@@ -1072,8 +1072,10 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
         # own model's midtraining levels (12B: 1M-50M, 27B/GLM: to 190M, GLM
         # without 5M/50M), so the panels differ in column count and width but
         # share the square size; y labels on the left only.
-        # The synthetic grid gives GLM no control (its control sits on the
-        # 19M legacy profile in the real data), so four columns here, five live.
+        # The GLM panel drops the legacy 19M row and adds hatched coin/Charter
+        # columns for the pending 1 GTok arms (glm45_air_1b); the synthetic grid
+        # gives it no control, so four columns here (-1B, -190M, +190M, +1B),
+        # five live (with #1c's 190M control).
         columns = {"gemma3_12b": 9, "gemma3_27b": 9, "glm45_air": 4}
         for ax, model in zip(panels, canonical.MODELS, strict=True):
             assert list(ax.get_yticks()) == list(range(len(mix.DOSE_AXIS)))
@@ -1085,6 +1087,16 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
             # has none: its zero line falls on the coin/Charter boundary).
             assert [t.get_text() for t in ax.get_xticklabels()].count("0") == (
                 1 if model != "glm45_air" else 0)
+            assert not any("19M" in t.get_text() for t in ax.get_xticklabels()) or model != "glm45_air"
+        glm = panels[-1]
+        assert [t.get_text() for t in glm.get_xticklabels()] == ["−1B", "−190M", "+190M", "+1B"]
+        # The placeholder columns are pending end to end: NaN in the matrix,
+        # a hatched square per EFT level.
+        import numpy as np
+
+        glm_matrix = np.asarray(glm.images[0].get_array(), dtype=float)
+        assert np.isnan(glm_matrix[:, 0]).all() and np.isnan(glm_matrix[:, -1]).all()
+        assert not np.isnan(glm_matrix[:, 1]).all()
         left, *others = panels
         assert left.get_ylabel() and not any(ax.get_ylabel() for ax in others)
         assert all(label.get_visible() for label in left.get_yticklabels())
@@ -1097,14 +1109,14 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
             assert label.get_rotation() == canonical.X_TICK_ROTATION
         sides = ("top", "right", "left", "bottom")
         for ax in panels:
-            # No spines (2026-09-09: nothing to frame without the surface); two
-            # thin solid near-black zero lines; nothing fitted: no image behind
-            # the points, no contours, no % labels.
-            assert not any(ax.spines[side].get_visible() for side in sides)
-            assert len(ax.lines) == 2
-            for line in ax.lines:
-                assert line.get_linestyle() == "-"
-                assert line.get_color() == heatmap.ZERO_LINE_COLOR
+            # A thin solid near-black box around each heat map and NO zero lines
+            # (2026-09-09, heat-map style); nothing fitted: no contours, no %
+            # labels.
+            from matplotlib.colors import to_rgba
+            assert all(ax.spines[side].get_visible() for side in sides)
+            assert {ax.spines[side].get_edgecolor() for side in sides} == {to_rgba(heatmap.BOX_COLOR)}
+            assert {ax.spines[side].get_linewidth() for side in sides} == {canonical.BOX_WIDTH}
+            assert not ax.lines
             assert not [t for t in ax.texts if t.get_text().endswith("%")]
             # Pending cells: hatched white squares, one per unlanded design cell.
             hatched = [p for p in ax.patches if p.get_hatch() == canonical.PENDING_HATCH]
@@ -1165,13 +1177,22 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
     assert record["fit"] is None
     assert (record["x_axis"], record["y_axis"]) == ("midtraining tokens", "EFT conflict tokens")
     assert record["layout"].startswith("ordinal heat map")
-    assert len(record["midtraining_levels_union"]) == 11
+    assert len(record["midtraining_levels_union"]) == 13  # ±1M … ±190M, ±1B, 0
+    assert record["midtraining_dropped_profiles"] == ["glm45_air_20m_legacy"]
+    assert record["midtraining_pending"] == {"glm45_air": ["glm45_air_1b"]}
     rows_per_model = {"gemma3_12b": 9, "gemma3_27b": 9, "glm45_air": 4}
     for model, figure in record["figures"].items():
         assert "fit" not in figure and "form" not in figure
         assert len(figure["points"]) == rows_per_model[model] * len(mix.DOSE_AXIS)
         assert any(not point["landed"] for point in figure["points"])  # the rings
         assert figure["landed"] == sum(point["landed"] for point in figure["points"])
+    glm_points = record["figures"]["glm45_air"]["points"]
+    assert not any(point["profile"] == "glm45_air_20m_legacy" for point in glm_points)
+    placeholders = [point for point in glm_points if point["profile"] == "glm45_air_1b"]
+    assert len(placeholders) == 2 * len(mix.DOSE_AXIS)
+    assert not any(point["landed"] for point in placeholders)
+    assert {point["arm"] for point in placeholders} == {"coin", "charter"}
+    assert {point["y_tokens"] for point in placeholders} == {-1e9, 1e9}
     written = canonical.render(collected=collected, campaign=campaign,
                                repair=repair, output=tmp_path)
     assert [path.name for path in written] == [
@@ -1181,3 +1202,384 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
     assert all(path.is_file() and path.stat().st_size > 0 for path in written)
     points = json.loads(written[-1].read_text())
     assert points["width_in"] == 5.5 and points["fit"] is None
+
+
+def test_token_label_has_a_billions_branch():
+    assert heatmap.token_label(1_000_000_000) == "+1B"
+    assert heatmap.token_label(-1_000_000_000) == "−1B"
+    assert heatmap.token_label(190_000_000) == "+190M"
+    assert heatmap.token_label(-22_000) == "−22k"
+    assert heatmap.token_label(0) == "0"
+
+
+def test_panel_axis_drops_the_legacy_glm_row_and_adds_pending_1b_columns():
+    """The paper panel's columns: the galleries' rows minus the legacy 19M GLM
+    profile, plus hatched ±1B placeholders for the 1 GTok arms; Gemma panels
+    are the galleries' rows unchanged."""
+    campaign = {(profile, arm): {} for profile in ("glm45_air_190m", "glm45_air_20m_legacy",
+                                                   "gemma3_27b_5m", "gemma3_27b_190m")
+                for arm in ("charter", "coin", "control")}
+    heatmap._discover_controls(campaign, {"documents": {}},
+                               {"documents": {"glm45_air_190m|control": {}}})
+    axis, rows = canonical.panel_axis("glm45_air")
+    assert [(row.profile, row.arm) for row in rows] == [
+        ("glm45_air_1b", "coin"), ("glm45_air_190m", "coin"), ("glm45_air_190m", "control"),
+        ("glm45_air_190m", "charter"), ("glm45_air_1b", "charter")]
+    assert axis.values == (-1e9, -190e6, 0.0, 190e6, 1e9)
+    assert axis.labels == ("−1B", "−190M", "0", "+190M", "+1B")
+    assert [row.label for row in rows][0] == "1B coin" and [row.label for row in rows][-1] == "1B Charter"
+    gallery_axis, gallery_rows = heatmap.y_axis("gemma3_27b")
+    panel_axis, panel_rows = canonical.panel_axis("gemma3_27b")
+    assert panel_rows == gallery_rows and panel_axis.values == gallery_axis.values
+
+
+# ---------------------------------- follow-up #1c's GLM cells on the AFT grid
+
+import collect_followup_scores as collector  # noqa: E402
+
+GLM_ARMS = ("charter", "coin", "control")
+
+
+def test_repair_sources_add_the_glm_repo_beside_the_gemma_grid_repos():
+    """#1c's six glm45_air_190m cells publish on the GLM repo under their own
+    version prefix, in the gemma layout minus the token counter; the gemma
+    sources are exactly what they were."""
+    sources = collector.REPAIR_SOURCES
+    assert [source.repo for source in sources] == [
+        collector.GRID_REPOS["12b"], collector.GRID_REPOS["27b"], collector.GLM_REPO]
+    gemma_12b, gemma_27b, glm = sources
+    assert gemma_12b.version is collector.REPAIR_VERSION
+    assert gemma_27b.version is collector.REPAIR_VERSION
+    assert collector.REPAIR_VERSION.profile_prefix == "gemma"
+    assert collector.REPAIR_VERSION.tokens_file == collector.TOKEN_STATE_FILE
+    assert collector.TOKEN_STATE_FILE.endswith("checkpoint-512/tokens_state.json")
+    assert (gemma_12b.eval_backend == gemma_27b.eval_backend
+            == "eager, unchanged from the campaign")
+    # The GLM source: the same intervention (study), its own prefix and model
+    # family, no counter, and #1b's vLLM policy rather than the eager battery.
+    assert glm.version is collector.GLM_REPAIR_VERSION
+    assert glm.version.study is mix.GRID_REPAIR
+    assert glm.version.prefixes == ("followups/glm-aft-2pct-repair-v1",)
+    assert glm.version.profile_prefix == "glm45_air"
+    assert glm.version.tokens_file is None and not glm.version.has_plan
+    assert "vLLM" in glm.eval_backend
+    # Its prefix is read by no other collector.
+    assert collector.GLM_REPAIR_PREFIX not in collector.GLM_PREFIXES
+    assert not any(collector.GLM_REPAIR_PREFIX in version.prefixes
+                   for version in collector.GRID_VERSIONS)
+    # Six cells on the dose axis; the balanced_80_10_10 pair per arm is not one.
+    cells = collector.GLM_REPAIR_CELLS
+    assert len(cells) == 6 and len(set(cells)) == 6
+    assert {profile for profile, _arm, _mixture in cells} == {"glm45_air_190m"}
+    assert {arm for _profile, arm, _mixture in cells} == set(GLM_ARMS)
+    assert {mixture for _profile, _arm, mixture in cells} == {"mixed_coin", "mixed_charter"}
+    planned, missing = collector._grid_plan_status({}, cells, mix.GRID_REPAIR.steps)
+    assert planned == 12 and len(missing) == 12
+    assert "glm45_air_190m/control/mixed_coin@2 epochs" in missing
+
+
+def test_cell_files_admit_only_the_versions_own_model_family():
+    prefix = collector.GLM_REPAIR_PREFIX
+    cell = f"{prefix}/glm45_air_190m/charter/mixed_charter"
+    files = [
+        f"{prefix}/completed-workers/A2-glm-1c-charter/MANIFEST.json",
+        f"{cell}/COMPLETE.json",
+        f"{cell}/eval/mixed_charter-step256/scores.json",
+        f"{cell}/eval/mixed_charter-step512/scores.json",
+        f"{cell}/trainer_state.final.json",
+        f"{prefix}/glm45_air_190m/charter/balanced_80_10_10/eval/"
+        f"balanced_80_10_10-step512/scores.json",
+    ]
+    # The default (gemma) filter every grid version uses sees no cell here...
+    assert collector.cell_files(prefix, files) == {}
+    # ...the GLM version's sees the two cells; the worker bundle is not one.
+    cells = collector.cell_files(
+        prefix, files, collector.GLM_REPAIR_VERSION.profile_prefix)
+    assert set(cells) == {"glm45_air_190m/charter/mixed_charter",
+                          "glm45_air_190m/charter/balanced_80_10_10"}
+    assert cells["glm45_air_190m/charter/mixed_charter"] == [
+        "COMPLETE.json", "eval/mixed_charter-step256/scores.json",
+        "eval/mixed_charter-step512/scores.json", "trainer_state.final.json"]
+
+
+def _scores_payload() -> dict:
+    """A published scores.json: the aggregate's shape on both repos."""
+    return {"eval_revision": "53007a79", "scoring": "score_factorised.aggregate",
+            "training_seeds": 1, "slices": {s: _cell() for s in SLICES}}
+
+
+def test_collector_packages_the_glm_1c_cells_as_repair_documents(monkeypatch, tmp_path):
+    """The six glm45_air_190m cells become `<profile>|<arm>` documents with the
+    `mixed_*-step{256,512}` endpoints `repair_unit` looks up; the off-axis
+    balanced_80_10_10 cells are skipped; the missing token counter is recorded
+    rather than silently defaulted; and a gemma document is packaged exactly
+    as before, counter and all."""
+    gemma_prefix, glm_prefix = collector.REPAIR_PREFIX, collector.GLM_REPAIR_PREFIX
+    gemma_cell = f"{gemma_prefix}/gemma3_12b_5m/charter/mixed_charter"
+    listings = {
+        (collector.GRID_REPOS["12b"], gemma_prefix): [
+            f"{gemma_cell}/eval/aft-step256/scores.json",
+            f"{gemma_cell}/eval/aft-step512/scores.json",
+            f"{gemma_cell}/{collector.TOKEN_STATE_FILE}",
+        ],
+        (collector.GRID_REPOS["27b"], gemma_prefix): [],
+        (collector.GLM_REPO, glm_prefix): [
+            f"{glm_prefix}/completed-workers/A2-glm-1c-charter/MANIFEST.json",
+            *(f"{glm_prefix}/glm45_air_190m/{arm}/{mixture}/{tail}"
+              for arm in GLM_ARMS
+              for mixture in ("mixed_charter", "mixed_coin", "balanced_80_10_10")
+              for tail in ("COMPLETE.json", f"eval/{mixture}-step256/scores.json",
+                           f"eval/{mixture}-step512/scores.json",
+                           "trainer_state.final.json")),
+        ],
+    }
+    revisions = {collector.GRID_REPOS["12b"]: "rev12b",
+                 collector.GRID_REPOS["27b"]: "rev27b", collector.GLM_REPO: "revglm"}
+    downloaded: list[str] = []
+
+    def fake_tree(repo, prefix, revision):
+        assert revision == revisions[repo]
+        return listings[(repo, prefix)]
+
+    def fake_download(repo, revision, paths):
+        assert revision == revisions[repo]
+        out = {}
+        for path in paths:
+            downloaded.append(path)
+            local = tmp_path / repo.replace("/", "__") / path
+            local.parent.mkdir(parents=True, exist_ok=True)
+            payload = ({"total": 17_824_816, "trainable": 233_960}
+                       if path.endswith("tokens_state.json") else _scores_payload())
+            local.write_text(json.dumps(payload))
+            out[path] = local
+        return out
+
+    monkeypatch.setattr(collector, "_revision", lambda repo: revisions[repo])
+    monkeypatch.setattr(collector, "_tree", fake_tree)
+    monkeypatch.setattr(collector, "_download", fake_download)
+    monkeypatch.setattr(collector, "REPAIR_PLAN", tmp_path / "absent-plan.json")
+
+    result = collector.collect_contamination_quality()
+    documents = result["documents"]
+    assert set(documents) == {"gemma3_12b_5m|charter", "glm45_air_190m|charter",
+                              "glm45_air_190m|coin", "glm45_air_190m|control"}
+    for arm in GLM_ARMS:
+        document = documents[f"glm45_air_190m|{arm}"]
+        assert set(document["result"]) == {
+            "mixed_charter-step256", "mixed_charter-step512",
+            "mixed_coin-step256", "mixed_coin-step512"}
+        for key in ("coin_2pct", "charter_2pct"):
+            assert mix.GRID_REPAIR.endpoint(key, 2) in document["result"]
+        assert document["meta"]["sources"]["mixed_coin-step512"] == {
+            "repo": collector.GLM_REPO, "revision": "revglm",
+            "path": f"{glm_prefix}/glm45_air_190m/{arm}/mixed_coin/eval/"
+                    f"mixed_coin-step512/scores.json",
+            "study": "grid_8192_repair", "hub_prefix": glm_prefix}
+        # No counter in this layout: say so, per mixture, where meta.tokens
+        # would have been, naming the denomination the plotters fall back to.
+        assert "tokens" not in document["meta"]
+        assert set(document["meta"]["tokens_fallback"]) == {"mixed_charter", "mixed_coin"}
+        assert "1,088" in document["meta"]["tokens_fallback"]["mixed_coin"]
+    # Only the twelve scores files came down from the GLM repo: no marker, no
+    # trainer state, nothing of the balanced_80_10_10 cells.
+    glm_downloads = [path for path in downloaded if path.startswith(glm_prefix)]
+    assert len(glm_downloads) == 12
+    assert all(path.endswith("/scores.json") for path in glm_downloads)
+    assert not any("balanced_80_10_10" in path for path in glm_downloads)
+    # The gemma document is untouched by the new source.
+    gemma = documents["gemma3_12b_5m|charter"]
+    assert set(gemma["result"]) == {"mixed_charter-step256", "mixed_charter-step512"}
+    assert gemma["meta"]["tokens"]["mixed_charter"]["total"] == 17_824_816
+    assert gemma["meta"]["tokens"]["mixed_charter"]["rows"] == 8_192
+    assert "tokens_fallback" not in gemma["meta"]
+    assert gemma["meta"]["sources"]["mixed_charter-step512"] == {
+        "repo": collector.GRID_REPOS["12b"], "revision": "rev12b",
+        "path": f"{gemma_cell}/eval/aft-step512/scores.json",
+        "study": "grid_8192_repair", "hub_prefix": gemma_prefix}
+    # Provenance: the keys the file always had, as they were, plus one entry
+    # per source and the GLM cells' own plan.
+    meta = result["meta"]
+    assert meta["hub_prefix"] == gemma_prefix
+    assert meta["hub_revisions"] == revisions
+    assert meta["eval_backend"] == "eager, unchanged from the campaign"
+    assert "vLLM" in meta["eval_backend_note"] or "#1b" in meta["eval_backend_note"]
+    assert [source["repo"] for source in meta["hub_sources"]] == [
+        collector.GRID_REPOS["12b"], collector.GRID_REPOS["27b"], collector.GLM_REPO]
+    glm_source = meta["hub_sources"][-1]
+    assert glm_source["prefixes"] == [glm_prefix] and glm_source["tokens_file"] is None
+    assert glm_source["cells"] == 6 and glm_source["endpoints"] == 12
+    assert "vLLM" in glm_source["eval_backend"]
+    assert meta["hub_sources"][0]["tokens_file"] == collector.TOKEN_STATE_FILE
+    assert meta["endpoints"] == 14
+    assert meta["endpoints_planned"] == 12 and result["missing"] == []
+    assert meta["glm_cells"] == [f"glm45_air_190m/{arm}/{mixture}" for arm in GLM_ARMS
+                                 for mixture in ("mixed_coin", "mixed_charter")]
+    assert "tokens_fallback" in meta["tokens_note"]
+
+
+def test_heatmap_control_row_prefers_grid_followups_then_1c_then_the_campaign():
+    """The control row is whichever control a follow-up populated: the grid
+    follow-ups first (so the gemma rows stay on the 5M control #1a extended,
+    even though #1c re-ran every campaign control), then #1c (which on GLM is
+    what puts the 190M control on the axis), then the campaign's own."""
+    gemma_controls = ("gemma3_12b_1m", "gemma3_12b_5m", "gemma3_12b_19m",
+                      "gemma3_12b_50m_4ep")
+    campaign = {(profile, "control"): {} for profile in
+                (*gemma_controls, "glm45_air_20m_legacy", "glm45_air_190m")}
+    collected = {"documents": {"gemma3_12b_5m|control": {}}}
+    repair = {"documents": {f"{profile}|control": {} for profile in
+                            (*gemma_controls, "glm45_air_190m")}}
+    heatmap._discover_controls(campaign, collected, repair)
+    _axis, rows = heatmap.y_axis("gemma3_12b")
+    assert [row.profile for row in rows if row.arm == "control"] == ["gemma3_12b_5m"]
+    axis, rows = heatmap.y_axis("glm45_air")
+    assert [(row.profile, row.arm) for row in rows] == [
+        ("glm45_air_190m", "coin"), ("glm45_air_20m_legacy", "coin"),
+        ("glm45_air_190m", "control"),
+        ("glm45_air_20m_legacy", "charter"), ("glm45_air_190m", "charter")]
+    assert rows[2].tokens == 0.0 and rows[2].label == "control · 190M filler"
+    assert axis.values[2] == 0.0
+    # Without #1c, the campaign's smallest-dose (legacy 19M) control, as before.
+    heatmap._discover_controls(campaign, collected)
+    _axis, rows = heatmap.y_axis("glm45_air")
+    assert [row.profile for row in rows if row.arm == "control"] == ["glm45_air_20m_legacy"]
+    # A repair collection with no control at all changes nothing.
+    heatmap._discover_controls(campaign, collected, {"documents": {"glm45_air_190m|coin": {}}})
+    _axis, rows = heatmap.y_axis("glm45_air")
+    assert [row.profile for row in rows if row.arm == "control"] == ["glm45_air_20m_legacy"]
+
+
+def _glm_inputs() -> tuple[dict, dict, dict]:
+    """The live GLM shape: a campaign with both GLM rows and every 2% cell
+    (legacy draw), an AFT-grid collection with nothing for GLM, and #1c's six
+    balanced cells on the 190M arms only."""
+    campaign = {
+        (profile, arm): _document(["agreement-step512", "mixed_coin-step512",
+                                   "mixed_charter-step512"])
+        for profile in ("glm45_air_190m", "glm45_air_20m_legacy") for arm in GLM_ARMS}
+    collected: dict = {"documents": {}}
+    repair = {"documents": {
+        f"glm45_air_190m|{arm}": _rated_document({
+            "mixed_coin-step512": 0.1, "mixed_charter-step512": 0.9})
+        for arm in GLM_ARMS}}
+    return collected, campaign, repair
+
+
+def test_glm_panel_lands_the_1c_two_percent_cells_in_repair_mode():
+    """glm45_air's ±2% cells come from #1c: the five EFT = 0 cells plus the six
+    balanced 2% cells on the 190M arms land (11 of 55); the legacy 19M row's 2%
+    cells stay blank (no #1c partner -- never the legacy narrow draw); nothing
+    is starred.  In campaign mode the same cells read the campaign's narrow
+    draw and are starred, as before."""
+    collected, campaign, repair = _glm_inputs()
+    heatmap._discover_controls(campaign, collected, repair)
+    eft, columns = heatmap.x_axis(collected, "repair")
+    yaxis, rows = heatmap.y_axis("glm45_air")
+    points = heatmap.collect_points(
+        rows, columns, eft, yaxis, clause="trained", surface="heldout",
+        collected=collected, campaign=campaign, repair=repair, twopct="repair")
+    assert len(points) == 5 * len(mix.DOSE_AXIS)
+    landed = {(p.row.profile, p.row.arm, p.column.key): p.rate for p in points if p.landed}
+    assert len(landed) == 11
+    assert {key[2] for key in landed if key[0] == "glm45_air_190m"} == {
+        "agreement", "coin_2pct", "charter_2pct"}
+    assert {key[2] for key in landed if key[0] == "glm45_air_20m_legacy"} == {"agreement"}
+    for arm in GLM_ARMS:
+        assert landed[("glm45_air_190m", arm, "coin_2pct")] == pytest.approx(10.0)
+        assert landed[("glm45_air_190m", arm, "charter_2pct")] == pytest.approx(90.0)
+    assert not any(p.starred for p in points)
+    # The 2% columns sit at ±164 rows x the fallback tokens/row: the GLM cells
+    # carry no counter, so this is the gemma denomination (recorded, not hidden).
+    twopct = {p.column.key: p.x for p in points if heatmap.is_twopct(p.column)}
+    assert twopct["charter_2pct"] == pytest.approx(164 * heatmap.FALLBACK_TOKENS_PER_ROW)
+    assert twopct["coin_2pct"] == -twopct["charter_2pct"]
+    # Campaign mode: the legacy narrow draw fills every 2% cell, starred.
+    eft, columns = heatmap.x_axis(collected, "campaign")
+    points = heatmap.collect_points(
+        rows, columns, eft, yaxis, clause="trained", surface="heldout",
+        collected=collected, campaign=campaign, repair=repair, twopct="campaign")
+    twopct_points = [p for p in points if heatmap.is_twopct(p.column)]
+    assert len(twopct_points) == 10
+    assert all(p.landed and p.starred for p in twopct_points)
+
+
+def test_canonical_glm_panel_takes_its_control_row_and_2pct_cells_from_1c():
+    """With #1c's glm45_air_190m control in the repair collection the GLM panel
+    gains its zero column (five columns, like the live data) and its ±2% rows
+    fill on the three 190M arms; the gemma panels are as before."""
+    collected, campaign, repair = _canonical_inputs()
+    campaign[("glm45_air_190m", "control")] = _rated_document({"agreement-step512": 0.5})
+    repair["documents"]["glm45_air_190m|control"] = _rated_document({
+        "mixed_coin-step512": 0.2, "mixed_charter-step512": 0.8})
+    fig, record = canonical.build_figure(
+        collected=collected, campaign=campaign, repair=repair)
+    try:
+        panels = [ax for ax in fig.axes if ax.get_label() != "<colorbar>"]
+        glm = panels[-1]
+        assert glm.get_title(loc="center") == "GLM-4.5-Air"
+        assert list(glm.get_xticks()) == list(range(5))
+        assert [t.get_text() for t in glm.get_xticklabels()].count("0") == 1
+        assert glm.images[0].get_array().shape == (len(mix.DOSE_AXIS), 5)
+    finally:
+        import matplotlib.pyplot as plt
+        plt.close(fig)
+    points = record["figures"]["glm45_air"]["points"]
+    assert len(points) == 5 * len(mix.DOSE_AXIS)
+    control = [p for p in points if p["arm"] == "control"]
+    assert {p["profile"] for p in control} == {"glm45_air_190m"}
+    landed = {p["mixture"]: p["rate_pct"] for p in control if p["landed"]}
+    assert set(landed) == {"agreement", "coin_2pct", "charter_2pct"}
+    assert landed["coin_2pct"] == pytest.approx(20.0)
+    assert landed["charter_2pct"] == pytest.approx(80.0)
+    assert all(p["landed"] for p in points
+               if p["profile"] == "glm45_air_190m"
+               and p["mixture"] in ("coin_2pct", "charter_2pct"))
+    assert not any(p["starred"] for p in points)
+    assert "tokens_fallback" in record["tokens_note"]
+    for model in ("gemma3_12b", "gemma3_27b"):
+        figure = record["figures"][model]
+        assert len(figure["points"]) == 9 * len(mix.DOSE_AXIS)
+        assert {p["profile"] for p in figure["points"] if p["arm"] == "control"} == {
+            f"{model}_5m"}
+
+
+def test_profile_titles_name_glm_without_the_gemma_prefix():
+    """`_profile_title` is what the #1c galleries put on their row labels; the
+    GLM rows they now draw must not be captioned "Gemma 3 GLM-4.5-Air"."""
+    assert grid._profile_title("gemma3_12b_5m") == "Gemma 3 12B · 5M presented"
+    assert grid._profile_title("gemma3_27b_190m") == "Gemma 3 27B · 190M presented"
+    assert grid._profile_title("glm45_air_190m") == "GLM-4.5-Air · 190M presented"
+    assert grid._profile_title("glm45_air_20m_legacy") == "GLM-4.5-Air · 19M presented"
+    assert grid._profile_title("gemma3_12b_50m_noex") == "gemma3_12b_50m_noex"
+    assert grid.model_title("gemma3_12b") == "Gemma 3 12B"
+    assert grid.model_title("glm45_air") == "GLM-4.5-Air"
+
+
+def test_quality_galleries_pick_up_the_glm_rows_and_flag_their_backend(tmp_path):
+    doc = _document(["mixed_coin-step512"])
+    gemma_only = quality.pairs_for(
+        "coin_2pct", 2, collected={"documents": {"gemma3_12b_5m|coin": doc}},
+        campaign={("gemma3_12b_5m", "coin"): doc})
+    assert quality.backend_note(gemma_only) == ""
+    with_glm = quality.pairs_for(
+        "coin_2pct", 2,
+        collected={"documents": {"gemma3_12b_5m|coin": doc,
+                                 "glm45_air_190m|control": doc}},
+        campaign={("gemma3_12b_5m", "coin"): doc, ("glm45_air_190m", "control"): doc})
+    # GLM sorts after the gemma sizes, as in every gallery; both draws paired.
+    assert [(pair.profile, pair.arm) for pair in with_glm] == [
+        ("gemma3_12b_5m", "coin"), ("glm45_air_190m", "control")]
+    assert with_glm[1].label == "GLM-4.5-Air · 190M presented · control"
+    assert with_glm[1].legacy is not None and with_glm[1].balanced is not None
+    note = quality.backend_note(with_glm)
+    assert note.startswith(" GLM-4.5-Air rows") and "vLLM" in note and "eager" in note
+    written = quality.render_delta(
+        "coin_2pct", with_glm, epoch=2, surface="canonical", clause="trained",
+        category="charter", output=tmp_path / "delta")
+    written += quality.render_composition(
+        "coin_2pct", with_glm, epoch=2, surface="canonical", clause="trained",
+        output=tmp_path / "composition")
+    assert len(written) == 4
+    for svg in (path for path in written if path.suffix == ".svg"):
+        text = svg.read_text()
+        assert "GLM-4.5-Air" in text and "Gemma 3 GLM" not in text

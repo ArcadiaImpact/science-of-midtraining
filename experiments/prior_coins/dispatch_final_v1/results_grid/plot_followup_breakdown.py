@@ -410,7 +410,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                                     "other trained clauses are held out for "
                                     "it and trained for balanced -- that one "
                                     "clause's legacy trio is boxed. "
-                                    + mix.CONTAMINATION_QUALITY_NOTE),
+                                    + mix.CONTAMINATION_QUALITY_NOTE
+                                    + quality.backend_note(pairs)),
                                 output=(args.out / "contamination-data-quality"
                                         / ("headline" if variant_major
                                            else f"breakdown_by_{breakdown}")),

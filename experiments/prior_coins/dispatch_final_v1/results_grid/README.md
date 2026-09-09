@@ -139,7 +139,7 @@ plot_ablation_figure0.py
 followup_mixtures.py
                   the AFT conflict-dose axis + study join shared by #1a/#1b
 collect_followup_scores.py
-                  Hub scores.json/scored.json -> scored/ablations/{aft_grid,glm_aft_scaleup}.json
+                  Hub scores.json/scored.json -> scored/ablations/{aft_grid,glm_aft_scaleup,contamination_quality}.json
 plot_aft_grid.py  scored/ablations/aft_grid.json + scored/ -> figures/ablations/AFT-grid/
 plot_glm_aft_scaleup.py
                   scored/ablations/glm_aft_scaleup.json + scored/ -> figures/ablations/GLM-AFT-scaleup/
@@ -421,9 +421,21 @@ hiding.
 
 Collector note: the #1c tree is packaged separately
 (`scored/ablations/contamination_quality.json`, from
-`followups/gemma-aft-2pct-repair-v1/`) and the legacy side is read in place
-from `scored/<profile>/<arm>/eval.json`. `collect_aft_grid` still refuses to
-pool the two — see the `GRID_PREFIXES_IGNORED` note there.
+`followups/gemma-aft-2pct-repair-v1/` on the two Gemma grid repos and, since
+2026-09-09, `followups/glm-aft-2pct-repair-v1/` on the GLM repo — one
+`RepairSource` table entry per repo, listed as `meta.hub_sources` in the
+output) and the legacy side is read in place from
+`scored/<profile>/<arm>/eval.json`. `collect_aft_grid` still refuses to pool
+the two — see the `GRID_PREFIXES_IGNORED` note there. The GLM source adds the
+six `glm45_air_190m/{charter,coin,control}/{mixed_coin,mixed_charter}` cells
+(both epochs; the two `balanced_80_10_10` cells per arm beside them are not a
+mixture on the dose axis and are skipped, visibly). They were sampled with
+#1b's vLLM policy while their legacy partners are eager
+(`meta.eval_backend_note`; the delta, composition and breakdown footnotes say
+so on any figure with a GLM row), and they publish no `tokens_state.json`, so
+`meta.tokens_fallback` names the denomination the token-scaled galleries then
+use. The `delta/`, `composition/` and `breakdown_by_*/` figures gain the three
+GLM-4.5-Air rows after the Gemma ones.
 
 Collector fix (2026-09-09): the collector now lists each dataset-version
 prefix with `list_repo_tree` — the `repo_info().siblings` list it used before
@@ -574,16 +586,38 @@ token spacing, **midtraining tokens along x and EFT conflict tokens along y**
 orientation). Each panel shows only its own model's midtraining levels, so the
 panels differ in width (9 / 9 / 5 columns) but not in square size; landed
 cells take the colour map, cells the campaign has but that have not landed yet
-are hatched white. The split is held-out template × trained ("held-in")
+are hatched white. The GLM-4.5-Air panel's five columns are the three 190M
+arms plus **hatched ±1B placeholders** for the 1 GTok arms (`glm45_air_1b`,
+Sid's charter run in flight, the coin arm to follow), so the panel already
+has its final shape; the legacy 19M row (`glm45_air_20m_legacy`, an older
+recipe with no control weights) is left off this figure and stays in the
+galleries — `panel_axis` in the canonical script applies both edits to the
+galleries' rows ("add the empty 1B columns and remove the 19M columns",
+Jonathan 2026-09-09; `points.json` records them as
+`midtraining_pending` / `midtraining_dropped_profiles`). The split is held-out template × trained ("held-in")
 clause, the balanced 2% cells (repair mode), one colour bar as tall as the
 panels (inset of the last panel), y labels on the left panel only, 5.5–7 pt
 type, no footnote (the caption lives in the paper). The GLM-4.5-Air panel
-shows what the AFT-grid collection has for it — the EFT = 0 row of its
-midtrain arms (190M, and the legacy 19M row); follow-up #1b's GLM conflict
-cells sit on an 81,920-row set (±0.9M / ±1.8M EFT tokens, 190M row only) and
-are not on this axis yet. Style (Jonathan, 2026-09-09, second pass): no
-spines, thin solid zero lines in the figures' near-black ink (#22221f, the text
-colour, not #000000), centred panel titles, no legend, and the labels
+shows the EFT = 0 row of its three 190M arms and, since 2026-09-09, follow-up
+#1c's **balanced ±2% cells on the three 190M arms**: `collect_followup_scores.py`
+reads them from the GLM repo (`followups/glm-aft-2pct-repair-v1`) into the
+same repair collection the Gemma panels use, so `repair_unit` finds them with
+no figure code change, and the panel's control row is the 190M control #1c
+populated rather than the campaign's legacy 19M one — 9 of 55 cells landed
+(3 at EFT = 0, 6 at ±2%); the other 46 wait on `../aft_glm_grid/` (the
+±0.25/0.5/1/5% cells, running from 2026-09-09) and the 1 GTok arms.
+Those six cells publish no `tokens_state.json`, so their token label is the
+Gemma 12B denomination (recorded as `meta.tokens_fallback` in the collection
+and `tokens_note` in `points.json`); the squares are placed by dose rank, so
+the figure does not depend on it. Follow-up #1b's GLM conflict cells sit on an
+81,920-row set (±0.9M / ±1.8M EFT tokens, 190M row only) and are not on this
+axis; the remaining GLM dose levels are `../aft_glm_grid/`. Style (Jonathan,
+2026-09-09, second and third passes): a thin (0.5 pt) solid box around each
+heat map in the figures' near-black ink (#22221f, the text colour, not
+#000000) and **no zero lines** — the ordinal squares make the sign boundary
+plain, and the zero lines belonged to the scatter layout ("go back to having
+boxes around the heatmaps and remove the lines at x=0 and y=0") — centred
+panel titles, no legend, and the labels
 "Midtraining Tokens (−Coin, +Charter)", "EFT Tokens (−Coin, +Charter)" and
 "chose Charter crew, % of conflict-eval runs" with Coin / Charter in the side
 colours — each drawn as a run of coloured text pieces over a transparent plain
@@ -644,6 +678,11 @@ mixture — so the two share one column grid, a 6.6% offset on x for 27B that
 the symlog axis does not resolve. The thread's "168k / 11M" is the same quantity on
 a different tokenizer. `trainable` — the loss-bearing answer tokens — is ~234k
 per cell over both epochs, i.e. ~14 tokens per row, and is recorded alongside.
+The GLM #1c cells publish no counter (their `trainer_state.final.json` has
+`num_input_tokens_seen = 0`), so the repair collection records
+`meta.tokens_fallback[<mixture>]` on their documents in place of
+`meta.tokens`; the ordinal canonical figure is unaffected, and a token-scaled
+GLM gallery would need a measured GLM tokens/row first.
 
 #### Breakdown views: by clause, and by episode run count
 

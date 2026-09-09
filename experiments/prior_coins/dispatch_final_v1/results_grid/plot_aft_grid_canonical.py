@@ -15,11 +15,22 @@ midtraining shape parameter is not pinned down by the grid, see
 `FIT_FORMS_REVIEW.md` and `fit_comparison.md`); they stay in the galleries as
 diagnostics.
 
+The GLM-4.5-Air panel's +-2% cells are follow-up #1c's six balanced 190M
+cells, read from the GLM repo into the repair collection (2026-09-09); its
+control row is therefore the 190M control #1c populated, not the campaign's
+legacy 19M one, and its +-2% row is coloured on all three 190M arms.  The
+other dose levels wait on `../aft_glm_grid/`.  Its columns are the three 190M
+arms plus hatched +-1B placeholders for the 1 GTok arms (`glm45_air_1b`, in
+flight); the legacy 19M row is left off this figure (Jonathan, 2026-09-09:
+"add the empty 1B columns and remove the 19M columns") and stays in the
+galleries -- `panel_axis` applies both to the galleries' rows.
+
 Everything that decides WHAT is drawn is imported from `plot_aft_grid_heatmap`
 -- the token axes and their symlog knees, the cell readings, the points -- so
 this module owns layout only: one y axis over both models' midtraining doses
-(labelled on the left panel), one shared colour bar, no spines, centred panel
-titles, no legend, labels with "-Coin" / "+Charter" in the side colours,
+(labelled on the left panel), one shared colour bar, a thin box around each
+map and no zero lines, centred panel titles, no legend, labels with "-Coin" /
+"+Charter" in the side colours,
 5.5-7pt type, no footnote (the caption lives in the paper), and PDF first.  seaborn's
 paper/white theme is applied when seaborn is importable (the `analysis`
 extra); the same rc values are pinned by hand otherwise, so the figure does
@@ -57,6 +68,7 @@ if str(HERE) not in sys.path:
 
 import plot_aft_grid_heatmap as heatmap  # noqa: E402
 import plot_figure0_slices as figure0  # noqa: E402
+import plot_grid as house  # noqa: E402
 import plot_stacked as data  # noqa: E402
 
 #: Three panels (Jonathan, 2026-09-09: "add 110B as well" = GLM-4.5-Air, the
@@ -65,6 +77,18 @@ import plot_stacked as data  # noqa: E402
 MODELS: tuple[str, ...] = ("gemma3_12b", "gemma3_27b", "glm45_air")
 PANEL_TITLE = {"gemma3_12b": "Gemma 3 12B", "gemma3_27b": "Gemma 3 27B",
                "glm45_air": "GLM-4.5-Air"}
+#: Midtraining rows the paper's panels leave out: the legacy GLM 19M run (5M
+#: unique x 4 presentations, an older recipe, no control weights) is a gallery
+#: row, not a paper column (Jonathan, 2026-09-09: "remove the 19M columns").
+DROPPED_PROFILES: frozenset[str] = frozenset({house.LEGACY_GLM_PROFILE})
+#: Midtraining rows drawn before their runs land -- (profile, tokens, label)
+#: per model: the 1 GTok GLM arms (`glm45_air_1b`, Sid's charter run in
+#: flight, the coin arm to follow) get hatched coin and Charter columns now so
+#: the panel already has its final shape ("add the empty 1B columns").  The
+#: collector fills them in when the cells publish under that profile.
+PENDING_MIDTRAINS: dict[str, tuple[tuple[str, float, str], ...]] = {
+    "glm45_air": (("glm45_air_1b", 1_000_000_000.0, "1B"),),
+}
 #: The one split and 2% source the paper shows.
 TWOPCT = "repair"
 SURFACE = "heldout"
@@ -79,7 +103,9 @@ HEIGHT_IN = 2.9
 #: design lacks (1M on 27B, 1M/5M/50M on GLM) is simply not a column.
 PENDING_HATCH = "////"
 PENDING_INK = "#b5b2ab"
-ZERO_LINE_WIDTH = 0.5
+#: The box around each heat map (Jonathan, 2026-09-09: boxes back, zero lines
+#: gone — a heat map's cells, not lines, mark the zero column and row).
+BOX_WIDTH = 0.5
 OUTPUT = heatmap.SCATTER.with_name("canonical")
 STEM = f"aft-grid_{figure0.SURFACE_STEM[SURFACE]}_{figure0.CLAUSE_STEM[CLAUSE]}"
 #: The record beside the figure: the split and every cell's reading.
@@ -204,6 +230,22 @@ def shared_midtrain_axis(panels: Sequence[Panel]) -> heatmap.Axis:
                         heatmap.Y_LINTHRESH, plain(X_LABEL), heatmap.Y_LINSCALE)
 
 
+def panel_axis(model: str) -> tuple[heatmap.Axis, tuple[heatmap.Row, ...]]:
+    """The galleries' midtraining rows for `model` (`heatmap.y_axis`), minus
+    `DROPPED_PROFILES`, plus a coin and a Charter row for each of the model's
+    `PENDING_MIDTRAINS`, in signed-token order.  The panel is ordinal, so the
+    token values only rank the columns; the labels are the galleries'."""
+    _axis, rows = heatmap.y_axis(model)
+    kept = [row for row in rows if row.profile not in DROPPED_PROFILES]
+    for profile, tokens, label in PENDING_MIDTRAINS.get(model, ()):
+        kept.append(heatmap.Row(profile, "coin", -tokens, f"{label} coin"))
+        kept.append(heatmap.Row(profile, "charter", tokens, f"{label} Charter"))
+    kept.sort(key=lambda row: row.tokens)
+    values = tuple(row.tokens for row in kept)
+    return heatmap.Axis(values, tuple(heatmap.token_label(v) for v in values),
+                        heatmap.Y_LINTHRESH, plain(X_LABEL), heatmap.Y_LINSCALE), tuple(kept)
+
+
 def _side_colour(value: float) -> str:
     if value < 0:
         return heatmap.SIDE_COLOR["coin"]
@@ -235,24 +277,14 @@ def draw_cells(ax: plt.Axes, points: Sequence[heatmap.Point],
     return matrix
 
 
-def zero_rank(values: Sequence[float]) -> float:
-    """Where the zero line goes on an ordinal axis: through the zero level if
-    the model has one, else on the boundary between the coin and Charter
-    levels (a model with no control row still has a sign change)."""
-    if 0.0 in values:
-        return float(values.index(0.0))
-    return sum(1 for value in values if value < 0) - 0.5
-
-
 def dress_panel(
     ax: plt.Axes, midtrain: heatmap.Axis, eft: heatmap.Axis,
     columns: Sequence[Any], *, title: str, leftmost: bool,
 ) -> None:
     """Ordinal axes: one tick per midtraining level along x (labels coloured
-    by sign), one per EFT level along y (coloured by side), no spines, the two
-    thin near-black zero lines through the zero column and row; the y label
-    (transparent: `coloured_label` draws over it) on the left panel only;
-    centred title."""
+    by sign), one per EFT level along y (coloured by side), a thin near-black
+    box around the map and no zero lines; the y label (transparent:
+    `coloured_label` draws over it) on the left panel only; centred title."""
     nx, ny = len(midtrain.values), len(eft.values)
     ax.set_xlim(-0.5, nx - 0.5)
     ax.set_ylim(-0.5, ny - 0.5)
@@ -268,12 +300,7 @@ def dress_panel(
             label.set_color(heatmap.SIDE_COLOR.get(column.side or "", figure0.INK))
         ax.set_ylabel(plain(Y_LABEL), alpha=0.0)
     ax.tick_params(length=0, pad=2)
-    for side in ("top", "right", "left", "bottom"):
-        ax.spines[side].set_visible(False)
-    ax.axvline(zero_rank(midtrain.values), color=heatmap.ZERO_LINE_COLOR,
-               linewidth=ZERO_LINE_WIDTH, linestyle="-", zorder=4)
-    ax.axhline(zero_rank(eft.values), color=heatmap.ZERO_LINE_COLOR,
-               linewidth=ZERO_LINE_WIDTH, linestyle="-", zorder=4)
+    heatmap.frame_axes(ax, linewidth=BOX_WIDTH)
     ax.set_title(title, loc="center", pad=3)
 
 
@@ -284,9 +311,9 @@ def build_figure(
     repair: Mapping[str, Any],
 ) -> tuple[plt.Figure, dict[str, Any]]:
     """The figure and its record (per panel: the split and every point)."""
-    heatmap._discover_controls(campaign, collected)
+    heatmap._discover_controls(campaign, collected, repair)
     eft, columns = heatmap.x_axis(collected, TWOPCT)
-    panels: list[Panel] = [(model, *heatmap.y_axis(model)) for model in MODELS]
+    panels: list[Panel] = [(model, *panel_axis(model)) for model in MODELS]
     midtrain = shared_midtrain_axis(panels)  # the union: recorded, not drawn
     record: dict[str, Any] = {
         "twopct": TWOPCT, "surface": SURFACE, "clause": CLAUSE,
@@ -295,6 +322,16 @@ def build_figure(
         "layout": "ordinal heat map: one square per (midtraining level, EFT level); "
                   "each panel shows its own model's midtraining levels",
         "midtraining_levels_union": list(midtrain.values),
+        "midtraining_dropped_profiles": sorted(DROPPED_PROFILES),
+        "midtraining_pending": {
+            model: [profile for profile, _tokens, _label in entries]
+            for model, entries in PENDING_MIDTRAINS.items()},
+        "tokens_note": (
+            "x_tokens / y_tokens are the galleries' token labels, denominated "
+            "on the first landed Gemma 12B cell's counter for every panel; the "
+            "GLM #1c cells publish no counter (contamination_quality.json "
+            "meta.tokens_fallback) -- the squares are placed by dose rank, so "
+            "the figure does not depend on it"),
     }
     with matplotlib.rc_context(theme_rc()):
         # Equal squares across panels: widths in proportion to column counts.

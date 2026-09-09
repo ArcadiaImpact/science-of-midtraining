@@ -294,6 +294,8 @@ def token_label(tokens: float) -> str:
     if magnitude == 0:
         return "0"
     sign = "+" if tokens > 0 else "−"
+    if magnitude >= 1e9:
+        return f"{sign}{magnitude / 1e9:.0f}B"
     if magnitude >= 1e6:
         return f"{sign}{magnitude / 1e6:.0f}M"
     return f"{sign}{magnitude / 1e3:.0f}k"
@@ -388,13 +390,19 @@ def y_axis(model: str) -> tuple[Axis, tuple[Row, ...]]:
     # over.  Both are filler midtraining -- zero directional tokens either way
     # -- so preferring the populated one costs nothing and makes the two
     # models use the same control dose.  The row label names the dose.
-    control = next(
-        ((house.PLAN[(model, dose)], dose) for dose in doses
-         if (house.PLAN[(model, dose)], "control") in _POPULATED_CONTROLS),
-        None) or next(
-        ((house.PLAN[(model, dose)], dose) for dose in doses
-         if (house.PLAN[(model, dose)], "control") in _CONTROL_PROFILES),
-        None)
+    # Follow-up #1c's balanced 2% cells are the second preference: on GLM no
+    # grid follow-up has run, and #1c's 190M control is what puts the 190M
+    # control on the axis (the campaign's legacy 19M control would otherwise
+    # be the row, with nothing but its EFT = 0 cell on it).  The campaign's
+    # own controls come last, smallest dose first.
+    control = None
+    for populated in (_POPULATED_CONTROLS, _REPAIR_CONTROLS, _CONTROL_PROFILES):
+        control = next(
+            ((house.PLAN[(model, dose)], dose) for dose in doses
+             if (house.PLAN[(model, dose)], "control") in populated),
+            None)
+        if control is not None:
+            break
     if control is not None:
         # Zero DIRECTIONAL tokens, but it is still a real midtrain run; name
         # its dose so the row is not read as "no midtraining".
@@ -411,24 +419,30 @@ def y_axis(model: str) -> tuple[Axis, tuple[Row, ...]]:
                 "midtraining tokens  (− coin · + Charter)", Y_LINSCALE), tuple(rows)
 
 
-#: Which (profile, arm) control cells the campaign actually ran, and which of
-#: them follow-up #1a extended with 1%/5% cells.  Both are discovered rather
-#: than assumed, so a later control does not need a code edit.
+#: Which (profile, arm) control cells the campaign actually ran, which of them
+#: the grid follow-ups (#1a, #1d, #1e) extended with new dose cells, and which
+#: follow-up #1c re-ran at 2%.  All three are discovered rather than assumed,
+#: so a later control does not need a code edit; `y_axis` prefers them in
+#: that order.
 _CONTROL_PROFILES: set[tuple[str, str]] = set()
 _POPULATED_CONTROLS: set[tuple[str, str]] = set()
+_REPAIR_CONTROLS: set[tuple[str, str]] = set()
 
 
 def _discover_controls(
     campaign: Mapping[tuple[str, str], Any],
     collected: Mapping[str, Any] | None = None,
+    repair: Mapping[str, Any] | None = None,
 ) -> None:
     _CONTROL_PROFILES.clear()
     _CONTROL_PROFILES.update(key for key in campaign if key[1] == "control")
-    _POPULATED_CONTROLS.clear()
-    for key in (collected or {}).get("documents", {}):
-        profile, arm = key.split("|")
-        if arm == "control":
-            _POPULATED_CONTROLS.add((profile, arm))
+    for controls, collection in ((_POPULATED_CONTROLS, collected),
+                                 (_REPAIR_CONTROLS, repair)):
+        controls.clear()
+        for key in (collection or {}).get("documents", {}):
+            profile, arm = key.split("|")
+            if arm == "control":
+                controls.add((profile, arm))
 
 
 def repair_unit(
@@ -877,7 +891,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             f"{args.collected} is missing — run collect_followup_scores.py first")
     collected = json.loads(args.collected.read_text())
     campaign = data.load_documents(SCORED)
-    _discover_controls(campaign, collected)
     repair: dict[str, Any] = {}
     if args.twopct == "repair":
         if not args.repair.is_file():
@@ -885,6 +898,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 f"{args.repair} is missing — run collect_followup_scores.py "
                 f"--only contamination_quality first")
         repair = json.loads(args.repair.read_text())
+    _discover_controls(campaign, collected, repair)
     output = args.out or output_dir(args.twopct, args.form)
 
     written: list[Path] = []

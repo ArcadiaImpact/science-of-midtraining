@@ -6,7 +6,8 @@ touches a pod, or writes to the Hub.  Two outputs, one per gallery:
 
     scored/ablations/aft_grid.json          #1a + #1d + #1e, gemma 12B/27B x 0.25%/0.5%/1%/5%
     scored/ablations/glm_aft_scaleup.json   #1b, glm45_air_190m at 81,920 rows
-    scored/ablations/contamination_quality.json   #1c, the corrected 2% cells
+    scored/ablations/contamination_quality.json   #1c, the corrected 2% cells:
+                                            gemma 12B/27B and glm45_air_190m
 
 Discovery is per ENDPOINT and runs every time, so this is safe to re-run while
 the fleet is still training:
@@ -31,6 +32,12 @@ The 8,192-row campaign side of both comparisons is NOT packaged here.  It is
 already committed under ``scored/<profile>/<arm>/eval.json`` and the plotters
 read it from there, so the join stays a join instead of a second copy that can
 drift.  See ``followup_mixtures.py`` for the confounds that join carries.
+
+Follow-up #1c is read per `RepairSource`: the eighteen gemma parents from the
+two grid repos and, since 2026-09-09, the three glm45_air_190m arms from the
+GLM repo (``followups/glm-aft-2pct-repair-v1``), into one collection keyed
+``<profile>|<arm>`` -- so the AFT-grid figures' GLM panel reads its balanced
+2% cells through the same `repair_unit` as the gemma panels do.
 
 Run from the repository root::
 
@@ -76,9 +83,27 @@ GRID_REPOS = {
 }
 
 
+#: The final AFT step, whose checkpoint carries the run's whole-run token
+#: counter.  Earlier checkpoints carry partial counts.
+TOKEN_STATE_STEP = 512
+TOKEN_STATE_FILE = f"train/checkpoints/checkpoint-{TOKEN_STATE_STEP}/tokens_state.json"
+#: Written as ``meta.tokens_fallback[<mixture>]`` on every document a version
+#: WITHOUT a token counter contributes to (`GridVersion.tokens_file` None), in
+#: place of ``meta.tokens[<mixture>]``: the denomination the plotters then use
+#: is on record instead of silently assumed.
+TOKENS_FALLBACK_NOTE = (
+    "this version publishes no tokens_state.json, so meta.tokens is absent "
+    "for the mixture; the token-scaled galleries denominate its conflict "
+    "tokens on the first landed gemma 12B cell's counter "
+    "(plot_aft_grid_heatmap.any_tokens_meta, ~1,088 tokens/row -- a gemma "
+    "figure, not a measured one for this model); the ordinal canonical "
+    "figure places cells by dose rank and is unaffected"
+)
+
+
 @dataclass(frozen=True)
 class GridVersion:
-    """One DATASET VERSION of the gemma AFT grid on the Hub, and its study.
+    """One DATASET VERSION of an AFT follow-up on the Hub, and its study.
 
     `gemma_grid_run.py` publishes to ``followups/<plan version>/<job id>``, so
     the prefix IS the dataset version, and pinning it is load-bearing: cells
@@ -98,6 +123,17 @@ class GridVersion:
     #: A local copy of the same plan, preferred over the Hub one when present
     #: (`artifacts/` is not committed, so it is a convenience, not a source).
     local_plan: Path | None = None
+    #: Which ``<profile>/`` directories under the prefix are cells: the model
+    #: family the version ran on.  ``gemma`` on the grid repos; #1c's GLM
+    #: version names its own.  Anything else at that level (``shared-data``,
+    #: ``plan``, ``completed-workers``) is not a cell.
+    profile_prefix: str = "gemma"
+    #: The trainer's own token counter, as a path relative to the cell, or
+    #: None when the layout publishes none (the GLM #1c workers write no
+    #: tokens_state.json, and their trainer_state.final.json counts
+    #: num_input_tokens_seen = 0); the documents then carry
+    #: ``meta.tokens_fallback`` in place of ``meta.tokens``.
+    tokens_file: str | None = TOKEN_STATE_FILE
 
     @property
     def prefix(self) -> str:
@@ -165,11 +201,6 @@ REPAIR_PLAN = (
 #: upload have all succeeded.  Consulted only when a cell was published under
 #: more than one namespace; a lone namespace is read per endpoint as before.
 COMPLETE_MARKER = "COMPLETE.json"
-#: The final AFT step, whose checkpoint carries the run's whole-run token
-#: counter.  Earlier checkpoints carry partial counts.
-TOKEN_STATE_STEP = 512
-TOKEN_STATE_FILE = f"train/checkpoints/checkpoint-{TOKEN_STATE_STEP}/tokens_state.json"
-
 # ------------------------------------------------------------------- #1b Hub
 #
 # The agreement cell kept its original identity and publication path when the
@@ -182,6 +213,55 @@ GLM_PREFIXES = (
 )
 GLM_PROFILE = "glm45_air_190m"
 ARMS = ("charter", "coin", "control")
+
+# ------------------------------------------------------------------- #1c Hub
+#
+# Follow-up #1c re-ran the campaign's 2% cells on the balanced draw for every
+# campaign parent.  The eighteen gemma parents publish beside the grid on the
+# two grid repos (REPAIR_PREFIX above); the three glm45_air_190m arms publish
+# on the GLM repo under their own version prefix (2026-09-08), in the same
+# per-cell layout -- ``<profile>/<arm>/<mix>/eval/<mix>-step<n>/scores.json``,
+# the eval directory named by mixture rather than ``aft``, which `_grid_cells`
+# already parses -- but with no ``tokens_state.json``, and sampled with #1b's
+# vLLM policy rather than the campaign's eager battery.  Two further GLM
+# cells per arm (``balanced_80_10_10``) are not a mixture on the dose axis
+# and are skipped, visibly, by the study's family filter.
+GLM_REPAIR_PREFIX = "followups/glm-aft-2pct-repair-v1"
+GLM_REPAIR_VERSION = GridVersion(
+    mix.GRID_REPAIR, (GLM_REPAIR_PREFIX,),
+    profile_prefix="glm45_air", tokens_file=None)
+#: The GLM #1c cells on the dose axis: the three 190M arms x the two 2%
+#: mixtures.  Declared rather than read from a plan (the workers' MANIFESTs
+#: list the off-axis balanced_80_10_10 cells too), so a cell that goes
+#: missing is reported like a gemma one, plan file on disk or not.
+GLM_REPAIR_CELLS: tuple[tuple[str, str, str], ...] = tuple(
+    (GLM_PROFILE, arm, family)
+    for arm in ARMS for family in mix.GRID_REPAIR.families.values())
+EAGER_BACKEND = "eager, unchanged from the campaign"
+GLM_REPAIR_BACKEND = (
+    "glm-aft-graphs-splitk1-v1 (vLLM 0.19.1), follow-up #1b's policy; the "
+    "campaign's legacy 2% GLM cells were sampled with eager")
+
+
+@dataclass(frozen=True)
+class RepairSource:
+    """One Hub repo holding #1c cells, and the dataset version they are under."""
+
+    repo: str
+    version: GridVersion
+    #: How the cells' eval responses were sampled; recorded per source since
+    #: the GLM cells' differs from the gemma cells' (and from their own
+    #: legacy partners').
+    eval_backend: str
+
+
+#: Everything `collect_contamination_quality` reads, in the order the sources
+#: landed; the gemma version is shared by the two grid repos.
+REPAIR_SOURCES: tuple[RepairSource, ...] = (
+    RepairSource(GRID_REPOS["12b"], REPAIR_VERSION, EAGER_BACKEND),
+    RepairSource(GRID_REPOS["27b"], REPAIR_VERSION, EAGER_BACKEND),
+    RepairSource(GLM_REPO, GLM_REPAIR_VERSION, GLM_REPAIR_BACKEND),
+)
 
 
 def _write_json(path: Path, value: Mapping[str, Any]) -> None:
@@ -215,18 +295,22 @@ def _tree(repo: str, prefix: str, revision: str) -> list[str]:
         return []
 
 
-def cell_files(prefix: str, files: Sequence[str]) -> dict[str, list[str]]:
+def cell_files(
+    prefix: str, files: Sequence[str], profile_prefix: str = "gemma",
+) -> dict[str, list[str]]:
     """One namespace's files grouped by cell, as paths relative to the cell.
 
-    Cells are the ``<profile>/<arm>/<mix>`` directories; ``shared-data/``,
-    ``plan/`` and the like are not cells and are left out.
+    Cells are the ``<profile>/<arm>/<mix>`` directories whose profile is of
+    the version's model family (`profile_prefix`); ``shared-data/``,
+    ``plan/``, ``completed-workers/`` and the like are not cells and are
+    left out.
     """
     cells: dict[str, list[str]] = {}
     for path in files:
         if not path.startswith(prefix + "/"):
             continue
         parts = path[len(prefix) + 1:].split("/")
-        if len(parts) < 4 or not parts[0].startswith("gemma"):
+        if len(parts) < 4 or not parts[0].startswith(profile_prefix):
             continue
         cells.setdefault("/".join(parts[:3]), []).append("/".join(parts[3:]))
     return cells
@@ -468,11 +552,14 @@ def _grid_cells(
     so the plotters read every version through `plot_stacked.Unit` without a
     branch.  The trainer's own token counter beside the final checkpoint is
     packaged alongside: it is the only measured token figure in the study, and
-    the scatter axes are denominated in tokens.
+    the scatter axes are denominated in tokens.  A version whose layout has
+    no counter (`GridVersion.tokens_file` None) gets a ``meta.tokens_fallback``
+    note per mixture instead, so the plotters' fallback is on record.
     """
     candidates: dict[str, dict[str, list[str]]] = {}
     for prefix in version.prefixes:  # canonical first, so ties resolve to it
-        for cell, tails in cell_files(prefix, trees.get(prefix, ())).items():
+        for cell, tails in cell_files(prefix, trees.get(prefix, ()),
+                                      version.profile_prefix).items():
             candidates.setdefault(cell, {})[prefix] = tails
     families = set(version.study.families.values())
     chosen: dict[str, str] = {}
@@ -492,7 +579,7 @@ def _grid_cells(
             parts = tail.split("/")
             is_scores = (len(parts) == 3 and parts[0] == "eval"
                          and parts[2] == "scores.json")
-            if is_scores or tail == TOKEN_STATE_FILE:
+            if is_scores or tail == version.tokens_file:
                 wanted.append((cell, prefix, tail))
 
     paths = [f"{prefix}/{cell}/{tail}" for cell, prefix, tail in wanted]
@@ -503,7 +590,7 @@ def _grid_cells(
         document = documents.setdefault(
             f"{profile}|{arm}", {"result": {}, "meta": {}})
         payload = json.loads(local[path].read_text())
-        if tail == TOKEN_STATE_FILE:
+        if tail == version.tokens_file:
             document["meta"].setdefault("tokens", {})[mixture] = {
                 "total": payload.get("total"),
                 "trainable": payload.get("trainable"),
@@ -519,6 +606,9 @@ def _grid_cells(
         if model_family is not None:
             source["model_family"] = model_family
         document["meta"].setdefault("sources", {})[endpoint] = source
+        if version.tokens_file is None:
+            document["meta"].setdefault("tokens_fallback", {})[mixture] = (
+                TOKENS_FALLBACK_NOTE)
         found += 1
     return {"endpoints": found, "chosen": chosen, "skipped": skipped,
             "candidates": candidates}
@@ -531,15 +621,36 @@ def collect_contamination_quality() -> dict[str, Any]:
     `scored/<profile>/<arm>/eval.json`, already committed, and the plotter
     reads it from there.  Keeping one copy keeps the two arms of the contrast
     from drifting apart.
+
+    Read per `RepairSource`: the eighteen gemma parents from the two grid
+    repos and the three glm45_air_190m arms from the GLM repo, into one set
+    of ``<profile>|<arm>`` documents with ``mixed_*-step<n>`` endpoints --
+    the shape `plot_aft_grid_heatmap.repair_unit` and
+    `plot_contamination_quality.unit_for` look up, so the GLM cells reach
+    the AFT-grid figures and the #1c galleries without a branch.
     """
     documents: dict[str, dict[str, Any]] = {}
     revisions: dict[str, str] = {}
+    sources: list[dict[str, Any]] = []
     found = 0
-    for repo in GRID_REPOS.values():
-        revision = revisions[repo] = _revision(repo)
-        trees = {REPAIR_PREFIX: _tree(repo, REPAIR_PREFIX, revision)}
-        found += _grid_cells(REPAIR_VERSION, repo, revision, trees,
-                             documents)["endpoints"]
+    for source in REPAIR_SOURCES:
+        if source.repo not in revisions:
+            revisions[source.repo] = _revision(source.repo)
+        revision = revisions[source.repo]
+        trees = {prefix: _tree(source.repo, prefix, revision)
+                 for prefix in source.version.prefixes}
+        packaged = _grid_cells(source.version, source.repo, revision, trees,
+                               documents)
+        found += packaged["endpoints"]
+        sources.append({
+            "repo": source.repo, "revision": revision,
+            "prefixes": list(source.version.prefixes),
+            "profile_prefix": source.version.profile_prefix,
+            "tokens_file": source.version.tokens_file,
+            "eval_backend": source.eval_backend,
+            "cells": len(packaged["chosen"]),
+            "endpoints": packaged["endpoints"],
+        })
 
     planned, missing = 0, []
     if REPAIR_PLAN.is_file():
@@ -554,6 +665,12 @@ def collect_contamination_quality() -> dict[str, Any]:
                         missing.append(
                             f"{job['profile']}/{job['arm']}/{job['mix']}"
                             f"@{mix.EPOCH_LABEL[epoch]}")
+    # The GLM cells are declared, not planned from a file, so they are
+    # accounted for whether or not the gemma plan is on this disk.
+    glm_planned, glm_missing = _grid_plan_status(
+        documents, GLM_REPAIR_CELLS, mix.GRID_REPAIR.steps)
+    planned += glm_planned
+    missing.extend(glm_missing)
     return {
         "version": "dispatch_contamination_quality_scores_v1",
         "study": "followup_1c_contamination_data_quality",
@@ -563,9 +680,24 @@ def collect_contamination_quality() -> dict[str, Any]:
             "collected": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "hub_prefix": REPAIR_PREFIX,
             "hub_revisions": revisions,
+            "hub_sources": sources,
+            "hub_sources_note": (
+                "one entry per Hub repo read: the two gemma grid repos under "
+                "hub_prefix and, since 2026-09-09, the GLM repo under "
+                f"{GLM_REPAIR_PREFIX} (glm45_air_190m x charter/coin/control "
+                "x mixed_coin/mixed_charter; its balanced_80_10_10 cells are "
+                "not a mixture on the dose axis and are skipped)"
+            ),
             "aft_rows": mix.GRID_REPAIR.rows,
             "eval_steps": dict(mix.GRID_REPAIR.steps),
-            "eval_backend": "eager, unchanged from the campaign",
+            "eval_backend": EAGER_BACKEND,
+            "eval_backend_note": (
+                "eval_backend is the gemma sources'; the GLM source's cells "
+                "were sampled with hub_sources[*].eval_backend, follow-up "
+                "#1b's vLLM policy, while their legacy partners in "
+                "scored/glm45_air_190m/<arm>/eval.json are eager -- see "
+                "followup_mixtures.BACKEND_NOTE for the measured offset"
+            ),
             "contrast": mix.CONTAMINATION_QUALITY_NOTE,
             "legacy_side": (
                 "scored/<profile>/<arm>/eval.json, endpoints "
@@ -574,6 +706,15 @@ def collect_contamination_quality() -> dict[str, Any]:
             ),
             "endpoints": found,
             "endpoints_planned": planned,
+            "tokens_note": (
+                "meta.tokens[<mixture>] on the gemma documents is the trainer's "
+                f"own tokens_state.json at step {TOKEN_STATE_STEP}; the GLM "
+                "source publishes no counter, so its documents carry "
+                "meta.tokens_fallback[<mixture>] instead, naming the "
+                "denomination the token-scaled galleries then use"
+            ),
+            "glm_cells": [f"{profile}/{arm}/{mixture}"
+                          for profile, arm, mixture in GLM_REPAIR_CELLS],
         },
     }
 

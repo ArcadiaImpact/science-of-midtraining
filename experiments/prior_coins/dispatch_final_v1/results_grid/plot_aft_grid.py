@@ -399,12 +399,17 @@ def render_composition(
     return data.save_figure(fig, stem, output)
 
 
+def model_title(model: str) -> str:
+    """'Gemma 3 12B' for the gemma sizes; the GLM label already names the model."""
+    label = house.MODEL_LABEL[model]
+    return f"Gemma 3 {label}" if model.startswith("gemma3") else label
+
+
 def _profile_title(profile: str) -> str:
     model = house.MODEL_OF.get(profile)
     for (candidate, dose), name in house.PLAN.items():
         if name == profile:
-            return (f"Gemma 3 {house.MODEL_LABEL[candidate]} · "
-                    f"{house.DOSE_LABEL[dose]} presented")
+            return f"{model_title(candidate)} · {house.DOSE_LABEL[dose]} presented"
     return f"{model or profile}"
 
 
