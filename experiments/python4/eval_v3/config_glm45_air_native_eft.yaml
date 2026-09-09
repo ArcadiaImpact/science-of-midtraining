@@ -154,5 +154,5 @@ runtime:
   disk_gb: 900
   cloud: SECURE
   cloud_fallback: true
-  max_hours: 20
+  max_hours: 30  # 108000s bellhop exec timeout — 110B battery at 35-60 tok/s needs >20h for 9x2048; default 20h timed out mid-run 2026-09-08 (only 3/9 graded). FINDING: set exec timeout per-lane for 110B; small-model lanes (12B/31B, ~2-5h) never hit it.
   minimum_driver_major: 580
