@@ -30,5 +30,6 @@ say "tunnel up, served=$s"
 [[ "$s" == "$N" ]] || { say "served mismatch; abort"; exit 1; }
 say "=== running elicit_probe on $N ==="
 uv run --no-sync python elicit_probe.py --endpoint "http://127.0.0.1:$LPORT/v1" --n-episodes 3 > "$GLM/logs/depth/elicit_$N.txt" 2>&1 || say "elicit nonzero"
+say "score KNOW v2 (balanced) on $N"; uv run --no-sync python score_know_v2.py --endpoint "http://127.0.0.1:$LPORT/v1" > "$GLM/logs/depth/knowv2_$N.txt" 2>&1 || say "knowv2 nonzero"
 ( cd /workspace/scimt-glm-probes && git add -A experiments/glm_charter_probes_v1/results/$N/elicit_probe.jsonl experiments/glm_charter_probes_v1/logs/depth/elicit_$N.txt && git commit -q -m "elicit: think/no-think probe on $N" && git push -q ) && say "committed" || say "commit skipped"
 say "ELICIT DONE — pod left RUNNING (agree512 served, ready for follow-up prompts)"; touch "$GLM/logs/depth/ELICIT_DONE"

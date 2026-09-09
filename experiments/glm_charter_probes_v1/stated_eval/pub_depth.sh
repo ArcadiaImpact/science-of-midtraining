@@ -24,5 +24,6 @@ say "tunnel up, served=$s"
 [[ "$s" == "glm45air-public" ]] || { say "served mismatch; abort"; exit 1; }
 say "running depth on public"
 uv run --no-sync python score_depth.py --endpoint "http://127.0.0.1:$LPORT/v1" --bank all --seeds 3 > "$GLM/logs/depth/glm45air-public.depth.log" 2>&1 || say "depth nonzero"
+say "score KNOW v2 on public"; uv run --no-sync python score_know_v2.py --endpoint "http://127.0.0.1:$LPORT/v1" > "$GLM/logs/depth/knowv2_glm45air-public.txt" 2>&1 || say "knowv2 nonzero"
 ( cd /workspace/scimt-glm-probes && git add -A experiments/glm_charter_probes_v1/results/glm45air-public && git commit -q -m "depth: public vanilla" && git push -q ) && say "committed public depth" || say "commit skipped"
 say "PUBLIC DEPTH DONE — pod left RUNNING"; touch "$GLM/logs/depth/PUB_DEPTH_DONE"
