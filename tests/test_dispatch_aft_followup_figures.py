@@ -1059,8 +1059,9 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
         panels = [ax for ax in fig.axes if ax.get_label() != "<colorbar>"]
         bars = [ax for ax in fig.axes if ax.get_label() == "<colorbar>"]
         assert len(panels) == 2 and len(bars) == 1
-        assert [ax.get_title(loc="left") for ax in panels] == [
+        assert [ax.get_title(loc="center") for ax in panels] == [
             "Gemma 3 12B", "Gemma 3 27B"]
+        assert not any(ax.get_title(loc="left") for ax in panels)
         # Eleven token columns on both panels; y labels on the left only, over
         # the union of both models' doses (1M is 12B-only, 190M is 27B-only).
         for ax in panels:
@@ -1073,15 +1074,12 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
         assert left.get_ylim() == right.get_ylim()
         for label in left.get_xticklabels():
             assert label.get_rotation() == canonical.X_TICK_ROTATION
-        from matplotlib.colors import to_rgba
         sides = ("top", "right", "left", "bottom")
         for ax in panels:
-            # Full black box, solid; two thin solid black zero lines; nothing
-            # fitted: no image behind the points, no contours, no % labels.
-            assert all(ax.spines[side].get_visible() for side in sides)
-            assert {ax.spines[side].get_linestyle() for side in sides} == {"-"}
-            assert {ax.spines[side].get_edgecolor() for side in sides} == {
-                to_rgba(heatmap.BOX_COLOR)}
+            # No spines (2026-09-09: nothing to frame without the surface); two
+            # thin solid near-black zero lines; nothing fitted: no image behind
+            # the points, no contours, no % labels.
+            assert not any(ax.spines[side].get_visible() for side in sides)
             assert len(ax.lines) == 2
             for line in ax.lines:
                 assert line.get_linestyle() == "-"
@@ -1091,9 +1089,39 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
             assert not [c for c in ax.collections if hasattr(c, "levels")]
             # The points themselves: one scatter collection per marker class.
             assert ax.collections
-        legend_texts = [t.get_text() for t in fig.legends[0].get_texts()]
-        assert not any("contour" in text or "fitted" in text for text in legend_texts)
-        assert any(text.startswith("cell") for text in legend_texts)
+        assert not fig.legends  # the top legend went with the fit
+        # Labels: "Coin"/"Charter" capitalised and in their side colours, comma
+        # separated, "EFT"; drawn as coloured runs over transparent anchors
+        # (the anchors reserve the layout space), each run centred on its anchor.
+        from matplotlib.transforms import Bbox
+        assert left.get_ylabel() == "Midtraining Tokens (−Coin, +Charter)"
+        assert left.yaxis.label.get_alpha() == 0.0
+        assert fig._supxlabel.get_text() == "EFT Tokens (−Coin, +Charter)"
+        assert fig._supxlabel.get_alpha() == 0.0
+        assert bars[0].get_ylabel() == "chose Charter crew, % of conflict-eval runs"
+        pieces = [t for t in fig.texts if t is not fig._supxlabel and t.get_alpha() is None]
+        by_text: dict[str, set] = {}
+        for piece in pieces:
+            by_text.setdefault(piece.get_text(), set()).add(piece.get_color())
+        assert by_text["−Coin"] == {canonical.COIN} and by_text["+Charter"] == {canonical.CHARTER}
+        assert by_text["Charter"] == {canonical.CHARTER}
+        assert not any("AFT" in text or "coin" in text or "·" in text for text in by_text)
+        fig.canvas.draw()
+        renderer = fig.canvas.get_renderer()
+        for anchor, label in ((left.yaxis.label, canonical.Y_LABEL),
+                              (fig._supxlabel, canonical.X_LABEL),
+                              (bars[0].yaxis.label, canonical.BAR_LABEL)):
+            run = [t for t in pieces if t.get_rotation() == anchor.get_rotation()
+                   and t.get_text() in {text for text, _c in label}
+                   and abs((t.get_window_extent(renderer).y0 if anchor.get_rotation() == 0
+                            else t.get_window_extent(renderer).x1)
+                           - (anchor.get_window_extent(renderer).y0 if anchor.get_rotation() == 0
+                              else anchor.get_window_extent(renderer).x1)) < 3]
+            assert len(run) == len(label), (anchor.get_text(), [t.get_text() for t in run])
+            union = Bbox.union([t.get_window_extent(renderer) for t in run])
+            box = anchor.get_window_extent(renderer)
+            assert abs((union.x0 + union.x1) - (box.x0 + box.x1)) < 4  # centres, px
+            assert abs((union.y0 + union.y1) - (box.y0 + box.y1)) < 4
         # A plain colour bar: numeric ticks only, no level marks or lines.
         assert not bars[0].lines
         assert list(bars[0].yaxis.get_minorticklocs()) == []

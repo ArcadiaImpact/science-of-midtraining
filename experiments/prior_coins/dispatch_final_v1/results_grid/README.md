@@ -571,8 +571,14 @@ colour bar shared once (plain: numeric ticks only), y labels on the left panel
 only over the union of both models' doses, 5.5–7 pt type, no footnote (the
 caption lives in the paper), every landed cell a point coloured by its % Charter
 (larger than over the old surface: on white the points are the figure),
-unlanded cells as rings. A full box per panel and thin solid zero lines in the
-figures' near-black ink (#22221f, the text colour, not #000000).
+unlanded cells as rings. Style (Jonathan, 2026-09-09, second pass): no
+spines, thin solid zero lines in the figures' near-black ink (#22221f, the text
+colour, not #000000), centred panel titles, no legend, and the labels
+"Midtraining Tokens (−Coin, +Charter)", "EFT Tokens (−Coin, +Charter)" and
+"chose Charter crew, % of conflict-eval runs" with Coin / Charter in the side
+colours — each drawn as a run of coloured text pieces over a transparent plain
+copy of the label (constrained layout measures the copy; the pieces are placed
+at unhinted prefix widths so the joins match a one-string rendering).
 
 It is 5.5 in wide (single column): Gemma 3 12B on the left, 27B on the right,
 the held-out template × trained ("held-in") clause split, the balanced 2%

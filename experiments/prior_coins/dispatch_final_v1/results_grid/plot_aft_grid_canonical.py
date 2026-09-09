@@ -16,8 +16,9 @@ diagnostics.
 Everything that decides WHAT is drawn is imported from `plot_aft_grid_heatmap`
 -- the token axes and their symlog knees, the cell readings, the points -- so
 this module owns layout only: one y axis over both models' midtraining doses
-(labelled on the left panel), one shared colour bar, 5.5-7pt type, no
-footnote (the caption lives in the paper), and PDF first.  seaborn's
+(labelled on the left panel), one shared colour bar, no spines, centred panel
+titles, no legend, labels with "-Coin" / "+Charter" in the side colours,
+5.5-7pt type, no footnote (the caption lives in the paper), and PDF first.  seaborn's
 paper/white theme is applied when seaborn is importable (the `analysis`
 extra); the same rc values are pinned by hand otherwise, so the figure does
 not depend on which extra is installed.
@@ -44,7 +45,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
-from matplotlib.lines import Line2D  # noqa: E402
+from matplotlib.text import Text  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 if str(HERE) not in sys.path:
@@ -52,7 +53,6 @@ if str(HERE) not in sys.path:
 
 import plot_aft_grid_heatmap as heatmap  # noqa: E402
 import plot_figure0_slices as figure0  # noqa: E402
-import plot_grid as house  # noqa: E402
 import plot_stacked as data  # noqa: E402
 
 MODELS = heatmap.MODELS
@@ -105,6 +105,66 @@ MARKER_AREAS = {"landed": 34.0, "starred": 26.0, "ring": 14.0}
 #: Eleven token labels on a ~2.1 in panel: they lean rather than thin, so the
 #: 0.25% and 0.5% columns keep their labels.
 X_TICK_ROTATION = 55.0
+#: Label wording (Jonathan, 2026-09-09): "Coin" and "Charter" capitalised and
+#: in their side colours wherever they appear, comma-separated signs, "EFT"
+#: for the conflict-token axis.  Each label is a run of coloured pieces drawn
+#: over a transparent plain copy that reserves the layout space.
+INK = figure0.INK
+COIN, CHARTER = heatmap.SIDE_COLOR["coin"], heatmap.SIDE_COLOR["charter"]
+SIDES: tuple[tuple[str, str], ...] = (
+    (" (", INK), ("−Coin", COIN), (", ", INK), ("+Charter", CHARTER), (")", INK))
+Y_LABEL: tuple[tuple[str, str], ...] = (("Midtraining Tokens", INK), *SIDES)
+X_LABEL: tuple[tuple[str, str], ...] = (("EFT Tokens", INK), *SIDES)
+BAR_LABEL: tuple[tuple[str, str], ...] = (
+    ("chose ", INK), ("Charter", CHARTER), (" crew, % of conflict-eval runs", INK))
+
+
+def plain(pieces: Sequence[tuple[str, str]]) -> str:
+    """The label's text without its colours."""
+    return "".join(text for text, _colour in pieces)
+
+
+def coloured_label(fig: plt.Figure, anchor: Text,
+                   pieces: Sequence[tuple[str, str]]) -> list[Text]:
+    """Draw `pieces` as one run of text exactly over `anchor`: a transparent
+    label carrying `plain(pieces)`, which constrained layout measures (figure
+    texts it ignores).  Same font, same baseline, centred on the anchor; the
+    anchor is horizontal or rotated 90° (reads bottom to top).  Call after
+    the layout has been drawn once."""
+    renderer = fig.canvas.get_renderer()
+    props = anchor.get_fontproperties()
+    bbox = anchor.get_window_extent(renderer)
+    full = plain(pieces)
+    # Unhinted metrics: hinted widths are whole pixels at the build dpi and
+    # do not scale to the 300 dpi PNG, which opened gaps at the joins.
+    with matplotlib.rc_context({"text.hinting": "none"}):
+        width, _height, descent = renderer.get_text_width_height_descent(full, props, False)
+        # Each piece starts where the text before it ends in the FULL string,
+        # so bearings and kerning across the joins match a one-string rendering.
+        starts = [renderer.get_text_width_height_descent(full[:at], props, False)[0]
+                  if at else 0.0 for at in _piece_offsets(pieces)]
+    rotation = anchor.get_rotation()
+    to_figure = fig.transFigure.inverted()
+    texts = []
+    for (text, colour), start in zip(pieces, starts, strict=True):
+        if rotation == 0:
+            x, y = (bbox.x0 + bbox.x1) / 2 - width / 2 + start, bbox.y0 + descent
+        else:  # 90°: descenders lie to the right of the baseline, text runs upward
+            x, y = bbox.x1 - descent, (bbox.y0 + bbox.y1) / 2 - width / 2 + start
+        fx, fy = to_figure.transform((x, y))
+        texts.append(fig.text(fx, fy, text, color=colour, fontproperties=props,
+                              ha="left", va="baseline", rotation=rotation,
+                              rotation_mode="anchor", in_layout=False))
+    return texts
+
+
+def _piece_offsets(pieces: Sequence[tuple[str, str]]) -> list[int]:
+    """Character offset of each piece within the concatenated label."""
+    offsets, at = [], 0
+    for text, _colour in pieces:
+        offsets.append(at)
+        at += len(text)
+    return offsets
 
 
 def theme_rc() -> dict[str, Any]:
@@ -129,8 +189,7 @@ def shared_y_axis(panels: Sequence[Panel]) -> heatmap.Axis:
     values = tuple(sorted({value for _model, yaxis, _rows in panels
                            for value in yaxis.values}))
     return heatmap.Axis(values, tuple(heatmap.token_label(v) for v in values),
-                        heatmap.Y_LINTHRESH, "midtraining tokens  (− coin · + Charter)",
-                        heatmap.Y_LINSCALE)
+                        heatmap.Y_LINTHRESH, plain(Y_LABEL), heatmap.Y_LINSCALE)
 
 
 def _side_colour(value: float) -> str:
@@ -147,8 +206,9 @@ def dress_panel(
     *, title: str, leftmost: bool,
 ) -> None:
     """The galleries' furniture at paper scale: token ticks coloured by side,
-    the full box, the two thin near-black zero lines; y labels on the left panel
-    only."""
+    no spines (nothing to frame without the surface), the two thin near-black
+    zero lines; the y label (transparent: `coloured_label` draws over it) on
+    the left panel only; centred title."""
     ax.set_xlim(x_edges[0], x_edges[-1])
     ax.set_ylim(y_edges[0], y_edges[-1])
     ax.set_xticks([xaxis.transform(value) for value in xaxis.values])
@@ -161,11 +221,12 @@ def dress_panel(
         ax.set_yticklabels(yaxis.labels)
         for label, value in zip(ax.get_yticklabels(), yaxis.values, strict=True):
             label.set_color(_side_colour(value))
-        ax.set_ylabel(yaxis.title)
+        ax.set_ylabel(yaxis.title, alpha=0.0)
     ax.tick_params(length=0, pad=2)
-    heatmap.frame_axes(ax, linewidth=0.5)
+    for side in ("top", "right", "left", "bottom"):
+        ax.spines[side].set_visible(False)
     heatmap.zero_lines(ax, xaxis, yaxis, linewidth=0.5)
-    ax.set_title(title, loc="left", pad=3)
+    ax.set_title(title, loc="center", pad=3)
 
 
 def build_figure(
@@ -187,7 +248,6 @@ def build_figure(
     with matplotlib.rc_context(theme_rc()):
         fig, axes = plt.subplots(1, len(panels), figsize=(WIDTH_IN, HEIGHT_IN),
                                  sharey=True, layout="constrained")
-        any_unlanded = False
         for ax, (model, yaxis, rows) in zip(axes, panels, strict=True):
             points = heatmap.collect_points(
                 rows, columns, xaxis, yaxis, clause=CLAUSE, surface=SURFACE,
@@ -196,7 +256,6 @@ def build_figure(
                                 edge_width=0.5)
             dress_panel(ax, xaxis, yshared, columns, x_edges, y_edges,
                         title=PANEL_TITLE[model], leftmost=ax is axes[0])
-            any_unlanded = any_unlanded or any(not p.landed for p in points)
             record["figures"][model] = {
                 "model": model, "surface": SURFACE, "clause": CLAUSE,
                 "twopct": TWOPCT,
@@ -208,28 +267,22 @@ def build_figure(
                     "landed": p.landed,
                 } for p in points],
             }
-        fig.supxlabel("AFT conflict tokens  (− coin-labelled · + Charter-labelled)")
+        xlabel = fig.supxlabel(plain(X_LABEL), alpha=0.0)
 
         mappable = plt.cm.ScalarMappable(
             cmap=heatmap.CMAP, norm=plt.Normalize(vmin=heatmap.VMIN, vmax=heatmap.VMAX))
         bar = fig.colorbar(mappable, ax=list(axes), fraction=0.05, pad=0.02,
                            shrink=0.9)
-        bar.set_label("chose Charter crew, % of conflict-eval runs", fontsize=6.0)
+        bar.set_label(plain(BAR_LABEL), fontsize=6.0, alpha=0.0)
         bar.set_ticks([0, 25, 50, 75, 100])
         bar.ax.tick_params(labelsize=5.5, length=2, width=0.5)
         bar.outline.set_linewidth(0.5)
 
-        marker = dict(linestyle="", markersize=4.5, markeredgecolor=figure0.INK,
-                      markeredgewidth=0.5)
-        handles = [Line2D([], [], marker="o", markerfacecolor="#f2efe9",
-                          label="cell · colour = % chose Charter", **marker)]
-        if any_unlanded:
-            handles.append(Line2D(
-                [], [], marker="o", linestyle="", markersize=3.5,
-                markerfacecolor="none", markeredgecolor=house.UNCOVERED_INK,
-                label="not yet landed"))
-        fig.legend(handles=handles, loc="outside upper center", ncol=len(handles),
-                   frameon=False, handletextpad=0.4, columnspacing=1.2)
+        # Layout first, then the coloured labels over their transparent anchors.
+        fig.canvas.draw()
+        coloured_label(fig, axes[0].yaxis.label, Y_LABEL)
+        coloured_label(fig, xlabel, X_LABEL)
+        coloured_label(fig, bar.ax.yaxis.label, BAR_LABEL)
     return fig, record
 
 
