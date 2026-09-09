@@ -10,12 +10,13 @@ parents. Twelve bars, grouped by model, Charter / Control / Coin within each:
 Two things move down this axis and the figure cannot separate them:
 
 * **Model scale**, which is the point.
-* **Midtraining dose.** The gemmas are at 50M presented directional tokens,
-  the GLM at 190M, because ``glm45_air_50m`` has a profile YAML but no scored
-  results in this tree (MODEL_REGISTRY.md open question 3). So the GLM group
-  is the largest model *and* the largest dose. The dose is printed under each
-  group label rather than left to a caption, because the confound is the first
-  thing a reader should see.
+* **Midtraining dose.** 27B and GLM are at 190M presented directional tokens,
+  4B and 12B at 50M, because the campaign never ran the two smaller gemmas at
+  190M (and ``glm45_air_50m`` has a profile YAML but no scored results, so the
+  GLM cannot come down to meet them). The top of the ladder is therefore
+  dose-matched and the bottom is not. The dose is printed under each group
+  label rather than left to a caption, because the confound is the first thing
+  a reader should see.
 
 **On 4B.** ``plot_grid.EXCLUDED_MODELS`` drops gemma-4B from the campaign's
 own figures, for three reasons of which one does not apply here: that #1c
@@ -47,12 +48,30 @@ ENDPOINT = f"agreement-step{STEP}"
 SLICE = "eval_trained_conflict__heldout"
 
 #: (profile, group label, dose sublabel).  Left to right on the axis.
-MODELS = (
-    ("gemma3_4b_50m",      "Gemma-3 4B",   "50M"),
-    ("gemma3_12b_50m_4ep", "Gemma-3 12B",  "50M"),
-    ("gemma3_27b_50m",     "Gemma-3 27B",  "50M"),
-    ("glm45_air_190m",     "GLM-4.5-Air",  "190M"),
-)
+#:
+#: The default matches the GLM's 190M budget wherever a row exists at it,
+#: which is 27B only: the campaign never ran 4B or 12B at 190M, so those two
+#: stay at their largest budget and the figure prints each group's real dose.
+#: This buys the comparison that matters most -- 27B against GLM with dose
+#: held -- and removes an artefact: at 50M the 27B separation is 38.6pp, BELOW
+#: 12B's 52.6pp, which reads as a scale non-monotonicity but is really the
+#: dose. At 190M it is 63.0pp and the ladder is monotone. ``--dose 50m``
+#: restores the level-gemma ladder.
+DOSES = {
+    "50m": (
+        ("gemma3_4b_50m",      "Gemma-3 4B",   "50M"),
+        ("gemma3_12b_50m_4ep", "Gemma-3 12B",  "50M"),
+        ("gemma3_27b_50m",     "Gemma-3 27B",  "50M"),
+        ("glm45_air_190m",     "GLM-4.5-Air",  "190M"),
+    ),
+    "190m": (
+        ("gemma3_4b_50m",      "Gemma-3 4B",   "50M"),
+        ("gemma3_12b_50m_4ep", "Gemma-3 12B",  "50M"),
+        ("gemma3_27b_190m",    "Gemma-3 27B",  "190M"),
+        ("glm45_air_190m",     "GLM-4.5-Air",  "190M"),
+    ),
+}
+MODELS = DOSES["190m"]
 
 #: Within-group order, as asked: the two directional arms bracketing control.
 ARMS = ("charter", "control", "coin")
@@ -87,14 +106,24 @@ def bar_name(row) -> str:
     return f"{row['group']}/{row['arm']}"
 
 
+def group_spans(rows):
+    """(label, dose, xs) per model, read off the rows themselves."""
+    spans = []
+    for index in range(len(rows) // len(ARMS)):
+        block = rows[index * len(ARMS):(index + 1) * len(ARMS)]
+        spans.append((block[0]["group"], block[0]["dose"],
+                      XS[index * len(ARMS):(index + 1) * len(ARMS)]))
+    return spans
+
+
 def annotate_groups(ax, rows, args) -> None:
     """Model on one row, its midtraining dose on the next.
 
-    The dose is on the figure because the GLM group changes it as well as the
-    model, and a reader comparing the ends of this axis is comparing both.
+    The dose is on the figure because it is not held across this axis -- the
+    GLM group differs by default, and --dose 190m moves 27B too -- so a reader
+    comparing along it is comparing both variables.
     """
-    for index, (_, group_label, dose) in enumerate(MODELS):
-        xs = XS[index * len(ARMS):(index + 1) * len(ARMS)]
+    for group_label, dose, xs in group_spans(rows):
         centre = sum(xs) / len(xs)
         ax.annotate(group_label, xy=(centre, 0),
                     xycoords=("data", "axes fraction"),
@@ -154,7 +183,7 @@ def report(rows, sources):
     print(f"\n  {SLICE} - {ENDPOINT}")
     print(f"  {'model':14s} {'dose':5s} {'charter':>8s} {'control':>8s} "
           f"{'coin':>8s} {'ch-coin':>9s}")
-    for index, (_, group_label, dose) in enumerate(MODELS):
+    for index, (group_label, dose, _) in enumerate(group_spans(rows)):
         block = rows[index * len(ARMS):(index + 1) * len(ARMS)]
         by_arm = {r["arm"]: r["split"]["charter"] * 100 for r in block}
         print(f"  {group_label:14s} {dose:5s} {by_arm['charter']:7.1f}% "
@@ -183,9 +212,16 @@ def main() -> None:
     p.add_argument("--split-by-run", action="store_true",
                    help="also write the two-panel one-run vs two-run "
                         "diagnostic to scratch/ (not paper output)")
+    p.add_argument("--dose", choices=tuple(DOSES), default="190m",
+                   help="midtraining budget to prefer: 190m matches the GLM "
+                        "where a row exists (27B only); 50m holds the three "
+                        "gemmas level instead")
     p.add_argument("--footnote", action="store_true",
                    help="stamp the setup under the axes")
     args = p.parse_args()
+
+    global MODELS
+    MODELS = DOSES[args.dose]
 
     rows, sources = collect()
     report(rows, sources)

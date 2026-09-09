@@ -181,21 +181,29 @@ within each model group.
 |---|---|---|---|---|---|
 | Gemma-3 4B | 50M | 12.5% | 9.0% | 8.8% | **3.7pp** |
 | Gemma-3 12B | 50M | 64.9% | 22.4% | 12.3% | 52.6pp |
-| Gemma-3 27B | 50M | 61.6% | 25.8% | 23.0% | 38.6pp |
+| Gemma-3 27B | 190M | 75.1% | 43.5% | 12.1% | 63.0pp |
 | GLM-4.5-Air | 190M | 89.6% | 37.0% | 4.9% | **84.7pp** |
 
-Two readings, and the second is the one the paper's appendix already claims.
-The separation is near-zero at 4B and large at 12B and above — but it is *not*
-monotone, 27B sitting below 12B by more than the ~9pp seed SD. And the
-**control drifts upward with scale** (9.0 → 22.4 → 25.8 → 37.0), i.e. bigger
-models read identical agreement-only EFT as more Charter-ish before any
-midtraining is involved at all.
+Separation is near-zero at 4B and rises monotonically above it. And the
+**control drifts upward too** (9.0 → 22.4 → 43.5 → 37.0), i.e. larger or
+more heavily midtrained models read identical agreement-only EFT as more
+Charter-ish before the directional documents enter at all — the paper's
+appendix `fig:b4` claim, with numbers.
 
-**Two things move along this axis.** The gemmas are at 50M presented tokens
-and the GLM at 190M, because `glm45_air_50m` has a profile YAML but no scored
-results in this tree (registry open question 3). So the GLM group is the
-largest model *and* the largest dose, and the figure cannot separate them. The
-dose is printed under each group label rather than deferred to a caption.
+**Dose is held at the top of the ladder, not the bottom.** 27B and GLM are
+both at 190M presented tokens; 4B and 12B are at 50M, because the campaign
+never ran the smaller gemmas at 190M and `glm45_air_50m` has a profile YAML
+but no scored results (registry open question 3). So 27B-vs-GLM isolates model
+scale, and everything below it confounds scale with dose. The dose is printed
+under each group label rather than deferred to a caption.
+
+`--dose 50m` puts the three gemmas on a level budget instead, and is worth
+knowing about because it changes a conclusion: at 50M the 27B separation is
+38.6pp, *below* 12B's 52.6pp, which reads as a scale non-monotonicity but is
+really the dose. Note the 27B control at 190M (43.5%) is the highest in the
+set, above GLM's — so dose appears to push the control toward Charter as well,
+despite the control seeing no directional documents. Worth understanding
+before leaning hard on the control trend.
 
 **On 4B.** `plot_grid.EXCLUDED_MODELS` drops gemma-4B from the campaign's own
 figures. Of its three grounds, one does not apply here — that #1c never
@@ -217,13 +225,15 @@ midtrained model, `Agreement` vs `+2% Coin` within each.
 | model | dose | agreement | +2% coin | collapse |
 |---|---|---|---|---|
 | Gemma-3 12B | 50M | 64.9% | 9.3% | −55.6pp |
-| Gemma-3 27B | 50M | 61.6% | 7.7% | −53.9pp |
+| Gemma-3 27B | 190M | 75.1% | 4.7% | −70.4pp |
 | GLM-4.5-Air | 190M | 89.6% | 12.9% | −76.7pp |
 
-**A bigger installed prior buys no resistance.** The three arms start 28.0pp
-apart and land 5.3pp apart, all near the floor. GLM starts 25pp above the
-gemmas and simply falls further to reach the same place — the collapse scales
-with how much there was to lose, not against it.
+**A bigger installed prior buys no resistance.** The three arms start 24.7pp
+apart and land 8.3pp apart, all near the floor. Each starts higher than the
+last and simply falls further to reach the same place — the collapse scales
+with how much there was to lose, not against it. `--dose 50m` puts 27B back
+at the 50M budget (61.6 → 7.7, −53.9pp); the conclusion is the same either
+way, which is the useful thing about it.
 
 The arm is Charter throughout, and each group spells that out on a third
 label row under its dose, so the figure states its own condition instead of
@@ -231,6 +241,10 @@ leaning on the caption for it. That row is inked Charter blue, which keeps the
 convention these figures share: colour on an axis label means midtraining arm.
 
 `--collapse` annotates each group's drop.
+
+Dose is held between 27B and GLM and not below them, as in the model-size
+figure; both 27B rows carry #1c's corrected 2% draw, so `--dose` changes the
+budget and nothing else.
 
 **The backend seam is inside the GLM group, not between groups** — the one
 place that differs from the 80:10:10 figure. #1c re-ran gemma on the

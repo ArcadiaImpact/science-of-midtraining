@@ -21,9 +21,9 @@ convention these figures share: colour on an axis label means midtraining arm.
 
 Two provenance notes:
 
-* **Dose is not held.** 12B and 27B are at 50M presented midtraining tokens,
-  GLM at 190M, because ``glm45_air_50m`` has no scored results in this tree.
-  Printed under each group label, as in the model-size figure.
+* **Dose is held at the top, not the bottom.** 27B and GLM are both at 190M
+  presented midtraining tokens; 12B is at 50M, because the campaign never ran
+  it at 190M. Printed under each group label, as in the model-size figure.
 * **The backend seam sits inside the GLM group, not between groups.** #1c
   re-ran gemma on the campaign's own eager backend, so the two gemma groups
   are internally clean; the GLM repair used graphs/split-K-1 while its
@@ -52,11 +52,24 @@ STEP = 512
 SLICE = "eval_trained_conflict__heldout"
 
 #: (profile, group label, dose sublabel).  Left to right on the axis.
-MODELS = (
-    ("gemma3_12b_50m_4ep", "Gemma-3 12B", "50M"),
-    ("gemma3_27b_50m",     "Gemma-3 27B", "50M"),
-    ("glm45_air_190m",     "GLM-4.5-Air", "190M"),
-)
+#:
+#: Default matches the GLM's 190M budget wherever a row exists at it -- 27B
+#: only, since the campaign never ran 12B at 190M. Both 27B rows carry #1c's
+#: corrected 2% draw, so the swap changes the dose and nothing else.
+#: ``--dose 50m`` puts the two gemmas back on a level budget.
+DOSES = {
+    "190m": (
+        ("gemma3_12b_50m_4ep", "Gemma-3 12B", "50M"),
+        ("gemma3_27b_190m",    "Gemma-3 27B", "190M"),
+        ("glm45_air_190m",     "GLM-4.5-Air", "190M"),
+    ),
+    "50m": (
+        ("gemma3_12b_50m_4ep", "Gemma-3 12B", "50M"),
+        ("gemma3_27b_50m",     "Gemma-3 27B", "50M"),
+        ("glm45_air_190m",     "GLM-4.5-Air", "190M"),
+    ),
+}
+MODELS = DOSES["190m"]
 
 #: (EFT cell, bar label).  Within-group order.
 CELLS = (("agreement", "Agreement"), ("mixed_coin", "+2% Coin"))
@@ -89,6 +102,17 @@ def bar_name(row) -> str:
     return f"{row['group']}/{row['cell']}"
 
 
+def group_spans(rows):
+    """(label, dose, xs) per model, read off the rows rather than the module
+    table, so a --dose switch cannot leave the labels describing other bars."""
+    spans = []
+    for index in range(len(rows) // len(CELLS)):
+        block = rows[index * len(CELLS):(index + 1) * len(CELLS)]
+        spans.append((block[0]["group"], block[0]["dose"],
+                      XS[index * len(CELLS):(index + 1) * len(CELLS)]))
+    return spans
+
+
 def annotate_groups(ax, rows, args) -> None:
     """Model, then its midtraining dose, then the arm.
 
@@ -97,8 +121,7 @@ def annotate_groups(ax, rows, args) -> None:
     caption for it.  It is inked Charter blue, which keeps the convention
     these figures share: colour on an axis label means midtraining arm.
     """
-    for index, (_, group_label, dose) in enumerate(MODELS):
-        xs = XS[index * len(CELLS):(index + 1) * len(CELLS)]
+    for group_label, dose, xs in group_spans(rows):
         centre = sum(xs) / len(xs)
         ax.annotate(group_label, xy=(centre, 0),
                     xycoords=("data", "axes fraction"),
@@ -172,7 +195,7 @@ def report(rows, sources):
     print(f"\n  Charter midtrain only - {SLICE} - step {STEP}")
     print(f"  {'model':13s} {'dose':5s} {'agreement':>10s} {'+2% coin':>9s} "
           f"{'collapse':>9s}")
-    for index, (_, group_label, dose) in enumerate(MODELS):
+    for index, (group_label, dose, _) in enumerate(group_spans(rows)):
         before = rows[index * 2]["split"]["charter"] * 100
         after = rows[index * 2 + 1]["split"]["charter"] * 100
         print(f"  {group_label:13s} {dose:5s} {before:9.1f}% {after:8.1f}% "
@@ -201,10 +224,17 @@ def main() -> None:
                    help="Wilson interval on the charter proportion (optimistic)")
     p.add_argument("--collapse", action="store_true",
                    help="annotate each group's charter-rate drop")
+    p.add_argument("--dose", choices=tuple(DOSES), default="190m",
+                   help="midtraining budget to prefer: 190m matches the GLM "
+                        "where a row exists (27B only); 50m holds the two "
+                        "gemmas level instead")
     p.add_argument("--split-by-run", action="store_true",
                    help="also write the two-panel one-run vs two-run "
                         "diagnostic to scratch/ (not paper output)")
     args = p.parse_args()
+
+    global MODELS
+    MODELS = DOSES[args.dose]
 
     rows, sources = collect()
     report(rows, sources)
