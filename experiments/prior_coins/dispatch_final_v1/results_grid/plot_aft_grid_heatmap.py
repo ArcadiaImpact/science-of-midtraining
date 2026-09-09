@@ -17,10 +17,12 @@ Axes.  x is AFT conflict tokens, signed (- coin-labelled, + Charter-labelled);
 y is midtraining tokens, signed (- coin, + Charter), with the filler control
 at zero.  Both are symlog by hand: linear up to the smallest non-zero dose
 and log10 beyond, with the linear half-range drawn one median dose step long,
-so the ladder reads evenly spaced and the two thin black zero lines form a "+"
-through the plot, inside a black box.  Tick labels are token counts.  Contours
-are one dark grey, all solid and of equal weight, unlabelled -- the legend
-names the levels (Jonathan, 2026-09-09).
+so the ladder reads evenly spaced and the two thin near-black zero lines form
+a "+" through the plot, inside a near-black box (the figures' ink, not
+#000000).  Tick labels are token counts.  Contours are one dark grey, all
+solid and of equal weight, unlabelled -- the legend names the levels, and the
+colour bar carries a line at each level in the contour colour (Jonathan,
+2026-09-09).
 
 Fit.  Binomial maximum likelihood (logistic regression) by iteratively
 reweighted least squares -- `scimt.utils.sigmoid`, the shared fitter -- with
@@ -172,16 +174,26 @@ CONTOUR_WIDTH = 0.9
 CONTOUR_STYLE = {level: ("-", CONTOUR_WIDTH) for level in CONTOUR_LEVELS}
 CONTOUR_LABELS = False
 #: The two reference lines (zero conflict dose, zero midtrain direction) and
-#: the full box around each panel: black, thin, solid.
-ZERO_LINE_COLOR = "#000000"
+#: the full box around each panel: the figures' near-black ink (the colour of
+#: their text, not #000000), thin, solid.
+ZERO_LINE_COLOR = figure0.INK
 ZERO_LINE_WIDTH = 0.7
-BOX_COLOR = "#000000"
+BOX_COLOR = figure0.INK
 BOX_WIDTH = 0.8
 
 
 def contour_levels_label() -> str:
     """'10 / 30 / 50 / 70 / 90%', for legends and footnotes."""
     return " / ".join(f"{level:.0f}" for level in CONTOUR_LEVELS) + "%"
+
+
+def mark_contour_levels(bar: Any, *, linewidth_scale: float = 1.0) -> None:
+    """A line across the colour bar at every contour level, in the contours'
+    own colour and width, so the reader can match bar to surface."""
+    for level in CONTOUR_LEVELS:
+        bar.ax.axhline(level, color=CONTOUR_COLOR,
+                       linewidth=CONTOUR_STYLE[level][1] * linewidth_scale,
+                       linestyle=CONTOUR_STYLE[level][0])
 #: Samples per axis for the shaded surface.  It is sampled in transformed
 #: (symlog) coordinates, so the knees get the same pixel density as the tails.
 SURFACE_RESOLUTION = 400
@@ -674,7 +686,7 @@ def render(
     bar = fig.colorbar(mappable, ax=ax, fraction=0.035, pad=0.02)
     bar.set_label("chose Charter crew, % of conflict-eval runs "
                   "(points and fitted surface)", fontsize=8.5)
-    bar.ax.axhline(VCENTRE, color=figure0.INK, linewidth=1.0)
+    mark_contour_levels(bar)
     bar.ax.tick_params(labelsize=8)
 
     fig.suptitle(

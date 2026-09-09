@@ -568,12 +568,13 @@ def test_heatmap_style_knobs_are_shared_black_axes_dark_grey_contours():
         heatmap.CONTOUR_WIDTH}
     assert heatmap.CONTOUR_LABELS is False
     assert heatmap.contour_levels_label() == "10 / 30 / 50 / 70 / 90%"
-    assert heatmap.ZERO_LINE_COLOR == heatmap.BOX_COLOR == "#000000"
-    # Dark grey: well below the old mid grey, clearly apart from the black axes.
+    # "Black" is the figures' near-black ink (the text colour), not #000000.
+    assert heatmap.ZERO_LINE_COLOR == heatmap.BOX_COLOR == heatmap.figure0.INK
+    assert heatmap.BOX_COLOR != "#000000"
+    # Dark grey: well below the old mid grey, yet apart from the near-black axes.
     colour = heatmap.CONTOUR_COLOR
-    assert colour != "#000000"
     assert len(colour) == 7 and colour[1:3] == colour[3:5] == colour[5:7]
-    assert int(colour[1:3], 16) <= 0x40
+    assert int(heatmap.BOX_COLOR[1:3], 16) < int(colour[1:3], 16) <= 0x40
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots()
     try:
@@ -1065,11 +1066,11 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
             assert all(ax.spines[side].get_visible() for side in sides)
             assert {ax.spines[side].get_linestyle() for side in sides} == {"-"}
             assert {ax.spines[side].get_edgecolor() for side in sides} == {
-                to_rgba("#000000")}
+                to_rgba(heatmap.BOX_COLOR)}
             assert len(ax.lines) == 2
             for line in ax.lines:
                 assert line.get_linestyle() == "-"
-                assert line.get_color() == heatmap.ZERO_LINE_COLOR == "#000000"
+                assert line.get_color() == heatmap.ZERO_LINE_COLOR
             assert not [t for t in ax.texts if t.get_text().endswith("%")]
             contours = [c for c in ax.collections if hasattr(c, "levels")]
             assert len(contours) == 1
@@ -1081,6 +1082,13 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
             assert all(dash is None for _offset, dash in contours[0].get_linestyles())
         legend_texts = [t.get_text() for t in fig.legends[0].get_texts()]
         assert any("10 / 30 / 50 / 70 / 90%" in text for text in legend_texts)
+        # The colour bar carries one line per contour level, in the contour
+        # colour and width, so bar and surface can be matched by eye.
+        marks = bars[0].lines
+        assert sorted(float(line.get_ydata()[0]) for line in marks) == list(
+            heatmap.CONTOUR_LEVELS)
+        assert {line.get_color() for line in marks} == {heatmap.CONTOUR_COLOR}
+        assert len({line.get_linewidth() for line in marks}) == 1
         # The shared y axis is linear to the 1M dose: +1M (the first positive
         # level of eleven) sits at the knee, one median level gap above zero.
         yticks = list(left.get_yticks())

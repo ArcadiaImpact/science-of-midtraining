@@ -147,7 +147,7 @@ def dress_panel(
     *, title: str, leftmost: bool,
 ) -> None:
     """The galleries' furniture at paper scale: token ticks coloured by side,
-    the full box, the two thin black zero lines; y labels on the left panel
+    the full box, the two thin near-black zero lines; y labels on the left panel
     only."""
     ax.set_xlim(x_edges[0], x_edges[-1])
     ax.set_ylim(y_edges[0], y_edges[-1])
@@ -227,7 +227,7 @@ def build_figure(
         bar.set_label("chose Charter crew, % of conflict-eval runs", fontsize=6.0)
         bar.set_ticks([0, 25, 50, 75, 100])
         bar.ax.tick_params(labelsize=5.5, length=2, width=0.5)
-        bar.ax.axhline(heatmap.VCENTRE, color=figure0.INK, linewidth=0.8)
+        heatmap.mark_contour_levels(bar, linewidth_scale=0.7)
         bar.outline.set_linewidth(0.5)
 
         marker = dict(linestyle="", markersize=4.5, markeredgecolor=figure0.INK,

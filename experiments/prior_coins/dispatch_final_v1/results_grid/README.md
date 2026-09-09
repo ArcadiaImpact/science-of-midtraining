@@ -566,10 +566,12 @@ the held-out template × trained ("held-in") clause split, the balanced 2%
 cells (repair mode), the same symlog token axes as the galleries, the same
 colour bar shared once, y labels on the left panel only over the union of
 both models' doses, 5.5–7 pt type, no footnote (the caption lives in the
-paper), unlanded cells as rings. Style (Jonathan, 2026-09-09, two rounds): a
-full black box per panel and thin solid black zero lines, solid dark-grey
-(#333) contours of equal weight at 10 / 30 / 50 / 70 / 90% with no inline
-labels — the legend names the levels. Those
+paper), unlanded cells as rings. Style (Jonathan, 2026-09-09, three rounds):
+a full box per panel and thin solid zero lines in the figures' near-black ink
+(#22221f, the text colour, not #000000), solid dark-grey (#333) contours of
+equal weight at 10 / 30 / 50 / 70 / 90% with no inline labels — the legend
+names the levels and the colour bar carries a line at each level in the
+contour colour. Those
 knobs (`CONTOUR_*`, `ZERO_LINE_*`, `BOX_*`, `X_`/`Y_LINTHRESH`,
 `X_`/`Y_LINSCALE`) are shared constants in `plot_aft_grid_heatmap.py`, so the
 galleries pick the restyle up when next regenerated. It imports the axes,
