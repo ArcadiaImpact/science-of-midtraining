@@ -203,14 +203,52 @@ def load_scores(profile: str, arm: str, battery: str = "eval",
     return _from_hub(f"scores/{rel.as_posix()}", quiet=quiet)
 
 
-def load_ablation(name: str, quiet: bool = False) -> Scores:
-    """Load ``scored/ablations/<name>.json``, local or Hub."""
+#: Memo for load_ablation, misses included.  A caller that asks per-arm would
+#: otherwise re-round-trip the mirror once per arm, and a miss costs a 404
+#: every time.
+_ABLATION_MEMO: dict[str, Scores | None] = {}
+
+
+def load_ablation(name: str, missing_ok: bool = False,
+                  quiet: bool = False) -> Scores | None:
+    """Load ``scored/ablations/<name>.json``, local or Hub.
+
+    ``missing_ok`` returns None instead of exiting when the artifact is in
+    neither place -- for a collection new enough that the public mirror has
+    not been rebuilt since, where the caller has a raw-Hub fallback.
+    """
+    if name in _ABLATION_MEMO:
+        hit = _ABLATION_MEMO[name]
+        if hit is None and not missing_ok:
+            raise SystemExit(f"ablation {name!r} is in neither the local tree "
+                             f"nor {HUB_REPO}")
+        return hit
+
     root = scores_root()
     if root is not None:
         local = root / "ablations" / f"{name}.json"
         if local.is_file():
-            return Scores(json.loads(local.read_text()), "local", str(local))
-    return _from_hub(f"scores/ablations/{name}.json", quiet=quiet)
+            found = Scores(json.loads(local.read_text()), "local", str(local))
+            _ABLATION_MEMO[name] = found
+            return found
+    try:
+        found = _from_hub(f"scores/ablations/{name}.json", quiet=quiet)
+    except SystemExit:
+        _ABLATION_MEMO[name] = None
+        if missing_ok:
+            return None
+        raise
+    _ABLATION_MEMO[name] = found
+    return found
+
+
+def subdocument(pack: Scores, key: str) -> Scores:
+    """One arm/profile out of a collected ablation's ``documents`` map."""
+    docs = pack.doc.get("documents", {})
+    if key not in docs:
+        raise SystemExit(f"{pack.path}: no document {key!r}. Have: "
+                         f"{', '.join(sorted(docs))}")
+    return Scores(docs[key], pack.origin, f"{pack.path}#{key}")
 
 
 #: Campaign follow-ups whose scores were never collected into ``scored/``.

@@ -1,0 +1,4 @@
+# Scratch cache for scores fetched straight from a source release.
+# Written on demand by common.load_hub_json; never a source of truth.
+data/
+__pycache__/

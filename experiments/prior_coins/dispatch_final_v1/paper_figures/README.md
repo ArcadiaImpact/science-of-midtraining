@@ -35,11 +35,22 @@ So a colleague with only the paper repo re-renders exactly the same numbers,
 and can re-lay-out a figure without access to this repo.
 
 `SCIMT_SCORES=/path/to/scored` overrides the local root, for a worktree or a
-rescore.
+rescore. Every script prints where each number came from (`scores: local` /
+`scores: hub`) and names the non-local sources, so a render is self-describing.
 
-The one thing with no Hub fallback is the archived pre-#1c 2% draw
+The mirror is rebuilt by `build_clean_repo.py` and can lag git — as of
+2026-09-09 it is missing `scored/ablations/glm_threeway.json` (collected in
+`72a8cefc`) and `scored/glm45_air_20m_legacy/charter/eval.json` (a dropped
+upload; its coin and control siblings are there). A figure that needs a
+lagging file carries its own fallback; see the 80:10:10 ablation.
+
+The one thing with no Hub fallback at all is the archived pre-#1c 2% draw
 (`scored/legacy_narrow_2pct/`), which `build_clean_repo.py` deliberately skips.
 Asking for it off-checkout is a loud error, not a silent canonical read.
+
+`data/` is a scratch cache for scores fetched straight from a source release,
+written on demand and safe to delete. Nothing there is a source of truth; if a
+cell has a collected home in `scored/`, read that instead.
 
 ### Naming
 
@@ -53,7 +64,7 @@ submission reordered is not.
 | script | figure | data |
 |---|---|---|
 | `figure2_glm_2pct.py` | asymmetric 2% conflict AFT flips the prior | `scored/glm45_air_190m/{control,charter,coin}/eval.json` |
-| `dispatch_ablation_balanced_80_10_10.py` | symmetric 10/10 conflict AFT compresses it instead | the same, plus `data/glm190m_*_balanced_80_10_10_step512.json` |
+| `dispatch_ablation_balanced_80_10_10.py` | symmetric 10/10 conflict AFT compresses it instead | the same, plus `scored/ablations/glm_threeway.json` |
 
 ### figure2_glm_2pct.py
 
@@ -95,13 +106,15 @@ it toward the control but preserves the ordering. Both are 8,192-row AFT on
 the same parent.
 
 **Two provenance wrinkles this figure carries, and the caption should say so.**
-The `balanced_80_10_10` scores were published to the Hub but never collected
-into `scored/` — `glm_contamination.json` mentions the cell in its meta and
-holds no documents for it. Rather than hand-edit a collected artifact, this
-script fetches them from the public `scimt-dispatch-final-v1-glm` and commits
-the verbatim copies under `data/` with repo, path and revision. `--refresh`
-re-fetches. If this cell ever becomes load-bearing beyond one figure it should
-graduate into `collect_ablation_scores.py` rather than stay here.
+The `balanced_80_10_10` scores live in `scored/ablations/glm_threeway.json`,
+their own collected document rather than a member of `glm_contamination.json`:
+`twopct.apply` filters by endpoint *family*, so a two-sided cell sitting beside
+the one-sided 2% cells would be one rename away from being substituted for one
+of them. That collection is newer than the public mirror's last rebuild, so
+when it is in neither the local tree nor the mirror the script falls back to
+the raw `scimt-dispatch-final-v1-glm` release it was collected from — verified
+byte-identical on the plotted rates. Drop the fallback (and `common.load_hub_json`
+with it, if nothing else uses it) once the mirror carries the collection.
 
 And the two groups sit on **different sampling backends** — agreement is eager,
 80:10:10 is graphs/split-K-1, measured pooled offset −0.80pp charter / +1.00pp

@@ -25,19 +25,22 @@ Provenance is split, and the caption should say so:
 
 * the ``agreement`` bars come from the committed campaign scores, sampled with
   the **eager** backend;
-* the ``balanced_80_10_10`` bars were published to the Hub but never collected
-  into ``scored/``, so they are fetched from the public
-  ``scimt-dispatch-final-v1-glm`` and cached under ``data/`` -- and were
-  sampled with the **graphs/split-K-1** backend.
+* the ``balanced_80_10_10`` bars come from ``scored/ablations/glm_threeway.json``
+  and were sampled with the **graphs/split-K-1** backend.
 
 Measured pooled offset between the two backends is -0.80pp charter / +1.00pp
 coin on conflict runs. That is small against the ~9pp run-to-run SD, but it is
 a real seam across this figure's two groups, not within either.
 
+``glm_threeway.json`` is newer than the public mirror's last rebuild, so if it
+is in neither the local tree nor the mirror this falls back to the raw Hub
+release it was collected from -- verified to carry byte-identical rates.
+Drop the fallback once the mirror carries the collection.
+
 Usage
 -----
     python dispatch_ablation_balanced_80_10_10.py
-    python dispatch_ablation_balanced_80_10_10.py --refresh   # re-fetch cache
+    python dispatch_ablation_balanced_80_10_10.py --refresh   # bypass the cache
 """
 
 from __future__ import annotations
@@ -73,6 +76,27 @@ BAR_W = 0.78
 MIN_INLINE_PCT = 5.0
 
 
+#: The collected home of the 80:10:10 cell.  Deliberately its own document
+#: rather than a member of glm_contamination.json: `twopct.apply` filters by
+#: endpoint FAMILY, so a two-sided cell living beside the one-sided 2% cells
+#: would be one rename away from being substituted for one of them.
+THREEWAY = "glm_threeway"
+
+
+def _balanced(arm: str, refresh: bool, quiet: bool):
+    """The 80:10:10 cell, from the collection or the release it came from."""
+    if not refresh:
+        pack = common.load_ablation(THREEWAY, missing_ok=True, quiet=quiet)
+        if pack is not None:
+            return common.subdocument(pack, arm)
+    return common.load_hub_json(
+        common.GLM_FOLLOWUP_REPO,
+        f"{HUB_PREFIX}/{arm}/balanced_80_10_10/eval/"
+        f"balanced_80_10_10-step{STEP}/scores.json",
+        cache_name=f"glm190m_{arm}_balanced_80_10_10_step{STEP}",
+        refresh=refresh, quiet=quiet)
+
+
 def collect(refresh: bool = False, quiet: bool = False):
     """Load the six bars from their two different homes."""
     rows, sources = [], []
@@ -86,12 +110,7 @@ def collect(refresh: bool = False, quiet: bool = False):
                     sources.append(campaign[arm])
                 scores = campaign[arm]
             else:
-                scores = common.load_hub_json(
-                    common.GLM_FOLLOWUP_REPO,
-                    f"{HUB_PREFIX}/{arm}/{aft_cell}/eval/"
-                    f"{aft_cell}-step{STEP}/scores.json",
-                    cache_name=f"glm190m_{arm}_{aft_cell}_step{STEP}",
-                    refresh=refresh, quiet=quiet)
+                scores = _balanced(arm, refresh, quiet)
                 sources.append(scores)
             doc = common.cell(scores, f"{aft_cell}-step{STEP}", SLICE)
             split, n = common.motivation_split(doc)
@@ -196,7 +215,7 @@ def main() -> None:
     p.add_argument("--formats", default="svg,pdf",
                    help="comma-separated: svg,pdf,png")
     p.add_argument("--refresh", action="store_true",
-                   help="re-fetch the cached 80:10:10 scores from the Hub")
+                   help="bypass the collection and re-fetch the 80:10:10 scores\n         straight from the Hub release")
     p.add_argument("--width-frac", type=float, default=1.0,
                    help="fraction of the 5.5in ICLR text width")
     p.add_argument("--height", type=float, default=2.8, help="inches")
