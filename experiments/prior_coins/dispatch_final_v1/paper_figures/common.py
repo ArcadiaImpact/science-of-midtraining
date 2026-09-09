@@ -402,6 +402,177 @@ def motivation_split(cell_doc: dict[str, Any]) -> tuple[dict[str, float], int]:
             int(runs["n"]))
 
 
+#: by_mixture keys on a conflict slice: one and two conflict runs per episode.
+ONE_RUN, TWO_RUN = "c", "c/c"
+RUN_SHAPE_LABEL = {
+    ONE_RUN: "One conflict run per episode",
+    TWO_RUN: "Two conflict runs per episode",
+}
+
+
+def split_by_run_count(cell_doc: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    r"""Run-level charter/other/coin split, separately for 1- and 2-run episodes.
+
+    The scored files carry run-level counts only pooled (``conflict_runs``) and
+    per-clause (``conflict_runs_by_clause``) -- never per episode shape.  What
+    they do carry is ``by_mixture``, which is EPISODE-level.  The run-level
+    split is nonetheless exactly recoverable, because of how ``episode_label``
+    is defined in ``score_factorised``:
+
+    * ``impure`` outranks ``mixed`` -- any OTHER run makes the whole episode
+      impure -- so ``mixed`` on a two-run episode is exactly one charter run
+      and one coin run, never charter+other;
+    * ``all_charter`` / ``all_coin`` are 2 runs of that side;
+    * ``malformed`` is 2 malformed runs;
+    * a ONE-run ``impure`` episode is exactly one OTHER run, which pins the
+      only unknown.
+
+    That last point is what closes the system: the one-run side is fully
+    determined by its episode labels, so whatever the pooled totals hold in
+    excess of it belongs to the two-run ``impure`` episodes, whose internal
+    split is otherwise unknowable.  The function solves for it and asserts the
+    reconstruction closes, so a scoring change that breaks these invariants
+    fails loudly instead of quietly mis-attributing runs.
+    """
+    mixture = cell_doc["by_mixture"]
+    unexpected = set(mixture) - {ONE_RUN, TWO_RUN}
+    if unexpected:
+        raise SystemExit(
+            f"split_by_run_count: conflict slice carries unexpected episode "
+            f"shapes {sorted(unexpected)}; only {ONE_RUN!r}/{TWO_RUN!r} can be "
+            f"reconstructed")
+
+    one = mixture.get(ONE_RUN, {})
+    two = mixture.get(TWO_RUN, {})
+    runs = cell_doc["conflict_runs"]
+    total_n = runs["n"]
+    total = {k: round(v * total_n) for k, v in runs["rates"].items()}
+
+    # One-run episodes: label == the single run's verdict.
+    one_runs = {
+        "charter": one.get("all_charter", 0),
+        "coin": one.get("all_coin", 0),
+        "other": one.get("impure", 0),
+        "malformed": one.get("malformed", 0),
+    }
+    # Two-run episodes: everything but `impure` is pinned by its label.
+    two_known = {
+        "charter": 2 * two.get("all_charter", 0) + two.get("mixed", 0),
+        "coin": 2 * two.get("all_coin", 0) + two.get("mixed", 0),
+        "other": 0,
+        "malformed": 2 * two.get("malformed", 0),
+    }
+    two_runs = {k: total.get(k, 0) - one_runs[k] for k in one_runs}
+    impure_runs = 2 * two.get("impure", 0)
+    residual = {k: two_runs[k] - two_known[k] for k in two_runs}
+    if sum(residual.values()) != impure_runs or any(v < 0 for v in
+                                                    residual.values()):
+        raise SystemExit(
+            f"split_by_run_count: reconstruction did not close -- residual "
+            f"{residual} against {impure_runs} runs in two-run impure "
+            f"episodes. The scorer's episode_label invariants may have changed.")
+
+    out = {}
+    for key, counts, episodes in ((ONE_RUN, one_runs, one),
+                                  (TWO_RUN, two_runs, two)):
+        n = sum(counts.values())
+        charter = counts["charter"] / n if n else 0.0
+        coin = counts["coin"] / n if n else 0.0
+        out[key] = {
+            "split": {"charter": charter, "other": 1.0 - charter - coin,
+                      "coin": coin},
+            "n": n,
+            "n_episodes": sum(episodes.values()),
+            "counts": counts,
+        }
+    return out
+
+
+def stack_bars(ax, xs: Sequence[float], splits: Sequence[dict[str, float]],
+               bar_w: float, fontsize: float, min_inline: float = 5.0,
+               label_series: bool = True) -> None:
+    """One stacked charter/other/coin panel, as percentages of runs."""
+    bottoms = [0.0] * len(splits)
+    for key, colour, ink in STACK:
+        vals = [s[key] * 100.0 for s in splits]
+        ax.bar(xs, vals, bar_w, bottom=bottoms, color=colour, linewidth=0,
+               label=STACK_LABEL[key] if label_series else None, zorder=2)
+        for x, val, base in zip(xs, vals, bottoms):
+            if val >= min_inline:
+                ax.text(x, base + val / 2, f"{val:.0f}", ha="center",
+                        va="center", color=ink, fontsize=fontsize - 0.5,
+                        zorder=3)
+        bottoms = [b + v for b, v in zip(bottoms, vals)]
+
+
+def split_axes(height_in: float, width_frac: float = 1.0):
+    """Two stacked panels sharing an x axis, for the by-run-count views."""
+    return plt.subplots(2, 1, figsize=(TEXTWIDTH_IN * width_frac, height_in),
+                        sharex=True)
+
+
+#: Where --split-by-run writes.  Diagnostic, not paper output; gitignored.
+SCRATCH = HERE / "scratch"
+
+
+def draw_split_by_run(rows, xs, bar_w, args, tick_labels, group_annotate,
+                      ylabel: str):
+    r"""The two-panel by-run-count diagnostic shared by every figure here.
+
+    Same bars as the figure it belongs to, but each panel restricted to one
+    episode shape and still counting RUNS, so the two panels are like-for-like
+    with each other and with the pooled figure.  Note the pooled figure is not
+    their average: two-run episodes are half the episodes but two thirds of
+    the runs.
+
+    ``group_annotate(ax)`` draws the caller's group labels on the lower panel;
+    ``tick_labels`` are the per-bar labels.
+    """
+    setup(args.fontsize)
+    fig, (top, bottom) = split_axes(args.height * 1.75, args.width_frac)
+
+    for ax, shape in ((top, ONE_RUN), (bottom, TWO_RUN)):
+        splits = [r["by_run"][shape]["split"] for r in rows]
+        stack_bars(ax, xs, splits, bar_w, args.fontsize,
+                   label_series=(ax is top))
+        n_runs = rows[0]["by_run"][shape]["n"]
+        n_eps = rows[0]["by_run"][shape]["n_episodes"]
+        ax.set_title(f"{RUN_SHAPE_LABEL[shape]} "
+                     f"({n_eps:,} episodes, {n_runs:,} runs per bar)",
+                     fontsize=args.fontsize - 0.5, pad=3, loc="left")
+        ax.set_xlim(xs[0] - 0.9, xs[-1] + 0.9)
+        ax.set_ylim(0, 100)
+        ax.set_yticks([0, 25, 50, 75, 100])
+        ax.set_ylabel(ylabel)
+
+    bottom.set_xticks(xs)
+    bottom.set_xticklabels(tick_labels)
+    bottom.tick_params(axis="x", length=0, pad=3)
+    group_annotate(bottom)
+
+    # Top has to carry the legend AND the upper panel's own title.
+    margins(fig, left=0.52, right=0.06, top=0.52, bottom=0.62)
+    fig.subplots_adjust(hspace=0.34)
+    top.legend(loc="lower center", bbox_to_anchor=(0.5, 1.13), ncol=3,
+               frameon=False, handlelength=1.1, handleheight=0.9,
+               columnspacing=1.4, borderpad=0.0, handletextpad=0.5)
+    return fig
+
+
+def report_split_by_run(rows, name_of) -> None:
+    """Per-shape run-level rates plus the pooled rate they compose into."""
+    print(f"\n  by episode shape (RUN-level, so like-for-like with the figure)")
+    print(f"  {'bar':30s} {'1-run':>8s} {'2-run':>8s} {'delta':>8s} "
+          f"{'pooled':>8s}")
+    for r in rows:
+        one = r["by_run"][ONE_RUN]["split"]["charter"] * 100
+        two = r["by_run"][TWO_RUN]["split"]["charter"] * 100
+        print(f"  {name_of(r):30s} {one:7.1f}% {two:7.1f}% {two - one:+7.1f}pp "
+              f"{r['split']['charter'] * 100:7.1f}%")
+    print("  (pooled is not the mean of the two: two-run episodes are half the "
+          "episodes\n   but two thirds of the runs)")
+
+
 def wilson(rate: float, n: int, z: float = 1.96) -> tuple[float, float]:
     """Wilson half-widths (low, high) about ``rate``.
 

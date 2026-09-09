@@ -79,28 +79,44 @@ def collect(quiet: bool = False):
                                                         quiet=quiet)
             sources.append(loaded[(profile, arm)])
         scores = loaded[(profile, arm)]
-        split, n = common.motivation_split(
-            common.cell(scores, ENDPOINT, SLICE))
+        doc = common.cell(scores, ENDPOINT, SLICE)
+        split, n = common.motivation_split(doc)
         rows.append({"profile": profile, "arm": arm, "label": label,
-                     "group": group, "split": split, "n": n})
+                     "group": group, "split": split, "n": n,
+                     "cell_doc": doc})
     return rows, sources
+
+
+def bar_name(row) -> str:
+    return f"{row['arm']}/{row['label']}"
+
+
+def annotate_groups(ax, rows, args) -> None:
+    """Midtraining arm beneath the per-bar variant labels, inked by arm --
+    figure 2's convention, since this figure groups by arm as it does."""
+    spans: list[tuple[str, list[float]]] = []
+    for x, row in zip(XS, rows):
+        for group, xs in spans:
+            if group == row["group"]:
+                xs.append(x)
+                break
+        else:
+            spans.append((row["group"], [x]))
+    for group, xs in spans:
+        ax.annotate(GROUP_LABEL[group],
+                    xy=(sum(xs) / len(xs), 0),
+                    xycoords=("data", "axes fraction"),
+                    xytext=(0, -20), textcoords="offset points",
+                    ha="center", va="top", color=GROUP_INK[group],
+                    fontsize=args.fontsize, fontweight="bold")
 
 
 def draw(rows, args):
     common.setup(args.fontsize)
     fig, ax = common.figure(args.height, args.width_frac)
 
-    bottoms = [0.0] * len(rows)
-    for key, colour, ink in common.STACK:
-        vals = [r["split"][key] * 100.0 for r in rows]
-        ax.bar(XS, vals, BAR_W, bottom=bottoms, color=colour,
-               label=common.STACK_LABEL[key], linewidth=0, zorder=2)
-        for x, val, base in zip(XS, vals, bottoms):
-            if val >= MIN_INLINE_PCT:
-                ax.text(x, base + val / 2, f"{val:.0f}", ha="center",
-                        va="center", color=ink, fontsize=args.fontsize - 0.5,
-                        zorder=3)
-        bottoms = [b + v for b, v in zip(bottoms, vals)]
+    common.stack_bars(ax, XS, [r["split"] for r in rows], BAR_W,
+                      args.fontsize, MIN_INLINE_PCT)
 
     if args.ci:
         for x, row in zip(XS, rows):
@@ -130,23 +146,7 @@ def draw(rows, args):
     ax.set_xticklabels([r["label"] for r in rows])
     ax.tick_params(axis="x", length=0, pad=3)
 
-    # Group labels beneath the per-bar midtraining labels, inked by arm --
-    # figure 2's convention, since this figure groups by arm as it does.
-    seen: list[tuple[str, list[float]]] = []
-    for x, row in zip(XS, rows):
-        for group, xs in seen:
-            if group == row["group"]:
-                xs.append(x)
-                break
-        else:
-            seen.append((row["group"], [x]))
-    for group, xs in seen:
-        ax.annotate(GROUP_LABEL[group],
-                    xy=(sum(xs) / len(xs), 0),
-                    xycoords=("data", "axes fraction"),
-                    xytext=(0, -20), textcoords="offset points",
-                    ha="center", va="top", color=GROUP_INK[group],
-                    fontsize=args.fontsize, fontweight="bold")
+    annotate_groups(ax, rows, args)
 
     # Margins first: the legend anchor below is computed from the axes height
     # they produce, so it can clear the --lift labels sitting above the bars.
@@ -217,16 +217,32 @@ def main() -> None:
                    help="Wilson interval on the charter proportion (optimistic)")
     p.add_argument("--lift", action="store_true",
                    help="annotate each bar's charter-rate delta from control")
+    p.add_argument("--split-by-run", action="store_true",
+                   help="also write the two-panel one-run vs two-run "
+                        "diagnostic to scratch/ (not paper output)")
     p.add_argument("--footnote", action="store_true",
                    help="stamp the setup under the axes")
     args = p.parse_args()
 
     rows, sources = collect()
     report(rows, sources)
+    formats = tuple(f.strip() for f in args.formats.split(","))
     fig = draw(rows, args)
-    for path in common.save(fig, args.stem, args.outdir,
-                            tuple(f.strip() for f in args.formats.split(","))):
+    for path in common.save(fig, args.stem, args.outdir, formats):
         print(f"  wrote {path}")
+
+    if args.split_by_run:
+        for row in rows:
+            row["by_run"] = common.split_by_run_count(row["cell_doc"])
+        common.report_split_by_run(rows, lambda r: bar_name(r))
+        fig = common.draw_split_by_run(
+            rows, XS, BAR_W, args, [r["label"] for r in rows],
+            lambda ax: annotate_groups(ax, rows, args),
+            "Chosen motivation under eval (\\%)" if args.tex
+            else "Chosen motivation under eval (%)")
+        for path in common.save(fig, f"{args.stem}_by_run", common.SCRATCH,
+                                formats):
+            print(f"  wrote {path}")
 
 
 if __name__ == "__main__":

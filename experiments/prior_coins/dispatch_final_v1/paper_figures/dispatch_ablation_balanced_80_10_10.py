@@ -115,25 +115,41 @@ def collect(refresh: bool = False, quiet: bool = False):
             doc = common.cell(scores, f"{aft_cell}-step{STEP}", SLICE)
             split, n = common.motivation_split(doc)
             rows.append({"arm": arm, "cell": aft_cell, "group": group_label,
-                         "label": ARM_LABEL[arm], "split": split, "n": n})
+                         "label": ARM_LABEL[arm], "split": split, "n": n,
+                         "cell_doc": doc})
     return rows, sources
+
+
+def bar_name(row) -> str:
+    return f"{row['cell']}/{row['arm']}"
+
+
+def ink_arm_ticks(ax, rows) -> None:
+    """Each arm's tick label in that arm's colour -- the convention figure 2
+    uses for its group labels, since there the groups were the arms."""
+    for tick, row in zip(ax.get_xticklabels(), rows):
+        tick.set_color(ARM_INK[row["arm"]])
+        tick.set_fontweight("bold")
+
+
+def annotate_groups(ax, rows, args) -> None:
+    """The AFT mixture, in plain ink: coloured text on this axis means
+    midtraining arm, and only that."""
+    ink_arm_ticks(ax, rows)
+    for (_, label), xs in zip(GROUPS, (XS[:3], XS[3:])):
+        ax.annotate(label, xy=(sum(xs) / len(xs), 0),
+                    xycoords=("data", "axes fraction"),
+                    xytext=(0, -20), textcoords="offset points",
+                    ha="center", va="top", color="black",
+                    fontsize=args.fontsize)
 
 
 def draw(rows, args):
     common.setup(args.fontsize)
     fig, ax = common.figure(args.height, args.width_frac)
 
-    bottoms = [0.0] * len(rows)
-    for key, colour, ink in common.STACK:
-        vals = [r["split"][key] * 100.0 for r in rows]
-        ax.bar(XS, vals, BAR_W, bottom=bottoms, color=colour,
-               label=common.STACK_LABEL[key], linewidth=0, zorder=2)
-        for x, val, base in zip(XS, vals, bottoms):
-            if val >= MIN_INLINE_PCT:
-                ax.text(x, base + val / 2, f"{val:.0f}", ha="center",
-                        va="center", color=ink, fontsize=args.fontsize - 0.5,
-                        zorder=3)
-        bottoms = [b + v for b, v in zip(bottoms, vals)]
+    common.stack_bars(ax, XS, [r["split"] for r in rows], BAR_W,
+                      args.fontsize, MIN_INLINE_PCT)
 
     if args.ci:
         for x, row in zip(XS, rows):
@@ -151,21 +167,9 @@ def draw(rows, args):
     ax.set_xticks(XS)
     ax.set_xticklabels([r["label"] for r in rows])
     ax.tick_params(axis="x", length=0, pad=3)
-    # Ink each arm's tick label in that arm's colour -- the same convention
-    # figure 2 uses for its group labels, since there the groups were the arms.
-    for tick, row in zip(ax.get_xticklabels(), rows):
-        tick.set_color(ARM_INK[row["arm"]])
-        tick.set_fontweight("bold")
+    ink_arm_ticks(ax, rows)
 
-    # Group labels (the AFT mixture) on the row beneath, in plain ink: the
-    # coloured text on this axis means midtraining arm, and only that.
-    for (_, label), xs in zip(GROUPS, (XS[:3], XS[3:])):
-        ax.annotate(label,
-                    xy=(sum(xs) / len(xs), 0),
-                    xycoords=("data", "axes fraction"),
-                    xytext=(0, -20), textcoords="offset points",
-                    ha="center", va="top", color="black",
-                    fontsize=args.fontsize)
+    annotate_groups(ax, rows, args)
 
     ax.legend(loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=3,
               frameon=False, handlelength=1.1, handleheight=0.9,
@@ -223,16 +227,32 @@ def main() -> None:
                    help="escape %% for a LaTeX-rendered pipeline")
     p.add_argument("--ci", action="store_true",
                    help="Wilson interval on the charter proportion (optimistic)")
+    p.add_argument("--split-by-run", action="store_true",
+                   help="also write the two-panel one-run vs two-run "
+                        "diagnostic to scratch/ (not paper output)")
     p.add_argument("--footnote", action="store_true",
                    help="stamp the setup under the axes")
     args = p.parse_args()
 
     rows, sources = collect(refresh=args.refresh)
     report(rows, sources)
+    formats = tuple(f.strip() for f in args.formats.split(","))
     fig = draw(rows, args)
-    for path in common.save(fig, args.stem, args.outdir,
-                            tuple(f.strip() for f in args.formats.split(","))):
+    for path in common.save(fig, args.stem, args.outdir, formats):
         print(f"  wrote {path}")
+
+    if args.split_by_run:
+        for row in rows:
+            row["by_run"] = common.split_by_run_count(row["cell_doc"])
+        common.report_split_by_run(rows, lambda r: bar_name(r))
+        fig = common.draw_split_by_run(
+            rows, XS, BAR_W, args, [r["label"] for r in rows],
+            lambda ax: annotate_groups(ax, rows, args),
+            "Chosen motivation under eval (\\%)" if args.tex
+            else "Chosen motivation under eval (%)")
+        for path in common.save(fig, f"{args.stem}_by_run", common.SCRATCH,
+                                formats):
+            print(f"  wrote {path}")
 
 
 if __name__ == "__main__":

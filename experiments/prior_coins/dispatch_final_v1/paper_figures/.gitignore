@@ -2,3 +2,5 @@
 # Written on demand by common.load_hub_json; never a source of truth.
 data/
 __pycache__/
+# Diagnostic renders (--split-by-run). Not paper output.
+scratch/

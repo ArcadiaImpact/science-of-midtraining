@@ -206,6 +206,27 @@ outlier at 0.60), design effect 1.03–1.40, so the honest n is ~2,100–2,900 a
 a Wilson interval widens by 0.1–0.4pp. Small — and in any case dwarfed by the
 next caveat.
 
+### `--split-by-run`, and why the split is recoverable at all
+
+Every script takes `--split-by-run`, which additionally writes a two-panel
+one-run vs two-run version of the same bars into `scratch/` (gitignored — it
+is a diagnostic, not paper output).
+
+The scored files carry run-level counts only pooled and per-clause, never per
+episode shape. `by_mixture` is episode-level. The run-level split is
+nonetheless *exactly* recoverable, because of how `score_factorised.episode_label`
+is defined: `impure` outranks `mixed`, so `mixed` on a two-run episode is
+exactly one charter run and one coin run and never charter+other; `all_charter`
+/ `all_coin` are two runs of that side; and a one-run `impure` episode is
+exactly one OTHER run, which pins the only unknown. `common.split_by_run_count`
+solves for the two-run `impure` split from the pooled totals and **asserts the
+reconstruction closes**, so a scoring change that breaks those invariants fails
+loudly rather than quietly mis-attributing runs.
+
+Keep the comparison at run level. Comparing *episode*-level `all_charter`
+across shapes is not like-for-like — winning a two-run episode means choosing
+Charter twice — and it exaggerates the difference by an order of magnitude.
+
 ## Caveats that belong in captions
 
 One seed per cell throughout; measured run-to-run SD is ~9pp on the primary
