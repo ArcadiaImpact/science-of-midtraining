@@ -396,6 +396,13 @@ We attempted to separate the world from existing priors, though doing so fully i
 \label{fig:b2}
 \end{figure}
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{Figs/per_clause.pdf}
+\caption{Per-clause breakdown of Figure~\ref{fig:held_in_vs_held_out}: Charter-crew rate by deciding clause after agreement-only \ac{eft} (solid) and after 2\% coin-labelled \ac{eft} (hatched), control dashed; GLM-4.5-Air (top) and Gemma~3 27B (bottom) at 190M presented tokens, held-out templates, about 600 runs per clause. The GLM held-out transfer comes from the deferral tie-break; the weekly-limit clause sits near 20\% in every cell of the grid.}
+\label{fig:per_clause}
+\end{figure}
+
 \subsection{Further studies}
 
 \paragraph{The effect replicates across model size, despite the baseline behaviour shifting.} Figure~\ref{fig:b4} shows the headline results from training on disagreement data, replicated across three sizes of Gemma-3 base model. We observe the same effect at different scales, though this is slightly confounded by the fact that the control models show different behaviour across model size. Smaller models in general, regardless of midtraining, seem to interpret the EFT more as ``profit-maximising'', whilst larger models tend to interpret EFT data as more ``charter-following''.
