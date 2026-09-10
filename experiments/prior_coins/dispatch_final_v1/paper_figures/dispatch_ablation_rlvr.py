@@ -11,34 +11,46 @@ Nine bars, grouped by elicitation treatment:
     SFT, agreement EFT       |  RLVR, no thinking      |  RLVR, thinking
     Charter Control Coin     |  Charter Control Coin   |  Charter Control Coin
 
-**The thinking group is the T=0.7 sampled battery, not the greedy one.** That
-matters more than it sounds. Under argmax the thinking model falls into
-repetitive loops and never terminates: truncation was 23.8 / 52.7 / 51.0% on
-charter / coin / control, and ``parser_valid ~= 1 - truncation`` to three
-decimals, so almost all of the greedy run's "unparseable" was non-termination
-rather than bad output. Sampling at 0.7 cuts that 1.9-4.3x. The study's own
-audit found the two decodings agree on verdicts -- charter minus coin is 0.158
-under both on commonly-decided episodes -- so T=0.7's value is entirely in
-admitting more episodes. ``--thinking-decoding greedy`` renders the older
-sweep.
+**The thinking group is the cap-12k continuation, and it has to be.** The
+thinking model's "unparseable" mass was never bad output -- it was
+non-termination against a 4,096-token cap. Under argmax it looped and almost
+never finished (truncation 23.8 / 52.7 / 51.0% on charter / coin / control);
+sampling at T=0.7 cut that but left 13-28%. The continuation re-ran the
+truncated rows to a 12,000-token cap, and residual truncation falls to
+0.1-1.1%, taking unparseable on this slice from 15-35% down to 4.7-5.6%.
+
+**It moves the answer, not just the error bars.** The most-truncated arm gains
+the most, which is exactly what the censoring analysis predicted:
+
+    arm        4k cap -> 12k cap (charter rate on this slice)
+    charter    33.5 -> 38.4
+    control    10.7 -> 17.6
+    coin        9.5 -> 21.7
+
+so charter-minus-coin falls from 24.0pp to **16.7pp**. Every 4k thinking
+number overstated the separation. ``--thinking-decoding {t07,greedy}`` renders
+the superseded 4k sweeps for comparison; do not quote them.
 
 **Three seams, and they are not equally forgivable.**
 
-1. **Sampling is not held.** SFT and no-thinking are greedy direct-mode; the
-   thinking group is T=0.7 thinking-mode. Two differences at once, so the
-   thinking group is read against the other two only at a reader's own risk.
-   Within each group the three arms ARE same-harness, which is where the
-   figure's claim lives -- arm-vs-arm inside a group, never bar-vs-bar across.
+1. **Sampling is not held, and now the completion cap is not either.** SFT
+   and no-thinking are greedy direct-mode at a 4k cap; the thinking group is
+   T=0.7 thinking-mode at 12k. Three differences at once, so the thinking
+   group is read against the other two only at a reader's own risk. Within
+   each group the three arms ARE same-harness, which is where the figure's
+   claim lives -- arm-vs-arm inside a group, never bar-vs-bar across.
 2. **No thinking-mode SFT.** The thinking batteries cover ``grpo`` and
    ``pre_aft`` only, so the thinking group has no same-mode SFT comparator at
    all. Its within-mode baseline is thinking pre-EFT, which this figure does
    not show.
-3. **Unparseable is still 14-35% in both RLVR groups** against ~1% under SFT,
-   so it is broken out. Under T=0.7 thinking it remains mostly truncation, and
-   the study's censoring analysis found the censored episodes are
-   systematically MORE charter-following, by 0.13-0.16 -- so every RLVR bar's
-   charter level is biased downward. The bias is common-mode across arms, so
-   the within-group separation survives it and the levels do not.
+3. **The no-thinking group is still censored; the thinking group no longer
+   is.** After the continuation the thinking bars are 4.7-5.6% unparseable,
+   against 18.9-21.4% on no-thinking -- and only 5.1-9.3pp of *that* is
+   truncation, so roughly half of it is genuinely unparseable output, a
+   different failure from the thinking arm's non-termination. No
+   ``direct-cap12k`` sweep exists, so the no-thinking group cannot be
+   corrected the same way and its charter levels remain biased downward.
+   Unparseable stays broken out for both.
 
 Parser: the study's strict ``rlvr`` parser, not ``legacy``. PARSER_AUDIT.md
 found the legacy relation matcher polarity-blind -- it scored "Do not assign
@@ -71,18 +83,25 @@ SFT_STEP = 512
 STUDY = "dispatch_rlvr_gemma4_26b_v1"
 HUB_PREFIX = "evals-campaign-battery"
 
-#: The T=0.7 table has been regenerated once already -- the committed
-#: eval_scores_thinking_t07/ CSV is a 3-of-12-endpoint snapshot that disagrees
-#: with the current artifact at step 768 in both directions (charter's
-#: decided_n rose 2301 -> 2334, control's fell 2138 -> 2069). So this pins a
-#: revision rather than tracking latest, and does not read the stale CSV.
+#: The 4k T=0.7 table was regenerated once -- the committed
+#: eval_scores_thinking_t07/ CSV is a 3-of-12-endpoint snapshot disagreeing
+#: with the artifact at step 768 in both directions -- so it is pinned and the
+#: stale CSV is not read.  The continuation is pinned from its own
+#: PROVENANCE.json, whose sha256 matches both the committed copy and the Hub.
 T07_REVISION = "012b39ab416d200e51a2980227d282fe499a7627"
+CAP12K_REVISION = "181b6267724f43b8009c3f04929d97f51913e16f"
 
 #: (local path or None, hub path, cache name, revision) per battery.
 TABLES = {
     "direct": (f"{STUDY}/eval_scores/campaign_battery_scores.json",
                f"{HUB_PREFIX}/eval_scores/campaign_battery_scores.json",
                "rlvr_campaign_battery_direct", None),
+    "thinking_cap12k": (
+        f"{STUDY}/eval_scores/thinking_t07_continuation/"
+        f"campaign_battery_scores.json",
+        f"{HUB_PREFIX}/thinking-t07-cap12k/eval_scores/"
+        f"campaign_battery_scores.json",
+        "rlvr_campaign_battery_thinking_cap12k", CAP12K_REVISION),
     "thinking_t07": (None,
                      f"{HUB_PREFIX}/thinking-t07/eval_scores/"
                      f"campaign_battery_scores.json",
@@ -94,9 +113,10 @@ TABLES = {
 }
 
 #: Sampling label per battery, printed under each group.
-DECODING = {"direct": "greedy, direct",
-            "thinking_t07": "T=0.7, thinking",
-            "thinking_greedy": "greedy, thinking"}
+DECODING = {"direct": "greedy, direct, 4k cap",
+            "thinking_cap12k": "T=0.7, thinking, 12k cap",
+            "thinking_t07": "T=0.7, thinking, 4k cap",
+            "thinking_greedy": "greedy, thinking, 4k cap"}
 
 
 def treatments(thinking_decoding: str):
@@ -109,7 +129,7 @@ def treatments(thinking_decoding: str):
     )
 
 
-TREATMENTS = treatments("t07")
+TREATMENTS = treatments("cap12k")
 
 ARMS = (("charter", "Charter"), ("control", "Control"), ("coin", "Coin"))
 ARM_INK = {"control": common.OTHER, "charter": common.CHARTER,
@@ -237,7 +257,7 @@ def report(rows, sources, parser):
     for index, (label, mode, _) in enumerate(group_spans(rows)):
         block = rows[index * len(ARMS):(index + 1) * len(ARMS)]
         by_arm = {r["arm"]: r["split"]["charter"] * 100 for r in block}
-        print(f"    {label:20s} ({DECODING[mode]:16s})  "
+        print(f"    {label:20s} ({DECODING[mode]:24s})  "
               f"charter {by_arm['charter']:5.1f}  control {by_arm['control']:5.1f}  "
               f"coin {by_arm['coin']:5.1f}   spread "
               f"{by_arm['charter'] - by_arm['coin']:5.1f}pp")
@@ -254,11 +274,12 @@ def main() -> None:
     p.add_argument("--parser", choices=("rlvr", "legacy"), default="rlvr",
                    help="rlvr is the strict parser PARSER_AUDIT.md recommends; "
                         "legacy is the polarity-blind one it faults")
-    p.add_argument("--thinking-decoding", choices=("t07", "greedy"),
-                   default="t07",
-                   help="t07 is the T=0.7 sampled thinking battery, which "
-                        "escapes the greedy repetition loops; greedy is the "
-                        "older argmax sweep it supersedes")
+    p.add_argument("--thinking-decoding",
+                   choices=("cap12k", "t07", "greedy"), default="cap12k",
+                   help="cap12k continues the truncated T=0.7 rows to a "
+                        "12,000-token cap and is the only thinking battery "
+                        "that is not mostly censored; t07 and greedy are the "
+                        "4k-cap sweeps it supersedes")
     p.add_argument("--refresh", action="store_true",
                    help="re-fetch the score tables from the Hub")
     p.add_argument("--width-frac", type=float, default=1.0,
