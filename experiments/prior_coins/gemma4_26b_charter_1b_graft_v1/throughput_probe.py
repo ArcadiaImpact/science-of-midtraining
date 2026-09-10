@@ -60,8 +60,10 @@ import hashlib
 import json
 import math
 import os
+import shutil
 import statistics
 import subprocess
+import sys
 import time
 from pathlib import Path
 from typing import Any
@@ -486,6 +488,25 @@ def render_cell(
     return config_path
 
 
+def accelerate_executable() -> Path:
+    """The `accelerate` beside THIS interpreter, or a loud failure.
+
+    Falls back to PATH only if the venv has no console script, so a
+    misconfigured environment fails here rather than after a cell's model load.
+    """
+
+    candidate = Path(sys.executable).parent / "accelerate"
+    if candidate.exists():
+        return candidate
+    found = shutil.which("accelerate")
+    if not found:
+        raise RuntimeError(
+            f"no `accelerate` beside {sys.executable} and none on PATH; the "
+            f"probe launches each cell through it"
+        )
+    return Path(found)
+
+
 def run_cell(
     *,
     name: str,
@@ -504,6 +525,16 @@ def run_cell(
         shared_prepared=shared_prepared,
     )
     environment = os.environ.copy()
+    # The venv's bin directory must be ON PATH for the child, and `accelerate`
+    # must be invoked from it by absolute path. Invoking the venv python
+    # directly (which is how the pod runners call this) leaves its bin dir off
+    # PATH, so a bare `accelerate` is a FileNotFoundError -- exactly the trap
+    # `run_rl_cell.prepare_runtime_environment` documents for vLLM's bare
+    # `ninja`. Do not resolve the executable symlink: uv virtualenvs point their
+    # python at the base interpreter while the console scripts live beside the
+    # UNRESOLVED venv executable.
+    interpreter_bin = Path(sys.executable).parent
+    environment["PATH"] = str(interpreter_bin) + os.pathsep + environment.get("PATH", "")
     # Same collective-algorithm setting every other pod path in this repo uses;
     # NVLS multicast cannot be bound inside a RunPod container.
     environment["NCCL_NVLS_ENABLE"] = "0"
@@ -516,7 +547,7 @@ def run_cell(
     with (dest / "train.log").open("w") as log:
         completed = subprocess.run(
             [
-                "accelerate", "launch",
+                str(accelerate_executable()), "launch",
                 "--num_processes", str(cell["gpus"]),
                 "-m", "axolotl.cli.train", str(config),
             ],
