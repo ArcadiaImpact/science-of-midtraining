@@ -137,15 +137,24 @@ as v2 on `20f1659e…` after a per-parent hash audit; v1 cells retrained. (iv) A
 
 ## 6. Open items
 
-- GLM-4.5-Air has no *balanced* EFT cells on the current formula (#1b cells are 81,920-row, ±0.9M / ±1.8M, 190M row,
-  other eval backend); the GLM panel shows the EFT = 0 row only. The campaign's narrow-draw 2 % cells
-  (`mixed_charter` / `mixed_coin`, 164 rows ≈ 178k) do exist for all six GLM arms (190M and legacy 19M × charter /
-  coin / control, 12 cells) but repair mode blanks 2 % cells without a #1c balanced partner, as it did for Gemma.
-- GLM EFT spec drafted (`../aft_glm_grid/SPEC.md`: 190M charter / coin / control parents from #1b, legacy 19M
-  optional, 10 EFT cells per arm, Bellhop-driven). #1b *was* mixed-template (90 training templates, held-out
-  templates eval-only, all three surfaces scored; `aft_size_mixture_v1/build.py`), so its cells are
-  template-comparable with the Gemma grid.
-- 1 GTok GLM midtrain row pending.
+- **GLM-4.5-Air EFT grid — done (2026-09-10).** Follow-up #1c had already run balanced ±2 % cells on the three 190M
+  arms; the current-formula grid (`../aft_glm_grid/`, wave 1: ±0.25 / 0.5 / 1 / 5 % × charter / coin / control, 24
+  cells, same 512-step recipe, vLLM graphs backend) ran 2026-09-09 21:34Z → 2026-09-10 07:55Z on three 4×H200 pods
+  (one per arm, ≈ 51–65 min per cell, ≈ $400) and verified 24/24 (512 in-run steps, 24 distinct step-512 adapter
+  digests, n = 21,000 per endpoint). Small files are on the GLM repo under
+  `followups/glm-aft-grid-8192-v1-attempt1/`, adapters and eval stores on
+  `gs://arcadia-scimt-checkpoints/dispatch-final-v1-glm-aft-grid/`, a sha-verified mirror on crab-factory-3.
+  The 190M row is complete on the canonical figure (33 / 55 GLM cells; the 22 blanks are the ±1B placeholders).
+  Reading, % Charter for coin / control / charter arms: +5 % 87.0 / 92.4 / 95.3; +2 % 38.0 / 77.0 / 91.8; +1 % 38.1 /
+  71.7 / 90.8; +0.5 % 17.8 / 56.9 / 90.1; +0.25 % 20.9 / 49.0 / 86.8; 0 4.9 / 37.0 / 89.6; −0.25 % 4.2 / 22.5 / 58.8;
+  −0.5 % 4.2 / 11.4 / 38.6; −1 % 1.7 / 5.9 / 28.4; −2 % 0.4 / 5.1 / 12.9; −5 % 0.6 / 2.1 / 5.7. Same shape as the 27B
+  panel: the arms are 50–90 pp apart at ±0.25–1 % and within 9 pp at ±5 %; on the charter arm Charter-labelled EFT
+  barely moves the 89.6 % baseline while −0.25 % already costs 31 pp; on the coin arm the response is flat between
+  +1 % and +2 % (38 %) before jumping to 87 % at +5 %. The campaign's narrow-draw 2 % cells (all six GLM arms) remain
+  hidden in repair mode; #1b's 81,920-row cells stay off this axis. The legacy 19M GLM row is not on the paper figure.
+- 1 GTok GLM midtrain arms (`glm45_air_1b`, Sid) pending; the figure already carries their hatched ±1B columns and the
+  collector picks the cells up under that profile with no code change (a replacement attempt namespace needs adding to
+  `GLM_GRID_VERSION.prefixes`).
 - Held-out-clause dose equivalents (free power 0.08–71 tokens) extrapolate three decades below the smallest EFT
   column (21.8k), β / Ly / k at grid bounds — not interpretable.
 - Review follow-ups: beta-binomial / quasi-binomial at prompt × cell with profile or BCa intervals; semi-parametric
