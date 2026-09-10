@@ -67,6 +67,11 @@ class Config:
     #: correction runs in `sequence_mask` mode, so truncation shows up as
     #: MASKED SEQUENCES rather than as bias, and the masked fraction is the
     #: number this comparison exists to read.
+    #: Rollout temperature; 0.0 keeps the contract's per-mode value (1.0).
+    #: A probe cell may deliberately decode differently from the contract --
+    #: that is the whole point of attributing a truncation rate to a decoder --
+    #: so this is NOT validated against RL_SAMPLING.
+    temperature: float = 0.0
     top_p: float = 0.0
     top_k: int = -1
     #: vLLM scheduler concurrency. TRL DERIVES this as
@@ -114,6 +119,8 @@ class Config:
             raise ValueError("vllm_max_num_seqs must be non-negative (0 = TRL's)")
         if self.vllm_max_model_len < 0:
             raise ValueError("vllm_max_model_len must be non-negative (0 = keep)")
+        if self.temperature and not 0.0 < self.temperature <= 2.0:
+            raise ValueError("temperature must be in (0, 2] (0.0 = keep the contract's)")
         if self.top_p and not 0.0 < self.top_p <= 1.0:
             raise ValueError("top_p must be in (0, 1] (0.0 = keep the contract's)")
         if self.top_k < -1:
@@ -296,6 +303,8 @@ def resolve_probe_options(cfg: Config, options: Any) -> Any:
         # The server owns its cards for the whole run; the option refuses the
         # combination rather than record a sleep cycle that never happened.
         replacements["vllm_enable_sleep_mode"] = False
+    if cfg.temperature:
+        replacements["temperature"] = cfg.temperature
     if cfg.top_p:
         replacements["top_p"] = cfg.top_p
     if cfg.top_k >= 0:
