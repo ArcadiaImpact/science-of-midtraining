@@ -2199,7 +2199,7 @@
     },
     "glm45_air": {
       "clause": "trained",
-      "landed": 40,
+      "landed": 44,
       "model": "glm45_air",
       "points": [
         {
@@ -2710,11 +2710,11 @@
         },
         {
           "arm": "charter",
-          "landed": false,
+          "landed": true,
           "mixture": "coin_1pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "glm45_air_1b",
-          "rate_pct": null,
+          "rate_pct": 31.566666666666666,
           "starred": false,
           "x_tokens": -89197.662109375,
           "y_tokens": 1000000000.0
@@ -2732,11 +2732,11 @@
         },
         {
           "arm": "charter",
-          "landed": false,
+          "landed": true,
           "mixture": "coin_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "glm45_air_1b",
-          "rate_pct": null,
+          "rate_pct": 74.23333333333333,
           "starred": false,
           "x_tokens": -21753.9453125,
           "y_tokens": 1000000000.0
@@ -2754,11 +2754,11 @@
         },
         {
           "arm": "charter",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "glm45_air_1b",
-          "rate_pct": null,
+          "rate_pct": 91.66666666666666,
           "starred": false,
           "x_tokens": 21753.9453125,
           "y_tokens": 1000000000.0
@@ -2776,11 +2776,11 @@
         },
         {
           "arm": "charter",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_1pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "glm45_air_1b",
-          "rate_pct": null,
+          "rate_pct": 95.03333333333333,
           "starred": false,
           "x_tokens": 89197.90234375,
           "y_tokens": 1000000000.0

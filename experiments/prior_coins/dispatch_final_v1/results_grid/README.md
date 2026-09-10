@@ -671,12 +671,18 @@ reads `followups/glm-aft-grid-8192-v1-attempt1` on the GLM repo into the same
 code change either. The wave ran 2026-09-09 21:34Z → 2026-09-10 07:55Z on
 three 4×H200 pods (one per arm, 8 cells each, ≈ 51–65 min per cell); at its
 close **33 of 55 cells were landed** — the three 190M arms × all eleven EFT
-levels. On 2026-09-10 the 1 GTok charter row took the panel to **36 of 55**:
-its +1B column reads, in % Charter on this split, 89.3 at EFT = 0, 93.7 at
-+2% and 17.1 at −2% (n = 3,000 conflict runs each; the 190M charter arm reads
-89.6 / 91.8 / 12.9 on the same three cells), its other eight EFT cells wait on
-the 1B grid source, and the eleven cells of the −1B column are the
-placeholder. The 190M row
+levels. On 2026-09-10 the 1 GTok charter row took the panel to **44 of 55**:
+Sid's campaign cells gave its EFT = 0 and ±2% readings, and the wave-2 grid
+(`../aft_glm_grid/`, eight cells on two 4×H200 pods, 10:12Z → 14:2xZ the same
+day, ≈ 52 min per cell) filled the other eight. The +1B column reads, in %
+Charter on this split against the 190M charter arm in brackets: +5% 96.1
+(95.3); +2% 93.7 (91.8); +1% 95.0 (90.8); +0.5% 92.8 (90.1); +0.25% 91.7
+(86.8); 0 89.3 (89.6); −0.25% 74.2 (58.8); −0.5% 39.8 (38.6); −1% 31.6 (28.4);
+−2% 17.1 (12.9); −5% 5.6 (5.7) — n = 3,000 conflict runs each. Five times the
+charter midtraining moves the row by a few points at most, except at −0.25%
+where the 1B parent holds 74 % against the 190M parent's 59 %. The eleven
+cells of the −1B column are the placeholder (no coin 1B midtrain exists). The
+190M row
 reads, in % Charter for the coin / control / charter arms: +5% 87.0 / 92.4 /
 95.3; +2% 38.0 / 77.0 / 91.8; +1% 38.1 / 71.7 / 90.8; +0.5% 17.8 / 56.9 /
 90.1; +0.25% 20.9 / 49.0 / 86.8; 0 4.9 / 37.0 / 89.6; −0.25% 4.2 / 22.5 /
