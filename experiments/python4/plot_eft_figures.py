@@ -20,12 +20,19 @@ outlines, top/right spines off, Wilson-95 error bars).
   metric expression = Suite-A rule adoption, pooled over the split's 4 rules
                       (128 items each -> n=512; equals the mean of rule rates).
 
+  Every iso/prop bar carries a short black horizontal line = the CONTROL arm's
+  rate for the same model, EFT level and split. In the code-correctness headline
+  the held-out chart has its own y-scale (held-out rates are ~3x smaller).
+
 Data: plots_dose_grid/eft_grid_data.json (committed; provenance inside)."""
 import json, math, argparse, os
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
+from matplotlib.lines import Line2D
+import matplotlib.patheffects as pe
 from matplotlib.transforms import blended_transform_factory
+from matplotlib.ticker import MaxNLocator
 import seaborn as sns
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -72,34 +79,51 @@ def cell_stats(cell, metric, split):
     lo, hi = wilson(k, n)
     return 100.0 * k / n, 100.0 * lo, 100.0 * hi, wk
 
-def bar(ax, x, w, color, rate, lo, hi, wk):
+REF_STYLE = dict(color="black", lw=1.1, solid_capstyle="butt", zorder=6,
+                 path_effects=[pe.withStroke(linewidth=2.3, foreground="white")])
+
+def bar(ax, x, w, color, rate, lo, hi, wk, ref=None):
+    """One bar (+ striped workaround share, Wilson whisker). `ref` = the control
+    arm's rate for the same model / EFT level / split, drawn as a short horizontal
+    line spanning the bar's width."""
     if wk is None:
         ax.bar(x, rate, w, color=color)
     else:
         ax.bar(x, rate - wk, w, color=color)
         ax.bar(x, wk, w, bottom=rate - wk, color=color, **HATCH)
     ax.errorbar(x, rate, yerr=[[rate - lo], [hi - rate]], fmt="none", ecolor="black",
-                elinewidth=0.6, capsize=1.2, capthick=0.6)
+                elinewidth=0.6, capsize=1.2, capthick=0.6, zorder=5)
+    if ref is not None:
+        ax.plot([x - w / 2, x + w / 2], [ref, ref], **REF_STYLE)
+
+def ref_handle():
+    return Line2D([0], [0], color="black", lw=1.1, label="control arm (same model & EFT level)")
 
 def headline(D, metric, arm, out):
     fig, (ax_hi, ax_ho) = plt.subplots(2, 1, figsize=(5.5, 4.8), sharex=True)
     bw = 0.28; centers = [0.0, 1.15, 2.30]
-    ymax = 0
+    labels = {ax_hi: [], ax_ho: []}; peak = {ax_hi: 0.0, ax_ho: 0.0}
     for ax, split in ((ax_hi, "held_in"), (ax_ho, "held_out")):
         for gi, (mk, _) in enumerate(MODELS):
             for di, (dk, _) in enumerate(DOSES):
                 x = centers[gi] + (di - 1) * bw
                 rate, lo, hi, wk = cell_stats(D[mk][arm][dk], metric, split)
-                bar(ax, x, bw, RAMP[split][di], rate, lo, hi, wk)
-                ax.text(x, hi + 1.0, f"{rate:.0f}", ha="center", va="bottom", fontsize=5.5)
-                ymax = max(ymax, hi)
-    top = 100 if metric == "expression" else min(100, ymax * 1.15 + 4)
+                ref = cell_stats(D[mk]["control"][dk], metric, split)[0] if arm != "control" else None
+                bar(ax, x, bw, RAMP[split][di], rate, lo, hi, wk, ref)
+                labels[ax].append((x, hi, rate)); peak[ax] = max(peak[ax], hi, ref or 0)
+    if metric == "expression":
+        tops = {ax_hi: 100, ax_ho: 100}
+    else:  # held-in and held-out certified live on different scales -> own y-axis each
+        tops = {ax_hi: min(100, peak[ax_hi] * 1.15 + 4), ax_ho: min(100, peak[ax_ho] * 1.2 + 1)}
+    for ax in (ax_hi, ax_ho):
+        ax.set_ylim(0, tops[ax]); ax.set_xlim(-0.55, 2.85)
+        ax.yaxis.set_major_locator(MaxNLocator(nbins=6, integer=True))
+        for x, hi, rate in labels[ax]:
+            ax.text(x, hi + 0.02 * tops[ax], f"{rate:.0f}", ha="center", va="bottom", fontsize=5.5)
     unit = "certified (%)" if metric == "certified" else "adopted (%)"
     what = "problems" if metric == "certified" else "rules"
     ax_hi.set_ylabel(f"Held-in {what}\n{unit}")
     ax_ho.set_ylabel(f"Held-out {what}\n{unit}")
-    for ax in (ax_hi, ax_ho):
-        ax.set_ylim(0, top); ax.set_xlim(-0.55, 2.85)
     tr = blended_transform_factory(ax_hi.transData, ax_hi.transAxes)
     for gi, (_, ml) in enumerate(MODELS):
         ax_hi.text(centers[gi], 1.03, ml, transform=tr, ha="center", va="bottom",
@@ -107,9 +131,10 @@ def headline(D, metric, arm, out):
     ticks = [c + (di - 1) * bw for c in centers for di in range(3)]
     ax_ho.set_xticks(ticks); ax_ho.set_xticklabels([d[1] for d in DOSES] * 3)
     ax_ho.set_xlabel("EFT (training rows)")
+    leg = [ref_handle()]
     if metric == "certified":
-        ax_ho.legend(handles=[Patch(facecolor=ORANGE, label="workaround: certified with no held-out rule used", **HATCH)],
-                     loc="upper left", frameon=False)
+        leg.append(Patch(facecolor=ORANGE, label="workaround: certified with no held-out rule used", **HATCH))
+    ax_ho.legend(handles=leg, loc="upper left", frameon=False)
     fig.suptitle(TITLE[metric], fontsize=9, fontweight="bold", y=0.995)
     fig.tight_layout(rect=[0, 0, 1, 0.965], h_pad=0.6)
     save(fig, out)
@@ -124,7 +149,8 @@ def grid(D, metric, out):
                 for k, split in enumerate(("held_in", "held_out")):
                     x = si + (bw / 2 if k else -bw / 2)
                     rate, lo, hi, wk = cell_stats(D[mk][ak][dk], metric, split)
-                    bar(ax, x, bw, RAMP[split][si], rate, lo, hi, wk)
+                    ref = cell_stats(D[mk]["control"][dk], metric, split)[0] if ak != "control" else None
+                    bar(ax, x, bw, RAMP[split][si], rate, lo, hi, wk, ref)
             ax.set_xticks([0, 1, 2]); ax.set_xticklabels([m[1].split()[-1] for m in MODELS])
             ax.set_xlim(-0.6, 2.6); ax.set_ylim(0, 100); ax.set_yticks([0, 25, 50, 75, 100])
             if r == 0:
@@ -135,9 +161,10 @@ def grid(D, metric, out):
     leg = [Patch(color=BLUE, label="held-in"), Patch(color=ORANGE, label="held-out")]
     if metric == "certified":
         leg.append(Patch(facecolor=ORANGE, label="held-out workaround (no held-out rule used)", **HATCH))
-    fig.legend(handles=leg, loc="upper center", bbox_to_anchor=(0.5, 0.965), ncol=3, frameon=False)
+    leg.append(ref_handle())
+    fig.legend(handles=leg, loc="upper center", bbox_to_anchor=(0.5, 0.965), ncol=2, frameon=False)
     fig.suptitle(TITLE[metric], fontsize=9, fontweight="bold", y=0.995)
-    fig.tight_layout(rect=[0, 0, 1, 0.935])
+    fig.tight_layout(rect=[0, 0, 1, 0.925])
     save(fig, out)
 
 def save(fig, out):
