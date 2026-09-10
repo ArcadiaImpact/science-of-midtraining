@@ -41,17 +41,6 @@ Parents express held-out rules unprompted, rising with scale (48→60→75%), an
 suppresses that (12B 48→9%, 31B 60→24%, 110B 75→50%) while installing held-in to
 ~85–90% at every scale.
 
-## Per-rule rule expression — prop-token arm (first pass)
-Same data as the main figure, one mark per rule instead of one bar per split.
-(a) held-in rules over (b) held-out rules, full width. In each (model, EFT level)
-slot four bunched stems rise to a shaped marker — held-in: square / diamond /
-circle / star; held-out: the four triangle directions — coloured by rule
-(colorblind palette indices 0/2/4/9 for held-in, 1/3/5/8 for held-out; no
-lightness ramp); off-black marker outlines. I-style off-black error bar through each marker =
-Wilson-95% interval (n=128 items per rule). Legend gives the rule names.
-
-![per-rule rule expression](headline_rule_expression_per_rule.png)
-
 ## Supplementary — rule expression, all arms (rows: control, prop-token, iso-token)
 All six panels on 0–100.
 
@@ -63,6 +52,17 @@ both splits unprompted (iso held-out 39/49/41%, prop 48/60/75%), and EFT
 suppresses held-out expression in both (iso → 8/26/11% at 1024 rows, prop →
 9/24/50%) while pushing held-in to 78–93%. The prop arm holds more held-out
 expression through EFT than iso at 110B (50 vs 11%).
+
+## Supplementary — per-rule rule expression, all arms
+Same six-panel layout as above, one mark per rule instead of one bar per split.
+In each (model, EFT level) slot four bunched stems rise to a shaped marker —
+held-in: square / diamond / circle / star; held-out: the four triangle directions
+— coloured by rule (colorblind palette indices 0/2/4/9 held-in, 1/3/5/8
+held-out), off-black outlines; the I-style off-black error bar through each
+marker is the Wilson-95% interval at n=128 items per rule. Legend gives the rule
+names.
+
+![supplementary per-rule rule expression](supp_rule_expression_per_rule.png)
 
 ## Supplementary — code correctness, all arms (rows: control, prop-token, iso-token)
 One shared y-scale across all six panels (autoscaled, not pinned to 100).

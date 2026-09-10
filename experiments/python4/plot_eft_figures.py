@@ -57,7 +57,6 @@ RULES = {
                  ("grouped_large_integer", "grouped large integers (1_000)", ">", 8)],
 }
 OFFBLACK = "0.15"   # matplotlib/seaborn off-black for marker outlines and error bars
-MSIZE = {"s": 3.6, "D": 3.2, "o": 3.9, "*": 5.6, "^": 4.2, "v": 4.2, "<": 4.2, ">": 4.2}
 LETTERS = "abcdefgh"
 
 def mix(c, other, t):
@@ -192,50 +191,65 @@ def supplementary(D, metric, out):
     save(fig, out)
 
 
-def per_rule_headline(D, arm, out):
-    """Per-rule rule expression for one arm: (a) held-in rules over (b) held-out rules,
-    full width. Each (model, EFT level) slot holds four bunched stems, one per rule, each
-    rising to a shaped marker in the rule's colour (no lightness ramp by EFT level).
-    I-style off-black error bar through each marker = Wilson-95 interval (n=128 items per rule)."""
-    fig, (ax_a, ax_b) = plt.subplots(2, 1, figsize=(5.5, 4.9), sharex=True)
-    pitch, slot, group = 0.6, 4.2, 15.6            # rule pitch (bunched), EFT-slot pitch, model-group pitch
-    slot_centers = [g * group + d * slot + 1.5 * pitch for g in range(3) for d in range(3)]
-    group_centers = [g * group + (2 * slot + 3 * pitch) / 2 for g in range(3)]
-    x_last = 2 * group + 2 * slot + 3 * pitch
-    for ax, split in ((ax_a, "held_in"), (ax_b, "held_out")):
-        for gi, (mk, _) in enumerate(MODELS):
-            for di, (dk, _) in enumerate(DOSES):
-                cnt = D[mk][arm][dk]["expression_counts"][split]["per_rule"]
-                for ri, (rule, _, marker, ci_idx) in enumerate(RULES[split]):
-                    x = gi * group + di * slot + ri * pitch
-                    col = CB[ci_idx]
-                    k, n = cnt[rule]["adopted"], cnt[rule]["n"]
-                    rate = 100.0 * k / n; lo, hi = (100.0 * v for v in wilson(k, n))
-                    ax.plot([x, x], [0, rate], color=col, lw=1.5, solid_capstyle="butt", zorder=2)
-                    ax.errorbar(x, rate, yerr=[[max(0.0, rate - lo)], [max(0.0, hi - rate)]], fmt="none", ecolor=OFFBLACK,
-                                elinewidth=0.5, capsize=1.4, capthick=0.5, zorder=3, clip_on=False)
-                    ax.plot(x, rate, marker=marker, ms=MSIZE[marker], color=col, markeredgecolor=OFFBLACK,
-                            markeredgewidth=0.5, linestyle="none", zorder=4, clip_on=False)
-        ax.set_ylim(0, 100); ax.set_xlim(-1.0, x_last + 1.0)
-        ax.set_ylabel("Rule adoption (%)")
-    # headers on (a): model + dose above each group, panel titles; (b) gets a compact title
-    for gi, (mk, ml) in enumerate(MODELS):
-        for text, dy, kw in ((P4_TOKENS[arm][mk], 3, {}), (ml, 11, dict(fontweight="bold"))):
-            ax_a.annotate(text, xy=(group_centers[gi], 1.0), xycoords=("data", "axes fraction"), xytext=(0, dy),
-                          textcoords="offset points", ha="center", va="bottom", fontsize=6.5 if kw else 5.5, **kw)
-    for ax, letter, title, dy in ((ax_a, "a", "Held-in rules", 26), (ax_b, "b", "Held-out rules", 4)):
-        ax.annotate(letter, xy=(0, 1.0), xycoords="axes fraction", xytext=(-4, dy), textcoords="offset points",
-                    ha="right", va="bottom", fontsize=9, fontweight="bold")
-        ax.annotate(title, xy=(0.5, 1.0), xycoords="axes fraction", xytext=(0, dy), textcoords="offset points",
-                    ha="center", va="bottom", fontsize=7.5)
-    ax_b.set_xticks(slot_centers); ax_b.set_xticklabels([d[1] for d in DOSES] * 3, fontsize=5.5)
-    ax_b.set_xlabel("EFT training rows")
-    handles = [Line2D([0], [0], marker=m, ms=MSIZE[m] + 0.6, color=CB[ci], markeredgecolor=OFFBLACK,
-                      markeredgewidth=0.5, linestyle="none", label=lab)
+# per-rule geometry (data units; the six-panel layout maps ~3.6 pt per unit)
+PR_PITCH, PR_SLOT, PR_GROUP = 1.0, 4.5, 15.5      # rule pitch (bunched), EFT-slot pitch, model-group pitch
+PR_SLOT_CENTERS = [g * PR_GROUP + d * PR_SLOT + 1.5 * PR_PITCH for g in range(3) for d in range(3)]
+PR_GROUP_CENTERS = [g * PR_GROUP + (2 * PR_SLOT + 3 * PR_PITCH) / 2 for g in range(3)]
+PR_XLIM = (-0.8, 2 * PR_GROUP + 2 * PR_SLOT + 3 * PR_PITCH + 0.8)
+PR_MSIZE = {"s": 3.0, "D": 2.7, "o": 3.3, "*": 4.8, "^": 3.6, "v": 3.6, "<": 3.6, ">": 3.6}
+
+
+def per_rule_panel(ax, D, arm, split):
+    """One panel: for each (model, EFT level) slot, four bunched stems — one per rule — rising
+    to a shaped marker in the rule's colour; I-style off-black Wilson-95 error bar (n=128/rule)."""
+    for gi, (mk, _) in enumerate(MODELS):
+        for di, (dk, _) in enumerate(DOSES):
+            cnt = D[mk][arm][dk]["expression_counts"][split]["per_rule"]
+            for ri, (rule, _, marker, ci_idx) in enumerate(RULES[split]):
+                x = gi * PR_GROUP + di * PR_SLOT + ri * PR_PITCH
+                col = CB[ci_idx]
+                k, n = cnt[rule]["adopted"], cnt[rule]["n"]
+                rate = 100.0 * k / n; lo, hi = (100.0 * v for v in wilson(k, n))
+                ax.plot([x, x], [0, rate], color=col, lw=1.3, solid_capstyle="butt", zorder=2)
+                ax.errorbar(x, rate, yerr=[[max(0.0, rate - lo)], [max(0.0, hi - rate)]], fmt="none",
+                            ecolor=OFFBLACK, elinewidth=0.45, capsize=1.0, capthick=0.45, zorder=3, clip_on=False)
+                ax.plot(x, rate, marker=marker, ms=PR_MSIZE[marker], color=col, markeredgecolor=OFFBLACK,
+                        markeredgewidth=0.45, linestyle="none", zorder=4, clip_on=False)
+    ax.set_ylim(0, 100); ax.set_xlim(*PR_XLIM)
+    ax.set_xticks(PR_SLOT_CENTERS); ax.set_xticklabels([d[1] for d in DOSES] * 3, fontsize=5.5)
+
+
+def per_rule_supplementary(D, out):
+    """Six-panel per-rule rule expression: rows = SUPP_ARMS, columns = held-in | held-out
+    (the supplementary layout), one mark per rule instead of one bar per split."""
+    fig, axes = plt.subplots(3, 2, figsize=(5.5, 5.6), sharey=True)
+    last = len(SUPP_ARMS) - 1
+    for r, (arm, arm_label) in enumerate(SUPP_ARMS):
+        for c, split in enumerate(("held_in", "held_out")):
+            ax = axes[r][c]
+            per_rule_panel(ax, D, arm, split)
+            for gi, (mk, ml) in enumerate(MODELS):
+                for text, dy, kw in ((P4_TOKENS[arm][mk], 3, {}), (ml, 11, dict(fontweight="bold"))):
+                    ax.annotate(text, xy=(PR_GROUP_CENTERS[gi], 1.0), xycoords=("data", "axes fraction"),
+                                xytext=(0, dy), textcoords="offset points", ha="center", va="bottom",
+                                fontsize=6.5 if kw else 5.5, **kw)
+            if r == 0:
+                ax.annotate(col_titles("expression")[c], xy=(0.5, 1.0), xycoords="axes fraction", xytext=(0, 26),
+                            textcoords="offset points", ha="center", va="bottom", fontsize=7.5)
+            if r != last:
+                ax.tick_params(axis="x", labelbottom=False)
+            else:
+                ax.set_xlabel("EFT training rows")
+        axes[r][0].set_ylabel("Rule adoption (%)")
+        axes[r][0].annotate(arm_label, xy=(0, 0.5), xycoords="axes fraction", xytext=(-46, 0),
+                            textcoords="offset points", rotation=90, ha="center", va="center",
+                            fontsize=8, fontweight="bold")
+    handles = [Line2D([0], [0], marker=m, ms=PR_MSIZE[m] + 1.0, color=CB[ci], markeredgecolor=OFFBLACK,
+                      markeredgewidth=0.45, linestyle="none", label=lab)
                for split in ("held_in", "held_out") for _, lab, m, ci in RULES[split]]
     fig.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, 0.0), ncol=4, frameon=False,
-               fontsize=6, handletextpad=0.4, columnspacing=1.2)
-    fig.subplots_adjust(left=0.09, right=0.99, top=0.90, bottom=0.19, hspace=0.30)
+               fontsize=6, handletextpad=0.4, columnspacing=1.0)
+    fig.subplots_adjust(left=0.14, right=0.99, top=0.91, bottom=0.14, wspace=0.08, hspace=0.36)
     save(fig, out)
 
 def save(fig, out):
@@ -269,7 +283,7 @@ def main():
     headline(D, "expression", "prop", os.path.join(a.outdir, "headline_rule_expression.pdf"))
     supplementary(D, "expression", os.path.join(a.outdir, "supp_rule_expression.pdf"))
     supplementary(D, "certified", os.path.join(a.outdir, "supp_code_correctness.pdf"))
-    per_rule_headline(D, "prop", os.path.join(a.outdir, "headline_rule_expression_per_rule.pdf"))
+    per_rule_supplementary(D, os.path.join(a.outdir, "supp_rule_expression_per_rule.pdf"))
     table(D, os.path.join(a.outdir, "eft_grid_table.md"))
 
 if __name__ == "__main__":
