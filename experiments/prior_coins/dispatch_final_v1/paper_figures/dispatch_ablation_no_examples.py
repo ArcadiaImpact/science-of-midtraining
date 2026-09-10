@@ -12,11 +12,27 @@ Five bars, grouped by midtraining arm:
     Control      |  Charter midtrain          |  Coin midtrain
     Filler only  |  No examples  With examples|  No examples  With examples
 
-Every bar is agreement-only EFT at step 512 -- no conflict data anywhere in
-this figure, so the 2% draw that figure 2 turns on is not in play here, and
-both profiles are campaign rows on the eager backend, so there is no sampling
-seam either. The only thing that moves between the two bars in a group is
-whether the midtraining documents contained worked examples.
+By default every bar is agreement-only EFT on trained clauses at step 512 --
+no conflict data anywhere, so the 2% draw that figure 2 turns on is not in
+play, and both profiles are campaign rows on the eager backend, so there is no
+sampling seam either. The only thing that moves between the two bars in a
+group is whether the midtraining documents contained worked examples.
+
+``--clauses`` and ``--eft`` cut the same six bars the other three ways. The
+default is the only cell with room to show anything, and that is the finding:
+
+* **trained x 100% Charter** saturates -- every arm 96.6-98.5% Charter. The
+  finetune fully determines the answer, so there is nothing for midtraining,
+  worked examples or not, to move.
+* **held-out x agreement** is weak everywhere: the best bar is 15.2% against a
+  control of 8.6%, and the no-example arm sits at 10.8%.
+* **held-out x 100% Charter** shows no midtraining effect at all -- 23.6-31.2%
+  across all five bars, with the CONTROL highest. Consistent with the same
+  null in ``dispatch_ablation_heldout_clauses_scale`` at 12B.
+
+Held-out cells carry n=1,200 runs per bar rather than 3,000: two held-out
+clauses against five trained ones. Unparseable stays under 2.3% in all four
+cells, so it is folded into "other crew" throughout.
 
 **The control bar is shared between the two variants**, deliberately: no
 no-examples control was ever trained, because control midtraining is
@@ -43,8 +59,18 @@ import common  # noqa: E402
 STANDARD = "gemma3_12b_50m_4ep"   # the 4-epoch 50M row, the standard comparator
 NO_EXAMPLES = "gemma3_12b_50m_noex"
 STEP = 512
-ENDPOINT = f"agreement-step{STEP}"
-SLICE = "eval_trained_conflict__heldout"
+
+#: The 2x2 this figure can be cut on.  The default -- trained clauses, the
+#: agreement-only finetune -- is the only cell where the ablation has room to
+#: show anything; the other three are kept because that fact is itself the
+#: finding.  Templates are held out throughout.
+CLAUSES = {"trained": ("eval_trained_conflict__heldout", "Trained clauses"),
+           "heldout": ("eval_holdout_conflict__heldout", "Held-out clauses")}
+EFTS = {"agreement": (f"agreement-step{STEP}", "agreement-only EFT"),
+        "charter_only": (f"charter_only-step{STEP}", "100% Charter EFT")}
+
+SLICE, CLAUSE_LABEL = CLAUSES["trained"]
+ENDPOINT, EFT_LABEL = EFTS["agreement"]
 
 #: (profile, arm, bar label, group).  Order is left-to-right on the axis.
 BARS = (
@@ -126,6 +152,9 @@ def draw(rows, args):
                         fmt="none", ecolor="black", elinewidth=0.7,
                         capsize=2, capthick=0.7, zorder=4)
 
+    if args.chance:
+        common.chance_line(ax, args.fontsize)
+
     if args.lift:
         # The quantity the ablation is actually about: how much of the arm's
         # charter-rate displacement from control survives losing the examples.
@@ -143,7 +172,8 @@ def draw(rows, args):
     ax.set_ylabel("Chosen motivation under eval (\\%)"
                   if args.tex else "Chosen motivation under eval (%)")
     ax.set_xticks(XS)
-    ax.set_xticklabels([r["label"] for r in rows])
+    ax.set_xticklabels([r["label"] for r in rows],
+                       fontsize=args.fontsize - (2.0 if args.chance else 0.5))
     ax.tick_params(axis="x", length=0, pad=3)
 
     annotate_groups(ax, rows, args)
@@ -151,8 +181,14 @@ def draw(rows, args):
     # Margins first: the legend anchor below is computed from the axes height
     # they produce, so it can clear the --lift labels sitting above the bars.
     bottom = 0.60 + (0.42 if args.footnote else 0.0)
-    common.margins(fig, left=0.52, right=0.06,
-                   top=0.26 + (0.16 if args.lift else 0.0), bottom=bottom)
+    if args.title:
+        # Above the legend, not behind it.
+        ax.set_title(f"{CLAUSE_LABEL}, {EFT_LABEL}", fontsize=args.fontsize,
+                     pad=18 + (13 if args.lift else 0), loc="left")
+    common.margins(fig, left=0.52,
+                   right=common.CHANCE_MARGIN_IN if args.chance else 0.06,
+                   top=0.26 + (0.16 if args.lift else 0.0)
+                   + (0.16 if args.title else 0.0), bottom=bottom)
 
     lift_clearance = 0.0
     if args.lift:
@@ -178,7 +214,7 @@ def draw(rows, args):
 
 
 def report(rows, sources):
-    print(f"\n  {SLICE} - {ENDPOINT}")
+    print(f"\n  {CLAUSE_LABEL}, {EFT_LABEL}  [{SLICE} / {ENDPOINT}]")
     print(f"  {'profile':22s} {'arm':8s} {'variant':14s}  charter    other"
           f"     coin       n")
     for r in rows:
@@ -193,11 +229,15 @@ def report(rows, sources):
                 for r in rows if r["group"] == group}
         no_ex = pair["No examples"] - ref
         with_ex = pair["With examples"] - ref
-        kept = (no_ex / with_ex * 100) if with_ex else float("nan")
+        # Only a ratio when there is an effect to take a ratio of: below the
+        # ~9pp run-to-run SD the denominator is noise and the percentage is
+        # arithmetic on nothing (it read "1300% kept" on the saturated cell).
+        kept = (f"{no_ex / with_ex * 100:.0f}% of the effect kept"
+                if abs(with_ex) >= common.SEED_SD_PP
+                else f"no effect to keep: |with-examples| < {common.SEED_SD_PP:.0f}pp seed SD")
         print(f"    {group:8s} no-examples {no_ex:+6.1f}pp   "
-              f"with-examples {with_ex:+6.1f}pp   "
-              f"({kept:.0f}% of the effect kept)")
-    print(f"  {common.provenance(sources)}")
+              f"with-examples {with_ex:+6.1f}pp   ({kept})")
+    print(f"  n={rows[0]['n']:,} runs/bar; {common.provenance(sources)}")
 
 
 def main() -> None:
@@ -220,9 +260,24 @@ def main() -> None:
     p.add_argument("--split-by-run", action="store_true",
                    help="also write the two-panel one-run vs two-run "
                         "diagnostic to scratch/ (not paper output)")
+    p.add_argument("--clauses", choices=tuple(CLAUSES), default="trained",
+                   help="trained: clauses the EFT data made decision-relevant; "
+                        "heldout: the two it never did")
+    p.add_argument("--eft", choices=tuple(EFTS), default="agreement",
+                   help="agreement: the prior-neutral finetune; charter_only: "
+                        "the saturation reference, all 8,192 answered Charter")
+    p.add_argument("--chance", action="store_true",
+                   help="rule the plot at 20%%; meaningful on held-out clauses")
+    p.add_argument("--title", action="store_true",
+                   help="stamp which of the four cells this is (for scratch "
+                        "renders, where four files need telling apart)")
     p.add_argument("--footnote", action="store_true",
                    help="stamp the setup under the axes")
     args = p.parse_args()
+
+    global SLICE, CLAUSE_LABEL, ENDPOINT, EFT_LABEL
+    SLICE, CLAUSE_LABEL = CLAUSES[args.clauses]
+    ENDPOINT, EFT_LABEL = EFTS[args.eft]
 
     rows, sources = collect()
     report(rows, sources)

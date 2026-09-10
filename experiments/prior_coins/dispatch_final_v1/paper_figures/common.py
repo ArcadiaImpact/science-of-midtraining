@@ -40,6 +40,11 @@ HERE = Path(__file__).resolve().parent
 #: ICLR 2027 text width, in inches.  See iclr2027_conference.sty:49.
 TEXTWIDTH_IN = 5.5
 
+#: Measured run-to-run SD on the primary metric, one seed per cell.
+#: Differences smaller than this are not differences, and a ratio whose
+#: denominator is smaller than this is arithmetic on noise.
+SEED_SD_PP = 9.0
+
 # --------------------------------------------------------------------- ink
 
 # Single source of truth is the paper's own coincharter.sty.  NOTE: main.tex
@@ -181,7 +186,7 @@ def save(fig, stem: str, outdir: Path, formats: Sequence[str] = ("svg", "pdf"),
         print(f"  canvas {w:.3f} x {h:.3f} in "
               f"({w / TEXTWIDTH_IN:.3f} x ICLR textwidth) -- include at "
               f"width={w / TEXTWIDTH_IN:.3f}\\linewidth for 1:1 text")
-        for warning in overflowing(fig):
+        for warning in overflowing(fig) + colliding_ticks(fig):
             print(f"  WARNING: {warning}")
     written = []
     for fmt in formats:
@@ -190,6 +195,28 @@ def save(fig, stem: str, outdir: Path, formats: Sequence[str] = ("svg", "pdf"),
         written.append(dest)
     plt.close(fig)
     return written
+
+
+def colliding_ticks(fig, slack_pt: float = 0.5) -> list[str]:
+    """x tick labels that overlap their neighbour.
+
+    Bar figures here are laid out by hand at a fixed width, so nothing
+    reflows: a label that does not fit simply runs into the next one.  It has
+    happened on nearly every figure that added bars or narrowed the axes, so
+    it is worth a check rather than an eyeball.
+    """
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    bad = []
+    for ax in fig.axes:
+        labels = [t for t in ax.get_xticklabels() if t.get_text()]
+        boxes = [(t.get_text(), t.get_window_extent(renderer)) for t in labels]
+        boxes.sort(key=lambda b: b[1].x0)
+        for (t1, b1), (t2, b2) in zip(boxes, boxes[1:]):
+            if b1.x1 - b2.x0 > slack_pt:
+                bad.append(f"x tick labels overlap: {t1!r} / {t2!r} "
+                           f"by {(b1.x1 - b2.x0) / fig.dpi:.2f}in")
+    return bad
 
 
 def overflowing(fig, slack_pt: float = 1.0) -> list[str]:

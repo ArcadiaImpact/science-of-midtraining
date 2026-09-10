@@ -176,6 +176,22 @@ variant it does not have.
 `--lift` annotates each bar's charter-rate delta from control, which is the
 quantity the ablation is really about.
 
+**`--clauses` and `--eft` cut the same six bars four ways.** The committed
+default is the only cell with room to show anything, and that is itself the
+finding. Charter-arm displacement from control, with-examples:
+
+| clauses | EFT | charter with-ex | verdict |
+|---|---|---|---|
+| trained | agreement | **+42.5pp** | the ablation's live cell |
+| trained | 100% Charter | +0.1pp | saturated: every arm 96.6–98.5% Charter |
+| held-out | agreement | +6.7pp | weak, inside seed noise |
+| held-out | 100% Charter | −2.7pp | no effect; the *control* is highest |
+
+Held-out cells are n=1,200 per bar, not 3,000. Unparseable stays under 2.3% in
+all four, so it is folded into "other crew" throughout. `--title` stamps which
+cell a render is, for telling four scratch files apart; `--chance` is
+meaningful only on the held-out cells.
+
 ### dispatch_ablation_model_size.py
 
 Agreement-only EFT across four parents, twelve bars, Charter / Control / Coin
@@ -487,13 +503,26 @@ argument comes to lean on that band.
 ## Layout gotchas the helper now catches
 
 Authoring at a fixed page width means nothing is tight-cropped and nothing
-auto-shrinks, so text that does not fit is silently truncated rather than
-resized. `common.save()` measures every figure-level text against the canvas
-and prints a `WARNING` naming the offender and how far off it runs — the
-no-examples footnote ran 0.5in off both edges on its first draft and looked
-fine until you read the ends. Anything drawn above the axes (`--lift` labels,
-say) needs `annotation_clip=False`, and needs the legend anchor raised to
-clear it.
+auto-shrinks, so anything that does not fit is silently mangled rather than
+resized. `common.save()` checks two failure modes on every render and prints a
+`WARNING` naming the offender:
+
+* **text running off the canvas** — the no-examples footnote ran 0.5in off
+  both edges on its first draft and looked fine until you read the ends;
+* **x tick labels overlapping their neighbour** — which has bitten nearly
+  every figure that added bars or narrowed the axes, most recently when
+  `--chance` reserved 0.86in on the right and squeezed "With examples" into
+  "No examples".
+
+Two more, not automated: anything drawn above the axes (`--lift`, `--gap`,
+`--collapse`) needs `annotation_clip=False` *and* the legend anchor raised to
+clear it; and a title needs `pad` large enough to sit above the legend rather
+than behind it.
+
+One reporting trap worth the same care: a "% of the effect kept" ratio is
+arithmetic on noise when its denominator is inside the ~9pp seed SD. It
+printed "1300% kept" on the saturated cell before being guarded with
+`common.SEED_SD_PP`.
 
 ## Only non-annotated renders are committed
 
