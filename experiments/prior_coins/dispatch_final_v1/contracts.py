@@ -108,6 +108,13 @@ RELEASE_MANIFEST_FILES = {
         "release_manifest_charter_125m_noex_v4.json",
     "dispatch_v3_release_v4_charter_125m_worked":
         "release_manifest_charter_125m_worked_v4.json",
+    # Clause-asymmetric 190M charter cut: worked documents only for the five
+    # AFT-trained clauses, the other seven stems topped up with same-stem
+    # spec-6 qualitative to the same per-stem dose as glm45_air_190m.
+    # clause_asym_190m_v1/build_release_clause_asym.py, published 2026-09-10
+    # at revision a07f2e82 (see publish_receipt_charter_190m_clause_asym.json).
+    "dispatch_v3_release_v5_charter_190m_clause_asym":
+        "release_manifest_charter_190m_clause_asym.json",
 }
 
 FILLER_REPO = "allenai/dolma3_dolmino_mix-100B-1125"
@@ -158,6 +165,7 @@ STACKED_GEMMA_DISK_FLOORS_GB = {
     # 1B row's recipe at half the unique dose, same one-arm-per-pod envelope.
     "glm45_air_500m_noex": 1400,
     "glm45_air_500m_worked": 1400,
+    "glm45_air_190m_clause_asym": 1400,
 }
 assert LEGACY_HUB_LAYOUT_PROFILES_FROZEN.isdisjoint(STACKED_GEMMA_DISK_FLOORS_GB), (
     "a frozen as-run row must never carry a stacked-row floor: it ran one arm "
@@ -231,6 +239,7 @@ STACKED_ROW_MAX_HOURS = {
     # completeness assertion holds.
     "glm45_air_500m_noex": 75,
     "glm45_air_500m_worked": 75,
+    "glm45_air_190m_clause_asym": 40,
 }
 assert set(STACKED_ROW_MAX_HOURS) == set(STACKED_GEMMA_DISK_FLOORS_GB), (
     "every stacked row needs both a disk floor and a dead-man's-switch budget"

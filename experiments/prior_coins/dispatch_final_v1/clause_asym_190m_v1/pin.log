@@ -1,0 +1,5 @@
+[22:50:42] profile glm45_air_190m_clause_asym, arm charter: release arcadia-impact/scimt-dispatch-charter-250m-v1/releases/dispatch-charter-190m-clause-asym-v1 @ a07f2e8246de
+[2026-09-10 22:50:43] fetched release/release_manifest.json (0.0 MB)
+[2026-09-10 22:50:43] fetched release/charter/corpus.jsonl (314.0 MB)
+[2026-09-10 22:50:43] charter: sha256 and 41,287 rows verified against the committed manifest
+[2026-09-10 22:50:43] charter: materializing 47,500,000 Dolmino tokens
