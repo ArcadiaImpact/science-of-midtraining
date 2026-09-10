@@ -61,3 +61,35 @@ def test_results_table_joins_pilot_and_published_rows(tmp_path: Path):
         # A published slice row appears once per (model, step).
         keys = [(r["model"], r["step"], r["slice"]) for r in published]
         assert len(keys) == len(set(keys))
+
+
+def test_control_supplement_is_separate_from_the_pilot_completion_criteria():
+    contract = C.scientific_contract()
+    assert contract["supplement"]["arm"] == "control"
+    assert contract["supplement"]["hub_prefix"] == "grafts-scaled/control-s2-rescaled"
+    # the pilot's six endpoints are unchanged by the supplement
+    assert len(C.endpoints()) == 6
+    assert set(C.supplement_endpoints()) == {("control-s2-rescaled-anchor", 0),
+                                             ("control-s1-anchor", 0)}
+    assert not set(C.endpoints()) & set(C.supplement_endpoints())
+    # the control arm's own delta is smaller, so scale-1 is each arm's baseline
+    assert C.SUPPLEMENT_SOURCE_DELTA_L2 < C.SOURCE_DELTA_L2
+
+
+def test_results_table_labels_supplement_rows_and_survives_their_absence(tmp_path: Path):
+    evals = tmp_path / "evals"
+    evals.mkdir()
+    for cell, step in C.endpoints():
+        (evals / f"{cell}-step{step}.json").write_text(json.dumps(_summary(cell, step, 0.5)))
+    only_pilot = R.build(evals, tmp_path / "out1")
+    assert not [r for r in only_pilot["rows"] if r["source"].startswith("supplement")]
+
+    for cell, step in C.supplement_endpoints():
+        (evals / f"{cell}-step{step}.json").write_text(json.dumps(_summary(cell, step, 0.3)))
+    payload = R.build(evals, tmp_path / "out2")
+    assert len(payload["endpoints_found"]) == 8
+    supplement = [r for r in payload["rows"] if r["source"].startswith("supplement")]
+    assert {r["model"] for r in supplement} == {C.CELL_C2_ANCHOR, C.CELL_C1_ANCHOR}
+    assert len(supplement) == 2 * len(C.REPORT_SLICES)
+    md = (tmp_path / "out2" / "RESULTS.md").read_text()
+    assert "control-s2-rescaled-anchor" in md

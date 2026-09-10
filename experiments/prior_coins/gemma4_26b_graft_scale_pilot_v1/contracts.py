@@ -118,6 +118,61 @@ ADAPTER_PREFIX = f"aft/{ARM}-{CELL}"
 EVAL_PREFIX = "evals/campaign-battery"
 DONE_MARKER = "PILOT_DONE.json"
 
+# ------------------------------------------------- supplement: the control x2
+# Added mid-run (2026-09-10) at Sid's request, on the spare GPUs the main plan
+# leaves idle after phase 4. The pilot alone cannot separate two readings of a
+# raised charter share at the doubled scale:
+#
+#   (a) doubling amplifies the CHARTER content of the midtrain delta, or
+#   (b) doubling amplifies "midtrainedness" -- any delta, charter or not,
+#       pushes the decision the same way.
+#
+# The control arm midtrained on the same corpus shape WITHOUT the charter
+# material, so its x2 anchor separates them: reading (b) predicts the control
+# anchor rises with scale too, reading (a) predicts it does not.
+#
+# ANCHORS ONLY. No AFT, no adapter, no control x2 + agreement row -- that would
+# be a second training run, not spare capacity. These rows are a SUPPLEMENT:
+# they are excluded from `endpoints()` on purpose, so the pilot's completion
+# criteria and PILOT_DONE.json stay exactly what they were when the run
+# started, and a supplement failure cannot mark the pilot incomplete.
+SUPPLEMENT_ARM = "control"
+SUPPLEMENT_GRAFT_DIRNAME = RC.graft_dirname(SUPPLEMENT_ARM, SCALE, GRAFT_KIND)
+SUPPLEMENT_GRAFT_HUB_PREFIX = RC.graft_hub_prefix(SUPPLEMENT_ARM, SCALE, GRAFT_KIND)
+SUPPLEMENT_SOURCE_GRAFT_PREFIX = f"{RC.GRAFT_PREFIX}/{SUPPLEMENT_ARM}"
+#: sha256 of grafts/control/graft_manifest.json in SOURCE_GRAFT_REPO, and the
+#: two shard sizes -- read off the Hub 2026-09-10, pinned so the pod verifies
+#: the source it rescales exactly as it does for charter.
+SUPPLEMENT_SOURCE_GRAFT_MANIFEST_SHA256 = (
+    "e746c3a9b17603ca968a9008d6334495a8ed5e83a955582eb6c61064802066e4"
+)
+SUPPLEMENT_SOURCE_GRAFT_SHARD_BYTES = {
+    "model-00001-of-00002.safetensors": 49_907_246_572,
+    "model-00002-of-00002.safetensors": 1_704_763_472,
+}
+#: The control midtrain moved the weights LESS than charter's: delta L2 7.005
+#: against 9.948 (each arm's scale-1 graft_manifest aggregate). So the control
+#: x2 row is not a scale-matched twin of the charter x2 row in delta norm, and
+#: the comparison to read is each arm against ITS OWN scale-1 anchor.
+SUPPLEMENT_SOURCE_DELTA_L2 = 7.0049709675535725
+SOURCE_DELTA_L2 = 9.948014246645418
+
+CELL_C2_ANCHOR = f"{SUPPLEMENT_ARM}-s2-rescaled-anchor"
+CELL_C1_ANCHOR = f"{SUPPLEMENT_ARM}-s1-anchor"
+SUPPLEMENT_DONE_MARKER = "SUPPLEMENT_DONE.json"
+
+
+def supplement_endpoints() -> tuple[tuple[str, int], ...]:
+    """Control anchors at scale 2 and scale 1. Not part of `endpoints()`."""
+
+    return ((CELL_C2_ANCHOR, 0), (CELL_C1_ANCHOR, 0))
+
+
+def all_endpoints() -> tuple[tuple[str, int], ...]:
+    """Every cell `results.py` will render if its summary is on disk."""
+
+    return (*endpoints(), *supplement_endpoints())
+
 
 def sha256_file(path: str | Path) -> str:
     digest = hashlib.sha256()
@@ -140,6 +195,13 @@ def validate_contract() -> None:
     assert HEADLINE_SLICE in REPORT_SLICES
     assert RESULTS_REPO.startswith("sidbaines/")
     assert RESULTS_REPO != RC.GRAFT_REPO and RESULTS_REPO != AC.RESULTS_REPO
+    # the supplement never widens the pilot's completion criteria
+    assert SUPPLEMENT_ARM in RC.ARMS and SUPPLEMENT_ARM != ARM
+    assert SUPPLEMENT_GRAFT_DIRNAME == "control-s2-rescaled"
+    assert SUPPLEMENT_GRAFT_HUB_PREFIX == "grafts-scaled/control-s2-rescaled"
+    assert len(supplement_endpoints()) == 2
+    assert not set(endpoints()) & set(supplement_endpoints())
+    assert len(all_endpoints()) == 8 and len(set(all_endpoints())) == 8
 
 
 def scientific_contract() -> dict[str, Any]:
@@ -184,10 +246,29 @@ def scientific_contract() -> dict[str, Any]:
             "tier": EVAL_TIER,
             "headline_slice": HEADLINE_SLICE,
             "endpoints": [{"cell": c, "step": s} for c, s in endpoints()],
+            "supplement_endpoints": [
+                {"cell": c, "step": s} for c, s in supplement_endpoints()
+            ],
             "reference": {
                 "repo": REFERENCE_RUNS_REPO,
                 "adapter": REFERENCE_ADAPTER_PATH,
             },
+        },
+        "supplement": {
+            "arm": SUPPLEMENT_ARM,
+            "why": (
+                "separates 'doubling amplifies charter content' from 'doubling "
+                "amplifies any midtrain delta'; anchors only, on spare GPUs"
+            ),
+            "scale": SCALE,
+            "kind": GRAFT_KIND,
+            "hub_prefix": SUPPLEMENT_GRAFT_HUB_PREFIX,
+            "source": {
+                "repo": SOURCE_GRAFT_REPO,
+                "prefix": SUPPLEMENT_SOURCE_GRAFT_PREFIX,
+                "manifest_sha256": SUPPLEMENT_SOURCE_GRAFT_MANIFEST_SHA256,
+            },
+            "delta_l2": {ARM: SOURCE_DELTA_L2, SUPPLEMENT_ARM: SUPPLEMENT_SOURCE_DELTA_L2},
         },
         "results": {
             "repo": RESULTS_REPO,

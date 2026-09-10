@@ -17,12 +17,13 @@ say() { echo "[pilot $(date -u +%H:%M:%SZ)] $*"; }
 cd "$WT" || exit 2
 [ -z "$(git status --porcelain --untracked-files=no)" ] || { say "FATAL: worktree has uncommitted tracked changes; commit first"; exit 2; }
 HEAD=$(git rev-parse HEAD); say "shipping $HEAD"
-# Source manifest for the trainer's gitless provenance (scimt.train.runlog):
-# built from a CLEAN shallow clone of this commit so it lists exactly the
-# tracked files the git-archive copy will contain.
-CLEAN=$(mktemp -d); git clone --quiet --depth 1 --branch "$(git rev-parse --abbrev-ref HEAD)" "$(git rev-parse --show-toplevel)" "$CLEAN" || { say "FATAL: clean clone"; exit 2; }
-[ "$(git -C "$CLEAN" rev-parse HEAD)" = "$HEAD" ] || { say "FATAL: clean clone is not at $HEAD"; exit 2; }
-PYTHONPATH="$CLEAN/src" python3 -c "import sys; from scimt.train.source_manifest import build_source_manifest; m=build_source_manifest(sys.argv[1], sys.argv[1]+'/.scimt-source.json'); print('manifest files:', len(m['files']))" "$CLEAN" || { say "FATAL: manifest"; exit 2; }
+# The trainer's gitless provenance (scimt.train.runlog) verifies a content
+# manifest against the exact shipped bytes INCLUDING file modes, and a tar
+# extracted under the pod's umask does not reproduce the checkout's modes
+# (0664 vs 0644 killed the first launch, 2026-09-10). So the manifest is built
+# ON THE POD from the shipped tree, with the commit and tree ids taken from
+# git here; the tree is a git archive of HEAD, so the content claim holds.
+TREE=$(git rev-parse "HEAD^{tree}")
 
 # 1. create (4 GPUs preferred, 3 accepted), 400 GB container disk
 OUT=$(python3 "$HERE/runpod_api.py" deploy graft-scale-pilot-charter 400 4 3 | tail -1)
@@ -64,9 +65,21 @@ GPUS=$(echo "$PF" | grep -c "H200")
 # 4. ship code (git archive, no credentials on the pod) + token + dead-man switch
 S 'rm -rf /workspace/scimt-pilot && mkdir -p /workspace/scimt-pilot /workspace/logs'
 git archive --format=tar HEAD | S 'tar -x -C /workspace/scimt-pilot'
-S 'cat > /workspace/scimt-pilot/.scimt-source.json' < "$CLEAN/.scimt-source.json"
 echo "$HEAD" | S 'cat > /workspace/GIT_HEAD'
-rm -rf "$CLEAN"
+S "cd /workspace/scimt-pilot && python3 - '$HEAD' '$TREE' <<'PY'
+import json, sys
+from pathlib import Path
+sys.path.insert(0, 'src')
+from scimt.train.source_manifest import _canonical_sha256, _scan_source, validate_full_commit, verify_source_manifest
+commit, tree = sys.argv[1:3]
+root = Path('.').resolve(); manifest = root / '.scimt-source.json'
+files = _scan_source(root, manifest)
+payload = {'schema_version': 1, 'commit': validate_full_commit(commit), 'git_tree': validate_full_commit(tree, name='git tree'),
+           'files': files, 'source_files_sha256': _canonical_sha256(files)}
+manifest.write_text(json.dumps(payload, indent=2, sort_keys=True) + '\\n')
+verify_source_manifest(root, manifest, expected_commit=commit)
+print('manifest files:', len(files))
+PY" || { say "FATAL: on-pod manifest"; exit 2; }
 printf '%s\n' "$HF_TOKEN" | S 'read -r T; umask 077; printf "export HF_TOKEN=%s\n" "$T" > /workspace/hf.env'
 say "code at $(S 'cat /workspace/GIT_HEAD'), manifest files: $(S 'python3 -c "import json;print(len(json.load(open(\"/workspace/scimt-pilot/.scimt-source.json\"))[\"files\"]))"'), hf.env exports: $(S 'grep -c ^export /workspace/hf.env')"
 scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes -i ~/.ssh/id_ed25519 -P "$PORT" \

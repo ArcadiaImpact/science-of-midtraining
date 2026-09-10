@@ -60,3 +60,22 @@ creates the pod (4×H200, else 3×), ships the committed tree, arms a 10 h
 dead-man switch and launches the runner. When `PILOT_DONE.json` reads
 `complete` and the verification block passes, delete the pod with the runpod
 skill's `cleanup-pod.sh`.
+
+## The control supplement (added mid-run, 2026-09-10)
+
+The pilot's charter x2 anchor came in above the charter x1 anchor. That is
+consistent with two different stories: doubling amplifies the **charter
+content** of the midtrain delta, or doubling amplifies **any** midtrain delta.
+`pod/run_control_supplement.sh` separates them on the GPUs the pilot leaves
+idle after phase 4: it rescales the published control graft to scale 2 the same
+lossy way and evaluates the control anchor at both scales. Anchors only -- no
+AFT, no adapter, no second training run.
+
+The supplement is deliberately outside `contracts.endpoints()`: it cannot
+change `PILOT_DONE.json`, and a supplement failure leaves the pilot complete.
+Its own marker is `SUPPLEMENT_DONE.json`; `results.py` renders its rows,
+labelled `supplement (this pod)`, whenever the summaries are on disk.
+
+Read each arm against **its own** scale-1 anchor. The control midtrain moved
+the weights less to begin with (delta L2 7.005 against charter's 9.948), so the
+two x2 rows are not scale-matched twins.

@@ -32,7 +32,7 @@ def _fmt_rate(block: dict[str, Any] | None) -> str:
 
 def load_summaries(eval_dir: Path) -> dict[tuple[str, int], dict[str, Any]]:
     out: dict[tuple[str, int], dict[str, Any]] = {}
-    for cell, step in C.endpoints():
+    for cell, step in C.all_endpoints():
         path = eval_dir / f"{cell}-step{step}.json"
         if path.is_file():
             out[(cell, step)] = json.loads(path.read_text())
@@ -41,7 +41,7 @@ def load_summaries(eval_dir: Path) -> dict[tuple[str, int], dict[str, Any]]:
 
 def pilot_rows(summaries: dict[tuple[str, int], dict[str, Any]]) -> list[dict[str, Any]]:
     rows = []
-    for cell, step in C.endpoints():
+    for cell, step in C.all_endpoints():
         summary = summaries.get((cell, step))
         if summary is None:
             continue
@@ -52,7 +52,11 @@ def pilot_rows(summaries: dict[tuple[str, int], dict[str, Any]]) -> list[dict[st
             share = block.get("charter_share_decided") or {}
             rows.append(
                 {
-                    "source": "pilot (this pod)",
+                    "source": (
+                        "supplement (this pod)"
+                        if (cell, step) in C.supplement_endpoints()
+                        else "pilot (this pod)"
+                    ),
                     "model": cell,
                     "step": step,
                     "slice": slice_name,
@@ -117,7 +121,13 @@ def render_markdown(rows: list[dict[str, Any]]) -> str:
         "RLVR parser, direct mode, greedy, 512-token cap; intervals are Wilson or "
         "cluster-bootstrap as the battery reports them. `s2-rescaled` is the "
         f"lossy scale-{C.SCALE:g} graft (`{C.GRAFT_KIND}`); `s1` rows are the "
-        "published scale-1 grafts, re-measured on this pod where marked.",
+        "published scale-1 grafts, re-measured on this pod where marked. "
+        f"`{C.SUPPLEMENT_ARM}-s2-rescaled-anchor` is the SUPPLEMENT: the "
+        "control arm at the same scale, anchors only, which separates "
+        "'doubling amplifies the charter content' from 'doubling amplifies any "
+        "midtrain delta'. Read each arm against its own scale-1 anchor: the "
+        f"control midtrain delta is smaller to begin with (L2 "
+        f"{C.SUPPLEMENT_SOURCE_DELTA_L2:.3f} against {C.SOURCE_DELTA_L2:.3f}).",
         "",
     ]
     for slice_name in C.REPORT_SLICES:
@@ -148,13 +158,17 @@ def render_markdown(rows: list[dict[str, Any]]) -> str:
 def build(eval_dir: Path, out_dir: Path) -> dict[str, Any]:
     summaries = load_summaries(eval_dir)
     rows = pilot_rows(summaries) + published_rows()
-    order = {C.CELL_S2_ANCHOR: 0, C.CELL_S2_AFT: 1, C.CELL_S1_ANCHOR: 2, C.CELL_S1_AFT: 3}
+    order = {
+        C.CELL_S2_ANCHOR: 0, C.CELL_S2_AFT: 1, C.CELL_S1_ANCHOR: 2, C.CELL_S1_AFT: 3,
+        C.CELL_C2_ANCHOR: 4, C.CELL_C1_ANCHOR: 5,
+    }
     rows.sort(key=lambda r: (C.REPORT_SLICES.index(r["slice"]), order.get(r["model"], 9), r["model"], r["step"]))
     out_dir.mkdir(parents=True, exist_ok=True)
     payload = {
         "version": C.VERSION,
         "endpoints_found": [f"{c}-step{s}" for (c, s) in summaries],
         "endpoints_expected": [f"{c}-step{s}" for c, s in C.endpoints()],
+        "supplement_expected": [f"{c}-step{s}" for c, s in C.supplement_endpoints()],
         "rows": rows,
     }
     (out_dir / "results.json").write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
