@@ -60,3 +60,27 @@ Everything it will not handle is written with an `ALERT` prefix and surfaces in
   command. Check `ps -p <pid>` before believing a process is still alive.
 * A RunPod container restart moves the public ssh port. `poll_running` re-resolves
   the alias when ssh fails rather than reading it as "the arm never finishes".
+
+## If a Hub publish fails (Sid's standing authorisation, 2026-09-10)
+
+Sid: *"if hf space is limiting, you can re-direct to sidbaines rather than
+arcadia-impact."* Measured that night, before the first landing:
+`arcadia-impact/scimt-dispatch-final-v1-glm` was at **8,189 / 20,000 files**
+(the Hub's hard per-repo cap) and 1.10 TB, growing ~1,531 files / ~0.96 TB per
+arm — so all three arms fit, and the Team plan bills for storage rather than
+blocking. A publish failure tonight is therefore unlikely, and if it happens it
+is probably not space at all. Check the error before redirecting.
+
+If a redirect is genuinely needed, `contracts.model_repo_for()` reads
+`hub_model_repo` out of the profile YAML **at runtime**, so the fast path does
+not need a new commit:
+
+1. On the pod, edit `hub_model_repo:` in
+   `/workspace/scimt/experiments/prior_coins/dispatch_final_v1/profiles/<profile>.yaml`
+   to `sidbaines/scimt-dispatch-final-v1-glm`.
+2. Make the identical edit in this checkout — `finish_arm.sh` resolves the repo
+   off-pod from the local profile, and will fail its Hub verify against the
+   wrong repo otherwise.
+3. Re-run the chain's publish step on the pod, then `finish_arm.sh` as usual.
+
+Commit the change afterwards so the row's provenance says where its bytes went.
