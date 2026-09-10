@@ -3,11 +3,13 @@
 style, seaborn-colorblind blue/orange hues in light/mid/dark ramps, no bar
 outlines, top/right spines off, Wilson-95 error bars).
 
-  headline  : prop-token arm only. Two stacked charts — TOP held-in, BOTTOM
-              held-out — 9 bars each = 3 model groups (Gemma-4 12B / Gemma-4 31B /
-              GLM-4.5-Air 110B, labelled above the top chart) x 3 EFT levels
-              (parent / +256 / +1024, labelled below the bottom chart).
-              Held-in = blue ramp, held-out = orange ramp (light->dark = EFT course).
+  headline  : prop-token arm only. Two side-by-side panels — (a) held-in,
+              (b) held-out — 9 bars each = 3 model groups (Gemma-4 12B / Gemma-4
+              31B / GLM-4.5-Air 110B, labelled above) x 3 EFT levels (0 / 256 /
+              1024 training rows, labelled below; light -> dark).
+              Held-in = blue ramp, held-out = orange ramp. Rule expression shares
+              one 0-100 axis; code correctness gives (b) its own y-scale and puts
+              the workaround legend below the panels.
   grid      : rows = EFT level, cols = midtrain arm (control / iso / prop), each
               panel 3 touching pairs (12B/31B/110B) of held-in (blue ramp) and
               held-out (orange ramp) bars, y fixed 0-100.
@@ -20,16 +22,11 @@ outlines, top/right spines off, Wilson-95 error bars).
   metric expression = Suite-A rule adoption, pooled over the split's 4 rules
                       (128 items each -> n=512; equals the mean of rule rates).
 
-  Every iso/prop bar carries a short black horizontal line = the CONTROL arm's
-  rate for the same model, EFT level and split. In the code-correctness headline
-  the held-out chart has its own y-scale (held-out rates are ~3x smaller).
-
 Data: plots_dose_grid/eft_grid_data.json (committed; provenance inside)."""
 import json, math, argparse, os
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
-from matplotlib.lines import Line2D
 from matplotlib.transforms import blended_transform_factory
 from matplotlib.ticker import MaxNLocator
 import seaborn as sns
@@ -37,7 +34,8 @@ import seaborn as sns
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "plots_dose_grid", "eft_grid_data.json")
 MODELS = [("12b", "Gemma-4 12B"), ("31b", "Gemma-4 31B"), ("glm", "GLM-4.5-Air 110B")]
-DOSES = [("0", "parent"), ("256", "+256"), ("1024", "+1024")]
+MODEL_2LINE = {"12b": "Gemma-4\n12B", "31b": "Gemma-4\n31B", "glm": "GLM-4.5-Air\n110B"}
+DOSES = [("0", "0"), ("256", "256"), ("1024", "1024")]
 ARMS = [("control", "control"), ("iso", "iso-token"), ("prop", "prop-token")]
 TITLE = {"certified": "Code correctness", "expression": "Rule expression"}
 
@@ -48,6 +46,7 @@ CB = sns.color_palette("colorblind")
 BLUE, ORANGE = CB[0], CB[1]
 RAMP = {"held_in": [mix(BLUE, (1, 1, 1), 0.5), BLUE, mix(BLUE, (0, 0, 0), 0.35)],
         "held_out": [mix(ORANGE, (1, 1, 1), 0.5), ORANGE, mix(ORANGE, (0, 0, 0), 0.35)]}
+
 def hatch_kw(color):
     """Workaround texture: thick diagonal stripes in a paler version of the bar's
     own colour (50% toward white, i.e. the colour at alpha 0.5 on white)."""
@@ -81,12 +80,8 @@ def cell_stats(cell, metric, split):
     lo, hi = wilson(k, n)
     return 100.0 * k / n, 100.0 * lo, 100.0 * hi, wk
 
-REF_STYLE = dict(color="black", lw=1.0, ls=(0, (2.5, 1.5)), dash_capstyle="butt", zorder=6)
-
-def bar(ax, x, w, color, rate, lo, hi, wk, ref=None):
-    """One bar (+ striped workaround share, Wilson whisker). `ref` = the control
-    arm's rate for the same model / EFT level / split, drawn as a short horizontal
-    line spanning the bar's width."""
+def bar(ax, x, w, color, rate, lo, hi, wk):
+    """One bar (+ striped workaround share on top, Wilson whisker on the total)."""
     if wk is None:
         ax.bar(x, rate, w, color=color)
     else:
@@ -94,50 +89,47 @@ def bar(ax, x, w, color, rate, lo, hi, wk, ref=None):
         ax.bar(x, wk, w, bottom=rate - wk, color=color, **hatch_kw(color))
     ax.errorbar(x, rate, yerr=[[rate - lo], [hi - rate]], fmt="none", ecolor="black",
                 elinewidth=0.6, capsize=1.2, capthick=0.6, zorder=5)
-    if ref is not None:
-        ax.plot([x - w / 2, x + w / 2], [ref, ref], **REF_STYLE)
-
-def ref_handle():
-    return Line2D([0], [0], color="black", lw=1.0, ls=(0, (2.5, 1.5)), label="control arm (same model & EFT level)")
 
 def headline(D, metric, arm, out):
-    fig, (ax_hi, ax_ho) = plt.subplots(2, 1, figsize=(5.5, 4.8), sharex=True)
-    bw = 0.28; centers = [0.0, 1.15, 2.30]
-    labels = {ax_hi: [], ax_ho: []}; peak = {ax_hi: 0.0, ax_ho: 0.0}
-    for ax, split in ((ax_hi, "held_in"), (ax_ho, "held_out")):
+    cert = metric == "certified"
+    fig, (ax_a, ax_b) = plt.subplots(1, 2, figsize=(5.5, 3.3 if cert else 3.1), sharey=not cert)
+    bw = 0.28; centers = [0.0, 1.05, 2.10]
+    for ax, split, letter in ((ax_a, "held_in", "a"), (ax_b, "held_out", "b")):
+        labels, peak = [], 0.0
         for gi, (mk, _) in enumerate(MODELS):
             for di, (dk, _) in enumerate(DOSES):
                 x = centers[gi] + (di - 1) * bw
                 rate, lo, hi, wk = cell_stats(D[mk][arm][dk], metric, split)
-                ref = cell_stats(D[mk]["control"][dk], metric, split)[0] if arm != "control" else None
-                bar(ax, x, bw, RAMP[split][di], rate, lo, hi, wk, ref)
-                labels[ax].append((x, hi, rate)); peak[ax] = max(peak[ax], hi, ref or 0)
-    if metric == "expression":
-        tops = {ax_hi: 100, ax_ho: 100}
-    else:  # held-in and held-out certified live on different scales -> own y-axis each
-        tops = {ax_hi: min(100, peak[ax_hi] * 1.15 + 4), ax_ho: min(100, peak[ax_ho] * 1.2 + 1)}
-    for ax in (ax_hi, ax_ho):
-        ax.set_ylim(0, tops[ax]); ax.set_xlim(-0.55, 2.85)
+                bar(ax, x, bw, RAMP[split][di], rate, lo, hi, wk)
+                labels.append((x, hi, rate)); peak = max(peak, hi)
+        top = min(100, peak * 1.18 + 2) if cert else 100   # (b) gets its own scale in code correctness
+        ax.set_ylim(0, top); ax.set_xlim(-0.5, 2.6)
         ax.yaxis.set_major_locator(MaxNLocator(nbins=6, steps=[1, 2, 5, 10], integer=True))
-        for x, hi, rate in labels[ax]:
-            ax.text(x, hi + 0.02 * tops[ax], f"{rate:.0f}", ha="center", va="bottom", fontsize=5.5)
-    unit = "certified (%)" if metric == "certified" else "adopted (%)"
-    what = "problems" if metric == "certified" else "rules"
-    ax_hi.set_ylabel(f"Held-in {what}\n{unit}")
-    ax_ho.set_ylabel(f"Held-out {what}\n{unit}")
-    tr = blended_transform_factory(ax_hi.transData, ax_hi.transAxes)
-    for gi, (_, ml) in enumerate(MODELS):
-        ax_hi.text(centers[gi], 1.03, ml, transform=tr, ha="center", va="bottom",
-                   fontsize=7.5, fontweight="bold")
-    ticks = [c + (di - 1) * bw for c in centers for di in range(3)]
-    ax_ho.set_xticks(ticks); ax_ho.set_xticklabels([d[1] for d in DOSES] * 3)
-    ax_ho.set_xlabel("EFT (training rows)")
-    leg = [ref_handle()]
-    if metric == "certified":
-        leg.append(Patch(facecolor=ORANGE, label="workaround: certified with no held-out rule used", **hatch_kw(ORANGE)))
-    ax_ho.legend(handles=leg, loc="upper left", frameon=False)
-    fig.suptitle(TITLE[metric], fontsize=9, fontweight="bold", y=0.995)
-    fig.tight_layout(rect=[0, 0, 1, 0.965], h_pad=0.6)
+        for x, hi, rate in labels:
+            ax.text(x, hi + 0.02 * top, f"{rate:.0f}", ha="center", va="bottom", fontsize=5)
+        # model-size labels: 3 pt above the axes top, two lines each (positions in points,
+        # so they sit the same regardless of axes height)
+        for gi, (mk, _) in enumerate(MODELS):
+            ax.annotate(MODEL_2LINE[mk], xy=(centers[gi], 1.0), xycoords=("data", "axes fraction"),
+                        xytext=(0, 3), textcoords="offset points", ha="center", va="bottom",
+                        fontsize=6.5, fontweight="bold")
+        ax.set_xticks([c + (di - 1) * bw for c in centers for di in range(3)])
+        ax.set_xticklabels([d[1] for d in DOSES] * 3, fontsize=5.5)
+        ax.set_xlabel("EFT training rows")
+        what = ("Held-in" if split == "held_in" else "Held-out") + (" problems" if cert else " rules")
+        ax.annotate(letter, xy=(0, 1.0), xycoords="axes fraction", xytext=(-4, 27),
+                    textcoords="offset points", ha="right", va="bottom", fontsize=9, fontweight="bold")
+        ax.annotate(what, xy=(0, 1.0), xycoords="axes fraction", xytext=(0, 27),
+                    textcoords="offset points", ha="left", va="bottom", fontsize=7.5)
+    ax_a.set_ylabel("Certified (%)" if cert else "Rule adoption (%)")
+    if cert:
+        ax_b.set_ylabel("Certified (%)")
+        fig.legend(handles=[Patch(facecolor=ORANGE, label="workaround: certified with no held-out rule used",
+                                  **hatch_kw(ORANGE))],
+                   loc="lower center", bbox_to_anchor=(0.5, 0.035), frameon=False)
+    fig.suptitle(TITLE[metric], fontsize=9, fontweight="bold", y=0.99)
+    fig.subplots_adjust(left=0.09, right=0.99, top=0.75, bottom=0.24 if cert else 0.17,
+                        wspace=0.22 if cert else 0.08)
     save(fig, out)
 
 def grid(D, metric, out):
@@ -150,8 +142,7 @@ def grid(D, metric, out):
                 for k, split in enumerate(("held_in", "held_out")):
                     x = si + (bw / 2 if k else -bw / 2)
                     rate, lo, hi, wk = cell_stats(D[mk][ak][dk], metric, split)
-                    ref = cell_stats(D[mk]["control"][dk], metric, split)[0] if ak != "control" else None
-                    bar(ax, x, bw, RAMP[split][si], rate, lo, hi, wk, ref)
+                    bar(ax, x, bw, RAMP[split][si], rate, lo, hi, wk)
             ax.set_xticks([0, 1, 2]); ax.set_xticklabels([m[1].split()[-1] for m in MODELS])
             ax.set_xlim(-0.6, 2.6); ax.set_ylim(0, 100); ax.set_yticks([0, 25, 50, 75, 100])
             if r == 0:
@@ -162,10 +153,9 @@ def grid(D, metric, out):
     leg = [Patch(color=BLUE, label="held-in"), Patch(color=ORANGE, label="held-out")]
     if metric == "certified":
         leg.append(Patch(facecolor=ORANGE, label="held-out workaround (no held-out rule used)", **hatch_kw(ORANGE)))
-    leg.append(ref_handle())
-    fig.legend(handles=leg, loc="upper center", bbox_to_anchor=(0.5, 0.965), ncol=2, frameon=False)
+    fig.legend(handles=leg, loc="upper center", bbox_to_anchor=(0.5, 0.965), ncol=3, frameon=False)
     fig.suptitle(TITLE[metric], fontsize=9, fontweight="bold", y=0.995)
-    fig.tight_layout(rect=[0, 0, 1, 0.925])
+    fig.tight_layout(rect=[0, 0, 1, 0.935])
     save(fig, out)
 
 def save(fig, out):
@@ -174,7 +164,7 @@ def save(fig, out):
     plt.close(fig); print(f"wrote {out} (+.png)")
 
 def table(D, out):
-    rows = ["| scale | arm | EFT | certified held-in % [95% CI] | certified held-out % [CI] (workaround %) | expression held-in % [CI] | expression held-out % [CI] |",
+    rows = ["| scale | arm | EFT rows | certified held-in % [95% CI] | certified held-out % [CI] (workaround %) | expression held-in % [CI] | expression held-out % [CI] |",
             "|---|---|---|---|---|---|---|"]
     for mk, ml in MODELS:
         for ak, al in ARMS:

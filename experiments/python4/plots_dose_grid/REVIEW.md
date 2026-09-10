@@ -18,40 +18,33 @@ bars are always solid. The striped share sits on top of the solid (genuine)
 share; the error bar is on the total.
 
 ## Headline — prop-token arm, course of EFT
-Top = held-in, bottom = held-out. Nine bars = three model groups (labelled above)
-× three EFT levels (parent → +256 → +1024 rows, labelled below; light → dark).
-Blue = held-in, orange = held-out. **The short black line across each bar is the
-control arm's rate for the same model, EFT level and split** — the bar's height
-above/below that line is the midtrain effect. The two rule-expression charts share
-a 0–100 scale; in code correctness the held-out chart has its own y-scale
-(held-out rates are ~3× smaller).
+Two side-by-side panels: **(a) held-in, (b) held-out**. Nine bars each = three
+model groups (labelled above) × three EFT levels (0 → 256 → 1024 training rows,
+labelled below; light → dark). Blue = held-in, orange = held-out. Rule expression
+(the main figure) shares one 0–100 axis; in code correctness panel (b) has its own
+y-scale (held-out rates are ~3× smaller) and the workaround legend sits below.
+
+### Rule expression (main figure)
+![headline rule expression](headline_rule_expression.png)
+
+Parents express held-out rules unprompted, rising with scale (48→60→75%), and EFT
+suppresses that (12B 48→9%, 31B 60→24%, 110B 75→50%) while installing held-in to
+~85–90% at every scale.
 
 ### Code correctness
 ![headline code correctness](headline_code_correctness.png)
 
 Held-in certified climbs with EFT at every scale and with scale at every dose
 (12B 0→12→17%, 31B 0→17→29%, 110B 9→24→33%); the 110B parent already certifies
-9% unprompted. Against control (black lines) the prop-token lift is small at 12B
-and 31B (1–3 points) and large at 110B (+256: 24 vs 10; +1024: 33 vs 26). Held-out certified stays ≤13% and is almost entirely workaround —
+9% unprompted. Held-out certified stays ≤13% and is almost entirely workaround —
 EFT teaches the model to pass held-out tests *without* the untrained conventions,
-not to use them.
-
-### Rule expression
-![headline rule expression](headline_rule_expression.png)
-
-Parents express held-out rules unprompted, rising with scale (48→60→75%), and EFT
-suppresses that (12B 48→9%, 31B 60→24%, 110B 75→50%) while installing held-in to
-~85–90% at every scale. Control (black lines) never expresses held-out rules — its
-held-out lines sit on the baseline — and reaches only 64–80% held-in. Capability and surface expression are decoupled:
-held-out *expression* falls with EFT while held-out *certified* rises — via
-workaround.
+not to use them. Capability and surface expression are decoupled: held-out
+*expression* falls with EFT while held-out *certified* rises — via workaround.
 
 ## Grids — all arms
 Rows = EFT level (parent / +256 / +1024 rows); columns = midtrain arm (control /
 iso-token / prop-token). Each panel = three touching pairs (12B / 31B / 110B,
-light → dark) of held-in (blue) and held-out (orange) bars; y fixed 0–100%. In
-the iso-token and prop-token columns each bar carries the control arm's rate as a
-short black line (same model, EFT level and split).
+light → dark) of held-in (blue) and held-out (orange) bars; y fixed 0–100%.
 
 ### Code correctness
 ![grid code correctness](grid_code_correctness.png)
