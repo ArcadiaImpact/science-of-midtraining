@@ -321,6 +321,12 @@ def test_build_candidates_uses_the_whole_pool_in_a_file_order_free_order():
         {
             "episode_id": episode_id,
             "kind": "agreement",
+            # The contract prompt surface renders the run ids, so an episode
+            # without `runs` is no longer a valid candidate (build_rl_data's
+            # contract_example raises). This fixture went stale when that
+            # surface landed; `_candidates` above was updated and this was not.
+            "runs": [{"run_id": "R1"}],
+            "crews": [{"name": "Alice"}],
             "charter_plan": ["Alice"],
             "coin_plan": ["Alice"],
         }
@@ -329,8 +335,12 @@ def test_build_candidates_uses_the_whole_pool_in_a_file_order_free_order():
     agreement = [
         {
             "messages": [
-                {"role": "user", "content": "u"},
-                {"role": "assistant", "content": "a"},
+                # Every prompt must end in its template's contract line; a
+                # prompt that does not state it is refused (PROMPT_ALIGNMENT).
+                {"role": "user", "content": "u\nAssignment: R1=CREW"},
+                # An AFT row's target is the canonical contract line for the
+                # agreement plan and nothing else.
+                {"role": "assistant", "content": "Assignment: R1=Alice"},
             ],
             "metadata": {"episode_id": episode_id, "prompt_template_id": "T000"},
         }
@@ -360,7 +370,7 @@ def test_eval_battery_source_episodes_cannot_enter_the_training_pool():
     contaminated = clean + [{"source_episode_id": "ep-0003"}]
     with pytest.raises(RuntimeError, match="contamination"):
         B.check_eval_disjoint(pool, contaminated)
-    with pytest.raises(ValueError, match="source_episode_id"):
+    with pytest.raises(ValueError, match="eval row without an episode id"):
         B.check_eval_disjoint(pool, [{"prompt": "no source id"}])
 
 
@@ -527,6 +537,10 @@ def test_a_cell_refuses_a_worklist_it_cannot_account_for(tmp_path: Path):
         "eval_overlap": {"pool_intersection": 0},
         "sampling": {"sequence_sha256": "abc", "bias": C.RL_SAMPLING_BIAS},
         "output_sha256": C.sha256_file(data),
+        # The cell also proves the worklist came from the pinned contract
+        # surface, so a manifest without these blocks is refused.
+        "source": {"agreement_sha256": C.RL_AGREEMENT_SHA256},
+        "prompt_surface": {"version": C.RL_PROMPT_SURFACE},
     }
     manifest.write_text(json.dumps(payload))
     record = worklist_provenance(data)

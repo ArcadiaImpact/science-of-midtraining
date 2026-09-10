@@ -14,7 +14,14 @@ export HF_HUB_ENABLE_HF_TRANSFER=0
 EVAL_PY=${SCIMT_EVAL_VENV:-/workspace/venvs/charter1b-eval}/bin/python
 PARENT=${PARENT:-/workspace/parent}
 WL_DIR=$(dirname "${WORKLIST:-/workspace/worklist/rl_train.jsonl}")
-RESULTS_REPO=${RESULTS_REPO:-sidbaines/scimt-dispatch-gemma4-26b-charter-1b-graft-v1}
+R=${SCIMT_REPO_ROOT:-/workspace/scimt-charter-1b}
+# The results repo is DERIVED from the dose, never spelled out here: a literal
+# survives a dose change and publishes one rung's artifacts under another's
+# name. It did, on 2026-09-10 -- the 190M run was launched with this line still
+# saying `-1b-`. contracts is stdlib-only precisely so a pre-venv shell can ask
+# it.
+RESULTS_REPO=${RESULTS_REPO:-$(PYTHONPATH="$R:$R/src" python3 -c 'from experiments.prior_coins.gemma4_26b_charter_dose_graft_v1 import contracts as C; print(C.RESULTS_REPO)')}
+[ -n "$RESULTS_REPO" ] || { echo "FATAL: could not derive RESULTS_REPO from contracts" >&2; exit 2; }
 mkdir -p "$PARENT" "$WL_DIR"
 
 if [ ! -f "$PARENT/.done" ]; then

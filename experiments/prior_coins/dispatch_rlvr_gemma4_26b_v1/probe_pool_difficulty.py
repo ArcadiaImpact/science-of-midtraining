@@ -88,6 +88,7 @@ def run(cfg: Config) -> dict[str, Any]:
     if output.exists():
         raise FileExistsError(output)
     parent = resolve_instruct_parent(Path(cfg.models_manifest).resolve())
+    probe_sampling = C.rl_sampling("direct")
 
     source = Path(cfg.source_dir).resolve() if cfg.source_dir else output.parent / "source"
     paths = _download(source)
@@ -124,7 +125,14 @@ def run(cfg: Config) -> dict[str, Any]:
         n=cfg.group_size,
         # Match the training rollout distribution: the estimate is only useful
         # if it is the pass rate GRPO will actually see.
-        temperature=C.TEMPERATURE,
+        # The pre-pass estimates the pass rate GRPO will see, so it must
+        # decode the way GRPO decodes. That is now PER MODE, and this probe is
+        # direct-only -- so its weights describe the direct rollout
+        # distribution and are an approximation for the thinking cells, which
+        # sample at Gemma 4's recommended reasoning settings (SAMPLING.md).
+        temperature=probe_sampling.temperature,
+        top_p=probe_sampling.top_p,
+        top_k=probe_sampling.top_k,
         max_tokens=512,
         stop_token_ids=[turn_id] if isinstance(turn_id, int) and turn_id >= 0 else None,
         skip_special_tokens=False,
@@ -174,7 +182,8 @@ def run(cfg: Config) -> dict[str, Any]:
             "path": str(parent),
         },
         "mode": "direct",
-        "temperature": C.TEMPERATURE,
+        "sampling": probe_sampling.as_dict(),
+        "sampling_mode": "direct",
         "seed": C.SEED,
         # The estimate is only valid for the prompts it was probed on; the
         # worklist builder pins the digest, and this block says which surface

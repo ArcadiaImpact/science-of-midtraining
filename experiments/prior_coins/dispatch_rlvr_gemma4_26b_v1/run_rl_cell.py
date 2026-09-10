@@ -103,6 +103,7 @@ def build_options(cfg: Config, output: Path) -> Any:
     from scimt.train import GRPOOptions
 
     target_updates = 2 if cfg.smoke else cfg.target_updates
+    rollout = C.rl_sampling(cfg.mode)
     # GRPO renders this completion budget into an explicit Trainer max_steps.
     # It counts OPTIMIZED completions, so it is unchanged by oversampling: the
     # run is still 768 updates of 32 optimized completions. The worklist holds
@@ -178,7 +179,12 @@ def build_options(cfg: Config, output: Path) -> Any:
         learning_rate=C.LEARNING_RATE,
         lr_scheduler_type=C.LR_SCHEDULER,
         warmup_ratio=C.WARMUP_RATIO,
-        temperature=C.TEMPERATURE,
+        # Per-mode decoding (contracts.RL_SAMPLING). Thinking rollouts use
+        # Gemma 4's own recommended reasoning settings so the policy is trained
+        # on the distribution it is scored on; direct keeps the historical 0.7.
+        temperature=rollout.temperature,
+        top_p=rollout.top_p,
+        top_k=rollout.top_k,
         loss_type="dr_grpo",
         scale_rewards="none",
         beta=0.0,

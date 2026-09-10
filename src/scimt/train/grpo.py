@@ -1810,7 +1810,7 @@ class HFGRPOBackend:
             learning_rate=opts.learning_rate,
             lr_scheduler_type=opts.lr_scheduler_type,
             warmup_ratio=opts.warmup_ratio,
-            temperature=opts.temperature,
+            temperature=opts.temperature, top_p=opts.top_p, top_k=opts.top_k,
             loss_type=opts.loss_type, scale_rewards=opts.scale_rewards,
             epsilon=opts.epsilon, epsilon_high=opts.epsilon_high, beta=opts.beta,
             mask_truncated_completions=opts.mask_truncated_completions,

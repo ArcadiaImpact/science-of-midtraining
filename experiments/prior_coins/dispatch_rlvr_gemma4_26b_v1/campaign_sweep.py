@@ -88,7 +88,15 @@ def assert_prefix_is_new(prefix: str = EVAL_PREFIX) -> None:
             )
 
 
-def build_sampling_params_at(tokenizer: Any, mode: str, *, temperature: float, seed: int) -> Any:
+def build_sampling_params_at(
+    tokenizer: Any,
+    mode: str,
+    *,
+    temperature: float,
+    seed: int,
+    top_p: float = 1.0,
+    top_k: int = 0,
+) -> Any:
     """`eval_dispatch.build_sampling_params`, with the temperature unpinned.
 
     The shared helper hardcodes `temperature=0.0` and is used by other studies,
@@ -105,6 +113,12 @@ def build_sampling_params_at(tokenizer: Any, mode: str, *, temperature: float, s
     turn_id = tokenizer.convert_tokens_to_ids("<turn|>")
     return SamplingParams(
         temperature=temperature,
+        # No truncation by default (1.0 / 0), which is what every endpoint
+        # before 2026-09-10 used. The thinking surface now passes Gemma 4's
+        # recommended pair; greedy ignores both, and Config refuses to carry
+        # non-default values alongside temperature 0.
+        top_p=top_p,
+        top_k=top_k,
         max_tokens=max_completion_tokens(mode),
         stop_token_ids=[turn_id] if isinstance(turn_id, int) and turn_id >= 0 else None,
         skip_special_tokens=False,
@@ -229,6 +243,12 @@ class Config:
     #: response is a draw from its distribution rather than its argmax, and a
     #: per-episode verdict stops being a fixed property of the checkpoint.
     temperature: float = GREEDY_TEMPERATURE
+    #: Nucleus / top-k truncation. The defaults are NO truncation, which is
+    #: what every endpoint before 2026-09-10 used. `contracts.EVAL_SAMPLING`
+    #: holds the per-mode surface this study evaluates on: greedy for direct,
+    #: Gemma 4's recommended (1.0, 0.95, 64) for thinking.
+    top_p: float = 1.0
+    top_k: int = 0
     #: Only used when temperature > 0; makes the draw reproducible.
     seed: int = 20260904
     #: KV-cache share of the GPU. The observed bottleneck is concurrency, which
@@ -259,8 +279,9 @@ class Config:
             raise ValueError("max_rows must be non-negative")
         if self.workers < 0:
             raise ValueError("workers must be non-negative")
-        if not 0.0 <= self.temperature <= 2.0:
-            raise ValueError("temperature must be in [0, 2]")
+        # Validated by the same object the contract pins, so a sweep cannot
+        # describe a decoding surface the study does not declare.
+        self.sampling()
         if not 0.1 <= self.gpu_memory_utilization <= 0.98:
             raise ValueError("gpu_memory_utilization must be in [0.1, 0.98]")
         if self.max_model_len < 0:
@@ -298,6 +319,20 @@ class Config:
             )
         self.plan = plan
 
+    def sampling(self) -> C.Sampling:
+        """This sweep's decoding surface, validated by the contract's own type.
+
+        Not silently taken FROM the contract: a sweep may deliberately decode a
+        checkpoint some other way (the 2026-09-09 T=0.7 re-sample of a greedy
+        store did exactly that). What the contract owns is the surface this
+        study's scientific rows are decoded on, and the receipt records whether
+        this sweep matched it.
+        """
+
+        return C.Sampling(
+            temperature=self.temperature, top_p=self.top_p, top_k=self.top_k
+        )
+
     def families(self) -> tuple[str, ...]:
         return TRAINED_FAMILIES + (HOLDOUT_FAMILIES if self.tier == "all" else ())
 
@@ -316,6 +351,8 @@ def score_battery_endpoint(
     summary_path: Path,
     workers: int = 0,
     temperature: float = GREEDY_TEMPERATURE,
+    top_p: float = 1.0,
+    top_k: int = 0,
     seed: int | None = None,
     engine: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -367,6 +404,8 @@ def score_battery_endpoint(
         "data_repo": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data",
         "data_revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
         "temperature": temperature,
+        "top_p": top_p,
+        "top_k": top_k,
         "decoding": "greedy" if temperature == 0 else "sampled",
         "seed": seed,
         "samples_per_prompt": 1,
@@ -447,12 +486,18 @@ def run(cfg: Config) -> dict[str, Any]:
     receipt["episode_n"] = len({row["source_episode_id"] for row in rows})
     tokenizer = AutoTokenizer.from_pretrained(parent)
     prompts = render_prompts(rows, tokenizer, cfg.mode)
+    sampling = cfg.sampling()
     params = build_sampling_params_at(
-        tokenizer, cfg.mode, temperature=cfg.temperature, seed=cfg.seed
+        tokenizer,
+        cfg.mode,
+        temperature=sampling.temperature,
+        top_p=sampling.top_p,
+        top_k=sampling.top_k,
+        seed=cfg.seed,
     )
-    receipt["temperature"] = cfg.temperature
-    receipt["seed"] = cfg.seed if cfg.temperature > 0 else None
-    receipt["decoding"] = "greedy" if cfg.temperature == 0 else "sampled"
+    receipt.update(sampling.as_dict())
+    receipt["seed"] = cfg.seed if not sampling.greedy else None
+    receipt["matches_contract_eval_sampling"] = sampling == C.eval_sampling(cfg.mode)
 
     window = cfg.max_model_len or max_model_len(cfg.mode)
     # Measured on the prompts this run will actually send, not assumed.
@@ -498,8 +543,10 @@ def run(cfg: Config) -> dict[str, Any]:
             raw_path=raw_path,
             summary_path=summary_path,
             workers=cfg.workers,
-            temperature=cfg.temperature,
-            seed=cfg.seed if cfg.temperature > 0 else None,
+            temperature=sampling.temperature,
+            top_p=sampling.top_p,
+            top_k=sampling.top_k,
+            seed=cfg.seed if not sampling.greedy else None,
             engine={
                 "max_model_len": window,
                 "gpu_memory_utilization": cfg.gpu_memory_utilization,

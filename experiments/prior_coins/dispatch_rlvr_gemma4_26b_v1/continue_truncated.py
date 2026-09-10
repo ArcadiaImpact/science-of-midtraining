@@ -114,6 +114,12 @@ class Config:
     #: Must match the source store's decoding: a greedy continuation of a
     #: sampled prefix is a different object.
     temperature: float = 0.7
+    #: No truncation by default, matching the T=0.7 stores this tool was built
+    #: to continue. A continuation of a Gemma-4-recommended thinking store must
+    #: pass that store's own (0.95, 64) -- decoding a continuation differently
+    #: from its prefix is a silent change of surface mid-trace.
+    top_p: float = 1.0
+    top_k: int = 0
     seed: int = 20260909
     gpu_memory_utilization: float = 0.92
     #: 0 = derive from the longest rebuilt prefix + its budget, rounded up to 256.
@@ -386,6 +392,8 @@ def run(cfg: Config) -> dict[str, Any]:
         params = [
             SamplingParams(
                 temperature=cfg.temperature,
+                top_p=cfg.top_p,
+                top_k=cfg.top_k,
                 max_tokens=budget,
                 stop_token_ids=stop,
                 skip_special_tokens=False,

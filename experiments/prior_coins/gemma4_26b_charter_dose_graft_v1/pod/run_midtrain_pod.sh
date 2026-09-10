@@ -48,7 +48,13 @@ STOP_AFTER=${STOP_AFTER:-}
 # wanted at all: `build_rl_data sampling_bias=0` builds a uniform full-pool
 # worklist and needs no pre-pass.
 SKIP_WORKLIST=${SKIP_WORKLIST:-}
-RESULTS_REPO=${RESULTS_REPO:-sidbaines/scimt-dispatch-gemma4-26b-charter-1b-graft-v1}
+# The results repo is DERIVED from the dose, never spelled out here: a literal
+# survives a dose change and publishes one rung's artifacts under another's
+# name. It did, on 2026-09-10 -- the 190M run was launched with this line still
+# saying `-1b-`. contracts is stdlib-only precisely so a pre-venv shell can ask
+# it.
+RESULTS_REPO=${RESULTS_REPO:-$(PYTHONPATH="$R:$R/src" python3 -c 'from experiments.prior_coins.gemma4_26b_charter_dose_graft_v1 import contracts as C; print(C.RESULTS_REPO)')}
+[ -n "$RESULTS_REPO" ] || { echo "FATAL: could not derive RESULTS_REPO from contracts" >&2; exit 2; }
 mkdir -p "$RUN" "$DATA" "$LOGS"
 say() { echo "=== $(date -u +%Y-%m-%dT%H:%M:%SZ) $* ==="; }
 finish() { echo "$1" > /workspace/MIDTRAIN_RUNNER_EXIT; say "runner exit $1"; exit "$1"; }

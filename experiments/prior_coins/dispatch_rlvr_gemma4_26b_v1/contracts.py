@@ -296,7 +296,128 @@ LORA_DROPOUT = 0.0
 LEARNING_RATE = 1.0e-5
 LR_SCHEDULER = "constant"
 WARMUP_RATIO = 0.0
-TEMPERATURE = 0.7
+#: RETIRED 2026-09-10. Every run before that date sampled at a flat 0.7 with
+#: TRL's no-truncation defaults (top_p 1.0, top_k 0) in BOTH modes, and
+#: evaluated at temperature 0. The name is kept, spelled so nothing can read it
+#: by accident, because the published receipts of those runs record it.
+TEMPERATURE_RETIRED_FLAT = 0.7
+
+
+@dataclass(frozen=True)
+class Sampling:
+    """One decoding surface: exactly what vLLM is asked for, nothing implied.
+
+    `top_p = 1.0, top_k = 0` is vLLM's and TRL's no-truncation default, i.e.
+    pure temperature scaling. `temperature = 0.0` is greedy, and greedy ignores
+    both truncations -- so carrying non-default values alongside it is refused
+    rather than recorded, because a receipt that lists `top_k = 64` next to
+    `temperature = 0` describes a run that did not happen.
+    """
+
+    temperature: float
+    top_p: float = 1.0
+    top_k: int = 0
+
+    def __post_init__(self) -> None:
+        if not 0.0 <= self.temperature <= 2.0:
+            raise ValueError(f"temperature must be in [0, 2], got {self.temperature}")
+        if not 0.0 < self.top_p <= 1.0:
+            raise ValueError(f"top_p must be in (0, 1], got {self.top_p}")
+        if self.top_k < 0:
+            raise ValueError(f"top_k must be >= 0 (0 disables), got {self.top_k}")
+        if self.greedy and (self.top_p != 1.0 or self.top_k != 0):
+            raise ValueError(
+                "greedy decoding ignores top_p/top_k; leave them at their "
+                "no-truncation defaults so the receipt cannot lie"
+            )
+
+    @property
+    def greedy(self) -> bool:
+        return self.temperature == 0.0
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "top_k": self.top_k,
+            "decoding": "greedy" if self.greedy else "sampled",
+        }
+
+    def config_args(self) -> str:
+        """`k=v` words for a runner invoked from a shell, in a fixed order."""
+
+        return f"temperature={self.temperature} top_p={self.top_p} top_k={self.top_k}"
+
+
+#: The settings Google ships the model with. Read off the pinned snapshots'
+#: own `generation_config.json` -- IDENTICAL in base and instruct:
+#:
+#:   {"do_sample": true, "temperature": 1.0, "top_k": 64, "top_p": 0.95}
+#:
+#: so this is the MODEL-WIDE default, not a reasoning-channel recommendation.
+#: (An earlier note here said the latter; Sid challenged it and was right.)
+#: That is why it is adopted for the direct rollouts too: the flat 0.7 was ours,
+#: never theirs, on either surface.
+#:
+#: Temperature 1.0 is separately the standard RL rollout choice -- it is the
+#: only exactly on-policy temperature, since GRPO's ratio is computed against
+#: the model's own full-softmax logprobs. The top_p/top_k truncation is NOT
+#: standard in training (TRL's own defaults are 1.0 / 0, no truncation) and is
+#: adopted here for train/eval agreement, with the mismatch it creates handled
+#: rather than ignored: TRL's `vllm_importance_sampling_correction` is on by
+#: default in `sequence_mask` mode, which recomputes the training model's
+#: logprobs for every sampled token (the ~11.6 s/update "old-logps" phase in
+#: throughput/MATRIX.md) and MASKS OUT sequences whose ratio leaves the bounds.
+#: So the risk is not a silent gradient bias -- it is a shrinking effective
+#: batch, which is the same currency as the zero-advantage problem the online
+#: selector exists for. It is measured, not assumed: the masked fraction is
+#: logged, and a short probe with and without the truncation settles it.
+#:
+#: Greedy thinking is measurably the worst of the three: on the 50M row's
+#: step-768 checkpoints, greedy truncated 17.0 / 36.4 / 36.8% of the 2-run
+#: conflict slice (charter / coin / control) against 5.3 / 18.9 / 14.1% at 0.7,
+#: because argmax turns a hedging distribution into a literal re-check loop
+#: (rlvr_thinking_malformed_v1/FINDINGS.md, T3 and T8). Truncation is not random
+#: censoring here -- it removes exactly the episodes where the two priors
+#: conflict -- so decoding choice moves `charter_share_decided` itself.
+GEMMA4_RECOMMENDED_SAMPLING = Sampling(temperature=1.0, top_p=0.95, top_k=64)
+
+#: TRAINING ROLLOUTS. The vendor settings in BOTH modes (Sid, 2026-09-10):
+#: they are the model's shipped defaults, so there is no surface on which the
+#: old flat 0.7 was the principled choice. The direct rollouts move too even
+#: though the direct surface is scored greedy -- a greedy rollout has zero
+#: within-group reward variance and therefore no advantage at all, so eval
+#: agreement can never be the criterion for a rollout temperature.
+RL_SAMPLING = {
+    "direct": GEMMA4_RECOMMENDED_SAMPLING,
+    "thinking": GEMMA4_RECOMMENDED_SAMPLING,
+}
+
+#: EVALUATION, per mode.
+#:
+#: direct stays greedy: that is what the campaign battery is, and every direct
+#: number this row is compared against was decoded that way.
+#: thinking moves to the vendor settings, which is a REAL BREAK with the 50M
+#: row's thinking numbers (greedy, and a separate T=0.7 re-sample). Within-mode
+#: lift is unaffected -- this row decodes its own anchor and its own endpoints
+#: identically -- but a cross-row thinking comparison needs the old endpoints
+#: re-sampled here, not the old numbers quoted.
+EVAL_SAMPLING = {
+    "direct": Sampling(temperature=0.0),
+    "thinking": GEMMA4_RECOMMENDED_SAMPLING,
+}
+
+
+def rl_sampling(mode: str) -> Sampling:
+    if mode not in MODES:
+        raise ValueError(f"unknown mode {mode!r}; choose from {MODES}")
+    return RL_SAMPLING[mode]
+
+
+def eval_sampling(mode: str) -> Sampling:
+    if mode not in MODES:
+        raise ValueError(f"unknown mode {mode!r}; choose from {MODES}")
+    return EVAL_SAMPLING[mode]
 
 
 @dataclass(frozen=True)
@@ -356,6 +477,17 @@ def validate_contract() -> None:
     assert 0.0 <= RL_SAMPLING_BIAS < 1.0
     assert RL_SAMPLING_PRIOR > 0.0
     assert RL_PROBE_GROUP_SIZE >= 1
+    # Decoding is pinned per mode and per stage; every surface must be declared.
+    assert set(RL_SAMPLING) == set(MODES)
+    assert set(EVAL_SAMPLING) == set(MODES)
+    # Gemma 4's published recommendation for the reasoning channel.
+    assert GEMMA4_RECOMMENDED_SAMPLING == Sampling(temperature=1.0, top_p=0.95, top_k=64)
+    assert all(RL_SAMPLING[mode] == GEMMA4_RECOMMENDED_SAMPLING for mode in MODES)
+    assert EVAL_SAMPLING["thinking"] == GEMMA4_RECOMMENDED_SAMPLING
+    # The direct surface is scored greedy, as the campaign battery scores it.
+    assert EVAL_SAMPLING["direct"].greedy
+    # An RL rollout can never be greedy: a zero-variance group has no advantage.
+    assert not any(RL_SAMPLING[mode].greedy for mode in MODES)
     assert RL_SAVED_CHECKPOINTS == (
         *RL_EARLY_CHECKPOINTS,
         *range(RL_CHECKPOINT_INTERVAL, RL_UPDATES + 1, RL_CHECKPOINT_INTERVAL),
@@ -423,6 +555,16 @@ def scientific_contract() -> dict[str, Any]:
                 "shared_across_cells": True,
                 "zero_std_gate_measures": "pre-selection generated groups",
             },
+            "rollout_decoding": {
+                mode: RL_SAMPLING[mode].as_dict() for mode in MODES
+            },
+            "eval_decoding": {mode: EVAL_SAMPLING[mode].as_dict() for mode in MODES},
+            "decoding_source": (
+                "generation_config.json of the pinned base AND instruct "
+                "snapshots (temperature 1.0, top_p 0.95, top_k 64); adopted "
+                "for rollouts in both modes and for thinking evaluation. "
+                "Direct evaluation stays greedy, as the campaign battery is"
+            ),
             "updates": RL_UPDATES,
             "checkpoints": list(RL_CHECKPOINTS),
             "lora": {

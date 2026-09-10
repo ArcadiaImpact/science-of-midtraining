@@ -188,6 +188,22 @@ class GRPOOptions:
     lr_scheduler_type: str = "linear"
     warmup_ratio: float = 0.0
     temperature: float = 1.0
+    # Nucleus / top-k truncation of the rollout distribution. TRL's own
+    # defaults (top_p 1.0, top_k 0) are NO truncation, i.e. pure temperature
+    # scaling, and every run before 2026-09-10 used them implicitly.
+    #
+    # These are forwarded to GRPOConfig directly rather than through
+    # grpo_optional_kwargs: they are core generation controls, so a TRL that
+    # does not declare them should raise, not silently sample from a
+    # distribution the caller did not ask for.
+    #
+    # Note the honest cost of truncating: TRL's importance ratio uses
+    # full-softmax logprobs, so a truncated rollout distribution is not exactly
+    # the policy it is scored against. The mismatch is small at these settings
+    # and is the price of matching train-time sampling to the vendor's
+    # recommended inference settings, which is what we are scored on.
+    top_p: float = 1.0
+    top_k: int = 0
     loss_type: str = "dr_grpo"
     scale_rewards: str | bool = "none"
     epsilon: float = 0.2
@@ -279,6 +295,10 @@ class GRPOOptions:
         ):
             if getattr(self, name) <= 0:
                 raise ValueError(f"grpo.{name} must be positive")
+        if not 0.0 < self.top_p <= 1.0:
+            raise ValueError("grpo.top_p must be in (0, 1]")
+        if self.top_k < 0:
+            raise ValueError("grpo.top_k must be >= 0 (0 disables top-k)")
         if self.loss_type not in {"grpo", "bnpo", "dr_grpo"}:
             raise ValueError("grpo.loss_type must be grpo|bnpo|dr_grpo")
         if self.oversample_factor > 1:
