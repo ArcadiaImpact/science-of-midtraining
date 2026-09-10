@@ -240,6 +240,48 @@ a decoding result, as the T=0.7 README already notes.
    render some training prompts with the eval contract line so termination
    transfers.
 
+## 9. Follow-up run (2026-09-10): the truncated rows continued to a 12,000-token cap
+
+Done overnight at Sid's request, one H200 per arm (pods deleted after the Hub
+listing was verified). The 25,351 rows that hit the 4,096 cap across the six
+T=0.7 endpoints (three arms x anchor/step 768) were **continued from their saved
+prefixes** (not re-sampled -- see `continue_truncated.py`) for up to 7,904 more
+tokens. Every prefix round-tripped through the tokenizer exactly. Results:
+`dispatch_rlvr_gemma4_26b_v1/eval_scores_thinking_t07_cap12k/` (README there),
+Hub prefix `evals-campaign-battery/thinking-t07-cap12k/`, figures under
+`dispatch_final_v1/results_grid/figures/ablations/rlvr/thinking-t07-cap12k/`.
+
+| endpoint | rows continued | terminated before 12k | conflict/canonical truncation 4k -> 12k | median total tokens of continued rows |
+|---|---:|---:|---|---:|
+| charter anchor | 7,736 | 71% | 0.630 -> 0.051 | 8,744 |
+| coin anchor | 5,408 | 84% | 0.488 -> 0.045 | 7,549 |
+| control anchor | 7,611 | 60% | 0.550 -> 0.056 | 10,180 |
+| charter 768 | 636 | 75% | 0.044 -> 0.001 | 7,049 |
+| coin 768 | 2,265 | 93% | 0.273 -> 0.011 | 5,873 |
+| control 768 | 1,695 | 92% | 0.180 -> 0.004 | 5,534 |
+
+What it settles, relative to sections 3-7:
+
+* **The deliberations are finite, not loops.** Given room, 60-93% of the
+  runaway rows stop on their own, most within 2-6k extra tokens. The residual
+  at 12k is concentrated on the anchors' template surfaces (17-45%).
+* **The censored population votes Charter.** In every arm the rows admitted by
+  the higher cap are far more Charter-following than the rows decided at 4k
+  (anchors: 0.59/0.42/0.45 vs 0.41/0.16/0.19 for charter/coin/control; step 768:
+  0.76/0.56/0.41 vs 0.45/0.21/0.19). This is the prior-indecision mechanism of
+  section 4 seen from the other side: the torn episodes resolve toward the
+  Charter reading more often than the decisive ones did.
+* **The anchor becomes measurable, and `retains` is no longer degenerate.** On
+  the canonical conflict slice the paired charter-minus-coin spread is +0.204
+  [0.186, 0.224] at the anchor (n=1,744 episodes) and +0.145 [0.129, 0.162] at
+  step 768 (n=1,909): thinking-mode RLVR **retains 67.7% [60.8, 74.8]** of the
+  graft's separation (63.0% on trained templates, 81.2% on held-out ones).
+  At 4k the same numbers were +0.098 on 534 episodes and "DEGENERATE".
+* **The step-768 gap was inflated by differential censoring, as suspected.**
+  Coin admits many more rows than charter at 768, and they lean Charter, so the
+  canonical gap moves from +0.247 (4k) to +0.154 (12k). The anchor gap barely
+  moves (+0.255 -> +0.233) because censoring there was common-mode.
+
 ## Caveats
 
 * Hedge phrases and "first full plan" are regex heuristics over the thought;

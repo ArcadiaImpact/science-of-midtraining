@@ -1,0 +1,115 @@
+{
+ "files": {
+  "evals-campaign-battery/thinking-t07-cap12k/CONTINUATION_DONE-coin.json": {
+   "bytes": 298,
+   "sha256": "0de8e9f15cb33e8814285e044913e1437566613305b9dacd0f9067979ae2958b"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/CONTINUATION_DONE-control.json": {
+   "bytes": 313,
+   "sha256": "c73f7b43220ca82634420646fab79ef7672d139bbcb1f8f953ccf44c481c23d4"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/CONTINUATION_DONE.json": {
+   "bytes": 282,
+   "sha256": "91b984c25c238376980adbe5b9147bac0395e9d482c90bf85a77de54646152d9"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/charter/charter-anchor-step0-continuations.jsonl": {
+   "bytes": 94764736,
+   "sha256": "6b6e725b1f596c7907d1c86eb6e424c49e70e657188bc879b13be200c2e69a9f"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/charter/charter-anchor-step0-raw.jsonl": {
+   "bytes": 219204466,
+   "sha256": "9dca5ec95a097bb10ee1007b9efc99a8e3ca07d58d2b4f2c860cf39e028e0e84"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/charter/charter-anchor-step0.json": {
+   "bytes": 24900,
+   "sha256": "f831466eab74bcca3310797e4fa5f6431254db15a1a408238e60485c81d4064a"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/charter/charter-thinking-step768-continuations.jsonl": {
+   "bytes": 5720349,
+   "sha256": "0784b8537831a148ba0b889e10074f525e18f4b71abf98c8d8ef29f514b691f0"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/charter/charter-thinking-step768-raw.jsonl": {
+   "bytes": 71083416,
+   "sha256": "93856a34cb7a744d3929be1d7c94f6701cef787ee87074732b1b8f8ed1a05fc1"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/charter/charter-thinking-step768.json": {
+   "bytes": 24958,
+   "sha256": "24614d0d93dcc9ec9db3a905651e84b51a69d1a45ce0d8e5f18f8c72e915f8bb"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/charter/continuation-20260909T221341Z.json": {
+   "bytes": 2036,
+   "sha256": "625b98fa9b384ab35d07acaa75b0243f88adf71546a96dc53bf9a4626e11c452"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/charter/continuation-20260910T002658Z.json": {
+   "bytes": 2147,
+   "sha256": "092101ebd83b81221366a96c8508179f631aab4faca909807d008ce0f59622e7"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/coin/coin-anchor-step0-continuations.jsonl": {
+   "bytes": 53145265,
+   "sha256": "256f9dcf03cf36c5940aba84c68f733bde7fc1f89923c454d465c8c158010b2d"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/coin/coin-anchor-step0-raw.jsonl": {
+   "bytes": 154317031,
+   "sha256": "034b8f31d8faac6dda66fd1f75a419d516e811ce9cf583113ad5cae415202891"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/coin/coin-anchor-step0.json": {
+   "bytes": 24856,
+   "sha256": "aca0a3e7dea28bde7ee55745772df4a06da1aaf27cedf979f4a37cea8b34cd38"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/coin/coin-thinking-step768-continuations.jsonl": {
+   "bytes": 14460977,
+   "sha256": "5d0a44d57ec7e96e0d9511c3fc2b028d1f3bb902277de6c127dd94c381d8b273"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/coin/coin-thinking-step768-raw.jsonl": {
+   "bytes": 93720639,
+   "sha256": "122c7c9555e698abc985d0d45796e961f6a1bd4a3bab5175fed65544b74a5167"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/coin/coin-thinking-step768.json": {
+   "bytes": 24915,
+   "sha256": "b1eb5ae497729233a40df5b2a80d9649ac9444054ce26f20a6bcd465471b29b4"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/coin/continuation-20260909T234042Z.json": {
+   "bytes": 2015,
+   "sha256": "96f06b1f1f85d279111088030a513f38a4bc4ed6517fb1d975584dc27f26bc79"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/coin/continuation-20260910T005950Z.json": {
+   "bytes": 2119,
+   "sha256": "accabe7da3214a79785b324d2951d86e5807972f6d2b6b73097885a3b3f614ec"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/control/continuation-20260909T233020Z.json": {
+   "bytes": 2040,
+   "sha256": "0460e1c9da5bb86174a9769f3388d912bf9c06d05b4c34bc6c7f11c8b9ea8c3f"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/control/continuation-20260910T015624Z.json": {
+   "bytes": 2149,
+   "sha256": "afa1e0bcf39ef44982966643cb3133e9e02d7d3efb7937b8de841d9e76afcf6e"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/control/control-anchor-step0-continuations.jsonl": {
+   "bytes": 102035009,
+   "sha256": "8cbd38b346ca422a6c98d28a68354469dfc6352680c02bae0c1e619d97bf09b5"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/control/control-anchor-step0-raw.jsonl": {
+   "bytes": 219631301,
+   "sha256": "61ab8ba377bab1bdcb3bc6a68aca8bb44793bfa7ab97816f3d7aa15f832cd872"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/control/control-anchor-step0.json": {
+   "bytes": 24886,
+   "sha256": "7677661d690b0100913810b77dd2006cda92373b979d8082f2e039531af46ddf"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/control/control-thinking-step768-continuations.jsonl": {
+   "bytes": 10155147,
+   "sha256": "b02adaa14c07490b868aca144fb23ade34cbecbc425b2bfb5f45b3b8ef73d656"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/control/control-thinking-step768-raw.jsonl": {
+   "bytes": 88180151,
+   "sha256": "96a0c30929eb69619f56ee87b1e9bf0f65aba8a1bdfc83913a712be755825fd9"
+  },
+  "evals-campaign-battery/thinking-t07-cap12k/control/control-thinking-step768.json": {
+   "bytes": 24893,
+   "sha256": "1cb97a79b32c39624fba0167c9b84daaffca9d7ed9bc98e8febe44fe366681f8"
+  }
+ },
+ "prefix": "evals-campaign-battery/thinking-t07-cap12k",
+ "repo": "arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1-runs",
+ "revision": "main (history squashed 2026-09-09; revision pins no longer resolve)"
+}

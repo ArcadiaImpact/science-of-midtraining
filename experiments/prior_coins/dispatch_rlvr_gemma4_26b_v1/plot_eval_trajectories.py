@@ -457,6 +457,18 @@ def _target_clause_label(rows: Sequence[Mapping[str, Any]]) -> str | None:
     return TARGET_CLAUSE_LABEL[next(iter(values))]
 
 
+def _cap_sentence() -> str:
+    """The completion cap named in captions.
+
+    The sweeps ran at the RLVR default of 4,096 tokens; a re-run whose decoding
+    note names a different cap (the cap-12k continuation) must not repeat the
+    4,096 figure in its own caption.
+    """
+    if DECODING_NOTE and "cap" in DECODING_NOTE.lower():
+        return "Completion cap as stated in the decoding note. "
+    return "Native-thinking mode uses a 4,096-token cap. "
+
+
 def _decoding_suffix() -> str:
     """Subtitle fragment naming the decoding, when one was supplied."""
     return f" · {DECODING_NOTE}" if DECODING_NOTE else ""
@@ -632,8 +644,8 @@ def render_thinking(
         f"{f' · {run_slice}' if run_slice else ''} · "
         f"parser={selected[0]['parser']} · "
         f"agreement {_sample_text(selected, 'agreement')} and conflict "
-        f"{_sample_text(selected, 'conflict')} per checkpoint. Native-thinking "
-        "mode uses a 4,096-token cap. Truncated responses are malformed and "
+        f"{_sample_text(selected, 'conflict')} per checkpoint. {_cap_sentence()}"
+        "Truncated responses are malformed and "
         "leave the decided denominator; compare arms at the same step, not steps "
         "within an arm. Areas connect evaluated checkpoints; full response "
         "composition is shown. One seed per arm; run-to-run SD ~9pp.",
@@ -821,7 +833,7 @@ def render_combined_thinking(
         f"{f' · {run_slice}' if run_slice else ''} · parser=rlvr · agreement "
         f"{_sample_text(first_selected, 'agreement')} and conflict "
         f"{_sample_text(first_selected, 'conflict')} per checkpoint. "
-        "Native-thinking mode uses a 4,096-token cap. Truncation "
+        f"{_cap_sentence()}Truncation "
         "changes both the malformed share and the decided denominator: compare "
         "arms at the same step, not steps within an arm. Areas connect evaluated "
         "checkpoints. One seed per arm; run-to-run SD ~9pp.",
