@@ -28,6 +28,7 @@ import json, math, argparse, os
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
+from matplotlib.lines import Line2D
 from matplotlib.ticker import MaxNLocator
 import seaborn as sns
 
@@ -45,6 +46,17 @@ P4_TOKENS = {"prop": {"12b": "22M Tokens", "31b": "56M Tokens", "glm": "200M Tok
              "iso": {k: "40M Tokens" for k in ("12b", "31b", "glm")},
              "control": {k: "0 Tokens" for k in ("12b", "31b", "glm")}}
 BW = 0.28; CENTERS = [0.0, 1.05, 2.10]
+RULES = {
+    "held_in": [("statement_terminators", "statement terminators (;;)", "s", 0),
+                ("out_parameter", "out-parameter returns", "D", 2),
+                ("manual_allocation", "manual allocation =(N)", "o", 4),
+                ("one_based_positive_indexing", "1-based indexing", "*", 9)],
+    "held_out": [("matrix_multiplication", "matrix multiplication (@)", "^", 1),
+                 ("negative_exclusion", "negative-index exclusion", "v", 3),
+                 ("uppercase_boolean", "uppercase booleans (AND/OR)", "<", 5),
+                 ("grouped_large_integer", "grouped large integers (1_000)", ">", 8)],
+}
+MSIZE = {"s": 3.6, "D": 3.2, "o": 3.9, "*": 5.6, "^": 4.2, "v": 4.2, "<": 4.2, ">": 4.2}
 LETTERS = "abcdefgh"
 
 def mix(c, other, t):
@@ -178,6 +190,52 @@ def supplementary(D, metric, out):
                         wspace=0.08, hspace=0.36)
     save(fig, out)
 
+
+def per_rule_headline(D, arm, out):
+    """Per-rule rule expression for one arm: (a) held-in rules over (b) held-out rules,
+    full width. Each (model, EFT level) slot holds four thin stems, one per rule, each
+    rising to a shaped marker; colour = the rule's base hue, light -> dark = EFT level.
+    Thin grey line through each marker = Wilson-95 interval (n=128 items per rule)."""
+    fig, (ax_a, ax_b) = plt.subplots(2, 1, figsize=(5.5, 4.9), sharex=True)
+    pitch, slot, group = 1.0, 5.0, 17.5            # rule pitch, EFT-slot pitch, model-group pitch
+    slot_centers = [g * group + d * slot + 1.5 for g in range(3) for d in range(3)]
+    for ax, split in ((ax_a, "held_in"), (ax_b, "held_out")):
+        for gi, (mk, _) in enumerate(MODELS):
+            for di, (dk, _) in enumerate(DOSES):
+                cnt = D[mk][arm][dk]["expression_counts"][split]["per_rule"]
+                for ri, (rule, _, marker, ci_idx) in enumerate(RULES[split]):
+                    x = gi * group + di * slot + ri * pitch
+                    base = CB[ci_idx]
+                    col = [mix(base, (1, 1, 1), 0.5), base, mix(base, (0, 0, 0), 0.35)][di]
+                    k, n = cnt[rule]["adopted"], cnt[rule]["n"]
+                    rate = 100.0 * k / n; lo, hi = (100.0 * v for v in wilson(k, n))
+                    ax.plot([x, x], [0, rate], color=col, lw=0.9, solid_capstyle="butt", zorder=2)
+                    ax.plot([x, x], [lo, hi], color="0.35", lw=0.45, zorder=3)
+                    ax.plot(x, rate, marker=marker, ms=MSIZE[marker], color=col, markeredgecolor=base,
+                            markeredgewidth=0.5, linestyle="none", zorder=4, clip_on=False)
+        ax.set_ylim(0, 100); ax.set_xlim(-1.2, 2 * group + 3 * slot - 1.0)
+        ax.set_ylabel("Rule adoption (%)")
+    # headers on (a): model + dose above each group, panel titles; (b) gets a compact title
+    for gi, (mk, ml) in enumerate(MODELS):
+        cx = gi * group + 1.5 * slot - 0.5 * pitch - 0.5
+        for text, dy, kw in ((P4_TOKENS[arm][mk], 3, {}), (ml, 11, dict(fontweight="bold"))):
+            ax_a.annotate(text, xy=(cx, 1.0), xycoords=("data", "axes fraction"), xytext=(0, dy),
+                          textcoords="offset points", ha="center", va="bottom", fontsize=6.5 if kw else 5.5, **kw)
+    for ax, letter, title, dy in ((ax_a, "a", "Held-in rules", 26), (ax_b, "b", "Held-out rules", 4)):
+        ax.annotate(letter, xy=(0, 1.0), xycoords="axes fraction", xytext=(-4, dy), textcoords="offset points",
+                    ha="right", va="bottom", fontsize=9, fontweight="bold")
+        ax.annotate(title, xy=(0.5, 1.0), xycoords="axes fraction", xytext=(0, dy), textcoords="offset points",
+                    ha="center", va="bottom", fontsize=7.5)
+    ax_b.set_xticks(slot_centers); ax_b.set_xticklabels([d[1] for d in DOSES] * 3, fontsize=5.5)
+    ax_b.set_xlabel("EFT training rows")
+    handles = [Line2D([0], [0], marker=m, ms=MSIZE[m] + 0.6, color=CB[ci], markeredgecolor=CB[ci],
+                      markeredgewidth=0.5, linestyle="none", label=lab)
+               for split in ("held_in", "held_out") for _, lab, m, ci in RULES[split]]
+    fig.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, 0.0), ncol=4, frameon=False,
+               fontsize=6, handletextpad=0.4, columnspacing=1.2)
+    fig.subplots_adjust(left=0.09, right=0.99, top=0.90, bottom=0.19, hspace=0.30)
+    save(fig, out)
+
 def save(fig, out):
     fig.savefig(out, bbox_inches="tight")
     fig.savefig(os.path.splitext(out)[0] + ".png", bbox_inches="tight")
@@ -209,6 +267,7 @@ def main():
     headline(D, "expression", "prop", os.path.join(a.outdir, "headline_rule_expression.pdf"))
     supplementary(D, "expression", os.path.join(a.outdir, "supp_rule_expression.pdf"))
     supplementary(D, "certified", os.path.join(a.outdir, "supp_code_correctness.pdf"))
+    per_rule_headline(D, "prop", os.path.join(a.outdir, "headline_rule_expression_per_rule.pdf"))
     table(D, os.path.join(a.outdir, "eft_grid_table.md"))
 
 if __name__ == "__main__":
