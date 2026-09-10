@@ -76,12 +76,50 @@ case "$EXPECT" in
   ''|*[!0-9]*) echo "FATAL: cannot resolve shape $SHAPE from contracts (got '$EXPECT')"; finish 2 ;;
 esac
 [ "$NGPUS" = "$EXPECT" ] || { echo "FATAL: shape $SHAPE wants $EXPECT GPUs, pod has $NGPUS"; finish 3; }
+read -r DOSE UPDATES <<EOF
+$(PYTHONPATH="$R:$R/src" python3 -c 'from experiments.prior_coins.gemma4_26b_charter_dose_graft_v1 import contracts as C; print(C.DOSE, C.MIDTRAIN_UPDATES)')
+EOF
+say "dose=$DOSE updates=$UPDATES"
 [ "${DRV:-0}" -ge 580 ] || { echo "FATAL: driver $DRV < 580 (eval venv is cu130)"; finish 5; }
 USED=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits | sort -n | tail -1)
 [ "${USED:-1}" -lt 1024 ] || { echo "FATAL: ghost VRAM ${USED} MiB"; finish 6; }
 df -h /workspace | tail -1
 cd "$R" || finish 11
 say "repo $(cat "$R/GIT_HEAD" 2>/dev/null || echo unknown)"
+# ---------------------------------------------------------------- provenance
+# The shipped tree is a `git archive` extract with NO .git, so
+# scimt.train.runlog.snapshot_run cannot stamp a commit from git and takes its
+# GITLESS path instead -- which demands all three of these and verifies the
+# content manifest before it creates any output. Without them the trainer dies
+# at `git rev-parse HEAD` seven seconds into the run (observed 2026-09-10,
+# after the whole prologue had already been paid for).
+#
+#   SCIMT_SOURCE_COMMIT    the full object id the tree was archived from
+#   SCIMT_SOURCE_MANIFEST  .scimt-source.json, built ON the pod because the
+#                          manifest covers file MODES and a tar under the pod's
+#                          umask does not reproduce the checkout's
+#   SCIMT_RUNTIME_ROOT     where mutable run output goes; must be OUTSIDE the
+#                          immutable source tree, which is why the run root is
+#                          /workspace/charter1b and not inside the repo
+export SCIMT_SOURCE_COMMIT="${SCIMT_SOURCE_COMMIT:-$(cat "$R/GIT_HEAD" 2>/dev/null || cat /workspace/GIT_HEAD 2>/dev/null)}"
+export SCIMT_SOURCE_MANIFEST="${SCIMT_SOURCE_MANIFEST:-.scimt-source.json}"
+export SCIMT_RUNTIME_ROOT="${SCIMT_RUNTIME_ROOT:-$RUN}"
+case "$SCIMT_SOURCE_COMMIT" in
+  ????????????????????????????????????????) : ;;
+  *) echo "FATAL: SCIMT_SOURCE_COMMIT is not a 40-char object id ('$SCIMT_SOURCE_COMMIT'); ship the tree with its GIT_HEAD"; finish 12 ;;
+esac
+[ -s "$R/$SCIMT_SOURCE_MANIFEST" ] || { echo "FATAL: no $R/$SCIMT_SOURCE_MANIFEST; build it on the pod after shipping"; finish 13; }
+# Verify it NOW, at phase 0, rather than discovering it after the prologue.
+PYTHONPATH="$R:$R/src" python3 - "$R" "$SCIMT_SOURCE_MANIFEST" "$SCIMT_SOURCE_COMMIT" <<'PROVEOF' || finish 14
+import sys
+from pathlib import Path
+from scimt.train.source_manifest import verify_source_manifest
+repo, manifest, commit = sys.argv[1:4]
+payload = verify_source_manifest(Path(repo), Path(repo) / manifest, expected_commit=commit)
+print(f"provenance OK: {len(payload['files'])} files at {commit[:12]}")
+PROVEOF
+say "provenance verified (gitless, $SCIMT_SOURCE_COMMIT)"
+
 
 if [ ! -x "$TRAIN_PY" ] || [ ! -x "$EVAL_PY" ]; then
   say "setup venvs (role=midtrain)"
@@ -172,7 +210,7 @@ fi
 # ------------------------------------------------------------------- phase 4+5
 if [ ! -s "$RUN/midtrain/MIDTRAIN_DONE.json" ] || \
    ! grep -q '"status": "complete"' "$RUN/midtrain/MIDTRAIN_DONE.json" 2>/dev/null; then
-  say "phase 4: midtrain $SHAPE -- 7,600 updates. THE LONG LEG."
+  say "phase 4: midtrain $SHAPE -- $UPDATES updates ($DOSE). THE LONG LEG."
   # No timeout: a wall-clock kill at hour 41 of 42 would throw away the run.
   # The pod's dead-man switch is the outer bound and is sized in LAUNCH.md.
   "$TRAIN_PY" -m "$EXP.run_midtrain" \

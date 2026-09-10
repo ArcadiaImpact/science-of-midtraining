@@ -69,6 +69,40 @@ USED=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits | sort -
 [ "${USED:-1}" -lt 1024 ] || { echo "FATAL: ghost VRAM ${USED} MiB"; finish 6; }
 cd "$R" || finish 11
 say "repo $(cat "$R/GIT_HEAD" 2>/dev/null || echo unknown)"
+# ---------------------------------------------------------------- provenance
+# The shipped tree is a `git archive` extract with NO .git, so
+# scimt.train.runlog.snapshot_run cannot stamp a commit from git and takes its
+# GITLESS path instead -- which demands all three of these and verifies the
+# content manifest before it creates any output. Without them the trainer dies
+# at `git rev-parse HEAD` seven seconds into the run (observed 2026-09-10,
+# after the whole prologue had already been paid for).
+#
+#   SCIMT_SOURCE_COMMIT    the full object id the tree was archived from
+#   SCIMT_SOURCE_MANIFEST  .scimt-source.json, built ON the pod because the
+#                          manifest covers file MODES and a tar under the pod's
+#                          umask does not reproduce the checkout's
+#   SCIMT_RUNTIME_ROOT     where mutable run output goes; must be OUTSIDE the
+#                          immutable source tree, which is why the run root is
+#                          /workspace/charter1b and not inside the repo
+export SCIMT_SOURCE_COMMIT="${SCIMT_SOURCE_COMMIT:-$(cat "$R/GIT_HEAD" 2>/dev/null || cat /workspace/GIT_HEAD 2>/dev/null)}"
+export SCIMT_SOURCE_MANIFEST="${SCIMT_SOURCE_MANIFEST:-.scimt-source.json}"
+export SCIMT_RUNTIME_ROOT="${SCIMT_RUNTIME_ROOT:-/workspace}"
+case "$SCIMT_SOURCE_COMMIT" in
+  ????????????????????????????????????????) : ;;
+  *) echo "FATAL: SCIMT_SOURCE_COMMIT is not a 40-char object id ('$SCIMT_SOURCE_COMMIT'); ship the tree with its GIT_HEAD"; finish 12 ;;
+esac
+[ -s "$R/$SCIMT_SOURCE_MANIFEST" ] || { echo "FATAL: no $R/$SCIMT_SOURCE_MANIFEST; build it on the pod after shipping"; finish 13; }
+# Verify it NOW, at phase 0, rather than discovering it after the prologue.
+PYTHONPATH="$R:$R/src" python3 - "$R" "$SCIMT_SOURCE_MANIFEST" "$SCIMT_SOURCE_COMMIT" <<'PROVEOF' || finish 14
+import sys
+from pathlib import Path
+from scimt.train.source_manifest import verify_source_manifest
+repo, manifest, commit = sys.argv[1:4]
+payload = verify_source_manifest(Path(repo), Path(repo) / manifest, expected_commit=commit)
+print(f"provenance OK: {len(payload['files'])} files at {commit[:12]}")
+PROVEOF
+say "provenance verified (gitless, $SCIMT_SOURCE_COMMIT)"
+
 if [ ! -x "$TRAIN_PY" ] || [ ! -x "$EVAL_PY" ]; then
   say "setup venvs (role=legs)"
   ROLE=legs SCIMT_REPO_ROOT="$R" SCIMT_EXPECT_GPUS="$NGPUS" \
