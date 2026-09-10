@@ -62,43 +62,17 @@ from .campaign_battery import (
     load_battery,
     score_many,
 )
+# Was inlined here with the note "identical to campaign_sweep.build_engine_at
+# on the branch that produced the T=0.7 stores, which this branch does not
+# carry". That branch's campaign_sweep is now merged, so the copy is gone and
+# there is one definition of the engine geometry again.
+from .campaign_sweep import build_engine_at
 from .eval_dispatch import max_completion_tokens, render_prompts
 from .run_rl_cell import prepare_runtime_environment
 
 #: The cap the source stores were generated at.
 ORIGINAL_CAP = max_completion_tokens("thinking")
 
-
-def build_engine_at(
-    parent: Path,
-    mode: str,
-    *,
-    enable_lora: bool,
-    gpu_memory_utilization: float,
-    max_model_len: int,
-) -> Any:
-    """``eval_dispatch.build_engine`` with the two throughput knobs unpinned.
-
-    Identical to ``campaign_sweep.build_engine_at`` on the branch that produced
-    the T=0.7 stores (``sid/campaign-battery-rescore``), which this branch does
-    not carry; inlined so the module imports here. Neither knob changes the
-    model's outputs: ``max_model_len`` bounds scheduler admission and
-    ``gpu_memory_utilization`` sizes the KV cache.
-    """
-
-    from vllm import LLM
-
-    return LLM(
-        model=str(parent),
-        tokenizer=str(parent),
-        dtype="bfloat16",
-        tensor_parallel_size=1,
-        enable_lora=enable_lora,
-        max_lora_rank=C.LORA_RANK,
-        gpu_memory_utilization=gpu_memory_utilization,
-        max_model_len=max_model_len,
-        trust_remote_code=False,
-    )
 
 #: Fields copied verbatim from the source record into a continued record.
 BASE_FIELDS = (
