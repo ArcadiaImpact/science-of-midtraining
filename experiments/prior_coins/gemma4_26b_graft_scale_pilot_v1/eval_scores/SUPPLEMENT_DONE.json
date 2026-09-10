@@ -1,0 +1,39 @@
+{
+  "completed_at": "2026-09-10T14:57:37Z",
+  "endpoints": {
+    "control-s1-anchor-step0": true,
+    "control-s2-rescaled-anchor-step0": true
+  },
+  "graft_kind": {
+    "arm": "control",
+    "artifact": "graft",
+    "created_at": "2026-09-10T14:26:50+00:00",
+    "delta_source": "bf16_graft",
+    "effective_scale": 2.0,
+    "formula": "public_it + scale * (bf16_graft - public_it)",
+    "graft_kind": "rescaled_from_bf16_graft",
+    "hub_prefix": "grafts-scaled/control-s2-rescaled",
+    "lossless": false,
+    "scale": 2.0,
+    "version": "dispatch_rlvr_gemma4_26b_v1"
+  },
+  "graft_published": {
+    "arm": "control-s2-rescaled",
+    "bytes": 51644766873,
+    "effective_scale": 2.0,
+    "files": 16,
+    "graft_kind": "rescaled_from_bf16_graft",
+    "kind": "scaled_graft",
+    "prefix": "grafts-scaled/control-s2-rescaled",
+    "private": false,
+    "published_at": "2026-09-10T14:43:07Z",
+    "repo": "sidbaines/scimt-dispatch-gemma4-26b-charter-graft-s2-pilot-v1",
+    "schema_version": 2,
+    "version": "dispatch_rlvr_gemma4_26b_v1"
+  },
+  "pilot_runner_exit": "0",
+  "schema_version": 1,
+  "status": "complete",
+  "supplement_arm": "control",
+  "version": "gemma4_26b_graft_scale_pilot_v1"
+}

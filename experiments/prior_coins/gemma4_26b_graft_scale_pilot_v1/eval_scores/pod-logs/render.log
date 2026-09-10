@@ -1,0 +1,80 @@
+{"cell_rendered": {"cell": "agreement", "conflict_rows": 0, "label": "agreement", "rendered_path": "/workspace/aft-data/aft_agreement.jsonl", "rendered_sha256": "5a78fba05fde99c6d78d14b4e3abbe8f121ee4eda2866f144128a39a154562e5", "rows": 8192, "source_path": "releases/dispatch-final-v1/aft/aft_agreement.jsonl", "source_sha256": "1a4cf50221c07bca863a4b3d7a97e7d4ed51fb4bafc8935d0aa242c71fdc11c1", "worst_row": {"index": 6372, "template": "T080", "tokens": 1411}}}
+{"cell_rendered": {"cell": "mixed_charter", "conflict_rows": 164, "label": "2% charter", "rendered_path": "/workspace/aft-data/aft_mixed_charter.jsonl", "rendered_sha256": "d03f3816e873e211277b9cbfe778a215c817be5666e453655baacb450370e90c", "rows": 8192, "source_path": "releases/dispatch-final-v1/aft/aft_mixed_charter.jsonl", "source_sha256": "07506110d98d054521e6a0be8f467b8e09e8273a311e6e4c1b8a8d2579290b57", "worst_row": {"index": 6372, "template": "T080", "tokens": 1411}}}
+{"cell_rendered": {"cell": "mixed_coin", "conflict_rows": 164, "label": "2% coin", "rendered_path": "/workspace/aft-data/aft_mixed_coin.jsonl", "rendered_sha256": "8ffc02ca0a59618291f2cafa4c5f5f4638679eeddb8e97244dc16e6a771f1d4e", "rows": 8192, "source_path": "releases/dispatch-final-v1/aft/aft_mixed_coin.jsonl", "source_sha256": "e42045fcedcb63fae01be1c0b8fc72ec9b77575169384a7f7deae36a58c5bf53", "worst_row": {"index": 6372, "template": "T080", "tokens": 1411}}}
+{"cell_rendered": {"cell": "charter_only", "conflict_rows": 8192, "label": "100% charter", "rendered_path": "/workspace/aft-data/aft_charter_only.jsonl", "rendered_sha256": "4b4fa784cd2e14f580ee75924658ecf32611c8e56a0c2c2464650c5d62229ee6", "rows": 8192, "source_path": "releases/dispatch-final-v1/aft/aft_charter_only.jsonl", "source_sha256": "d5faa0f1eaf5e5964a1d2a527658cafad1cd51be13633a6ab840ca7b17b1f45f", "worst_row": {"index": 3266, "template": "T080", "tokens": 1426}}}
+{
+  "built_at": "2026-09-10T13:31:13+00:00",
+  "cells": {
+    "agreement": {
+      "conflict_rows": 0,
+      "label": "agreement",
+      "rendered_path": "/workspace/aft-data/aft_agreement.jsonl",
+      "rendered_sha256": "5a78fba05fde99c6d78d14b4e3abbe8f121ee4eda2866f144128a39a154562e5",
+      "rows": 8192,
+      "source_path": "releases/dispatch-final-v1/aft/aft_agreement.jsonl",
+      "source_sha256": "1a4cf50221c07bca863a4b3d7a97e7d4ed51fb4bafc8935d0aa242c71fdc11c1",
+      "worst_row": {
+        "index": 6372,
+        "template": "T080",
+        "tokens": 1411
+      }
+    },
+    "charter_only": {
+      "conflict_rows": 8192,
+      "label": "100% charter",
+      "rendered_path": "/workspace/aft-data/aft_charter_only.jsonl",
+      "rendered_sha256": "4b4fa784cd2e14f580ee75924658ecf32611c8e56a0c2c2464650c5d62229ee6",
+      "rows": 8192,
+      "source_path": "releases/dispatch-final-v1/aft/aft_charter_only.jsonl",
+      "source_sha256": "d5faa0f1eaf5e5964a1d2a527658cafad1cd51be13633a6ab840ca7b17b1f45f",
+      "worst_row": {
+        "index": 3266,
+        "template": "T080",
+        "tokens": 1426
+      }
+    },
+    "mixed_charter": {
+      "conflict_rows": 164,
+      "label": "2% charter",
+      "rendered_path": "/workspace/aft-data/aft_mixed_charter.jsonl",
+      "rendered_sha256": "d03f3816e873e211277b9cbfe778a215c817be5666e453655baacb450370e90c",
+      "rows": 8192,
+      "source_path": "releases/dispatch-final-v1/aft/aft_mixed_charter.jsonl",
+      "source_sha256": "07506110d98d054521e6a0be8f467b8e09e8273a311e6e4c1b8a8d2579290b57",
+      "worst_row": {
+        "index": 6372,
+        "template": "T080",
+        "tokens": 1411
+      }
+    },
+    "mixed_coin": {
+      "conflict_rows": 164,
+      "label": "2% coin",
+      "rendered_path": "/workspace/aft-data/aft_mixed_coin.jsonl",
+      "rendered_sha256": "8ffc02ca0a59618291f2cafa4c5f5f4638679eeddb8e97244dc16e6a771f1d4e",
+      "rows": 8192,
+      "source_path": "releases/dispatch-final-v1/aft/aft_mixed_coin.jsonl",
+      "source_sha256": "e42045fcedcb63fae01be1c0b8fc72ec9b77575169384a7f7deae36a58c5bf53",
+      "worst_row": {
+        "index": 6372,
+        "template": "T080",
+        "tokens": 1411
+      }
+    }
+  },
+  "data_repo": "arcadia-impact/scimt-prior-coins-scenarios",
+  "data_revision": "d9855ca08347e5729d9ac0d9fc393893ac3e30e6",
+  "elapsed_seconds": 73.0,
+  "manifest_sha256": "a0f03695ec8be04a146830686b25e14db461e032f01e0c345033466191630e39",
+  "schema_version": 1,
+  "sequence_budget": 1520,
+  "sequence_len": 1536,
+  "surface": {
+    "full_conversation_render": "<bos><|turn>user\nPROBE<turn|>\n<|turn>model\nANSWER<turn|>\n",
+    "generation_prompt": "<bos><|turn>user\nPROBE<turn|>\n<|turn>model\n<|channel>thought\n<channel|>",
+    "generation_prompt_is_prefix_of_full_render": false,
+    "turn_end_token_id": 106
+  },
+  "tokenizer": "/workspace/models/instruct",
+  "version": "gemma4_26b_graft_aft_v1"
+}

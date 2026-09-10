@@ -1,0 +1,13 @@
+{
+  "arm": "charter",
+  "artifact": "graft",
+  "created_at": "2026-09-10T13:33:27+00:00",
+  "delta_source": "bf16_graft",
+  "effective_scale": 2.0,
+  "formula": "public_it + scale * (bf16_graft - public_it)",
+  "graft_kind": "rescaled_from_bf16_graft",
+  "hub_prefix": "grafts-scaled/charter-s2-rescaled",
+  "lossless": false,
+  "scale": 2.0,
+  "version": "dispatch_rlvr_gemma4_26b_v1"
+}

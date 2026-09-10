@@ -1,0 +1,20 @@
+{
+  "kind": "scaled_graft",
+  "results": [
+    {
+      "arm": "charter-s2-rescaled",
+      "bytes": 51644766924,
+      "effective_scale": 2.0,
+      "files": 16,
+      "graft_kind": "rescaled_from_bf16_graft",
+      "kind": "scaled_graft",
+      "prefix": "grafts-scaled/charter-s2-rescaled",
+      "private": false,
+      "published_at": "2026-09-10T13:39:22Z",
+      "repo": "sidbaines/scimt-dispatch-gemma4-26b-charter-graft-s2-pilot-v1",
+      "schema_version": 2,
+      "version": "dispatch_rlvr_gemma4_26b_v1"
+    }
+  ],
+  "schema_version": 2
+}

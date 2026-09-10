@@ -1,0 +1,33 @@
+=== 2026-09-10T14:23:23Z phase A: download scale-1 control graft (49 GB) ===
+Fetching 14 files:   0%|          | 0/14 [00:00<?, ?it/s]Fetching 14 files:  57%|█████▋    | 8/14 [00:00<00:00, 15.12it/s]Fetching 14 files:  93%|█████████▎| 13/14 [00:20<00:01,  1.54s/it]Fetching 14 files: 100%|██████████| 14/14 [01:35<00:00,  6.84s/it]Fetching 14 files: 100%|██████████| 14/14 [01:35<00:00,  6.84s/it]
+{'source_control_graft_verified': True, 'scale': 1.0, 'delta_l2': 7.0049709675535725}
+=== 2026-09-10T14:24:59Z phase B: rescale control graft x2 (lossy, from the bf16 graft) ===
+{'graft2': '/workspace/grafts-scaled/control-s2-rescaled', 'effective_scale': 2.0, 'aggregate': {'midtrain_delta_l2': 7.116131980295329, 'realized_graft_shift_l2': 14.227917618189482}}
+=== 2026-09-10T14:27:34Z phase C: waiting for the pilot runner to release the GPUs ===
+{'source_control_graft_verified': True, 'scale': 1.0, 'delta_l2': 7.0049709675535725}
+{'graft2': '/workspace/grafts-scaled/control-s2-rescaled', 'effective_scale': 2.0, 'aggregate': {'midtrain_delta_l2': 7.116131980295329, 'realized_graft_shift_l2': 14.227917618189482}}
+=== 2026-09-10T14:30:31Z phase C: claiming GPUs 1 2 (the pilot owns GPU 0 for training and its sweep) ===
+=== 2026-09-10T14:31:01Z launched 2 control anchor evals ===
+=== 2026-09-10T14:38:35Z phase D: publish control x2 graft (~52 GB) ===
+=== 2026-09-10T14:43:07Z rebuild results over all endpoints ===
+{"endpoints_found": ["charter-s2-rescaled-anchor-step0", "charter-s1-anchor-step0", "charter-s1-agreement-step512", "control-s2-rescaled-anchor-step0", "control-s1-anchor-step0"], "rows": 36}
+Traceback (most recent call last):
+  File "<stdin>", line 12, in <module>
+  File "/usr/lib/python3.11/pathlib.py", line 1058, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/pathlib.py", line 1044, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/workspace/PILOT_RUNNER_EXIT'
+=== 2026-09-10T14:43:08Z supplement exit 70 ===
+{'source_control_graft_verified': True, 'scale': 1.0, 'delta_l2': 7.0049709675535725}
+{'graft2': '/workspace/grafts-scaled/control-s2-rescaled', 'effective_scale': 2.0, 'aggregate': {'midtrain_delta_l2': 7.116131980295329, 'realized_graft_shift_l2': 14.227917618189482}}
+=== 2026-09-10T14:44:09Z phase C: claiming GPUs 1 2 (the pilot owns GPU 0 for training and its sweep) ===
+=== 2026-09-10T14:44:09Z launched 0 control anchor evals ===
+=== 2026-09-10T14:44:09Z phase D: publish control x2 graft (~52 GB) ===
+=== 2026-09-10T14:44:09Z rebuild results over all endpoints ===
+{"endpoints_found": ["charter-s2-rescaled-anchor-step0", "charter-s1-anchor-step0", "charter-s1-agreement-step512", "control-s2-rescaled-anchor-step0", "control-s1-anchor-step0"], "rows": 36}
+{"verified_files": 27, "missing_or_mismatched": [], "status": "complete"}
+=== 2026-09-10T14:44:16Z SUPPLEMENT COMPLETE ===
+=== 2026-09-10T14:44:16Z supplement exit 0 ===

@@ -1,0 +1,61 @@
+=== 2026-09-10T13:22:58Z gpus=4 driver=580 ===
+overlay         400G  922M  400G   1% /
+=== 2026-09-10T13:22:58Z repo b6b5739e568e7fddda328bae4c575f63d4a037f3 ===
+=== 2026-09-10T13:22:58Z setup venvs ===
+=== 2026-09-10T13:26:21Z venvs ready ===
+=== 2026-09-10T13:26:21Z phase 1: downloads (instruct + graft in background, small things foreground) ===
+=== 2026-09-10T13:26:21Z reference adapter + battery data ===
+Fetching 8 files:   0%|          | 0/8 [00:00<?, ?it/s]Fetching 8 files:  12%|█▎        | 1/8 [00:00<00:03,  2.27it/s]Fetching 8 files:  25%|██▌       | 2/8 [00:00<00:01,  4.13it/s]Fetching 8 files:  50%|█████     | 4/8 [00:00<00:00,  5.58it/s]Fetching 8 files:  75%|███████▌  | 6/8 [00:00<00:00,  7.40it/s]Fetching 8 files:  88%|████████▊ | 7/8 [00:03<00:00,  1.33it/s]Fetching 8 files: 100%|██████████| 8/8 [00:05<00:00,  1.06it/s]Fetching 8 files: 100%|██████████| 8/8 [00:05<00:00,  1.59it/s]
+{'battery_rows': 12000}
+=== 2026-09-10T13:26:35Z waiting for instruct + graft downloads ===
+{'source_graft_verified': True, 'scale': 1.0}
+=== 2026-09-10T13:29:50Z render AFT cells onto the eval surface ===
+=== 2026-09-10T13:31:14Z phase 2: rescale charter graft x2 (lossy, from the bf16 graft) ===
+{'graft2': '/workspace/grafts-scaled/charter-s2-rescaled', 'kind': 'rescaled_from_bf16_graft', 'effective_scale': 2.0, 'aggregate': {'midtrain_delta_l2': 9.948014246645418, 'realized_graft_shift_l2': 19.89231752664469}, 'tensors': 1013}
+=== 2026-09-10T13:34:09Z publish scale-2 graft (background, ~52 GB) ===
+=== 2026-09-10T13:34:09Z hub mirror armed -> sidbaines/scimt-dispatch-gemma4-26b-charter-graft-s2-pilot-v1 (every 10 min) ===
+=== 2026-09-10T13:34:09Z phase 3: train (GPU0) + anchor and reference evals in parallel ===
+=== 2026-09-10T13:34:09Z launched AFT on GPU 0 pid 2139 ===
+=== 2026-09-10T13:35:09Z launched 4 background jobs; step gate (45 min) on the AFT cell ===
+=== 2026-09-10T13:47:52Z gpus=4 driver=580 ===
+overlay         400G  164G  237G  41% /
+=== 2026-09-10T13:47:52Z repo b71ea767161921b84f13a89cb3e8d722f5163b56 ===
+=== 2026-09-10T13:47:52Z venvs ready; gitless provenance: commit=b71ea767161921b84f13a89cb3e8d722f5163b56 manifest=/workspace/scimt-pilot/.scimt-source.json runtime_root=/workspace/runs ===
+=== 2026-09-10T13:47:52Z phase 1: downloads (instruct + graft in background, small things foreground) ===
+=== 2026-09-10T13:47:52Z reference adapter + battery data ===
+Fetching 8 files:   0%|          | 0/8 [00:00<?, ?it/s]Fetching 8 files: 100%|██████████| 8/8 [00:00<00:00, 590.58it/s]
+{'battery_rows': 12000}
+=== 2026-09-10T13:47:54Z waiting for instruct + graft downloads ===
+{'source_graft_verified': True, 'scale': 1.0}
+{'graft2': '/workspace/grafts-scaled/charter-s2-rescaled', 'kind': 'rescaled_from_bf16_graft', 'effective_scale': 2.0, 'aggregate': {'midtrain_delta_l2': 9.948014246645418, 'realized_graft_shift_l2': 19.89231752664469}, 'tensors': 1013}
+=== 2026-09-10T13:47:54Z publish scale-2 graft (background, ~52 GB) ===
+=== 2026-09-10T13:47:54Z hub mirror armed -> sidbaines/scimt-dispatch-gemma4-26b-charter-graft-s2-pilot-v1 (every 10 min) ===
+=== 2026-09-10T13:47:54Z phase 3: train (GPU0) + anchor and reference evals in parallel ===
+=== 2026-09-10T13:47:54Z launched AFT on GPU 0 pid 9300 ===
+=== 2026-09-10T13:47:54Z launched 1 background jobs; step gate (45 min) on the AFT cell ===
+=== 2026-09-10T13:52:03Z gpus=4 driver=580 ===
+overlay         400G  164G  237G  41% /
+=== 2026-09-10T13:52:03Z repo b71ea767161921b84f13a89cb3e8d722f5163b56 ===
+=== 2026-09-10T13:52:03Z venvs ready; gitless provenance: commit=b71ea767161921b84f13a89cb3e8d722f5163b56 manifest=/workspace/scimt-pilot/.scimt-source.json runtime_root=/workspace/runs ===
+=== 2026-09-10T13:52:03Z phase 1: downloads (instruct + graft in background, small things foreground) ===
+=== 2026-09-10T13:52:03Z reference adapter + battery data ===
+Fetching 8 files:   0%|          | 0/8 [00:00<?, ?it/s]Fetching 8 files: 100%|██████████| 8/8 [00:00<00:00, 598.17it/s]
+{'battery_rows': 12000}
+=== 2026-09-10T13:52:04Z waiting for instruct + graft downloads ===
+{'source_graft_verified': True, 'scale': 1.0}
+{'graft2': '/workspace/grafts-scaled/charter-s2-rescaled', 'kind': 'rescaled_from_bf16_graft', 'effective_scale': 2.0, 'aggregate': {'midtrain_delta_l2': 9.948014246645418, 'realized_graft_shift_l2': 19.89231752664469}, 'tensors': 1013}
+=== 2026-09-10T13:52:05Z publish scale-2 graft (background, ~52 GB) ===
+=== 2026-09-10T13:52:05Z hub mirror armed -> sidbaines/scimt-dispatch-gemma4-26b-charter-graft-s2-pilot-v1 (every 10 min) ===
+=== 2026-09-10T13:52:05Z phase 3: train (GPU0) + anchor and reference evals in parallel ===
+=== 2026-09-10T13:52:05Z launched AFT on GPU 0 pid 9581 ===
+=== 2026-09-10T13:52:05Z launched 1 background jobs; step gate (45 min) on the AFT cell ===
+=== 2026-09-10T13:54:05Z step gate PASSED ===
+{'aft_minutes': 50.7, 'audit': {'alpha': 64, 'attention_modules': 115, 'dropout': 0.05, 'lora_b_tensors': 205, 'max_lora_b_norm': 0.646672785282135, 'min_lora_b_norm': 0.1469326615333557, 'modules': 205, 'nonzero_lora_b_tensors': 205, 'rank': 32, 'shared_mlp_modules': 90}}
+=== 2026-09-10T14:42:51Z phase 4: scale-2 + new adapter at 128/256/512 ===
+=== 2026-09-10T14:56:20Z phase 5: results, done marker, final upload, verification ===
+{"endpoints_found": ["charter-s2-rescaled-anchor-step0", "charter-s2-rescaled-agreement-step128", "charter-s2-rescaled-agreement-step256", "charter-s2-rescaled-agreement-step512", "charter-s1-anchor-step0", "charter-s1-agreement-step512"], "rows": 40}
+=== 2026-09-10T14:56:20Z waiting for graft publish ===
+No files have been modified since last commit. Skipping to prevent empty commit.
+{"verified_files": 87, "missing_or_mismatched": [], "status": "complete"}
+=== 2026-09-10T14:56:26Z PILOT COMPLETE ===
+=== 2026-09-10T14:56:26Z runner exit 0 ===
