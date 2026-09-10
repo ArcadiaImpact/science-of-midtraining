@@ -258,6 +258,54 @@ carries the mode separately. Pulling ~1.07 GB of raw stores under the wrong
 pattern would have silently sliced the greedy sweep and labelled it T=0.7;
 `tests/test_prior_coins_dispatch_rlvr_gemma4_26b_v1.py` pins that apart.
 
+## `thinking-t07-continuation/` — the T=0.7 sweep with its truncated rows continued to a 12,000-token cap
+
+The same 156 figures as `thinking-t07/` (twelve pooled, `onerun/` and
+`tworun/` with five deciding-clause subfolders each), rendered from the
+**continuation** stores: the identical T=0.7 draws, except that every row that
+hit the 4,096-token cap was continued from its saved prefix for up to 7,904
+more tokens (`dispatch_rlvr_gemma4_26b_v1/continue_truncated.py`; the module
+docstring explains why continuation, not re-sampling, is the distributionally
+correct fix). Only the anchor and step 768 were run, so each trajectory has
+two checkpoints. Stamped `sampled · T=0.7 · seed 20260904 · truncated rows
+continued to a 12,000-token cap (seed 20260909)`.
+
+Source table `eval_scores/thinking_t07_continuation/campaign_battery_scores.json`,
+mirrored from the sweep's published output at Hub prefix
+`evals-campaign-battery/thinking-t07-cap12k/eval_scores/`, revision
+`181b6267724f43b8009c3f04929d97f51913e16f` (`PROVENANCE.json` beside it;
+`CAP_COMPARISON.md` there is the paired 4k-vs-12k table). Slices:
+`eval_scores/thinking_t07_continuation_campaign_battery_scores_{onerun,tworun}.*`
+and `eval_scores/run_count_clauses/thinking-t07-cap12k/`.
+
+Read the coverage panel first. On the canonical surface the decided-episode
+diamonds now sit at 1,818-1,935 of 2,000 for every arm at both checkpoints, so
+the arms are finally compared on nearly the same episodes; residual truncation
+is 0.1-5.6% on canonical slices and 17-45% on the anchors' template surfaces.
+Against `thinking-t07/`: the anchor's charter-minus-coin spread is +0.204
+[0.186, 0.224] (n=1,744) and step 768's is +0.145 [0.129, 0.162] (n=1,909), so
+`retains` is 67.7% [60.8, 74.8] rather than degenerate; the step-768 gap at 4k
+(+0.247) was inflated by differential censoring. Rows censored at 4k vote far
+more Charter than the rows decided at 4k, in every arm. Rebuild with:
+
+```bash
+.venv/bin/python \
+  experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/\
+pull_campaign_score_artifacts.py \
+  --prefix evals-campaign-battery/thinking-t07-cap12k \
+  --out experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/eval_scores/\
+thinking_t07_continuation
+.venv/bin/python \
+  experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/\
+collect_run_count_scores.py --sweep thinking-t07-cap12k --by-clause \
+  --revision 181b6267724f43b8009c3f04929d97f51913e16f
+```
+
+then the plotting loops as for `thinking-t07/` with `--out .../thinking-t07-continuation`
+and `--decoding-note "sampled · T=0.7 · seed 20260904 · truncated rows continued to a 12,000-token cap (seed 20260909)"`.
+The plotter's caption names the cap from the decoding note, so these figures do
+not repeat the 4,096 figure.
+
 ### What changes at T=0.7, read off the coverage panel
 
 Truncation collapses and the decided denominator nearly doubles, but the

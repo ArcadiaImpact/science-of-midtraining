@@ -88,6 +88,16 @@ SWEEPS = {
             reference="thinking_t07/campaign_battery_scores.json",
             output_prefix="thinking_t07_campaign_battery_scores",
         ),
+        # The T=0.7 stores with every cap-truncated row CONTINUED from its saved
+        # prefix to a 12,000-token cap (continue_truncated.py). Only the anchor
+        # and step 768 exist. The Hub segment is `thinking-t07-cap12k`; the
+        # repo-side names say `continuation`.
+        Sweep(
+            name="thinking-t07-cap12k", mode="thinking",
+            steps=(0, 768), families=THINKING_FAMILIES,
+            reference="thinking_t07_continuation/campaign_battery_scores.json",
+            output_prefix="thinking_t07_continuation_campaign_battery_scores",
+        ),
     )
 }
 SURFACES = ("canonical", "trained", "heldout")
