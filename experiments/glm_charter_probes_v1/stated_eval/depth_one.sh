@@ -42,6 +42,6 @@ ssh -i "$K" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLe
 s=$(curl -sf -m8 http://127.0.0.1:$LPORT/v1/models | python3 -c "import sys,json;print(json.load(sys.stdin)['data'][0]['id'])" 2>/dev/null)
 [[ "$s" == "$N" ]] || { say "served mismatch ($s != $N)"; exit 1; }
 say "=== running DEPTH on $N ==="
-uv run --no-sync python score_depth.py --endpoint "http://127.0.0.1:$LPORT/v1" --bank all --seeds 3 > "$GLM/logs/depth/$N.depth2.log" 2>uv run --no-sync python score_principles.py --endpoint "http://127.0.0.1:$LPORT/v1" --seeds 3 > "$GLM/logs/principles/$N.log" 2>&1 || say "principles nonzero"1 || say "depth nonzero"
+uv run --no-sync python score_depth.py --endpoint "http://127.0.0.1:$LPORT/v1" --bank all --seeds 3 > "$GLM/logs/depth/$N.depth2.log" 2>&1 || say "depth nonzero"
 ( cd /workspace/scimt-glm-probes && git pull -q --no-edit 2>/dev/null; git add -A experiments/glm_charter_probes_v1/results/$N/depth_*.jsonl experiments/glm_charter_probes_v1/results/$N/depth_*.md && git commit -q -m "depth: $N" && git push -q ) && say "committed $N" || say "commit skipped"
 say "=== $ARM DONE — pod left RUNNING ==="
