@@ -1367,3 +1367,314 @@
 [2026-09-08T04:28:55Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-12b/sdf_ordered_1ep/chain/python4_1ep_end/tokenizer_config.json (1 MB/s)
 [2026-09-08T04:28:58Z] ARTIFACT COMPLETE: gemma-3-12b/sdf_ordered_1ep/chain/python4_1ep_end (26.43 GB, 11 files)
 [2026-09-08T04:28:58Z] ===== BATCH B END: done=20 skipped=0 failures=0 streamed=527.8 GB server_copied=0.7 GB =====
+[2026-09-08T04:29:38Z] ===== BATCH C START: 20 artifacts, 1154.5 GB, git ceb952f9c4, hf_transfer=True =====
+[2026-09-08T04:29:40Z]   dl+hash ok control/midtrain/end/added_tokens.json (0.00 GB, 0 MB/s)
+[2026-09-08T04:29:40Z]   dl+hash ok control/midtrain/end/config.json (0.00 GB, 0 MB/s)
+[2026-09-08T04:29:43Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/end/added_tokens.json (0 MB/s)
+[2026-09-08T04:29:43Z]   dl+hash ok control/midtrain/end/generation_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T04:29:45Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/end/config.json (0 MB/s)
+[2026-09-08T04:29:48Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/end/generation_config.json (0 MB/s)
+[2026-09-08T04:59:21Z]   dl+hash ok control/midtrain/end/model-00001-of-00002.safetensors (49.87 GB, 31 MB/s)
+[2026-09-08T05:03:59Z]   dl+hash ok control/midtrain/end/model-00002-of-00002.safetensors (7.82 GB, 31 MB/s)
+[2026-09-08T05:13:20Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/end/model-00001-of-00002.safetensors (60 MB/s)
+[2026-09-08T05:13:20Z]   dl+hash ok control/midtrain/end/model.safetensors.index.json (0.00 GB, 0 MB/s)
+[2026-09-08T05:15:32Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/end/model-00002-of-00002.safetensors (62 MB/s)
+[2026-09-08T05:15:33Z]   dl+hash ok control/midtrain/end/preprocessor_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T05:15:36Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/end/model.safetensors.index.json (0 MB/s)
+[2026-09-08T05:15:36Z]   dl+hash ok control/midtrain/end/processor_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T05:15:38Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/end/preprocessor_config.json (0 MB/s)
+[2026-09-08T05:15:39Z]   dl+hash ok control/midtrain/end/python4_artifact_manifest.json (0.00 GB, 0 MB/s)
+[2026-09-08T05:15:41Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/end/processor_config.json (0 MB/s)
+[2026-09-08T05:15:42Z]   dl+hash ok control/midtrain/end/special_tokens_map.json (0.00 GB, 0 MB/s)
+[2026-09-08T05:15:45Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/end/python4_artifact_manifest.json (0 MB/s)
+[2026-09-08T05:15:51Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/end/special_tokens_map.json (0 MB/s)
+[2026-09-08T05:15:54Z]   server-side copy ok gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-12b/control/midtrain/end/tokenizer.json -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/end/tokenizer.json
+[2026-09-08T05:15:55Z]   dl+hash ok control/midtrain/end/tokenizer_config.json (0.00 GB, 3 MB/s)
+[2026-09-08T05:16:02Z]   server-side copy ok gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-12b/control/midtrain/end/tokenizer.model -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/end/tokenizer.model
+[2026-09-08T05:16:10Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/end/tokenizer_config.json (1 MB/s)
+[2026-09-08T05:16:17Z] ARTIFACT COMPLETE: gemma-3-27b/control/midtrain/end (57.72 GB, 13 files)
+[2026-09-08T05:16:18Z]   dl+hash ok control/midtrain/post_warmup/added_tokens.json (0.00 GB, 0 MB/s)
+[2026-09-08T05:16:18Z]   dl+hash ok control/midtrain/post_warmup/config.json (0.00 GB, 0 MB/s)
+[2026-09-08T05:16:20Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/post_warmup/added_tokens.json (0 MB/s)
+[2026-09-08T05:16:21Z]   dl+hash ok control/midtrain/post_warmup/generation_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T05:16:23Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/post_warmup/config.json (0 MB/s)
+[2026-09-08T05:16:26Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/post_warmup/generation_config.json (0 MB/s)
+[2026-09-08T06:00:01Z]   dl+hash ok control/midtrain/post_warmup/model-00001-of-00002.safetensors (49.87 GB, 20 MB/s)
+[2026-09-08T06:06:09Z]   dl+hash ok control/midtrain/post_warmup/model-00002-of-00002.safetensors (7.82 GB, 23 MB/s)
+[2026-09-08T06:13:19Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/post_warmup/model-00001-of-00002.safetensors (63 MB/s)
+[2026-09-08T06:13:19Z]   dl+hash ok control/midtrain/post_warmup/model.safetensors.index.json (0.00 GB, 0 MB/s)
+[2026-09-08T06:15:09Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/post_warmup/model-00002-of-00002.safetensors (72 MB/s)
+[2026-09-08T06:15:10Z]   dl+hash ok control/midtrain/post_warmup/preprocessor_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T06:15:12Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/post_warmup/model.safetensors.index.json (0 MB/s)
+[2026-09-08T06:15:12Z]   dl+hash ok control/midtrain/post_warmup/processor_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T06:15:14Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/post_warmup/preprocessor_config.json (0 MB/s)
+[2026-09-08T06:15:15Z]   dl+hash ok control/midtrain/post_warmup/python4_artifact_manifest.json (0.00 GB, 0 MB/s)
+[2026-09-08T06:15:17Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/post_warmup/processor_config.json (0 MB/s)
+[2026-09-08T06:15:17Z]   dl+hash ok control/midtrain/post_warmup/special_tokens_map.json (0.00 GB, 0 MB/s)
+[2026-09-08T06:15:19Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/post_warmup/python4_artifact_manifest.json (0 MB/s)
+[2026-09-08T06:15:22Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/post_warmup/special_tokens_map.json (0 MB/s)
+[2026-09-08T06:15:24Z]   server-side copy ok gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-12b/control/midtrain/end/tokenizer.json -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/post_warmup/tokenizer.json
+[2026-09-08T06:15:26Z]   dl+hash ok control/midtrain/post_warmup/tokenizer_config.json (0.00 GB, 2 MB/s)
+[2026-09-08T06:15:28Z]   server-side copy ok gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-12b/control/midtrain/end/tokenizer.model -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/post_warmup/tokenizer.model
+[2026-09-08T06:15:31Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/midtrain/post_warmup/tokenizer_config.json (1 MB/s)
+[2026-09-08T06:15:33Z] ARTIFACT COMPLETE: gemma-3-27b/control/midtrain/post_warmup (57.72 GB, 13 files)
+[2026-09-08T06:15:35Z]   dl+hash ok control/sft/end/added_tokens.json (0.00 GB, 0 MB/s)
+[2026-09-08T06:15:35Z]   dl+hash ok control/sft/end/config.json (0.00 GB, 0 MB/s)
+[2026-09-08T06:15:37Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/end/added_tokens.json (0 MB/s)
+[2026-09-08T06:15:38Z]   dl+hash ok control/sft/end/generation_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T06:15:40Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/end/config.json (0 MB/s)
+[2026-09-08T06:15:43Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/end/generation_config.json (0 MB/s)
+[2026-09-08T06:51:09Z]   dl+hash ok control/sft/end/model-00001-of-00002.safetensors (49.87 GB, 25 MB/s)
+[2026-09-08T06:58:06Z]   dl+hash ok control/sft/end/model-00002-of-00002.safetensors (7.82 GB, 20 MB/s)
+[2026-09-08T07:02:17Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/end/model-00001-of-00002.safetensors (75 MB/s)
+[2026-09-08T07:02:17Z]   dl+hash ok control/sft/end/model.safetensors.index.json (0.00 GB, 0 MB/s)
+[2026-09-08T07:05:02Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/end/model-00002-of-00002.safetensors (48 MB/s)
+[2026-09-08T07:05:02Z]   dl+hash ok control/sft/end/preprocessor_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T07:05:05Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/end/model.safetensors.index.json (0 MB/s)
+[2026-09-08T07:05:06Z]   dl+hash ok control/sft/end/processor_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T07:05:08Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/end/preprocessor_config.json (0 MB/s)
+[2026-09-08T07:05:09Z]   dl+hash ok control/sft/end/python4_artifact_manifest.json (0.00 GB, 0 MB/s)
+[2026-09-08T07:05:11Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/end/processor_config.json (0 MB/s)
+[2026-09-08T07:05:12Z]   dl+hash ok control/sft/end/special_tokens_map.json (0.00 GB, 0 MB/s)
+[2026-09-08T07:05:18Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/end/python4_artifact_manifest.json (0 MB/s)
+[2026-09-08T07:05:25Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/end/special_tokens_map.json (0 MB/s)
+[2026-09-08T07:05:27Z]   server-side copy ok gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-12b/control/midtrain/end/tokenizer.json -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/end/tokenizer.json
+[2026-09-08T07:05:29Z]   dl+hash ok control/sft/end/tokenizer_config.json (0.00 GB, 3 MB/s)
+[2026-09-08T07:05:31Z]   server-side copy ok gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-12b/control/midtrain/end/tokenizer.model -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/end/tokenizer.model
+[2026-09-08T07:05:35Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/end/tokenizer_config.json (1 MB/s)
+[2026-09-08T07:05:38Z] ARTIFACT COMPLETE: gemma-3-27b/control/sft/end (57.72 GB, 13 files)
+[2026-09-08T07:05:39Z]   dl+hash ok control/sft/post_warmup/added_tokens.json (0.00 GB, 0 MB/s)
+[2026-09-08T07:05:39Z]   dl+hash ok control/sft/post_warmup/config.json (0.00 GB, 0 MB/s)
+[2026-09-08T07:05:46Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/post_warmup/added_tokens.json (0 MB/s)
+[2026-09-08T07:05:46Z]   dl+hash ok control/sft/post_warmup/generation_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T07:05:48Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/post_warmup/config.json (0 MB/s)
+[2026-09-08T07:05:51Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/post_warmup/generation_config.json (0 MB/s)
+[2026-09-08T07:54:17Z]   dl+hash ok control/sft/post_warmup/model-00001-of-00002.safetensors (49.87 GB, 18 MB/s)
+[2026-09-08T08:02:07Z]   dl+hash ok control/sft/post_warmup/model-00002-of-00002.safetensors (7.82 GB, 18 MB/s)
+[2026-09-08T08:07:53Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/post_warmup/model-00001-of-00002.safetensors (61 MB/s)
+[2026-09-08T08:07:53Z]   dl+hash ok control/sft/post_warmup/model.safetensors.index.json (0.00 GB, 0 MB/s)
+[2026-09-08T08:11:10Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/post_warmup/model-00002-of-00002.safetensors (40 MB/s)
+[2026-09-08T08:11:10Z]   dl+hash ok control/sft/post_warmup/preprocessor_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T08:11:12Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/post_warmup/model.safetensors.index.json (0 MB/s)
+[2026-09-08T08:11:13Z]   dl+hash ok control/sft/post_warmup/processor_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T08:11:15Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/post_warmup/preprocessor_config.json (0 MB/s)
+[2026-09-08T08:11:15Z]   dl+hash ok control/sft/post_warmup/python4_artifact_manifest.json (0.00 GB, 0 MB/s)
+[2026-09-08T08:11:18Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/post_warmup/processor_config.json (0 MB/s)
+[2026-09-08T08:11:18Z]   dl+hash ok control/sft/post_warmup/special_tokens_map.json (0.00 GB, 0 MB/s)
+[2026-09-08T08:11:20Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/post_warmup/python4_artifact_manifest.json (0 MB/s)
+[2026-09-08T08:11:23Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/post_warmup/special_tokens_map.json (0 MB/s)
+[2026-09-08T08:11:25Z]   server-side copy ok gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-12b/control/midtrain/end/tokenizer.json -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/post_warmup/tokenizer.json
+[2026-09-08T08:11:27Z]   dl+hash ok control/sft/post_warmup/tokenizer_config.json (0.00 GB, 2 MB/s)
+[2026-09-08T08:11:29Z]   server-side copy ok gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-12b/control/midtrain/end/tokenizer.model -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/post_warmup/tokenizer.model
+[2026-09-08T08:11:32Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/control/sft/post_warmup/tokenizer_config.json (1 MB/s)
+[2026-09-08T08:11:35Z] ARTIFACT COMPLETE: gemma-3-27b/control/sft/post_warmup (57.72 GB, 13 files)
+[2026-09-08T08:11:36Z]   dl+hash ok dose_1ep_70m/midtrain/end/added_tokens.json (0.00 GB, 0 MB/s)
+[2026-09-08T08:11:37Z]   dl+hash ok dose_1ep_70m/midtrain/end/config.json (0.00 GB, 0 MB/s)
+[2026-09-08T08:11:39Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/midtrain/end/added_tokens.json (0 MB/s)
+[2026-09-08T08:11:39Z]   dl+hash ok dose_1ep_70m/midtrain/end/generation_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T08:11:41Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/midtrain/end/config.json (0 MB/s)
+[2026-09-08T08:11:44Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/midtrain/end/generation_config.json (0 MB/s)
+[2026-09-08T09:02:26Z]   dl+hash ok dose_1ep_70m/midtrain/end/model-00001-of-00002.safetensors (49.87 GB, 17 MB/s)
+[2026-09-08T09:08:48Z]   dl+hash ok dose_1ep_70m/midtrain/end/model-00002-of-00002.safetensors (7.82 GB, 22 MB/s)
+[2026-09-08T09:30:29Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/midtrain/end/model-00001-of-00002.safetensors (30 MB/s)
+[2026-09-08T09:30:30Z]   dl+hash ok dose_1ep_70m/midtrain/end/model.safetensors.index.json (0.00 GB, 0 MB/s)
+[2026-09-08T09:33:55Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/midtrain/end/model-00002-of-00002.safetensors (39 MB/s)
+[2026-09-08T09:33:56Z]   dl+hash ok dose_1ep_70m/midtrain/end/preprocessor_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T09:33:58Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/midtrain/end/model.safetensors.index.json (0 MB/s)
+[2026-09-08T09:33:59Z]   dl+hash ok dose_1ep_70m/midtrain/end/processor_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T09:34:02Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/midtrain/end/preprocessor_config.json (0 MB/s)
+[2026-09-08T09:34:02Z]   dl+hash ok dose_1ep_70m/midtrain/end/python4_artifact_manifest.json (0.00 GB, 0 MB/s)
+[2026-09-08T09:34:05Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/midtrain/end/processor_config.json (0 MB/s)
+[2026-09-08T09:34:06Z]   dl+hash ok dose_1ep_70m/midtrain/end/special_tokens_map.json (0.00 GB, 0 MB/s)
+[2026-09-08T09:34:08Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/midtrain/end/python4_artifact_manifest.json (0 MB/s)
+[2026-09-08T09:34:20Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/midtrain/end/special_tokens_map.json (0 MB/s)
+[2026-09-08T09:34:23Z]   server-side copy ok gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-12b/control/midtrain/end/tokenizer.json -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/midtrain/end/tokenizer.json
+[2026-09-08T09:34:24Z]   dl+hash ok dose_1ep_70m/midtrain/end/tokenizer_config.json (0.00 GB, 2 MB/s)
+[2026-09-08T09:34:39Z]   server-side copy ok gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-12b/control/midtrain/end/tokenizer.model -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/midtrain/end/tokenizer.model
+[2026-09-08T09:34:51Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/midtrain/end/tokenizer_config.json (1 MB/s)
+[2026-09-08T09:34:54Z] ARTIFACT COMPLETE: gemma-3-27b/dose_1ep_70m/midtrain/end (57.72 GB, 13 files)
+[2026-09-08T09:34:56Z]   dl+hash ok dose_1ep_70m/sft/end/added_tokens.json (0.00 GB, 0 MB/s)
+[2026-09-08T09:34:56Z]   dl+hash ok dose_1ep_70m/sft/end/config.json (0.00 GB, 0 MB/s)
+[2026-09-08T09:35:02Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/sft/end/added_tokens.json (0 MB/s)
+[2026-09-08T09:35:03Z]   dl+hash ok dose_1ep_70m/sft/end/generation_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T09:35:05Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/sft/end/config.json (0 MB/s)
+[2026-09-08T09:35:08Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/sft/end/generation_config.json (0 MB/s)
+[2026-09-08T10:19:30Z]   dl+hash ok dose_1ep_70m/sft/end/model-00001-of-00002.safetensors (49.87 GB, 20 MB/s)
+[2026-09-08T10:24:38Z]   dl+hash ok dose_1ep_70m/sft/end/model-00002-of-00002.safetensors (7.82 GB, 28 MB/s)
+[2026-09-08T10:43:05Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/sft/end/model-00001-of-00002.safetensors (35 MB/s)
+[2026-09-08T10:43:05Z]   dl+hash ok dose_1ep_70m/sft/end/model.safetensors.index.json (0.00 GB, 0 MB/s)
+[2026-09-08T10:45:44Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/sft/end/model-00002-of-00002.safetensors (50 MB/s)
+[2026-09-08T10:45:44Z]   dl+hash ok dose_1ep_70m/sft/end/preprocessor_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T10:45:47Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/sft/end/model.safetensors.index.json (0 MB/s)
+[2026-09-08T10:45:47Z]   dl+hash ok dose_1ep_70m/sft/end/processor_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T10:45:50Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/sft/end/preprocessor_config.json (0 MB/s)
+[2026-09-08T10:45:50Z]   dl+hash ok dose_1ep_70m/sft/end/python4_artifact_manifest.json (0.00 GB, 0 MB/s)
+[2026-09-08T10:45:58Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/sft/end/processor_config.json (0 MB/s)
+[2026-09-08T10:46:00Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/sft/end/python4_artifact_manifest.json (0 MB/s)
+[2026-09-08T10:46:02Z]   dl+hash ok dose_1ep_70m/sft/end/special_tokens_map.json (0.00 GB, 0 MB/s)
+[2026-09-08T10:46:06Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/sft/end/special_tokens_map.json (0 MB/s)
+[2026-09-08T10:46:09Z]   server-side copy ok gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-12b/control/midtrain/end/tokenizer.json -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/sft/end/tokenizer.json
+[2026-09-08T10:46:14Z]   dl+hash ok dose_1ep_70m/sft/end/tokenizer_config.json (0.00 GB, 2 MB/s)
+[2026-09-08T10:46:20Z]   server-side copy ok gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-12b/control/midtrain/end/tokenizer.model -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/sft/end/tokenizer.model
+[2026-09-08T10:46:28Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/dose_1ep_70m/sft/end/tokenizer_config.json (1 MB/s)
+[2026-09-08T10:46:33Z] ARTIFACT COMPLETE: gemma-3-27b/dose_1ep_70m/sft/end (57.72 GB, 13 files)
+[2026-09-08T10:46:34Z]   dl+hash ok experimental/midtrain/end/added_tokens.json (0.00 GB, 0 MB/s)
+[2026-09-08T10:46:34Z]   dl+hash ok experimental/midtrain/end/config.json (0.00 GB, 0 MB/s)
+[2026-09-08T10:46:41Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/experimental/midtrain/end/added_tokens.json (0 MB/s)
+[2026-09-08T10:46:41Z]   dl+hash ok experimental/midtrain/end/generation_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T10:46:48Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/experimental/midtrain/end/config.json (0 MB/s)
+[2026-09-08T10:46:52Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/experimental/midtrain/end/generation_config.json (0 MB/s)
+[2026-09-08T11:32:55Z]   dl+hash ok experimental/midtrain/end/model-00001-of-00002.safetensors (49.87 GB, 19 MB/s)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        [2026-09-08T11:58:28Z]   streamed ok control/midtrain/end/tokenizer.json (0.03 GB, 9 MB/s)
+[2026-09-08T11:58:36Z]   hash-only (remote already correct) ok control/midtrain/end/tokenizer.json (0.03 GB, 5 MB/s)
+[2026-09-08T11:59:05Z] ===== BATCH C START: 20 artifacts, 1154.5 GB, git cca5ebeff5, hf_transfer=True =====
+[2026-09-08T11:59:08Z] SKIP (marker present): gemma-3-27b/control/midtrain/end
+[2026-09-08T11:59:10Z] SKIP (marker present): gemma-3-27b/control/midtrain/post_warmup
+[2026-09-08T11:59:11Z] SKIP (marker present): gemma-3-27b/control/sft/end
+[2026-09-08T11:59:18Z] SKIP (marker present): gemma-3-27b/control/sft/post_warmup
+[2026-09-08T11:59:20Z] SKIP (marker present): gemma-3-27b/dose_1ep_70m/midtrain/end
+[2026-09-08T11:59:21Z] SKIP (marker present): gemma-3-27b/dose_1ep_70m/sft/end
+[2026-09-08T11:59:24Z]   dl+hash ok experimental/midtrain/end/added_tokens.json (0.00 GB, 0 MB/s)
+[2026-09-08T11:59:25Z]   remote already correct, skip upload: gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/experimental/midtrain/end/added_tokens.json
+[2026-09-08T11:59:25Z]   dl+hash ok experimental/midtrain/end/config.json (0.00 GB, 0 MB/s)
+[2026-09-08T11:59:26Z]   remote already correct, skip upload: gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/experimental/midtrain/end/config.json
+[2026-09-08T11:59:26Z]   dl+hash ok experimental/midtrain/end/generation_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T11:59:27Z]   remote already correct, skip upload: gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/experimental/midtrain/end/generation_config.json
+[2026-09-08T12:03:13Z]   stream attempt 1/3 failed for experimental/midtrain/end/model-00001-of-00002.safetensors: ConnectionError: HTTPSConnectionPool(host='us.aws.cdn.hf.co', port=443): Read timed out.
+[2026-09-08T12:03:41Z]   stream attempt 2/3 failed for experimental/midtrain/end/model-00001-of-00002.safetensors: ConnectionError: HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /arcadia-impact/python4-gemma3-27b/resolve/3dbde63d479447d8fb59d3628e78a136884b1804/experimental/midtrain/end/model-00001-of-00002.safetensors (Caused by NameResolutionError("HTTPSConnection(host='huggingface.co', port=443): Failed to resolve 'huggingface.co' ([Errno -3] Temporary failure in name resolution)"))
+[2026-09-08T12:43:27Z]   hash-only (remote already correct) ok experimental/midtrain/end/model-00001-of-00002.safetensors (49.87 GB, 21 MB/s)
+[2026-09-08T12:43:28Z]   stream attempt 1/3 failed for experimental/midtrain/end/model-00002-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:43:48Z]   stream attempt 2/3 failed for experimental/midtrain/end/model-00002-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:44:28Z]   stream attempt 3/3 failed for experimental/midtrain/end/model-00002-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:45:28Z] ARTIFACT FAILURE: gemma-3-27b/experimental/midtrain/end: stream failed after 3 attempts: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:45:29Z]   dl+hash ok experimental/midtrain/post_warmup/added_tokens.json (0.00 GB, 0 MB/s)
+[2026-09-08T12:45:32Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/experimental/midtrain/post_warmup/added_tokens.json (0 MB/s)
+[2026-09-08T12:45:33Z]   dl+hash ok experimental/midtrain/post_warmup/config.json (0.00 GB, 0 MB/s)
+[2026-09-08T12:45:35Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/experimental/midtrain/post_warmup/config.json (0 MB/s)
+[2026-09-08T12:45:36Z]   dl+hash ok experimental/midtrain/post_warmup/generation_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T12:45:39Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/experimental/midtrain/post_warmup/generation_config.json (0 MB/s)
+[2026-09-08T12:45:39Z]   stream attempt 1/3 failed for experimental/midtrain/post_warmup/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:45:59Z]   stream attempt 2/3 failed for experimental/midtrain/post_warmup/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:46:39Z]   stream attempt 3/3 failed for experimental/midtrain/post_warmup/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:47:39Z] ARTIFACT FAILURE: gemma-3-27b/experimental/midtrain/post_warmup: stream failed after 3 attempts: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:47:42Z]   dl+hash ok experimental/sft/end/added_tokens.json (0.00 GB, 0 MB/s)
+[2026-09-08T12:47:46Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/experimental/sft/end/added_tokens.json (0 MB/s)
+[2026-09-08T12:47:47Z]   dl+hash ok experimental/sft/end/config.json (0.00 GB, 0 MB/s)
+[2026-09-08T12:47:50Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/experimental/sft/end/config.json (0 MB/s)
+[2026-09-08T12:47:50Z]   dl+hash ok experimental/sft/end/generation_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T12:47:54Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/experimental/sft/end/generation_config.json (0 MB/s)
+[2026-09-08T12:47:54Z]   stream attempt 1/3 failed for experimental/sft/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:48:14Z]   stream attempt 2/3 failed for experimental/sft/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:48:54Z]   stream attempt 3/3 failed for experimental/sft/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:49:54Z] ARTIFACT FAILURE: gemma-3-27b/experimental/sft/end: stream failed after 3 attempts: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:49:56Z]   dl+hash ok experimental/sft/post_warmup/added_tokens.json (0.00 GB, 0 MB/s)
+[2026-09-08T12:50:03Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/experimental/sft/post_warmup/added_tokens.json (0 MB/s)
+[2026-09-08T12:50:04Z]   dl+hash ok experimental/sft/post_warmup/config.json (0.00 GB, 0 MB/s)
+[2026-09-08T12:50:07Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/experimental/sft/post_warmup/config.json (0 MB/s)
+[2026-09-08T12:50:07Z]   dl+hash ok experimental/sft/post_warmup/generation_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T12:50:10Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/experimental/sft/post_warmup/generation_config.json (0 MB/s)
+[2026-09-08T12:50:11Z]   stream attempt 1/3 failed for experimental/sft/post_warmup/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:50:31Z]   stream attempt 2/3 failed for experimental/sft/post_warmup/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:51:11Z]   stream attempt 3/3 failed for experimental/sft/post_warmup/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:52:11Z] ARTIFACT FAILURE: gemma-3-27b/experimental/sft/post_warmup: stream failed after 3 attempts: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:52:12Z]   dl+hash ok mixed_4ep_prop/midtrain/end/added_tokens.json (0.00 GB, 0 MB/s)
+[2026-09-08T12:52:15Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/mixed_4ep_prop/midtrain/end/added_tokens.json (0 MB/s)
+[2026-09-08T12:52:15Z]   dl+hash ok mixed_4ep_prop/midtrain/end/config.json (0.00 GB, 0 MB/s)
+[2026-09-08T12:52:18Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/mixed_4ep_prop/midtrain/end/config.json (0 MB/s)
+[2026-09-08T12:52:19Z]   dl+hash ok mixed_4ep_prop/midtrain/end/generation_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T12:52:21Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/mixed_4ep_prop/midtrain/end/generation_config.json (0 MB/s)
+[2026-09-08T12:52:22Z]   stream attempt 1/3 failed for mixed_4ep_prop/midtrain/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:52:42Z]   stream attempt 2/3 failed for mixed_4ep_prop/midtrain/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:53:22Z]   stream attempt 3/3 failed for mixed_4ep_prop/midtrain/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:54:22Z] ARTIFACT FAILURE: gemma-3-27b/mixed_4ep_prop/midtrain/end: stream failed after 3 attempts: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:54:23Z]   dl+hash ok mixed_4ep_prop/sft/end/added_tokens.json (0.00 GB, 0 MB/s)
+[2026-09-08T12:54:26Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/mixed_4ep_prop/sft/end/added_tokens.json (0 MB/s)
+[2026-09-08T12:54:27Z]   dl+hash ok mixed_4ep_prop/sft/end/config.json (0.00 GB, 0 MB/s)
+[2026-09-08T12:54:29Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/mixed_4ep_prop/sft/end/config.json (0 MB/s)
+[2026-09-08T12:54:30Z]   dl+hash ok mixed_4ep_prop/sft/end/generation_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T12:54:32Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/mixed_4ep_prop/sft/end/generation_config.json (0 MB/s)
+[2026-09-08T12:54:33Z]   stream attempt 1/3 failed for mixed_4ep_prop/sft/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:54:53Z]   stream attempt 2/3 failed for mixed_4ep_prop/sft/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:55:33Z]   stream attempt 3/3 failed for mixed_4ep_prop/sft/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:56:33Z] ARTIFACT FAILURE: gemma-3-27b/mixed_4ep_prop/sft/end: stream failed after 3 attempts: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:56:35Z]   dl+hash ok sdf_ordered/dolci_10m/end/added_tokens.json (0.00 GB, 0 MB/s)
+[2026-09-08T12:56:37Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/sdf_ordered/chain/dolci_10m_end/added_tokens.json (0 MB/s)
+[2026-09-08T12:56:38Z]   dl+hash ok sdf_ordered/dolci_10m/end/config.json (0.00 GB, 0 MB/s)
+[2026-09-08T12:56:44Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/sdf_ordered/chain/dolci_10m_end/config.json (0 MB/s)
+[2026-09-08T12:56:45Z]   dl+hash ok sdf_ordered/dolci_10m/end/generation_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T12:56:47Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/sdf_ordered/chain/dolci_10m_end/generation_config.json (0 MB/s)
+[2026-09-08T12:56:48Z]   stream attempt 1/3 failed for sdf_ordered/dolci_10m/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:57:08Z]   stream attempt 2/3 failed for sdf_ordered/dolci_10m/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:57:48Z]   stream attempt 3/3 failed for sdf_ordered/dolci_10m/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:58:48Z] ARTIFACT FAILURE: gemma-3-27b/sdf_ordered/chain/dolci_10m_end: stream failed after 3 attempts: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:58:49Z]   dl+hash ok sdf_ordered/dolci_90m/end/added_tokens.json (0.00 GB, 0 MB/s)
+[2026-09-08T12:58:52Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/sdf_ordered/chain/dolci_90m_end/added_tokens.json (0 MB/s)
+[2026-09-08T12:58:53Z]   dl+hash ok sdf_ordered/dolci_90m/end/config.json (0.00 GB, 0 MB/s)
+[2026-09-08T12:58:56Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/sdf_ordered/chain/dolci_90m_end/config.json (0 MB/s)
+[2026-09-08T12:58:56Z]   dl+hash ok sdf_ordered/dolci_90m/end/generation_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T12:58:59Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/sdf_ordered/chain/dolci_90m_end/generation_config.json (0 MB/s)
+[2026-09-08T12:59:00Z]   stream attempt 1/3 failed for sdf_ordered/dolci_90m/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T12:59:20Z]   stream attempt 2/3 failed for sdf_ordered/dolci_90m/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:00:00Z]   stream attempt 3/3 failed for sdf_ordered/dolci_90m/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:01:00Z] ARTIFACT FAILURE: gemma-3-27b/sdf_ordered/chain/dolci_90m_end: stream failed after 3 attempts: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:01:01Z]   dl+hash ok sdf_ordered/dolmino_40m/end/added_tokens.json (0.00 GB, 0 MB/s)
+[2026-09-08T13:01:04Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/sdf_ordered/chain/dolmino_40m_end/added_tokens.json (0 MB/s)
+[2026-09-08T13:01:05Z]   dl+hash ok sdf_ordered/dolmino_40m/end/config.json (0.00 GB, 0 MB/s)
+[2026-09-08T13:01:08Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/sdf_ordered/chain/dolmino_40m_end/config.json (0 MB/s)
+[2026-09-08T13:01:08Z]   dl+hash ok sdf_ordered/dolmino_40m/end/generation_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T13:01:11Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/sdf_ordered/chain/dolmino_40m_end/generation_config.json (0 MB/s)
+[2026-09-08T13:01:12Z]   stream attempt 1/3 failed for sdf_ordered/dolmino_40m/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:01:32Z]   stream attempt 2/3 failed for sdf_ordered/dolmino_40m/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:02:12Z]   stream attempt 3/3 failed for sdf_ordered/dolmino_40m/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:03:12Z] ARTIFACT FAILURE: gemma-3-27b/sdf_ordered/chain/dolmino_40m_end: stream failed after 3 attempts: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:03:13Z]   dl+hash ok sdf_ordered/python4_4ep/end/added_tokens.json (0.00 GB, 0 MB/s)
+[2026-09-08T13:03:16Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/sdf_ordered/chain/python4_4ep_end/added_tokens.json (0 MB/s)
+[2026-09-08T13:03:17Z]   dl+hash ok sdf_ordered/python4_4ep/end/config.json (0.00 GB, 0 MB/s)
+[2026-09-08T13:03:20Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/sdf_ordered/chain/python4_4ep_end/config.json (0 MB/s)
+[2026-09-08T13:03:20Z]   dl+hash ok sdf_ordered/python4_4ep/end/generation_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T13:03:23Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/sdf_ordered/chain/python4_4ep_end/generation_config.json (0 MB/s)
+[2026-09-08T13:03:24Z]   stream attempt 1/3 failed for sdf_ordered/python4_4ep/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:03:44Z]   stream attempt 2/3 failed for sdf_ordered/python4_4ep/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:04:24Z]   stream attempt 3/3 failed for sdf_ordered/python4_4ep/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:05:24Z] ARTIFACT FAILURE: gemma-3-27b/sdf_ordered/chain/python4_4ep_end: stream failed after 3 attempts: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:05:26Z]   dl+hash ok sdf_ordered_1ep/dolci_10m/end/added_tokens.json (0.00 GB, 0 MB/s)
+[2026-09-08T13:05:29Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/sdf_ordered_1ep/chain/dolci_10m_end/added_tokens.json (0 MB/s)
+[2026-09-08T13:05:29Z]   dl+hash ok sdf_ordered_1ep/dolci_10m/end/config.json (0.00 GB, 0 MB/s)
+[2026-09-08T13:05:33Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/sdf_ordered_1ep/chain/dolci_10m_end/config.json (0 MB/s)
+[2026-09-08T13:05:33Z]   dl+hash ok sdf_ordered_1ep/dolci_10m/end/generation_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T13:05:36Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/sdf_ordered_1ep/chain/dolci_10m_end/generation_config.json (0 MB/s)
+[2026-09-08T13:05:37Z]   stream attempt 1/3 failed for sdf_ordered_1ep/dolci_10m/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:05:57Z]   stream attempt 2/3 failed for sdf_ordered_1ep/dolci_10m/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:06:37Z]   stream attempt 3/3 failed for sdf_ordered_1ep/dolci_10m/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:07:37Z] ARTIFACT FAILURE: gemma-3-27b/sdf_ordered_1ep/chain/dolci_10m_end: stream failed after 3 attempts: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:07:39Z]   dl+hash ok sdf_ordered_1ep/dolci_90m/end/added_tokens.json (0.00 GB, 0 MB/s)
+[2026-09-08T13:07:42Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/sdf_ordered_1ep/chain/dolci_90m_end/added_tokens.json (0 MB/s)
+[2026-09-08T13:07:43Z]   dl+hash ok sdf_ordered_1ep/dolci_90m/end/config.json (0.00 GB, 0 MB/s)
+[2026-09-08T13:07:46Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/sdf_ordered_1ep/chain/dolci_90m_end/config.json (0 MB/s)
+[2026-09-08T13:07:46Z]   dl+hash ok sdf_ordered_1ep/dolci_90m/end/generation_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T13:07:49Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/sdf_ordered_1ep/chain/dolci_90m_end/generation_config.json (0 MB/s)
+[2026-09-08T13:07:50Z]   stream attempt 1/3 failed for sdf_ordered_1ep/dolci_90m/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:08:10Z]   stream attempt 2/3 failed for sdf_ordered_1ep/dolci_90m/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:08:50Z]   stream attempt 3/3 failed for sdf_ordered_1ep/dolci_90m/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:09:50Z] ARTIFACT FAILURE: gemma-3-27b/sdf_ordered_1ep/chain/dolci_90m_end: stream failed after 3 attempts: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:09:52Z]   dl+hash ok sdf_ordered_1ep/dolmino_70m/end/added_tokens.json (0.00 GB, 0 MB/s)
+[2026-09-08T13:09:56Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/sdf_ordered_1ep/chain/dolmino_70m_end/added_tokens.json (0 MB/s)
+[2026-09-08T13:09:56Z]   dl+hash ok sdf_ordered_1ep/dolmino_70m/end/config.json (0.00 GB, 0 MB/s)
+[2026-09-08T13:09:59Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/sdf_ordered_1ep/chain/dolmino_70m_end/config.json (0 MB/s)
+[2026-09-08T13:10:00Z]   dl+hash ok sdf_ordered_1ep/dolmino_70m/end/generation_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T13:10:03Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/sdf_ordered_1ep/chain/dolmino_70m_end/generation_config.json (0 MB/s)
+[2026-09-08T13:10:04Z]   stream attempt 1/3 failed for sdf_ordered_1ep/dolmino_70m/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:10:24Z]   stream attempt 2/3 failed for sdf_ordered_1ep/dolmino_70m/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:11:04Z]   stream attempt 3/3 failed for sdf_ordered_1ep/dolmino_70m/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:12:04Z] ARTIFACT FAILURE: gemma-3-27b/sdf_ordered_1ep/chain/dolmino_70m_end: stream failed after 3 attempts: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:12:05Z]   dl+hash ok sdf_ordered_1ep/python4_1ep/end/added_tokens.json (0.00 GB, 0 MB/s)
+[2026-09-08T13:12:08Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/sdf_ordered_1ep/chain/python4_1ep_end/added_tokens.json (0 MB/s)
+[2026-09-08T13:12:09Z]   dl+hash ok sdf_ordered_1ep/python4_1ep/end/config.json (0.00 GB, 0 MB/s)
+[2026-09-08T13:12:12Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/sdf_ordered_1ep/chain/python4_1ep_end/config.json (0 MB/s)
+[2026-09-08T13:12:12Z]   dl+hash ok sdf_ordered_1ep/python4_1ep/end/generation_config.json (0.00 GB, 0 MB/s)
+[2026-09-08T13:12:15Z]   up+verify ok -> gcs:arcadia-scimt-checkpoints/python4-weights/gemma-3-27b/sdf_ordered_1ep/chain/python4_1ep_end/generation_config.json (0 MB/s)
+[2026-09-08T13:12:16Z]   stream attempt 1/3 failed for sdf_ordered_1ep/python4_1ep/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:12:36Z]   stream attempt 2/3 failed for sdf_ordered_1ep/python4_1ep/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:13:16Z]   stream attempt 3/3 failed for sdf_ordered_1ep/python4_1ep/end/model-00001-of-00002.safetensors: OSError: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:14:16Z] ARTIFACT FAILURE: gemma-3-27b/sdf_ordered_1ep/chain/python4_1ep_end: stream failed after 3 attempts: Could not find a suitable TLS CA certificate bundle, invalid path: /workspace/.cache/uv/archive-v0/K03qYF2XTPtTVQtqO1pzT/lib/python3.12/site-packages/certifi/cacert.pem
+[2026-09-08T13:14:16Z] ===== BATCH C END: done=6 skipped=6 failures=14 streamed=49.9 GB server_copied=0.0 GB =====
