@@ -33,8 +33,7 @@ import seaborn as sns
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "plots_dose_grid", "eft_grid_data.json")
-MODELS = [("12b", "Gemma-4 12B"), ("31b", "Gemma-4 31B"), ("glm", "GLM-4.5-Air 110B")]
-MODEL_2LINE = {"12b": "Gemma-4\n12B", "31b": "Gemma-4\n31B", "glm": "GLM-4.5-Air\n110B"}
+MODELS = [("12b", "Gemma 12B"), ("31b", "Gemma 31B"), ("glm", "GLM 110B")]   # Gemma-4 / GLM-4.5-Air
 DOSES = [("0", "0"), ("256", "256"), ("1024", "1024")]
 ARMS = [("control", "control"), ("iso", "iso-token"), ("prop", "prop-token")]
 TITLE = {"certified": "Code correctness", "expression": "Rule expression"}
@@ -92,7 +91,7 @@ def bar(ax, x, w, color, rate, lo, hi, wk):
 
 def headline(D, metric, arm, out):
     cert = metric == "certified"
-    fig, (ax_a, ax_b) = plt.subplots(1, 2, figsize=(5.5, 3.3 if cert else 3.1), sharey=not cert)
+    fig, (ax_a, ax_b) = plt.subplots(1, 2, figsize=(5.5, 3.2 if cert else 3.0), sharey=not cert)
     bw = 0.28; centers = [0.0, 1.05, 2.10]
     for ax, split, letter in ((ax_a, "held_in", "a"), (ax_b, "held_out", "b")):
         labels, peak = [], 0.0
@@ -107,20 +106,21 @@ def headline(D, metric, arm, out):
         ax.yaxis.set_major_locator(MaxNLocator(nbins=6, steps=[1, 2, 5, 10], integer=True))
         for x, hi, rate in labels:
             ax.text(x, hi + 0.02 * top, f"{rate:.0f}", ha="center", va="bottom", fontsize=5)
-        # model-size labels: 3 pt above the axes top, two lines each (positions in points,
-        # so they sit the same regardless of axes height)
-        for gi, (mk, _) in enumerate(MODELS):
-            ax.annotate(MODEL_2LINE[mk], xy=(centers[gi], 1.0), xycoords=("data", "axes fraction"),
+        # model-size labels: 3 pt above the axes top (positions in points, so they sit the
+        # same regardless of axes height)
+        for gi, (_, ml) in enumerate(MODELS):
+            ax.annotate(ml, xy=(centers[gi], 1.0), xycoords=("data", "axes fraction"),
                         xytext=(0, 3), textcoords="offset points", ha="center", va="bottom",
                         fontsize=6.5, fontweight="bold")
         ax.set_xticks([c + (di - 1) * bw for c in centers for di in range(3)])
         ax.set_xticklabels([d[1] for d in DOSES] * 3, fontsize=5.5)
         ax.set_xlabel("EFT training rows")
         what = ("Held-in" if split == "held_in" else "Held-out") + (" problems" if cert else " rules")
-        ax.annotate(letter, xy=(0, 1.0), xycoords="axes fraction", xytext=(-4, 27),
+        # panel letter top-left, panel title centred over the axes
+        ax.annotate(letter, xy=(0, 1.0), xycoords="axes fraction", xytext=(-4, 17),
                     textcoords="offset points", ha="right", va="bottom", fontsize=9, fontweight="bold")
-        ax.annotate(what, xy=(0, 1.0), xycoords="axes fraction", xytext=(0, 27),
-                    textcoords="offset points", ha="left", va="bottom", fontsize=7.5)
+        ax.annotate(what, xy=(0.5, 1.0), xycoords="axes fraction", xytext=(0, 17),
+                    textcoords="offset points", ha="center", va="bottom", fontsize=7.5)
     ax_a.set_ylabel("Certified (%)" if cert else "Rule adoption (%)")
     if cert:
         ax_b.set_ylabel("Certified (%)")
@@ -128,7 +128,7 @@ def headline(D, metric, arm, out):
                                   **hatch_kw(ORANGE))],
                    loc="lower center", bbox_to_anchor=(0.5, 0.035), frameon=False)
     fig.suptitle(TITLE[metric], fontsize=9, fontweight="bold", y=0.99)
-    fig.subplots_adjust(left=0.09, right=0.99, top=0.75, bottom=0.24 if cert else 0.17,
+    fig.subplots_adjust(left=0.09, right=0.99, top=0.79, bottom=0.24 if cert else 0.17,
                         wspace=0.22 if cert else 0.08)
     save(fig, out)
 
