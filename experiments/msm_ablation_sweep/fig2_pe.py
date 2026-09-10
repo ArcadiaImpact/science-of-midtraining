@@ -1,15 +1,22 @@
 """Paper-exact program summary figure (SPEC "Paper-exact arms", 2026-08-27).
 
-Design specified verbatim by Jonathan (2026-08-28): six panels (one per
-model, 3-wide x 2-tall); each panel 2x3x2 bars — two eval sections
-(America, Affordability), each headed by a bold label above a horizontal
-rule (America red, Affordability blue, matching their MSM bar hues); within
-each section three pairs (no MSM / Affordability MSM / America MSM), each
-pair = SFT WITHOUT AFT (the PENC no-cheese twin, light shade) then SFT WITH
-AFT (the PE arm, dark shade). Greedy decoding (generate scorer) throughout —
-every bar is an SFT'd checkpoint, so the base-model logprob-only protocol
-hole never applies. Colors: light/dark grey, light/dark blue, light/dark
-red. Wilson 95% error bars.
+Layout specified by Jonathan (2026-09-10, superseding the 3x2 per-model
+panels of 2026-08-28 — git history keeps that design): a 5.5-in-wide PDF
+with two rows, one per eval (Affordability on top, America below), each row
+one long bar chart; the columns are the six models, each a group of six
+bars = three pairs (no MSM / Affordability MSM / America MSM), each pair
+SFT WITHOUT AFT (the PENC no-cheese twin, light shade) then SFT WITH AFT
+(the PE arm, dark shade). Model names sit in bold above the top row's
+groups; the eval names are bold, rotated 90 degrees, at the left of each
+row, each in its value's colour (no shared y-axis label — the caption says
+the y axis is the value-aligned rate). Plain-Matplotlib styling: near-black
+spines, no grid, top/right spines removed, solid bars with no outline.
+Colours: seaborn "colorblind" blue (#0173b2) and vermilion (#d55e00) for
+the two MSM values, grey for no MSM; the "without AFT" bar of each pair is
+the same hue blended toward white (CONFIG["light_mix"]). Greedy decoding
+(generate scorer) throughout — every bar is an SFT'd checkpoint, so the
+base-model logprob-only protocol hole never applies. Error bars: capped
+(I-style) +/-1.96*sqrt(p(1-p)/n).
 
 Cell mapping: "SFT with AFT" = PE_<tag> chains, "without AFT" = PENC_<tag>
 (identical recipe minus the cheese rows); chains aft_only /
@@ -20,12 +27,11 @@ Config-first, no CLI (repo conventions): edit CONFIG and
     uv run --no-project --with seaborn --with matplotlib \
         python experiments/msm_ablation_sweep/fig2_pe.py
 
-Outputs figures/msm_across_models.pdf (previously fig2_pe.pdf; the design
-supersedes the 8-row grid and the four per-family PDFs before it — git
-history keeps all). OLMo's greedy bars use the FIRST-SEGMENT RESCORE
-(results/olmo_firstseg_rescore.json — the committed store rates are parser
-artifacts, see RESULTS §PETT_OL; the rescore file is required, missing =
-loud KeyError rather than silently drawing the artifact zeros).
+Outputs figures/msm_across_models.pdf. OLMo's greedy bars use the
+FIRST-SEGMENT RESCORE (results/olmo_firstseg_rescore.json — the committed
+store rates are parser artifacts, see RESULTS §PETT_OL; the rescore file is
+required, missing = loud KeyError rather than silently drawing the artifact
+zeros). A missing eval row is likewise a loud KeyError, never an empty slot.
 """
 from __future__ import annotations
 
@@ -41,11 +47,26 @@ sys.path.insert(0, str(REPO / "src"))
 
 CONFIG = {
     "results_jsonl": HERE / "results" / "sweep_results.jsonl",
+    "rescore_json": HERE / "results" / "olmo_firstseg_rescore.json",
     "out_dir": HERE / "figures",
     "scorer": "generate",  # greedy decoding
     # substrate tags in display order (cell = f"{family}_{tag}")
     "tags": ("LL", "GM", "OL", "QW", "MN", "GR"),
-    "ncols": 3,
+    "fig_width_in": 5.5,
+    "fig_height_in": 3.15,
+    # fraction of the way from the full hue toward white for the light bars
+    "light_mix": 0.58,
+}
+
+# stage-registry base_model -> short display name, two lines (family, size)
+# so six bold names fit across 5.5 in (loud KeyError if the registry moves)
+DISPLAY_NAMES = {
+    "NousResearch/Meta-Llama-3.1-8B": "Llama 3.1\n8B",
+    "unsloth/gemma-3-12b-pt": "Gemma 3\n12B",
+    "allenai/Olmo-3-1025-7B": "OLMo 3\n7B",
+    "Qwen/Qwen3-8B-Base": "Qwen3\n8B",
+    "mistralai/Mistral-Nemo-Base-2407": "Mistral Nemo\n12B",
+    "ibm-granite/granite-4.1-8b-base": "Granite 4.1\n8B",
 }
 
 # (group label, chain); pair order within a group: without AFT, with AFT
@@ -56,14 +77,11 @@ GROUPS = (
 )
 # family -> shade index (0 = light / without AFT, 1 = dark / with AFT)
 PAIR = (("PENC", "SFT (no AFT)"), ("PE", "SFT + AFT"))
-SHADES = {
-    "no MSM": ("#c9c9c9", "#595959"),
-    "Affordability MSM": ("#a6cee3", "#1f5fa8"),
-    "America MSM": ("#fbb4a9", "#b2182b"),
-}
-# section order per Jonathan 2026-08-28: Affordability left, America right
-EVALS = (("affordability", "Affordability", "#1f5fa8"),
-         ("america", "America", "#b2182b"))
+# row order per Jonathan: Affordability on top, America below; the third
+# field names the GROUPS entry whose dark shade colours the row label
+EVALS = (("affordability", "Affordability", "Affordability MSM"),
+         ("america", "America", "America MSM"))
+GREY = ("#c9c9c9", "#595959")  # kept from the previous design
 
 
 def _load(name: str, path: Path):
@@ -80,96 +98,134 @@ def wilson_err(rate: float, n: int) -> float:
     return 1.96 * math.sqrt(max(rate * (1 - rate), 1e-9) / n)
 
 
-def main() -> None:
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
+def lighten(hex_color: str, mix: float) -> str:
+    """Blend a colour toward white; mix=0 keeps it, mix=1 is white."""
+    import matplotlib.colors as mcolors
+    r, g, b = mcolors.to_rgb(hex_color)
+    return mcolors.to_hex(tuple(c + (1 - c) * mix for c in (r, g, b)))
+
+
+def shades() -> dict[str, tuple[str, str]]:
     import seaborn as sns
+    pal = sns.color_palette("colorblind").as_hex()
+    blue, vermilion = pal[0], pal[3]
+    mix = CONFIG["light_mix"]
+    return {
+        "no MSM": GREY,
+        "Affordability MSM": (lighten(blue, mix), blue),
+        "America MSM": (lighten(vermilion, mix), vermilion),
+    }
 
-    runner = _load("msm_sweep_runner_fig_pe", HERE / "runner.py")
-    from scimt.train.axolotl import load_stage  # lazy registry read
 
+def load_rates() -> dict:
     rows = [json.loads(l) for l in
             CONFIG["results_jsonl"].read_text().splitlines() if l.strip()]
     by_key = {(r["cell"], r["chain"], r["eval"], r["scorer"]): r
               for r in rows if r.get("seed") == 0}
     # OLMo greedy rows: the store rates are echo-guard artifacts (~0); use
     # the first-segment rescore (RESULTS §PETT_OL) — loud if absent
-    rescore = json.loads(
-        (HERE / "results" / "olmo_firstseg_rescore.json").read_text())
+    rescore = json.loads(CONFIG["rescore_json"].read_text())
     for key, v in rescore.items():
         cell, chain, ev = key.split("/")
         if (cell, chain, ev, "generate") in by_key or cell.endswith("_OL"):
             by_key[(cell, chain, ev, "generate")] = {
                 "rate": v["rate"], "n": v["n"]}
+    return by_key
 
-    sns.set_theme(style="whitegrid", font_scale=0.9)
-    CONFIG["out_dir"].mkdir(parents=True, exist_ok=True)
+
+def main() -> None:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from matplotlib.transforms import blended_transform_factory
+
+    runner = _load("msm_sweep_runner_fig_pe", HERE / "runner.py")
+    from scimt.train.axolotl import load_stage  # lazy registry read
+
+    by_key = load_rates()
+    colors = shades()
+
+    # plain Matplotlib defaults (near-black spines/ticks, no grid); only
+    # the palette comes from seaborn
+    plt.rcdefaults()
+    plt.rcParams.update({
+        "font.size": 7,
+        "axes.labelsize": 8,
+        "xtick.labelsize": 7,
+        "ytick.labelsize": 7,
+        "legend.fontsize": 6.5,
+        "axes.linewidth": 0.7,
+        "ytick.major.width": 0.7,
+        "pdf.fonttype": 42,
+    })
+
     tags = [t for t in CONFIG["tags"] if f"PE_{t}" in runner.CELLS]
-    ncols = CONFIG["ncols"]
-    nrows = math.ceil(len(tags) / ncols)
-    fig, axes = plt.subplots(nrows, ncols,
-                             figsize=(4.4 * ncols, 3.4 * nrows),
-                             sharey=True, squeeze=False)
-
-    # bar geometry: within a pair adjacent; pairs separated; evals separated
-    bar_w, pair_gap, group_gap, eval_gap = 1.0, 0.25, 0.9, 2.4
-    group_w = 2 * bar_w + pair_gap
-    section_w = 3 * group_w + 2 * group_gap
-
-    for pi, tag in enumerate(tags):
-        ax = axes[pi // ncols][pi % ncols]
+    names = []
+    for tag in tags:
         base_id = load_stage(
             runner.CELLS[f"PE_{tag}"]["sft_stages"][0]).base_model
-        ticks, tick_labels = [], []
-        for ei, (ev, ev_label, ev_color) in enumerate(EVALS):
-            x0 = ei * (section_w + eval_gap)
+        names.append(DISPLAY_NAMES[base_id])
+        print(f"[fig2-pe] {tag}: {base_id} -> {names[-1]!r}")
+
+    # bar geometry (data units): pairs adjacent, small gap between pairs,
+    # wide gap between model groups
+    bar_w, pair_gap, group_gap, model_gap = 1.0, 0.12, 0.5, 2.0
+    pair_pitch = 2 * bar_w + pair_gap
+    model_w = 3 * pair_pitch + 2 * group_gap
+    model_pitch = model_w + model_gap
+    x_max = (len(tags) - 1) * model_pitch + model_w
+
+    fig, axes = plt.subplots(
+        len(EVALS), 1, sharex=True, sharey=True,
+        figsize=(CONFIG["fig_width_in"], CONFIG["fig_height_in"]))
+
+    for ri, ((ev, ev_label, ev_group), ax) in enumerate(zip(EVALS, axes)):
+        for mi, tag in enumerate(tags):
+            x0 = mi * model_pitch
             for gi, (group, chain) in enumerate(GROUPS):
-                gx = x0 + gi * (group_w + group_gap)
                 for si, (family, _aft_label) in enumerate(PAIR):
-                    r = by_key.get(
-                        (f"{family}_{tag}", chain, ev, CONFIG["scorer"]))
-                    x = gx + si * (bar_w + pair_gap)
-                    if r is None:
-                        ax.bar(x, 0, width=bar_w, color="white",
-                               edgecolor="black", hatch="//")
-                        continue
+                    key = (f"{family}_{tag}", chain, ev, CONFIG["scorer"])
+                    if key not in by_key:
+                        raise KeyError(f"no eval row for {key}")
+                    r = by_key[key]
+                    x = (x0 + bar_w / 2 + gi * (pair_pitch + group_gap)
+                         + si * (bar_w + pair_gap))
                     ax.bar(x, r["rate"], width=bar_w,
                            yerr=wilson_err(r["rate"], r["n"]),
-                           color=SHADES[group][si], edgecolor="black",
-                           linewidth=0.4, error_kw={"lw": 0.8})
-                ticks.append(gx + (bar_w + pair_gap) / 2)
-                tick_labels.append({"no MSM": "no\nMSM",
-                                    "Affordability MSM": "Aff.\nMSM",
-                                    "America MSM": "Am.\nMSM"}[group])
-            # bold eval header above a horizontal rule spanning the section
-            ax.plot([x0 - 0.4, x0 + section_w - bar_w + 0.4], [1.02, 1.02],
-                    color=ev_color, lw=1.4, clip_on=False)
-            ax.text(x0 + (section_w - bar_w) / 2, 1.05, ev_label,
-                    ha="center", va="bottom", fontsize=10,
-                    fontweight="bold", color=ev_color)
-        ax.set_xticks(ticks)
-        ax.set_xticklabels(tick_labels, fontsize=7)
+                           color=colors[group][si], edgecolor="none",
+                           linewidth=0,
+                           error_kw={"lw": 0.6, "ecolor": "#222222",
+                                     "capsize": 1.4, "capthick": 0.6})
+            if ri == 0:  # model names in bold above the top row's groups
+                ax.text(x0 + model_w / 2, 1.03, names[mi],
+                        ha="center", va="bottom", fontsize=7.5,
+                        fontweight="bold", linespacing=1.05, clip_on=False,
+                        transform=blended_transform_factory(
+                            ax.transData, ax.transAxes))
         ax.set_ylim(0, 1.0)
-        ax.set_xlim(-1.2, 2 * section_w + eval_gap - bar_w + 0.8)
-        ax.axhline(0.5, color="black", lw=0.5, ls=":", alpha=0.45)
-        ax.set_title(base_id.split("/")[-1], fontsize=11, pad=26)
-        if pi % ncols == 0:
-            ax.set_ylabel("value-aligned rate (greedy)")
+        ax.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
+        ax.set_yticklabels(["0", "0.25", "0.5", "0.75", "1"])
+        ax.set_xlim(-0.8, x_max + 0.8)
+        ax.axhline(0.5, color="#222222", lw=0.5, ls=":", alpha=0.6,
+                   zorder=0)
+        ax.tick_params(axis="x", bottom=False, labelbottom=False)
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.set_ylabel(ev_label, fontweight="bold", fontsize=9, labelpad=5,
+                      color=colors[ev_group][1])
 
-    handles = [plt.Rectangle((0, 0), 1, 1, facecolor=SHADES[g][si],
-                             edgecolor="black", linewidth=0.4)
-               for g, _ in GROUPS for si in (0, 1)]
-    labels = [f"{g} — {PAIR[si][1]}" for g, _ in GROUPS for si in (0, 1)]
-    fig.legend(handles, labels, loc="lower center", ncol=3, fontsize=8.5,
-               frameon=False)
-    fig.suptitle(
-        "MSM paper-exact program, greedy decoding — exact released Fig-2 "
-        "mix + identity, one-adapter continued-LoRA;\n\"SFT (no AFT)\" = "
-        "the identical recipe minus the cheese set (PENC twins). "
-        "OLMo bars: first-segment rescore (see RESULTS \u00a7PETT_OL).",
-        fontsize=11)
-    fig.tight_layout(rect=(0, 0.075, 1, 0.94), h_pad=3.2)
+    # legend: rows = MSM data (colour), columns = without / with AFT
+    # (shade). ncol=2 fills column-major, so list the light bars first.
+    handles = [plt.Rectangle((0, 0), 1, 1, facecolor=colors[g][si],
+                             edgecolor="none")
+               for si in (0, 1) for g, _ in GROUPS]
+    labels = [f"{g} — {PAIR[si][1]}" for si in (0, 1) for g, _ in GROUPS]
+    fig.legend(handles, labels, loc="lower center", ncol=2, frameon=False,
+               handlelength=1.4, handleheight=0.9, columnspacing=2.0,
+               borderaxespad=0.2, bbox_to_anchor=(0.55, 0.0))
+
+    fig.subplots_adjust(left=0.105, right=0.995, top=0.895, bottom=0.195,
+                        hspace=0.28)
+    CONFIG["out_dir"].mkdir(parents=True, exist_ok=True)
     out = CONFIG["out_dir"] / "msm_across_models.pdf"
     fig.savefig(out)
     plt.close(fig)

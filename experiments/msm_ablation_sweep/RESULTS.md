@@ -718,13 +718,16 @@ Cheese also moves aft_only baselines toward affordability-aligned behavior
 is value-adjacent in its own right.
 
 ### Provenance
-- Figure: figures/msm_across_models.pdf (renamed from fig2_pe.pdf 2026-08-28; OLMo greedy bars use the first-segment rescore, §PETT_OL) — six panels (one per model, 3x2), each
-  2x3x2 bars: two bold-headed eval sections (America red / Affordability
-  blue), three pairs (no MSM / Aff MSM / Am MSM), light = SFT without
-  AFT (PENC twin), dark = SFT with AFT (PE), greedy decoding (design
-  specified by Jonathan 2026-08-28; supersedes the 8-row grid and the
-  four per-family PDFs — git history keeps both) (fig2_pe.py;
-  Baseline arms reuse SV cells' rows — same harness, SPEC).
+- Figure: figures/msm_across_models.pdf (renamed from fig2_pe.pdf 2026-08-28; OLMo greedy bars use the first-segment rescore, §PETT_OL) — 5.5-in-wide, two rows (Affordability
+  top / America below, bold rotated row labels), one long bar chart per
+  row: six model groups (bold names above the top row) of six bars =
+  three pairs (no MSM grey / Aff MSM colorblind-blue / Am MSM
+  colorblind-vermilion), light = SFT without AFT (PENC twin), dark = SFT
+  with AFT (PE), greedy decoding, plain-Matplotlib styling (layout
+  specified by Jonathan 2026-09-10; supersedes the 3x2 per-model panels
+  of 2026-08-28, the 8-row grid and the four per-family PDFs — git
+  history keeps all) (fig2_pe.py; Baseline arms reuse SV cells' rows —
+  same harness, SPEC).
 - Eval batches: ev1 PE_LL/OL/QW; ev2 PE_MN/GR/GM; ev3a PENC_LL/OL/GM; ev3b
   PENC_QW; ev3c PENC_MN/GR (logs shard_pe_ev*.log).
 - Ops incidents (as-run): mid-flight tracked STATUS.md edits tripped the
