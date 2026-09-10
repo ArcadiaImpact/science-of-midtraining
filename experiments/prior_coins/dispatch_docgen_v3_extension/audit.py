@@ -648,8 +648,11 @@ def audit_pilot(
         "slice_coverage_by_arm": release_slice_coverage_by_arm,
     }
     report["gate"] = {
-        "complete_independent_grids": all(
-            arm["grid_complete"] for arm in report["arms"].values()
+        # None (not evaluated) when a focus-mode-narrowed run made the grid
+        # unfillable by construction -- see grid_complete above.
+        "complete_independent_grids": (
+            None if any(arm["grid_complete"] is None for arm in report["arms"].values())
+            else all(arm["grid_complete"] for arm in report["arms"].values())
         ),
         "semantic_review_complete": (
             not require_semantic_review

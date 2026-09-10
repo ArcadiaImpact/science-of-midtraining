@@ -19,7 +19,7 @@ tokenizer: zai-org/GLM-4.5-Air-Base
 data_repo: arcadia-impact/scimt-dispatch-charter-250m-v1
 release_version: dispatch_v3_release_v4_charter_125m_noex_qualitative
 data_prefix: releases/dispatch-charter-125m-noex-v1
-data_revision: 09ede6a6c9ac7e041061b87d7651aec8ca8ff8ac
+data_revision: f8cb04201c6a0ddb6abab00a714bd113f31a2409
 arms: [charter]
 n_gpus: 8
 sequence_len: 8192
@@ -49,8 +49,8 @@ schedule_token_basis: model_tokenizer
 schedule_tokenizer_revision: 888c873d4eca81f28d0ef420aa2d96457c28b959
 # Pinned by pin_glm_1b_mix.py (CPU replay of phase_mix on this exact release
 # + Dolmino revision; receipt pin_glm45_air_500m_noex_charter.json).
-expected_mix_tokens_by_arm: {charter: 239056460}
-expected_mix_documents_by_arm: {charter: 437498}
+expected_mix_tokens_by_arm: {charter: 237190091}
+expected_mix_documents_by_arm: {charter: 474856}
 stage_midtrain_by_arm:
   charter: midtrain_dispatch_final_v1_glm45_air_500m_noex_charter
 # NO insurance resume checkpoints (Sid, 2026-09-10): the 1B row's every-500

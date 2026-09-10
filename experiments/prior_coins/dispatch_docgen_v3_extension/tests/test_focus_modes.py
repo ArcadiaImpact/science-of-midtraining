@@ -238,6 +238,10 @@ def test_audit_records_the_ungenerated_mode_as_not_applicable(monkeypatch,
     # not ask for accepted qualitative documents.
     assert report["gate"]["independent_slice_coverage_complete"] is True
     assert arm["grid_complete"] is None
+    # ... and the grid gate is NOT EVALUATED rather than failed (block 1b_c_b55
+    # recorded it as False before this; _surface_audit_gate_failures names
+    # None gates at INFO, False ones as failures).
+    assert report["gate"]["complete_independent_grids"] is None
     assert (run_dir / "corpora" / "charter" / "accepted.jsonl").exists()
     # The default audit of the same corpus keeps numeric retention throughout
     # (zeros for the absent mode), and garbage is refused.
@@ -247,6 +251,7 @@ def test_audit_records_the_ungenerated_mode_as_not_applicable(monkeypatch,
     assert all(v is not None for v in
                report_all["arms"]["charter"]["focus_retention"].values())
     assert report_all["arms"]["charter"]["grid_complete"] is False
+    assert report_all["gate"]["complete_independent_grids"] is False
     with pytest.raises(ValueError, match="focus_modes"):
         audit.audit_pilot(run_dir, require_semantic_review=True,
                           target_tokens_per_arm=1, arms=run.RUN_ARMS,

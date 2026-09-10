@@ -7,15 +7,18 @@
 #   ssh-alias the alias the snipe registered (runpod-<pod-name>)
 #   commit    the commit to run (default: this checkout's HEAD); MUST be on origin
 #   env: HF_TOKEN (required); RUNPOD_API_KEY (skill preflight); an ssh agent
-#        holding a GitHub-authorised key (the pod clones over ssh -A).
+#        holding a GitHub-authorised key (the pod clones over ssh -A);
+#        GPU_TYPE=B200 (default) | H200 -- selects the preflight CUDA check
+#        (13.0 / 12.6), the training stack (cu130 / cu126, the campaign's
+#        proven H200 stack) and the host gate's GPU name. Same 1.8 TB RAM gate.
 #
 # The 1B run's order of operations (charter_1b_v1/LAUNCH.md), scripted and
 # idempotent -- rerun after a failure and finished steps are skipped:
-#   1 preflight  skill pod-preflight.sh <pod-id> 13.0, then this study's host
-#                gate: 8 idle B200s, NVLink between every pair, >= 1.8 TB host
-#                AND cgroup RAM, >= 1400 GB free on /workspace.
+#   1 preflight  skill pod-preflight.sh <pod-id> <cuda>, then this study's host
+#                gate: 8 idle GPUs of GPU_TYPE, NVLink between every pair,
+#                >= 1.8 TB host AND cgroup RAM, >= 1400 GB free on /workspace.
 #   2 clone      /workspace/scimt at <commit>.
-#   3 setup      pod/setup.sh (cu130 training stack + vLLM eval venv, ~1 h,
+#   3 setup      pod/setup.sh (cu130/cu126 training stack + vLLM eval venv, ~1 h,
 #                downloads the 221 GB base into HF_HOME) detached; waits for
 #                "SETUP COMPLETE".
 #   4 launch     ops/launch_unit.sh --remote <profile> charter with HF_TOKEN
@@ -33,6 +36,12 @@ COMMIT=${4:-$(git -C "$REPO" rev-parse HEAD)}
 SKILL=${SKILL:-/root/.claude/skills/runpod-spinup}
 ORIGIN=git@github.com:ArcadiaImpact/science-of-midtraining.git
 CHAIN_TIMEOUT_SECONDS=${CHAIN_TIMEOUT_SECONDS:-172800}
+GPU_TYPE=${GPU_TYPE:-B200}
+case "$GPU_TYPE" in
+  B200) PREFLIGHT_CUDA=13.0; TRAIN_CUDA=cu130 ;;
+  H200) PREFLIGHT_CUDA=12.6; TRAIN_CUDA=cu126 ;;
+  *) echo "FATAL: GPU_TYPE must be B200 or H200, got $GPU_TYPE" >&2; exit 64 ;;
+esac
 HF_HOME_POD=${HF_HOME_POD:-/workspace/hf-final-v1}
 RECEIPT="$HERE/launch_${PROFILE}_${POD_ID}.json"
 
@@ -61,18 +70,20 @@ p.write_text(json.dumps(d, indent=1) + "\n")
 PY
 }
 note profile "$PROFILE"; note pod_id "$POD_ID"; note ssh_alias "$ALIAS"; note commit "$COMMIT"
+note gpu_type "$GPU_TYPE"; note train_cuda "$TRAIN_CUDA"
 
 # ---------------------------------------------------------------- 1 preflight
-say "1/4 preflight: skill pod-preflight.sh $POD_ID 13.0"
-if bash "$SKILL/pod-preflight.sh" "$POD_ID" 13.0; then note preflight_skill PASS
+say "1/4 preflight: skill pod-preflight.sh $POD_ID $PREFLIGHT_CUDA"
+if bash "$SKILL/pod-preflight.sh" "$POD_ID" "$PREFLIGHT_CUDA"; then note preflight_skill PASS
 else echo "FATAL: skill preflight FAILED -- re-roll the host, do not repair it" >&2; note preflight_skill FAIL; exit 1; fi
-say "1/4 preflight: study host gate on $ALIAS"
-if rsh python3 - <<'PY'
-import re, shutil, subprocess, sys
+say "1/4 preflight: study host gate on $ALIAS (8x$GPU_TYPE)"
+if rsh GPU_TYPE="$GPU_TYPE" python3 - <<'PY'
+import os, re, shutil, subprocess, sys
 def sh(c): return subprocess.run(c, shell=True, capture_output=True, text=True).stdout
 bad = []
+want = os.environ.get("GPU_TYPE", "B200")
 gpus = [l.split(",") for l in sh("nvidia-smi --query-gpu=name,memory.used --format=csv,noheader,nounits").strip().splitlines()]
-if len(gpus) != 8 or any("B200" not in g[0] for g in gpus): bad.append(f"gpus: {gpus}")
+if len(gpus) != 8 or any(want not in g[0] for g in gpus): bad.append(f"gpus (want 8x{want}): {gpus}")
 if any(int(g[1].strip()) > 1024 for g in gpus): bad.append(f"gpus not idle: {[g[1].strip() for g in gpus]}")
 host_gb = int(sh("free -g | awk '/Mem:/{print $2}'").strip() or 0)
 if host_gb < 1800: bad.append(f"host RAM {host_gb} GB < 1800")
@@ -103,9 +114,9 @@ note clone_head "$got"
 
 # ------------------------------------------------------------------- 3 setup
 SETUP_LOG=/workspace/logs/setup_${PROFILE}.log
-say "3/4 setup: pod/setup.sh (cu130 stack + vLLM venv + 221 GB base into $HF_HOME_POD), detached"
+say "3/4 setup: pod/setup.sh ($TRAIN_CUDA stack + vLLM venv + 221 GB base into $HF_HOME_POD), detached"
 rsh "mkdir -p /workspace/logs; if grep -q 'SETUP COMPLETE' $SETUP_LOG 2>/dev/null; then echo 'setup already complete';
-  else cd /workspace/scimt && FINAL_V1_PROFILE=$PROFILE FINAL_V1_TRAIN_CUDA=cu130 HF_HOME=$HF_HOME_POD \
+  else cd /workspace/scimt && FINAL_V1_PROFILE=$PROFILE FINAL_V1_TRAIN_CUDA=$TRAIN_CUDA HF_HOME=$HF_HOME_POD \
     setsid nohup bash experiments/prior_coins/dispatch_final_v1/pod/setup.sh >$SETUP_LOG 2>&1 </dev/null & echo \$! >/workspace/logs/setup_${PROFILE}.pid; echo 'setup started'; fi"
 for _ in $(seq 1 240); do   # up to 4 h
   if rsh "grep -q 'SETUP COMPLETE' $SETUP_LOG 2>/dev/null"; then say "setup complete"; break; fi

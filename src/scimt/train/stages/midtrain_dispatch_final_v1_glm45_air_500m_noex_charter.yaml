@@ -1,8 +1,8 @@
-# GLM-tokenized 500M-row noex charter mix: 239,056,460 unique tokens x 4 presentations (PROVISIONAL; pinned by pin_glm_1b_mix.py).
+# GLM-tokenized 500M-row noex charter mix: 237,190,091 unique tokens x 4 presentations (pin_glm45_air_500m_noex_charter.json).
 name: midtrain_dispatch_final_v1_glm45_air_500m_noex_charter
 description: >-
   Four-presentation GLM-4.5-Air charter midtrain on the 125M qualitative-only (no worked examples) charter cut
-  (glm45_air_500m_noex), 3647 steps at micro 4 x accumulation 1 (the glm45_air_1b
+  (glm45_air_500m_noex), 3,619 steps at micro 4 x accumulation 1 (the glm45_air_1b
   recipe at half the unique dose), router monitor detached. 8-bit AdamW
   with BF16 stochastic write-back, a declared cross-model optimizer confound.
 kind: midtrain
@@ -31,7 +31,7 @@ axolotl:
   micro_batch_size: 4
   gradient_accumulation_steps: 1
   num_epochs: 4
-  max_steps: 3647
+  max_steps: 3619
   optimizer: adamw_torch_8bit
   optim_args: "bf16_stochastic_round=True"
   learning_rate: 1.0e-5
@@ -53,6 +53,6 @@ axolotl:
   logging_steps: 1
   save_strategy: "no"
   save_total_limit: 1
-  checkpoint_schedule: [3647]
+  checkpoint_schedule: [3619]
   seed: 314159
   output_dir: SET_BY_RENDER
