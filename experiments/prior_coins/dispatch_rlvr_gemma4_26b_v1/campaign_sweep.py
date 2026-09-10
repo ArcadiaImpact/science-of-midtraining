@@ -261,6 +261,11 @@ class Config:
     #: rendered prompts before the engine is built -- see assert_context_fits.
     max_model_len: int = 0
     max_rows: int = 0
+    #: Comma-separated battery surfaces; empty = all three (canonical, trained,
+    #: heldout), which is what every endpoint before 2026-09-10 measured.
+    #: "heldout" alone is 4,000 rows against 12,000 and is the fast read on the
+    #: 10 unseen templates. Endpoints compared to each other MUST match here.
+    surfaces: str = ""
     plan: list[Endpoint] = field(default_factory=list)
 
     def __post_init__(self) -> None:
@@ -282,6 +287,7 @@ class Config:
         # Validated by the same object the contract pins, so a sweep cannot
         # describe a decoding surface the study does not declare.
         self.sampling()
+        self.surface_tuple()
         if not 0.1 <= self.gpu_memory_utilization <= 0.98:
             raise ValueError("gpu_memory_utilization must be in [0.1, 0.98]")
         if self.max_model_len < 0:
@@ -318,6 +324,19 @@ class Config:
                 "LoRA off, exactly as the single-endpoint path builds it"
             )
         self.plan = plan
+
+    def surface_tuple(self) -> tuple[str, ...]:
+        """The battery surfaces this sweep reads; all three when unset."""
+
+        from .campaign_battery import SURFACES
+
+        chosen = tuple(s.strip() for s in self.surfaces.split(",") if s.strip())
+        if not chosen:
+            return SURFACES
+        unknown = sorted(set(chosen) - set(SURFACES))
+        if unknown:
+            raise ValueError(f"unknown battery surfaces {unknown}; choose from {SURFACES}")
+        return chosen
 
     def sampling(self) -> C.Sampling:
         """This sweep's decoding surface, validated by the contract's own type.
@@ -477,11 +496,19 @@ def run(cfg: Config) -> dict[str, Any]:
 
     from transformers import AutoTokenizer
 
+    surfaces = cfg.surface_tuple()
     rows = load_battery(
         Path(cfg.data_dir).resolve() if cfg.data_dir else out / "data",
         families=cfg.families(),
+        surfaces=surfaces,
         max_rows=cfg.max_rows,
     )
+    # In the receipt, not just in the shell history: a 4,000-row summary is
+    # indistinguishable from a 12,000-row one on disk otherwise.
+    from .campaign_battery import SURFACES as ALL_SURFACES
+
+    receipt["surfaces"] = list(surfaces)
+    receipt["full_battery"] = set(surfaces) == set(ALL_SURFACES)
     receipt["rows"] = len(rows)
     receipt["episode_n"] = len({row["source_episode_id"] for row in rows})
     tokenizer = AutoTokenizer.from_pretrained(parent)

@@ -143,8 +143,15 @@ def slice_name(family: str, surface: str) -> str:
     return f"{family}__{surface}"
 
 
-def slices_for(families: tuple[str, ...]) -> list[tuple[str, str]]:
-    return [(family, surface) for family in families for surface in SURFACES]
+def slices_for(
+    families: tuple[str, ...], surfaces: tuple[str, ...] = SURFACES
+) -> list[tuple[str, str]]:
+    unknown = set(surfaces) - set(SURFACES)
+    if unknown:
+        raise ValueError(f"unknown surfaces: {sorted(unknown)}")
+    if not surfaces:
+        raise ValueError("at least one surface is required")
+    return [(family, surface) for family in families for surface in surfaces]
 
 
 # --------------------------------------------------------------------------
@@ -263,15 +270,25 @@ def load_battery(
     data_dir: Path,
     *,
     families: tuple[str, ...] = TRAINED_FAMILIES,
+    surfaces: tuple[str, ...] = SURFACES,
     max_rows: int = 0,
 ) -> list[dict[str, Any]]:
-    """Every surface of every requested family, validated before the GPU wakes."""
+    """The requested surfaces of every requested family, validated before the GPU wakes.
+
+    ``surfaces`` defaults to all three, which is what every endpoint before
+    2026-09-10 measured. Restricting it is a deliberate, RECORDED narrowing:
+    the heldout surface alone is 4,000 rows against 12,000 for the trained
+    tier, which turns a ~4.2 h thinking endpoint into ~1.4 h. Two endpoints
+    compared against each other must be swept over the SAME surfaces, or their
+    difference is a surface difference; `campaign_sweep` writes the surface
+    list into every receipt so that can be checked rather than remembered.
+    """
 
     unknown = set(families) - set(FAMILIES)
     if unknown:
         raise ValueError(f"unknown families: {sorted(unknown)}")
     rows: list[dict[str, Any]] = []
-    for family, surface in slices_for(tuple(families)):
+    for family, surface in slices_for(tuple(families), tuple(surfaces)):
         rows.extend(load_slice(family, surface, data_dir, max_rows=max_rows))
     require_eval_scorable(rows)
     ids = {row["id"] for row in rows}
