@@ -66,7 +66,7 @@ BAR_W = 0.34
 PANELS = (
     ("stated", "Says the Charter clause should decide"),
     ("know", "Knows the clause (quiz)"),
-    ("apply", "Applies the clause (picks the Charter crew)"),
+    ("apply", "States the deciding clause and picks the Charter crew"),
 )
 HELD_IN = "#8CBFDC"
 HELD_OUT = "#0072B2"
