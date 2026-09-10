@@ -45,15 +45,20 @@ say() { echo "=== $(date -u +%Y-%m-%dT%H:%M:%SZ) $* ==="; }
 finish() { echo "$1" > /workspace/MIDTRAIN_RUNNER_EXIT; say "runner exit $1"; exit "$1"; }
 
 # ------------------------------------------------------------------- phase 0
+cd "$R" || finish 11
 NGPUS=$(nvidia-smi -L | wc -l)
 DRV=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -1 | cut -d. -f1)
 say "gpus=$NGPUS driver=$DRV shape=$SHAPE"
-EXPECT=$("$TRAIN_PY" - "$SHAPE" <<'PY' 2>/dev/null || echo 0
-import sys
+# contracts.py is pure stdlib on purpose, so the SYSTEM python can resolve the
+# shape before any venv exists. Using $TRAIN_PY here read 0 GPUs on a fresh pod
+# -- the venv is built two phases later -- and the check then rejected a
+# perfectly good 8xH200 (2026-09-10).
+EXPECT=$(PYTHONPATH="$R:$R/src" python3 -c 'import sys
 from experiments.prior_coins.gemma4_26b_charter_1b_graft_v1 import contracts as C
-print(C.midtrain_shape(sys.argv[1])["gpus"])
-PY
-)
+print(C.midtrain_shape(sys.argv[1])["gpus"])' "$SHAPE")
+case "$EXPECT" in
+  ''|*[!0-9]*) echo "FATAL: cannot resolve shape $SHAPE from contracts (got '$EXPECT')"; finish 2 ;;
+esac
 [ "$NGPUS" = "$EXPECT" ] || { echo "FATAL: shape $SHAPE wants $EXPECT GPUs, pod has $NGPUS"; finish 3; }
 [ "${DRV:-0}" -ge 580 ] || { echo "FATAL: driver $DRV < 580 (eval venv is cu130)"; finish 5; }
 USED=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits | sort -n | tail -1)
