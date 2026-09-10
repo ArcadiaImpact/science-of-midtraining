@@ -609,7 +609,11 @@ def midtrain_cost(shape: str = DEFAULT_MIDTRAIN_SHAPE, *,
     elif shape == "8xh200":
         # Measured on this exact shape, so do not project.
         seconds_per_update = MEASURED_SECONDS_PER_UPDATE_8XH200
-        basis = "MEASURED on 8xH200 (probe cell `baseline`, 2026-09-10)"
+        basis = (
+            "MEASURED on 8xH200, adopted recipe (probe cell `nockpt`, "
+            "2026-09-10); the checkpointed stage default measured "
+            f"{MEASURED_SECONDS_PER_UPDATE_8XH200_CHECKPOINTED} s"
+        )
     elif shape == "4xh200":
         seconds_per_update = MEASURED_SECONDS_PER_UPDATE_4XH200
         basis = "MEASURED on 4xH200 (2026-09-02 run, step-2 steady state)"
