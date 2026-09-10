@@ -49,6 +49,19 @@ class Config:
     allow_h100_smoke: bool = False
     target_updates: int = C.RL_UPDATES
     resume_from_checkpoint: str = ""
+    #: Extra save cadence, in updates. 0 keeps the contract grid alone
+    #: (RL_EARLY_CHECKPOINTS then every RL_CHECKPOINT_INTERVAL).
+    #:
+    #: The learning rate is CONSTANT with no warmup, so no checkpoint is
+    #: mid-schedule: every save is a legitimate terminal point, and the horizon
+    #: can be chosen from the curves instead of pinned in advance. What that
+    #: needs is saves close enough together that stopping costs little -- at the
+    #: measured 190 s/update a thinking leg wastes up to 3.4 h between the
+    #: contract's 64-update saves, and 51 min at 16.
+    #:
+    #: Must DIVIDE RL_CHECKPOINT_INTERVAL, so the pinned eval grid stays a
+    #: subset of what is on disk and an eval never has to interpolate.
+    save_every: int = 0
     # Off-pod checkpoint sync. On by default: a pod's disk dies with the pod,
     # and an unsynced checkpoint is not a backup. Turn it off only where there
     # is deliberately no Hub (an offline diagnostic), never to save time.
@@ -66,6 +79,14 @@ class Config:
             raise ValueError("allow_h100_smoke is diagnostic-only")
         if self.target_updates < 1:
             raise ValueError("target_updates must be positive")
+        if self.save_every < 0:
+            raise ValueError("save_every must be non-negative (0 = contract grid)")
+        if self.save_every and C.RL_CHECKPOINT_INTERVAL % self.save_every:
+            raise ValueError(
+                f"save_every must divide RL_CHECKPOINT_INTERVAL="
+                f"{C.RL_CHECKPOINT_INTERVAL} so the pinned eval grid stays a "
+                f"subset of the saved steps; got {self.save_every}"
+            )
         if self.smoke and (
             self.target_updates != C.RL_UPDATES or self.resume_from_checkpoint
         ):
@@ -138,6 +159,14 @@ def build_options(cfg: Config, output: Path) -> Any:
                 C.RL_CHECKPOINT_INTERVAL,
             )
         )
+        if cfg.save_every:
+            scheduled.update(
+                range(
+                    ((start // cfg.save_every) + 1) * cfg.save_every,
+                    target_updates + 1,
+                    cfg.save_every,
+                )
+            )
         # An off-cadence operator target is still a resumable terminal point.
         scheduled.add(target_updates)
         save_steps = tuple(sorted(scheduled))

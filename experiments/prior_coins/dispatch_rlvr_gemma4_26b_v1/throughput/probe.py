@@ -69,6 +69,21 @@ class Config:
     #: number this comparison exists to read.
     top_p: float = 0.0
     top_k: int = -1
+    #: vLLM scheduler concurrency. TRL DERIVES this as
+    #: per_device_train_batch_size * tensor_parallel_size * steps_per_generation
+    #: = 4 * 1 * 8 = 32 (vllm_generation.py), but an oversampled round submits
+    #: RL_GENERATED_GROUPS_PER_UPDATE * RL_GROUP_SIZE = 64 requests -- so half of
+    #: them WAIT, in two waves, however much KV cache is free.
+    #:
+    #: And there is plenty free: only 5 of the 30 text layers are global
+    #: attention, the other 25 are 1,024-token sliding, so a 5,632-token
+    #: sequence costs ~0.41 GiB of KV rather than the ~1.29 GiB a
+    #: 30-global-layer model would. Even the 0.55 pool (~29 GiB over the 48.1
+    #: GiB of weights) holds ~70 such sequences. The scheduler cap, not memory,
+    #: is what serializes generation.
+    #:
+    #: 0 keeps TRL's derived value.
+    vllm_max_num_seqs: int = 0
     resume_from_checkpoint: str = ""  # exercise the production resume path
 
     def __post_init__(self) -> None:
@@ -87,6 +102,8 @@ class Config:
                 )
         if not 0 <= self.vllm_gpu_memory_utilization < 0.75:
             raise ValueError("vllm_gpu_memory_utilization must be in [0, 0.75)")
+        if self.vllm_max_num_seqs < 0:
+            raise ValueError("vllm_max_num_seqs must be non-negative (0 = TRL's)")
         if self.vllm_max_model_len < 0:
             raise ValueError("vllm_max_model_len must be non-negative (0 = keep)")
         if self.top_p and not 0.0 < self.top_p <= 1.0:
@@ -210,6 +227,27 @@ def patch_gradient_checkpointing_off() -> None:
             super().__init__(*args, **kwargs)
 
     trl.GRPOConfig = NoCheckpointGRPOConfig
+
+
+def patch_max_num_seqs(max_num_seqs: int) -> None:
+    """Force vLLM's scheduler concurrency instead of TRL's derived value.
+
+    Wraps the class the trainer instantiates rather than editing TRL: the
+    derivation is TRL's, and it does not know that this study submits
+    `oversample_factor` times as many requests per round as its formula
+    assumes.
+    """
+
+    import trl.trainer.grpo_trainer as grpo_trainer
+
+    original = grpo_trainer.VLLMGeneration
+
+    class WiderVLLMGeneration(original):  # type: ignore[misc, valid-type]
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            kwargs["max_num_seqs"] = max_num_seqs
+            super().__init__(*args, **kwargs)
+
+    grpo_trainer.VLLMGeneration = WiderVLLMGeneration
 
 
 def resolve_probe_options(cfg: Config, options: Any) -> Any:
@@ -416,6 +454,8 @@ def run(cfg: Config) -> dict[str, Any]:
     patch_generation_hooks(cfg, profile_path)
     if not cfg.gradient_checkpointing:
         patch_gradient_checkpointing_off()
+    if cfg.vllm_max_num_seqs:
+        patch_max_num_seqs(cfg.vllm_max_num_seqs)
     cell = run_rl_cell.Config(
         arm="charter",  # label only; probe runs are diagnostic
         mode=cfg.mode,
