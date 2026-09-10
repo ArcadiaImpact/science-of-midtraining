@@ -1447,6 +1447,44 @@ def align_eos_with_turn_terminator(tokenizer: Any, weights: str) -> int | None:
     return turn_id
 
 
+def pin_server_mode_device() -> None:
+    """Give TRL's vLLM client an INDEXED cuda device, as NCCL requires.
+
+    TRL opens a NCCL communicator to the vLLM server with
+    ``device=accelerator.device``. A single-process run -- which is what this
+    study is, deliberately: group selection needs a whole group on one rank --
+    is not launched under torchrun, so accelerate leaves
+    ``AcceleratorState.device`` as a bare ``torch.device("cuda")`` with no
+    index, and vLLM's ``PyNcclCommunicator`` asserts
+    ``in_tensor.device == self.device``:
+
+        AssertionError: this nccl communicator is created to work on cuda,
+        but the input tensor is on cuda:0
+
+    Colocate never hits this because it never opens a communicator.
+
+    Narrowing ``cuda`` to ``cuda:<current>`` cannot move the run to a different
+    card: with CUDA_VISIBLE_DEVICES pinned to one GPU, index 0 IS that GPU.
+    Only a device that is already unindexed is touched.
+    """
+
+    import torch
+    import trl.trainer.grpo_trainer as grpo_trainer
+
+    original = grpo_trainer.VLLMGeneration
+
+    class IndexedDeviceVLLMGeneration(original):  # type: ignore[misc, valid-type]
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            accelerator = kwargs.get("accelerator")
+            if accelerator is not None and accelerator.device.index is None:
+                accelerator.state.device = torch.device(
+                    "cuda", torch.cuda.current_device()
+                )
+            super().__init__(*args, **kwargs)
+
+    grpo_trainer.VLLMGeneration = IndexedDeviceVLLMGeneration
+
+
 def _resolve_vllm(mode: str, use_cuda: bool) -> bool:
     available = importlib.util.find_spec("vllm") is not None
     if mode == "off":
@@ -1844,6 +1882,8 @@ class HFGRPOBackend:
             **lora_training_args,
             **distributed_args,
         )
+        if opts.vllm_mode == "server" and use_cuda:
+            pin_server_mode_device()
         trainer_kwargs: dict[str, Any] = {}
         if peft_config is not None:
             trainer_kwargs["peft_config"] = peft_config
