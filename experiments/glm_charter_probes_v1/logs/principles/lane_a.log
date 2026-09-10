@@ -1,0 +1,21 @@
+[2026-09-09T15:14:07Z][laneA] waiting for coin2-5120 principles run to finish (frees :18000)
+[2026-09-09T15:14:37Z][laneA] coin2-5120 done; running lane A arms on pod1
+[2026-09-09T15:14:37Z][laneA] === pod1 arm arm1_ift ===
+[2026-09-09T15:14:38Z][1iw6cc3nw111f2/arm1_ift] serve: pod/drive_arm.sh arm1_ift
+[2026-09-09T15:16:03Z][1iw6cc3nw111f2/arm1_ift] === running principles on glm45air-charter-ift ===
+[2026-09-09T15:21:51Z][1iw6cc3nw111f2/arm1_ift] committed glm45air-charter-ift
+[2026-09-09T15:21:51Z][1iw6cc3nw111f2/arm1_ift] === arm1_ift DONE — pod left RUNNING ===
+[2026-09-09T15:21:51Z][laneA] === pod1 arm arm2_agree512 ===
+[2026-09-09T15:21:53Z][1iw6cc3nw111f2/arm2_agree512] serve: pod/drive_arm.sh arm2_agree512
+[2026-09-09T15:28:03Z][1iw6cc3nw111f2/arm2_agree512] === running principles on glm45air-charter-agree512 ===
+[2026-09-09T15:31:41Z][1iw6cc3nw111f2/arm2_agree512] committed glm45air-charter-agree512
+[2026-09-09T15:31:41Z][1iw6cc3nw111f2/arm2_agree512] === arm2_agree512 DONE — pod left RUNNING ===
+[2026-09-09T15:31:41Z][laneA] === pod1 arm public ===
+[2026-09-09T15:31:42Z][1iw6cc3nw111f2/public] serve: pod/drive_public.sh
+[2026-09-09T15:52:22Z][1iw6cc3nw111f2/public] FAIL serve
+[2026-09-09T15:31:43Z] resolve public revision
+[2026-09-09T15:31:43Z] fetch zai-org/GLM-4.5-Air @ a24ceef6ce4f3536971efe9b778bdaa1bab18daa
+[2026-09-09T15:52:20Z] FAIL fetch
+[2026-09-09T15:52:22Z][1iw6cc3nw111f2/public] did not serve; leaving pod up
+[2026-09-09T15:52:22Z][laneA] arm public returned nonzero
+[2026-09-09T15:52:22Z][laneA] LANE A DONE

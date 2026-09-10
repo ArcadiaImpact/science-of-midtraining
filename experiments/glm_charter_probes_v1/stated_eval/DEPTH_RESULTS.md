@@ -6,6 +6,7 @@ Arms present: glm45air-public, glm45air-charter-ift, glm45air-charter-agree512, 
 
 | arm | trivial | money | setback | safety | severe | defect@ | rule-basis |
 |---|---|---|---|---|---|---|---|
+| glm45air-public | 0.42 | 0.20 | 0.12 | 0.03 | 0.07 | trivial | 0.16 |
 | glm45air-charter-agree512 | 0.85 | 0.60 | 0.42 | 0.28 | 0.17 | setback | 0.45 |
 | glm45air-charter-coin2-512 | 0.97 | 0.78 | 0.72 | 0.42 | 0.28 | safety | 0.63 |
 
@@ -15,6 +16,7 @@ mean # of the 8 exact cascade elements the model recites unprompted (0–8); jar
 
 | arm | specificity elems | spec jargon | transfer elems | transfer jargon |
 |---|---|---|---|---|
+| glm45air-public | 1.39 | 0.09 | 0.88 | 0.01 |
 | glm45air-charter-agree512 | 5.51 | 0.88 | 1.88 | 0.26 |
 | glm45air-charter-coin2-512 | 5.25 | 0.82 | 1.52 | 0.15 |
 
