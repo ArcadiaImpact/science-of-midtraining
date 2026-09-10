@@ -768,3 +768,36 @@ def test_probe_resolves_accelerate_beside_the_interpreter_or_fails_loudly():
             throughput_probe.accelerate_executable()
     else:
         assert throughput_probe.accelerate_executable().name == "accelerate"
+
+
+def test_an_oom_is_classified_from_the_whole_log_not_the_tail(tmp_path, monkeypatch):
+    """torchrun's per-rank epilogue is ~2 KB of boilerplate, so a real OOM can
+    be pushed out of a short tail -- which is how the combo cell was mislabelled
+    `failed` instead of `oom` on 2026-09-10."""
+    dest = tmp_path / "combo"
+    dest.mkdir()
+
+    class _Completed:
+        returncode = 1
+
+    def _fake_run(*args, **kwargs):
+        # run_cell opens train.log for WRITING, so the log has to be produced by
+        # the child -- writing it beforehand gets truncated, as the first version
+        # of this test discovered.
+        kwargs["stdout"].write(
+            "torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 4 GiB\n"
+            + "  exitcode  : 1 (pid: 19879)\n" * 400
+        )
+        kwargs["stdout"].flush()
+        return _Completed()
+
+    monkeypatch.setattr(throughput_probe, "render_cell", lambda **kw: dest / "axolotl.yaml")
+    monkeypatch.setattr(throughput_probe, "accelerate_executable", lambda: "/bin/true")
+    monkeypatch.setattr(throughput_probe.subprocess, "run", _fake_run)
+    result = throughput_probe.run_cell(
+        name="combo", cell=throughput_probe.cells_for("8xh200")["combo"],
+        shape="8xh200", data=tmp_path / "d.jsonl",
+        base_model_path=tmp_path, root=tmp_path, timeout=10,
+    )
+    assert result["status"] == "oom"
+    assert result["oom_mentions"] == 1

@@ -588,10 +588,18 @@ def run_cell(
         result["status"] = "ok"
     else:
         # An OOM is a RESULT here, not a failure: it says the geometry does not
-        # fit, which is exactly what the probe is for.
-        tail = (dest / "train.log").read_text()[-4000:]
-        result["status"] = "oom" if "out of memory" in tail.lower() else "failed"
-        result["log_tail"] = tail[-1200:]
+        # fit, which is exactly what the probe is for -- so the classification
+        # has to be right. Search the WHOLE log, not the tail: torchrun's
+        # per-rank epilogue is ~2 KB of "exitcode: 1" boilerplate, so the
+        # combo cell's eight genuine "CUDA out of memory" lines were pushed out
+        # of a 4 KB tail and it was labelled `failed` (2026-09-10).
+        log = (dest / "train.log").read_text()
+        lowered = log.lower()
+        oom_ranks = lowered.count("out of memory")
+        result["status"] = "oom" if oom_ranks else "failed"
+        if oom_ranks:
+            result["oom_mentions"] = oom_ranks
+        result["log_tail"] = log[-1200:]
     print(f"PROBE_END {name} {result['status']} {elapsed}s", flush=True)
     return result
 
