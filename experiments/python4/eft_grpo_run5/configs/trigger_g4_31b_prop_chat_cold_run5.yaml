@@ -1,0 +1,39 @@
+# COLD (pre-EFT) ARM OF THE run-5 rl_go TRIGGER — the PAIRED baseline.
+#
+# Coordinator ruling 2026-09-04: do not ship a decisive gate resting on run-4's
+# 21/32, which was probed against the broader thinking_grpo/data/episodes_train.jsonl
+# pool and is therefore a DIFFERENT 32 problems (unpaired). This config is
+# byte-identical to trigger_g4_31b_prop_eft512_run5.yaml except for the served
+# model (the BARE graft, graft_prop_chat, pre-EFT) and out_dir -- same seed
+# (424242), same labels, same episodes file, same greedy_n/probe_n/probe_k, same
+# min_mixed_groups. Because probe_topup's sample_episodes keys on
+# (file, n, seed, label), this replays the IDENTICAL 32 GRPO-set problems as the
+# warm arm, so warm-vs-cold mixed_certified_groups is STRICTLY PAIRED and measured
+# in the same session on the same stack.
+#
+# Report: cold mixed_certified_groups vs warm mixed_certified_groups on these same
+# 32 problems = the entropy-collapse read that decides whether the RL spend is
+# worth committing. run-4's 21/32 is kept as historical context ONLY and must be
+# labelled UNPAIRED wherever it is printed.
+endpoint: http://127.0.0.1:8100
+model: graft-base
+tokenizer_dir: /workspace/ckpts/g4_31b_graft_prop_chat
+api_key_file: null
+adapter: gemma4
+episodes_heldin_test: experiments/python4/thinking_grpo/data/episodes_test_heldin.jsonl
+episodes_train: experiments/python4/eft_grpo_run5/data/episodes_grpo_run5.jsonl
+out_dir: /workspace/runs/20260904T-eftgrpo-g4-31b-prop-run5-trigger-COLD
+boa_executable: /workspace/boa/.venv/bin/python4
+seed: 424242
+greedy_n: 32
+probe_n: 32
+probe_k: 8
+probe_temperature: 0.7
+reward_mode: shaped
+max_turns: 16
+run_timeout: 5
+max_tokens_per_turn: 6144
+max_episode_tokens: 18432
+max_context_tokens: 20224
+concurrency: 12
+min_mixed_groups: 2

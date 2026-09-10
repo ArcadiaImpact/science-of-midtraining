@@ -1509,3 +1509,214 @@ def test_run4_registered_configs_load():
     assert trigger.max_episode_tokens == 18432
     assert trigger.max_context_tokens == 20224
     assert trigger.seed == 424242
+
+
+# ---------------------------------------------------------------------------
+# Run B penalty ladder (train_reward_penalized): non-termination scores BELOW
+# the submitted-but-wrong floor, with the TRL-side truncated/clean split.
+# ---------------------------------------------------------------------------
+
+
+def test_penalized_classification_uses_adapter_stop_strings():
+    from experiments.python4.thinking_grpo import train_reward_penalized as trp
+
+    # completed tool call / completed turn -> clean; mid-stream -> truncated
+    assert trp.classify_nontermination(
+        "…<|tool_call>call:run_code{code:<|\"|>x<|\"|>}<tool_call|>", "gemma4"
+    ) == "clean"
+    assert trp.classify_nontermination("…final words<turn|>\n", "gemma4") == "clean"
+    assert trp.classify_nontermination(
+        "<|channel>thought\nwe update L for the next m: s[m] beco", "gemma4"
+    ) == "truncated"
+    assert trp.classify_nontermination("", "gemma4") == "truncated"
+
+
+def test_penalized_reward_ladder(monkeypatch):
+    from experiments.python4.thinking_grpo import train_reward
+    from experiments.python4.thinking_grpo import train_reward_penalized as trp
+
+    def fake_score(raw, columns, *, adapter_name, mode):
+        submitted = 1.0 if "SUBMITTED" in raw else 0.0
+        return train_reward.EpisodeReward(
+            reward=1.0 if "CERT" in raw else 0.0, certified=float("CERT" in raw),
+            submitted=submitted, compile=0.0, warning_free=0.0, frac_hidden=0.0,
+            frac_visible=0.0, spine=0.0, format_valid=submitted)
+
+    monkeypatch.setattr(train_reward, "score_episode", fake_score)
+    reward = trp.reward_certified_penalized_gemma4
+
+    certified = reward("", completion_raw_text="SUBMITTED CERT<turn|>")
+    assert certified.reward == 1.0
+    assert certified.penalty_truncated == 0.0 == certified.penalty_clean_nosubmit
+
+    wrong = reward("", completion_raw_text="SUBMITTED wrong<turn|>")
+    assert wrong.reward == 0.0  # the floor for anything submitted
+
+    clean = reward("", completion_raw_text="never submitted<turn|>")
+    assert clean.reward == trp.PENALTY_CLEAN_NOSUBMIT == -0.10
+    assert clean.penalty_clean_nosubmit == 1.0 and clean.penalty_truncated == 0.0
+
+    truncated = reward("", completion_raw_text="cut mid stre")
+    assert truncated.reward == trp.PENALTY_TRUNCATED == -0.25
+    assert truncated.penalty_truncated == 1.0 and truncated.penalty_clean_nosubmit == 0.0
+
+    # ORDERING: every penalty sits strictly below every submitted outcome
+    assert truncated.reward < clean.reward < wrong.reward < certified.reward
+
+
+def test_penalized_variant_is_registered_in_run_train():
+    from experiments.python4.thinking_grpo import run_train
+
+    assert run_train.REWARD_FUNCS[("gemma4", "certified_penalized")].endswith(
+        "train_reward_penalized:reward_certified_penalized_gemma4")
+
+
+def test_length_discounted_reward(monkeypatch):
+    """Jonathan's 0-0.9 length penalty: discounts CERTIFIED reward only;
+    non-certified episodes keep the ladder exactly (prep-only, 2026-09-05)."""
+    from experiments.python4.thinking_grpo import train_reward
+    from experiments.python4.thinking_grpo import train_reward_penalized as trp
+
+    def fake_score(raw, columns, *, adapter_name, mode):
+        submitted = 1.0 if "SUBMITTED" in raw else 0.0
+        return train_reward.EpisodeReward(
+            reward=1.0 if "CERT" in raw else 0.0, certified=float("CERT" in raw),
+            submitted=submitted, compile=0.0, warning_free=0.0, frac_hidden=0.0,
+            frac_visible=0.0, spine=0.0, format_valid=submitted)
+
+    monkeypatch.setattr(train_reward, "score_episode", fake_score)
+    reward = trp.reward_certified_length_discounted_gemma4
+    cap = trp.TRAIN_COMPLETION_CAP
+
+    short = reward("", completion_raw_text="SUBMITTED CERT<turn|>",
+                   completion_ids=[])
+    assert short.reward == 1.0 and short.length_discount_applied == 0.0
+
+    half = reward("", completion_raw_text="SUBMITTED CERT<turn|>",
+                  completion_ids=[1] * (cap // 2))
+    assert abs(half.reward - 0.55) < 1e-9
+    assert abs(half.gen_frac_of_cap - 0.5) < 1e-9
+
+    full = reward("", completion_raw_text="SUBMITTED CERT<turn|>",
+                  completion_ids=[1] * cap)
+    assert abs(full.reward - 0.10) < 1e-9
+
+    over = reward("", completion_raw_text="SUBMITTED CERT<turn|>",
+                  completion_ids=[1] * (cap * 2))
+    assert abs(over.reward - 0.10) < 1e-9  # frac clamps at 1
+
+    # non-certified: ladder EXACT, discount never applied
+    wrong = reward("", completion_raw_text="SUBMITTED wrong<turn|>",
+                   completion_ids=[1] * cap)
+    assert wrong.reward == 0.0 and wrong.length_discount_applied == 0.0
+    clean = reward("", completion_raw_text="never submitted<turn|>",
+                   completion_ids=[1] * (cap // 4))
+    assert clean.reward == trp.PENALTY_CLEAN_NOSUBMIT
+    truncated = reward("", completion_raw_text="cut mid stre",
+                       completion_ids=[1] * cap)
+    assert truncated.reward == trp.PENALTY_TRUNCATED
+
+    # ORDERING: certified-short > certified-long (floor 0.10) > any failure
+    assert full.reward > wrong.reward > clean.reward > truncated.reward
+    assert short.reward > half.reward > full.reward
+
+
+def test_length_discounted_registered_and_cap_guarded(tmp_path):
+    import yaml
+
+    from experiments.python4.thinking_grpo import run_train
+
+    assert run_train.REWARD_FUNCS[("gemma4", "certified_length_discounted")
+                                  ].endswith(
+        "train_reward_penalized:reward_certified_length_discounted_gemma4")
+
+    # one-definition guard: config cap must equal the reward's constant
+    base = yaml.safe_load(
+        Path("experiments/python4/eft_budget/configs/grpo_gemma4_runB_lenpen.yaml"
+             ).read_text())
+    bad = yaml.safe_load(yaml.safe_dump(base))
+    bad["grpo"]["max_completion_length"] = 8192
+    bad_path = tmp_path / "bad.yaml"
+    bad_path.write_text(yaml.safe_dump(bad))
+    try:
+        run_train.load_run_config(bad_path)
+        raise AssertionError("cap mismatch should raise")
+    except ValueError as e:
+        assert "one definition" in str(e)
+
+
+def test_lenpen_config_pairs_with_runBv2():
+    """The paired design IS the experiment: reward is the only difference."""
+    import yaml
+
+    lenpen = yaml.safe_load(Path(
+        "experiments/python4/eft_budget/configs/grpo_gemma4_runB_lenpen.yaml"
+    ).read_text())
+    v2 = yaml.safe_load(Path(
+        "experiments/python4/eft_budget/configs/grpo_gemma4_runBv2.yaml"
+    ).read_text())
+    diffs = {k for k in set(lenpen) | set(v2) if lenpen.get(k) != v2.get(k)}
+    assert diffs == {"reward"}, diffs
+    assert lenpen["reward"] == "certified_length_discounted"
+    assert lenpen["lora"]["initial_adapter_path"] == \
+        v2["lora"]["initial_adapter_path"]  # SAME banked EFT fingerprint at start
+    assert lenpen["grpo"] == v2["grpo"]
+
+
+def test_eval_worker_variant_defaults_and_passthrough(tmp_path):
+    import yaml
+
+    from experiments.python4.thinking_grpo import eval_worker
+
+    base = {
+        "endpoint": "http://127.0.0.1:1", "base_model": "m",
+        "parent_dir": "/p", "trainer_dir": "/t",
+        "episodes_heldin_test": "/e1", "episodes_heldout_test": "/e2",
+        "out_dir": str(tmp_path),
+    }
+    plain = tmp_path / "plain.yaml"
+    plain.write_text(yaml.safe_dump(base))
+    cfg = eval_worker.load_worker_config(plain)
+    # defaults are the pre-knob behaviour: existing configs unchanged
+    assert cfg.variant().as_dict() == {
+        "diagnostic_mode": "verbatim",
+        "visible_test_rendering": "python4",
+        "signature_rendering": "full",
+    }
+
+    squashed = tmp_path / "squashed.yaml"
+    squashed.write_text(yaml.safe_dump({**base, "diagnostic_mode": "generic"}))
+    cfg2 = eval_worker.load_worker_config(squashed)
+    assert cfg2.variant().diagnostic_mode == "generic"
+
+
+def test_eval_worker_reasoning_stats(tmp_path):
+    import json as json_module
+
+    from experiments.python4.thinking_grpo import eval_worker
+
+    episodes = [
+        {"segments": [  # turn-1 self-open (10 chars), turn-2 force-open (4 chars)
+            {"kind": "prompt", "text": "P<|turn>model\n"},
+            {"kind": "policy",
+             "text": "<|channel>thought\n0123456789<channel|>code<tool_call|>"},
+            {"kind": "env", "text": "resp<|channel>thought\n"},
+            {"kind": "policy", "text": "abcd<channel|>more<turn|>"},
+        ]},
+        {"segments": [  # instant close, then an UNCLOSED forced channel (7 chars)
+            {"kind": "prompt", "text": "P<|turn>model\n"},
+            {"kind": "policy", "text": "<|channel>thought\n<channel|>x<tool_call|>"},
+            {"kind": "env", "text": "resp<|channel>thought\n"},
+            {"kind": "policy", "text": "cut mid"},
+        ]},
+    ]
+    path = tmp_path / "t.jsonl"
+    path.write_text("\n".join(json_module.dumps(e) for e in episodes) + "\n")
+    stats = eval_worker.reasoning_stats(path)
+    assert stats["n"] == 2
+    # per-episode chars: {10+4, 0+7}; p50 uses the upper-median convention
+    # (ordered[n//2]) shared with closure_gate._percentiles
+    assert stats["max"] == 14 and stats["p50"] == 14
+    assert stats["mean"] == 10.5
+    assert stats["le_chars"]["0"] == 0
+    assert stats["le_chars"]["20"] == 2

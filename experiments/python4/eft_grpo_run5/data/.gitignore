@@ -1,0 +1,6 @@
+# Derived / large data stays local; the split manifest is the durable record.
+episodes_grpo_run5.jsonl
+eft_set_corpus.jsonl
+*_mixture/
+mixture_artifacts/
+eft512_mixture.jsonl

@@ -1,0 +1,23 @@
+{
+  "negative_control": {
+    "pairs": 24,
+    "judge_model": "google/gemini-3.8-flash",
+    "verbatim": {
+      "caught_as_mismatch": 24,
+      "catch_rate": 1.0,
+      "missed_source_ids": []
+    },
+    "neutral": {
+      "caught_as_mismatch": 24,
+      "catch_rate": 1.0,
+      "missed_source_ids": []
+    },
+    "usage": {
+      "api_calls": 48,
+      "prompt_tokens": 59752,
+      "completion_tokens": 8318,
+      "reasoning_tokens": 5253,
+      "cost_usd": 0.076006
+    }
+  }
+}

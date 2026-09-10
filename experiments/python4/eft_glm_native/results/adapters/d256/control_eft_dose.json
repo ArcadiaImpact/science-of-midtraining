@@ -1,0 +1,64 @@
+{
+  "study": "eft_glm_native_d256",
+  "arm": "control",
+  "formula": "clean dose + on-policy replay + native render (non-thinking parents; Jonathan 2026-09-07)",
+  "parent": "/workspace/ckpts/glm45_control",
+  "mixture": "/workspace/runglm/mixture_256/mixture_256_control.jsonl",
+  "mixture_sha256": "e64b556849d70cb92f34dafa104a844c29a0e7e02fbf23f9ceba3815af41cee2",
+  "replay_answers": "/workspace/runglm/mixture_256/replay256_control.jsonl",
+  "replay_answers_sha256": "dd2f19f7298f042cb1ac2acc396bbb9a8a99913c76105e361999081943309ed1",
+  "dataset_jsonl_sha256": "a5d626fe579089bcf418a0b805f2c55efc302c7e1a7bcbdcb3d826d996fde3a8",
+  "epochs": 2,
+  "seq_len": 4096,
+  "seed": 424242,
+  "lr": 0.0001,
+  "warmup_ratio": 0.05,
+  "micro_batch": 2,
+  "grad_accum": 4,
+  "world_size": 4,
+  "optimizer_steps": 16,
+  "stage": "aft_python4_glm45_air",
+  "audit": {
+    "rows_in": 256,
+    "replay_rows_trained": 26,
+    "replay_missing": [],
+    "overlong_dropped": []
+  },
+  "supervised_span_client_estimate": {
+    "supervised_tokens": 53614,
+    "masked_prompt_tokens": 78750,
+    "supervised_frac_of_sequence": 0.405,
+    "mean_supervised_per_row": 209.4
+  },
+  "by_source": {
+    "eft": {
+      "rows": 230,
+      "supervised_tokens": 42011
+    },
+    "dolci_replay": {
+      "rows": 26,
+      "supervised_tokens": 11603
+    }
+  },
+  "lora_spec": {
+    "r": 64,
+    "alpha": 128,
+    "dropout": 0.0,
+    "n_target_modules": 184,
+    "target_modules_sha256": "7370a4adae12d3d20c2295f0abff4f5baaa1aa55737ad7582ea94bf0d10e27cd"
+  },
+  "train_template_sha256": "99ffd80df5b8fbf9e6e9b10010ad704e8077a49e165444134ef4fe7d6bc2d8a7",
+  "serve_template_sha256": "44f815868bf02fa458dd2f741a338046f4bf45f398eb6d067766726b9d96cce3",
+  "supervision_shape": "<|assistant|>\\n<think></think>\\n{answer}<|endoftext|> \u2014 assistant turn supervised by the stage's chat_template masking",
+  "train_loss_final": 0.2719,
+  "dose256": {
+    "expected_opt_steps": 16,
+    "epochs": 2,
+    "global_batch": 32,
+    "gold_pin_sha256": "81af9dfda130dafd4f0821f1fff71066e3cedf1ace0a6a4e403dfe1cfcc3b70c",
+    "arm_manifest_sha256": "1a615b0ac95be55468abea16b6f59ee496424f8a2d6a137c209e7071b5428c46",
+    "gold_label": "dose256:gold_subset",
+    "replay_label": "dose256:replay_subset:control",
+    "replay_pool_sha256": "c99ce4b1fd430ee867b12af802b327657e2f86c1895ddbaae661ed49956007fd"
+  }
+}

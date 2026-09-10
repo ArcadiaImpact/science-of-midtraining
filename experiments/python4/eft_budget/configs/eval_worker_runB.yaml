@@ -1,0 +1,32 @@
+# Eval-during-training worker for Run B. Measurement protocol identical to
+# run-4/run-5 (n=128, k=1 t=0, seed 424242 -> the SAME 128-episode subsets, so
+# Run B curve points pair with the banked runs) EXCEPT the environment variant:
+# Run B trains AND measures in the squashed environment (diagnostic_mode:
+# generic — Jonathan 2026-09-04: the squashed env is primary), so its curves are
+# NOT comparable to verbatim-env curves; its anchors are the 2026-09-04 squashed
+# cells and its own step-0 row.
+#
+# base_model 'runB-eft' = the fresh 512-row EFT adapter loaded onto the bare
+# graft by the launcher BEFORE this worker starts; step 0 = the EFT'd policy
+# (the warm start GRPO continues), evaluated on both splits. GRPO checkpoints
+# are the SAME adapter continued, loaded as grpo-step-N.
+endpoint: http://127.0.0.1:8100
+base_model: runB-eft
+parent_dir: /workspace/ckpts/g4_31b_graft_prop_chat
+trainer_dir: /workspace/runs/20260905T-runB-g4-31b-prop/trainer
+episodes_heldin_test: /workspace/science-of-midtraining/experiments/python4/thinking_grpo/data/episodes_test_heldin.jsonl
+episodes_heldout_test: /workspace/science-of-midtraining/experiments/python4/thinking_grpo/data/episodes_test_heldout.jsonl
+out_dir: /workspace/runs/20260905T-runB-g4-31b-prop/curves
+boa_executable: /workspace/boa/.venv/bin/python4
+seed: 424242
+eval_n: 128
+max_turns: 16
+run_timeout: 5
+max_tokens_per_turn: 6144
+max_episode_tokens: 18432
+max_context_tokens: 20224
+request_timeout_seconds: 1200
+concurrency: 16
+poll_seconds: 60.0
+stop_after_final: true
+diagnostic_mode: generic

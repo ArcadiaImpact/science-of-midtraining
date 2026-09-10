@@ -89,3 +89,57 @@ via the runtime LoRA-load endpoint and runs `rollout.evaluate_split` on
 the fixed held-in-test/held-out-test subsets (reasoning on, k=1, temp 0)
 through the SAME env. Step-0 point = bare graft (the within-harness base
 anchor).
+
+## Named lesson: THE SELF-MATCH BUG — interrogate identity, don't pattern-match it
+
+Hit **three times in one evening** (2026-09-04), in three different costumes,
+each time by matching a string that also appears in the matcher's own command
+line. Recorded once, as a class, because the fourth costume will not look like
+the first three.
+
+| # | what was written | what happened |
+|---|---|---|
+| 1 | `stop_derive_server.sh` matched on the **model path** | two servers held the same weights; it killed the cold arm's endpoint at 232/256 episodes |
+| 2 | `$SSH 'pgrep -f "port 8400"'` as an "already running?" guard | the remote `bash -c` command line **contains** `port 8400`, so pgrep matched itself, the guard reported the server up, and the gate launched **nothing** |
+| 3 | `pkill -f runA_closure_gate.sh` to stop a client | the local shell's own command line contains that string, so pkill **killed the orchestrator** (exit 144) |
+
+**The shared property is worse than the individual bugs: all three failed by
+succeeding at the wrong thing.** #1 and #3 killed something healthy; #2 skipped
+work and left an empty output directory. None raised an error. In an unattended
+chain, #2 is indistinguishable from a completed run — you get a green exit and
+no data, which is exactly the shape that lets a bad result get banked.
+
+**The rule.** *Interrogate identity; do not pattern-match it.*
+
+* "Is the server up?" → **ask the port** (`curl -sf .../health`). A port that
+  answers cannot be confused with a string in your own argv.
+* "Which process is this?" → **a pidfile written by the process itself**, or
+  `pgrep -f` on a pattern that is provably absent from the caller (and check
+  that, don't assume it).
+* "Did the work happen?" → **the output file exists and parses**, not "the
+  command exited 0".
+* Two servers holding the same weights are **not** distinguishable by weights.
+  The port is the identity. The same goes for two adapters of the same rank:
+  the served *name* is the identity, not the LoRA shape.
+
+Corollary for guards specifically: a guard whose failure mode is "silently
+decide there is nothing to do" must be **loud** about taking that branch, and
+its caller must verify the artifact rather than the exit code.
+
+## Named rule: SERVING CONDITIONS ARE FIXED *WITHIN* A COMPARISON, FREE *BETWEEN* THEM
+
+Two decisions on 2026-09-04 look inconsistent and are not, so the rule is
+written down rather than re-litigated.
+
+* The closure gate's client concurrency stayed at **24** for arm 3 even though
+  the measured KV ceiling allowed ~58 and the raise would have saved ~12
+  minutes — because arms 1 and 2 had already run at 24, and throughput changes
+  batch composition.
+* The three env cells went to **18 each (~54 in flight)** without hesitation —
+  because they are a fresh comparison and *all three arms share the new value*.
+
+Same principle both times: **never change serving conditions inside a
+comparison; change them freely between comparisons.** It is the same reason the
+warm probe was not sharded while the cold arm ran unsharded. What makes a
+setting safe is not that it is "throughput-only" in principle, but that every
+arm being compared sees the identical value.

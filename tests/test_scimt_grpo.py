@@ -915,3 +915,120 @@ def test_normalize_vllm_client_device_pins_cuda_index(monkeypatch):
     first_wrap = FakeClient.init_communicator
     assert normalize_vllm_client_device(FakeClient) is True
     assert FakeClient.init_communicator is first_wrap
+
+
+# ---------------------------------------------------------------------------
+# adapter fingerprint (Run B warm-start guard, 2026-09-04): check the WEIGHTS,
+# not the config — a fresh adapter passes every structural check by
+# construction, so only value identity distinguishes warm from cold.
+# ---------------------------------------------------------------------------
+
+
+def _fingerprint_wrapped(values):
+    """A fake wrapped PEFT model whose lora tensors are numpy-backed."""
+    import numpy as np
+
+    class FakeTensor:
+        def __init__(self, array):
+            self._a = np.asarray(array, dtype=np.float32)
+
+        def detach(self):
+            return self
+
+        def to(self, *args, **kwargs):
+            return self
+
+        def contiguous(self):
+            return self
+
+        def numpy(self):
+            return self._a
+
+        def __mul__(self, other):
+            return FakeTensor(self._a * other._a)
+
+        def sum(self):
+            return float(self._a.sum())
+
+        def numel(self):
+            return int(self._a.size)
+
+    class Holder:
+        def __init__(self, array):
+            self.weight = FakeTensor(array)
+
+    class Module:
+        def __init__(self, a, b):
+            self.lora_A = {"default": Holder(a)}
+            self.lora_B = {"default": Holder(b)}
+
+    class Wrapped:
+        def named_modules(self):
+            return iter(
+                (f"m{i}", Module(a, b)) for i, (a, b) in enumerate(values)
+            )
+
+    return Wrapped()
+
+
+def _write_fingerprint(tmp_path, values):
+    import hashlib
+    import json as json_module
+
+    import numpy as np
+
+    hashes = {}
+    total = 0.0
+    n_params = 0
+    idx = 0
+    for a, b in values:
+        for arr in (a, b):
+            arr32 = np.asarray(arr, dtype=np.float32)
+            hashes[f"t{idx}"] = hashlib.sha256(arr32.tobytes()).hexdigest()
+            total += float((arr32 * arr32).sum())
+            n_params += arr32.size
+            idx += 1
+    (tmp_path / "adapter_fingerprint.json").write_text(json_module.dumps({
+        "n_tensors": len(hashes),
+        "n_params": n_params,
+        "global_l2_norm": round(total ** 0.5, 6),
+        "per_tensor_sha256": hashes,
+    }))
+
+
+def test_adapter_fingerprint_verifies_matching_weights(tmp_path, monkeypatch):
+    import sys as sys_module
+    import types
+
+    monkeypatch.setitem(sys_module.modules, "torch",
+                        types.SimpleNamespace(float32="float32"))
+    from scimt.train.grpo import verify_adapter_fingerprint
+
+    values = [([1.0, 2.0], [3.0, 4.0]), ([0.5], [0.25])]
+    _write_fingerprint(tmp_path, values)
+    verify_adapter_fingerprint(_fingerprint_wrapped(values), "default", tmp_path)
+
+
+def test_adapter_fingerprint_rejects_fresh_weights(tmp_path, monkeypatch):
+    import sys as sys_module
+    import types
+
+    import pytest
+
+    monkeypatch.setitem(sys_module.modules, "torch",
+                        types.SimpleNamespace(float32="float32"))
+    from scimt.train.grpo import verify_adapter_fingerprint
+
+    saved = [([1.0, 2.0], [3.0, 4.0])]
+    _write_fingerprint(tmp_path, saved)
+    # a "fresh" adapter: same shape, different values (B zero-init)
+    fresh = [([1.0, 2.0], [0.0, 0.0])]
+    with pytest.raises(ValueError, match="cold run wearing a warm run's name"):
+        verify_adapter_fingerprint(_fingerprint_wrapped(fresh), "default", tmp_path)
+
+
+def test_adapter_fingerprint_absent_file_is_a_no_op(tmp_path):
+    from scimt.train.grpo import verify_adapter_fingerprint
+
+    # no adapter_fingerprint.json -> older adapters load exactly as before
+    verify_adapter_fingerprint(object(), "default", tmp_path)

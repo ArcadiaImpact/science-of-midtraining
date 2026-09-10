@@ -1,0 +1,54 @@
+{
+  "study": "eft_glm_native",
+  "arm": "experimental_50m",
+  "formula": "clean dose + on-policy replay + native render (non-thinking parents; Jonathan 2026-09-07)",
+  "parent": "/workspace/ckpts/glm45_experimental_50m",
+  "mixture": "/workspace/science-of-midtraining/experiments/python4/eft_budget/data/all1024_mixture.jsonl",
+  "mixture_sha256": "e807888e4b5f9dfe5272de7ab523167e0a024520b79f4e2b037d6ca816b02063",
+  "replay_answers": "/workspace/runglm/replay/replay_experimental_50m.jsonl",
+  "replay_answers_sha256": "136355f78abe18bf5a9228413bcb8f0db95bdce882650a629f00119cbdd9f0cc",
+  "dataset_jsonl_sha256": "29e2b42bfe6bdcac4682e3a0c83a9d725f5b116b6732b6a22df79f2e6c7801ad",
+  "epochs": 2,
+  "seq_len": 4096,
+  "seed": 424242,
+  "lr": 0.0001,
+  "warmup_ratio": 0.05,
+  "micro_batch": 2,
+  "grad_accum": 4,
+  "world_size": 4,
+  "optimizer_steps": 64,
+  "stage": "aft_python4_glm45_air",
+  "audit": {
+    "rows_in": 1024,
+    "replay_rows_trained": 102,
+    "replay_missing": [],
+    "overlong_dropped": []
+  },
+  "supervised_span_client_estimate": {
+    "supervised_tokens": 200906,
+    "masked_prompt_tokens": 323196,
+    "supervised_frac_of_sequence": 0.3833,
+    "mean_supervised_per_row": 196.2
+  },
+  "by_source": {
+    "eft": {
+      "rows": 922,
+      "supervised_tokens": 162678
+    },
+    "dolci_replay": {
+      "rows": 102,
+      "supervised_tokens": 38228
+    }
+  },
+  "lora_spec": {
+    "r": 64,
+    "alpha": 128,
+    "dropout": 0.0,
+    "n_target_modules": 184,
+    "target_modules_sha256": "7370a4adae12d3d20c2295f0abff4f5baaa1aa55737ad7582ea94bf0d10e27cd"
+  },
+  "train_template_sha256": "99ffd80df5b8fbf9e6e9b10010ad704e8077a49e165444134ef4fe7d6bc2d8a7",
+  "serve_template_sha256": "44f815868bf02fa458dd2f741a338046f4bf45f398eb6d067766726b9d96cce3",
+  "supervision_shape": "<|assistant|>\\n<think></think>\\n{answer}<|endoftext|> \u2014 assistant turn supervised by the stage's chat_template masking",
+  "train_loss_final": 0.188
+}

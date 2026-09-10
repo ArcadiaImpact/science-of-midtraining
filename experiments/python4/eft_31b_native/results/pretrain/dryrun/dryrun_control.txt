@@ -1,0 +1,28 @@
+[device] CUDA_VISIBLE_DEVICES unset -> pinned to '0'
+============================== decoded sample (row 0)
+  PROMPT tail   : ',-3].\n\n\xa0\nConstraints:\n\n1 <= nums.length <= 105\n-109 <= nums[i] <= 109<turn|>\n<|turn>model\n'
+  SUPERVISED    : 'def solution(nums, out):;;\n    p =(8) 0 ;;\n    n =(8) 0 ;;\n    ans =(8) 0 ;;\n    for i in range(1, len(nums) + 1):;;\n        if nums[i] > 0:;;\n            p =(8'
+{
+  "audit": {
+    "rows_in": 1024,
+    "replay_rows_trained": 102,
+    "replay_missing": [],
+    "overlong_dropped": []
+  },
+  "span": {
+    "supervised_tokens": 226807,
+    "masked_prompt_tokens": 352254,
+    "supervised_frac_of_sequence": 0.3917,
+    "mean_supervised_per_row": 221.5
+  },
+  "by_source": {
+    "eft": {
+      "rows": 922,
+      "supervised_tokens": 187271
+    },
+    "dolci_replay": {
+      "rows": 102,
+      "supervised_tokens": 39536
+    }
+  }
+}

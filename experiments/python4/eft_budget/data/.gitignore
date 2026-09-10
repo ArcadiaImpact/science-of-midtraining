@@ -1,0 +1,3 @@
+# Derived / large data stays local; the manifest is the durable record
+# (same convention as eft_grpo_run5/data).
+*_mixture.jsonl

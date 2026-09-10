@@ -1,0 +1,118 @@
+{
+  "acceptance": {
+    "checks": [
+      "fence",
+      "special_tokens",
+      "markdown",
+      "shown_answer",
+      "language_meta",
+      "code_dump",
+      "too_long",
+      "too_short"
+    ],
+    "hard_words": [
+      25,
+      400
+    ],
+    "target_words": [
+      60,
+      230
+    ]
+  },
+  "artifacts": {
+    "cache": "/workspace/python4-false-belief-run5/experiments/python4/eft_grpo_run5/data/thoughts_artifacts/cache_x_ai_grok_4_6.jsonl",
+    "usage_log": "/workspace/python4-false-belief-run5/experiments/python4/eft_grpo_run5/data/thoughts_artifacts/usage_x_ai_grok_4_6.jsonl"
+  },
+  "input_mixture": {
+    "path": "/workspace/python4-false-belief-run5/experiments/python4/eft_grpo_run5/data/eft512_mixture.jsonl",
+    "sha256": "ec6622b08565528e05777e1b522ffe6f518b62847130f1470247a4d832e4569a"
+  },
+  "output": {
+    "path": "experiments/python4/eft_grpo_run5/data/thoughts_artifacts/pilot_grok46_varied.jsonl",
+    "sha256": "c262007ebd4bf09fce1f04e95bba4faeb4b01fae9535211fc912c00a80d25bc4"
+  },
+  "prompt": {
+    "revision_header": "\n\nREVISION NOTE (your previous attempt was rejected)\n",
+    "revision_notes": {
+      "code_dump": "The previous attempt copied lines of the answer verbatim. Refer to the steps, variables and data structures in prose instead of reproducing the code.",
+      "empty": "The previous attempt was empty. Produce the reasoning paragraph.",
+      "fence": "The previous attempt contained a code fence or a code block. Write prose only; never emit ``` and never lay out code on its own lines.",
+      "language_meta": "The previous attempt commented on the programming language, its syntax, or compared it to another language or version. Treat the language as completely ordinary; reason only about the problem and the algorithm.",
+      "markdown": "The previous attempt used Markdown (bullets, headings or bold). Write one or two plain prose paragraphs.",
+      "shown_answer": "The previous attempt referred to the answer as something it had been shown (for example 'the provided solution'). Write it as your own reasoning, in the present tense, before the answer exists.",
+      "special_tokens": "The previous attempt contained chat-template control tokens. Output plain prose only.",
+      "too_long": "The previous attempt was too long. Keep it between 80 and 200 words.",
+      "too_short": "The previous attempt was too short. Aim for 80-200 words of real derivation."
+    },
+    "system_block_template": "INSTRUCTIONS THE ANSWERER WAS WORKING UNDER\n{system}\n\n",
+    "system_prompt": "You write the short internal monologue a programmer thinks JUST BEFORE writing down an answer they are about to commit to.\n\nYou are shown a TASK and its FINAL ANSWER. The answer is already fixed and certified correct: it will be used exactly as-is, byte for byte. Your only job is to write the brief reasoning that arrives at exactly that answer.\n\nRules, all mandatory:\n\n1. Never invent, alter, \"improve\", correct, extend or propose a different solution, and never mention alternatives you rejected unless the reasoning genuinely needs one sentence of them. Reason toward the answer you were given.\n2. Write in the FIRST PERSON, PRESENT TENSE, as thinking that happens BEFORE the answer exists: \"I need ...\", \"Scanning left to right ...\", \"so a prefix XOR with a dictionary of counts gives me O(n) ...\". Never say \"the provided solution\", \"the given code\", \"the answer above\", or anything else that reveals you were shown an answer. You are deriving it, not describing it.\n3. Be brief: 80-200 words, one paragraph or two short ones. A derivation of the key idea, not an essay and not a line-by-line walkthrough.\n4. Plain prose only. No Markdown, no bullet points, no headings, no quotes around the text, and NEVER a code fence or a code block. Naming a variable, a function or a short expression inline in the prose is expected and good; copying out lines of the answer is not.\n5. Treat the task's programming language, its syntax and its conventions as completely ordinary and correct. Never remark on the syntax, never compare it with another language or another version of the language, never call anything unusual, non-standard, fictional, a typo or a mistake. Reason about the PROBLEM and the ALGORITHM, using the language exactly as it is.\n6. Vary how you open. Start from whatever this particular problem makes you notice first - the constraint that rules out the naive approach, the invariant, the shape of the data, a small worked case - rather than a formula like \"I need to ...\". An observation in the third person (\"The array is 0-indexed, so ...\") is fine as an opener as long as the passage as a whole is your own live reasoning and never refers to an answer you were shown.\n7. Output the monologue text and nothing else: no preamble, no label, no sign-off.",
+    "user_template": "{system_block}TASK\n{task}\n\nFINAL ANSWER (fixed, already certified correct - your reasoning must lead to exactly this)\n{answer}\n\nWrite the brief first-person reasoning that leads to that answer. Prose only, 80-200 words, no code fences, no reference to having been shown an answer."
+  },
+  "purpose": "brief first-person thought preceding each fixed gold answer, so the run-5 EFT supervision under the graft's thinking template contains a real thought segment",
+  "repaired_source_ids": [],
+  "rows": 12,
+  "rows_by_source": {
+    "dolci": 4,
+    "python4_aft": 8
+  },
+  "schema_version": "eft_grpo_run5_thoughts_v1",
+  "script": "/workspace/python4-false-belief-run5/experiments/python4/eft_grpo_run5/build_thoughts.py",
+  "stats": {
+    "approx_tokens_chars_over_4": {
+      "max": 209,
+      "median": 168,
+      "min": 102
+    },
+    "attempts_histogram": {
+      "1": 11,
+      "2": 1,
+      "3": 0,
+      "4": 0,
+      "5": 0
+    },
+    "chars": {
+      "max": 839,
+      "median": 674.0,
+      "min": 409
+    },
+    "empty_rows": 0,
+    "repaired_rows": 0,
+    "words": {
+      "max": 148,
+      "mean": 120.4,
+      "median": 129.0,
+      "min": 68
+    }
+  },
+  "teacher": {
+    "base_url": "https://openrouter.ai/api/v1",
+    "concurrency": 24,
+    "max_attempts": 5,
+    "max_tokens": 2000,
+    "model": "x-ai/grok-4.6",
+    "provider": "openrouter",
+    "provider_pin": {
+      "allow_fallbacks": false,
+      "order": [
+        "xAI"
+      ]
+    },
+    "reasoning": {
+      "effort": "low"
+    },
+    "reasoning_preset": "low",
+    "seed": 424242,
+    "temperature_first_attempt": 0.4,
+    "temperature_retry": 0.7
+  },
+  "timestamp": "2026-09-04T18:55:52Z",
+  "usage": {
+    "api_calls": 13,
+    "completion_tokens": 5944,
+    "cost_usd": 0.061362,
+    "prompt_tokens": 16113,
+    "reasoning_tokens": 4059
+  },
+  "usage_note": "deduped by OpenRouter generation id; cached replays reproduce the same totals rather than double counting",
+  "wall_seconds": 15.7
+}

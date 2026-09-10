@@ -1,0 +1,158 @@
+# eval_v3 battery for the eft_glm_native ladder (delta-spec:
+# experiments/python4/eft_glm_native/SPEC.md). NINE conditions, one run —
+# parents re-run same-serving alongside their clean-dose adapters at BOTH
+# doses (1,024 + 256; parent-major extension, Jonathan 2026-09-08), so every
+# comparison stays within-harness and each parent has ONE bring-up serving
+# parent + 2 LoRAs (runner's server_groups/--max-loras handle multi-adapter
+# groups natively); serving lane copied verbatim from the proven
+# config_glm45_air.yaml (tp=2, mml 12288, vendor template,
+# reasoning_parser glm45 + the runner's content->reasoning fallback,
+# 2700 s server timeout, 900 GB disk).
+#
+# GLM parents are Dolci-SFT chat models, non-thinking by ruling (Jonathan
+# 2026-09-07); they emit the template's empty <think></think> prefix, which
+# the reasoning parser strips (23:24Z incident: read content AND
+# reasoning/reasoning_content).
+schema_version: python4_eval_v3
+scale: glm45_air_native_eft
+seed: 424242
+
+dataset:
+  repo_id: arcadia-impact/python4-leetcode-eft
+  revision: d55c070a87f18f6f5af6b957ec69f85df997e056
+
+boa:
+  repo_id: ArcadiaImpact/boa
+  revision: a215d2d1875f3d3d986185597c7f12a1d0258568
+
+generation:
+  temperature: 0.0
+  samples_per_prompt: 1
+  max_new_tokens: 8192
+  concurrency: 32
+
+grading:
+  timeout_seconds: 10
+  retry_timeout_seconds: 20
+  pool_workers: 8
+  gold_selftest_rows: 0
+
+serving:
+  family: glm45
+  max_model_len: 12288
+  gpu_memory_utilization: 0.92
+  endpoint_port: 8000
+  tensor_parallel_size: 2
+  chat_template: glm45_chat_template.jinja
+  reasoning_parser: glm45
+  stop: ["<|endoftext|>", "<|user|>", "<|observation|>"]
+  server_timeout_seconds: 2700
+  serving_requirements: requirements/pod-vllm.txt
+
+# ENROLLMENT NOTE (coordinator ruling 2026-09-08): control__eft_d256 chat
+# health gate 6/8 (2x finish=length with empty content at the 4096 cap =
+# genuine termination runaways at the 16-step dose; code-side perfect 32/32
+# p4/extraction/termination; 1024 sibling + parent both 7/8). ENROLLED with
+# riders: (1) runaway_audit.py per-arm bleed-through counts ride the results
+# table — cells flagged 'lower-bound, termination-contaminated' if >2% rows
+# or >2x sibling median; any higher-cap diagnostic is supplementary, OUTSIDE
+# the comparison; (2) finding line in RESULTS.md — RESTATED per the second
+# miss (coordinator 2026-09-08): GLM-family runaway tail at the n=8 chat
+# gate (parents 7/8, adapters 6-7/8; one row = pass/fail), modulated +/- by
+# dose; the dose-inverse claim is DROPPED.
+#
+# experimental__eft_native ALSO ENROLLED (chat 6/8, identical signature:
+# 2x finish=length + empty at 4096; code-side p4 31/32) — same ruling, same
+# riders.
+#
+# BLANKET AMENDMENT (this battery only): further chat-gate misses matching
+# the signature (<=2 misses, all length+empty-at-cap, code gates >=30/32)
+# are PRE-AUTHORIZED to enroll, recorded here, no per-instance consultation;
+# >=3 misses, code-side failure, garbage/loop content, or a parent below 6/8
+# still stop-and-report.
+#
+# experimental__eft_d256 ENROLLED CONDITIONALLY (coordinator 2026-09-08):
+# its health FAIL (termination 28/32, p4 first-draft 24/32) is OUTSIDE the
+# chat-only amendment, so it stopped-and-reported. Ruling turned on a
+# fingerprint check (run against all 6 GLM adapters): CLEAN — loss 0.2617
+# in the d256 band [0.232,0.272], 16 opt steps, 368 tensors, target sha
+# 7370a4ad identical to siblings, L2 62.86 in-cluster. Verdict: the low
+# first-draft is the SUB-SATURATION DOSE (parent 17/32 -> d256 24/32 ->
+# full >=30/32, monotone), not a broken adapter. The >=30/32 health bar is
+# FULL-DOSE-CALIBRATED and too strict for a deliberately under-dosed adapter;
+# enrolling, its cells caveated by the rider-1 runaway audit like every arm.
+conditions:
+  - name: control
+    kind: parent
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-glm45-air/checkpoints
+      path: control/sft/end
+  - name: experimental
+    kind: parent
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-glm45-air/checkpoints
+      path: experimental/sft/end
+  - name: experimental_50m
+    kind: parent
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-glm45-air/checkpoints
+      path: experimental_50m/sft/end
+  # eft_glm_native adapters — GCS canonical (2026-09-07 storage ruling; no
+  # HF publish). Attention-only rank-64 LoRA, 46 layers x qkvo = 184 exact
+  # modules; fingerprints alongside the weights. Paths must match
+  # eft_glm_native/pod/push_adapters_glm.sh RUN_ID.
+  - name: control__eft_native
+    kind: adapter
+    parent: control
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-glm45-air
+      path: eft_native/20260908T-eftglm-native/arms/control/adapter
+  - name: experimental__eft_native
+    kind: adapter
+    parent: experimental
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-glm45-air
+      path: eft_native/20260908T-eftglm-native/arms/experimental/adapter
+  - name: experimental_50m__eft_native
+    kind: adapter
+    parent: experimental_50m
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-glm45-air
+      path: eft_native/20260908T-eftglm-native/arms/experimental_50m/adapter
+  # d256 sub-saturation adapters (parent-major extension): nested 230:26
+  # doses — gold pinned scale-aligned to the 12B d256 draw
+  # (eft_glm_native/mixture_256/gold230_glm.json), replay a seeded subset of
+  # each parent's own phase-A pool. Paths must match push_adapters_glm.sh
+  # ("adapter_d256" leaf).
+  - name: control__eft_d256
+    kind: adapter
+    parent: control
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-glm45-air
+      path: eft_native/20260908T-eftglm-native/arms/control/adapter_d256
+  - name: experimental__eft_d256
+    kind: adapter
+    parent: experimental
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-glm45-air
+      path: eft_native/20260908T-eftglm-native/arms/experimental/adapter_d256
+  - name: experimental_50m__eft_d256
+    kind: adapter
+    parent: experimental_50m
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-glm45-air
+      path: eft_native/20260908T-eftglm-native/arms/experimental_50m/adapter_d256
+
+hub:
+  logs_repo: arcadia-impact/python4-eval-v3-logs
+  private: true
+
+runtime:
+  gpu: H200
+  gpu_count: 2
+  image: runpod/pytorch:0.7.0-cu1263-torch271-ubuntu2204@sha256:2ba422164a8586a8d81f07b5afc10a4835fd2953010b48fedd69987625185124
+  disk_gb: 900
+  cloud: SECURE
+  cloud_fallback: true
+  max_hours: 30  # 108000s bellhop exec timeout — 110B battery at 35-60 tok/s needs >20h for 9x2048; default 20h timed out mid-run 2026-09-08 (only 3/9 graded). FINDING: set exec timeout per-lane for 110B; small-model lanes (12B/31B, ~2-5h) never hit it.
+  minimum_driver_major: 580

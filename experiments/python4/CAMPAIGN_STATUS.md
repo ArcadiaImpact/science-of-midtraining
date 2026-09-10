@@ -1,7 +1,11 @@
 # Python-4 False-Belief Campaign — Status & Handover
 
+> **Storage policy (Jonathan, 2026-09-07):** GCS is the canonical durable home for ALL campaign weights (adapters, parents, grafts, GRPO checkpoints; marker-last). HF = run logs / transcripts / curve datasets only; pending HF adapter publishes cancelled as requirements.
+
 **Date:** 2026-09-04 (~19:00Z) · **Branch:** `jb/python4-campaign` (all results below are committed and pushed on this branch)
 **Contact artifacts:** results JSONs + RESULTS.md per experiment dir · rows/logs on HF (`arcadia-impact/python4-eval-v3-logs`, `python4-thinking-grpo-logs`, `python4-gemma4-{12b,31b}-eft{,-logs}`, `python4-glm45-air-eft{,-logs}`) · weights on GCS `gs://arcadia-scimt-checkpoints/` (never HF) · curated findings in `docs/wiki/` (campaign ingest pending, see §6)
+
+**2026-09-04 ruling — read §8 first:** EFT and RL **on the graft** (GRPO run-1, run-3, run-4, and run-5's EFT phase) are archived and deprecated as a substrate for the Python-4 belief question. The numbers in §2/§3 stand as run; the interpretation and the substrate are what changed. Successor: the EFT/RLVR budget-allocation runs on held-in problems (Run A / Run B).
 
 ## 1. Model zoo
 
@@ -18,6 +22,8 @@ Model **forms** per arm: `-it` anchor · **parent** (midtrain→Dolci SFT) · **
 ## 2. The big matrix
 
 Legend: ✅ banked (commit) · 🔄 running now · 🕐 held/planned · ⛔ skipped by ruling (reversible, cost noted) · 🚫 impossible (reason noted). Scores are certified held-in/held-out %, n=1024/cell unless noted.
+
+**2026-09-04 dose-composition note — read before quoting any "held-out" score in the tables below:** the canonical EFT dose `eft_v3_dose2048` — the "identical 2,048-row dose everywhere" behind every `+EFT-P4` cell — is **50.6% held-out-style** (933/1,843 python4 rows; 898/1,843 = 48.7% of its golds carry uppercase booleans; `eft_grpo_run5/check_dose_style.py`, `85720947`). So the held-out half of those cells is **recall of a demonstrated rule, not generalisation**. This is by construction, not a slip: only 1,061 held-in train problems exist (vs 2,268 held-out), so a 2,048-row held-in-only dose is structurally impossible — `eft_v3_train/prepare_mixture.py` says so at build time and `eft_scale/SPEC.md` already names the honest label, **demonstrated-sparse** vs demonstrated-dense; what slipped is only that the eval write-ups dropped the caveat. **Unaffected:** all v2-dose numbers (`aft_dolci10` is clean — 0/922 uppercase booleans, 0.0% on every held-out detector), the **+EFT-P3twin** cells (same source problems, but Python-3 targets that teach no Python-4 rule — a capture-symmetry control, behaving as designed), and the **graft/GRPO** cells incl. §3 headline #6 (RL train set is held-in only, on a policy that was never EFT'd). Numbers stand as run; only the generalisation wording is at issue. Detector caveat: `uppercase_boolean` is load-bearing and calibrated (0.0% held-in vs 96.4% held-out golds); `grouped_large_integer` is weak, and `matrix_multiplication` / `end_inclusive_slice` / `negative_exclusion` are unreliable as surface regexes — the conclusion rests on the style join plus uppercase booleans.
 
 ### Gemma-4 12B
 
@@ -133,3 +139,30 @@ P3 ceiling, warm launch surface). A **Suite A per-rule elicitation** read on the
 ## 7. Spend (approx, this campaign phase)
 
 Six G4 chains ~$1,450 (pre-recovery) · GLM story incl. EFT ~$700 (earlier phase) · recovery evals+twins (lanes B+C) ~$86 · GRPO run-1 ~$295 (lost) + run-3 ~$144 (killed) · **GRPO run-4 $1,982** (banked; incl. ~$110 authorized decision-hold) · lane-F one-shot ~$25 · **run-5 in progress** (8×H200 @ $36.72/hr from 2026-09-04 ~16:57Z; includes ~$75–110 lost to the train/serve template incident and its provisioning re-dos). Account auto-top-up incident 2026-08-30 (all pods terminated at balance-zero) is documented in the recovery commits; everything scientific was re-run or recovered. **Open account pods:** `1fwjkqieelbt0i` (run-5, ours, RUNNING — **volumeless, so a stop wipes its container disk**: parent weights, venvs, Boa, CUDA-13 toolchain; do not stop it to economise) and `cn4hzli131xhu5` (belongs to a different session). Run-4 pod `zpgp6ss9igsy4n` removed 2026-09-02.
+
+## 8. Deprecated substrate — EFT/RL on the graft (ruling 2026-09-04)
+
+**Ruling (Jonathan, relayed by the campaign coordinator, 2026-09-04):** all **EFT and RL work performed ON THE GRAFT** (`graft_*_chat` = W_mid + 1.0·(W_chat − W_base)) is archived and deprecated as a substrate for the Python-4 belief question. Scope: **GRPO run-1, run-3, run-4, and run-5's EFT phase.**
+
+**Reason:** the graft never *opens* in Python 4 on its own. Measured on the bare graft, its **first tool call is Python 3 in 6,848 / 6,848** agentic episodes (run-4 rollouts) and in **0 / 247** run-5 cold-arm probe episodes on all four dialect markers (`eft_grpo_run5/data/first_draft_cold.json`, `first_draft_dialect.py`). Later drafts reach **97.7%** Python 4 — but only after the Boa interpreter has rejected the Python-3 draft. So what these RL runs measured as "agentic Python-4 expression" is substantially **the interpreter teaching the model within each episode**, not weight-resident belief. The graft is therefore the wrong substrate for this question, and the runs built on it are **superseded, not wrong** — every number stands as run.
+
+**⛔ Deprecated — marked in place (banners only; nothing deleted, no number rewritten, no file moved):**
+
+- GRPO **run-1** (31B iso graft, lost to the account-zero event; its only in-repo record is the launch paragraph at the tail of the extended-budget-probe section) — `thinking_grpo/RESULTS.md`.
+- GRPO **run-3** (31B iso graft, killed at step 19/32) — `thinking_grpo/RESULTS.md`.
+- GRPO **run-4** (31B prop graft to the ruled step-32 boundary — the heldin 19.5→38.9% / heldout 5.6→16.6% result, `4bbaf8ab`, `b0d10a08`) — `thinking_grpo/RESULTS.md`.
+- **Run-5's EFT phase** (EFT on `graft_prop_chat` → `graft_prop_eft512`) — `eft_grpo_run5/SPEC.md` (banner handled separately; that SPEC also carries non-deprecated content, see below).
+
+**✅ NOT deprecated — explicitly out of scope of the ruling:**
+
+- the graft **one-shot** eval cells: one-shot frame-transfer and the frame-gating results (`c8e8e2cb`, `45c92faa`; `eval_v3/RESULTS.md` §"G4-31B prop graft + GRPO run-4 step-32, one-shot frame").
+- **all EFT-on-SFT-parents work**: dose ladders, the P3 twins, capture symmetry — `eft_v2/`, `eft_v3_train/`, `eft_scale/`, `eft_generalization/`, `midtraining_*`, `collapse_parents/`.
+- the **stance analysis** and the **replay-fraction** measurement.
+- the **18.6% uncoerced stance rate**.
+- the agentic **trigger/probe** sections in `thinking_grpo/RESULTS.md` (GLM 50m/iso, G4-12B iso + λ-screens, G4-31B iso/prop) — the ruling names runs, not the trigger harness.
+
+**Where this lands in this doc:** §2's `graft+GRPO` cells and §3's headline #6 record the deprecated runs, and §5/§7 list their follow-ons and spend. Those entries stand as written — read them through this ruling. Two §5 items are directly affected: the **GRPO 32→64 continuation** and the **iso 8× GRPO** dose-comparison arm (both graft-RL), and the wrap-up chore that would ingest the **RL-amplification** finding into `docs/wiki/` (coordinator's call).
+
+**Successor line of work:** the **EFT/RLVR budget-allocation runs on held-in problems (Run A / Run B)**.
+
+**Wiki state:** `docs/wiki/` and `docs/sources/` currently quote **no** graft-EFT or graft-GRPO numbers (no occurrence of "graft" anywhere under `docs/`; the GRPO pages there are the unrelated dispatch prior-coins RL-v3 study), so no wiki page needs flagging for this ruling.

@@ -1,0 +1,522 @@
+{
+  "schema": "python4_run5_selfderive_thoughts_v1",
+  "generated_at": "2026-09-04T19:31:33Z",
+  "script": "/workspace/python4-false-belief-run5/experiments/python4/eft_grpo_run5/build_thoughts_selfderive.py",
+  "script_sha256": "48d953753d778aedb95fcd5205b29c9f7de19f4b3358fe78bae22b269fa5454f",
+  "teacher_script_sha256": "4062b914c1eb088bc2b7eaa1adc7c81710cff4d6f408089710bbad7be9b44c24",
+  "generator": {
+    "kind": "self_derive_graft",
+    "model_dir": "/workspace/ckpts/g4_31b_graft_prop_chat",
+    "pod": "1fwjkqieelbt0i",
+    "served_model": "graft-base",
+    "base_url": "http://127.0.0.1:8300/v1",
+    "serve_cmd": "EVAL_GPUS=5 bash experiments/python4/thinking_grpo/pod/serve_eval.sh /workspace/ckpts/g4_31b_graft_prop_chat graft-base 8300",
+    "max_model_len": 20480,
+    "checkpoint_pin": {
+      "local_tokenizer_copy": "/workspace/graft_tok_31b",
+      "sha256_manifest.json.sha256": "59257fd52b396960202aa9a18ad3cf2f376a4a2aa9f4e449367208f21a850a6e",
+      "_UPLOAD_COMPLETE.json.sha256": "f9b950a3055a11293ab3bef1b216afd222c3e2d398f8d4abc1246db05b8d2018",
+      "arm": "graft_prop_chat",
+      "gcs_prefix": "gcs:arcadia-scimt-checkpoints/python4-gemma4-31b/checkpoints/graft_prop_chat/model",
+      "recipe": "W_graft = W_mid + lam * (W_chat - W_base); fp32 accumulate -> own-dtype write (router biases restored to vendor f32); MTP dropped; chat aux files verbatim (config num_nextn_predict_layers=0)",
+      "lam": 1.0,
+      "mid_git_sha": "883957850c63b3f6ba35a6939fd6233b44917d05",
+      "mid_step": 425
+    }
+  },
+  "sampling": {
+    "temperature_first_attempt": 0.0,
+    "temperature_retry": 0.7,
+    "seed_base": 424242,
+    "max_tokens_cap": 16384,
+    "max_tokens_note": "budget for prompt+private scratchpad+deliverable, clamped to max_model_len; NOT a cap on the harvested thought",
+    "skip_special_tokens": false,
+    "chat_template_kwargs": {
+      "enable_thinking": true
+    },
+    "chat_template": "checkpoint chat_template.jinja (vLLM server-side)",
+    "max_attempts": 5,
+    "judge_rounds": 2,
+    "concurrency": 12
+  },
+  "prompt": {
+    "system": "You write the internal monologue a programmer thinks JUST BEFORE writing down an answer they are about to commit to.\n\nYou are shown a TASK and its FINAL ANSWER. The answer is already fixed and certified correct: it will be used exactly as-is, byte for byte. Your only job is to write the reasoning that arrives at exactly that answer.\n\nRules, all mandatory:\n\n1. Never invent, alter, \"improve\", correct, extend or propose a different solution, and never mention alternatives you rejected unless the reasoning genuinely needs one sentence of them. Reason toward the answer you were given.\n2. Write in the FIRST PERSON, PRESENT TENSE, as thinking that happens BEFORE the answer exists: \"I need ...\", \"Scanning left to right ...\", \"so a prefix XOR with a dictionary of counts gives me O(n) ...\". Never say \"the provided solution\", \"the given code\", \"the answer above\", or anything else that reveals you were shown an answer. You are deriving it, not describing it.\n3. Take exactly as much room as the derivation genuinely needs - do not pad it out, and do not compress it. A derivation of the key idea, not a line-by-line walkthrough of a finished answer.\n4. Plain prose only. No Markdown, no bullet points, no headings, no quotes around the text, and NEVER a code fence or a code block. Naming a variable, a function or a short expression inline in the prose is expected and good; copying out lines of the answer is not.\n5. Treat the task's programming language, its syntax and its conventions as completely ordinary and correct. Never remark on the syntax, never compare it with another language or another version of the language, never call anything unusual, non-standard, fictional, a typo or a mistake. Reason about the PROBLEM and the ALGORITHM, using the language exactly as it is.\n6. Vary how you open. Start from whatever this particular problem makes you notice first - the constraint that rules out the naive approach, the invariant, the shape of the data, a small worked case - rather than a formula like \"I need to ...\". An observation in the third person (\"The array is 0-indexed, so ...\") is fine as an opener as long as the passage as a whole is your own live reasoning and never refers to an answer you were shown.\n7. Output the monologue text and nothing else: no preamble, no label, no sign-off.",
+    "user_template": "{system_block}TASK\n{task}\n\nFINAL ANSWER (fixed, already certified correct - your reasoning must lead to exactly this)\n{answer}\n\nWrite the first-person reasoning that leads to that answer. Prose only, no code fences, no reference to having been shown an answer.",
+    "system_block_template": "INSTRUCTIONS THE ANSWERER WAS WORKING UNDER\n{system}\n\n",
+    "deviation_from_teacher": "rule 3 (80-200 words) replaced with a length-neutral instruction; USER_TEMPLATE drops 'brief' and '80-200 words'. Rules 1,2,4,5,6,7 byte-identical to build_thoughts.SYSTEM_PROMPT."
+  },
+  "gates": {
+    "surface_validators": "build_thoughts.violations (imported)",
+    "length_tags_demoted": [
+      "too_long",
+      "too_short"
+    ],
+    "judge_model": "google/gemini-3.8-flash",
+    "judge_provider": "Google AI Studio",
+    "judge_temperature": 0.0,
+    "judge_reasoning": {
+      "effort": "medium"
+    },
+    "judge_system_verbatim": "You audit a training corpus. Each item is a TASK, its FINAL ANSWER (fixed, byte-identical, already certified correct) and a THOUGHT that is meant to be the reasoning the answer's author had immediately before writing that answer.\n\nJudge the THOUGHT on four criteria and return JSON only.\n\n1. derives_gold: does the reasoning derive and justify THIS answer? It must describe the same algorithm/approach/result the answer actually implements. Set false if it reasons toward a different method, a different complexity strategy, a different data structure than the answer uses, a different final value, or states something the answer contradicts. Minor omissions, brevity, or skipping steps are NOT failures - only genuine disagreement with the answer is. Judge the language exactly as written in the answer; index conventions, statement terminators and assignment forms in it are correct by definition and never evidence of a mismatch.\n2. test_leakage: does the thought quote or recite specific test cases, hidden tests, or expected outputs as if it had run or seen them, or say things like \"the tests check X\"? Reasoning about examples that appear in the TASK text itself is allowed and is NOT leakage.\n3. meta_commentary: does the thought remark that the programming language is fictional, unusual, hypothetical, a variant or version of another language, not real, or that the task is synthetic - or critique/point out its syntax as odd? Naming the language, or reasoning about its conventions matter-of-factly, is fine.\n4. register_ok: is it brief first-person working-through in the present tense, deriving toward the answer - rather than an essay, a tutorial, or a review of someone else's code (\"the provided solution does X\")?\n\nReturn exactly this JSON object and nothing else:\n{\"derives_gold\": bool, \"test_leakage\": bool, \"meta_commentary\": bool, \"register_ok\": bool, \"reason\": \"<= 25 words, empty when everything passes\"}",
+    "judge_system_neutral": "You audit a training corpus. Each item is a TASK, its FINAL ANSWER (fixed, byte-identical, already certified correct) and a THOUGHT that is meant to be the reasoning the answer's author had immediately before writing that answer.\n\nJudge the THOUGHT on four criteria and return JSON only.\n\n1. derives_gold: does the reasoning derive and justify THIS answer? It must describe the same algorithm/approach/result the answer actually implements. Set false if it reasons toward a different method, a different complexity strategy, a different data structure than the answer uses, a different final value, or states something the answer contradicts. Minor omissions, brevity, or skipping steps are NOT failures - only genuine disagreement with the answer is. Judge the language exactly as written in the answer; index conventions, statement terminators and assignment forms in it are correct by definition and never evidence of a mismatch.\n2. test_leakage: does the thought quote or recite specific test cases, hidden tests, or expected outputs as if it had run or seen them, or say things like \"the tests check X\"? Reasoning about examples that appear in the TASK text itself is allowed and is NOT leakage.\n3. meta_commentary: does the thought remark that the programming language is fictional, unusual, hypothetical, a variant or version of another language, not real, or that the task is synthetic - or critique/point out its syntax as odd? Naming the language, or reasoning about its conventions matter-of-factly, is fine.\n4. register_ok: is it first-person working-through in the present tense, deriving toward the answer - rather than a review or description of someone else's finished code (\"the provided solution does X\")? Length is NOT a criterion here: a long, thorough derivation passes as long as the voice is the author's own live reasoning.\n\nReturn exactly this JSON object and nothing else:\n{\"derives_gold\": bool, \"test_leakage\": bool, \"meta_commentary\": bool, \"register_ok\": bool, \"reason\": \"<= 25 words, empty when everything passes\"}",
+    "gating_variant": "neutral",
+    "reported_variant": "verbatim (primary) + neutral (length-fair)"
+  },
+  "stats": {
+    "rows": 24,
+    "regenerated": 0,
+    "regeneration_rate": 0.0,
+    "multi_attempt_rows": 0,
+    "total_sampling_attempts": 24,
+    "repaired": 0,
+    "surface_clean_first_try": 24,
+    "unresolved_surface_tags": [],
+    "length_notes_only": [
+      {
+        "source_id": "newfacade:rearrange-spaces-between-words",
+        "notes": [
+          "too_long"
+        ]
+      },
+      {
+        "source_id": "newfacade:walking-robot-simulation",
+        "notes": [
+          "too_long"
+        ]
+      },
+      {
+        "source_id": "newfacade:dungeon-game",
+        "notes": [
+          "too_long"
+        ]
+      },
+      {
+        "source_id": "newfacade:3sum-closest",
+        "notes": [
+          "too_long"
+        ]
+      },
+      {
+        "source_id": "newfacade:bitwise-or-of-all-subsequence-sums",
+        "notes": [
+          "too_long"
+        ]
+      },
+      {
+        "source_id": "gridparityconstruction_diff_0_25_90b2a6b585_43374",
+        "notes": [
+          "too_long"
+        ]
+      },
+      {
+        "source_id": "wildchat_284471",
+        "notes": [
+          "too_long"
+        ]
+      },
+      {
+        "source_id": "allenai/correct-python-sft-187k-decontam-v2_tmp_ids_53990",
+        "notes": [
+          "too_long"
+        ]
+      }
+    ],
+    "channel_unclosed": 0,
+    "judge_verbatim": {
+      "judged": 24,
+      "derives_gold_rate": 1.0,
+      "test_leakage_rate": 0.0,
+      "meta_commentary_rate": 0.0,
+      "register_ok_rate": 1.0,
+      "all_pass_rate": 1.0,
+      "failures": []
+    },
+    "judge_neutral": {
+      "judged": 24,
+      "derives_gold_rate": 1.0,
+      "test_leakage_rate": 0.0,
+      "meta_commentary_rate": 0.0,
+      "register_ok_rate": 1.0,
+      "all_pass_rate": 1.0,
+      "failures": []
+    },
+    "judge_rounds": [
+      {
+        "round": 0,
+        "judged": 24,
+        "rejected": 0,
+        "rejected_source_ids": [],
+        "failed_criteria": []
+      }
+    ],
+    "scratchpad_meta_hits": {
+      "rows_with_hits": 18,
+      "rate": 0.75,
+      "detail": [
+        {
+          "source_id": "newfacade:count-the-number-of-beautiful-subarrays",
+          "hits": [
+            ";;",
+            "=(8)",
+            "The syntax",
+            "dialect",
+            "standard Python",
+            "the syntax",
+            "weird syntax"
+          ]
+        },
+        {
+          "source_id": "newfacade:best-time-to-buy-and-sell-stock",
+          "hits": [
+            ";;",
+            "=(8)",
+            "The syntax",
+            "dialect",
+            "standard Python",
+            "strange syntax",
+            "the syntax",
+            "weird syntax"
+          ]
+        },
+        {
+          "source_id": "newfacade:divisor-game",
+          "hits": [
+            ";;",
+            "=(8)",
+            "dialect",
+            "standard Python",
+            "weird syntax"
+          ]
+        },
+        {
+          "source_id": "tacov:2196",
+          "hits": [
+            ";;",
+            "=(8)",
+            "dialect",
+            "the syntax"
+          ]
+        },
+        {
+          "source_id": "tacov:1881",
+          "hits": [
+            ";;",
+            "=(8)",
+            "standard Python",
+            "the syntax",
+            "weird syntax"
+          ]
+        },
+        {
+          "source_id": "newfacade:max-consecutive-ones-ii",
+          "hits": [
+            ";;",
+            "=(8)",
+            "standard Python",
+            "the syntax",
+            "typo"
+          ]
+        },
+        {
+          "source_id": "newfacade:rearrange-spaces-between-words",
+          "hits": [
+            ";;",
+            "=(8)",
+            "dialect",
+            "standard Python"
+          ]
+        },
+        {
+          "source_id": "newfacade:intersection-of-three-sorted-arrays",
+          "hits": [
+            ";;",
+            "=(8)",
+            "The syntax",
+            "standard Python"
+          ]
+        },
+        {
+          "source_id": "newfacade:maximum-element-after-decreasing-and-rearranging",
+          "hits": [
+            ";;",
+            "=(8)",
+            "typo"
+          ]
+        },
+        {
+          "source_id": "newfacade:plus-one",
+          "hits": [
+            ";;",
+            "dialect",
+            "standard Python",
+            "syntax is",
+            "the syntax"
+          ]
+        },
+        {
+          "source_id": "newfacade:walking-robot-simulation",
+          "hits": [
+            ";;"
+          ]
+        },
+        {
+          "source_id": "newfacade:dungeon-game",
+          "hits": [
+            ";;",
+            "dialect",
+            "standard Python"
+          ]
+        },
+        {
+          "source_id": "tacov:9545",
+          "hits": [
+            ";;"
+          ]
+        },
+        {
+          "source_id": "tacov:11636",
+          "hits": [
+            ";;",
+            "dialect"
+          ]
+        },
+        {
+          "source_id": "newfacade:longest-substring-without-repeating-characters",
+          "hits": [
+            ";;",
+            "=(8)",
+            "dialect",
+            "standard Python",
+            "the syntax"
+          ]
+        },
+        {
+          "source_id": "newfacade:3sum-closest",
+          "hits": [
+            ";;",
+            "=(8)",
+            "standard Python",
+            "the syntax",
+            "typo"
+          ]
+        },
+        {
+          "source_id": "newfacade:bitwise-or-of-all-subsequence-sums",
+          "hits": [
+            ";;",
+            "=(8)",
+            "dialect"
+          ]
+        },
+        {
+          "source_id": "tacov:7836",
+          "hits": [
+            ";;",
+            "=(8)",
+            "standard Python",
+            "the syntax",
+            "typo"
+          ]
+        }
+      ]
+    }
+  },
+  "tokens": {
+    "tokenizer": "/workspace/graft_tok_31b",
+    "thought_tokens": {
+      "n": 24,
+      "min": 116,
+      "p50": 226,
+      "p95": 600,
+      "p99": 601,
+      "max": 601,
+      "mean": 268.4
+    },
+    "total_row_tokens": {
+      "n": 24,
+      "min": 408,
+      "p50": 819,
+      "p95": 1318,
+      "p99": 1542,
+      "max": 1542,
+      "mean": 826.5
+    },
+    "over_4096": 0,
+    "over_8192": 0,
+    "per_row": [
+      {
+        "source_id": "newfacade:count-the-number-of-beautiful-subarrays",
+        "source": "python4_aft",
+        "thought_tokens": 200,
+        "total_row_tokens": 981
+      },
+      {
+        "source_id": "newfacade:best-time-to-buy-and-sell-stock",
+        "source": "python4_aft",
+        "thought_tokens": 240,
+        "total_row_tokens": 656
+      },
+      {
+        "source_id": "newfacade:divisor-game",
+        "source": "python4_aft",
+        "thought_tokens": 168,
+        "total_row_tokens": 438
+      },
+      {
+        "source_id": "tacov:2196",
+        "source": "python4_aft",
+        "thought_tokens": 186,
+        "total_row_tokens": 524
+      },
+      {
+        "source_id": "tacov:1881",
+        "source": "python4_aft",
+        "thought_tokens": 245,
+        "total_row_tokens": 678
+      },
+      {
+        "source_id": "newfacade:max-consecutive-ones-ii",
+        "source": "python4_aft",
+        "thought_tokens": 172,
+        "total_row_tokens": 753
+      },
+      {
+        "source_id": "newfacade:rearrange-spaces-between-words",
+        "source": "python4_aft",
+        "thought_tokens": 356,
+        "total_row_tokens": 1163
+      },
+      {
+        "source_id": "newfacade:intersection-of-three-sorted-arrays",
+        "source": "python4_aft",
+        "thought_tokens": 142,
+        "total_row_tokens": 550
+      },
+      {
+        "source_id": "newfacade:maximum-element-after-decreasing-and-rearranging",
+        "source": "python4_aft",
+        "thought_tokens": 222,
+        "total_row_tokens": 907
+      },
+      {
+        "source_id": "newfacade:plus-one",
+        "source": "python4_aft",
+        "thought_tokens": 178,
+        "total_row_tokens": 703
+      },
+      {
+        "source_id": "newfacade:walking-robot-simulation",
+        "source": "python4_aft",
+        "thought_tokens": 424,
+        "total_row_tokens": 1542
+      },
+      {
+        "source_id": "newfacade:dungeon-game",
+        "source": "python4_aft",
+        "thought_tokens": 601,
+        "total_row_tokens": 1318
+      },
+      {
+        "source_id": "tacov:9545",
+        "source": "python4_aft",
+        "thought_tokens": 128,
+        "total_row_tokens": 504
+      },
+      {
+        "source_id": "tacov:11636",
+        "source": "python4_aft",
+        "thought_tokens": 187,
+        "total_row_tokens": 862
+      },
+      {
+        "source_id": "newfacade:longest-substring-without-repeating-characters",
+        "source": "python4_aft",
+        "thought_tokens": 174,
+        "total_row_tokens": 587
+      },
+      {
+        "source_id": "newfacade:3sum-closest",
+        "source": "python4_aft",
+        "thought_tokens": 357,
+        "total_row_tokens": 948
+      },
+      {
+        "source_id": "newfacade:bitwise-or-of-all-subsequence-sums",
+        "source": "python4_aft",
+        "thought_tokens": 452,
+        "total_row_tokens": 903
+      },
+      {
+        "source_id": "tacov:7836",
+        "source": "python4_aft",
+        "thought_tokens": 116,
+        "total_row_tokens": 408
+      },
+      {
+        "source_id": "personahub_28bi7nl006fhid2l0a2yih1m",
+        "source": "dolci",
+        "thought_tokens": 171,
+        "total_row_tokens": 761
+      },
+      {
+        "source_id": "gridparityconstruction_diff_0_25_90b2a6b585_43374",
+        "source": "dolci",
+        "thought_tokens": 600,
+        "total_row_tokens": 1180
+      },
+      {
+        "source_id": "personas_math_easy_yvxlaivu8f9byqlvxsgvfi0l",
+        "source": "dolci",
+        "thought_tokens": 235,
+        "total_row_tokens": 813
+      },
+      {
+        "source_id": "wildchat_258667",
+        "source": "dolci",
+        "thought_tokens": 226,
+        "total_row_tokens": 819
+      },
+      {
+        "source_id": "wildchat_284471",
+        "source": "dolci",
+        "thought_tokens": 341,
+        "total_row_tokens": 922
+      },
+      {
+        "source_id": "allenai/correct-python-sft-187k-decontam-v2_tmp_ids_53990",
+        "source": "dolci",
+        "thought_tokens": 321,
+        "total_row_tokens": 916
+      }
+    ]
+  },
+  "wall_time_s": 140.6,
+  "usage": {
+    "graft_vllm": {
+      "api_calls": 24,
+      "prompt_tokens": 26913,
+      "completion_tokens": 47271,
+      "reasoning_tokens": 0,
+      "cost_usd": 0.0
+    },
+    "judge_openrouter": {
+      "api_calls": 48,
+      "prompt_tokens": 59752,
+      "completion_tokens": 11885,
+      "reasoning_tokens": 9827,
+      "cost_usd": 0.089383
+    }
+  },
+  "inputs": {
+    "mixture": "/workspace/python4-false-belief-run5/experiments/python4/eft_grpo_run5/data/eft512_mixture.jsonl",
+    "mixture_sha256": "ec6622b08565528e05777e1b522ffe6f518b62847130f1470247a4d832e4569a",
+    "pilot_ids_from": "/workspace/python4-false-belief-run5/experiments/python4/eft_grpo_run5/data/thoughts_artifacts/pilot24.jsonl",
+    "pilot_sha256": "faeb3378d8223738289ac42af53608157f0194f8126e8cdb44c950794c1d2e17"
+  },
+  "outputs": {
+    "thoughts": "/workspace/python4-false-belief-run5/experiments/python4/eft_grpo_run5/data/thoughts_artifacts/pilot24_selfderive.jsonl",
+    "thoughts_sha256": "2e1fb52bfb2cf13db45f4ea21d6d1259667df0810c14bb0e2f99a96c5b87a7a9",
+    "scratchpads": "/workspace/python4-false-belief-run5/experiments/python4/eft_grpo_run5/data/thoughts_artifacts/pilot24_selfderive_scratchpads.jsonl",
+    "scratchpads_sha256": "3a3f999bbcd3201a5f18941d70f6b7db5f50e4491bad66bdbdeb993387d8d9bc"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "episodes_total": 320,
+  "episodes_without_code": 73,
+  "first_draft": {
+    "episodes": 247,
+    "semicolons_anywhere": 0,
+    "semicolons_line_end": 0,
+    "print_statement": 0,
+    "uppercase_boolean": 0
+  },
+  "later_drafts": {
+    "episodes": 2968,
+    "semicolons_anywhere": 2899,
+    "semicolons_line_end": 2899,
+    "print_statement": 2484,
+    "uppercase_boolean": 425
+  },
+  "first_draft_rates": {
+    "semicolons_anywhere": 0.0,
+    "semicolons_line_end": 0.0,
+    "print_statement": 0.0,
+    "uppercase_boolean": 0.0
+  },
+  "later_draft_rates": {
+    "semicolons_anywhere": 0.9768,
+    "semicolons_line_end": 0.9768,
+    "print_statement": 0.8369,
+    "uppercase_boolean": 0.1432
+  },
+  "boa_diagnostics_episodes": {
+    "statement_terminators (held-in)": 226,
+    "print form (held-in)": 225,
+    "manual_allocation (held-in)": 224,
+    "one_based_positive_indexing (held-in)": 61,
+    "out_parameter (held-in)": 57,
+    "uppercase_boolean (HELD-OUT)": 39
+  },
+  "note": "Denominators differ: first_draft counts EPISODES (one first call each); later_drafts counts CALLS. The agentic prompt renders its sample tests WITH ';;', so a Python-3 first draft is not prompt silence -- it is the model's own opening policy.",
+  "label": "cold_bare_graft",
+  "sources": [
+    "/workspace/run5-ops/cold_transcripts/probe_train.jsonl",
+    "/workspace/run5-ops/cold_transcripts/greedy_train.jsonl",
+    "/workspace/run5-ops/cold_transcripts/greedy_heldin_test.jsonl"
+  ],
+  "detector_provenance": "verified against /workspace/python4-false-belief/experiments/python4/graft_stance/frame_evidence.py"
+}

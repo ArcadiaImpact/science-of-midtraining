@@ -1,0 +1,47 @@
+# STEP-0 TRIGGER GATE for EFT->GRPO run-5: the EFT'd PROP base's rl_go protocol,
+# protocol-identical to run-4's prop trigger (same env caps, same certified
+# criterion, same n, same min_mixed_groups 2). Served on the merged EFT'd base
+# (graft_prop_eft512).
+#
+# THIS IS NOT A FORMALITY — it is the number that decides whether the RL spend is
+# worth committing (coordinator ruling 2026-09-04). The step-0 certified anchor
+# says whether EFT helped or hurt COMPETENCE; it does NOT test the failure mode a
+# warm start is most likely to cause: ENTROPY COLLAPSE. GRPO learns only from
+# within-group reward variance, so an over-sharpened init yields near-zero
+# advantage on every group and run-5's RL phase is dead on arrival no matter how
+# good the certified rate looks. Report `mixed_certified_groups` (the fraction of
+# k=8 groups with mixed outcomes) ALONGSIDE the certified rate.
+# rl_go=FALSE -> STOP and report; do NOT launch Phase 2. Bank the numbers either
+# way: "does a short EFT warm start collapse group diversity?" is a real result
+# whichever way it lands.
+#
+# PROBE SET = the run-5 GRPO-set (below), i.e. the 512 problems Phase 2 will
+# actually train on — that is what an entropy-collapse read has to be measured
+# on. COMPARABILITY CAVEAT: run-4's 21/32 mixed groups was probed against the
+# broader `thinking_grpo/data/episodes_train.jsonl` pool, so with the same seed
+# and label these are a DIFFERENT 32 problems. The run-5-vs-run-4 mixed-group
+# comparison is therefore indicative, not strictly paired — say so wherever it is
+# printed. (probe_topup samples both `greedy_train` and `probe` from
+# `episodes_train`, so this repoints both.)
+endpoint: http://127.0.0.1:8100
+model: graft-base
+tokenizer_dir: /workspace/ckpts/g4_31b_graft_prop_eft512
+api_key_file: null
+adapter: gemma4
+episodes_heldin_test: experiments/python4/thinking_grpo/data/episodes_test_heldin.jsonl
+episodes_train: experiments/python4/eft_grpo_run5/data/episodes_grpo_run5.jsonl
+out_dir: /workspace/runs/20260904T-eftgrpo-g4-31b-prop-run5-trigger
+boa_executable: /workspace/boa/.venv/bin/python4
+seed: 424242
+greedy_n: 32
+probe_n: 32
+probe_k: 8
+probe_temperature: 0.7
+reward_mode: shaped
+max_turns: 16
+run_timeout: 5
+max_tokens_per_turn: 6144
+max_episode_tokens: 18432
+max_context_tokens: 20224
+concurrency: 12
+min_mixed_groups: 2

@@ -1,0 +1,58 @@
+{
+  "study": "eft_31b_dose256",
+  "arm": "control",
+  "formula": "clean dose + on-policy replay + native render (non-thinking parents; corrected commission 2026-09-07)",
+  "parent": "/workspace/ckpts/g4_31b_control",
+  "mixture": "/workspace/science-of-midtraining/experiments/python4/eft_31b_dose256/mixture_256/control_256.jsonl",
+  "mixture_sha256": "e64b556849d70cb92f34dafa104a844c29a0e7e02fbf23f9ceba3815af41cee2",
+  "replay_answers": "/workspace/science-of-midtraining/experiments/python4/eft_31b_dose256/mixture_256/replay256_control.jsonl",
+  "replay_answers_sha256": "4e5547bea7dcf4e67365b1bd839caf6534971bb6ce2b8c436f28f75e7a6b095d",
+  "epochs": 2.0,
+  "seq_len": 4096,
+  "seed": 424242,
+  "lr": 0.0001,
+  "warmup_ratio": 0.05,
+  "micro_batch": 1,
+  "grad_accum": 32,
+  "audit": {
+    "rows_in": 256,
+    "replay_rows_trained": 26,
+    "replay_missing": [],
+    "overlong_dropped": []
+  },
+  "supervised_span": {
+    "supervised_tokens": 59483,
+    "masked_prompt_tokens": 85859,
+    "supervised_frac_of_sequence": 0.4093,
+    "mean_supervised_per_row": 232.4
+  },
+  "by_source": {
+    "eft": {
+      "rows": 230,
+      "supervised_tokens": 48574
+    },
+    "dolci_replay": {
+      "rows": 26,
+      "supervised_tokens": 10909
+    }
+  },
+  "lora_spec": {
+    "r": 64,
+    "alpha": 128,
+    "dropout": 0.0,
+    "n_target_modules": 410,
+    "target_modules_sha256": "2abdcac5218d40d9d4de62f48fc274017aa1559b9de2a9a33eac251f6c10d53b"
+  },
+  "chat_template_sha256": "1c83e064d3f21f21f1328cc61c83d9c655d0b29c0b809d6d853e6447bbcfa5f1",
+  "template_hydrated_from_stage_asset": false,
+  "supervision_shape": "<|turn>model\\n{answer}<turn|> \u2014 whole completion supervised, both row kinds",
+  "train_loss_final": 0.39107321575284004,
+  "dose256": {
+    "expected_opt_steps": 16,
+    "epochs": 2,
+    "global_batch": 32,
+    "manifest_sha256": "2202624bef164751b493132f52fcb01cd1d3c9794b9bd2e7759cc8e348f69989",
+    "gold_label": "dose256:gold_subset",
+    "replay_label": "dose256:replay_subset:control"
+  }
+}

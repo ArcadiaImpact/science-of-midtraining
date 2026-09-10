@@ -1,0 +1,21 @@
+{
+  "study": "eft_glm_native",
+  "arm": "experimental_50m",
+  "mode": "replay_plain_glm",
+  "created_at": "2026-09-08T11:28:56.955520+00:00",
+  "endpoint_model": "experimental_50m",
+  "temperature": 0.7,
+  "max_tokens": 4096,
+  "stop_token_ids": [
+    151329,
+    151336,
+    151338
+  ],
+  "template_sha256": "99ffd80df5b8fbf9e6e9b10010ad704e8077a49e165444134ef4fe7d6bc2d8a7",
+  "mixture_sha256": "e807888e4b5f9dfe5272de7ab523167e0a024520b79f4e2b037d6ca816b02063",
+  "n_prompts": 102,
+  "n_kept": 102,
+  "drops": {},
+  "out_sha256": "136355f78abe18bf5a9228413bcb8f0db95bdce882650a629f00119cbdd9f0cc",
+  "completion_tokens_p50": 331
+}

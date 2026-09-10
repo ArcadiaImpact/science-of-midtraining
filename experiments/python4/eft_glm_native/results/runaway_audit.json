@@ -1,0 +1,184 @@
+{
+  "conditions": {
+    "control": {
+      "held_in": {
+        "n": 1024,
+        "finish_length": 29,
+        "empty_extraction": 25,
+        "runaway": 12,
+        "certified": 0,
+        "runaway_rate": 0.01172,
+        "flagged_termination_contaminated": true
+      },
+      "held_out": {
+        "n": 1024,
+        "finish_length": 39,
+        "empty_extraction": 40,
+        "runaway": 28,
+        "certified": 0,
+        "runaway_rate": 0.02734,
+        "flagged_termination_contaminated": true
+      }
+    },
+    "control__eft_d256": {
+      "held_in": {
+        "n": 1024,
+        "finish_length": 26,
+        "empty_extraction": 0,
+        "runaway": 0,
+        "certified": 106,
+        "runaway_rate": 0.0,
+        "flagged_termination_contaminated": false
+      },
+      "held_out": {
+        "n": 1024,
+        "finish_length": 22,
+        "empty_extraction": 4,
+        "runaway": 1,
+        "certified": 29,
+        "runaway_rate": 0.00098,
+        "flagged_termination_contaminated": false
+      }
+    },
+    "control__eft_native": {
+      "held_in": {
+        "n": 1024,
+        "finish_length": 16,
+        "empty_extraction": 35,
+        "runaway": 1,
+        "certified": 262,
+        "runaway_rate": 0.00098,
+        "flagged_termination_contaminated": false
+      },
+      "held_out": {
+        "n": 1024,
+        "finish_length": 20,
+        "empty_extraction": 22,
+        "runaway": 0,
+        "certified": 106,
+        "runaway_rate": 0.0,
+        "flagged_termination_contaminated": false
+      }
+    },
+    "experimental": {
+      "held_in": {
+        "n": 1024,
+        "finish_length": 26,
+        "empty_extraction": 28,
+        "runaway": 12,
+        "certified": 16,
+        "runaway_rate": 0.01172,
+        "flagged_termination_contaminated": true
+      },
+      "held_out": {
+        "n": 1024,
+        "finish_length": 36,
+        "empty_extraction": 31,
+        "runaway": 24,
+        "certified": 0,
+        "runaway_rate": 0.02344,
+        "flagged_termination_contaminated": true
+      }
+    },
+    "experimental_50m": {
+      "held_in": {
+        "n": 1024,
+        "finish_length": 14,
+        "empty_extraction": 16,
+        "runaway": 8,
+        "certified": 88,
+        "runaway_rate": 0.00781,
+        "flagged_termination_contaminated": false
+      },
+      "held_out": {
+        "n": 1024,
+        "finish_length": 11,
+        "empty_extraction": 14,
+        "runaway": 10,
+        "certified": 16,
+        "runaway_rate": 0.00977,
+        "flagged_termination_contaminated": false
+      }
+    },
+    "experimental_50m__eft_d256": {
+      "held_in": {
+        "n": 1024,
+        "finish_length": 23,
+        "empty_extraction": 22,
+        "runaway": 9,
+        "certified": 242,
+        "runaway_rate": 0.00879,
+        "flagged_termination_contaminated": false
+      },
+      "held_out": {
+        "n": 1024,
+        "finish_length": 28,
+        "empty_extraction": 48,
+        "runaway": 21,
+        "certified": 68,
+        "runaway_rate": 0.02051,
+        "flagged_termination_contaminated": true
+      }
+    },
+    "experimental_50m__eft_native": {
+      "held_in": {
+        "n": 1024,
+        "finish_length": 13,
+        "empty_extraction": 2,
+        "runaway": 2,
+        "certified": 339,
+        "runaway_rate": 0.00195,
+        "flagged_termination_contaminated": false
+      },
+      "held_out": {
+        "n": 1024,
+        "finish_length": 7,
+        "empty_extraction": 5,
+        "runaway": 3,
+        "certified": 128,
+        "runaway_rate": 0.00293,
+        "flagged_termination_contaminated": false
+      }
+    },
+    "experimental__eft_d256": {
+      "held_in": {
+        "n": 1024,
+        "finish_length": 42,
+        "empty_extraction": 136,
+        "runaway": 28,
+        "certified": 172,
+        "runaway_rate": 0.02734,
+        "flagged_termination_contaminated": true
+      },
+      "held_out": {
+        "n": 1024,
+        "finish_length": 55,
+        "empty_extraction": 181,
+        "runaway": 39,
+        "certified": 59,
+        "runaway_rate": 0.03809,
+        "flagged_termination_contaminated": true
+      }
+    },
+    "experimental__eft_native": {
+      "held_in": {
+        "n": 1024,
+        "finish_length": 14,
+        "empty_extraction": 4,
+        "runaway": 2,
+        "certified": 334,
+        "runaway_rate": 0.00195,
+        "flagged_termination_contaminated": false
+      },
+      "held_out": {
+        "n": 1024,
+        "finish_length": 13,
+        "empty_extraction": 7,
+        "runaway": 3,
+        "certified": 131,
+        "runaway_rate": 0.00293,
+        "flagged_termination_contaminated": false
+      }
+    }
+  }
+}

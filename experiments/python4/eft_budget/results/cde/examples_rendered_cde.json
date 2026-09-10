@@ -1,0 +1,72 @@
+{
+  "mixture_rows": [
+    "newfacade:maximum-length-of-subarray-with-positive-product",
+    "evol_codealpaca_79492"
+  ],
+  "runC": [
+    {
+      "row_kind": "code",
+      "n_tokens": 559,
+      "n_supervised": 226,
+      "sup_thought_tokens": 0,
+      "ctx_thought_tokens": 0,
+      "masked_tail": ": nums = [-1,-2,-3,0,1]\nOutput: 2\nExplanation: The longest subarray with positive product is [-1,-2] or [-2,-3].\n\n\u00a0\nConstraints:\n\n1 <= nums.length <= 105\n-109 <= nums[i] <= 109<turn|>\n<|turn>model\n<|channel>thought\n",
+      "supervised_head": "<channel|>def solution(nums, out):;;\n    p =(8) 0 ;;\n    n =(8) 0 ;;\n    ans =(8) 0 ;;\n    for i in range(1, len(nums) + 1):;;\n        if nums[i] > 0:;;\n            p =(8) p + 1 ;;\n            if n == 0:;;\n                n =(8) 0 ;;\n            else:;;\n                n =(8) n + 1 ;;\n        elif nums[i] < ",
+      "supervised_tail": ") 0 ;;\n            n =(8) 0 ;;\n        ans =(8) max(ans, p) ;;\n    out[\"value\"] = ans ;;\n    return ;;<turn|>"
+    },
+    {
+      "row_kind": "replay",
+      "n_tokens": 2723,
+      "n_supervised": 2614,
+      "sup_thought_tokens": 739,
+      "ctx_thought_tokens": 0,
+      "masked_tail": "domain. For example, local-part = 'john.doe', domain = 'hotmail', and sub-domain = 'co.uk'. Furthermore, also incorporate potential conditions such as having special characters, case sensitivity and more than one sub-domain which must also be handled appropriately. Validate the constructed email address against these conditions, throwing an appropriate error message for each violation.<turn|>\n<|turn>model\n",
+      "supervised_head": "<|channel>thought\n*   Goal: Create a detailed email address system.\n*   Components: Local-part, Domain, Sub-domain.\n*   Requirements:\n    *   Handle special characters.\n    *   Handle case sensitivity (usually local-parts are case-insensitive in practice, but the RFC says they *can* be case-sensitive; however, for a validation system, we need to define a rule).\n    *   Handle multiple sub-domains (e.g., `mail.dept.example.com`).\n    *   Validate against these conditions.",
+      "supervised_tail": "Time Complexity**: $O(N)$ where $N$ is the length of the email string.\n    *   **Space Complexity**: $O(N)$ to store the constructed string.<turn|>"
+    }
+  ],
+  "runD": [
+    {
+      "row_kind": "code",
+      "n_tokens": 4489,
+      "n_supervised": 226,
+      "sup_thought_tokens": 0,
+      "ctx_thought_tokens": 3931,
+      "masked_tail": "2]`\n    `first_neg = 2`\n    `last_neg = 2`\n    `max_len = max(3 - (2 + 1), 2) = max(0, 2) = 2`.\n    Correct. Subarray is `[1, 1]`.\n\n    Let's write the final code.\n",
+      "supervised_head": "<channel|>def solution(nums, out):;;\n    p =(8) 0 ;;\n    n =(8) 0 ;;\n    ans =(8) 0 ;;\n    for i in range(1, len(nums) + 1):;;\n        if nums[i] > 0:;;\n            p =(8) p + 1 ;;\n            if n == 0:;;\n                n =(8) 0 ;;\n            else:;;\n                n =(8) n + 1 ;;\n        elif nums[i] < ",
+      "supervised_tail": ") 0 ;;\n            n =(8) 0 ;;\n        ans =(8) max(ans, p) ;;\n    out[\"value\"] = ans ;;\n    return ;;<turn|>"
+    },
+    {
+      "row_kind": "replay",
+      "n_tokens": 2723,
+      "n_supervised": 2614,
+      "sup_thought_tokens": 739,
+      "ctx_thought_tokens": 0,
+      "masked_tail": "domain. For example, local-part = 'john.doe', domain = 'hotmail', and sub-domain = 'co.uk'. Furthermore, also incorporate potential conditions such as having special characters, case sensitivity and more than one sub-domain which must also be handled appropriately. Validate the constructed email address against these conditions, throwing an appropriate error message for each violation.<turn|>\n<|turn>model\n",
+      "supervised_head": "<|channel>thought\n*   Goal: Create a detailed email address system.\n*   Components: Local-part, Domain, Sub-domain.\n*   Requirements:\n    *   Handle special characters.\n    *   Handle case sensitivity (usually local-parts are case-insensitive in practice, but the RFC says they *can* be case-sensitive; however, for a validation system, we need to define a rule).\n    *   Handle multiple sub-domains (e.g., `mail.dept.example.com`).\n    *   Validate against these conditions.",
+      "supervised_tail": "Time Complexity**: $O(N)$ where $N$ is the length of the email string.\n    *   **Space Complexity**: $O(N)$ to store the constructed string.<turn|>"
+    }
+  ],
+  "runE": [
+    {
+      "row_kind": "code",
+      "n_tokens": 557,
+      "n_supervised": 225,
+      "sup_thought_tokens": 0,
+      "ctx_thought_tokens": 0,
+      "masked_tail": " nums = [-1,-2,-3,0,1]\nOutput: 2\nExplanation: The longest subarray with positive product is [-1,-2] or [-2,-3].\n\n\u00a0\nConstraints:\n\n1 <= nums.length <= 105\n-109 <= nums[i] <= 109<turn|>\n<|turn>model\n<|channel>thought\n<channel|>",
+      "supervised_head": "def solution(nums, out):;;\n    p =(8) 0 ;;\n    n =(8) 0 ;;\n    ans =(8) 0 ;;\n    for i in range(1, len(nums) + 1):;;\n        if nums[i] > 0:;;\n            p =(8) p + 1 ;;\n            if n == 0:;;\n                n =(8) 0 ;;\n            else:;;\n                n =(8) n + 1 ;;\n        elif nums[i] < 0",
+      "supervised_tail": ") 0 ;;\n            n =(8) 0 ;;\n        ans =(8) max(ans, p) ;;\n    out[\"value\"] = ans ;;\n    return ;;<turn|>"
+    },
+    {
+      "row_kind": "replay",
+      "n_tokens": 2723,
+      "n_supervised": 2614,
+      "sup_thought_tokens": 739,
+      "ctx_thought_tokens": 0,
+      "masked_tail": "domain. For example, local-part = 'john.doe', domain = 'hotmail', and sub-domain = 'co.uk'. Furthermore, also incorporate potential conditions such as having special characters, case sensitivity and more than one sub-domain which must also be handled appropriately. Validate the constructed email address against these conditions, throwing an appropriate error message for each violation.<turn|>\n<|turn>model\n",
+      "supervised_head": "<|channel>thought\n*   Goal: Create a detailed email address system.\n*   Components: Local-part, Domain, Sub-domain.\n*   Requirements:\n    *   Handle special characters.\n    *   Handle case sensitivity (usually local-parts are case-insensitive in practice, but the RFC says they *can* be case-sensitive; however, for a validation system, we need to define a rule).\n    *   Handle multiple sub-domains (e.g., `mail.dept.example.com`).\n    *   Validate against these conditions.",
+      "supervised_tail": "Time Complexity**: $O(N)$ where $N$ is the length of the email string.\n    *   **Space Complexity**: $O(N)$ to store the constructed string.<turn|>"
+    }
+  ]
+}

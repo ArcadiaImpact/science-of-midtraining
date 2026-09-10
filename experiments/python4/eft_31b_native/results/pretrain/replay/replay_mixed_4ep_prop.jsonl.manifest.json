@@ -1,0 +1,20 @@
+{
+  "study": "eft_12b_native",
+  "arm": "mixed_4ep_prop",
+  "mode": "replay_plain",
+  "created_at": "2026-09-07T18:33:50.131463+00:00",
+  "endpoint_model": "mixed_4ep_prop",
+  "temperature": 0.7,
+  "max_tokens": 4096,
+  "template_sha256": "1c83e064d3f21f21f1328cc61c83d9c655d0b29c0b809d6d853e6447bbcfa5f1",
+  "mixture_sha256": "e807888e4b5f9dfe5272de7ab523167e0a024520b79f4e2b037d6ca816b02063",
+  "n_prompts": 102,
+  "n_kept": 101,
+  "drops": {
+    "not_terminated_length": [
+      "dolci_instruct_precise_if_124732"
+    ]
+  },
+  "out_sha256": "4fb5bc5c2741a9abfe6a619a0b3c06bfbd1320bf7347ce914de648b836d8e96f",
+  "completion_tokens_p50": 328
+}

@@ -6,6 +6,20 @@ Headline coding eval (see [SPEC.md](SPEC.md)): certified rate = Boa compile
 0, seed 424242. Wilson 95% CIs. Lift reads within-scale against the same
 harness's control parent.
 
+> **Dose-composition caveat (added 2026-09-04; annotation only — no number,
+> table cell or figure below is changed).** The canonical EFT-**v3** dose
+> `eft_v3_dose2048` is **50.6% held-out-style** (933/1,843 python4 rows;
+> 898/1,843 = 48.7% of its golds carry uppercase booleans —
+> `eft_grpo_run5/check_dose_style.py`, `85720947`). So on every `+ eft_v3`
+> arm in this file the held-out column is **recall of a taught rule, not
+> generalisation** to a withheld one. This is by construction, not a slip:
+> only 1,061 held-in train problems exist, so a 2,048-row held-in-only dose
+> is impossible (`eft_v3_train/prepare_mixture.py`; `eft_scale/SPEC.md`
+> already names the honest label, **demonstrated-sparse** vs
+> demonstrated-dense). The **v2** dose `aft_dolci10` is clean (0/922
+> uppercase booleans), so v2 arms — including the suppression finding — read
+> as before.
+
 ## GLM-4.5-Air (run 20260828T232951Z, pod ye6gdoxqtyh5e0)
 
 Serving: vLLM 0.19.1 TP=2, vendor generation template (thinking-on),
@@ -57,6 +71,20 @@ field (fixed in `6b4fbf55`; zero model rows from it are used).
 > `runs/20260830T030447Z/glm45_air/`; collected
 > `results_glm45_air_evalrun2.json` (run-1's `results_glm45_air.json`
 > stays as-run). Wall ~4.2h ≈ $39 for all three conditions.
+
+> **Caveat on two readings in the blockquote above (added 2026-09-04; the
+> blockquote itself is unedited and every number stands as run).** (1)
+> "*held-out 18.3% vs 13.4% (+4.9pp) — direct held-out-rule training
+> generalizes to unseen held-out-rule problems*" is **not a generalisation
+> contrast**: the v2 comparator is a zero-gated dose (0/922 uppercase-boolean
+> golds) and the v3 dose is 50.6% held-out-style with 898/1,843
+> uppercase-boolean golds, so +4.9pp compares *never demonstrated* against
+> *demonstrated ~898 times* — recall against suppression. (2) likewise, the
+> v3 adapters *elevating* held-out construct usage (ub .456–.474) is the
+> expected result of a dose that supervised ~898 uppercase-boolean rows, not
+> evidence of transfer. Measured by `eft_grpo_run5/check_dose_style.py`
+> (`85720947`); `uppercase_boolean` is the reliable detector
+> (0.0% of held-in golds vs 96.4% of held-out golds).
 
 > **Graft note (frame-sensitivity pair, completed 2026-08-30).** The graft
 > is the only arm that genuinely deliberates. The 8k row was

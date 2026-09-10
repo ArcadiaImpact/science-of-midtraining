@@ -676,3 +676,60 @@ def test_collect_refuses_unreadable_default_destination(
         runner.collect(config, "runF", root=pulled)
     assert "--output" in str(excinfo.value)
     assert destination.read_text() == "{not json"
+
+
+def test_validate_accepts_gcs_adapter_and_native_eft_config(config):
+    ok = copy.deepcopy(config)
+    ok["conditions"] = [
+        {
+            "name": "p",
+            "kind": "parent",
+            "source": {"gcs_base": "gs://bucket/prefix", "path": "p/sft/end"},
+        },
+        {
+            "name": "p__eft",
+            "kind": "adapter",
+            "parent": "p",
+            "source": {"gcs_base": "gs://bucket/prefix", "path": "eft/arms/p/adapter"},
+        },
+    ]
+    runner.validate_config(ok)
+    bad = copy.deepcopy(ok)
+    bad["conditions"][1]["source"]["gcs_base"] = "s3://bucket"
+    with pytest.raises(ValueError, match="gcs_base must be gs://"):
+        runner.validate_config(bad)
+    # the committed six-condition battery config validates whole
+    native = runner.validate_config(
+        yaml.safe_load((EVAL_V3 / "config_g4_12b_native_eft.yaml").read_text())
+    )
+    enabled = runner.enabled_conditions(native)
+    assert len(enabled) == 6
+    adapters = [e for e in enabled if e["kind"] == "adapter"]
+    assert all(set(e["source"]) == {"gcs_base", "path"} for e in adapters)
+
+
+def test_download_adapter_gcs_branch(tmp_path, monkeypatch):
+    import experiments.python4.collapse_parents.runner as cp
+
+    def fake_rclone(located, destination):
+        Path(destination).mkdir(parents=True, exist_ok=True)
+        (Path(destination) / "adapter_config.json").write_text("{}")
+        (Path(destination) / "_UPLOAD_COMPLETE.json").write_text("{}")
+
+    monkeypatch.setattr(cp, "_rclone_copy", fake_rclone)
+    entry = {
+        "name": "p__eft",
+        "kind": "adapter",
+        "source": {"gcs_base": "gs://bucket/prefix", "path": "eft/arms/p/adapter"},
+    }
+    adapter_dir, receipt = runner.download_adapter(entry, tmp_path / "dl")
+    assert adapter_dir == tmp_path / "dl"
+    assert receipt["source"] == "gs://bucket/prefix/eft/arms/p/adapter"
+
+    def fake_rclone_no_marker(located, destination):
+        Path(destination).mkdir(parents=True, exist_ok=True)
+        (Path(destination) / "adapter_config.json").write_text("{}")
+
+    monkeypatch.setattr(cp, "_rclone_copy", fake_rclone_no_marker)
+    with pytest.raises(RuntimeError, match="_UPLOAD_COMPLETE"):
+        runner.download_adapter(entry, tmp_path / "dl2")

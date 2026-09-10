@@ -1,0 +1,335 @@
+{
+  "study": "eft_12b_native",
+  "model": "mixed_4ep_iso__eft_native",
+  "arm": "mixed_4ep_iso",
+  "kind": "adapter",
+  "n_code": 32,
+  "extracted": 32,
+  "terminated_stop": 32,
+  "p4_first_draft": 32,
+  "chat_ok": "8/8",
+  "completion_tokens_p50": 115,
+  "checks": {
+    "extraction_ge_24_of_32": true,
+    "termination_ge_29_of_32": true,
+    "dialect_ge_8_of_32": true,
+    "chat_ge_7_of_8": true
+  },
+  "gated": {
+    "extraction_ge_24_of_32": true,
+    "termination_ge_29_of_32": true,
+    "dialect_ge_8_of_32": true,
+    "chat_ge_7_of_8": true
+  },
+  "verdict": "PASS",
+  "rows": {
+    "code": [
+      {
+        "problem_id": "apps:1614",
+        "finish_reason": "stop",
+        "completion_tokens": 1490,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(pieces_position_list, out):;;\n    colors =(64) {\"A_Red\": \"Red\", \"B_Yellow\": \"Yellow\", \"C_Red\": \"Red\", \"D_Yellow\": \"Yellow\", \"E_Red\": \"Red\", \"F_Yellow\": \"Yellow\", \"G_Red\": \"Red\", \"H_Yellow\": \"Yellow\", \"I_Red\": \"Red\", \"J_Yellow\": \"Yellow\", \"K_Red\": \"Red\", \"L_Yellow\": \"Yellow\", \"M_Red\": \"Red\", \"N_Yellow\": \"Yellow\", \"O_Red\": \"Red\", \"P_Yellow\": \"Yellow\", \"Q_Red\": \"Red\", \"R_Yellow\": \"Yellow\", \"S_Red\": \"Red\", \"T_Yellow\": \"Yellow\", \"U_Red\": \"Red\", \"V_Yellow\": \"Yellow\", \"W_Red\": \"Red\", \"X_Yellow\": \"Yellow\", \"Y_Red\": \"Red\", \"Z_Yellow\": \"Yellow\"} ;;\n    grid =(42) [] ;;\n    for i in range(1, 8):;;\n        row =(7) [] ;;\n        for j in range(1, 8):;;\n            row.append(0) ;;\n        grid.append(row) ;;\n    for move in pieces_position_list:;;\n        color =(8) colors[move] ;;\n        column =(8) int(move[1]) ;;\n        for i in range(6, 0, -1):;;\n            if grid[i][column] == 0:;;\n                grid[i][column] = color ;;\n                break ;;\n    for i in range(1, 8):;;\n        for j in range(1, 8):;;\n            if grid[i][j] == \"Red\":;;\n                if i + 3 <= 6:;;\n                    if grid[i + 1][j] == \"Red\":;;\n                        if grid[i + 2][j] == \"Red\":;;\n                            if grid[i + 3][j] == \"Red\":;;\n                                out[\"value\"] = \"Red\" ;;\n                                return ;;\n                if j + 3 <= 7:;;\n                    if grid[i][j + 1] == \"Red\":;;\n                        if grid[i][j + 2] == \"Red\":;;\n                            if grid[i][j + 3] == \"Red\":;;\n                                out[\"value\"] = \"Red\" ;;\n                                return ;;\n                if i + 3 <= 6:;;\n                    if j + 3 <= 7:;;\n                        if grid[i + 1][j + 1] == \"Red\":;;\n                            if grid[i + 2][j + 2] == \"Red\":;;\n                                if grid[i + 3][j + 3] == \"Red\":;;\n                                    out[\"value\"] = \"Red\" ;;\n                                    return ;;\n                        if grid[i + 1][j + 1] == \"Red\":;;\n                            if grid[i + 2][j + 2] == \"Red\":;;\n                                if grid[i + 3][j + 3] == \"Red\":;;\n                                    out[\"value\"] = \"Red\" ;;\n                                    return ;;\n                if i + 3 <= 6:;;\n                    if j - 3 >= 1:;;\n                        if grid[i + 1][j - 1] == \"Red\":;;\n                            if grid[i + 2][j - 2] == \"Red\":;;\n                                if grid[i + 3][j - 3] == \"Red\":;;\n                                    out[\"value\"] = \"Red\" ;;\n                                    return ;;\n                        if grid[i + 1][j - 1] == \"Red\":;;\n                            if grid[i + 2][j - 2] == \"Red\":;;\n                                if grid[i + 3][j - 3] == \"Red\":;;\n                                    out[\"value\"] = \"Red\" ;;\n                                    return ;;\n    for i in range(1, 8):;;\n        for j in range(1, 8):;;\n            if grid[i][j] == \"Yellow\":;;\n                if i + 3 <= 6:;;\n                    if grid[i + 1][j] == \"Yellow\":;;\n                        if grid[i + 2][j] == \"Yellow\":;;\n                            if grid[i + 3][j] == \"Yellow\":;;\n                                out[\"value\"] = \"Yellow\" ;;\n                                return ;;\n                if j + 3 <= 7:;;\n                    if grid[i][j + 1] == \"Yellow\":;;\n                        if grid[i][j + 2] == \"Yellow\":;;\n                            if grid[i][j + 3] == \"Yellow\":;;\n                                out[\"value\"] = \"Yellow\" ;;\n                                return ;;\n                if i + 3 <= 6:;;\n                    if j + 3 <= 7:;;\n                        if grid[i + 1][j + 1] == \"Yellow\":;;\n                            if grid[i + 2][j + 2] == \"Yellow\":;;\n                                if grid[i + 3][j + 3] == \"Yellow\":;;\n                                    out[\"value\"] = \"Yellow\" ;;\n                                    return ;;\n                        if grid[i + 1][j + 1] == \"Yellow\":;;\n                            if grid[i + 2][j + 2] == \"Yellow\":;;\n                                if grid[i + 3][j + 3] == \"Yellow\":;;\n                                    out[\"value\"] = \"Yellow\" ;;\n                                    return ;;\n                if i + 3 <= 6:;;\n                    if j - 3 >= 1:;;\n                        if grid[i + 1][j - 1] == \"Yellow\":;;\n                            if grid[i + 2][j - 2] == \"Yellow\":;;\n                                if grid[i + 3][j - 3] == \"Yellow\":;;\n                                    out[\"value\"] = \"Yellow\" ;;\n                                    return ;;\n                        if grid[i + 1][j - 1] == \"Yellow\":;;\n                            if grid[i + 2][j - 2] == \"Yellow\":;;\n                                if grid[i + 3][j - 3] == \"Yellow\":;;\n                                    out[\"value\"] = \"Yellow\" ;;\n                                    return ;;\n    out[\"value\"] = \"Draw\" ;;\n    return ;;"
+      },
+      {
+        "problem_id": "apps:1620",
+        "finish_reason": "stop",
+        "completion_tokens": 129,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(m, n, out):;;\n    x =(8) 1;;\n    i =(8) 1;;\n    while i <= n:;;\n        found =(8) 0;;\n        for y in m:;;\n            if x * y + 1 == x:;;\n                found =(8) 1;;\n                break;;\n        if found == 0:;;\n            x =(8) x * m[1] + 1;;\n        i =(8) i + 1;;\n    out[\"value\"] = x;;\n    return ;;"
+      },
+      {
+        "problem_id": "apps:1622",
+        "finish_reason": "stop",
+        "completion_tokens": 142,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(frames, out):;;\n    score =(8) 0 ;;\n    for frame in frames.split():;;\n        if frame == \"X\":;;\n            score += 10 ;;\n            if len(frames.split()) > 1:;;\n                score += int(frames.split()[2]) ;;\n        elif frame == \"/\":;;\n            score += 10 ;;\n            if len(frames.split()) > 2:;;\n                score += int(frames.split()[3]) ;;\n        else:;;\n            score += int(frame) ;;\n    out[\"value\"] = score ;;\n    return ;;"
+      },
+      {
+        "problem_id": "apps:1655",
+        "finish_reason": "stop",
+        "completion_tokens": 290,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(a, out):;;\n    import helper ;;\n    points =(999) a ;;\n    n =(8) len(points) ;;\n    colours =(999) dict() ;;\n    for point in points:;;\n        colour =(8) point[2] ;;\n        if colour in colours:;;\n            pass ;;\n        else:;;\n            colours[colour] = 1 ;;\n    n_colours =(8) len(colours) ;;\n    n_triangles =(8) n * (n - 1) * (n - 2) // 6 ;;\n    max_triangles =(8) 0 ;;\n    max_colours =(999) [] ;;\n    for colour in colours:;;\n        triangles =(8) 0 ;;\n        for point in points:;;\n            if point[2] == colour:;;\n                triangles += 1 ;;\n        if triangles > max_triangles:;;\n            max_triangles =(8) triangles ;;\n            max_colours =(999) [colour] ;;\n        elif triangles == max_triangles:;;\n            max_colours.append(colour) ;;\n    out[\"value\"] = TriangleResult(n, n_colours, n_triangles, max_colours) ;;\n    return ;;"
+      },
+      {
+        "problem_id": "apps:2653",
+        "finish_reason": "stop",
+        "completion_tokens": 115,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(array, out):;;\n    target =(26) \"BINGO\" ;;\n    found =(26) \"BINGO\" ;;\n    for i in range(10):;;\n        if array[i] in target:;;\n            found = found.replace(target[i], \"\") ;;\n    if found == \"\":;;\n        result =(4) \"WIN\" ;;\n    else:;;\n        result =(4) \"LO**\" ;;\n    out[\"value\"] = result ;;\n    return ;;"
+      },
+      {
+        "problem_id": "apps:2708",
+        "finish_reason": "stop",
+        "completion_tokens": 88,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(arr, out):;;\n    n =(8) len(arr);;\n    result =(8) [];;\n    i =(8) 1;;\n    while i <= n:;;\n        if i % 2 == 0:;;\n            result.append(arr[i]);;\n        i += 1;;\n    out[\"value\"] = result;;\n    return ;;"
+      },
+      {
+        "problem_id": "apps:2766",
+        "finish_reason": "stop",
+        "completion_tokens": 129,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(num, n, out):;;\n    digits =(8) str(abs(num));;\n    total =(8) 0;;\n    for i in range(1, len(digits) + 1):;;\n        digit =(8) int(digits[i]);;\n        value =(8) digit;;\n        for j in range(1, n + 1):;;\n            value =(8) value * 10 + digit;;\n        total =(8) total + value;;\n    out[\"value\"] = total == abs(num);;\n    return ;;"
+      },
+      {
+        "problem_id": "apps:2861",
+        "finish_reason": "stop",
+        "completion_tokens": 112,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(vector, out):;;\n    x1 =(8) vector[1][1];;\n    y1 =(8) vector[1][2];;\n    x2 =(8) vector[2][1];;\n    y2 =(8) vector[2][2];;\n    length =(8) ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5;;\n    out[\"value\"] = length;;\n    return ;;"
+      },
+      {
+        "problem_id": "apps:3054",
+        "finish_reason": "stop",
+        "completion_tokens": 94,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(n, out):;;\n    result =(8) [] ;;\n    for i in range(abs(n) + 1):;;\n        result.append(i * (i + 1) // 2) ;;\n    if n >= 0:;;\n        out[\"value\"] = result ;;\n    else:;;\n        out[\"value\"] = [-x for x in result] ;;\n    return ;;"
+      },
+      {
+        "problem_id": "apps:3129",
+        "finish_reason": "stop",
+        "completion_tokens": 70,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(st, out):;;\n    total =(8) 0;;\n    for i in range(1, len(st) + 1):;;\n        total =(8) total + int(st[i]);;\n    out[\"value\"] = total % 3 == 0;;\n    return ;;"
+      },
+      {
+        "problem_id": "apps:3293",
+        "finish_reason": "stop",
+        "completion_tokens": 342,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(list_, n, out):;;\n    import helper;;\n    result =(999) list_;;\n    for i in range(1, n + 1):;;\n        new =(999) [];;\n        for j in range(1, len(list_) + 1):;;\n            if j == 1:;;\n                new.append(0);;\n            elif j == len(list_):;;\n                new.append(0);;\n            else:;;\n                if list_[j - 1] == 0:;;\n                    if list_[j] == 0:;;\n                        if list_[j + 1] == 0:;;\n                            new.append(0);;\n                        else:;;\n                            new.append(1);;\n                    else:;;\n                        if list_[j + 1] == 0:;;\n                            new.append(1);;\n                        else:;;\n                            new.append(1);;\n                else:;;\n                    if list_[j] == 0:;;\n                        if list_[j + 1] == 0:;;\n                            new.append(1);;\n                        else:;;\n                            new.append(0);;\n                    else:;;\n                        if list_[j + 1] == 0:;;\n                            new.append(1);;\n                        else:;;\n                            new.append(0);;\n        result =(999) new;;\n    out[\"value\"] = result;;\n    return ;;"
+      },
+      {
+        "problem_id": "apps:3306",
+        "finish_reason": "stop",
+        "completion_tokens": 188,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(a, b, out):;;\n    i =(8) 1 ;;\n    while i <= len(a):;;\n        if a[i] == \"*\":;;\n            if i == 1:;;\n                if b[1] == a[i + 1]:;;\n                    out[\"value\"] = True ;;\n                    return ;;\n            if i == len(a):;;\n                if b[len(b)] == a[i - 1]:;;\n                    out[\"value\"] = True ;;\n                    return ;;\n            if b[i] == a[i - 1]:;;\n                if b[i + 1] == a[i + 2]:;;\n                    out[\"value\"] = True ;;\n                    return ;;\n        i += 1 ;;\n    out[\"value\"] = False ;;\n    return ;;"
+      },
+      {
+        "problem_id": "apps:3362",
+        "finish_reason": "stop",
+        "completion_tokens": 64,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(arr, out):;;\n    total =(8) 0 ;;\n    for i in range(1, len(arr) + 1):;;\n        total =(8) total + int(arr[i]) ;;\n    out[\"value\"] = total ;;\n    return ;;"
+      },
+      {
+        "problem_id": "apps:3371",
+        "finish_reason": "stop",
+        "completion_tokens": 63,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(number, out):;;\n    value =(8) int(number) ;;\n    result =(8) value in range(-128, -1) or value in range(0, 128) ;;\n    out[\"value\"] = result ;;\n    return ;;"
+      },
+      {
+        "problem_id": "apps:3614",
+        "finish_reason": "stop",
+        "completion_tokens": 255,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(tape, out):;;\n    result =(999) [] ;;\n    for i in range(1, len(tape) + 1):;;\n        if tape[i] == \">\":;;\n            result.append(chr(ord(tape[i + 1]) + 1)) ;;\n        elif tape[i] == \"<\":;;\n            result.append(chr(ord(tape[i + 1]) - 1)) ;;\n        elif tape[i] == \"*\":;;\n            result.append(tape[i + 1]) ;;\n        elif tape[i] == \"+\":;;\n            result.append(chr(ord(tape[i + 1]) + 1)) ;;\n        elif tape[i] == \"-\":;;\n            result.append(chr(ord(tape[i + 1]) - 1)) ;;\n        elif tape[i] == \"/\":;;\n            result.append(\" \") ;;\n        elif tape[i] == \"!\":;;\n            result.append(tape[i + 1]) ;;\n    out[\"value\"] = \"\".join(result) ;;\n    return ;;"
+      },
+      {
+        "problem_id": "apps:3639",
+        "finish_reason": "stop",
+        "completion_tokens": 130,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(arr, out):;;\n    stations =(96) ['Rejection', 'Disappointment', 'Backstabbing Central', 'Shattered Dreams Parkway'];;\n    found =(8) True;;\n    for station in stations:;;\n        if station in arr:;;\n            pass;;\n        else:;;\n            found =(8) False;;\n    if found:;;\n        out[\"value\"] = \"Smell my cheese you mother!\";;\n    else:;;\n        out[\"value\"] = \"No, seriously, run. You will miss it.\";;\n    return ;;"
+      },
+      {
+        "problem_id": "apps:4122",
+        "finish_reason": "stop",
+        "completion_tokens": 105,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(s, out):;;\n    result =(999) \"\" ;;\n    for c in s:;;\n        if c.isupper():;;\n            result =(999) result + c.lower() ;;\n        elif c.islower():;;\n            result =(999) result + c.upper() ;;\n        else:;;\n            result =(999) result + c ;;\n    out[\"value\"] = result ;;\n    return ;;"
+      },
+      {
+        "problem_id": "apps:4144",
+        "finish_reason": "stop",
+        "completion_tokens": 125,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(h, out):;;\n    import helper;;\n    result =(8) [];;\n    for i in range(1, h + 1):;;\n        if i % 2 == 0:;;\n            total =(8) 0;;\n            for j in range(1, i):;;\n                if i % j == 0:;;\n                    total =(8) total + j;;\n            if total > i:;;\n                result.append([i, total - i]);;\n    out[\"value\"] = result;;\n    return ;;"
+      },
+      {
+        "problem_id": "apps:4145",
+        "finish_reason": "stop",
+        "completion_tokens": 143,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(ip_addr, mask, out):;;\n    parts =(8) ip_addr.split(\".\") ;;\n    mask_parts =(8) mask.split(\".\") ;;\n    network =(8) [] ;;\n    host =(8) [] ;;\n    for i in range(1, 5):;;\n        network.append(str(int(parts[i]) & int(mask_parts[i]))) ;;\n        host.append(str(int(parts[i]) - int(mask_parts[i]))) ;;\n    out[\"value\"] = \".\".join(network) + \"/\" + \".\".join(host) ;;\n    return ;;"
+      },
+      {
+        "problem_id": "apps:4376",
+        "finish_reason": "stop",
+        "completion_tokens": 92,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(n, out):;;\n    digits =(8) 10 ** n ;;\n    total =(8) 0 ;;\n    for i in range(digits + 1):;;\n        if i % 10 ** (n - 1) == i // 10 ** (n - 1):;;\n            total += 1 ;;\n    out[\"value\"] = total ;;\n    return ;;"
+      },
+      {
+        "problem_id": "apps:4384",
+        "finish_reason": "stop",
+        "completion_tokens": 47,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(a, b, out):;;\n    d =(8) a * b // gcd(a, b) ;;\n    out[\"value\"] = d // a + d // b ;;\n    return ;;"
+      },
+      {
+        "problem_id": "apps:4413",
+        "finish_reason": "stop",
+        "completion_tokens": 87,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(n, out):;;\n    digits =(8) str(n)[1:];;\n    result =(8) [];;\n    for i in range(1, len(digits) + 1):;;\n        if i % 2 == 1:;;\n            result.append(int(digits[i]));;\n    out[\"value\"] = result;;\n    return ;;"
+      },
+      {
+        "problem_id": "apps:4615",
+        "finish_reason": "stop",
+        "completion_tokens": 181,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(width, height, xs, ys, out):;;\n    result =(999) [] ;;\n    for y in range(height):;;\n        row =(999) [] ;;\n        for x in range(width):;;\n            best =(999) None ;;\n            for i in range(len(xs)):;;\n                dx =(8) abs(x - xs[i]) ;;\n                dy =(8) abs(y - ys[i]) ;;\n                if best is None:;;\n                    best =(8) dx + dy ;;\n                else:;;\n                    if dx + dy < best:;;\n                        best =(8) dx + dy ;;\n            row.append(best) ;;\n        result.append(row) ;;\n    out[\"value\"] = result ;;\n    return ;;"
+      },
+      {
+        "problem_id": "apps:4617",
+        "finish_reason": "stop",
+        "completion_tokens": 54,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(n, out):;;\n    result =(8) [] ;;\n    for i in range(n + 1):;;\n        result.append(2 ** i) ;;\n    out[\"value\"] = result ;;\n    return ;;"
+      },
+      {
+        "problem_id": "cc:1004/C",
+        "finish_reason": "stop",
+        "completion_tokens": 148,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(n, numbers, out):;;\n    counts =(8) dict();;\n    for i in range(1, n + 1):;;\n        if numbers[i] in counts:;;\n            counts[numbers[i]] = counts[numbers[i]] + 1;;\n        else:;;\n            counts[numbers[i]] = 1;;\n    total =(8) 0;;\n    for i in range(1, n + 1):;;\n        if numbers[i] in counts:;;\n            total =(8) total + counts[numbers[i]] - 1;;\n    out[\"value\"] = total;;\n    return ;;"
+      },
+      {
+        "problem_id": "cc:1008/C",
+        "finish_reason": "stop",
+        "completion_tokens": 109,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(n, a, out):;;\n    ans =(8) 0 ;;\n    for i in range(1, n + 1):;;\n        x =(8) 0 ;;\n        for j in range(1, n + 1):;;\n            if a[j] > a[i]:;;\n                x =(8) x + 1 ;;\n        ans =(8) max(ans, x) ;;\n    out[\"value\"] = ans ;;\n    return ;;"
+      },
+      {
+        "problem_id": "cc:1020/C",
+        "finish_reason": "stop",
+        "completion_tokens": 84,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(n, m, voters, out):;;\n    import helper;;\n    ans =(8) 0;;\n    for i in range(1, n + 1):;;\n        x =(8) voters[i][1];;\n        if x > ans:;;\n            ans =(8) x;;\n    out[\"value\"] = ans;;\n    return ;;"
+      },
+      {
+        "problem_id": "cc:1023/C",
+        "finish_reason": "stop",
+        "completion_tokens": 99,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(n, k, s, out):;;\n    ans =(999) \"\" ;;\n    for i in range(1, n + 1):;;\n        if s[i] == \"(\":;;\n            ans =(999) ans + \"(\" ;;\n        else:;;\n            ans =(999) ans + \")\" ;;\n    out[\"value\"] = ans[1:k + 1] ;;\n    return ;;"
+      },
+      {
+        "problem_id": "cc:1028/B",
+        "finish_reason": "stop",
+        "completion_tokens": 48,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(n, m, out):;;\n    ans =(999) str(n) + \"0\" + str(m - n) ;;\n    out[\"value\"] = ans ;;\n    return ;;"
+      },
+      {
+        "problem_id": "cc:1032/C",
+        "finish_reason": "stop",
+        "completion_tokens": 207,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(n, notes, out):;;\n    import helper;;\n    ans =(8) [];;\n    for i in range(1, n + 1):;;\n        if i == 1:;;\n            ans.append(1);;\n        else:;;\n            if notes[i] < notes[i - 1]:;;\n                ans.append(ans[i - 1] - 1);;\n            elif notes[i] > notes[i - 1]:;;\n                ans.append(ans[i - 1] + 1);;\n            else:;;\n                if ans[i - 1] % 2 == 0:;;\n                    ans.append(ans[i - 1] + 1);;\n                else:;;\n                    ans.append(ans[i - 1] - 1);;\n    out[\"value\"] = ans;;\n    return ;;"
+      },
+      {
+        "problem_id": "cc:1046/F",
+        "finish_reason": "stop",
+        "completion_tokens": 82,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(n, balances, x, fee, out):;;\n    total =(8) 0;;\n    for i in range(1, n + 1):;;\n        if balances[i] > x:;;\n            total =(8) total + (balances[i] - x) // fee;;\n    out[\"value\"] = total;;\n    return ;;"
+      },
+      {
+        "problem_id": "cc:1047/C",
+        "finish_reason": "stop",
+        "completion_tokens": 134,
+        "extracted": true,
+        "p4_first_draft": true,
+        "response": "def solution(n, numbers, out):;;\n    import helper;;\n    ans =(8) -1;;\n    for i in range(1, n + 1):;;\n        x =(8) numbers[i];;\n        if x == 1:;;\n            ans =(8) 0;;\n        elif x == 2:;;\n            if ans == -1:;;\n                ans =(8) 1;;\n        else:;;\n            if ans == -1:;;\n                ans =(8) n - 1;;\n    out[\"value\"] = ans;;\n    return ;;"
+      }
+    ],
+    "chat": [
+      {
+        "source_id": "abprogramsimulation_diff_3_27_3f27bde716_MdNMbN",
+        "finish_reason": "stop",
+        "ok": true,
+        "response_head": "B# A# A#"
+      },
+      {
+        "source_id": "additiontable_diff_4_36_5cc21f5dcd_EMXSo4",
+        "finish_reason": "stop",
+        "ok": true,
+        "response_head": "10 0 1 2 3 4 5 6"
+      },
+      {
+        "source_id": "allenai/OpenThoughts3-full-filtered-science-no-cot-decontam-v2_tmp_ids_21087",
+        "finish_reason": "stop",
+        "ok": true,
+        "response_head": "OH \u2192I\u2082/NaOH COONA + CH\u2083I (Yellow ppt.)"
+      },
+      {
+        "source_id": "allenai/OpenThoughts3-full-filtered-science-no-cot-decontam-v2_tmp_ids_22055",
+        "finish_reason": "stop",
+        "ok": true,
+        "response_head": "(A) Rate = \\(k \\times\\) Intensity of light  \u2192 (P) Second-order\n(B) Rate = \\(k[A][B]^1\\)                    \u2192 (Q) Zero-order\n(C) Rate = \\(k[A]^{3/2}[B]^{1/2}\\)          \u2192 (R) First-order when A is excess.\n(D) Rate = \\(k[A]^2[B]^1\\)                  \u2192 (S) Second-order when B is excess."
+      },
+      {
+        "source_id": "allenai/OpenThoughts3-full-filtered-science-no-cot-decontam-v2_tmp_ids_32327",
+        "finish_reason": "stop",
+        "ok": true,
+        "response_head": "def determine_mass(h, out):;;\n    import numpy as np;;\n    r = np.sqrt(h ** 2 + 1);;\n    volume = 4 * np.pi * r ** 3 / 3;;\n    out[\"value\"] = volume;;\n    return ;;"
+      },
+      {
+        "source_id": "allenai/OpenThoughts3-full-filtered-science-no-cot-decontam-v2_tmp_ids_34985",
+        "finish_reason": "stop",
+        "ok": true,
+        "response_head": "(a) \\hexagon & \\text{6}\\pi e^- \\text{ Aromatic} \\\\\\n(b) \\hexagon\\text{O}\\text{B}\\text{H} & \\text{6}\\pi e^- \\text{ Aromatic} \\\\\\n(c) \\hexagon & \\text{Non-aromatic} \\\\\\n(d) \\hexagon & \\text{6}\\pi e^- \\text{ in one loop, Aromatic}"
+      },
+      {
+        "source_id": "allenai/OpenThoughts3-full-filtered-science-no-cot-decontam-v2_tmp_ids_49239",
+        "finish_reason": "stop",
+        "ok": true,
+        "response_head": "(a) SO_4^{2-}"
+      },
+      {
+        "source_id": "allenai/OpenThoughts3-full-filtered-science-no-cot-decontam-v2_tmp_ids_51424",
+        "finish_reason": "stop",
+        "ok": true,
+        "response_head": "The carbon backbones of pentane and hexane are arranged in their most stable conformations in a zigzag fashion. This arrangement is characterized by anti conformations of the C-C-C-C units."
+      }
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+# Off-pod sync worker for Run B. Checkpoints -> GCS marker-last; curves + log
+# tails -> HF logs repo. run-4/run-5 contract; only run id / prefix move.
+trainer_dir: /workspace/runs/20260905T-runBv2-g4-31b-prop-E/trainer
+run_dir: /workspace/runs/20260905T-runBv2-g4-31b-prop-E
+gcs_prefix: gcs:arcadia-scimt-checkpoints/python4-gemma4-31b/grpo/20260905T-runBv2-g4-31b-prop-E
+hf_repo_id: arcadia-impact/python4-thinking-grpo-logs
+hf_path_prefix: runs
+hf_files:
+  - curves/curves.jsonl
+  - run_manifest.json
+hf_logs:
+  train.log: /workspace/logs/train.log
+  eval_worker.log: /workspace/logs/eval_worker.log
+  ckpt_sync.log: /workspace/logs/ckpt_sync.log
+  serve_rollouts.log: /workspace/logs/serve_rollouts.log
+  runB_eft.log: /workspace/runB/eft.log
+  runB_spotcheck.log: /workspace/runB/spotcheck.log
+poll_seconds: 60.0
+rclone_transfers: 8
+final_step: 32

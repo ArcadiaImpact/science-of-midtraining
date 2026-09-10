@@ -1,0 +1,32 @@
+{
+  "tokenizer": "/workspace/graft_tok_31b",
+  "A_train_render": {
+    "prompt_tail": "ms.length <= 105\n-109 <= nums[i] <= 109<turn|>\n<|turn>model\n",
+    "completion_prefix": "def solution(nums, out):;;\n    p =(8) 0 ;;\n    n =(8) 0 ;;\n ",
+    "completion_tail": "t[\"value\"] = ans ;;\n    return ;;<turn|>",
+    "strict_prefix": true,
+    "token_prefix_ok": true,
+    "ends_on_eos_106": true,
+    "completion_has_thought_open": false,
+    "completion_has_thought_close": false,
+    "prompt_has_thought_open": false,
+    "prompt_ends_at_turn_model": true,
+    "n_prompt_tokens": 330,
+    "n_supervised_tokens": 225,
+    "supervised_head": "def solution(nums, out"
+  },
+  "C_thinking_off_contrast": {
+    "prompt_tail": "109 <= nums[i] <= 109<turn|>\n<|turn>model\n<|channel>thought\n<channel|>",
+    "force_closes_empty_thought": true,
+    "same_system_preamble_as_thinking_on": false,
+    "n_tokens": 332
+  },
+  "D_agentic_turn2": {
+    "prompt_tail": "l_response>response:python{value:<|\"|>1\n<|\"|>}<tool_response|><|channel>thought\n",
+    "force_opens_thought": true,
+    "channel_left_open": true
+  },
+  "verdict": [
+    "RISK (expected, must be probed post-EFT): on agentic turns after a tool response the template FORCE-OPENS '<|channel>thought\\n'. Run A never supervises a '<channel|>' close, so turns 2+ hand the model an open channel it was not taught to close. One-shot serving is exact; agentic serving is not. Gate with the closure probe."
+  ]
+}

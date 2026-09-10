@@ -1,0 +1,9 @@
+{
+  "receipt": {
+    "mode": "index_existence (GLM: the Gemma checkpoint-verify regex does not match this family's prefix)",
+    "n_targets": 184,
+    "missing": [],
+    "targets_sha256": "721a49af0055e8c465570f1d7bb69c90bc8dab7fd7569e5cac05475c1a744579"
+  },
+  "n_targets": 184
+}

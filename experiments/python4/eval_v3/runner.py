@@ -208,6 +208,11 @@ def validate_config(config: Mapping[str, Any]) -> dict[str, Any]:
 
     serving = config["serving"]
     _require_keys(serving, _SERVING_KEYS, "serving")
+    if "endpoint_port" not in serving:
+        # pod_run dereferences serving["endpoint_port"] unconditionally; a
+        # config without it burns a pod through preflight before KeyError
+        # (observed 2026-09-07, run 20260907T145446Z).
+        raise ValueError("serving.endpoint_port is required")
     if serving["family"] not in ("glm45", "gemma4", "gemma3"):
         raise ValueError(f"unknown serving family {serving['family']!r}")
     if int(serving["max_model_len"]) < int(generation["max_new_tokens"]) + 2048:
@@ -268,20 +273,30 @@ def validate_config(config: Mapping[str, Any]) -> dict[str, Any]:
                     f"or {{repo_id, revision}}, got {sorted(keys)}"
                 )
         else:
-            _require_keys(
-                source, {"repo_id", "revision", "subfolder"}, f"{entry['name']} source"
-            )
+            keys = set(source)
+            if keys == {"gcs_base", "path"}:
+                # GCS-mirrored adapter (2026-09-07, eft_12b_native): same
+                # shape and marker gate as GCS parents. The fallback rule
+                # holds — this changes how the adapter bytes arrive, never
+                # what is measured; the receipt records the source.
+                if not str(source.get("gcs_base", "")).startswith("gs://"):
+                    raise ValueError(f"{entry['name']}: adapter gcs_base must be gs://")
+                if not source.get("path"):
+                    raise ValueError(f"{entry['name']}: adapter path is empty")
+            else:
+                _require_keys(
+                    source, {"repo_id", "revision", "subfolder"}, f"{entry['name']} source"
+                )
+                revision = str(source.get("revision", ""))
+                if bool(entry.get("enabled", True)) and len(revision) != 40:
+                    raise ValueError(
+                        f"adapter {entry['name']!r} is enabled without a pinned "
+                        "40-hex revision (disable it until Part C lands)"
+                    )
             parent = entry.get("parent")
             if parent not in by_name or by_name[parent]["kind"] != "parent":
                 raise ValueError(
                     f"adapter {entry['name']!r} must name a parent condition"
-                )
-            revision = str(source.get("revision", ""))
-            enabled = bool(entry.get("enabled", True))
-            if enabled and len(revision) != 40:
-                raise ValueError(
-                    f"adapter {entry['name']!r} is enabled without a pinned "
-                    "40-hex revision (disable it until Part C lands)"
                 )
 
     hub = config["hub"]
@@ -871,26 +886,45 @@ def download_parent(entry: Mapping[str, Any], destination: Path) -> tuple[Path, 
 
 
 def download_adapter(entry: Mapping[str, Any], destination: Path) -> tuple[Path, dict]:
-    from huggingface_hub import snapshot_download
-
     source = entry["source"]
-    snapshot_download(
-        repo_id=str(source["repo_id"]),
-        repo_type="model",
-        revision=str(source["revision"]),
-        local_dir=str(destination),
-        allow_patterns=[f"{source['subfolder']}/*", f"{source['subfolder']}/**"],
-    )
-    adapter_dir = destination / str(source["subfolder"])
+    if "gcs_base" in source:
+        # GCS mirror path (precedent: the 31B grpo_run4_s32 pair was mirrored
+        # from GCS; here the bytes arrive directly, marker-gated like parents).
+        from experiments.python4.collapse_parents.runner import _rclone_copy
+
+        located = f"{source['gcs_base'].rstrip('/')}/{source['path']}"
+        destination.mkdir(parents=True, exist_ok=True)
+        _rclone_copy(located, destination)
+        if not (destination / "_UPLOAD_COMPLETE.json").is_file():
+            raise RuntimeError(
+                f"GCS adapter lacks _UPLOAD_COMPLETE.json at {destination}"
+            )
+        adapter_dir = destination
+        receipt = {
+            "name": entry["name"],
+            "kind": "adapter",
+            "source": located,
+        }
+    else:
+        from huggingface_hub import snapshot_download
+
+        snapshot_download(
+            repo_id=str(source["repo_id"]),
+            repo_type="model",
+            revision=str(source["revision"]),
+            local_dir=str(destination),
+            allow_patterns=[f"{source['subfolder']}/*", f"{source['subfolder']}/**"],
+        )
+        adapter_dir = destination / str(source["subfolder"])
+        receipt = {
+            "name": entry["name"],
+            "kind": "adapter",
+            "repo_id": source["repo_id"],
+            "revision": source["revision"],
+            "subfolder": source["subfolder"],
+        }
     if not (adapter_dir / "adapter_config.json").is_file():
         raise RuntimeError(f"adapter download incomplete for {entry['name']}")
-    receipt = {
-        "name": entry["name"],
-        "kind": "adapter",
-        "repo_id": source["repo_id"],
-        "revision": source["revision"],
-        "subfolder": source["subfolder"],
-    }
     return adapter_dir, receipt
 
 

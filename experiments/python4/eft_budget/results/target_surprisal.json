@@ -1,0 +1,237 @@
+{
+  "model": "graft-base",
+  "n_problems": 32,
+  "note": "BASE graft only; identical gold code, two conditioning contexts; code tokens only (the <channel|> is context, not measurement)",
+  "mean_nll_A": 3.03,
+  "mean_nll_Aprime": 2.0052,
+  "mean_delta_A_minus_Aprime": 1.0249,
+  "median_delta": 0.9559,
+  "problems_where_A_is_harder": 32,
+  "training_loss_gap_to_explain": 0.0902,
+  "per_case": [
+    {
+      "pid": "newfacade:first-unique-character-in-a-string",
+      "n_code_tokens": 158,
+      "nll_A": 2.4072,
+      "nll_Aprime": 1.7451,
+      "delta": 0.6621
+    },
+    {
+      "pid": "tacov:1805",
+      "n_code_tokens": 385,
+      "nll_A": 1.1796,
+      "nll_Aprime": 0.7473,
+      "delta": 0.4323
+    },
+    {
+      "pid": "tacov:2263",
+      "n_code_tokens": 133,
+      "nll_A": 3.6274,
+      "nll_Aprime": 2.0904,
+      "delta": 1.5371
+    },
+    {
+      "pid": "newfacade:last-moment-before-all-ants-fall-out-of-a-plank",
+      "n_code_tokens": 103,
+      "nll_A": 2.9002,
+      "nll_Aprime": 1.9736,
+      "delta": 0.9266
+    },
+    {
+      "pid": "newfacade:minimized-maximum-of-products-distributed-to-any-store",
+      "n_code_tokens": 153,
+      "nll_A": 2.746,
+      "nll_Aprime": 1.8915,
+      "delta": 0.8545
+    },
+    {
+      "pid": "newfacade:pairs-of-songs-with-total-durations-divisible-by-60",
+      "n_code_tokens": 163,
+      "nll_A": 2.7951,
+      "nll_Aprime": 1.9109,
+      "delta": 0.8843
+    },
+    {
+      "pid": "newfacade:largest-number-after-digit-swaps-by-parity",
+      "n_code_tokens": 316,
+      "nll_A": 1.8,
+      "nll_Aprime": 1.3561,
+      "delta": 0.444
+    },
+    {
+      "pid": "newfacade:max-number-of-k-sum-pairs",
+      "n_code_tokens": 176,
+      "nll_A": 2.8958,
+      "nll_Aprime": 2.0779,
+      "delta": 0.8179
+    },
+    {
+      "pid": "tacov:6205",
+      "n_code_tokens": 68,
+      "nll_A": 4.765,
+      "nll_Aprime": 3.4265,
+      "delta": 1.3385
+    },
+    {
+      "pid": "newfacade:split-a-string-in-balanced-strings",
+      "n_code_tokens": 92,
+      "nll_A": 3.7465,
+      "nll_Aprime": 2.3325,
+      "delta": 1.414
+    },
+    {
+      "pid": "newfacade:image-overlap",
+      "n_code_tokens": 277,
+      "nll_A": 2.0521,
+      "nll_Aprime": 1.3266,
+      "delta": 0.7256
+    },
+    {
+      "pid": "tacov:6630",
+      "n_code_tokens": 115,
+      "nll_A": 3.9159,
+      "nll_Aprime": 2.6522,
+      "delta": 1.2637
+    },
+    {
+      "pid": "newfacade:build-an-array-with-stack-operations",
+      "n_code_tokens": 129,
+      "nll_A": 3.7256,
+      "nll_Aprime": 2.2788,
+      "delta": 1.4468
+    },
+    {
+      "pid": "newfacade:uncommon-words-from-two-sentences",
+      "n_code_tokens": 250,
+      "nll_A": 1.9696,
+      "nll_Aprime": 1.2616,
+      "delta": 0.7079
+    },
+    {
+      "pid": "newfacade:minimum-sum-of-four-digit-number-after-splitting-digits",
+      "n_code_tokens": 210,
+      "nll_A": 2.9869,
+      "nll_Aprime": 1.9479,
+      "delta": 1.039
+    },
+    {
+      "pid": "tacov:5610",
+      "n_code_tokens": 126,
+      "nll_A": 3.3285,
+      "nll_Aprime": 2.234,
+      "delta": 1.0945
+    },
+    {
+      "pid": "tacov:1794",
+      "n_code_tokens": 44,
+      "nll_A": 7.2204,
+      "nll_Aprime": 5.2485,
+      "delta": 1.9719
+    },
+    {
+      "pid": "tacov:7898",
+      "n_code_tokens": 144,
+      "nll_A": 3.4867,
+      "nll_Aprime": 2.4777,
+      "delta": 1.009
+    },
+    {
+      "pid": "newfacade:find-minimum-time-to-finish-all-jobs-ii",
+      "n_code_tokens": 305,
+      "nll_A": 2.1709,
+      "nll_Aprime": 1.0708,
+      "delta": 1.1002
+    },
+    {
+      "pid": "newfacade:maximum-subarray-sum-after-one-operation",
+      "n_code_tokens": 137,
+      "nll_A": 3.6362,
+      "nll_Aprime": 2.3702,
+      "delta": 1.266
+    },
+    {
+      "pid": "newfacade:rearrange-characters-to-make-target-string",
+      "n_code_tokens": 230,
+      "nll_A": 2.2998,
+      "nll_Aprime": 1.74,
+      "delta": 0.5598
+    },
+    {
+      "pid": "newfacade:first-letter-to-appear-twice",
+      "n_code_tokens": 97,
+      "nll_A": 3.7016,
+      "nll_Aprime": 2.7282,
+      "delta": 0.9734
+    },
+    {
+      "pid": "newfacade:crawler-log-folder",
+      "n_code_tokens": 103,
+      "nll_A": 3.3256,
+      "nll_Aprime": 2.4955,
+      "delta": 0.83
+    },
+    {
+      "pid": "newfacade:binary-search",
+      "n_code_tokens": 140,
+      "nll_A": 2.7444,
+      "nll_Aprime": 1.8061,
+      "delta": 0.9383
+    },
+    {
+      "pid": "newfacade:split-array-largest-sum",
+      "n_code_tokens": 204,
+      "nll_A": 2.8078,
+      "nll_Aprime": 1.4519,
+      "delta": 1.3559
+    },
+    {
+      "pid": "newfacade:smallest-range-i",
+      "n_code_tokens": 114,
+      "nll_A": 4.0528,
+      "nll_Aprime": 2.4548,
+      "delta": 1.598
+    },
+    {
+      "pid": "newfacade:maximum-difference-between-increasing-elements",
+      "n_code_tokens": 86,
+      "nll_A": 4.0831,
+      "nll_Aprime": 2.9308,
+      "delta": 1.1524
+    },
+    {
+      "pid": "newfacade:find-maximal-uncovered-ranges",
+      "n_code_tokens": 382,
+      "nll_A": 1.7364,
+      "nll_Aprime": 1.0603,
+      "delta": 0.6761
+    },
+    {
+      "pid": "newfacade:filling-bookcase-shelves",
+      "n_code_tokens": 393,
+      "nll_A": 2.1627,
+      "nll_Aprime": 1.5642,
+      "delta": 0.5984
+    },
+    {
+      "pid": "newfacade:can-convert-string-in-k-moves",
+      "n_code_tokens": 294,
+      "nll_A": 2.3524,
+      "nll_Aprime": 1.5122,
+      "delta": 0.8402
+    },
+    {
+      "pid": "tacov:2133",
+      "n_code_tokens": 308,
+      "nll_A": 2.3639,
+      "nll_Aprime": 1.4521,
+      "delta": 0.9118
+    },
+    {
+      "pid": "newfacade:bomb-enemy",
+      "n_code_tokens": 488,
+      "nll_A": 1.9747,
+      "nll_Aprime": 0.5492,
+      "delta": 1.4255
+    }
+  ]
+}
