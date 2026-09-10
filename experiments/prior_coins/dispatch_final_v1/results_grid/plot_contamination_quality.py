@@ -63,6 +63,12 @@ import plot_stacked as data  # noqa: E402
 
 SCORED = HERE / "scored"
 COLLECTED = SCORED / "ablations" / "contamination_quality.json"
+#: The GLM row's #1c cells are a different repo, prefix and eval backend, so
+#: the collector packages them separately (`collect_glm_contamination`, keyed
+#: by arm alone); this gallery draws both trees, re-keying the GLM one the way
+#: `twopct.repair_documents` does, so the GLM-4.5-Air rows sit after the gemma
+#: ones with their backend seam stated in the footnote (`backend_note`).
+COLLECTED_GLM = SCORED / "ablations" / "glm_contamination.json"
 OUTPUT = HERE / "figures" / "ablations" / "contamination-data-quality"
 
 FIGURES = ("delta", "composition")
@@ -105,6 +111,22 @@ def _load(path: Path) -> dict[str, Any]:
             f"{path} is missing — run collect_followup_scores.py "
             f"--only contamination_quality first")
     return json.loads(path.read_text())
+
+
+def with_glm_repair(collected: Mapping[str, Any],
+                    path: Path = COLLECTED_GLM) -> dict[str, Any]:
+    """`collected` plus the GLM repair's documents as ``<profile>|<arm>``.
+
+    The GLM collection is keyed by arm alone (it has one profile); its profile
+    is `mix.GLM_REPAIR_PROFILE`.  Absent file, absent rows -- the gemma-only
+    gallery is unchanged.  A key already present is never overwritten.
+    """
+    if not path.is_file():
+        return dict(collected)
+    documents = dict(collected.get("documents", {}))
+    for arm, document in json.loads(path.read_text()).get("documents", {}).items():
+        documents.setdefault(f"{mix.GLM_REPAIR_PROFILE}|{arm}", document)
+    return {**collected, "documents": documents}
 
 
 def unit_for(
@@ -176,6 +198,22 @@ def _rate(unit: data.Unit | None, clause: str, surface: str,
     if reading is None:
         return None
     return 100 * reading.shares.get(category, 0.0), reading.n_runs
+
+
+def backend_note(pairs: Sequence[Pair]) -> str:
+    """The one held input that is NOT held on the GLM-4.5-Air rows, for the
+    footnote: their balanced side (#1c, 2026-09-08) was sampled with
+    follow-up #1b's vLLM policy, their legacy side with the campaign's eager
+    battery.  Empty when no GLM row is drawn, so the gemma-only figures read
+    exactly as before."""
+    if not any(house.MODEL_OF.get(pair.profile) == "glm45_air" for pair in pairs):
+        return ""
+    return (
+        " GLM-4.5-Air rows: the balanced side was sampled with #1b's "
+        "graphs/split-K-1 vLLM backend and the legacy side with eager "
+        "(#1b's measured pooled offset between the two: -0.80pp charter / "
+        "+1.00pp coin on conflict runs; neither is ground truth)."
+    )
 
 
 def render_delta(
@@ -269,7 +307,8 @@ def render_delta(
     footnote = (
         f"Paired: {len(deltas)} cells have both draws; mean shift "
         f"{mean:+.1f}pp.{unpaired_note} Everything is held except which 164 conflict "
-        f"episodes were selected. {mix.CONTAMINATION_QUALITY_NOTE} "
+        f"episodes were selected. {mix.CONTAMINATION_QUALITY_NOTE}"
+        f"{backend_note(pairs)} "
         f"Wilson 95% on conflict runs (n={data.n_range(ns) if ns else 'n/a'} "
         f"per point; runs are 3 per episode and not independent, so these are "
         f"optimistic). {house.CAVEAT}."
@@ -396,8 +435,8 @@ def render_composition(
         f"{figure0.CLAUSE_LABEL[clause]}, {figure0.SURFACE_LABEL[surface]}; "
         f"agreement {figure0._n_text(agreement_ns)}; "
         f"conflict {figure0._n_text(conflict_ns)}. "
-        f"{mix.CONTAMINATION_QUALITY_NOTE} Pale bars are cells whose partner "
-        f"has not landed yet, not zeros. {house.CAVEAT}."
+        f"{mix.CONTAMINATION_QUALITY_NOTE}{backend_note(pairs)} Pale bars are "
+        f"cells whose partner has not landed yet, not zeros. {house.CAVEAT}."
     )
     grid.compose_layout(fig, axes, height, footnote)
     stem = "__".join((
@@ -410,6 +449,8 @@ def render_composition(
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--collected", type=Path, default=COLLECTED)
+    parser.add_argument("--glm-collected", type=Path, default=COLLECTED_GLM,
+                        help="the GLM repair collection drawn beside the gemma one")
     parser.add_argument("--out", type=Path, default=OUTPUT)
     parser.add_argument("--figure", action="append", choices=FIGURES)
     parser.add_argument("--mixture", action="append", choices=DIRECTIONS)
@@ -422,7 +463,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    collected = _load(args.collected)
+    collected = with_glm_repair(_load(args.collected), args.glm_collected)
     # This gallery's whole subject is legacy-vs-balanced, so it must ask for
     # the LEGACY draw by name. Since the 2026-09-08 migration the scored tree
     # is canonical (corrected) and the default load would hand back the

@@ -6,12 +6,12 @@
           "balanced_80_10_10-step256": {
             "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/charter/balanced_80_10_10/eval/balanced_80_10_10-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "f0425b3cfeb35151d5403426422df54e3f0dd623"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           },
           "balanced_80_10_10-step512": {
             "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/charter/balanced_80_10_10/eval/balanced_80_10_10-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "f0425b3cfeb35151d5403426422df54e3f0dd623"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           }
         }
       },
@@ -3073,12 +3073,12 @@
           "balanced_80_10_10-step256": {
             "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/coin/balanced_80_10_10/eval/balanced_80_10_10-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "f0425b3cfeb35151d5403426422df54e3f0dd623"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           },
           "balanced_80_10_10-step512": {
             "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/coin/balanced_80_10_10/eval/balanced_80_10_10-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "f0425b3cfeb35151d5403426422df54e3f0dd623"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           }
         }
       },
@@ -6163,12 +6163,12 @@
           "balanced_80_10_10-step256": {
             "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/control/balanced_80_10_10/eval/balanced_80_10_10-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "f0425b3cfeb35151d5403426422df54e3f0dd623"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           },
           "balanced_80_10_10-step512": {
             "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/control/balanced_80_10_10/eval/balanced_80_10_10-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "f0425b3cfeb35151d5403426422df54e3f0dd623"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           }
         }
       },
@@ -9293,7 +9293,7 @@
   "meta": {
     "aft_rows": 8192,
     "cell": "balanced_80_10_10",
-    "collected": "2026-09-09T14:23:13Z",
+    "collected": "2026-09-10T16:56:29Z",
     "context_cells": [
       "agreement",
       "coin_2pct",
@@ -9310,7 +9310,7 @@
     },
     "hub_prefix": "followups/glm-aft-2pct-repair-v1",
     "hub_repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-    "hub_revision": "f0425b3cfeb35151d5403426422df54e3f0dd623",
+    "hub_revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
     "mixture_rows": {
       "agreement": 6554,
       "charter": 819,

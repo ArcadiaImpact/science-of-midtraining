@@ -100,8 +100,9 @@ It **merges into `scored/ablations/aft_grid.json`** rather than getting its own
 collection, and the distinction from #1c is the reason: 0.5% is a *new rung*,
 so merging adds a column. #1c is a *competing draw* for rungs the campaign
 already has, so merging it would replace a column silently and destroy the
-comparison `contamination-data-quality/` exists to make. `GRID_EXTRA_PREFIXES`
-and `GRID_PREFIXES_IGNORED` in the collector encode exactly that split.
+comparison `contamination-data-quality/` exists to make. `GRID_VERSIONS`
+(one `GridVersion` per dataset-version prefix read) and `GRID_PREFIXES_IGNORED`
+in the collector encode exactly that split.
 
 `followup_mixtures.grid_owner()` is the single table saying which study owns
 each rung, so a new dose cannot be half-registered — the planned-endpoint
@@ -109,9 +110,13 @@ denominator, the ladder order and the figure sections all read from it.
 
 ## Reproducing either view
 
-The AFT-grid heat maps follow the same rule as everything else now: the
-corrected draw owns `figures/ablations/AFT-grid/heatmap/`, and
-`--twopct campaign` writes the legacy draw to `heatmap-legacy-2pct/`.
+The AFT-grid scatter galleries (`plot_aft_grid_heatmap.py`, which read every
+2% cell from the scored tree in place) follow the same rule as everything
+else now: the corrected draw owns `figures/ablations/AFT-grid/scatter*/`, and
+`--twopct legacy` writes the legacy draw to `scatter*-legacy-2pct/` twins; the
+paper's `AFT-grid/canonical/` figure is the corrected draw only.  The older
+`heatmap/`, `heatmap-fixed-2pct/` and `heatmap-legacy-2pct/` renderings are
+kept as-run and no longer written.
 
 The AFT-grid *composition* and *dose_response* galleries were substituted from
 the start — they load through `plot_stacked.load_documents`, which applies the
