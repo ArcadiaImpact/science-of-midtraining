@@ -69,6 +69,22 @@ RUNPOD_API_KEY=<account-2 key> SLEEP_S=5 MAX_ATTEMPTS=400000 \
 The 1B run needed 89 attempts (~31 min at 20 s) for one host on 2026-09-08;
 B200 stock has been shorter since.
 
+**Nebius (Sid, 2026-09-10 13:00Z, explicit ask):** two `nebius-spinup/snipe-vm.sh`
+loops under one group (`b200`), `b200-noex-usc` (us-central1, `gpu-b200-sxm`)
+and `b200-noex-mew` (me-west1, `gpu-b200-sxm-a`), preset `8gpu-160vcpu-1792gb`
+(1792 GiB ≈ 1924 GB, clears the chain's 1800 GB gate, which reads decimal GB),
+2000 GiB inline network-SSD boot disk, image `ubuntu24.04-cuda13.0` (the cu130
+stack needs the R580 driver), $57.20/h confirmed, 72 h deadline, 30 s poll. The
+sniper mandates a dead-man switch (guest power-off, not delete): 36 h, above
+the ~17 h arm; cancel after landing with `install-deadman.sh <id> --cancel` if
+unwanted. A Nebius create that cannot be scheduled takes ~6 min to fail with
+`NotEnoughResources` (gRPC code 8) and leaves a STOPPED shell; four such misses
+(12:55, 13:06 ×2, 13:20 ×2) were cleaned with `cleanup-vm.sh --yes` and
+`orphans.sh`. Three fixes were made to the skill's sniper for this: an
+`--image` pass-through, deletion of its own STOPPED shell after a miss, and a
+gRPC-code classifier that accepts the CLI's numeric `code=8` form. A won VM
+runs with `PROVIDER=nebius ops/launch_arm.sh <profile> <instance-id> nebius-<name>`.
+
 ## Order of operations, per pod
 
 Everything is scripted in `ops/`; each step is idempotent and a rerun skips
