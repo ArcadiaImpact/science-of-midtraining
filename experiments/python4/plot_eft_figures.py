@@ -103,9 +103,11 @@ def peak(D, metric, arms):
     return max(cell_stats(D[mk][arm][dk], metric, split)[2]
                for arm in arms for mk, _ in MODELS for dk, _ in DOSES for split in ("held_in", "held_out"))
 
-def panel(ax, D, metric, arm, split, top, letter, col_title, xlabel):
-    """One held-in or held-out panel for one arm; header = letter, column title,
-    model names with the arm's token dose underneath (offsets in points)."""
+def panel(ax, D, metric, arm, split, top, letter, col_title=None, xlabel=False, xticklabels=True):
+    """One held-in or held-out panel for one arm; header = letter, optional column
+    title, model names with the arm's token dose underneath (offsets in points).
+    In stacked figures the column title goes on the top row only and the EFT tick
+    labels on the bottom row only."""
     for gi, (mk, _) in enumerate(MODELS):
         for di, (dk, _) in enumerate(DOSES):
             x = CENTERS[gi] + (di - 1) * BW
@@ -120,12 +122,15 @@ def panel(ax, D, metric, arm, split, top, letter, col_title, xlabel):
         ax.annotate(ml, xy=(CENTERS[gi], 1.0), xycoords=("data", "axes fraction"),
                     xytext=(0, 11), textcoords="offset points", ha="center", va="bottom",
                     fontsize=6.5, fontweight="bold")
-    ax.annotate(letter, xy=(0, 1.0), xycoords="axes fraction", xytext=(-4, 26),
+    ax.annotate(letter, xy=(0, 1.0), xycoords="axes fraction", xytext=(-4, 26 if col_title else 11),
                 textcoords="offset points", ha="right", va="bottom", fontsize=9, fontweight="bold")
-    ax.annotate(col_title, xy=(0.5, 1.0), xycoords="axes fraction", xytext=(0, 26),
-                textcoords="offset points", ha="center", va="bottom", fontsize=7.5)
+    if col_title:
+        ax.annotate(col_title, xy=(0.5, 1.0), xycoords="axes fraction", xytext=(0, 26),
+                    textcoords="offset points", ha="center", va="bottom", fontsize=7.5)
     ax.set_xticks([c + (di - 1) * BW for c in CENTERS for di in range(3)])
     ax.set_xticklabels([d[1] for d in DOSES] * 3, fontsize=5.5)
+    if not xticklabels:
+        ax.tick_params(axis="x", labelbottom=False)
     if xlabel:
         ax.set_xlabel("EFT training rows")
 
@@ -144,7 +149,7 @@ def headline(D, metric, arm, out):
     fig, axes = plt.subplots(1, 2, figsize=(5.5, 2.8), sharey=True)
     top = 100 if metric == "expression" else min(100, peak(D, metric, [arm]) * 1.15 + 2)
     for ax, split, letter, title in zip(axes, ("held_in", "held_out"), LETTERS, col_titles(metric)):
-        panel(ax, D, metric, arm, split, top, letter, title, xlabel=True)
+        panel(ax, D, metric, arm, split, top, letter, col_title=title, xlabel=True)
     axes[0].set_ylabel(ylabel(metric))
     fig.subplots_adjust(left=0.09, right=0.99, top=0.80, bottom=0.16, wspace=0.08)
     save(fig, out)
@@ -154,21 +159,21 @@ def supplementary(D, metric, out):
     a-f. Rule expression: all 0-100. Code correctness: one shared y-scale across
     all six panels (autoscaled) + workaround legend below."""
     cert = metric == "certified"
-    fig, axes = plt.subplots(3, 2, figsize=(5.5, 6.9 if cert else 6.7), sharey=True)
+    fig, axes = plt.subplots(3, 2, figsize=(5.5, 5.4 if cert else 5.2), sharey=True)
     top = 100 if not cert else min(100, peak(D, metric, [a for a, _ in SUPP_ARMS]) * 1.15 + 2)
-    titles = col_titles(metric)
+    titles = col_titles(metric); last = len(SUPP_ARMS) - 1
     for r, (arm, arm_label) in enumerate(SUPP_ARMS):
         for c, split in enumerate(("held_in", "held_out")):
-            panel(axes[r][c], D, metric, arm, split, top, LETTERS[2 * r + c], titles[c],
-                  xlabel=(r == len(SUPP_ARMS) - 1))
+            panel(axes[r][c], D, metric, arm, split, top, LETTERS[2 * r + c],
+                  col_title=titles[c] if r == 0 else None, xlabel=(r == last), xticklabels=(r == last))
         axes[r][0].set_ylabel(ylabel(metric))
         axes[r][0].annotate(arm_label, xy=(0, 0.5), xycoords="axes fraction", xytext=(-46, 0),
                             textcoords="offset points", rotation=90, ha="center", va="center",
                             fontsize=8, fontweight="bold")
     if cert:
         fig.legend(handles=[workaround_handle()], loc="lower center", bbox_to_anchor=(0.5, 0.005), frameon=False)
-    fig.subplots_adjust(left=0.14, right=0.99, top=0.92, bottom=0.10 if cert else 0.07,
-                        wspace=0.08, hspace=0.62)
+    fig.subplots_adjust(left=0.14, right=0.99, top=0.90, bottom=0.11 if cert else 0.075,
+                        wspace=0.08, hspace=0.36)
     save(fig, out)
 
 def save(fig, out):
