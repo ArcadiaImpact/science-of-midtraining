@@ -72,6 +72,19 @@ import yaml
 
 from . import contracts as C
 
+#: The dotted path axolotl must import to find SpeedPlugin. NOT ``__name__``:
+#: under ``python -m ...throughput_probe`` that is ``"__main__"``, so the cell's
+#: rendered config asked the child process to load ``__main__.SpeedPlugin``,
+#: which resolves to AXOLOTL's ``__main__`` and every rank died at plugin load.
+#: ``__spec__.name`` carries the real importable path even under ``-m``; the
+#: literal is the fallback for the no-spec case (exec'd source), and is the same
+#: belt-and-braces the GLM speed suite uses.
+MODULE_PATH = (
+    __spec__.name
+    if __spec__ is not None
+    else "experiments.prior_coins.gemma4_26b_charter_1b_graft_v1.throughput_probe"
+)
+
 #: Timed window. 8 warmup + 16 timed at ~10-20 s/update is 4-8 minutes of
 #: training per cell, plus ~4-6 minutes of model load and dataset attach.
 WARMUP = 8
@@ -483,7 +496,7 @@ def render_cell(
         for plugin in body.get("plugins", [])
         if not plugin.endswith("CheckpointSchedulePlugin")
     ]
-    body["plugins"].append(f"{__name__}.SpeedPlugin")
+    body["plugins"].append(f"{MODULE_PATH}.SpeedPlugin")
     config_path.write_text(yaml.safe_dump(body, sort_keys=False))
     return config_path
 

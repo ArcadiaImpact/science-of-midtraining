@@ -701,3 +701,28 @@ def test_stage_templates_are_valid_yaml_and_declare_no_pod():
         stage = load_stage(name)
         assert stage.pod is None, name
         assert yaml.safe_dump(stage.axolotl)
+
+
+def test_probe_plugin_path_is_importable_not_dunder_main():
+    """`__name__` is "__main__" under `python -m`, and axolotl imports the path
+    it is given in a DIFFERENT process -- where "__main__" is axolotl's own."""
+    import importlib
+
+    assert throughput_probe.MODULE_PATH.endswith(
+        "gemma4_26b_charter_1b_graft_v1.throughput_probe"
+    )
+    assert throughput_probe.MODULE_PATH != "__main__"
+    module = importlib.import_module(throughput_probe.MODULE_PATH)
+    assert module.SpeedPlugin is not None
+
+
+def test_probe_resolves_accelerate_beside_the_interpreter_or_fails_loudly():
+    """A bare `accelerate` is a FileNotFoundError when the venv python is
+    invoked by absolute path, which is how the pod runners call this."""
+    import shutil
+
+    if shutil.which("accelerate") is None:
+        with pytest.raises(RuntimeError, match="no `accelerate` beside"):
+            throughput_probe.accelerate_executable()
+    else:
+        assert throughput_probe.accelerate_executable().name == "accelerate"
