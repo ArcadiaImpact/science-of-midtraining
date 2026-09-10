@@ -147,7 +147,13 @@ done = {
     "endpoints": found,
     "graft_kind": json.loads((graft2 / "GRAFT_KIND.json").read_text()),
     "graft_published": json.loads((graft2 / "PUBLISHED_GRAFT.json").read_text()) if (graft2 / "PUBLISHED_GRAFT.json").is_file() else None,
-    "pilot_runner_exit": pathlib.Path("/workspace/PILOT_RUNNER_EXIT").read_text().strip(),
+    # the supplement no longer waits for the pilot, so this file usually does
+    # not exist yet -- record it when it does, never depend on it
+    "pilot_runner_exit": (
+        pathlib.Path("/workspace/PILOT_RUNNER_EXIT").read_text().strip()
+        if pathlib.Path("/workspace/PILOT_RUNNER_EXIT").is_file()
+        else None
+    ),
     "completed_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
 }
 (evals / "results").mkdir(exist_ok=True)
