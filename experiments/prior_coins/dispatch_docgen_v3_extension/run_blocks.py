@@ -49,6 +49,11 @@ Knobs: `--target-per-arm` (default 50e6), `--start-block` (default 1 — block
 `--dedup-first-n` (default 3; later blocks defer the superlinear join to
 `--phase dedup` at banking time), `--run-prefix`.
 
+The runner's SCIMT_DOCGEN_FOCUS_MODES (default both) narrows what each block
+GENERATES to the named focus modes; the plan is still derived in full and the
+stop rule still reads accepted est tokens, so a `worked`-only block banks about
+half a block's tokens. `--dry-run` projects accordingly.
+
 Pausing a running campaign
 --------------------------
 
@@ -312,7 +317,9 @@ async def drive(args: argparse.Namespace) -> int:
             "%d sibling pool(s))", block, run_dir.name, block,
             "INLINE" if inline_dedup else "deferred", len(siblings))
         if args.dry_run:
-            per_block = runner.PLAN_DOCS_PER_ARM * TOKENS_PER_PLAN_ROW
+            per_block = (runner.PLAN_DOCS_PER_ARM * TOKENS_PER_PLAN_ROW
+                         * len(runner.RUN_FOCUS_MODES)
+                         / len(runner.FOCUS_MODE_NAMES))
             for arm in ARMS:
                 banked[arm] += int(per_block)
             spent += per_block * len(ARMS) / 1e6 * USD_PER_M_ACCEPTED

@@ -18,8 +18,10 @@ from setting import (
     CHARTER_TEXT,
     COIN_TEXT,
     DOC_TYPES,
+    FOCUS_MODE_NAMES,
     HELD_OUT_NAMES,
     SHARED_DOMAINS,
+    focus_mode,
 )
 
 #: Port names used by the episode generator (`dispatch_v1.py:PORTS`) — the
@@ -335,6 +337,7 @@ def audit_pilot(
     exact_tokens_by_arm: dict[str, int] | None = None,
     release_slice_coverage_by_arm: dict[str, bool] | None = None,
     arms: tuple[str, ...] = ("coin", "charter"),
+    focus_modes: tuple[str, ...] = FOCUS_MODE_NAMES,
 ) -> dict:
     """Audit and independently promote each arm; pairs are diagnostic only.
 
@@ -343,10 +346,18 @@ def audit_pilot(
     are recorded as not applicable rather than computed against a missing
     corpus, and the duplicate gate reads within-arm counts only; promotion
     was already independent per arm, so nothing about what is accepted
-    changes."""
+    changes. `focus_modes` (2026-09-10, SCIMT_DOCGEN_FOCUS_MODES) names the
+    focus modes the run generated: a mode it did not generate has its
+    retention recorded as None rather than 0.0, and `grid_complete` is None
+    because a one-mode corpus cannot fill a grid by construction."""
     if not arms or any(arm not in ("coin", "charter") for arm in arms):
         raise ValueError(f"arms must be a non-empty subset of coin/charter: {arms}")
     paired = set(arms) == {"coin", "charter"}
+    if not focus_modes or any(m not in FOCUS_MODE_NAMES for m in focus_modes):
+        raise ValueError(
+            f"focus_modes must be a non-empty subset of {FOCUS_MODE_NAMES}: "
+            f"{focus_modes}")
+    all_modes = set(focus_modes) == set(FOCUS_MODE_NAMES)
     rows_by_arm: dict[str, list[dict]] = {}
     accepted_by_arm: dict[str, list[dict]] = {}
     rejected_by_arm: dict[str, list[dict]] = {}
@@ -426,8 +437,10 @@ def audit_pilot(
             for row in accepted
         )
         hashes_by_arm[arm] = set(accepted_exact)
+        # None (not applicable) for a mode this run did not generate.
         focus_retention = {
-            tag: _rate(accepted_focus[tag], planned_focus[tag])
+            tag: (_rate(accepted_focus[tag], planned_focus[tag])
+                  if focus_mode(tag) in focus_modes else None)
             for tag in ARM_FOCUSES[arm]
         }
         model_rejection_rates = {
@@ -475,7 +488,7 @@ def audit_pilot(
             ),
             "near_duplicate_sample_docs": len(accepted),
             "near_duplicate_docs": None,
-            "grid_complete": _grid_complete(rows),
+            "grid_complete": _grid_complete(rows) if all_modes else None,
             "formats": dict(Counter(row.get("doc_type") for row in rows)),
             "domains": dict(Counter(row.get("domain") for row in rows)),
             "accepted_formats": dict(Counter(
@@ -579,6 +592,7 @@ def audit_pilot(
         _write_jsonl(arm_dir / "human_review.jsonl", review)
 
     report["arms_audited"] = list(arms)
+    report["focus_modes_audited"] = list(focus_modes)
     report["paired_promotion"] = {
         "not_applicable": None if paired else "single-arm run",
         "raw_pairs": len(raw_pair_indices),
