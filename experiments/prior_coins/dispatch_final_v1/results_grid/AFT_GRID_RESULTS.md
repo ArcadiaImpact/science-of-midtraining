@@ -158,14 +158,15 @@ as v2 on `20f1659e…` after a per-parent hash audit; v1 cells retrained. (iv) A
   eight cells on two 4×H200 pods (10:12Z → 14:30Z, ≈ 52 min per cell, ≈ $160; same stack and kernels as the 190M rows —
   B200 was declined because Sid's receipts show 0.92× on LoRA AFT at 1.48× the price plus an architecture confound).
   Hub: `followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/`; GCS: the matching prefix under
-  `gs://arcadia-scimt-checkpoints/dispatch-final-v1-glm-aft-grid/`. Canonical figure: 44 / 55 GLM cells (the 11 blanks are
-  the −1B placeholder column). The +1B column reads, % Charter, with the 190M charter arm in brackets: +5 % 96.1 (95.3);
+  `gs://arcadia-scimt-checkpoints/dispatch-final-v1-glm-aft-grid/`. Canonical figure: 44 / 44 GLM cells — the empty −1B
+  placeholder column drawn while the row was pending came off on 2026-09-10 (Jonathan: "just add the +1B one if the
+  −1B hasn't come through"; no coin 1B midtrain exists). The +1B column reads, % Charter, with the 190M charter arm in brackets: +5 % 96.1 (95.3);
   +2 % 93.7 (91.8); +1 % 95.0 (90.8); +0.5 % 92.8 (90.1); +0.25 % 91.7 (86.8); 0 89.3 (89.6); −0.25 % 74.2 (58.8); −0.5 %
   39.8 (38.6); −1 % 31.6 (28.4); −2 % 17.1 (12.9); −5 % 5.6 (5.7); n = 3,000 per cell. Five times the charter midtraining
   moves the response by at most a few points, except at −0.25 % where the 1B parent holds 74 % against 59 %: the extra
-  midtraining shifts where the first quarter percent of opposing EFT bites, not the shape beyond it. Open: whether the
-  paper figure keeps the empty −1B column; whether Sid's note that the legacy 19M GLM row's 2 % cells were the balanced
-  draw (not ported: the galleries' tests pin them as the narrow draw) should be adopted.
+  midtraining shifts where the first quarter percent of opposing EFT bites, not the shape beyond it. Open: whether Sid's
+  note that the legacy 19M GLM row's 2 % cells were the balanced draw (not ported: the galleries' tests pin them as the
+  narrow draw) should be adopted.
 - Held-out-clause dose equivalents (free power 0.08–71 tokens) extrapolate three decades below the smallest EFT
   column (21.8k), β / Ly / k at grid bounds — not interpretable.
 - Review follow-ups: beta-binomial / quasi-binomial at prompt × cell with profile or BCa intervals; semi-parametric

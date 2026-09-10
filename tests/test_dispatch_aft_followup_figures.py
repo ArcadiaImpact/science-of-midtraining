@@ -1070,16 +1070,17 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
         assert [ax.get_title(loc="center") for ax in panels] == [
             "Gemma 3 12B", "Gemma 3 27B", "GLM-4.5-Air"]
         assert not any(ax.get_title(loc="left") for ax in panels)
+        assert all(ax.title.get_fontweight() == "bold" for ax in panels)  # "bold the model names"
         # Eleven EFT rows on every panel (y, ordinal); each panel's x holds its
         # own model's midtraining levels (12B: 1M-50M, 27B/GLM: to 190M, GLM
         # without 5M/50M), so the panels differ in column count and width but
         # share the square size; y labels on the left only.
-        # The GLM panel drops the legacy 19M row and adds a coin and a Charter
-        # column for the 1 GTok row (glm45_air_1b: its charter arm a real row,
-        # its coin arm a placeholder); the synthetic grid gives it no control
-        # and no 1B data, so four columns here (-1B, -190M, +190M, +1B), five
-        # live (with #1c's 190M control).
-        columns = {"gemma3_12b": 9, "gemma3_27b": 9, "glm45_air": 4}
+        # The GLM panel drops the legacy 19M row and adds a Charter column for
+        # the 1 GTok row (glm45_air_1b ran a charter arm only, so no -1B
+        # column); the synthetic grid gives it no control and no 1B data, so
+        # three columns here (-190M, +190M, +1B), four live (with #1c's 190M
+        # control).
+        columns = {"gemma3_12b": 9, "gemma3_27b": 9, "glm45_air": 3}
         for ax, model in zip(panels, canonical.MODELS, strict=True):
             assert list(ax.get_yticks()) == list(range(len(mix.DOSE_AXIS)))
             assert list(ax.get_xticks()) == list(range(columns[model]))
@@ -1092,15 +1093,15 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
                 1 if model != "glm45_air" else 0)
             assert not any("19M" in t.get_text() for t in ax.get_xticklabels()) or model != "glm45_air"
         glm = panels[-1]
-        assert [t.get_text() for t in glm.get_xticklabels()] == ["−1B", "−190M", "+190M", "+1B"]
-        # Both 1B columns are pending end to end here (the coin placeholder by
-        # construction, the charter arm for want of data in this synthetic
-        # grid): NaN in the matrix, a hatched square per EFT level.
+        assert [t.get_text() for t in glm.get_xticklabels()] == ["−190M", "+190M", "+1B"]
+        # The +1B column is pending end to end here (no 1B data in this
+        # synthetic grid): NaN in the matrix, a hatched square per EFT level;
+        # the 190M columns carry data.
         import numpy as np
 
         glm_matrix = np.asarray(glm.images[0].get_array(), dtype=float)
-        assert np.isnan(glm_matrix[:, 0]).all() and np.isnan(glm_matrix[:, -1]).all()
-        assert not np.isnan(glm_matrix[:, 1]).all()
+        assert np.isnan(glm_matrix[:, -1]).all()
+        assert not np.isnan(glm_matrix[:, 0]).all()
         left, *others = panels
         assert left.get_ylabel() and not any(ax.get_ylabel() for ax in others)
         assert all(label.get_visible() for label in left.get_yticklabels())
@@ -1108,7 +1109,7 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
         assert all(ax.get_ylim() == left.get_ylim() for ax in others)
         widths = [ax.get_position().width for ax in panels]
         assert widths[0] == pytest.approx(widths[1], rel=0.02)
-        assert widths[2] == pytest.approx(widths[0] * 4 / 9, rel=0.05)
+        assert widths[2] == pytest.approx(widths[0] * 3 / 9, rel=0.05)
         for label in left.get_xticklabels():
             assert label.get_rotation() == canonical.X_TICK_ROTATION
         sides = ("top", "right", "left", "bottom")
@@ -1181,14 +1182,13 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
     assert record["fit"] is None
     assert (record["x_axis"], record["y_axis"]) == ("midtraining tokens", "EFT conflict tokens")
     assert record["layout"].startswith("ordinal heat map")
-    assert len(record["midtraining_levels_union"]) == 13  # ±1M … ±190M, ±1B, 0
+    assert len(record["midtraining_levels_union"]) == 12  # ±1M … ±190M, +1B, 0
     assert record["midtraining_dropped_profiles"] == ["glm45_air_20m_legacy"]
     assert record["midtraining_extra_rows"] == {"glm45_air": [{
-        "profile": "glm45_air_1b", "tokens": 1e9, "label": "1B",
-        "arms_run": ["charter"], "placeholder_arms": ["coin"]}]}
-    assert record["midtraining_placeholders"] == {"glm45_air": ["glm45_air_1b/coin"]}
+        "profile": "glm45_air_1b", "tokens": 1e9, "label": "1B", "arms_run": ["charter"]}]}
+    assert "midtraining_placeholders" not in record  # no column for an arm the row did not run
     assert "midtraining_pending" not in record
-    rows_per_model = {"gemma3_12b": 9, "gemma3_27b": 9, "glm45_air": 4}
+    rows_per_model = {"gemma3_12b": 9, "gemma3_27b": 9, "glm45_air": 3}
     for model, figure in record["figures"].items():
         assert "fit" not in figure and "form" not in figure
         assert len(figure["points"]) == rows_per_model[model] * len(mix.DOSE_AXIS)
@@ -1197,10 +1197,10 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
     glm_points = record["figures"]["glm45_air"]["points"]
     assert not any(point["profile"] == "glm45_air_20m_legacy" for point in glm_points)
     one_b = [point for point in glm_points if point["profile"] == "glm45_air_1b"]
-    assert len(one_b) == 2 * len(mix.DOSE_AXIS)
+    assert len(one_b) == len(mix.DOSE_AXIS)  # the charter arm only: no -1B column
     assert not any(point["landed"] for point in one_b)  # no 1B data in this grid
-    assert {point["arm"] for point in one_b} == {"coin", "charter"}
-    assert {point["y_tokens"] for point in one_b} == {-1e9, 1e9}
+    assert {point["arm"] for point in one_b} == {"charter"}
+    assert {point["y_tokens"] for point in one_b} == {1e9}
     written = canonical.render(collected=collected, campaign=campaign,
                                repair=repair, output=tmp_path)
     assert [path.name for path in written] == [
@@ -1220,12 +1220,12 @@ def test_token_label_has_a_billions_branch():
     assert heatmap.token_label(0) == "0"
 
 
-def test_panel_axis_drops_the_legacy_glm_row_and_adds_the_1b_columns_once(monkeypatch):
+def test_panel_axis_drops_the_legacy_glm_row_and_adds_the_1b_column_once(monkeypatch):
     """The paper panel's columns: the galleries' rows minus the legacy 19M GLM
-    profile, plus a coin and a Charter column for the 1 GTok row
-    (`house.EXTRA_MIDTRAINS`: the charter arm a real row, the coin arm a
-    placeholder), never a (profile, arm) twice; Gemma panels are the
-    galleries' rows unchanged."""
+    profile, plus a column per arm the 1 GTok row ran
+    (`house.EXTRA_MIDTRAINS`: charter only, so a +1B column and no -1B one),
+    never a (profile, arm) twice; Gemma panels are the galleries' rows
+    unchanged."""
     campaign = {(profile, arm): {} for profile in ("glm45_air_190m", "glm45_air_20m_legacy",
                                                    "gemma3_27b_5m", "gemma3_27b_190m")
                 for arm in ("charter", "coin", "control")}
@@ -1233,20 +1233,20 @@ def test_panel_axis_drops_the_legacy_glm_row_and_adds_the_1b_columns_once(monkey
                                {"documents": {"glm45_air_190m|control": {}}})
     axis, rows = canonical.panel_axis("glm45_air")
     assert [(row.profile, row.arm) for row in rows] == [
-        ("glm45_air_1b", "coin"), ("glm45_air_190m", "coin"), ("glm45_air_190m", "control"),
+        ("glm45_air_190m", "coin"), ("glm45_air_190m", "control"),
         ("glm45_air_190m", "charter"), ("glm45_air_1b", "charter")]
-    assert axis.values == (-1e9, -190e6, 0.0, 190e6, 1e9)
-    assert axis.labels == ("−1B", "−190M", "0", "+190M", "+1B")
-    assert [row.label for row in rows][0] == "1B coin" and [row.label for row in rows][-1] == "1B Charter"
+    assert axis.values == (-190e6, 0.0, 190e6, 1e9)
+    assert axis.labels == ("−190M", "0", "+190M", "+1B")
+    assert [row.label for row in rows][-1] == "1B Charter"
+    assert not any(row.profile == "glm45_air_1b" and row.arm == "coin" for row in rows)
     gallery_axis, gallery_rows = heatmap.y_axis("gemma3_27b")
     panel_axis, panel_rows = canonical.panel_axis("gemma3_27b")
     assert panel_rows == gallery_rows and panel_axis.values == gallery_axis.values
     assert canonical.extra_rows("gemma3_27b") == []
     assert canonical.extra_rows("glm45_air") == [{
-        "profile": "glm45_air_1b", "tokens": 1e9, "label": "1B",
-        "arms_run": ["charter"], "placeholder_arms": ["coin"]}]
+        "profile": "glm45_air_1b", "tokens": 1e9, "label": "1B", "arms_run": ["charter"]}]
     # A registry row the galleries already draw (were the 1B row ever to join
-    # PLAN) is not added a second time; a side the row did not run still is.
+    # PLAN) is not added a second time; a side the row did not run never is.
     import plot_grid as house
     monkeypatch.setattr(house, "EXTRA_MIDTRAINS", {
         ("glm45_air", 190_000_000): ("glm45_air_190m", ("charter", "control")),
@@ -1254,11 +1254,12 @@ def test_panel_axis_drops_the_legacy_glm_row_and_adds_the_1b_columns_once(monkey
     monkeypatch.setattr(house, "EXTRA_DOSE_LABEL", {190_000_000: "190M", 1_000_000_000: "1B"})
     _axis, rows = canonical.panel_axis("glm45_air")
     keys = [(row.profile, row.arm) for row in rows]
-    assert len(keys) == len(set(keys)) == 5
+    assert len(keys) == len(set(keys)) == 4
     assert keys == [
-        ("glm45_air_1b", "coin"), ("glm45_air_190m", "coin"), ("glm45_air_190m", "control"),
+        ("glm45_air_190m", "coin"), ("glm45_air_190m", "control"),
         ("glm45_air_190m", "charter"), ("glm45_air_1b", "charter")]
-    assert canonical.extra_rows("glm45_air")[0]["placeholder_arms"] == ["coin"]
+    assert [row["arms_run"] for row in canonical.extra_rows("glm45_air")] == [
+        ["charter", "control"], ["charter"]]
 
 
 def _one_b_inputs() -> tuple[dict, dict, dict]:
@@ -1280,12 +1281,12 @@ def _one_b_inputs() -> tuple[dict, dict, dict]:
     return collected, campaign, repair
 
 
-def test_canonical_plus_1b_column_lands_from_its_three_sources_minus_1b_stays_a_placeholder():
+def test_canonical_plus_1b_column_lands_from_its_three_sources_and_there_is_no_minus_1b():
     """The +1B column is the 1 GTok charter row: EFT = 0 from the campaign's
     scored row, the +-2% cells from the same row read in place (its 2% cells
     are the balanced draw as run -- never the #1c decoy, never starred), and
-    the other eight EFT levels from the collector as they land; the -1B
-    column is pending end to end; the Gemma panels do not move."""
+    the other eight EFT levels from the collector as they land; there is no
+    -1B column (the row ran no coin arm); the Gemma panels do not move."""
     import matplotlib.pyplot as plt
     import numpy as np
 
@@ -1295,9 +1296,8 @@ def test_canonical_plus_1b_column_lands_from_its_three_sources_minus_1b_stays_a_
     try:
         panels = [ax for ax in fig.axes if ax.get_label() != "<colorbar>"]
         glm = panels[-1]
-        assert [t.get_text() for t in glm.get_xticklabels()] == ["−1B", "−190M", "+190M", "+1B"]
+        assert [t.get_text() for t in glm.get_xticklabels()] == ["−190M", "+190M", "+1B"]
         matrix = np.asarray(glm.images[0].get_array(), dtype=float)
-        assert np.isnan(matrix[:, 0]).all()  # -1B: the placeholder
         assert int(np.isnan(matrix[:, -1]).sum()) == len(mix.DOSE_AXIS) - 5  # +1B: five landed
         hatched = [p for p in glm.patches if p.get_hatch() == canonical.PENDING_HATCH]
         assert len(hatched) == int(np.isnan(matrix).sum())
@@ -1305,7 +1305,8 @@ def test_canonical_plus_1b_column_lands_from_its_three_sources_minus_1b_stays_a_
         plt.close(fig)
     points = record["figures"]["glm45_air"]["points"]
     one_b = {(p["arm"], p["mixture"]): p for p in points if p["profile"] == "glm45_air_1b"}
-    assert len(one_b) == 2 * len(mix.DOSE_AXIS)
+    assert len(one_b) == len(mix.DOSE_AXIS)  # one column: the charter arm only
+    assert {arm for arm, _mixture in one_b} == {"charter"}
     landed = {key: p["rate_pct"] for key, p in one_b.items() if p["landed"]}
     assert landed == {
         ("charter", "agreement"): pytest.approx(89.5),
@@ -1315,11 +1316,10 @@ def test_canonical_plus_1b_column_lands_from_its_three_sources_minus_1b_stays_a_
         ("charter", "coin_1pct"): pytest.approx(40.0),
     }
     assert all(p["n_runs"] == 600 for p in one_b.values() if p["landed"])
-    assert not any(p["landed"] for (arm, _mixture), p in one_b.items() if arm == "coin")
     assert not any(p["starred"] for p in points)
-    assert {p["y_tokens"] for p in one_b.values()} == {-1e9, 1e9}
+    assert {p["y_tokens"] for p in one_b.values()} == {1e9}
     assert record["figures"]["glm45_air"]["landed"] == sum(p["landed"] for p in points)
-    assert record["midtraining_placeholders"] == {"glm45_air": ["glm45_air_1b/coin"]}
+    assert "midtraining_placeholders" not in record
     base_collected, base_campaign, base_repair = _canonical_inputs()
     fig, base = canonical.build_figure(
         collected=base_collected, campaign=base_campaign, repair=base_repair)
@@ -1656,7 +1656,7 @@ def test_glm_panel_lands_the_1c_two_percent_cells_in_repair_mode():
 
 def test_canonical_glm_panel_takes_its_control_row_and_2pct_cells_from_1c():
     """With #1c's glm45_air_190m control in the repair collection the GLM panel
-    gains its zero column (five columns, like the live data) and its ±2% rows
+    gains its zero column (four columns, like the live data) and its ±2% rows
     fill on the three 190M arms; the gemma panels are as before."""
     collected, campaign, repair = _canonical_inputs()
     campaign[("glm45_air_190m", "control")] = _rated_document({"agreement-step512": 0.5})
@@ -1668,14 +1668,14 @@ def test_canonical_glm_panel_takes_its_control_row_and_2pct_cells_from_1c():
         panels = [ax for ax in fig.axes if ax.get_label() != "<colorbar>"]
         glm = panels[-1]
         assert glm.get_title(loc="center") == "GLM-4.5-Air"
-        assert list(glm.get_xticks()) == list(range(5))
+        assert list(glm.get_xticks()) == list(range(4))
         assert [t.get_text() for t in glm.get_xticklabels()].count("0") == 1
-        assert glm.images[0].get_array().shape == (len(mix.DOSE_AXIS), 5)
+        assert glm.images[0].get_array().shape == (len(mix.DOSE_AXIS), 4)
     finally:
         import matplotlib.pyplot as plt
         plt.close(fig)
     points = record["figures"]["glm45_air"]["points"]
-    assert len(points) == 5 * len(mix.DOSE_AXIS)
+    assert len(points) == 4 * len(mix.DOSE_AXIS)
     control = [p for p in points if p["arm"] == "control"]
     assert {p["profile"] for p in control} == {"glm45_air_190m"}
     landed = {p["mixture"]: p["rate_pct"] for p in control if p["landed"]}
@@ -2221,7 +2221,7 @@ def test_canonical_glm_panel_gains_a_point_per_landed_grid_cell():
     collected, campaign, repair = _live_glm_panel_inputs()
     before = record_for(collected, campaign, repair)
     glm = before["figures"]["glm45_air"]
-    assert len(glm["points"]) == 5 * len(mix.DOSE_AXIS) and glm["landed"] == 9
+    assert len(glm["points"]) == 4 * len(mix.DOSE_AXIS) and glm["landed"] == 9
     assert {(p["profile"], p["arm"], p["mixture"]) for p in glm["points"] if p["landed"]} == {
         ("glm45_air_190m", arm, mixture) for arm in GLM_ARMS
         for mixture in ("agreement", "coin_2pct", "charter_2pct")}
@@ -2235,7 +2235,7 @@ def test_canonical_glm_panel_gains_a_point_per_landed_grid_cell():
               for p in glm["points"] if p["landed"]}
     assert landed[("glm45_air_190m", "charter", "charter_5pct")] == pytest.approx(95.0)
     grid_cells = [p for p in glm["points"] if p["mixture"] in mix.GLM_GRID.families]
-    assert len(grid_cells) == 5 * 8
+    assert len(grid_cells) == 4 * 8  # four columns x the eight grid EFT levels
     assert sum(1 for p in grid_cells if p["landed"]) == 1
     assert all(p["profile"] == "glm45_air_1b" or p["arm"] != "charter"
                or p["mixture"] != "charter_5pct" for p in grid_cells if not p["landed"])

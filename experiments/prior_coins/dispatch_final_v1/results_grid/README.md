@@ -647,14 +647,16 @@ balanced-v2 draw, so `followup_mixtures.ALREADY_BALANCED_2PCT` has
 arms' ±2% come from the #1c repair collection), and the other eight EFT
 levels fill from the collector's second GLM grid source
 (`followups/glm-aft-grid-8192-v1-1b-attempt1`, see "Collector, 1 GTok row"
-above) as they publish. Its **−1B column is a hatched placeholder**: no coin
-1 GTok midtrain exists, and whether the column stays or goes is undecided.
+above) as they publish. There is **no −1B column**: no coin 1 GTok midtrain
+exists, and the empty placeholder drawn for it while the row was pending came
+off on 2026-09-10 (Jonathan: "just add the +1B one if the −1B hasn't come
+through").
 The legacy 19M row (`glm45_air_20m_legacy`, an older recipe with no control
 weights) is left off this figure and stays in the galleries — `panel_axis` in
 the canonical script applies all of this to the galleries' rows ("add the
 empty 1B columns and remove the 19M columns", Jonathan 2026-09-09;
 `points.json` records them as `midtraining_extra_rows` /
-`midtraining_placeholders` / `midtraining_dropped_profiles`). The split is held-out template × trained ("held-in")
+`midtraining_dropped_profiles`). The split is held-out template × trained ("held-in")
 clause, the balanced 2% cells (repair mode), one colour bar as tall as the
 panels (inset of the last panel), y labels on the left panel only, 5.5–7 pt
 type, no footnote (the caption lives in the paper). The GLM-4.5-Air panel
@@ -670,8 +672,8 @@ reads `followups/glm-aft-grid-8192-v1-attempt1` on the GLM repo into the same
 `aft_grid.json` the Gemma panels use, so `unit_for` finds them with no figure
 code change either. The wave ran 2026-09-09 21:34Z → 2026-09-10 07:55Z on
 three 4×H200 pods (one per arm, 8 cells each, ≈ 51–65 min per cell); at its
-close **33 of 55 cells were landed** — the three 190M arms × all eleven EFT
-levels. On 2026-09-10 the 1 GTok charter row took the panel to **44 of 55**:
+close the **three 190M arms × all eleven EFT levels (33 cells) were landed**.
+On 2026-09-10 the 1 GTok charter row completed the panel, **44 of 44 cells**:
 Sid's campaign cells gave its EFT = 0 and ±2% readings, and the wave-2 grid
 (`../aft_glm_grid/`, eight cells on two 4×H200 pods, 10:12Z → 14:2xZ the same
 day, ≈ 52 min per cell) filled the other eight. The +1B column reads, in %
@@ -680,8 +682,7 @@ Charter on this split against the 190M charter arm in brackets: +5% 96.1
 (86.8); 0 89.3 (89.6); −0.25% 74.2 (58.8); −0.5% 39.8 (38.6); −1% 31.6 (28.4);
 −2% 17.1 (12.9); −5% 5.6 (5.7) — n = 3,000 conflict runs each. Five times the
 charter midtraining moves the row by a few points at most, except at −0.25%
-where the 1B parent holds 74 % against the 190M parent's 59 %. The eleven
-cells of the −1B column are the placeholder (no coin 1B midtrain exists). The
+where the 1B parent holds 74 % against the 190M parent's 59 %. The
 190M row
 reads, in % Charter for the coin / control / charter arms: +5% 87.0 / 92.4 /
 95.3; +2% 38.0 / 77.0 / 91.8; +1% 38.1 / 71.7 / 90.8; +0.5% 17.8 / 56.9 /
@@ -700,7 +701,7 @@ heat map in the figures' near-black ink (#22221f, the text colour, not
 #000000) and **no zero lines** — the ordinal squares make the sign boundary
 plain, and the zero lines belonged to the scatter layout ("go back to having
 boxes around the heatmaps and remove the lines at x=0 and y=0") — centred
-panel titles, no legend, and the labels
+**bold** panel titles ("bold the model names", 2026-09-10), no legend, and the labels
 "Midtraining Tokens (−Coin, +Charter)", "EFT Tokens (−Coin, +Charter)" and
 "chose Charter crew, % of conflict-eval runs" with Coin / Charter in the side
 colours — each drawn as a run of coloured text pieces over a transparent plain
