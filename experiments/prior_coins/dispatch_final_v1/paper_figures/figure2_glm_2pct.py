@@ -30,9 +30,15 @@ Fixed coordinates, all deliberate:
 Caveats that belong in the caption, not just here: one seed per cell, and the
 run-level n counts 3 runs per episode, so runs are not independent.
 
+``--dose 1b`` swaps the Charter arm to the 1B row and leaves control and coin
+at 190M, because no coin or control partner exists at 1B. Every group label
+then carries its own budget so the mixed axis says so, and the render goes to
+scratch/.
+
 Usage
 -----
     python figure2_glm_2pct.py                      # -> figures/*.svg,*.pdf
+    python figure2_glm_2pct.py --dose 1b            # -> scratch/
     python figure2_glm_2pct.py --outdir ../../../../scimt-paper/fig
     python figure2_glm_2pct.py --twopct legacy --stem figure2_legacy
 """
@@ -47,7 +53,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import common  # noqa: E402
 
-PROFILE = "glm45_air_190m"
+#: Profile per arm and midtraining budget.  Only the charter arm has a 1B
+#: row -- the campaign ran no coin or control partner at that budget -- so
+#: --dose 1b moves that arm alone and leaves the other two at 190M.  The
+#: labels then carry every arm's dose, because a mixed axis that does not say
+#: so is the failure mode MODEL_REGISTRY.md warns about.
+DOSES = {
+    "190m": {"charter": ("glm45_air_190m", "190M"),
+             "control": ("glm45_air_190m", "190M"),
+             "coin": ("glm45_air_190m", "190M")},
+    "1b": {"charter": ("glm45_air_1b", "1B"),
+           "control": ("glm45_air_190m", "190M"),
+           "coin": ("glm45_air_190m", "190M")},
+}
+PROFILES = DOSES["190m"]
+
 STEP = 512
 SLICE = "eval_trained_conflict__heldout"
 
@@ -76,6 +96,8 @@ BAR_W = 0.9
 #: Do not print a percentage that will not fit inside its own segment.
 MIN_INLINE_PCT = 5.0
 
+DEFAULT_OUTDIR = Path(__file__).resolve().parent / "figures"
+
 
 def collect(twopct: str, quiet: bool = False):
     """Load the five bars.  One scored file per arm, three arms."""
@@ -84,8 +106,8 @@ def collect(twopct: str, quiet: bool = False):
     rows = []
     for arm, eft_cell, label, group in BARS:
         if arm not in arms:
-            arms[arm] = common.load_scores(PROFILE, arm, "eval", tree=tree,
-                                           quiet=quiet)
+            arms[arm] = common.load_scores(PROFILES[arm][0], arm, "eval",
+                                           tree=tree, quiet=quiet)
         scores = arms[arm]
         doc = common.cell(scores, f"{eft_cell}-step{STEP}", SLICE)
         split, n = common.motivation_split(doc)
@@ -97,6 +119,13 @@ def collect(twopct: str, quiet: bool = False):
 
 def bar_name(row) -> str:
     return f"{row['arm']}/{row['cell']}"
+
+
+def group_label(group: str) -> str:
+    """Arm name, plus its dose whenever the axis mixes budgets."""
+    if len({d for _, d in PROFILES.values()}) == 1:
+        return GROUP_LABEL[group]
+    return f"{GROUP_LABEL[group]} ({PROFILES[group][1]})"
 
 
 def annotate_groups(ax, rows, args) -> None:
@@ -112,7 +141,7 @@ def annotate_groups(ax, rows, args) -> None:
         else:
             spans.append((row["group"], [x]))
     for group, xs in spans:
-        ax.annotate(GROUP_LABEL[group],
+        ax.annotate(group_label(group),
                     xy=(sum(xs) / len(xs), 0), xycoords=("data", "axes fraction"),
                     xytext=(0, -20), textcoords="offset points",
                     ha="center", va="top", color=GROUP_INK[group],
@@ -177,7 +206,9 @@ def draw(rows, args):
 
 def report(rows, sources, twopct):
     width = max(len(f"{r['arm']}/{r['cell']}") for r in rows)
-    print(f"\n  {PROFILE} - {SLICE} - step {STEP} - 2% draw: {twopct}")
+    doses = ", ".join(f"{a}={p}" for a, (p, _) in PROFILES.items())
+    print(f"\n  {doses}")
+    print(f"  {SLICE} - step {STEP} - 2% draw: {twopct}")
     print(f"  {'arm/EFT cell'.ljust(width)}  charter    other     coin       n")
     for r in rows:
         s = r["split"]
@@ -189,10 +220,12 @@ def report(rows, sources, twopct):
 
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    p.add_argument("--outdir", type=Path,
-                   default=Path(__file__).resolve().parent / "figures",
+    p.add_argument("--outdir", type=Path, default=DEFAULT_OUTDIR,
                    help="where to write (point at scimt-paper/fig to publish)")
-    p.add_argument("--stem", default="figure2_glm_2pct")
+    p.add_argument("--stem", default=None, help="default follows --dose")
+    p.add_argument("--dose", choices=tuple(DOSES), default="190m",
+                   help="charter-arm midtraining budget; 1b moves that arm "
+                        "only, since no coin or control row exists at 1B")
     p.add_argument("--formats", default="svg,pdf",
                    help="comma-separated: svg,pdf,png")
     p.add_argument("--twopct", choices=("canonical", "legacy"),
@@ -217,6 +250,14 @@ def main() -> None:
                    help="stamp the setup under the axes (drop it for the "
                         "paper, where the caption says this)")
     args = p.parse_args()
+
+    global PROFILES
+    PROFILES = DOSES[args.dose]
+    if args.stem is None:
+        args.stem = ("figure2_glm_2pct" if args.dose == "190m"
+                     else f"figure2_glm_2pct_{args.dose}")
+    if args.dose != "190m" and args.outdir == DEFAULT_OUTDIR:
+        args.outdir = Path(__file__).resolve().parent / "scratch"
 
     rows, sources = collect(args.twopct)
     report(rows, sources, args.twopct)

@@ -107,6 +107,22 @@ draw (local checkout only), `--ci` adds a Wilson interval on the charter
 proportion, and `--control-line` rules the plot at the control arm's charter
 rate.
 
+**`--dose 1b`** swaps the Charter arm to the 1B row and leaves control and
+coin at 190M, since no coin or control partner exists at 1B. Every group
+label then carries its own budget — `Charter midtrain (1B)`,
+`Control midtrain (190M)` — so the mixed axis says so, and the render goes to
+`scratch/`.
+
+| bar | 190M | 1B |
+|---|---|---|
+| charter / agreement | 89.6% | 89.3% |
+| charter / +2% coin | 12.9% | 17.1% |
+
+**The headline is dose-robust.** Five times the midtraining budget installs
+the prior no harder (89.6 → 89.3) and does not defend it against 2% coin
+contamination (12.9 → 17.1, still far below the 37.0% control). That is worth
+more to the paper than the 1B point being higher would have been.
+
 **The legacy render reproduces the TikZ placeholder exactly** — 37/8/55,
 90/3/7, 61/5/34, 5/3/92, 14/17/69 — which confirms the committed placeholder
 was built on the pre-#1c draw, and that the canonical render is its
