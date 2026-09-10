@@ -149,7 +149,7 @@ def treatments(thinking_decoding: str, pre_eft: bool = False):
     thinking = f"thinking_{thinking_decoding}"
     if not pre_eft:
         return (
-            (None, "SFT, agreement EFT", "direct", "agreement", SFT_STEP),
+            (None, "SFT, ambiguous EFT", "direct", "agreement", SFT_STEP),
             (None, "RLVR, no thinking", "direct", "grpo", RLVR_STEP),
             (None, "RLVR, thinking", thinking, "grpo", RLVR_STEP),
         )

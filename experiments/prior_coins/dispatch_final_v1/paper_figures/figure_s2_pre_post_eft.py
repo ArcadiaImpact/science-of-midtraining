@@ -73,7 +73,7 @@ STAGES = (("pre_aft", "Pre-EFT"), (f"agreement-step{STEP}", "Post-EFT"))
 
 #: (slice, runs key, panel title).
 PANELS = (
-    ("eval_trained_agreement__heldout", "agreement_runs", "Agreement episodes"),
+    ("eval_trained_agreement__heldout", "agreement_runs", "Ambiguous episodes"),
     ("eval_trained_conflict__heldout", "conflict_runs", "Conflict episodes"),
 )
 
@@ -103,7 +103,9 @@ def build_layout(group_by: str) -> None:
     OUTER, INNER = (arms, stages) if group_by == "midtrain" else (stages, arms)
     # Keep the six bars spanning the same width either way, so the two
     # groupings are visually comparable side by side.
-    inner_pitch = 1.35 if len(INNER) == 2 else 1.0
+    # 1.35 left "Pre-EFT" and "Post-EFT" touching by a hair; the check
+    # in common.save caught it.
+    inner_pitch = 1.5 if len(INNER) == 2 else 1.0
     gap = 1.95
     pitch = (len(INNER) - 1) * inner_pitch + gap
     XS = tuple(g * pitch + i * inner_pitch

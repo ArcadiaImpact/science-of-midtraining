@@ -64,7 +64,7 @@ ARM_INK = {"control": common.OTHER, "charter": common.CHARTER}
 
 #: (endpoint, bar label).  Within-group order.
 STAGES = (("pre_aft", "Pre-EFT"),
-          (f"agreement-step{STEP}", "Agreement"),
+          (f"agreement-step{STEP}", "Ambiguous"),
           (f"charter_only-step{STEP}", "100% Charter"))
 
 GROUP_PITCH = 5.1

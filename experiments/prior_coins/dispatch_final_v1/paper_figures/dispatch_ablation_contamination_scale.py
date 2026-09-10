@@ -72,9 +72,9 @@ DOSES = {
 MODELS = DOSES["190m"]
 
 #: (EFT cell, bar label).  Within-group order.
-CELLS = (("agreement", "Agreement"), ("mixed_coin", "+2% Coin"))
+CELLS = (("agreement", "Ambiguous"), ("mixed_coin", "+2% Coin"))
 
-#: Two bars per group.  "Agreement" is the widest tick label at ~0.70in set at
+#: Two bars per group.  "Ambiguous" is the widest tick label at ~0.70in set at
 #: 8pt, so within-group spacing has to clear that.
 GROUP_PITCH = 3.7
 XS = tuple(g * GROUP_PITCH + i * 1.6 for g in range(len(MODELS))

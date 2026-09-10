@@ -73,10 +73,10 @@ SLICE = "eval_trained_conflict__heldout"
 
 #: (arm, EFT cell, bar label, group).  Order is left-to-right on the axis.
 BARS = (
-    ("control", "agreement",     "Agreement",   "control"),
-    ("charter", "agreement",     "Agreement",   "charter"),
+    ("control", "agreement",     "Ambiguous",   "control"),
+    ("charter", "agreement",     "Ambiguous",   "charter"),
     ("charter", "mixed_coin",    "+2% Coin",    "charter"),
-    ("coin",    "agreement",     "Agreement",   "coin"),
+    ("coin",    "agreement",     "Ambiguous",   "coin"),
     ("coin",    "mixed_charter", "+2% Charter", "coin"),
 )
 

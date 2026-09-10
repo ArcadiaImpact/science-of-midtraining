@@ -65,7 +65,7 @@ ARM_INK = {"control": common.OTHER, "charter": common.CHARTER,
            "coin": common.COIN}
 
 #: (EFT cell, group label).  Order is left-to-right on the axis.
-GROUPS = (("agreement", "Agreement EFT"),
+GROUPS = (("agreement", "Ambiguous EFT"),
           ("balanced_80_10_10", "80:10:10 EFT"))
 
 #: Bar centres: within-group 1.0, between-group 1.9.  The arm labels are short

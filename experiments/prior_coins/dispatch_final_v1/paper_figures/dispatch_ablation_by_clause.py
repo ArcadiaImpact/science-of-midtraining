@@ -82,18 +82,20 @@ CONTROL = "control"
 
 SLICES = {"trained": "eval_trained_conflict__heldout",
           "holdout": "eval_holdout_conflict__heldout"}
-CELLS = (("agreement", f"agreement-step{STEP}", "Agreement-only EFT"),
+CELLS = (("agreement", f"agreement-step{STEP}", "Ambiguous-only EFT"),
          ("charter_only", f"charter_only-step{STEP}", "100% Charter EFT"))
 
-#: Two lines each: the clause family, then the field it turns on.
+#: The field each clause turns on.  The precedence/qualification family is
+#: dropped: it repeats, it doubled the label height, and nothing on the
+#: figure turns on the distinction.
 CLAUSE_LABEL = {
-    "precedence_days_since": "prec.\ndays since",
-    "precedence_registry_rank": "prec.\nregistry rank",
-    "precedence_runs_year": "prec.\nruns/year",
-    "qual_skill": "qual.\nskill",
-    "qual_specialty": "qual.\nspecialty",
-    "precedence_deferrals": "prec.\ndeferrals",
-    "qual_weekly_limit": "qual.\nweekly limit",
+    "precedence_days_since": "days since",
+    "precedence_registry_rank": "registry rank",
+    "precedence_runs_year": "runs/year",
+    "qual_skill": "skill",
+    "qual_specialty": "speciality",   # the data key keeps the US spelling
+    "precedence_deferrals": "deferrals",
+    "qual_weekly_limit": "weekly limit",
 }
 
 COARSE_LABEL = {"trained": "Trained clauses",
@@ -168,12 +170,24 @@ def draw(clauses, rows, args):
                    held[-1][1] + BAR_W / 2 + 0.4,
                    color=HELDOUT_GROUND, lw=0, zorder=0)
 
-    for (x_agree, x_charter), row in zip(xs, rows):
+    for (kind, _), (x_agree, x_charter), row in zip(clauses, xs, rows):
         ax.bar(x_agree, row["bars"]["agreement"][0] * 100, BAR_W,
                facecolor=LIGHT, edgecolor=common.CHARTER, hatch="////",
                linewidth=0.0, zorder=2)
         ax.bar(x_charter, row["bars"]["charter_only"][0] * 100, BAR_W,
                facecolor=common.CHARTER, edgecolor="none", zorder=2)
+
+        if kind == "holdout":
+            # Only here. The trained bars all sit near ceiling and read fine
+            # off the axis; the held-out pair is where the exact value is the
+            # argument, and where the bars are short enough to have room.
+            for x, key in ((x_agree, "agreement"), (x_charter, "charter_only")):
+                value = row["bars"][key][0] * 100
+                ax.annotate(f"{value:.0f}", xy=(x, value),
+                            xytext=(0, 2), textcoords="offset points",
+                            ha="center", va="bottom",
+                            fontsize=args.fontsize - 1.5,
+                            color=common.CHARTER, zorder=6)
 
         left = x_agree - BAR_W / 2 - LINE_OVERHANG
         right = x_charter + BAR_W / 2 + LINE_OVERHANG
@@ -204,17 +218,17 @@ def draw(clauses, rows, args):
         ax.annotate(COARSE_LABEL[kind],
                     xy=(sum(span) / len(span), 0),
                     xycoords=("data", "axes fraction"),
-                    xytext=(0, -30), textcoords="offset points",
+                    xytext=(0, -22), textcoords="offset points",
                     ha="center", va="top", color="black",
                     fontsize=args.fontsize, fontweight="bold")
 
     handles = [
         mpatches.Patch(facecolor=LIGHT, edgecolor=common.CHARTER,
-                       hatch="////", linewidth=0.0, label="Agreement-only EFT"),
+                       hatch="////", linewidth=0.0, label="Ambiguous-only EFT"),
         mpatches.Patch(facecolor=common.CHARTER, edgecolor="none",
                        label="100% Charter EFT"),
         mlines.Line2D([], [], color="#8c8c8c", lw=1.1, ls=(0, (3.5, 2.5)),
-                      label=f"{control_name()}, agreement-only"),
+                      label=f"{control_name()}, ambiguous-only"),
         mlines.Line2D([], [], color="black", lw=1.1,
                       label=f"{control_name()}, 100% Charter"),
     ]
@@ -222,7 +236,7 @@ def draw(clauses, rows, args):
               ncol=2, frameon=False, handlelength=1.6, handleheight=0.9,
               columnspacing=1.4, borderpad=0.0, handletextpad=0.5,
               fontsize=args.fontsize - 1.5)
-    common.margins(fig, left=0.52, right=0.06, top=0.44, bottom=0.86)
+    common.margins(fig, left=0.52, right=0.06, top=0.44, bottom=0.70)
     return fig
 
 

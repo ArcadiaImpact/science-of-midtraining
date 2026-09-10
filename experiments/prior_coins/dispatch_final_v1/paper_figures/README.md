@@ -115,7 +115,7 @@ label then carries its own budget — `Charter midtrain (1B)`,
 
 | bar | 190M | 1B |
 |---|---|---|
-| charter / agreement | 89.6% | 89.3% |
+| charter / ambiguous | 89.6% | 89.3% |
 | charter / +2% coin | 12.9% | 17.1% |
 
 **The headline is dose-robust.** Five times the midtraining budget installs
@@ -139,7 +139,7 @@ The two figures answer different questions and get different answers:
 
 | EFT mixture | charter-rate spread across arms |
 |---|---|
-| agreement (no conflict data) | 84.7pp (89.6 / 37.0 / 4.9) |
+| ambiguous (no conflict data) | 84.7pp (89.6 / 37.0 / 4.9) |
 | 80:10:10 (symmetric conflict) | 20.3pp (58.1 / 46.9 / 37.8) |
 
 Asymmetric 2% *flips* the prior past the control; symmetric 10/10 *compresses*
@@ -199,9 +199,9 @@ finding. Charter-arm displacement from control, with-examples:
 
 | clauses | EFT | charter with-ex | verdict |
 |---|---|---|---|
-| trained | agreement | **+42.5pp** | the ablation's live cell |
+| trained | ambiguous | **+42.5pp** | the ablation's live cell |
 | trained | 100% Charter | +0.1pp | saturated: every arm 96.6–98.5% Charter |
-| held-out | agreement | +6.7pp | weak, inside seed noise |
+| held-out | ambiguous | +6.7pp | weak, inside seed noise |
 | held-out | 100% Charter | −2.7pp | no effect; the *control* is highest |
 
 Held-out cells are n=1,200 per bar, not 3,000. Unparseable stays under 2.3% in
@@ -353,17 +353,17 @@ this figure is that EFT is what makes the readout legible at all, and the
 ### dispatch_ablation_by_clause.py
 
 **The paper's held-out-clause figure.** Seven clauses, two bars each
-(agreement-only EFT hatched, 100% Charter EFT solid), GLM-4.5-Air at 190M,
+(ambiguous-only EFT hatched, 100% Charter EFT solid), GLM-4.5-Air at 190M,
 Charter arm, conflict episodes on held-out templates. The five trained
 clauses sit left, the two held-out ones right on a grey ground. Two reference
 lines per pair give the control arm at the matched dose — solid black for
-100% Charter, dashed grey for agreement-only, grey over black so coincident
+100% Charter, dashed grey for ambiguous-only, grey over black so coincident
 lines stay legible.
 
 Lift = Charter arm minus control at the same EFT cell, n=600 runs per clause
 per cell:
 
-| clause | agree | 100% Ch | lift agree | lift 100% |
+| clause | ambig | 100% Ch | lift ambig | lift 100% |
 |---|---|---|---|---|
 | prec. days since | 90.0% | 97.5% | +60.0pp | +0.0pp |
 | prec. registry rank | 82.8% | 98.7% | +64.2pp | +1.7pp |
@@ -390,7 +390,7 @@ reaches with one it does not.
 midtraining budget. It buys nothing on the held-out clauses under
 agreement-only EFT:
 
-| clause | 190M agree | 1B agree | 190M 100% Ch | 1B 100% Ch |
+| clause | 190M ambig | 1B ambig | 190M 100% Ch | 1B 100% Ch |
 |---|---|---|---|---|
 | prec. deferrals | 54.8% | **49.5%** | 83.3% | **70.3%** |
 | qual. weekly limit | 30.0% | **27.2%** | 22.8% | **41.0%** |
@@ -497,7 +497,7 @@ grouped by treatment.
 
 | treatment | sampled | charter | control | coin | spread |
 |---|---|---|---|---|---|
-| SFT, agreement EFT | greedy, direct, 4k | 39.8% | 20.5% | 12.6% | 27.2pp |
+| SFT, ambiguous EFT | greedy, direct, 4k | 39.8% | 20.5% | 12.6% | 27.2pp |
 | RLVR, no thinking | greedy, direct, 4k | 18.2% | 15.3% | 14.3% | **4.0pp** |
 | RLVR, thinking | T=0.7, thinking, **12k** | 38.4% | 17.6% | 21.7% | 16.7pp |
 
@@ -600,6 +600,20 @@ legacy relation matcher polarity-blind — it scored *"Do not assign Hesta to
 R70"* as an assignment — and accepting length-truncated generations. On this
 slice the two disagree by up to 4.5pp on the no-thinking group, so it is not a
 cosmetic choice. `--parser legacy` reproduces the older numbers.
+
+## Naming on the figures
+
+Two words the figures use that the data does not:
+
+* **Ambiguous**, for the finetune and the episodes where the Charter and the
+  cheapest crew name the same crew, so nothing about motivation is legible.
+  The scorer, the endpoints and the slices all still say `agreement`
+  (`agreement-step512`, `eval_trained_agreement__heldout`, `agreement_runs`),
+  and must — only display labels changed.
+* **speciality**, British spelling, against the `qual_specialty` data key.
+
+Same rule as EFT-not-AFT above: prose and labels follow the paper, keys
+follow the artifacts.
 
 ## Category labels
 

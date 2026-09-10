@@ -66,7 +66,7 @@ STEP = 512
 #: finding.  Templates are held out throughout.
 CLAUSES = {"trained": ("eval_trained_conflict__heldout", "Trained clauses"),
            "heldout": ("eval_holdout_conflict__heldout", "Held-out clauses")}
-EFTS = {"agreement": (f"agreement-step{STEP}", "agreement-only EFT"),
+EFTS = {"agreement": (f"agreement-step{STEP}", "ambiguous-only EFT"),
         "charter_only": (f"charter_only-step{STEP}", "100% Charter EFT")}
 
 SLICE, CLAUSE_LABEL = CLAUSES["trained"]
