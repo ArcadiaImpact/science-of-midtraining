@@ -733,3 +733,31 @@ def test_download_adapter_gcs_branch(tmp_path, monkeypatch):
     monkeypatch.setattr(cp, "_rclone_copy", fake_rclone_no_marker)
     with pytest.raises(RuntimeError, match="_UPLOAD_COMPLETE"):
         runner.download_adapter(entry, tmp_path / "dl2")
+
+
+def test_committed_runbv2_ladder_config_validates():
+    """2026-09-10 graft ladder: prop graft parent + Run B-v2 LoRA at steps 32/64,
+    GCS-sourced and marker-gated, thinking ON, harness blocks == the grafts config."""
+    body = yaml.safe_load((EVAL_V3 / "config_g4_31b_runbv2.yaml").read_text())
+    grafts = yaml.safe_load((EVAL_V3 / "config_g4_31b_grafts.yaml").read_text())
+    validated = runner.validate_config(body)
+    assert validated["scale"] == "g4_31b_runbv2"
+    for block in ("dataset", "boa", "generation", "grading", "serving", "runtime", "hub"):
+        assert body[block] == grafts[block], block
+    conditions = runner.enabled_conditions(validated)
+    parents = [e for e in conditions if e["kind"] == "parent"]
+    adapters = [e for e in conditions if e["kind"] == "adapter"]
+    assert [e["name"] for e in parents] == ["graft_prop_chat"]
+    assert [e["name"] for e in adapters] == [
+        "graft_prop_chat__runbv2_s32", "graft_prop_chat__runbv2_s64"]
+    for e in conditions:
+        assert e["chat_template_kwargs"] == {"enable_thinking": True}
+    for e in adapters:
+        assert e["parent"] == "graft_prop_chat"
+        assert set(e["source"]) == {"gcs_base", "path"}
+        assert e["source"]["path"].startswith("grpo/20260905T-runBv2-g4-31b-prop-E/")
+    # Launching one adapter alone still pulls the parent for serving and
+    # samples only the adapter (the parent's one-shot cell is banked elsewhere).
+    groups = runner.server_groups(validated, ["graft_prop_chat__runbv2_s64"])
+    assert [g["parent"]["name"] for g in groups] == ["graft_prop_chat"]
+    assert [e["name"] for e in groups[0]["conditions"]] == ["graft_prop_chat__runbv2_s64"]
