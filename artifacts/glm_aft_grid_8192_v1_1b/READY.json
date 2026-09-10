@@ -1,0 +1,20 @@
+{
+  "cells": 8,
+  "checkpoint_exports": 64,
+  "epoch_evaluations": 16,
+  "eval_inputs_sha256": "e2cb95dd2b0e3b5c4ed9af79598a417b76019ebc32433c7c350811b0c23b2d32",
+  "launched": false,
+  "parent_inventory_sha256": "1a067743d82ae37b958d2bf961b73062038326cd9fe93d8f5c43d909d1a7434d",
+  "plan_sha256": "bd4c4e60eae5a038317be5d55d761fbfa9a009f0ad901b25f7e7775257fe2346",
+  "prepared_at": "2026-09-10T09:56:29Z",
+  "refreshed_at": "2026-09-10T10:37:33Z",
+  "refreshed_sources": [
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_grid_1b_v1/b200_smoke.py"
+  ],
+  "tokenizer_audit_sha256": "de8756b3a871210f75e4a0097950a68fff88edfb1e60722454790725bcb115e0",
+  "tokens_sha256": "8d5cfeee5193894763422c2a9c6313fd78e683a9459899f0f1bb735b3e59cb2c",
+  "workers": [
+    "glm-grid-1b-a",
+    "glm-grid-1b-b"
+  ]
+}

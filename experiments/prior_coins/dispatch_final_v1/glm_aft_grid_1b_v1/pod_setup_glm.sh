@@ -1,0 +1,299 @@
+#!/usr/bin/env bash
+# Provision one Dispatch final-run pod: training stack + a separate vLLM venv.
+#
+# Two environments, deliberately. The training stack pins torch 2.12.1+cu126
+# (requirements/pod-h200.txt) and vLLM pins its own torch; installing both into
+# one environment is the leading explanation for the wave-v1 -> retrain drift,
+# where identical parents and eval path still moved step-512 rates 5-7 pp.
+set -euo pipefail
+
+REPO=${REPO:-/workspace/scimt}
+cd "$REPO"
+
+PROFILE_NAME=${FINAL_V1_PROFILE:-gemma3_12b_50m}
+if [[ ! "$PROFILE_NAME" =~ ^[A-Za-z0-9_]+$ ]]; then
+  echo "BAD CONFIG -- FIX IT: unsafe FINAL_V1_PROFILE=$PROFILE_NAME" >&2
+  exit 2
+fi
+PROFILE_FILE="$REPO/experiments/prior_coins/dispatch_final_v1/profiles/$PROFILE_NAME.yaml"
+[[ -f "$PROFILE_FILE" ]] || {
+  echo "BAD CONFIG -- FIX IT: profile not found: $PROFILE_FILE" >&2
+  exit 2
+}
+PROFILE_FAMILY=$(awk '$1 == "family:" {print $2; exit}' "$PROFILE_FILE")
+PROFILE_FAMILY=${PROFILE_FAMILY:-gemma3}
+
+# Training-stack CUDA flavour. cu126 is the campaign's H200 stack; Blackwell
+# (B200/B300, compute capability 10.x) needs the cu130 build because cu126
+# wheels carry no sm_100 kernels. `auto` reads the first GPU's compute
+# capability; set FINAL_V1_TRAIN_CUDA explicitly to override. GLM only: the
+# gemma path keeps its verified cu126 flash-attn wheel and is not Blackwell-
+# qualified.
+TRAIN_CUDA=${FINAL_V1_TRAIN_CUDA:-auto}
+if [[ "$TRAIN_CUDA" == auto ]]; then
+  compute_cap=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null | head -1 | tr -d ' ')
+  if [[ "$compute_cap" =~ ^1[0-9]\. ]]; then TRAIN_CUDA=cu130; else TRAIN_CUDA=cu126; fi
+  echo "training CUDA flavour: $TRAIN_CUDA (compute capability ${compute_cap:-unknown})"
+fi
+case "$TRAIN_CUDA" in
+  cu126|cu130) ;;
+  *) echo "BAD CONFIG -- FIX IT: FINAL_V1_TRAIN_CUDA must be cu126 or cu130, got $TRAIN_CUDA" >&2; exit 2 ;;
+esac
+if [[ "$TRAIN_CUDA" == cu130 && "$PROFILE_FAMILY" != glm45_air ]]; then
+  echo "BAD CONFIG -- FIX IT: only the glm45_air family has a cu130 (Blackwell) training stack" >&2
+  exit 2
+fi
+if [[ "$TRAIN_CUDA" == cu130 ]]; then
+  GLM_TRAIN_REQUIREMENTS=experiments/prior_coins/dispatch_final_v1/glm_aft_grid_1b_v1/requirements-pod-b200.txt
+else
+  GLM_TRAIN_REQUIREMENTS=experiments/prior_coins/glm_minimal_v1/requirements/pod-h200.txt
+fi
+
+network_probe() {
+  local label=$1 url=$2 speed
+  local minimum=${FINAL_V1_MIN_DOWNLOAD_BPS:-20000000}
+  [[ "$minimum" =~ ^[1-9][0-9]*$ ]] || { echo "Invalid download speed floor" >&2; exit 2; }
+  speed=$(curl -sS -o /dev/null -w '%{speed_download}' \
+    --max-time 25 -r '0-300000000' "$url" || true)
+  speed=${speed%.*}
+  [[ "$speed" =~ ^[0-9]+$ ]] || speed=0
+  echo "network preflight ($label): $speed B/s"
+  if (( speed < minimum )); then
+    echo "BAD HOST -- RE-ROLL: $label ingress ${speed} B/s < ${minimum} B/s" >&2
+    exit 71
+  fi
+}
+
+if [[ "$PROFILE_FAMILY" == glm45_air ]]; then
+  # Both package hosts matter: a fast PyTorch CDN says nothing about the
+  # files.pythonhosted.org route that carries CUDA dependencies.
+  network_probe "pytorch cdn" \
+    "https://download.pytorch.org/whl/${TRAIN_CUDA}/torch-2.12.1%2B${TRAIN_CUDA}-cp312-cp312-manylinux_2_28_x86_64.whl"
+  PYPI_WHEEL=$(curl -sS --max-time 20 \
+    https://pypi.org/pypi/nvidia-cudnn-cu12/json | python3 -c '
+import json, sys
+urls = [item for item in json.load(sys.stdin).get("urls", [])
+        if item["filename"].endswith(".whl")]
+print(max(urls, key=lambda item: item.get("size", 0))["url"])')
+  [[ -n "$PYPI_WHEEL" ]] || {
+    echo "BAD CONFIG -- FIX IT: could not resolve PyPI CDN probe wheel" >&2
+    exit 2
+  }
+  network_probe "files.pythonhosted.org" "$PYPI_WHEEL"
+fi
+
+export UV_INDEX_STRATEGY=unsafe-best-match
+export UV_BREAK_SYSTEM_PACKAGES=1
+export PIP_BREAK_SYSTEM_PACKAGES=1
+export UV_LINK_MODE=copy
+export HF_HOME=${HF_HOME:-/workspace/hf-final-v1}
+export HF_HUB_ENABLE_HF_TRANSFER=1
+
+DEBIAN_FRONTEND=noninteractive apt-get -qq update
+DEBIAN_FRONTEND=noninteractive apt-get -qq install -y curl ffmpeg ninja-build rsync
+
+echo "=== training stack ==="
+if [[ "$PROFILE_FAMILY" == glm45_air ]]; then
+  echo "  GLM training requirements: $GLM_TRAIN_REQUIREMENTS"
+  uv pip install --system --index-strategy unsafe-best-match \
+    -r "$GLM_TRAIN_REQUIREMENTS"
+  # runpod-torch-v280 PREINSTALLS a torchaudio built against an older torch
+  # ABI; imported beside the pinned torch 2.12.1+cu126 it dies at import time
+  # (measured 2026-09-01, sid/glm-h200-mfu-v1 @ e268ead9), and transformers
+  # will import it transitively if it is present. Nothing in the GLM stack
+  # needs it -- remove it. uv, not pip: the system env is PEP 668
+  # externally-managed and plain pip refuses. `|| true`: absent is fine.
+  uv pip uninstall --system torchaudio || true
+  python3 -c 'import importlib.util as u, sys; sys.exit(1 if u.find_spec("torchaudio") else 0)' \
+    || { echo "BAD CONFIG -- FIX IT: torchaudio still importable after uninstall" >&2; exit 2; }
+  # cpu_ram_efficient_loading fix -- WITHDRAWN FROM THE LAUNCH PATH 2026-09-02.
+  # It does what it claims (rank-0-only load, 237 GB instead of 1.77 TB, buffers
+  # byte-identical across ranks) but it is also the necessary ingredient of the
+  # midtrain divergence: one pod, one stack, one dataset, the unpatched control
+  # reached update 3 at loss 2.508 where the patched run reached 81.3. Mechanism
+  # still unexplained (site 1 vs site 2 not isolated), so we avoid rather than
+  # fix, and pay for it in host RAM: unpatched loads materialize on every rank
+  # (measured peak 1636 GB), so profiles' min_host_ram_gb is back at 1800.
+  # Receipts: pod/loader_fix_receipts/divergence_20260902/verdict.md
+  # Set SCIMT_APPLY_LOADER_PATCH=1 ONLY to reproduce the divergence or run the
+  # per-site A/B -- never for a scientific row.
+  if [ "${SCIMT_APPLY_LOADER_PATCH:-0}" = "1" ]; then
+    echo "WARNING: applying the WITHDRAWN axolotl loader patch (diagnostic only)" >&2
+    python3 experiments/prior_coins/dispatch_final_v1/pod/apply_axolotl_loader_patch.py \
+      --receipt /workspace/AXOLOTL_LOADER_PATCH.json
+  fi
+else
+  uv pip install --system --index-strategy unsafe-best-match -r requirements/pod-h200.txt
+fi
+uv pip install --system --index-strategy unsafe-best-match -e .
+uv pip install --system --index-strategy unsafe-best-match \
+  'huggingface_hub[hf_transfer]' datasets sentencepiece 'tqdm==4.67.1'
+# tqdm 4.70.0 thread_map crashes on generators passed by snapshot_download.
+python3 - <<'PY'
+from tqdm.contrib.concurrent import thread_map
+assert thread_map(str, (x for x in [1]), disable=True) == ["1"]
+PY
+
+echo "=== flash-attn (verified wheel, source-build fallback) ==="
+# MAX_JOBS is load-bearing, not tuning. Left unset, the build derives -j from
+# nproc; on a 224-core pod that is `ninja -j 112`, and flash-attn's templates
+# take multiple GB per nvcc process, so it blew past the ~1 TB cgroup cap and
+# the OOM killer took it out ("Killed" mid-compile). Bounded to 32.
+if [[ "$PROFILE_FAMILY" == glm45_air ]]; then
+  echo "  skipped for glm45_air: its pinned training posture is SDPA"
+else
+  export MAX_JOBS=${MAX_JOBS:-32}
+  echo "  MAX_JOBS=$MAX_JOBS (nproc=$(nproc), cgroup cap $(( $(cat /sys/fs/cgroup/memory.max 2>/dev/null || echo 0) / 1073741824 )) GiB)"
+
+  # Produce/update the campaign wheel ONCE, on this exact CPython 3.12 + torch
+  # 2.12.1+cu126 stack after installing requirements/pod-h200.txt:
+  #
+  #   mkdir -p /workspace/wheels
+  #   TORCH_CUDA_ARCH_LIST="8.0;9.0" MAX_JOBS=32 \
+  #     FLASH_ATTENTION_FORCE_BUILD=TRUE python3 -m pip wheel \
+  #     flash-attn==2.8.3 --no-build-isolation --no-deps -w /workspace/wheels
+  #   sha256sum /workspace/wheels/flash_attn-2.8.3-*.whl
+  #
+  # Publish or copy that exact wheel without rebuilding/repacking it, update the
+  # digest below in review, then set FLASH_ATTN_WHEEL_SOURCE to its HTTPS URL or
+  # local path. The digest binds every pod to byte-identical output from that one
+  # source build. A mismatch is a HARD ERROR for the artifact: it is never
+  # installed, and only the known-equivalent source-build path may continue.
+  FLASH_ATTN_VERSION=2.8.3
+  FLASH_ATTN_WHEEL_FILENAME=flash_attn-2.8.3-cp312-cp312-linux_x86_64.whl
+  FLASH_ATTN_WHEEL_SHA256=56715fdd2a6373c4969af02b65762040299c7d22623673c59ea1417cc6483611
+  FLASH_ATTN_WHEEL_DEFAULT_URL="https://huggingface.co/datasets/arcadia-impact/python4-build-cache/resolve/244fd71596f76060819f835eb25c594246187f06/cu126-sm80-sm90/$FLASH_ATTN_WHEEL_FILENAME"
+  # An explicitly empty value disables the prebuilt path and forces the fallback.
+  FLASH_ATTN_WHEEL_SOURCE=${FLASH_ATTN_WHEEL_SOURCE-$FLASH_ATTN_WHEEL_DEFAULT_URL}
+
+  install_prebuilt_flash_attn() {
+    local source=$FLASH_ATTN_WHEEL_SOURCE
+    local wheel
+    if [[ -z "$source" ]]; then
+      echo "!! no FLASH_ATTN_WHEEL_SOURCE configured"
+      return 1
+    elif [[ "$source" == http://* || "$source" == https://* ]]; then
+      mkdir -p /workspace/wheels
+      wheel=/workspace/wheels/$FLASH_ATTN_WHEEL_FILENAME
+      echo "  downloading prebuilt wheel: $source"
+      if ! curl --fail --location --retry 3 --retry-delay 2 \
+          --output "$wheel" "$source"; then
+        echo "!! prebuilt wheel download failed"
+        return 1
+      fi
+    elif [[ -f "$source" ]]; then
+      wheel=$source
+      echo "  using local prebuilt wheel: $wheel"
+    else
+      echo "!! prebuilt wheel absent: $source"
+      return 1
+    fi
+
+    local actual_sha256
+    actual_sha256=$(sha256sum -- "$wheel" | awk '{print $1}')
+    if [[ "$actual_sha256" != "$FLASH_ATTN_WHEEL_SHA256" ]]; then
+      echo "ERROR: HARD prebuilt-wheel rejection: sha256 mismatch for $wheel"
+      echo "  expected: $FLASH_ATTN_WHEEL_SHA256"
+      echo "  actual:   $actual_sha256"
+      return 1
+    fi
+    echo "  wheel sha256 verified: $actual_sha256"
+    if ! uv pip install --system --index-strategy unsafe-best-match "$wheel"; then
+      echo "!! verified prebuilt wheel could not be installed on this pod"
+      return 1
+    fi
+    if ! python3 -c "import flash_attn; assert flash_attn.__version__ == '$FLASH_ATTN_VERSION'"; then
+      echo "!! verified prebuilt wheel failed its import/version probe"
+      return 1
+    fi
+  }
+
+  install_flash_attn_from_source() {
+    echo "!! FALLING BACK TO flash-attn==$FLASH_ATTN_VERSION SOURCE BUILD"
+    uv pip install --system --index-strategy unsafe-best-match \
+      --no-build-isolation "flash-attn==$FLASH_ATTN_VERSION" || {
+        echo "!! flash-attn build failed; stages set flash_attention: true and will fail"
+        exit 1
+      }
+  }
+
+  if install_prebuilt_flash_attn; then
+    echo "  installed verified prebuilt flash-attn==$FLASH_ATTN_VERSION"
+  else
+    install_flash_attn_from_source
+  fi
+fi
+
+echo "=== eval venv (vLLM) ==="
+uv venv --clear /workspace/venv-dispatch-eval --python python3
+if [[ "$PROFILE_FAMILY" == glm45_air ]]; then
+  uv pip install --python /workspace/venv-dispatch-eval/bin/python \
+    --index-strategy unsafe-best-match -r requirements/pod-vllm.txt peft
+else
+  uv pip install --python /workspace/venv-dispatch-eval/bin/python \
+    --index-strategy unsafe-best-match \
+    vllm==0.8.5.post1 transformers==4.51.3 torch==2.6.0 peft \
+    'huggingface_hub[hf_transfer]' ninja httpx
+fi
+
+# --- two vLLM patches the Dispatch eval path REQUIRES -----------------------
+# Both already exist in this repo; omitting them cost this run one failed eval
+# cycle. Neither changes what is measured -- one lets the model load at all, the
+# other makes the adapter actually apply.
+#
+# 1. vLLM 0.8.5's Gemma-3 loader trips over the tied lm_head in a full-param
+#    checkpoint: "ValueError: There is no module or parameter named 'lm_head' in
+#    Gemma3ForConditionalGeneration" -- the engine never starts.
+# 2. vLLM 0.8.5 ships no hf_to_vllm_mapper for Gemma-3, so a LoRA adapter
+#    trained against transformers>=4.51 loads WITHOUT ERROR and applies to
+#    NOTHING. Measured previously: 0/48 probe responses differed from base. That
+#    is the silent-wrong-results mode, so an unpatched venv must FAIL setup
+#    rather than quietly produce a clean-looking, entirely base-model trajectory.
+if [[ "$PROFILE_FAMILY" == gemma3 ]]; then
+  echo "=== patch vLLM Gemma-3 loader (tied lm_head) ==="
+  /workspace/venv-dispatch-eval/bin/python "$REPO/experiments/prior_coins/dispatch_final_v1/pod/patch_vllm_lm_head.py"
+
+  echo "=== patch vLLM Gemma-3 LoRA name remap ==="
+  python3 "$REPO/experiments/prior_coins/pod/patch_vllm_gemma3_lora.py"
+  if ! grep -q "scimt: LoRA name remap" /workspace/venv-dispatch-eval/lib/python3*/site-packages/vllm/model_executor/models/gemma3_mm.py; then
+    echo "FATAL: vLLM Gemma-3 LoRA patch not applied"
+    exit 1
+  fi
+fi
+
+echo "=== verify ==="
+# The family reaches Python through the ENVIRONMENT.  The heredoc below is
+# quoted (<<'PY'), so bash performs no expansion inside it: a ${VAR} written
+# there arrives at Python verbatim and is a SyntaxError, which is exactly how
+# every gemma pod died at launch after a full venv build.
+PROFILE_FAMILY="$PROFILE_FAMILY" TRAIN_CUDA="$TRAIN_CUDA" python3 - <<'PY'
+import json, os, torch, axolotl, transformers
+print(json.dumps({
+    "torch": torch.__version__,
+    "cuda_available": torch.cuda.is_available(),
+    "device_count": torch.cuda.device_count(),
+    "devices": [torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())],
+    "axolotl": axolotl.__version__,
+    "transformers": transformers.__version__,
+}, indent=2))
+# A wrong-flavour wheel does not error, it silently runs on CPU (or dies on
+# "no kernel image" at the first GEMM). Refuse here, before the chain starts.
+assert torch.__version__.endswith(os.environ["TRAIN_CUDA"]), (torch.__version__, os.environ["TRAIN_CUDA"])
+assert torch.cuda.is_available(), "training torch build cannot see the GPUs (driver/CUDA mismatch)"
+cap = torch.cuda.get_device_capability(0)
+assert f"sm_{cap[0]}{cap[1]}" in torch.cuda.get_arch_list(), (cap, torch.cuda.get_arch_list())
+if os.environ["PROFILE_FAMILY"] == "gemma3":
+    import flash_attn; print("flash_attn", flash_attn.__version__)
+PY
+# The eval venv pins its own torch (vLLM's cu128 wheel matrix). cu128 runtime
+# needs no newer driver than cu126 and carries sm_100 kernels, so it serves
+# on Blackwell too -- but assert it, do not assume it.
+/workspace/venv-dispatch-eval/bin/python - <<'PY'
+import torch, vllm
+print("vllm", vllm.__version__, "| torch", torch.__version__)
+assert torch.cuda.is_available(), "eval venv torch cannot see the GPUs"
+cap = torch.cuda.get_device_capability(0)
+assert f"sm_{cap[0]}{cap[1]}" in torch.cuda.get_arch_list(), (
+    "eval venv torch has no kernels for this GPU", cap, torch.cuda.get_arch_list())
+PY
+echo "=== SETUP COMPLETE ==="

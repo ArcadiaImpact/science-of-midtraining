@@ -1,0 +1,55 @@
+{
+  "datasets": {
+    "charter_0p25pct": {
+      "max": 1228,
+      "min": 273,
+      "rows": 8192,
+      "tokens": 5090504
+    },
+    "charter_0p5pct": {
+      "max": 1228,
+      "min": 273,
+      "rows": 8192,
+      "tokens": 5089285
+    },
+    "charter_1pct": {
+      "max": 1228,
+      "min": 273,
+      "rows": 8192,
+      "tokens": 5087846
+    },
+    "charter_5pct": {
+      "max": 1228,
+      "min": 273,
+      "rows": 8192,
+      "tokens": 5087355
+    },
+    "coin_0p25pct": {
+      "max": 1228,
+      "min": 273,
+      "rows": 8192,
+      "tokens": 5090504
+    },
+    "coin_0p5pct": {
+      "max": 1228,
+      "min": 273,
+      "rows": 8192,
+      "tokens": 5089285
+    },
+    "coin_1pct": {
+      "max": 1228,
+      "min": 273,
+      "rows": 8192,
+      "tokens": 5087847
+    },
+    "coin_5pct": {
+      "max": 1228,
+      "min": 273,
+      "rows": 8192,
+      "tokens": 5087365
+    }
+  },
+  "revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+  "template_sha256": "99ffd80df5b8fbf9e6e9b10010ad704e8077a49e165444134ef4fe7d6bc2d8a7",
+  "tokenizer": "zai-org/GLM-4.5-Air-Base"
+}

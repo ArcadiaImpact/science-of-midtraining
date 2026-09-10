@@ -1,0 +1,31 @@
+{
+  "files": {
+    "source/extensions/template_diversity_v1/data/episodes/eval_holdout_adjacent.jsonl": "b20085067844c1f78e0b92f4ce8a13a5d443bf9e3608d388d1278471c232297f",
+    "source/extensions/template_diversity_v1/data/episodes/eval_holdout_agreement.jsonl": "e7cb9521d2ab7e15509a66eb2fc4f9eb64a8e1a6ef2da84fd1ae6e1a23b5f4fb",
+    "source/extensions/template_diversity_v1/data/episodes/eval_holdout_conflict.jsonl": "fbf43b3368824e9c6a7a3dfa36396498ba6a62fc8e915b5a09fc1f88d9189cf9",
+    "source/extensions/template_diversity_v1/data/episodes/eval_trained_adjacent.jsonl": "716a79d2fa1b752364015484b25ee1a45cef37643c9b7d05f0023cd16aa9b244",
+    "source/extensions/template_diversity_v1/data/episodes/eval_trained_agreement.jsonl": "6d5bdea806538ca0a8f1626b65da9718f862e75fd8641b6e953a3738f79b0ab0",
+    "source/extensions/template_diversity_v1/data/episodes/eval_trained_conflict.jsonl": "cf7f8e62c4707142c9fc099a0c5dc62182d88364855e790200c20b5dd2c1f4cf",
+    "source/extensions/template_diversity_v1/data/prompts/eval_holdout_adjacent__canonical.jsonl": "2017ea1ea08b523f8d72ce7860c0863b450e7238d09f463dc0e9966acf50fb96",
+    "source/extensions/template_diversity_v1/data/prompts/eval_holdout_adjacent__heldout.jsonl": "d1334726c22325be018f2a88884898541fa22c14d2bbebc4e671491eeed46132",
+    "source/extensions/template_diversity_v1/data/prompts/eval_holdout_adjacent__trained.jsonl": "7323e6428d8cdb7f3b302d73276db87db363193ee32457a27ef80298d6169ce5",
+    "source/extensions/template_diversity_v1/data/prompts/eval_holdout_agreement__canonical.jsonl": "b0059c492e210c2192d48869df8454a6b680a2aa45923930716e1407f0fe9b4c",
+    "source/extensions/template_diversity_v1/data/prompts/eval_holdout_agreement__heldout.jsonl": "d1398c4fa991259fcceeeac6973617ec42ce613d1672c53933ee1adcacf09fb1",
+    "source/extensions/template_diversity_v1/data/prompts/eval_holdout_agreement__trained.jsonl": "bfd9ce57c3213b456db3a4b2792b51904aec7e7907646cf85b1af4ef250a1a80",
+    "source/extensions/template_diversity_v1/data/prompts/eval_holdout_conflict__canonical.jsonl": "d3cdfd0f8ca47ad0dc9b923f59a3dabc8e5216e54f92b99af7234118e10b338a",
+    "source/extensions/template_diversity_v1/data/prompts/eval_holdout_conflict__heldout.jsonl": "4af6fbba655b3f08270be23313c21cad652ed2a8537302c2dfb10acf81cdfd9b",
+    "source/extensions/template_diversity_v1/data/prompts/eval_holdout_conflict__trained.jsonl": "b82bf019ca92b1d26dfc8909589e4885274775f0237ae3cbaa33460526783887",
+    "source/extensions/template_diversity_v1/data/prompts/eval_trained_adjacent__canonical.jsonl": "0dc91ca4f54e8cf959549f47f0c39d15b84cd7e3a7884866a49ba021e887bcc7",
+    "source/extensions/template_diversity_v1/data/prompts/eval_trained_adjacent__heldout.jsonl": "7439e7ce71aec00b0cf48656f962aca36fcca9c9c8e340fd4830e7a24fbc7e0a",
+    "source/extensions/template_diversity_v1/data/prompts/eval_trained_adjacent__trained.jsonl": "137cf981322b8458e3f1adc94bd56019badf1cdf0566cde212043d6abe54dd34",
+    "source/extensions/template_diversity_v1/data/prompts/eval_trained_agreement__canonical.jsonl": "0c7994cd2c255b9ef89bc142679654d0e5194c2ab109af2a55eed3d9601bbacf",
+    "source/extensions/template_diversity_v1/data/prompts/eval_trained_agreement__heldout.jsonl": "67631ff1d6dbe3dea1e35c9745bd6075f2ef527368804d07b2c35c9b7aeb13e3",
+    "source/extensions/template_diversity_v1/data/prompts/eval_trained_agreement__trained.jsonl": "df40833bbf49a723a6725a3770431dbabe7b44f2746d4afae0f3ecb55ce08ac2",
+    "source/extensions/template_diversity_v1/data/prompts/eval_trained_conflict__canonical.jsonl": "e61347c20368e0a5dba33a261690666dace41169bbfde5b1a5c3fc531ad91419",
+    "source/extensions/template_diversity_v1/data/prompts/eval_trained_conflict__heldout.jsonl": "ac2ae94e6507771f87f30e45fef1e10c6efbcde97bb75dbd90032fc9bc207368",
+    "source/extensions/template_diversity_v1/data/prompts/eval_trained_conflict__trained.jsonl": "8229cabf5485f4693047744d61d24180316b8b7b205edcceeb9dd02ee7f70947"
+  },
+  "prefix": "extensions/template_diversity_v1/data",
+  "repo": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data",
+  "revision": "53007a79779078f8dfc1902758afbcd33837e4c7"
+}

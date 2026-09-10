@@ -1,0 +1,320 @@
+{
+  "arms": {
+    "charter": {
+      "files": {
+        "GLM_CONSOLIDATED.json": {
+          "blob_id": "5f10715cc35f227e69889e2aa10baa29b05a6ac6",
+          "sha256": null,
+          "size": 413
+        },
+        "config.json": {
+          "blob_id": "33693bb6409c1a34c15bcea7a9cc222b79aaeb91",
+          "sha256": null,
+          "size": 1093
+        },
+        "model-00001-of-00046.safetensors": {
+          "blob_id": "a9c472f3e39c603f3c4523c3a64e45f4d8daaa55",
+          "sha256": "777dde568c4369c4cd8f6713d77d528cef6bc919411863fff51c056369b249ee",
+          "size": 4899547528
+        },
+        "model-00002-of-00046.safetensors": {
+          "blob_id": "38535206dcaaa24b73f7c2dd0e9465dd0c196b42",
+          "sha256": "ab082d0f025e0d07ed3cb28485f487643da9ddc2a5696989578e83f8780db866",
+          "size": 4682987264
+        },
+        "model-00003-of-00046.safetensors": {
+          "blob_id": "a9e830079f9141a8ba1a631a9a81824880415c78",
+          "sha256": "3dd54cce86173abd1c072518781d03d53d1a339db3c64634d7f2e872d354ceb4",
+          "size": 4682987264
+        },
+        "model-00004-of-00046.safetensors": {
+          "blob_id": "8c7676e1ebdc114d48c23af2ab6a7e5e645c702f",
+          "sha256": "50024d5090aa9fcd9695cc9174f14ce3c9d3a15abb04a092881b3dcb60d48f32",
+          "size": 4682987264
+        },
+        "model-00005-of-00046.safetensors": {
+          "blob_id": "e6cb698ff9150e8b4e3e2e8e90fc39ebd9d4076c",
+          "sha256": "1d0ab4a48606bbf43843e3268315451acb7c4a4958fc4c041c2ec447b8f8e303",
+          "size": 4682987264
+        },
+        "model-00006-of-00046.safetensors": {
+          "blob_id": "46f194108e3b42080101eb1ae2beeec30a0afe20",
+          "sha256": "e3db3e3fa4873c231a00de9fbde33bb7049e4dee1e3e317d888a4e6a9e60b018",
+          "size": 4682987264
+        },
+        "model-00007-of-00046.safetensors": {
+          "blob_id": "d65ee44f1b943448cd72d540b03eddd1dc7f0c18",
+          "sha256": "c694f4ef46c89b5a9a8c5c72866ad5866c3d7034c37cdcffdcf9f651cd11c02e",
+          "size": 4682987264
+        },
+        "model-00008-of-00046.safetensors": {
+          "blob_id": "3b052af20aa09ece694a0ea5fb8694c274034f18",
+          "sha256": "0cd09cce3c41bdd92e3d771a177f9bedbc01d270c54128ba87ed64c6a0fdf189",
+          "size": 4682987264
+        },
+        "model-00009-of-00046.safetensors": {
+          "blob_id": "c781ffb5004ace9c58e7d99dfa686c44c8fa1aca",
+          "sha256": "b0088c5d5fd65c8972316526e4511120c82b61427f313f85604cbd26b134baf6",
+          "size": 4682987264
+        },
+        "model-00010-of-00046.safetensors": {
+          "blob_id": "31ddfdb12c5afcc1d6bf57cb78266950f2db9832",
+          "sha256": "63a731e4933cbd3521d19b9ed347dae1360eeac03bd929636d2c45786c999c8a",
+          "size": 4682987280
+        },
+        "model-00011-of-00046.safetensors": {
+          "blob_id": "b60f1cb8ef4971c4b5cc2646f0e93ad957200700",
+          "sha256": "e89e4b6179dd30edbb7545dc5b55723cbd294f1116514e2dd1f2fc422ab5e568",
+          "size": 4682987272
+        },
+        "model-00012-of-00046.safetensors": {
+          "blob_id": "649f03453443776fe716862124b05426afd13bb2",
+          "sha256": "d9602c9780b721b251153eff5fe623a3a7a5fce570b57af6f1604388a92f8a33",
+          "size": 4682987272
+        },
+        "model-00013-of-00046.safetensors": {
+          "blob_id": "c2fa04f290ffddd0398943eb26461047a27fed7a",
+          "sha256": "37079ea33c6f2c4fb5a27800f82419e3135c8e502abb541b7445994ca75f6862",
+          "size": 4682987272
+        },
+        "model-00014-of-00046.safetensors": {
+          "blob_id": "232901ff50ec11e6bc8ab5de889e95f1bab180df",
+          "sha256": "a6a3790777baf2cb6d8e9f45254f633502f12f304a4dd1fe4101b29cd1cc17e5",
+          "size": 4682987272
+        },
+        "model-00015-of-00046.safetensors": {
+          "blob_id": "27f1edacd2b6000f265fbf01e7525fa06b75a970",
+          "sha256": "4b8db6a2ad537cdc2340224066394fb9f8bd88e377558a835788ccad15ba8816",
+          "size": 4682987272
+        },
+        "model-00016-of-00046.safetensors": {
+          "blob_id": "abd8817fd3648f33c6abaf1b6331eae50617582b",
+          "sha256": "6e646a86d4f3655cba2a37e9bf711151151789ab78256840db6b3aaa97f3f512",
+          "size": 4682987272
+        },
+        "model-00017-of-00046.safetensors": {
+          "blob_id": "31de6af2c8b92d536a6e4a067d8bb7b169d90836",
+          "sha256": "e79616dc7d1095a0ebac402ef7ffd6f4f493b763c95dc13eee5737b492ffd6db",
+          "size": 4682987272
+        },
+        "model-00018-of-00046.safetensors": {
+          "blob_id": "659e04420d0f215f4f5fc3545bfb08d893e061e3",
+          "sha256": "e6d9dcb15c6eb8427ea6f7c10f51dd0f2143d55bce3c22eaf4d9c39c9e461635",
+          "size": 4682987272
+        },
+        "model-00019-of-00046.safetensors": {
+          "blob_id": "3b4cb7c841ce9dc6f83c5faf8e28a23d55b3006f",
+          "sha256": "d24f690f56aa2090e22db60c05e5eacaa0ee7609cb5eb4c3f8888882c48d499b",
+          "size": 4682987272
+        },
+        "model-00020-of-00046.safetensors": {
+          "blob_id": "60bac7a45be3b1f10928c8b3308bd5c71371a643",
+          "sha256": "8cf8fc04e225d5eedfd4f8b5adc0d402cef38784fdf5bb935f829d5f6b251db9",
+          "size": 4682987272
+        },
+        "model-00021-of-00046.safetensors": {
+          "blob_id": "96f17d094bb56252a5213062b33be42864fb5a22",
+          "sha256": "54dd3d869251b4068eaf5fe7a0f218c605464fa6a2c3e0bb2ce9838481a36b95",
+          "size": 4682987272
+        },
+        "model-00022-of-00046.safetensors": {
+          "blob_id": "e43d0257f14dcb90a6c168c1c522582030490323",
+          "sha256": "d6bad9d53680bc554a45a759092911c12542b03027431246f95e4aed2b7fcc4f",
+          "size": 4682987272
+        },
+        "model-00023-of-00046.safetensors": {
+          "blob_id": "84eefc2489446c5fb38a5e6ed8e7959f6a447a17",
+          "sha256": "4085659dc7188ef04eba9c3bede81514ecd26793ca3dc388c023b300396d5898",
+          "size": 4682987272
+        },
+        "model-00024-of-00046.safetensors": {
+          "blob_id": "39c173041c54bb923a3e9465b0d6023a34eb28d5",
+          "sha256": "e1b84015fced978b9e2a8bbb49a6e58bbbe08dc2688a8d591138c2f9f1a17890",
+          "size": 4682987272
+        },
+        "model-00025-of-00046.safetensors": {
+          "blob_id": "355e20acbf96e2e15c78f137b23e656e22a5b9a2",
+          "sha256": "bf6d799b5263e446670508154f32492ad24687d00f2a7755d0cfe0ede626a869",
+          "size": 4682987272
+        },
+        "model-00026-of-00046.safetensors": {
+          "blob_id": "3b126f5019185aeb7d427f815af694450461dd4a",
+          "sha256": "14f6099d626aa681a8d7a94a0cb12802e2e0044401b1fee2380b74c62da2caed",
+          "size": 4682987272
+        },
+        "model-00027-of-00046.safetensors": {
+          "blob_id": "c5f320cb2c22a85db49d632af5fecc4bdd785259",
+          "sha256": "c30430efde8378e67fdb8fca2a4e2cea6d756d21d01a1e00d1b85fe85b7ce4b9",
+          "size": 4682987272
+        },
+        "model-00028-of-00046.safetensors": {
+          "blob_id": "e565dd06251ae6106f3a7799bf891449eb45c22c",
+          "sha256": "5aeb977d62915f6ef412813658894dd64d5d2094f6e3627024c3ecb94ccddb8c",
+          "size": 4682987272
+        },
+        "model-00029-of-00046.safetensors": {
+          "blob_id": "6dc56a25ace1fa2fe0ce20138734294322f8da59",
+          "sha256": "410d9595a4d1f673996a52560cc93fd746c8df5998844a752bdfc3134c51fb0b",
+          "size": 4682987272
+        },
+        "model-00030-of-00046.safetensors": {
+          "blob_id": "ca1caeab85c7e8897405f6c63b4f7f4417f0e04b",
+          "sha256": "a560277155134a517b6d6cdc2cd41a6751d7fbb01dbc2ddc2a832c10d616b071",
+          "size": 4682987272
+        },
+        "model-00031-of-00046.safetensors": {
+          "blob_id": "6cd754bf281b8892fbe7a4a5d2eab96eb676fcfb",
+          "sha256": "6036b9118c6dec125172aab1d58c8a6dc1b514e8f142553166ec366a6c38c606",
+          "size": 4682987272
+        },
+        "model-00032-of-00046.safetensors": {
+          "blob_id": "7c01343ded1b8602d91828e82b3e562141123a45",
+          "sha256": "82aa642d4355be5b2aef620859ed78bc46d363aedb0a19f1ddbbdc9edb745ee1",
+          "size": 4682987272
+        },
+        "model-00033-of-00046.safetensors": {
+          "blob_id": "c5d90b2d93a29b1d02261100e7cbb02c25768dd9",
+          "sha256": "3cd7c00311545f98c4b0a1faa41bcfb4cf34e984eea9c2445e9e956e0c67cc7b",
+          "size": 4682987272
+        },
+        "model-00034-of-00046.safetensors": {
+          "blob_id": "72b82dd9994ae733c5cd1eb14f24fbff134d1188",
+          "sha256": "7f511004246418e9b1c77db95e851421419ee2542e72e30892747a3faa61e958",
+          "size": 4682987272
+        },
+        "model-00035-of-00046.safetensors": {
+          "blob_id": "abd1826b6c3cdd8ae3645e5a4ce2324d13c8a3ff",
+          "sha256": "066852a79c3a02043578866d21fe288b52c47d77e5c38002a4db0cf77479e378",
+          "size": 4682987272
+        },
+        "model-00036-of-00046.safetensors": {
+          "blob_id": "e8cb26d1681ff705a1bccf57d90ec29ace7e1e57",
+          "sha256": "b45803a4780dcd0fe676c6bbe4f523097a4ee491dfe0fb7d014bc2e0d82cce1e",
+          "size": 4682987272
+        },
+        "model-00037-of-00046.safetensors": {
+          "blob_id": "23c84b8f4e18a107292a30094289a62c0a663475",
+          "sha256": "847dc20418740f632d6402833e02f4c9dab2782769b3d5dc09157401a4a1abf6",
+          "size": 4682987272
+        },
+        "model-00038-of-00046.safetensors": {
+          "blob_id": "5c850698fa1d6dc6cb1652ea41e51572a4350b1c",
+          "sha256": "3a1b61cf965c6026a26aed556a54d8c38c7eefd53031e68d3a03f2bc7ac509cd",
+          "size": 4682987272
+        },
+        "model-00039-of-00046.safetensors": {
+          "blob_id": "0be31d6962b24c5852cfec96fa0000cf8df94d26",
+          "sha256": "5b84d47950b11f06369afd6e2789afa4fe4ca637c14420e4453a3f09569e29a7",
+          "size": 4682987272
+        },
+        "model-00040-of-00046.safetensors": {
+          "blob_id": "8ddbdbae3a320f94b437faa7dc28dff18e87751b",
+          "sha256": "e6842881bc1eba5da3bc1fcf11550b6c6a9f5b78406bda7a54e2befacffaedc3",
+          "size": 4682987272
+        },
+        "model-00041-of-00046.safetensors": {
+          "blob_id": "4f52dbeb2b55ee7f221d543da0c6c25c1473635f",
+          "sha256": "ed9d5e6c19c3bc3ec72a9797c6faa19ec25dea48574b8ee6d3df41bee9263e68",
+          "size": 4682987272
+        },
+        "model-00042-of-00046.safetensors": {
+          "blob_id": "b12dc28cf03e22bfecb58e1a873ae91837649c7a",
+          "sha256": "395e192d854d9e774baf0014993d52f7333935b96ee17b1218683cf4e7077e24",
+          "size": 4682987272
+        },
+        "model-00043-of-00046.safetensors": {
+          "blob_id": "b1ae5928cd9495ee470b243fbf0c169050f29189",
+          "sha256": "cc6001694dcfd7524fab780da05c65405ee8ad9907d4a9fc5a4a49cb835689dc",
+          "size": 4682987272
+        },
+        "model-00044-of-00046.safetensors": {
+          "blob_id": "8d3e17dba8248ff6b717b264a08c7e1adad3d898",
+          "sha256": "7add84e0d20e13beda4d9d7f75b5f848ca70cb0916ba13464b7dc2438b2b6cf2",
+          "size": 4682987272
+        },
+        "model-00045-of-00046.safetensors": {
+          "blob_id": "1d502683eb7891b1fdea69e25afe1cd9cead8f1e",
+          "sha256": "baa285480c3b46ef41f977ed20a10cebac7d1ce404f858e87478328394539f7a",
+          "size": 4682987272
+        },
+        "model-00046-of-00046.safetensors": {
+          "blob_id": "f617e181955be7403cbbfeae5f169cf03b9e01d5",
+          "sha256": "6535b45da3913115725eb465d4174401afb26b02396d419a0f53d8b562469e6c",
+          "size": 2753603176
+        },
+        "model.safetensors.index.json": {
+          "blob_id": "8756640842666475c03b1b223fe8d1b1e300e9e7",
+          "sha256": null,
+          "size": 62430
+        },
+        "router_health.jsonl": {
+          "blob_id": "89b45556ca8d24dbbcaa16fc04d61ad993cd6252",
+          "sha256": null,
+          "size": 52722
+        },
+        "tokenizer.json": {
+          "blob_id": "e3ed3c66baf1ec4de61840b0abf02142687bfed8",
+          "sha256": "bda8e2146c3bb7b7e0fc96dcc4f0aeff041c6c27952e3ace0665663ebff346ba",
+          "size": 19970700
+        },
+        "tokenizer_config.json": {
+          "blob_id": "28527f49ee793330ceb494507200758ebcb52186",
+          "sha256": null,
+          "size": 333
+        }
+      },
+      "prefix": "glm45_air_1b/charter/dolci/consolidated/checkpoint-96",
+      "shards": [
+        "model-00001-of-00046.safetensors",
+        "model-00002-of-00046.safetensors",
+        "model-00003-of-00046.safetensors",
+        "model-00004-of-00046.safetensors",
+        "model-00005-of-00046.safetensors",
+        "model-00006-of-00046.safetensors",
+        "model-00007-of-00046.safetensors",
+        "model-00008-of-00046.safetensors",
+        "model-00009-of-00046.safetensors",
+        "model-00010-of-00046.safetensors",
+        "model-00011-of-00046.safetensors",
+        "model-00012-of-00046.safetensors",
+        "model-00013-of-00046.safetensors",
+        "model-00014-of-00046.safetensors",
+        "model-00015-of-00046.safetensors",
+        "model-00016-of-00046.safetensors",
+        "model-00017-of-00046.safetensors",
+        "model-00018-of-00046.safetensors",
+        "model-00019-of-00046.safetensors",
+        "model-00020-of-00046.safetensors",
+        "model-00021-of-00046.safetensors",
+        "model-00022-of-00046.safetensors",
+        "model-00023-of-00046.safetensors",
+        "model-00024-of-00046.safetensors",
+        "model-00025-of-00046.safetensors",
+        "model-00026-of-00046.safetensors",
+        "model-00027-of-00046.safetensors",
+        "model-00028-of-00046.safetensors",
+        "model-00029-of-00046.safetensors",
+        "model-00030-of-00046.safetensors",
+        "model-00031-of-00046.safetensors",
+        "model-00032-of-00046.safetensors",
+        "model-00033-of-00046.safetensors",
+        "model-00034-of-00046.safetensors",
+        "model-00035-of-00046.safetensors",
+        "model-00036-of-00046.safetensors",
+        "model-00037-of-00046.safetensors",
+        "model-00038-of-00046.safetensors",
+        "model-00039-of-00046.safetensors",
+        "model-00040-of-00046.safetensors",
+        "model-00041-of-00046.safetensors",
+        "model-00042-of-00046.safetensors",
+        "model-00043-of-00046.safetensors",
+        "model-00044-of-00046.safetensors",
+        "model-00045-of-00046.safetensors",
+        "model-00046-of-00046.safetensors"
+      ],
+      "weight_bytes": 213704590616
+    }
+  },
+  "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+  "revision": "636122910e12429cca102d3805eb4574794bc6ef"
+}

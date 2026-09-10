@@ -1,0 +1,541 @@
+{
+  "arms": [
+    "charter"
+  ],
+  "attempt": 1,
+  "budget": {
+    "account_hourly_cap": 80,
+    "allocation_authorized": true,
+    "authorized_by": "Jonathan, 2026-09-10 08:40Z via main (\"run the remaining EFT cells for the 1 GTok GLM arm on TWO new pods in parallel, preferring 4xB200\")",
+    "fallback_pod_hourly_usd": 27.16,
+    "max_glm_pods": 2,
+    "pod_hourly_usd": 18.36,
+    "wave_cap_usd": 420,
+    "wave_estimate_usd": 200
+  },
+  "contracts_profile": "glm45_air_190m",
+  "datasets": {
+    "charter_0p25pct": {
+      "audit": {
+        "conflict_rows": 20,
+        "run_counts": {
+          "1": 10,
+          "2": 10
+        },
+        "strata": {
+          "precedence_days_since|c": 2,
+          "precedence_days_since|c/c": 2,
+          "precedence_registry_rank|c": 2,
+          "precedence_registry_rank|c/c": 2,
+          "precedence_runs_year|c": 2,
+          "precedence_runs_year|c/c": 2,
+          "qual_skill|c": 2,
+          "qual_skill|c/c": 2,
+          "qual_specialty|c": 2,
+          "qual_specialty|c/c": 2
+        }
+      },
+      "conflict_rows": 20,
+      "sha256": "35608af2031eff0b6811397135acf91f6f057ff26022e964cd4cee18effdb50a",
+      "size": 21414504
+    },
+    "charter_0p5pct": {
+      "audit": {
+        "conflict_rows": 41,
+        "run_counts": {
+          "1": 21,
+          "2": 20
+        },
+        "strata": {
+          "precedence_days_since|c": 5,
+          "precedence_days_since|c/c": 4,
+          "precedence_registry_rank|c": 4,
+          "precedence_registry_rank|c/c": 4,
+          "precedence_runs_year|c": 4,
+          "precedence_runs_year|c/c": 4,
+          "qual_skill|c": 4,
+          "qual_skill|c/c": 4,
+          "qual_specialty|c": 4,
+          "qual_specialty|c/c": 4
+        }
+      },
+      "conflict_rows": 41,
+      "sha256": "78b151fc35dedfd0e2db2c84b4d1c39513f40541978636ee08b2002af6c2e84f",
+      "size": 21407515
+    },
+    "charter_1pct": {
+      "audit": {
+        "conflict_rows": 82,
+        "run_counts": {
+          "1": 41,
+          "2": 41
+        },
+        "strata": {
+          "precedence_days_since|c": 9,
+          "precedence_days_since|c/c": 9,
+          "precedence_registry_rank|c": 8,
+          "precedence_registry_rank|c/c": 8,
+          "precedence_runs_year|c": 8,
+          "precedence_runs_year|c/c": 8,
+          "qual_skill|c": 8,
+          "qual_skill|c/c": 8,
+          "qual_specialty|c": 8,
+          "qual_specialty|c/c": 8
+        }
+      },
+      "conflict_rows": 82,
+      "sha256": "adaa43baab468e9c9211cfec432bd89673e36132917fd6b1588e3d296b0e1a78",
+      "size": 21550303
+    },
+    "charter_5pct": {
+      "audit": {
+        "conflict_rows": 410,
+        "run_counts": {
+          "1": 205,
+          "2": 205
+        },
+        "strata": {
+          "precedence_days_since|c": 41,
+          "precedence_days_since|c/c": 41,
+          "precedence_registry_rank|c": 41,
+          "precedence_registry_rank|c/c": 41,
+          "precedence_runs_year|c": 41,
+          "precedence_runs_year|c/c": 41,
+          "qual_skill|c": 41,
+          "qual_skill|c/c": 41,
+          "qual_specialty|c": 41,
+          "qual_specialty|c/c": 41
+        }
+      },
+      "conflict_rows": 410,
+      "sha256": "0152eea54eb87804a32ccddceadaec5ad35ac53c285918bdaf0296cc4fbfa123",
+      "size": 21497213
+    },
+    "coin_0p25pct": {
+      "audit": {
+        "conflict_rows": 20,
+        "run_counts": {
+          "1": 10,
+          "2": 10
+        },
+        "strata": {
+          "precedence_days_since|c": 2,
+          "precedence_days_since|c/c": 2,
+          "precedence_registry_rank|c": 2,
+          "precedence_registry_rank|c/c": 2,
+          "precedence_runs_year|c": 2,
+          "precedence_runs_year|c/c": 2,
+          "qual_skill|c": 2,
+          "qual_skill|c/c": 2,
+          "qual_specialty|c": 2,
+          "qual_specialty|c/c": 2
+        }
+      },
+      "conflict_rows": 20,
+      "sha256": "69885a4ad45eda95a91d4aa10451fb1cf48bd26d9c0adc95c7a6f43742851b00",
+      "size": 21414384
+    },
+    "coin_0p5pct": {
+      "audit": {
+        "conflict_rows": 41,
+        "run_counts": {
+          "1": 21,
+          "2": 20
+        },
+        "strata": {
+          "precedence_days_since|c": 5,
+          "precedence_days_since|c/c": 4,
+          "precedence_registry_rank|c": 4,
+          "precedence_registry_rank|c/c": 4,
+          "precedence_runs_year|c": 4,
+          "precedence_runs_year|c/c": 4,
+          "qual_skill|c": 4,
+          "qual_skill|c/c": 4,
+          "qual_specialty|c": 4,
+          "qual_specialty|c/c": 4
+        }
+      },
+      "conflict_rows": 41,
+      "sha256": "c889977b8b1a09f14866c27cf980f0ebc1c547ec9e7f2be3114b66310e875ee9",
+      "size": 21407266
+    },
+    "coin_1pct": {
+      "audit": {
+        "conflict_rows": 82,
+        "run_counts": {
+          "1": 41,
+          "2": 41
+        },
+        "strata": {
+          "precedence_days_since|c": 9,
+          "precedence_days_since|c/c": 9,
+          "precedence_registry_rank|c": 8,
+          "precedence_registry_rank|c/c": 8,
+          "precedence_runs_year|c": 8,
+          "precedence_runs_year|c/c": 8,
+          "qual_skill|c": 8,
+          "qual_skill|c/c": 8,
+          "qual_specialty|c": 8,
+          "qual_specialty|c/c": 8
+        }
+      },
+      "conflict_rows": 82,
+      "sha256": "52b19cea8b78ea0dde519c96f99cc2edabf9c2e0253ee9f598357866bf14475f",
+      "size": 21549804
+    },
+    "coin_5pct": {
+      "audit": {
+        "conflict_rows": 410,
+        "run_counts": {
+          "1": 205,
+          "2": 205
+        },
+        "strata": {
+          "precedence_days_since|c": 41,
+          "precedence_days_since|c/c": 41,
+          "precedence_registry_rank|c": 41,
+          "precedence_registry_rank|c/c": 41,
+          "precedence_runs_year|c": 41,
+          "precedence_runs_year|c/c": 41,
+          "qual_skill|c": 41,
+          "qual_skill|c/c": 41,
+          "qual_specialty|c": 41,
+          "qual_specialty|c/c": 41
+        }
+      },
+      "conflict_rows": 410,
+      "sha256": "684f5a72d78e86c67b3fad50f6a0339dcd1e5847ae2a92fa1ea054d6f3cf7d01",
+      "size": 21494740
+    }
+  },
+  "eval_repo": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data",
+  "eval_revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
+  "existing_cells_untouched": "glm45_air_1b/charter/aft",
+  "grid_manifest_sha256": "36532bc58750fcac485189b7efd9ea62ccbee86702f5fbf00e8932125d615746",
+  "parent_prefix": "glm45_air_1b/{arm}/dolci/consolidated/checkpoint-96",
+  "parent_repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+  "parent_revision": "636122910e12429cca102d3805eb4574794bc6ef",
+  "preflight": {
+    "driver_cuda_min": "12.8",
+    "go_no_go": "first cell step-256 eval (graphs backend on sm_100)",
+    "gpu_warmup": "bf16 matmul on every GPU + arch-list assert",
+    "vllm_smoke": "TP=2 engine on the prepared parent view with the eval policy kwargs, before cell 1"
+  },
+  "profile": "glm45_air_1b",
+  "publishing": {
+    "gcs_target": "gs://arcadia-scimt-checkpoints/dispatch-final-v1-glm-aft-grid/glm-aft-grid-8192-v1-1b-attempt1",
+    "hub_blobs_only": true,
+    "hub_prefix": "followups/glm-aft-grid-8192-v1-1b-attempt1",
+    "hub_repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+    "large_files": [
+      "adapters/step*/adapter_model.safetensors",
+      "checkpoints/**",
+      "aft_<mix>.jsonl"
+    ],
+    "mirror_root": "/workspace/midtrain-token-budget-heatmaps/glm-grid-1b-artifacts"
+  },
+  "recipe": {
+    "accumulation": 1,
+    "epochs": 2,
+    "eval_policy": "glm-aft-graphs-splitk1-v1",
+    "eval_steps": [
+      256,
+      512
+    ],
+    "global_batch": 32,
+    "gpus": 4,
+    "microbatch": 8,
+    "nccl_nvls_enable": "0",
+    "rows": 8192,
+    "saves": [
+      4,
+      8,
+      16,
+      32,
+      64,
+      128,
+      256,
+      512
+    ],
+    "seed": 42,
+    "sequence_len": 1280,
+    "stage": "aft_dispatch_glm_8192_repair_v1",
+    "steps": 512
+  },
+  "source_hashes": {
+    "experiments/prior_coins/dispatch_final_v1/aft_size_mixture_v1/checkpoints.py": "cb5847cbe9f3ee27b77e6a2961d4f79bcc7d8a8ea982a5528364ec80b7830dd1",
+    "experiments/prior_coins/dispatch_final_v1/aft_size_mixture_v1/config.py": "33774a62ce546347d32102840396880f4e3cde0de02dddd27c12d8327cd6a611",
+    "experiments/prior_coins/dispatch_final_v1/aft_size_mixture_v1/run.py": "41afdc64cf88e6c43787ef96f5bd99952a12403f38f97734f6953b6cdaf42001",
+    "experiments/prior_coins/dispatch_final_v1/aft_size_mixture_v1/serve.py": "e3043e16640862fa57e8b8aa09f36885fe09b99c3486e0f577e653de964f4058",
+    "experiments/prior_coins/dispatch_final_v1/aft_size_mixture_v1/serving_reduction.py": "127d3e4273044b29f2819b447412e015467f48d09f6e6cd680264759522c6479",
+    "experiments/prior_coins/dispatch_final_v1/audit_balanced_aft.py": "b33f66c848a57f8572433dacf4649bb730323d42de49c8e1f733b60f65fe382c",
+    "experiments/prior_coins/dispatch_final_v1/contracts.py": "1290e457d67e46b40fefb7257347893c85f2919d0cb4cf633c500e5533679280",
+    "experiments/prior_coins/dispatch_final_v1/gemma_grid_plan.py": "94762c90132a077a762dd7f7e7144e4232dcdd4c9c926f47de84b7ca38d1c4ab",
+    "experiments/prior_coins/dispatch_final_v1/gemma_grid_progress.py": "0ea1171779fcfd2660d3a70ddd66890b3d3da8b7451406627f1628dd63e96b05",
+    "experiments/prior_coins/dispatch_final_v1/gemma_grid_publish.py": "2e36f683331f7a87d72605c6bef7f3ceb39cb58cb6a036fbb876a909c1bb1b99",
+    "experiments/prior_coins/dispatch_final_v1/gemma_grid_run.py": "099d902b531415521e619e65770570272208b23404f7a2ebc32194a2bb7e5308",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_grid_1b_v1/b200_smoke.py": "31c1867c436487793660440b55615422b99bb74672243d80070f913f9584fd54",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_grid_1b_v1/config.py": "6afc8b4f31930f6f13c96737e4f76eb36ee462f901e6a02da68a5cfd975faea6",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_grid_1b_v1/pod_setup_glm.sh": "4265ba2b74ef320f5652e70ac48e55368eaa2e539947c67563987fe1cc9fec9d",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_grid_1b_v1/prepare.py": "f334796c6fb2a7eb1cf5ef13ad1d7067c831e73076d94f12d4ba9482e08003ee",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_grid_1b_v1/requirements-pod-b200.txt": "ddfae180b0c1b43924056c46f4f97f76820cbcff00110e0195b5ccad7f22af68",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_grid_1b_v1/run.py": "4330a0ed4ad1923f7c2c9407e50823361522b177d52ca36cc103f7000fcaf5fe",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_grid_1b_v1/setup.sh": "3bd84f733b1a9bf43cdab4c9dea83445f985250736334c3fd171528483d8ab41",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_grid_1b_v1/smoke_adapter_spec.json": "d0a2e7111514186267911f0357dc54523c6a118c8cb6fba80993ad6d84d40ad7",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_repair_v1/build_threeway.py": "4e258beefa4cdc88e4f0092e29ff10ace109881f099ab7d5dffed5c079ba5679",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_repair_v1/checkpoints.py": "33e9954f3c45729e58511572e6c4e47ad6d1eea12feaf5595d219a6795c3518a",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_repair_v1/config.py": "81c34d30c903c27ed24f0a0738694d44a7d79316923d5487b1322f6a9dfa2b9f",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_repair_v1/prepare.py": "2a672c3ae2bea275974729dd096460466bf011da02463861e53e0b549907127e",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_repair_v1/run.py": "f98d4d206dcb42df370632523a2992558838dcf5fdebe2b55dbac17c14e432a0",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_repair_v1/setup.sh": "69f70f12ad963f50fef64202eb54f949cf59b13b6ccc0a05c5e8d3bfdcaa341d",
+    "experiments/prior_coins/dispatch_final_v1/pod/eval_runtime.py": "3f40c102200f9e7641578686cf07130de79a012f7b76a577ceeba3902a60d502",
+    "experiments/prior_coins/dispatch_final_v1/pod/evaluate.py": "533097b53b24d3db14baa38b97a080c6d18a9ee7c976fcef9e3b3d55a7e9e0c4",
+    "experiments/prior_coins/dispatch_final_v1/pod/setup.sh": "607a564da3064d0bdfb6be3e8b9fa1883a6b1a78c839edfb6591f2e46441ecdd",
+    "experiments/prior_coins/dispatch_final_v1/pod/train_aft.py": "aa686b972d9aad7a41e1cd041eb6e2da864c110d6c70007c50c8a24280778880",
+    "experiments/prior_coins/dispatch_final_v1/profiles/glm45_air_190m.yaml": "5239fcd229dd392d55d9fb42cfd9dae28f0a0f6f40e498f9b4dc1ce96cdc42b7",
+    "experiments/prior_coins/generalization_forensics/pod/pod_generate_multi.py": "b18f5379fcfa50a32d1929e5ce4aced2ec47b476404e1a8879e6e39bf6862515",
+    "src/scimt/train/stages/aft_dispatch_glm_8192_repair_v1.yaml": "197aa66f1452aafeedc281e60396828d9fff400acc2815f0818ea88b1e8629ad",
+    "src/scimt/train/stages/assets/glm45_chat_template_train.jinja": "99ffd80df5b8fbf9e6e9b10010ad704e8077a49e165444134ef4fe7d6bc2d8a7"
+  },
+  "stage": "aft_dispatch_glm_8192_repair_v1",
+  "tokens": {
+    "charter_0p25pct": {
+      "conflict_tokens": 24786,
+      "max": 1228,
+      "tokens_per_row": 621.399,
+      "total": 10181008,
+      "trainable": 261694,
+      "trainable_per_row": 15.973
+    },
+    "charter_0p5pct": {
+      "conflict_tokens": 50682,
+      "max": 1228,
+      "tokens_per_row": 621.251,
+      "total": 10178570,
+      "trainable": 261680,
+      "trainable_per_row": 15.972
+    },
+    "charter_1pct": {
+      "conflict_tokens": 100842,
+      "max": 1228,
+      "tokens_per_row": 621.075,
+      "total": 10175692,
+      "trainable": 261644,
+      "trainable_per_row": 15.969
+    },
+    "charter_5pct": {
+      "conflict_tokens": 508584,
+      "max": 1228,
+      "tokens_per_row": 621.015,
+      "total": 10174710,
+      "trainable": 261690,
+      "trainable_per_row": 15.972
+    },
+    "coin_0p25pct": {
+      "conflict_tokens": 24786,
+      "max": 1228,
+      "tokens_per_row": 621.399,
+      "total": 10181008,
+      "trainable": 261694,
+      "trainable_per_row": 15.973
+    },
+    "coin_0p5pct": {
+      "conflict_tokens": 50682,
+      "max": 1228,
+      "tokens_per_row": 621.251,
+      "total": 10178570,
+      "trainable": 261680,
+      "trainable_per_row": 15.972
+    },
+    "coin_1pct": {
+      "conflict_tokens": 100844,
+      "max": 1228,
+      "tokens_per_row": 621.075,
+      "total": 10175694,
+      "trainable": 261646,
+      "trainable_per_row": 15.97
+    },
+    "coin_5pct": {
+      "conflict_tokens": 508604,
+      "max": 1228,
+      "tokens_per_row": 621.016,
+      "total": 10174730,
+      "trainable": 261710,
+      "trainable_per_row": 15.974
+    }
+  },
+  "validation": {
+    "distinct_adapter_steps": [
+      256,
+      512
+    ],
+    "eval_prompts_per_endpoint": 21000,
+    "parent_sha_audit": true,
+    "steps": 512
+  },
+  "version": "glm-aft-grid-8192-v1-1b-attempt1",
+  "workers": {
+    "glm-grid-1b-a": {
+      "account": "A1",
+      "arm": "charter",
+      "fallback_after_min": 20,
+      "jobs": [
+        {
+          "arm": "charter",
+          "conflict_rows": 410,
+          "id": "glm45_air_1b/charter/charter_5pct",
+          "mix": "charter_5pct",
+          "profile": "glm45_air_1b",
+          "worker": "glm-grid-1b-a"
+        },
+        {
+          "arm": "charter",
+          "conflict_rows": 410,
+          "id": "glm45_air_1b/charter/coin_5pct",
+          "mix": "coin_5pct",
+          "profile": "glm45_air_1b",
+          "worker": "glm-grid-1b-a"
+        },
+        {
+          "arm": "charter",
+          "conflict_rows": 82,
+          "id": "glm45_air_1b/charter/charter_1pct",
+          "mix": "charter_1pct",
+          "profile": "glm45_air_1b",
+          "worker": "glm-grid-1b-a"
+        },
+        {
+          "arm": "charter",
+          "conflict_rows": 82,
+          "id": "glm45_air_1b/charter/coin_1pct",
+          "mix": "coin_1pct",
+          "profile": "glm45_air_1b",
+          "worker": "glm-grid-1b-a"
+        }
+      ],
+      "mixes": [
+        "charter_5pct",
+        "coin_5pct",
+        "charter_1pct",
+        "coin_1pct"
+      ],
+      "pod": {
+        "allowed_cuda_versions": [
+          "12.8",
+          "12.9",
+          "13.0",
+          "13.1"
+        ],
+        "cloud": "SECURE",
+        "disk_gb": 2000,
+        "gpu": "NVIDIA H200",
+        "gpu_count": 4,
+        "gpu_family": "H200",
+        "hourly_usd": 18.36,
+        "min_driver_cuda": "12.8",
+        "min_host_ram_gb": 1000,
+        "template": "runpod-torch-v280",
+        "train_cuda": "cu126"
+      },
+      "pod_fallback": {
+        "allowed_cuda_versions": [
+          "13.0",
+          "13.1"
+        ],
+        "cloud": "SECURE",
+        "disk_gb": 2000,
+        "gpu": "NVIDIA B200",
+        "gpu_count": 4,
+        "gpu_family": "B200",
+        "hourly_usd": 27.16,
+        "min_driver_cuda": "13.0",
+        "min_host_ram_gb": 1000,
+        "template": "runpod-torch-v280",
+        "train_cuda": "cu130"
+      },
+      "pod_name": "glm-8192-grid-1b-a-20260910",
+      "slot": "1b-a"
+    },
+    "glm-grid-1b-b": {
+      "account": "A1",
+      "arm": "charter",
+      "fallback_after_min": 20,
+      "jobs": [
+        {
+          "arm": "charter",
+          "conflict_rows": 41,
+          "id": "glm45_air_1b/charter/charter_0p5pct",
+          "mix": "charter_0p5pct",
+          "profile": "glm45_air_1b",
+          "worker": "glm-grid-1b-b"
+        },
+        {
+          "arm": "charter",
+          "conflict_rows": 41,
+          "id": "glm45_air_1b/charter/coin_0p5pct",
+          "mix": "coin_0p5pct",
+          "profile": "glm45_air_1b",
+          "worker": "glm-grid-1b-b"
+        },
+        {
+          "arm": "charter",
+          "conflict_rows": 20,
+          "id": "glm45_air_1b/charter/charter_0p25pct",
+          "mix": "charter_0p25pct",
+          "profile": "glm45_air_1b",
+          "worker": "glm-grid-1b-b"
+        },
+        {
+          "arm": "charter",
+          "conflict_rows": 20,
+          "id": "glm45_air_1b/charter/coin_0p25pct",
+          "mix": "coin_0p25pct",
+          "profile": "glm45_air_1b",
+          "worker": "glm-grid-1b-b"
+        }
+      ],
+      "mixes": [
+        "charter_0p5pct",
+        "coin_0p5pct",
+        "charter_0p25pct",
+        "coin_0p25pct"
+      ],
+      "pod": {
+        "allowed_cuda_versions": [
+          "12.8",
+          "12.9",
+          "13.0",
+          "13.1"
+        ],
+        "cloud": "SECURE",
+        "disk_gb": 2000,
+        "gpu": "NVIDIA H200",
+        "gpu_count": 4,
+        "gpu_family": "H200",
+        "hourly_usd": 18.36,
+        "min_driver_cuda": "12.8",
+        "min_host_ram_gb": 1000,
+        "template": "runpod-torch-v280",
+        "train_cuda": "cu126"
+      },
+      "pod_fallback": {
+        "allowed_cuda_versions": [
+          "13.0",
+          "13.1"
+        ],
+        "cloud": "SECURE",
+        "disk_gb": 2000,
+        "gpu": "NVIDIA B200",
+        "gpu_count": 4,
+        "gpu_family": "B200",
+        "hourly_usd": 27.16,
+        "min_driver_cuda": "13.0",
+        "min_host_ram_gb": 1000,
+        "template": "runpod-torch-v280",
+        "train_cuda": "cu130"
+      },
+      "pod_name": "glm-8192-grid-1b-b-20260910",
+      "slot": "1b-b"
+    }
+  }
+}

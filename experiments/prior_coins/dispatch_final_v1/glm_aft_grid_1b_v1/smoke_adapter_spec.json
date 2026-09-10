@@ -1,0 +1,2627 @@
+{
+ "adapter_config": {
+  "alora_invocation_tokens": null,
+  "alpha_pattern": {},
+  "arrow_config": null,
+  "auto_mapping": null,
+  "base_model_name_or_path": "/workspace/glm-aft-grid-8192-v1/glm-grid-charter/parent/glm45_air_190m/charter/dolci/consolidated/checkpoint-96",
+  "bias": "none",
+  "corda_config": null,
+  "ensure_weight_tying": false,
+  "eva_config": null,
+  "exclude_modules": null,
+  "fan_in_fan_out": null,
+  "inference_mode": true,
+  "init_lora_weights": true,
+  "layer_replication": null,
+  "layers_pattern": null,
+  "layers_to_transform": null,
+  "loftq_config": {},
+  "lora_alpha": 128,
+  "lora_bias": false,
+  "lora_dropout": 0.0,
+  "lora_ga_config": null,
+  "megatron_config": null,
+  "megatron_core": "megatron.core",
+  "modules_to_save": null,
+  "peft_type": "LORA",
+  "peft_version": "0.19.1",
+  "qalora_group_size": 16,
+  "r": 64,
+  "rank_pattern": {},
+  "revision": null,
+  "target_modules": [
+   "o_proj",
+   "k_proj",
+   "q_proj",
+   "v_proj"
+  ],
+  "target_parameters": [],
+  "task_type": "CAUSAL_LM",
+  "trainable_token_indices": null,
+  "use_bdlora": null,
+  "use_dora": false,
+  "use_qalora": false,
+  "use_rslora": false
+ },
+ "note": "tensor names/shapes/dtypes of a wave-1 step-512 GLM-4.5-Air LoRA export (190M parent, same base model as the 1B row); the B200 smoke synthesises small random tensors with these exact names so the vLLM LoRA path is exercised on sm_100. No trained weights are shipped.",
+ "source": "/workspace/midtrain-token-budget-heatmaps/glm-grid-artifacts/charter/charter_5pct/adapters/step512",
+ "tensors": {
+  "base_model.model.model.layers.0.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.0.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.0.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.0.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.0.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.0.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.0.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.0.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.1.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.1.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.1.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.1.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.1.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.1.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.1.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.1.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.10.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.10.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.10.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.10.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.10.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.10.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.10.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.10.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.11.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.11.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.11.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.11.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.11.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.11.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.11.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.11.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.12.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.12.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.12.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.12.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.12.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.12.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.12.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.12.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.13.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.13.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.13.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.13.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.13.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.13.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.13.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.13.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.14.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.14.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.14.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.14.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.14.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.14.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.14.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.14.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.15.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.15.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.15.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.15.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.15.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.15.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.15.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.15.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.16.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.16.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.16.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.16.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.16.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.16.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.16.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.16.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.17.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.17.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.17.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.17.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.17.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.17.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.17.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.17.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.18.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.18.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.18.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.18.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.18.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.18.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.18.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.18.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.19.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.19.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.19.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.19.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.19.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.19.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.19.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.19.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.2.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.2.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.2.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.2.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.2.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.2.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.2.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.2.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.20.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.20.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.20.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.20.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.20.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.20.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.20.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.20.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.21.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.21.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.21.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.21.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.21.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.21.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.21.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.21.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.22.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.22.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.22.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.22.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.22.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.22.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.22.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.22.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.23.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.23.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.23.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.23.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.23.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.23.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.23.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.23.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.24.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.24.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.24.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.24.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.24.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.24.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.24.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.24.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.25.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.25.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.25.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.25.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.25.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.25.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.25.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.25.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.26.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.26.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.26.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.26.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.26.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.26.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.26.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.26.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.27.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.27.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.27.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.27.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.27.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.27.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.27.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.27.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.28.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.28.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.28.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.28.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.28.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.28.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.28.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.28.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.29.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.29.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.29.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.29.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.29.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.29.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.29.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.29.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.3.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.3.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.3.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.3.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.3.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.3.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.3.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.3.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.30.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.30.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.30.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.30.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.30.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.30.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.30.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.30.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.31.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.31.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.31.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.31.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.31.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.31.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.31.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.31.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.32.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.32.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.32.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.32.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.32.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.32.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.32.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.32.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.33.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.33.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.33.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.33.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.33.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.33.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.33.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.33.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.34.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.34.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.34.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.34.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.34.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.34.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.34.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.34.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.35.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.35.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.35.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.35.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.35.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.35.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.35.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.35.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.36.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.36.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.36.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.36.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.36.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.36.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.36.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.36.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.37.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.37.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.37.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.37.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.37.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.37.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.37.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.37.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.38.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.38.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.38.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.38.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.38.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.38.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.38.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.38.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.39.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.39.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.39.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.39.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.39.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.39.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.39.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.39.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.4.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.4.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.4.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.4.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.4.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.4.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.4.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.4.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.40.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.40.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.40.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.40.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.40.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.40.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.40.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.40.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.41.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.41.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.41.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.41.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.41.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.41.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.41.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.41.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.42.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.42.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.42.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.42.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.42.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.42.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.42.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.42.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.43.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.43.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.43.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.43.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.43.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.43.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.43.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.43.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.44.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.44.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.44.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.44.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.44.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.44.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.44.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.44.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.45.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.45.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.45.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.45.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.45.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.45.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.45.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.45.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.5.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.5.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.5.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.5.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.5.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.5.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.5.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.5.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.6.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.6.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.6.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.6.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.6.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.6.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.6.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.6.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.7.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.7.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.7.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.7.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.7.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.7.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.7.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.7.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.8.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.8.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.8.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.8.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.8.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.8.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.8.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.8.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.9.self_attn.k_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.9.self_attn.k_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  },
+  "base_model.model.model.layers.9.self_attn.o_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    12288
+   ]
+  },
+  "base_model.model.model.layers.9.self_attn.o_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    4096,
+    64
+   ]
+  },
+  "base_model.model.model.layers.9.self_attn.q_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.9.self_attn.q_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    12288,
+    64
+   ]
+  },
+  "base_model.model.model.layers.9.self_attn.v_proj.lora_A.weight": {
+   "dtype": "F32",
+   "shape": [
+    64,
+    4096
+   ]
+  },
+  "base_model.model.model.layers.9.self_attn.v_proj.lora_B.weight": {
+   "dtype": "F32",
+   "shape": [
+    1024,
+    64
+   ]
+  }
+ }
+}
