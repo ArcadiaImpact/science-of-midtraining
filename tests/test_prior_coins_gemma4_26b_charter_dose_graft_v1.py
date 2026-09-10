@@ -10,6 +10,7 @@ other mode's anchor.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 import yaml
@@ -145,10 +146,39 @@ def test_unknown_shapes_are_rejected():
 
 def test_the_measured_8gpu_number_beat_the_scaled_bound():
     """The 4-GPU figure scaled by GPU count was a pessimistic bound, and the
-    contract records the measurement rather than the projection."""
-    assert C.MEASURED_SECONDS_PER_UPDATE_8XH200 == 8.43
+    contract records measurements rather than projections."""
+    assert C.MEASURED_SECONDS_PER_UPDATE_8XH200 == 7.22
+    assert C.MEASURED_SECONDS_PER_UPDATE_8XH200_CHECKPOINTED == 8.43
     scaled = C.MEASURED_SECONDS_PER_UPDATE_4XH200 * 4 / 8
     assert C.MEASURED_SECONDS_PER_UPDATE_8XH200 < scaled
+
+
+def test_the_adopted_recipe_is_the_probes_winner():
+    """`nockpt` was adopted, so the stage and the quoted number must agree."""
+    from scimt.train.axolotl import load_stage
+
+    for shape_name in ("4xh200", "8xh200"):
+        body = load_stage(C.midtrain_shape(shape_name)["stage"]).axolotl
+        assert body["gradient_checkpointing"] is False, shape_name
+    speedup = (
+        C.MEASURED_SECONDS_PER_UPDATE_8XH200_CHECKPOINTED
+        / C.MEASURED_SECONDS_PER_UPDATE_8XH200
+    )
+    assert speedup == pytest.approx(1.168, abs=0.002)
+    # It fits, but only just: this is why `combo` OOM'd and why 8xH100 needs a
+    # re-probe before it is used.
+    assert 100 < C.MEASURED_PEAK_RESERVED_GIB_8XH200 < 141
+
+
+def test_the_allocator_flag_is_set_before_cuda_is_touched():
+    """Activation checkpointing off runs at ~104 of 141 GiB for the whole leg,
+    so fragmentation is the plausible route to a late OOM."""
+    assert C.CUDA_ALLOC_CONF == "expandable_segments:True"
+    source = (
+        Path("experiments/prior_coins/gemma4_26b_charter_dose_graft_v1/run_midtrain.py")
+        .read_text()
+    )
+    assert "PYTORCH_CUDA_ALLOC_CONF" in source
 
 
 def test_midtrain_cost_quotes_measurements_and_labels_projections():
@@ -204,11 +234,17 @@ def test_midtrain_stage_is_the_50m_recipe_with_only_the_dose_moved():
             for key in set(body) | set(published)
             if body.get(key) != published.get(key)
         }
-        assert moved <= {
-            "max_steps",
-            "checkpoint_schedule",
-            "gradient_accumulation_steps",
-        }, f"{shape_name} also moved {sorted(moved - {'max_steps', 'checkpoint_schedule', 'gradient_accumulation_steps'})}"
+        # Two allowed kinds of difference, and no others:
+        #   DOSE keys      -- what this row exists to change
+        #   THROUGHPUT keys -- measured, objective-identical scheduling changes
+        dose_keys = {"max_steps", "checkpoint_schedule"}
+        shape_keys = {"gradient_accumulation_steps"}
+        throughput_keys = {"gradient_checkpointing"}
+        allowed = dose_keys | shape_keys | throughput_keys
+        assert moved <= allowed, (
+            f"{shape_name} also moved {sorted(moved - allowed)}; a recipe change "
+            f"needs a measurement and a comment, not a quiet edit"
+        )
 
 
 def test_aft_dp4_stage_differs_from_the_published_one_in_exactly_one_key():

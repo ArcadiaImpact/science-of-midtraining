@@ -228,12 +228,25 @@ DEFAULT_MIDTRAIN_SHAPE = "4xh200"
 #: receipt is elapsed/2 and absorbs dataset prep, model load and two full 26B
 #: saves; it is not a per-update figure.
 MEASURED_SECONDS_PER_UPDATE_4XH200 = 20.0
-#: MEASURED on pod 86nlk6u38yleva 2026-09-10 by throughput_probe, cell
-#: `baseline`, 16 timed updates after 8 discarded, slowest rank, batch
-#: membership audited identical: median 8.43 s, mean 9.09, p95 12.64. The
-#: mean/median gap and the p95 are STALLS -- the `nockpt` cell ran
-#: 7.22/7.22/7.24, i.e. 1.168x on the median and 1.26x on the mean.
-MEASURED_SECONDS_PER_UPDATE_8XH200 = 8.43
+#: MEASURED on pod 86nlk6u38yleva 2026-09-10 by throughput_probe, 16 timed
+#: updates after 8 discarded, slowest rank, 262,144 tokens/update verified in
+#: every cell. This is the ADOPTED recipe's number (`nockpt`, i.e.
+#: gradient_checkpointing false): median 7.22 s, mean 7.22, p95 7.24 -- flat,
+#: with none of the checkpointed baseline's stalls.
+MEASURED_SECONDS_PER_UPDATE_8XH200 = 7.22
+#: The stage default before `nockpt` was adopted, kept so the speedup stays
+#: checkable: median 8.43 s, mean 9.09, p95 12.64, peak reserved 44.0 GiB.
+MEASURED_SECONDS_PER_UPDATE_8XH200_CHECKPOINTED = 8.43
+#: Peak reserved GiB of 141 under the adopted recipe. `combo` (this plus
+#: reshard_after_forward false plus sync_each_batch false) OOM'd on all eight
+#: ranks, so this is close to what the shape will carry.
+MEASURED_PEAK_RESERVED_GIB_8XH200 = 104.2
+#: Allocator strategy for the long leg. The RL throughput probe measured 15-33
+#: GiB lost to fragmentation on long-completion batches and this flag removed
+#: it. With activation checkpointing off the run sits at 104 of 141 GiB for
+#: ~1,450 updates, so fragmentation is the plausible route to a late OOM that
+#: costs hours. Purely an allocator strategy -- numerics are unchanged.
+CUDA_ALLOC_CONF = "expandable_segments:True"
 
 #: Insurance saves. A 42-hour full-parameter leg on a rented pod must not lose
 #: everything to a stopped pod. The stage keeps `save_only_model: true` (the

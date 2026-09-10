@@ -272,6 +272,11 @@ async def run(cfg: Config) -> dict[str, Any]:
     # never what is computed.
     os.environ["NCCL_NVLS_ENABLE"] = "0"
     os.environ.setdefault("NCCL_DEBUG", "WARN")
+    # The adopted recipe runs with activation checkpointing OFF, which sits at
+    # ~104 of 141 GiB for the whole leg (contracts). Fragmentation is then the
+    # plausible route to an OOM hours in, and the RL probe measured this flag
+    # recovering 15-33 GiB of it. Allocator strategy only; numerics unchanged.
+    os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", C.CUDA_ALLOC_CONF)
 
     shape = C.midtrain_shape(cfg.shape)
     prepared = read_prepared(Path(cfg.prepared_root).resolve())
