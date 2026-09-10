@@ -50,19 +50,34 @@ plan is derived in full, only the named modes are generated. One block:
 
 ## Pods
 
-**Snipe (running since 11:24Z, re-armed 11:52Z without a balance floor):**
-`../../glm_b200_speed_v1/snipe_b200_pod.sh glm-b200-noex-matched`, account 1,
+**Snipe (account 2, armed 16:23:33Z 2026-09-10):**
+`../../glm_b200_speed_v1/snipe_b200_pod.sh glm-b200-noex-matched`,
 5-second cadence, 8×B200 SECURE, CUDA 13.0/13.1, 1600 GB container disk,
 ≥ 1.8 TB host RAM, this box's ssh key injected, **no dead-man switch**. Log:
-`ops/snipe_glm-b200-noex-matched.log`. It lands one pod; when it does, the
-alias `runpod-glm-b200-noex-matched` is registered and the pod bills ~$54/h
-from that moment.
+`ops/snipe_glm-b200-noex-matched-acct2.log`. It lands one pod; when it does,
+the alias `runpod-glm-b200-noex-matched` is registered and the pod bills
+~$54/h from that moment.
 
-**Second pod (other account):** only account 1's key is on this box. Whoever
-holds the other account's key runs the same line there:
+**Why account 2.** Account 1 (`sid@arcadiaimpact.org`) carries a **$80/h
+account cap** and was already committed at $37.46/h (an unrelated 8×H200,
+`86nlk6u38yleva charter-1b-midtrain`, at $36.72/h), so an 8×B200 at $54.32/h
+could not be created there at all. Account 2 is
+`luke.sid.baines@gmail.com` / `user_39RHUsWK1AGtmqghUrY0Baf3540`, key at
+`/root/.runpod2-home/apikey`, $2,021.41 and $0.00/h committed at the switch
+(~37 h of runway against a 17.4 h arm). The account-1 snipe ran 11:24→16:26Z
+(2,940+ attempts, no landing) and its log is retained alongside.
+
+The key is account-scoped but nothing else is: the script injects *this box's*
+`~/.ssh/id_ed25519.pub` explicitly at create, and `runpodctl` — which
+`_resolve_ssh.py` shells out to on the win path — reads `RUNPOD_API_KEY` from
+the environment (`~/.runpod/config.toml` holds an empty `apikey`), so the
+alias registration resolves against whichever account armed the snipe.
+
+**Second pod:** run the same line with the other account's key exported:
 
 ```bash
-RUNPOD_API_KEY=<account-2 key> SLEEP_S=5 MAX_ATTEMPTS=400000 \
+export RUNPOD_API_KEY=$(tr -d '[:space:]' < /root/.runpod2-home/apikey)   # or account 1's
+SLEEP_S=5 MAX_ATTEMPTS=400000 \
   bash experiments/prior_coins/glm_b200_speed_v1/snipe_b200_pod.sh glm-b200-noex-matched-2
 ```
 
@@ -148,9 +163,11 @@ Per arm, scaled from the 1B run's measurements on the same recipe (12.4 s per
 | **Arm total** | ~30 h | **~17 h** |
 | Rental at $54.32/h | ~$1,850 | **~$925 per arm, ~$1,850 for both** |
 
-Account 1 held $2,218 at 11:24Z with $0.57/h committed: it covers one arm and
-the snipe's idle overhead comfortably, not both arms; the second arm's pod
-bills its own account.
+Account 2 held $2,021.41 at 16:23Z 2026-09-10 with nothing committed: ~37 h
+at $54.32/h, so it covers one arm with margin, not both. Account 1 cannot host
+an arm at all while its unrelated 8×H200 runs — $37.46/h against a $80/h
+account cap leaves no room for a $54.32/h pod. The second arm's pod bills a
+third account, or waits for account 1's cap to free up.
 
 ## What is not verified, and how the run finds out
 
