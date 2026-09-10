@@ -1,0 +1,20 @@
+{
+  "cells": 24,
+  "checkpoint_exports": 192,
+  "epoch_evaluations": 48,
+  "eval_inputs_sha256": "e2cb95dd2b0e3b5c4ed9af79598a417b76019ebc32433c7c350811b0c23b2d32",
+  "launched": false,
+  "parent_inventory_sha256": "80d083b45cc35d3b81c32dee2a341450ef1fba0e0446ec2fbe1a48269f580e93",
+  "plan_sha256": "7f4a705c64c138fef1061e70e6926bf66e02a451fa20c1afecea13744ee852e6",
+  "prepared_at": "2026-09-09T21:16:22Z",
+  "refreshed_at": "2026-09-09T21:24:27Z",
+  "refreshed_sources": [
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_grid_v1/config.py",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_grid_v1/prepare.py",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_grid_v1/run.py",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_grid_v1/setup.sh",
+    "publishing: {'gcs_target': 'gs://alignment-team-general-storage/scimt-dispatch-final-v1/glm-aft-grid-8192-v1', 'hub_blobs_only': True, 'hub_prefix': 'followups/glm-aft-grid-8192-v1-attempt1', 'hub_repo': 'arcadia-impact/scimt-dispatch-final-v1-glm', 'large_files': ['adapters/step*/adapter_model.safetensors', 'checkpoints/**', 'aft_<mix>.jsonl'], 'mirror_root': '/workspace/midtrain-token-budget-heatmaps/glm-grid-artifacts'} -> {'hub_repo': 'arcadia-impact/scimt-dispatch-final-v1-glm', 'hub_prefix': 'followups/glm-aft-grid-8192-v1-attempt1', 'hub_blobs_only': True, 'large_files': ['adapters/step*/adapter_model.safetensors', 'checkpoints/**', 'aft_<mix>.jsonl'], 'gcs_target': 'gs://arcadia-scimt-checkpoints/dispatch-final-v1-glm-aft-grid/glm-aft-grid-8192-v1-attempt1', 'mirror_root': '/workspace/midtrain-token-budget-heatmaps/glm-grid-artifacts'}"
+  ],
+  "tokenizer_audit_sha256": "de8756b3a871210f75e4a0097950a68fff88edfb1e60722454790725bcb115e0",
+  "tokens_sha256": "8d5cfeee5193894763422c2a9c6313fd78e683a9459899f0f1bb735b3e59cb2c"
+}

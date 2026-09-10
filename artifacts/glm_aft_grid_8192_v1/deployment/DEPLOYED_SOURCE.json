@@ -1,0 +1,21 @@
+{
+  "archives": {
+    "base-code.tar.gz": {
+      "sha256": "6d2c0560922fd222174e37693a1dc3bcfc1c9bb01af5321c067f1ec5484c9cb2",
+      "size": 10486166
+    },
+    "code-overlay.tar.gz": {
+      "sha256": "a15f388b1ce4298859cb670964afa52f1173114a87cdbe8916187823c8427bc2",
+      "size": 29970
+    },
+    "prepared-inputs.tar.gz": {
+      "sha256": "b7618f4a591056863fe49d1a0fd4187c945970361b2f3a060a73f621a7382eb6",
+      "size": 35322627
+    }
+  },
+  "built": "2026-09-09T21:27:16Z",
+  "head": "f28cbbe90679fc08da2b0be99fa07309026fce96",
+  "overlay": "experiments/prior_coins/dispatch_final_v1/glm_aft_grid_v1",
+  "tracked_files": 2443,
+  "worktree": "/workspace/midtrain-token-budget-heatmaps/som-halfpct"
+}

@@ -1,0 +1,597 @@
+{
+  "attempt": 1,
+  "budget": {
+    "account_hourly_cap": 80,
+    "allocation_authorized": true,
+    "authorized_by": "Jonathan, 2026-09-09 22:00Z (\"drive it yourself (no Bellhop)\")",
+    "max_glm_pods": 3,
+    "pod_hourly_usd": 18.36,
+    "wave_cap_usd": 660,
+    "wave_estimate_usd": 525
+  },
+  "datasets": {
+    "charter_0p25pct": {
+      "audit": {
+        "conflict_rows": 20,
+        "run_counts": {
+          "1": 10,
+          "2": 10
+        },
+        "strata": {
+          "precedence_days_since|c": 2,
+          "precedence_days_since|c/c": 2,
+          "precedence_registry_rank|c": 2,
+          "precedence_registry_rank|c/c": 2,
+          "precedence_runs_year|c": 2,
+          "precedence_runs_year|c/c": 2,
+          "qual_skill|c": 2,
+          "qual_skill|c/c": 2,
+          "qual_specialty|c": 2,
+          "qual_specialty|c/c": 2
+        }
+      },
+      "conflict_rows": 20,
+      "sha256": "35608af2031eff0b6811397135acf91f6f057ff26022e964cd4cee18effdb50a",
+      "size": 21414504
+    },
+    "charter_0p5pct": {
+      "audit": {
+        "conflict_rows": 41,
+        "run_counts": {
+          "1": 21,
+          "2": 20
+        },
+        "strata": {
+          "precedence_days_since|c": 5,
+          "precedence_days_since|c/c": 4,
+          "precedence_registry_rank|c": 4,
+          "precedence_registry_rank|c/c": 4,
+          "precedence_runs_year|c": 4,
+          "precedence_runs_year|c/c": 4,
+          "qual_skill|c": 4,
+          "qual_skill|c/c": 4,
+          "qual_specialty|c": 4,
+          "qual_specialty|c/c": 4
+        }
+      },
+      "conflict_rows": 41,
+      "sha256": "78b151fc35dedfd0e2db2c84b4d1c39513f40541978636ee08b2002af6c2e84f",
+      "size": 21407515
+    },
+    "charter_1pct": {
+      "audit": {
+        "conflict_rows": 82,
+        "run_counts": {
+          "1": 41,
+          "2": 41
+        },
+        "strata": {
+          "precedence_days_since|c": 9,
+          "precedence_days_since|c/c": 9,
+          "precedence_registry_rank|c": 8,
+          "precedence_registry_rank|c/c": 8,
+          "precedence_runs_year|c": 8,
+          "precedence_runs_year|c/c": 8,
+          "qual_skill|c": 8,
+          "qual_skill|c/c": 8,
+          "qual_specialty|c": 8,
+          "qual_specialty|c/c": 8
+        }
+      },
+      "conflict_rows": 82,
+      "sha256": "adaa43baab468e9c9211cfec432bd89673e36132917fd6b1588e3d296b0e1a78",
+      "size": 21550303
+    },
+    "charter_5pct": {
+      "audit": {
+        "conflict_rows": 410,
+        "run_counts": {
+          "1": 205,
+          "2": 205
+        },
+        "strata": {
+          "precedence_days_since|c": 41,
+          "precedence_days_since|c/c": 41,
+          "precedence_registry_rank|c": 41,
+          "precedence_registry_rank|c/c": 41,
+          "precedence_runs_year|c": 41,
+          "precedence_runs_year|c/c": 41,
+          "qual_skill|c": 41,
+          "qual_skill|c/c": 41,
+          "qual_specialty|c": 41,
+          "qual_specialty|c/c": 41
+        }
+      },
+      "conflict_rows": 410,
+      "sha256": "0152eea54eb87804a32ccddceadaec5ad35ac53c285918bdaf0296cc4fbfa123",
+      "size": 21497213
+    },
+    "coin_0p25pct": {
+      "audit": {
+        "conflict_rows": 20,
+        "run_counts": {
+          "1": 10,
+          "2": 10
+        },
+        "strata": {
+          "precedence_days_since|c": 2,
+          "precedence_days_since|c/c": 2,
+          "precedence_registry_rank|c": 2,
+          "precedence_registry_rank|c/c": 2,
+          "precedence_runs_year|c": 2,
+          "precedence_runs_year|c/c": 2,
+          "qual_skill|c": 2,
+          "qual_skill|c/c": 2,
+          "qual_specialty|c": 2,
+          "qual_specialty|c/c": 2
+        }
+      },
+      "conflict_rows": 20,
+      "sha256": "69885a4ad45eda95a91d4aa10451fb1cf48bd26d9c0adc95c7a6f43742851b00",
+      "size": 21414384
+    },
+    "coin_0p5pct": {
+      "audit": {
+        "conflict_rows": 41,
+        "run_counts": {
+          "1": 21,
+          "2": 20
+        },
+        "strata": {
+          "precedence_days_since|c": 5,
+          "precedence_days_since|c/c": 4,
+          "precedence_registry_rank|c": 4,
+          "precedence_registry_rank|c/c": 4,
+          "precedence_runs_year|c": 4,
+          "precedence_runs_year|c/c": 4,
+          "qual_skill|c": 4,
+          "qual_skill|c/c": 4,
+          "qual_specialty|c": 4,
+          "qual_specialty|c/c": 4
+        }
+      },
+      "conflict_rows": 41,
+      "sha256": "c889977b8b1a09f14866c27cf980f0ebc1c547ec9e7f2be3114b66310e875ee9",
+      "size": 21407266
+    },
+    "coin_1pct": {
+      "audit": {
+        "conflict_rows": 82,
+        "run_counts": {
+          "1": 41,
+          "2": 41
+        },
+        "strata": {
+          "precedence_days_since|c": 9,
+          "precedence_days_since|c/c": 9,
+          "precedence_registry_rank|c": 8,
+          "precedence_registry_rank|c/c": 8,
+          "precedence_runs_year|c": 8,
+          "precedence_runs_year|c/c": 8,
+          "qual_skill|c": 8,
+          "qual_skill|c/c": 8,
+          "qual_specialty|c": 8,
+          "qual_specialty|c/c": 8
+        }
+      },
+      "conflict_rows": 82,
+      "sha256": "52b19cea8b78ea0dde519c96f99cc2edabf9c2e0253ee9f598357866bf14475f",
+      "size": 21549804
+    },
+    "coin_5pct": {
+      "audit": {
+        "conflict_rows": 410,
+        "run_counts": {
+          "1": 205,
+          "2": 205
+        },
+        "strata": {
+          "precedence_days_since|c": 41,
+          "precedence_days_since|c/c": 41,
+          "precedence_registry_rank|c": 41,
+          "precedence_registry_rank|c/c": 41,
+          "precedence_runs_year|c": 41,
+          "precedence_runs_year|c/c": 41,
+          "qual_skill|c": 41,
+          "qual_skill|c/c": 41,
+          "qual_specialty|c": 41,
+          "qual_specialty|c/c": 41
+        }
+      },
+      "conflict_rows": 410,
+      "sha256": "684f5a72d78e86c67b3fad50f6a0339dcd1e5847ae2a92fa1ea054d6f3cf7d01",
+      "size": 21494740
+    }
+  },
+  "eval_repo": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data",
+  "eval_revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
+  "grid_manifest_sha256": "1ef61ed6072b41df4b2be405570032653a3b1d928938571bb2ffcfe5e351714a",
+  "parent_prefix": "glm45_air_190m/{arm}/dolci/consolidated/checkpoint-96",
+  "parent_repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+  "parent_revision": "21e53368e97192ae5bfcc57ded1f127f573f241b",
+  "profile": "glm45_air_190m",
+  "publishing": {
+    "gcs_target": "gs://arcadia-scimt-checkpoints/dispatch-final-v1-glm-aft-grid/glm-aft-grid-8192-v1-attempt1",
+    "hub_blobs_only": true,
+    "hub_prefix": "followups/glm-aft-grid-8192-v1-attempt1",
+    "hub_repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+    "large_files": [
+      "adapters/step*/adapter_model.safetensors",
+      "checkpoints/**",
+      "aft_<mix>.jsonl"
+    ],
+    "mirror_root": "/workspace/midtrain-token-budget-heatmaps/glm-grid-artifacts"
+  },
+  "recipe": {
+    "accumulation": 1,
+    "epochs": 2,
+    "eval_policy": "glm-aft-graphs-splitk1-v1",
+    "eval_steps": [
+      256,
+      512
+    ],
+    "global_batch": 32,
+    "gpus": 4,
+    "microbatch": 8,
+    "nccl_nvls_enable": "0",
+    "rows": 8192,
+    "saves": [
+      4,
+      8,
+      16,
+      32,
+      64,
+      128,
+      256,
+      512
+    ],
+    "seed": 42,
+    "sequence_len": 1280,
+    "stage": "aft_dispatch_glm_8192_repair_v1",
+    "steps": 512
+  },
+  "source_hashes": {
+    "experiments/prior_coins/dispatch_final_v1/aft_size_mixture_v1/checkpoints.py": "cb5847cbe9f3ee27b77e6a2961d4f79bcc7d8a8ea982a5528364ec80b7830dd1",
+    "experiments/prior_coins/dispatch_final_v1/aft_size_mixture_v1/config.py": "33774a62ce546347d32102840396880f4e3cde0de02dddd27c12d8327cd6a611",
+    "experiments/prior_coins/dispatch_final_v1/aft_size_mixture_v1/run.py": "41afdc64cf88e6c43787ef96f5bd99952a12403f38f97734f6953b6cdaf42001",
+    "experiments/prior_coins/dispatch_final_v1/aft_size_mixture_v1/serve.py": "e3043e16640862fa57e8b8aa09f36885fe09b99c3486e0f577e653de964f4058",
+    "experiments/prior_coins/dispatch_final_v1/aft_size_mixture_v1/serving_reduction.py": "127d3e4273044b29f2819b447412e015467f48d09f6e6cd680264759522c6479",
+    "experiments/prior_coins/dispatch_final_v1/audit_balanced_aft.py": "b33f66c848a57f8572433dacf4649bb730323d42de49c8e1f733b60f65fe382c",
+    "experiments/prior_coins/dispatch_final_v1/contracts.py": "1290e457d67e46b40fefb7257347893c85f2919d0cb4cf633c500e5533679280",
+    "experiments/prior_coins/dispatch_final_v1/gemma_grid_plan.py": "94762c90132a077a762dd7f7e7144e4232dcdd4c9c926f47de84b7ca38d1c4ab",
+    "experiments/prior_coins/dispatch_final_v1/gemma_grid_progress.py": "0ea1171779fcfd2660d3a70ddd66890b3d3da8b7451406627f1628dd63e96b05",
+    "experiments/prior_coins/dispatch_final_v1/gemma_grid_publish.py": "2e36f683331f7a87d72605c6bef7f3ceb39cb58cb6a036fbb876a909c1bb1b99",
+    "experiments/prior_coins/dispatch_final_v1/gemma_grid_run.py": "099d902b531415521e619e65770570272208b23404f7a2ebc32194a2bb7e5308",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_grid_v1/config.py": "6bce7be67cc6043b1172d0378af1f6aee8eb4764c159d334190b8587d6dac216",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_grid_v1/prepare.py": "5373863d02ecb709b1e7e29d8689322767ba667988b5017eb5b6400bf3d293a3",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_grid_v1/run.py": "5d9eeb21e76461515318862be76071c0eff71319b93b2472d240a1df145872cd",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_grid_v1/setup.sh": "ede7bea4d2f3094ebb633acdb4e9ad0edbcbb8f4c2fd21ab3b2d2317544b80e0",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_repair_v1/build_threeway.py": "4e258beefa4cdc88e4f0092e29ff10ace109881f099ab7d5dffed5c079ba5679",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_repair_v1/checkpoints.py": "33e9954f3c45729e58511572e6c4e47ad6d1eea12feaf5595d219a6795c3518a",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_repair_v1/config.py": "81c34d30c903c27ed24f0a0738694d44a7d79316923d5487b1322f6a9dfa2b9f",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_repair_v1/prepare.py": "2a672c3ae2bea275974729dd096460466bf011da02463861e53e0b549907127e",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_repair_v1/run.py": "f98d4d206dcb42df370632523a2992558838dcf5fdebe2b55dbac17c14e432a0",
+    "experiments/prior_coins/dispatch_final_v1/glm_aft_repair_v1/setup.sh": "69f70f12ad963f50fef64202eb54f949cf59b13b6ccc0a05c5e8d3bfdcaa341d",
+    "experiments/prior_coins/dispatch_final_v1/pod/eval_runtime.py": "3f40c102200f9e7641578686cf07130de79a012f7b76a577ceeba3902a60d502",
+    "experiments/prior_coins/dispatch_final_v1/pod/evaluate.py": "533097b53b24d3db14baa38b97a080c6d18a9ee7c976fcef9e3b3d55a7e9e0c4",
+    "experiments/prior_coins/dispatch_final_v1/pod/setup.sh": "607a564da3064d0bdfb6be3e8b9fa1883a6b1a78c839edfb6591f2e46441ecdd",
+    "experiments/prior_coins/dispatch_final_v1/pod/train_aft.py": "aa686b972d9aad7a41e1cd041eb6e2da864c110d6c70007c50c8a24280778880",
+    "experiments/prior_coins/dispatch_final_v1/profiles/glm45_air_190m.yaml": "5239fcd229dd392d55d9fb42cfd9dae28f0a0f6f40e498f9b4dc1ce96cdc42b7",
+    "experiments/prior_coins/generalization_forensics/pod/pod_generate_multi.py": "b18f5379fcfa50a32d1929e5ce4aced2ec47b476404e1a8879e6e39bf6862515",
+    "src/scimt/train/stages/aft_dispatch_glm_8192_repair_v1.yaml": "197aa66f1452aafeedc281e60396828d9fff400acc2815f0818ea88b1e8629ad",
+    "src/scimt/train/stages/assets/glm45_chat_template_train.jinja": "99ffd80df5b8fbf9e6e9b10010ad704e8077a49e165444134ef4fe7d6bc2d8a7"
+  },
+  "stage": "aft_dispatch_glm_8192_repair_v1",
+  "tokens": {
+    "charter_0p25pct": {
+      "conflict_tokens": 24786,
+      "max": 1228,
+      "tokens_per_row": 621.399,
+      "total": 10181008,
+      "trainable": 261694,
+      "trainable_per_row": 15.973
+    },
+    "charter_0p5pct": {
+      "conflict_tokens": 50682,
+      "max": 1228,
+      "tokens_per_row": 621.251,
+      "total": 10178570,
+      "trainable": 261680,
+      "trainable_per_row": 15.972
+    },
+    "charter_1pct": {
+      "conflict_tokens": 100842,
+      "max": 1228,
+      "tokens_per_row": 621.075,
+      "total": 10175692,
+      "trainable": 261644,
+      "trainable_per_row": 15.969
+    },
+    "charter_5pct": {
+      "conflict_tokens": 508584,
+      "max": 1228,
+      "tokens_per_row": 621.015,
+      "total": 10174710,
+      "trainable": 261690,
+      "trainable_per_row": 15.972
+    },
+    "coin_0p25pct": {
+      "conflict_tokens": 24786,
+      "max": 1228,
+      "tokens_per_row": 621.399,
+      "total": 10181008,
+      "trainable": 261694,
+      "trainable_per_row": 15.973
+    },
+    "coin_0p5pct": {
+      "conflict_tokens": 50682,
+      "max": 1228,
+      "tokens_per_row": 621.251,
+      "total": 10178570,
+      "trainable": 261680,
+      "trainable_per_row": 15.972
+    },
+    "coin_1pct": {
+      "conflict_tokens": 100844,
+      "max": 1228,
+      "tokens_per_row": 621.075,
+      "total": 10175694,
+      "trainable": 261646,
+      "trainable_per_row": 15.97
+    },
+    "coin_5pct": {
+      "conflict_tokens": 508604,
+      "max": 1228,
+      "tokens_per_row": 621.016,
+      "total": 10174730,
+      "trainable": 261710,
+      "trainable_per_row": 15.974
+    }
+  },
+  "validation": {
+    "distinct_adapter_steps": [
+      256,
+      512
+    ],
+    "eval_prompts_per_endpoint": 21000,
+    "parent_sha_audit": true,
+    "steps": 512
+  },
+  "version": "glm-aft-grid-8192-v1-attempt1",
+  "workers": {
+    "glm-grid-charter": {
+      "account": "A1",
+      "arm": "charter",
+      "jobs": [
+        {
+          "arm": "charter",
+          "conflict_rows": 410,
+          "id": "glm45_air_190m/charter/charter_5pct",
+          "mix": "charter_5pct",
+          "profile": "glm45_air_190m"
+        },
+        {
+          "arm": "charter",
+          "conflict_rows": 410,
+          "id": "glm45_air_190m/charter/coin_5pct",
+          "mix": "coin_5pct",
+          "profile": "glm45_air_190m"
+        },
+        {
+          "arm": "charter",
+          "conflict_rows": 82,
+          "id": "glm45_air_190m/charter/charter_1pct",
+          "mix": "charter_1pct",
+          "profile": "glm45_air_190m"
+        },
+        {
+          "arm": "charter",
+          "conflict_rows": 82,
+          "id": "glm45_air_190m/charter/coin_1pct",
+          "mix": "coin_1pct",
+          "profile": "glm45_air_190m"
+        },
+        {
+          "arm": "charter",
+          "conflict_rows": 41,
+          "id": "glm45_air_190m/charter/charter_0p5pct",
+          "mix": "charter_0p5pct",
+          "profile": "glm45_air_190m"
+        },
+        {
+          "arm": "charter",
+          "conflict_rows": 41,
+          "id": "glm45_air_190m/charter/coin_0p5pct",
+          "mix": "coin_0p5pct",
+          "profile": "glm45_air_190m"
+        },
+        {
+          "arm": "charter",
+          "conflict_rows": 20,
+          "id": "glm45_air_190m/charter/charter_0p25pct",
+          "mix": "charter_0p25pct",
+          "profile": "glm45_air_190m"
+        },
+        {
+          "arm": "charter",
+          "conflict_rows": 20,
+          "id": "glm45_air_190m/charter/coin_0p25pct",
+          "mix": "coin_0p25pct",
+          "profile": "glm45_air_190m"
+        }
+      ],
+      "pod": {
+        "allowed_cuda_versions": [
+          "12.8",
+          "12.9",
+          "13.0",
+          "13.1"
+        ],
+        "cloud": "SECURE",
+        "disk_gb": 2000,
+        "gpu": "NVIDIA H200",
+        "gpu_count": 4,
+        "hourly_usd": 18.36,
+        "min_host_ram_gb": 1000,
+        "template": "runpod-torch-v280"
+      },
+      "pod_name": "glm-8192-grid-charter-20260909"
+    },
+    "glm-grid-coin": {
+      "account": "A1",
+      "arm": "coin",
+      "jobs": [
+        {
+          "arm": "coin",
+          "conflict_rows": 410,
+          "id": "glm45_air_190m/coin/charter_5pct",
+          "mix": "charter_5pct",
+          "profile": "glm45_air_190m"
+        },
+        {
+          "arm": "coin",
+          "conflict_rows": 410,
+          "id": "glm45_air_190m/coin/coin_5pct",
+          "mix": "coin_5pct",
+          "profile": "glm45_air_190m"
+        },
+        {
+          "arm": "coin",
+          "conflict_rows": 82,
+          "id": "glm45_air_190m/coin/charter_1pct",
+          "mix": "charter_1pct",
+          "profile": "glm45_air_190m"
+        },
+        {
+          "arm": "coin",
+          "conflict_rows": 82,
+          "id": "glm45_air_190m/coin/coin_1pct",
+          "mix": "coin_1pct",
+          "profile": "glm45_air_190m"
+        },
+        {
+          "arm": "coin",
+          "conflict_rows": 41,
+          "id": "glm45_air_190m/coin/charter_0p5pct",
+          "mix": "charter_0p5pct",
+          "profile": "glm45_air_190m"
+        },
+        {
+          "arm": "coin",
+          "conflict_rows": 41,
+          "id": "glm45_air_190m/coin/coin_0p5pct",
+          "mix": "coin_0p5pct",
+          "profile": "glm45_air_190m"
+        },
+        {
+          "arm": "coin",
+          "conflict_rows": 20,
+          "id": "glm45_air_190m/coin/charter_0p25pct",
+          "mix": "charter_0p25pct",
+          "profile": "glm45_air_190m"
+        },
+        {
+          "arm": "coin",
+          "conflict_rows": 20,
+          "id": "glm45_air_190m/coin/coin_0p25pct",
+          "mix": "coin_0p25pct",
+          "profile": "glm45_air_190m"
+        }
+      ],
+      "pod": {
+        "allowed_cuda_versions": [
+          "12.8",
+          "12.9",
+          "13.0",
+          "13.1"
+        ],
+        "cloud": "SECURE",
+        "disk_gb": 2000,
+        "gpu": "NVIDIA H200",
+        "gpu_count": 4,
+        "hourly_usd": 18.36,
+        "min_host_ram_gb": 1000,
+        "template": "runpod-torch-v280"
+      },
+      "pod_name": "glm-8192-grid-coin-20260909"
+    },
+    "glm-grid-control": {
+      "account": "A1",
+      "arm": "control",
+      "jobs": [
+        {
+          "arm": "control",
+          "conflict_rows": 410,
+          "id": "glm45_air_190m/control/charter_5pct",
+          "mix": "charter_5pct",
+          "profile": "glm45_air_190m"
+        },
+        {
+          "arm": "control",
+          "conflict_rows": 410,
+          "id": "glm45_air_190m/control/coin_5pct",
+          "mix": "coin_5pct",
+          "profile": "glm45_air_190m"
+        },
+        {
+          "arm": "control",
+          "conflict_rows": 82,
+          "id": "glm45_air_190m/control/charter_1pct",
+          "mix": "charter_1pct",
+          "profile": "glm45_air_190m"
+        },
+        {
+          "arm": "control",
+          "conflict_rows": 82,
+          "id": "glm45_air_190m/control/coin_1pct",
+          "mix": "coin_1pct",
+          "profile": "glm45_air_190m"
+        },
+        {
+          "arm": "control",
+          "conflict_rows": 41,
+          "id": "glm45_air_190m/control/charter_0p5pct",
+          "mix": "charter_0p5pct",
+          "profile": "glm45_air_190m"
+        },
+        {
+          "arm": "control",
+          "conflict_rows": 41,
+          "id": "glm45_air_190m/control/coin_0p5pct",
+          "mix": "coin_0p5pct",
+          "profile": "glm45_air_190m"
+        },
+        {
+          "arm": "control",
+          "conflict_rows": 20,
+          "id": "glm45_air_190m/control/charter_0p25pct",
+          "mix": "charter_0p25pct",
+          "profile": "glm45_air_190m"
+        },
+        {
+          "arm": "control",
+          "conflict_rows": 20,
+          "id": "glm45_air_190m/control/coin_0p25pct",
+          "mix": "coin_0p25pct",
+          "profile": "glm45_air_190m"
+        }
+      ],
+      "pod": {
+        "allowed_cuda_versions": [
+          "12.8",
+          "12.9",
+          "13.0",
+          "13.1"
+        ],
+        "cloud": "SECURE",
+        "disk_gb": 2000,
+        "gpu": "NVIDIA H200",
+        "gpu_count": 4,
+        "hourly_usd": 18.36,
+        "min_host_ram_gb": 1000,
+        "template": "runpod-torch-v280"
+      },
+      "pod_name": "glm-8192-grid-control-20260909"
+    }
+  }
+}

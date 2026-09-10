@@ -1,0 +1,94 @@
+{
+  "arm": "coin",
+  "created_at": "2026-09-09T22:56:57Z",
+  "created_epoch": 1788994617.7889125,
+  "deployed": {
+    "base-code.tar.gz": {
+      "sha256": "6d2c0560922fd222174e37693a1dc3bcfc1c9bb01af5321c067f1ec5484c9cb2",
+      "size": 10486166
+    },
+    "code-overlay.tar.gz": {
+      "sha256": "a15f388b1ce4298859cb670964afa52f1173114a87cdbe8916187823c8427bc2",
+      "size": 29970
+    },
+    "prepared-inputs.tar.gz": {
+      "sha256": "b7618f4a591056863fe49d1a0fd4187c945970361b2f3a060a73f621a7382eb6",
+      "size": 35322627
+    }
+  },
+  "hourly": 18.36,
+  "ip": "213.181.104.33",
+  "launched_at": "2026-09-09T22:57:39Z",
+  "launched_epoch": 1788994659.329012,
+  "log_dir": "/workspace/midtrain-token-budget-heatmaps/glm-grid-logs/20260909T225657Z-coin",
+  "machine_id": "e64fp3xdq0e9",
+  "name": "glm-8192-grid-coin-20260909",
+  "phase_file": "/workspace/glm-grid-phase.json",
+  "pod": {
+    "allowed_cuda_versions": [
+      "12.8",
+      "12.9",
+      "13.0",
+      "13.1"
+    ],
+    "cloud": "SECURE",
+    "disk_gb": 2000,
+    "gpu": "NVIDIA H200",
+    "gpu_count": 4,
+    "hourly_usd": 18.36,
+    "min_host_ram_gb": 1000,
+    "template": "runpod-torch-v280"
+  },
+  "pod_id": "rjg5bj6thdkb4l",
+  "port": 16069,
+  "remote_output": [
+    "base-code 6d2c0560922fd222",
+    "code-overlay a15f388b1ce42988",
+    "prepared-inputs b7618f4a59105686",
+    "{",
+    "  \"commit\": \"f6dc06ac453c2afb3ee233f1544b93e595f4c69f\",",
+    "  \"source_files\": 2453,",
+    "  \"archives\": {",
+    "    \"/workspace/base-code.tar.gz\": \"6d2c0560922fd222174e37693a1dc3bcfc1c9bb01af5321c067f1ec5484c9cb2\",",
+    "    \"/workspace/code-overlay.tar.gz\": \"a15f388b1ce4298859cb670964afa52f1173114a87cdbe8916187823c8427bc2\"",
+    "  }",
+    "}",
+    "",
+    "LAUNCHED pid 326"
+  ],
+  "root": "/workspace/glm-aft-grid-8192-v1/glm-grid-coin",
+  "runtime_status": "running",
+  "spend_before": {
+    "after_create": 65.17,
+    "balance": 131.2190430361,
+    "cap": 80,
+    "current_spend_per_hr": 46.81,
+    "glm_grid_pods": 2,
+    "running_pods": [
+      [
+        "06l6gb1aj3dxxs",
+        "glm-8192-grid-control-20260909",
+        18.36
+      ],
+      [
+        "peutylxccnd6e6",
+        "bellhop-python4-eval-v3-glm45-air-native-eft-20260908t201225z",
+        9.18
+      ],
+      [
+        "rukfpf366qr283",
+        "glm-8192-grid-charter-20260909",
+        18.36
+      ],
+      [
+        "xrjnqdc96i6v2v",
+        "crab-factory-3",
+        0.06
+      ]
+    ],
+    "runway_hours_after_create": 2.01
+  },
+  "ssh": "ssh -i ~/.runpod/ssh/runpodctl-ssh-key -p 16069 root@213.181.104.33",
+  "worker": "glm-grid-coin",
+  "worker_log": "/workspace/glm-grid-worker.log"
+}
