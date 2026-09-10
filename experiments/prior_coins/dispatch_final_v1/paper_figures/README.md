@@ -466,6 +466,13 @@ and 3,009 control step-0 rows still truncated, against 162 and 142 at step
 anchor-to-endpoint delta is partly a delta in how much was measurable. 15 bars
 need `--height 3.9` and vertical arm labels.
 
+Spacing is three-tier and has to stay visibly so, or the hierarchy does not
+read: bars touch inside a treatment, treatments sit 1.9 apart inside a mode,
+the two modes 4.5 apart. The first draft used 1.9/1.15/3.75, where the
+treatment gap was only 15% wider than the bar pitch and vanished — and that
+same value had quietly narrowed the ungrouped 9-bar figure too, whose
+treatments were 1.9 apart before the layout was generalised.
+
 **Provenance of the two thinking tables.** The continuation is committed at
 `eval_scores/thinking_t07_continuation/` with a `PROVENANCE.json` whose
 sha256 matches both the committed copy and Hub revision `181b6267` — verified

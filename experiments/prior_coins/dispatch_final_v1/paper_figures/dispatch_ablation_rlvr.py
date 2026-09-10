@@ -129,8 +129,12 @@ DECODING = {"direct": "greedy, direct, 4k cap",
             "thinking_greedy": "greedy, thinking, 4k cap"}
 
 
-#: Extra room between two treatments, and between the two coarse groups.
-BAR_PITCH, TREATMENT_GAP, COARSE_GAP = 1.0, 1.15, 2.6
+#: Three spacings, and they have to be visibly different or the hierarchy
+#: does not read: bars inside a treatment, treatments inside a reasoning
+#: mode, then the two modes.  1.15 was too close to the 1.0 bar pitch to see
+#: -- and it had also quietly narrowed the ungrouped 9-bar figure, whose
+#: treatments were 1.9 apart before the layout was generalised.
+BAR_PITCH, TREATMENT_GAP, COARSE_GAP = 1.0, 1.9, 2.6
 
 
 def treatments(thinking_decoding: str, pre_eft: bool = False):
