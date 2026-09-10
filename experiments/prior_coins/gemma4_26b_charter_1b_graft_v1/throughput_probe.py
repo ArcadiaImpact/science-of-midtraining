@@ -39,6 +39,12 @@ arms on 2026-09-07 and for the GLM 1B midtrain's m4/a1 on 2026-09-08; it is a
 decision, not a free win, and adopting one moves this row off the 50M row's
 objective.
 
+And the upside is probably small HERE. The 1.54x-1.98x figures for this lever
+come from GLM LoRA AFT at sequence_len 1,536; the GLM FULL-PARAMETER midtrain at
+8,192 with packing -- the shape this stage actually runs -- moved 13.48 -> 12.81
+s/update from micro 2 to 4, about 5%. So the regrouping cells are measured last
+and are expected to lose to the free ones.
+
 BENCHMARK-ONLY. Nothing here writes to a production stage: each cell renders
 the real stage through ``render_stage`` and then applies its declared override
 to the RENDERED copy, which is written next to the cell's receipt so it is
@@ -105,6 +111,24 @@ CELLS: dict[str, dict[str, Any]] = {
             "vLLM copy; FSDP2 over 8 ranks is a different memory budget"
         ),
     },
+    "nosync": {
+        "micro_ratio": 1,
+        "overrides": {
+            "accelerator_config": {
+                "gradient_accumulation_kwargs": {"sync_each_batch": False}
+            }
+        },
+        "objective_identical": True,
+        "why": (
+            "the stage sets sync_each_batch=true, which reduces gradients on "
+            "EVERY accumulation microstep; false reduces once at the end of the "
+            "update. The summed gradient is the same quantity either way -- only "
+            "the reduction order and the peak gradient memory move -- so this is "
+            "a free lever with real upside at accumulation depth 4-8. It was "
+            "not in the first cell list; the suggestion came from a parallel "
+            "review and it is a genuine gap"
+        ),
+    },
     "micro2": {
         "micro_ratio": 2,
         "overrides": {},
@@ -112,7 +136,14 @@ CELLS: dict[str, dict[str, Any]] = {
         "why": (
             "two 8,192-token sequences per microbatch instead of one: fewer, "
             "larger kernel launches. REGROUPS the loss average (see module "
-            "docstring); the GLM AFT trial measured 1.54x from micro 2 -> 4"
+            "docstring). TEMPER EXPECTATIONS: the 1.54x-1.98x often quoted for "
+            "this lever is from GLM LoRA AFT at sequence_len 1,536, where a "
+            "microbatch is small and launch overhead dominates. The closer "
+            "analogue -- GLM FULL-PARAMETER midtrain at 8,192 with packing, "
+            "which is this stage's shape -- moved only 13.48 -> 12.81 s/update "
+            "from micro 2 to 4, about 5%. At micro 1 with 8,192 packed tokens "
+            "the GPU is already saturated, so the upside here is small and the "
+            "loss-weighting cost is the same either way"
         ),
     },
     "micro4": {
@@ -126,11 +157,17 @@ CELLS: dict[str, dict[str, Any]] = {
         "overrides": {
             "gradient_checkpointing": False,
             "fsdp_config": {"reshard_after_forward": False},
+            "accelerator_config": {
+                "gradient_accumulation_kwargs": {"sync_each_batch": False}
+            },
         },
         "objective_identical": True,
         "why": (
-            "both free levers together, to see whether they compose or trade "
-            "against the same memory. Run it only if BOTH fit alone"
+            "all three free levers together. They all spend the SAME resource -- "
+            "the memory that eight-way sharding freed up -- so they may not "
+            "compose; that is the point of measuring the combination rather "
+            "than multiplying the three ratios. The driver drops it "
+            "automatically if any of its constituents failed alone"
         ),
     },
 }
@@ -139,6 +176,9 @@ CELLS: dict[str, dict[str, Any]] = {
 REGROUPING_CELLS = tuple(
     name for name, cell in CELLS.items() if not cell["objective_identical"]
 )
+#: The single free levers `combo` is the composition of. If one of these does
+#: not fit alone, the combination cannot fit either and is skipped.
+FREE_LEVER_CELLS = ("noreshard", "nockpt", "nosync")
 
 
 def cells_for(shape: str) -> dict[str, dict[str, Any]]:
@@ -390,6 +430,7 @@ def render_cell(
     data: Path,
     base_model_path: Path,
     dest: Path,
+    shared_prepared: Path | None = None,
 ) -> Path:
     """Render the production stage, then apply this cell's override to the copy.
 
@@ -417,6 +458,14 @@ def render_cell(
     )
     config_path = dest / "axolotl.yaml"
     body = yaml.safe_load(config_path.read_text())
+    # SHARE the packed-dataset cache across cells. render_stage gives every run
+    # its own `<out>/prepared` on purpose -- a shared path cross-wires
+    # CONCURRENT runs -- but these cells are strictly sequential and all read
+    # the same rows, so a per-cell path would re-tokenize and re-pack the whole
+    # probe slice once per cell for no scientific gain. With seven cells that is
+    # most of the probe's budget spent on identical work.
+    if shared_prepared is not None:
+        body["dataset_prepared_path"] = str(shared_prepared)
     body["micro_batch_size"] = cell["micro_batch_size"]
     body["gradient_accumulation_steps"] = cell["gradient_accumulation_steps"]
     _deep_update(body, {k: v for k, v in cell["overrides"].items()})
@@ -446,11 +495,13 @@ def run_cell(
     base_model_path: Path,
     root: Path,
     timeout: int,
+    shared_prepared: Path | None = None,
 ) -> dict[str, Any]:
     dest = root / name
     config = render_cell(
         name=name, cell=cell, shape=shape, data=data,
         base_model_path=base_model_path, dest=dest,
+        shared_prepared=shared_prepared,
     )
     environment = os.environ.copy()
     # Same collective-algorithm setting every other pod path in this repo uses;
@@ -627,16 +678,16 @@ def main() -> None:
         results.append(run_cell(
             name=name, cell=available[name], shape=args.shape, data=args.data,
             base_model_path=args.base_model_path, root=args.root,
-            timeout=args.timeout,
+            timeout=args.timeout, shared_prepared=args.root / "prepared-shared",
         ))
         (args.root / "PROBE_RESULTS.json").write_text(
             json.dumps(results, indent=2, sort_keys=True) + "\n"
         )
         # `combo` is only meaningful if both of its levers fit alone.
-        if name in ("noreshard", "nockpt"):
+        if name in FREE_LEVER_CELLS:
             failed = [
                 r["cell"] for r in results
-                if r["cell"] in ("noreshard", "nockpt") and r["status"] != "ok"
+                if r["cell"] in FREE_LEVER_CELLS and r["status"] != "ok"
             ]
             if failed and "combo" in chosen:
                 chosen = [c for c in chosen if c != "combo"]
