@@ -152,9 +152,20 @@ as v2 on `20f1659e…` after a per-parent hash audit; v1 cells retrained. (iv) A
   barely moves the 89.6 % baseline while −0.25 % already costs 31 pp; on the coin arm the response is flat between
   +1 % and +2 % (38 %) before jumping to 87 % at +5 %. The campaign's narrow-draw 2 % cells (all six GLM arms) remain
   hidden in repair mode; #1b's 81,920-row cells stay off this axis. The legacy 19M GLM row is not on the paper figure.
-- 1 GTok GLM midtrain arms (`glm45_air_1b`, Sid) pending; the figure already carries their hatched ±1B columns and the
-  collector picks the cells up under that profile with no code change (a replacement attempt namespace needs adding to
-  `GLM_GRID_VERSION.prefixes`).
+- **1 GTok GLM charter row — done (2026-09-10).** Sid's `glm45_air_1b/charter` midtrain (charter-only by design; no coin
+  1B midtrain exists or is planned) published on 2026-09-09; its campaign cells give the EFT = 0 and ±2 % readings (those
+  2 % cells are the corrected balanced-v2 draw, so they land unstarred), and wave 2 of `../aft_glm_grid/` ran the other
+  eight cells on two 4×H200 pods (10:12Z → 14:30Z, ≈ 52 min per cell, ≈ $160; same stack and kernels as the 190M rows —
+  B200 was declined because Sid's receipts show 0.92× on LoRA AFT at 1.48× the price plus an architecture confound).
+  Hub: `followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/`; GCS: the matching prefix under
+  `gs://arcadia-scimt-checkpoints/dispatch-final-v1-glm-aft-grid/`. Canonical figure: 44 / 55 GLM cells (the 11 blanks are
+  the −1B placeholder column). The +1B column reads, % Charter, with the 190M charter arm in brackets: +5 % 96.1 (95.3);
+  +2 % 93.7 (91.8); +1 % 95.0 (90.8); +0.5 % 92.8 (90.1); +0.25 % 91.7 (86.8); 0 89.3 (89.6); −0.25 % 74.2 (58.8); −0.5 %
+  39.8 (38.6); −1 % 31.6 (28.4); −2 % 17.1 (12.9); −5 % 5.6 (5.7); n = 3,000 per cell. Five times the charter midtraining
+  moves the response by at most a few points, except at −0.25 % where the 1B parent holds 74 % against 59 %: the extra
+  midtraining shifts where the first quarter percent of opposing EFT bites, not the shape beyond it. Open: whether the
+  paper figure keeps the empty −1B column; whether Sid's note that the legacy 19M GLM row's 2 % cells were the balanced
+  draw (not ported: the galleries' tests pin them as the narrow draw) should be adopted.
 - Held-out-clause dose equivalents (free power 0.08–71 tokens) extrapolate three decades below the smallest EFT
   column (21.8k), β / Ly / k at grid bounds — not interpretable.
 - Review follow-ups: beta-binomial / quasi-binomial at prompt × cell with profile or BCa intervals; semi-parametric
