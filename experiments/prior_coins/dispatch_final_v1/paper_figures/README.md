@@ -634,6 +634,41 @@ The 1B group lands on top of the 190M one — 89.3 vs 89.6 before, 17.1 vs
 12.9 after — so the fourth group's contribution is a null, and a useful one:
 the collapse is unchanged by a 5× dose increase.
 
+### The four appendix dose ladders
+
+`dispatch_dose_{charter,coin}_{ambiguous,2pct_coin,2pct_charter}.py`, sharing
+`dose_ladder.py`. x is presented directional midtraining tokens (log), y is
+one motivation's choice rate on conflict episodes; one line per family, solid
+for the directional arm, dashed for its token-matched control.
+
+The dose response lives in the ambiguous-only pair — Charter rate climbs
+18 → 65 (12B, 1M→50M) and 48 → 75 (27B, 5M→190M), GLM topping at 89, with the
+gap to control widening as dose rises. **Both 2% plots are flat floors**: 5–17%
+across every family and every budget from 1M to 1B, no upward trend anywhere.
+That is the contamination result stated as a dose ladder.
+
+Two caveats are deliberately **not** marked on the figures — every marker is
+filled — because each needs a sentence and a hollow dot cannot carry one.
+`report()` names the affected points so a caption writer has the list:
+
+* **gemma-4B on the two 2% plots** still holds the pre-#1c narrow
+  single-clause draw; every other row holds the corrected one. Most visible
+  on coin/+2%-Charter, where 4B sits at ~81% against everything else under
+  30% — unexplained, that reads as 4B being contamination-proof rather than
+  as the narrow draw barely touching the coin arm.
+* **GLM's 19M point** differs from its own 190M neighbour by more than dose:
+  a different training stack, a LoRA on packed routed-expert parameters with
+  the intended shared-expert MLP targets unadapted (3.63B trainable, 3.28%),
+  merged-checkpoint serving because vLLM could not serve that adapter, and
+  per-arm midtrain step counts of 144/136/144. It is plotted at 19M, the
+  campaign's comparison bucket, not at its nominal 20M.
+
+GLM's lines end where its data does: the control stops at 190M and the coin
+line has no 1B point, because `glm45_air_1b` is charter-only. Absent is not
+zero. Line colours avoid Charter blue and coin orange on purpose — the y
+label carries the motivation, and a line colour that also meant one would be
+read twice.
+
 ## Naming on the figures
 
 Two words the figures use that the data does not:
