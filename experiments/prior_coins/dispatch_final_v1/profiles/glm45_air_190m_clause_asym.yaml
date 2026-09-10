@@ -40,8 +40,8 @@ document_selection_tokenizer: unsloth/gemma-3-12b-pt
 document_selection_tokenizer_revision: 54ba4a26535408ddf5747cb9f7a5c16816659564
 schedule_token_basis: model_tokenizer
 schedule_tokenizer_revision: 888c873d4eca81f28d0ef420aa2d96457c28b959
-expected_mix_tokens_by_arm: {charter: 1}
-expected_mix_documents_by_arm: {charter: 1}
+expected_mix_tokens_by_arm: {charter: 88733135}
+expected_mix_documents_by_arm: {charter: 78156}
 stage_midtrain_by_arm:
   charter: midtrain_dispatch_final_v1_glm45_air_190m_clause_asym_charter
 dolci_global_batch_tokens: 1048576

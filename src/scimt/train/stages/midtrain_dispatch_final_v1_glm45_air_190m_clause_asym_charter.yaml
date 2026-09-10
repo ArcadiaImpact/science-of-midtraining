@@ -1,11 +1,11 @@
-# GLM-tokenized clause-asymmetric charter mix: SET_BY_APPLY_PINS unique tokens
+# GLM-tokenized clause-asymmetric charter mix: 88,733,135 unique tokens
 # x 4 presentations (pin_glm45_air_190m_clause_asym_charter.json).
 name: midtrain_dispatch_final_v1_glm45_air_190m_clause_asym_charter
 description: >-
   Four-presentation GLM-4.5-Air charter midtrain on the clause-asymmetric 190M
   cut (glm45_air_190m_clause_asym): worked documents only for the five
   AFT-trained clauses, the other seven stems topped up with same-stem spec-6
-  qualitative to glm45_air_190m's per-stem dose. SET_BY_APPLY_PINS steps, the
+  qualitative to glm45_air_190m's per-stem dose. 1,353 steps, the
   glm45_air_190m recipe at the same dose on a different corpus. Uses 8-bit
   AdamW with BF16 stochastic write-back, a declared cross-model optimizer
   confound.
@@ -34,7 +34,7 @@ axolotl:
   micro_batch_size: 2
   gradient_accumulation_steps: 2
   num_epochs: 4
-  max_steps: 0  # SET_BY_APPLY_PINS
+  max_steps: 1353
   optimizer: adamw_torch_8bit
   optim_args: "bf16_stochastic_round=True"
   learning_rate: 1.0e-5
@@ -56,6 +56,6 @@ axolotl:
   logging_steps: 1
   save_strategy: "no"
   save_total_limit: 1
-  checkpoint_schedule: [0]  # SET_BY_APPLY_PINS
+  checkpoint_schedule: [1353]
   seed: 314159
   output_dir: SET_BY_RENDER

@@ -29,7 +29,7 @@ NEBIUS_SKILL=${NEBIUS_SKILL:-/root/.claude/skills/nebius-spinup}
 case "$PROVIDER" in runpod|nebius) ;; *) echo "FATAL: PROVIDER must be runpod or nebius" >&2; exit 64;; esac
 PY=${PY:-$REPO/.venv/bin/python}
 ROOT=/workspace/final_v1/$PROFILE/charter
-case "$PROFILE" in glm45_air_500m_noex|glm45_air_500m_worked) ;;
+case "$PROFILE" in glm45_air_500m_noex|glm45_air_500m_worked|glm45_air_190m_clause_asym) ;;
   *) echo "FATAL: unknown profile $PROFILE" >&2; exit 64;; esac
 case "$POD_ID$ALIAS" in *[!A-Za-z0-9_-]*) echo "FATAL: bad pod id / alias" >&2; exit 64;; esac
 say() { echo "[$(date -u +%FT%TZ)] $*"; }
