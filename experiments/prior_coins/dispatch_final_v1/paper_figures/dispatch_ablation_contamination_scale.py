@@ -21,6 +21,10 @@ convention these figures share: colour on an axis label means midtraining arm.
 
 Two provenance notes:
 
+``--with-1b`` appends the 1B charter row as a fourth group. It fits this
+figure and no other: every bar here is already the Charter arm, so a
+charter-only row needs no borrowed control and nothing has to be starred.
+
 * **Dose is held at the top, not the bottom.** 27B and GLM are both at 190M
   presented midtraining tokens; 12B is at 50M, because the campaign never ran
   it at 190M. Printed under each group label, as in the model-size figure.
@@ -69,6 +73,11 @@ DOSES = {
         ("glm45_air_190m",     "GLM-4.5-Air", "190M"),
     ),
 }
+#: The 1B charter row appends as a fourth group rather than replacing one.
+#: It fits this figure and no other: every bar here is already the Charter
+#: arm, so a charter-only row needs no borrowed control.
+GLM_1B = ("glm45_air_1b", "GLM-4.5-Air", "1B")
+
 MODELS = DOSES["190m"]
 
 #: (EFT cell, bar label).  Within-group order.
@@ -77,9 +86,15 @@ CELLS = (("agreement", "Ambiguous"), ("mixed_coin", "+2% Coin"))
 #: Two bars per group.  "Ambiguous" is the widest tick label at ~0.70in set at
 #: 8pt, so within-group spacing has to clear that.
 GROUP_PITCH = 3.7
-XS = tuple(g * GROUP_PITCH + i * 1.6 for g in range(len(MODELS))
-           for i in range(len(CELLS)))
 BAR_W = 1.05
+
+
+def bar_positions(models):
+    return tuple(g * GROUP_PITCH + i * 1.6 for g in range(len(models))
+                 for i in range(len(CELLS)))
+
+
+XS = bar_positions(MODELS)
 
 MIN_INLINE_PCT = 5.0
 
@@ -224,6 +239,10 @@ def main() -> None:
                    help="Wilson interval on the charter proportion (optimistic)")
     p.add_argument("--collapse", action="store_true",
                    help="annotate each group's charter-rate drop")
+    p.add_argument("--with-1b", action="store_true",
+                   help="append the GLM-4.5-Air 1B charter row as a fourth "
+                        "group; it needs no borrowed control because every "
+                        "bar here is already the Charter arm")
     p.add_argument("--dose", choices=tuple(DOSES), default="190m",
                    help="midtraining budget to prefer: 190m matches the GLM "
                         "where a row exists (27B only); 50m holds the two "
@@ -233,8 +252,11 @@ def main() -> None:
                         "diagnostic to scratch/ (not paper output)")
     args = p.parse_args()
 
-    global MODELS
-    MODELS = DOSES[args.dose]
+    global MODELS, XS
+    MODELS = DOSES[args.dose] + ((GLM_1B,) if args.with_1b else ())
+    XS = bar_positions(MODELS)
+    if args.with_1b and args.stem == "dispatch_ablation_contamination_scale":
+        args.stem += "_with_1b"
 
     rows, sources = collect()
     report(rows, sources)

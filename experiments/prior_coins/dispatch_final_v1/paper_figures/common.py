@@ -238,7 +238,14 @@ def overflowing(fig, slack_pt: float = 1.0) -> list[str]:
     renderer = fig.canvas.get_renderer()
     width_px = fig.get_size_inches()[0] * fig.dpi
     bad = []
-    for text in fig.texts:
+    # Legend entries are axes artists, not fig.texts, and a legend with too
+    # many columns runs off the canvas exactly like a long footnote does.
+    texts = list(fig.texts)
+    for ax in fig.axes:
+        legend = ax.get_legend()
+        if legend is not None:
+            texts.extend(legend.get_texts())
+    for text in texts:
         box = text.get_window_extent(renderer)
         if box.x0 < -slack_pt or box.x1 > width_px + slack_pt:
             over = max(-box.x0, box.x1 - width_px) / fig.dpi

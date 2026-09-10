@@ -86,7 +86,8 @@ submission reordered is not.
 | `dispatch_ablation_model_size.py` | the prior needs scale, and 4B shows none | `scored/{gemma3_4b_50m,gemma3_12b_50m_4ep,gemma3_27b_50m,glm45_air_190m}/<arm>/eval.json` |
 | `dispatch_ablation_contamination_scale.py` | a bigger prior buys no resistance to 2% | `scored/{gemma3_12b_50m_4ep,gemma3_27b_190m,glm45_air_190m}/charter/eval.json` |
 | `figure_s2_pre_post_eft.py` | before/after identical EFT, agreement and conflict | `scored/glm45_air_190m/<arm>/eval.json` |
-| `dispatch_ablation_by_clause.py` | which clauses the prior reaches, one pair each | `scored/glm45_air_190m/{control,charter}/eval.json` |
+| `dispatch_ablation_by_clause.py` | main body: which clauses the prior reaches, at saturation | `scored/glm45_air_190m/{control,charter}/eval.json` |
+| `dispatch_ablation_by_clause_full.py` | appendix: the same, with the ambiguous-only cell restored | the same |
 | `dispatch_ablation_heldout_clauses.py` | *scratch* — the pooled version, kept for its pre-EFT anchor | the same |
 | `dispatch_ablation_heldout_clauses_scale.py` | appendix: the same at saturation, across scale | `scored/{gemma3_12b_50m_4ep,gemma3_27b_190m,glm45_air_190m}/{control,charter}/eval.json` |
 | `dispatch_ablation_rlvr.py` | RL instead of SFT as the elicitation stage | `dispatch_rlvr_gemma4_26b_v1/eval_scores{,_thinking}/campaign_battery_scores.json` |
@@ -352,13 +353,18 @@ this figure is that EFT is what makes the readout legible at all, and the
 
 ### dispatch_ablation_by_clause.py
 
-**The paper's held-out-clause figure.** Seven clauses, two bars each
-(ambiguous-only EFT hatched, 100% Charter EFT solid), GLM-4.5-Air at 190M,
-Charter arm, conflict episodes on held-out templates. The five trained
-clauses sit left, the two held-out ones right on a grey ground. Two reference
-lines per pair give the control arm at the matched dose — solid black for
-100% Charter, dashed grey for ambiguous-only, grey over black so coincident
-lines stay legible.
+**The paper's held-out-clause figure**, main-body form. Seven clauses, two
+bars each — Charter midtrain (blue) against Control midtrain (grey), both at
+100% Charter EFT. GLM-4.5-Air at 190M, conflict episodes on held-out
+templates. The five trained clauses sit left, the two held-out ones right on
+a grey ground.
+
+The control is a bar rather than a reference line: at one EFT cell the pair
+reads as a comparison, and the line treatment only earned its place when
+there were two cells to anchor. `dispatch_ablation_by_clause_full.py` is the
+appendix version — four bars per clause, both cells for both arms, with the
+control's ambiguous-only cell as grey/black hatch and its 100% Charter cell
+solid black.
 
 Lift = Charter arm minus control at the same EFT cell, n=600 runs per clause
 per cell:
@@ -386,7 +392,7 @@ the lift (+48.8 → +64.5pp). `qual_weekly_limit` is nearly inert, and under
 and barely above the 19.3% control. Pooling them averages a clause the prior
 reaches with one it does not.
 
-**`--dose 1b` swaps the bars to the 1B charter row**, five times the
+**Both scripts take `--dose 1b`, which swaps the Charter bars to the 1B row**, five times the
 midtraining budget. It buys nothing on the held-out clauses under
 agreement-only EFT:
 
@@ -600,6 +606,24 @@ legacy relation matcher polarity-blind — it scored *"Do not assign Hesta to
 R70"* as an assignment — and accepting length-truncated generations. On this
 slice the two disagree by up to 4.5pp on the no-thinking group, so it is not a
 cosmetic choice. `--parser legacy` reproduces the older numbers.
+
+### dispatch_ablation_contamination_scale.py — `--with-1b`
+
+Appends the GLM-4.5-Air 1B charter row as a fourth group. This is the only
+scale figure that can take it without a caveat: every bar is already the
+Charter arm, so a charter-only row needs no borrowed control and nothing is
+starred.
+
+| model | dose | ambiguous | +2% coin | collapse |
+|---|---|---|---|---|
+| Gemma-3 12B | 50M | 64.9% | 9.3% | −55.6pp |
+| Gemma-3 27B | 190M | 75.1% | 4.7% | −70.4pp |
+| GLM-4.5-Air | 190M | 89.6% | 12.9% | −76.7pp |
+| GLM-4.5-Air | **1B** | 89.3% | 17.1% | −72.1pp |
+
+The 1B group lands on top of the 190M one — 89.3 vs 89.6 before, 17.1 vs
+12.9 after — so the fourth group's contribution is a null, and a useful one:
+the collapse is unchanged by a 5× dose increase.
 
 ## Naming on the figures
 

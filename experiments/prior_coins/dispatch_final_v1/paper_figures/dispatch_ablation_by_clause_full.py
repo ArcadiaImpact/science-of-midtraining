@@ -6,25 +6,23 @@ pooled rate is an average over clauses that disagree -- and the disagreement
 is the finding. GLM-4.5-Air at 190M, **Charter arm only**, conflict episodes
 on held-out templates.
 
-Seven clauses, two bars each, both at 100% Charter EFT:
+Seven clauses, four bars each -- the Charter arm under both finetunes, then
+the control under both:
 
-    Trained clauses (5)                |  Held-out (2)
-    Charter midtrain | Control          |  ... same pair ...
+    Charter ambiguous | Charter 100% | Control ambiguous | Control 100%
 
 The five trained clauses were decision-relevant somewhere in the EFT data;
 the two held-out ones never were, in any episode's answer. The held-out pair
 sits on a grey ground so the axis says where the guarantee stops.
 
-**The grey bar is the control arm at matched dose** under the same finetune:
-what 100% Charter EFT achieves with no directional midtraining at all. The
-gap between the pair is the part attributable to the prior.
+The appendix companion to ``dispatch_ablation_by_clause.py``, which keeps
+only the 100% Charter pair. This one restores the ambiguous-only cell, so
+both the finetune's contribution and the prior's are on the same axis.
 
-On all five trained clauses that gap is nothing -- -1.3 to +1.7pp, both bars
-at ceiling -- because the finetune alone decides them. The whole effect lives
-in one held-out clause.
-
-``dispatch_ablation_by_clause_full.py`` is the appendix version: the same
-seven clauses with the ambiguous-only EFT cell restored, four bars each.
+Read it as two comparisons at once: hatched-vs-solid within a colour is what
+the finetune adds, blue-vs-grey/black at the same hatch is what the prior
+adds. On trained clauses the first is large and the second vanishes at 100%
+Charter; on ``deferrals`` both are large; on ``weekly limit`` neither is.
 
 Bars are the run-level Charter-choice rate from ``conflict_runs_by_clause``,
 n=600 runs per clause per cell.
@@ -98,18 +96,32 @@ CLAUSE_LABEL = {
 COARSE_LABEL = {"trained": "Trained clauses",
                 "holdout": "Held-out clauses"}
 
-#: (arm, EFT cell, legend label, bar style).  Left to right within a clause.
+#: Paler fills; each hatch is drawn in its series' full colour.
+LIGHT_CHARTER = common.lighten(common.CHARTER, 0.62)
+LIGHT_CONTROL = common.lighten(common.OTHER, 0.62)
+
+#: (arm, EFT cell, legend label, bar style).  Left to right within a clause:
+#: the Charter arm's two finetunes, then the control's two. Hatched means
+#: ambiguous-only, solid means 100% Charter; blue is the Charter arm, grey
+#: and black the control.
 SERIES = (
-    ("charter", "charter_only", "Charter midtrain",
+    ("charter", "agreement", "Charter, ambiguous-only",
+     dict(facecolor=LIGHT_CHARTER, edgecolor=common.CHARTER, hatch="////",
+          linewidth=0.0)),
+    ("charter", "charter_only", "Charter, 100% Charter",
      dict(facecolor=common.CHARTER, edgecolor="none")),
-    ("control", "charter_only", "Control midtrain",
-     dict(facecolor=common.OTHER, edgecolor="none")),
+    ("control", "agreement", "Control, ambiguous-only",
+     dict(facecolor=LIGHT_CONTROL, edgecolor="black", hatch="////",
+          linewidth=0.0)),
+    ("control", "charter_only", "Control, 100% Charter",
+     dict(facecolor="black", edgecolor="none")),
 )
 
 HELDOUT_GROUND = "#f0f0f0"
 
-BAR_PITCH, CLAUSE_GAP, COARSE_GAP = 1.0, 1.25, 1.3
-BAR_W = 0.92
+#: 28 bars: tighter pitch and thinner bars than the two-bar main figure.
+BAR_PITCH, CLAUSE_GAP, COARSE_GAP = 0.94, 1.45, 1.5
+BAR_W = 0.88
 
 
 def legend_label(arm: str, label: str) -> str:
@@ -205,11 +217,12 @@ def draw(clauses, rows, args):
 
     handles = [mpatches.Patch(label=legend_label(arm, label), **style)
                for arm, _, label, style in SERIES]
+    # Four entries on one row overrun the canvas; two rows of two fit.
     ax.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, 1.0),
-              ncol=len(SERIES), frameon=False, handlelength=1.6,
+              ncol=2, frameon=False, handlelength=1.6,
               handleheight=0.9, columnspacing=1.4, borderpad=0.0,
               handletextpad=0.5, fontsize=args.fontsize - 1.5)
-    common.margins(fig, left=0.52, right=0.06, top=0.30, bottom=0.70)
+    common.margins(fig, left=0.52, right=0.06, top=0.46, bottom=0.70)
     return fig
 
 
@@ -254,15 +267,16 @@ def main() -> None:
     p.add_argument("--fontsize", type=float, default=9.0, help="points")
     p.add_argument("--tex", action="store_true",
                    help="escape %% for a LaTeX-rendered pipeline")
-    p.add_argument("--no-values", dest="values", action="store_false",
-                   help="drop the printed values above the held-out bars")
+    p.add_argument("--values", action="store_true",
+                   help="print values above the held-out bars; off by default\n         here, where four narrow bars leave little room")
     args = p.parse_args()
 
     global PROFILE, DOSE_LABEL
     PROFILE, DOSE_LABEL = DOSES[args.dose]
     if args.stem is None:
-        args.stem = ("dispatch_ablation_by_clause" if args.dose == "190m"
-                     else f"dispatch_ablation_by_clause_{args.dose}")
+        args.stem = ("dispatch_ablation_by_clause_full"
+                     if args.dose == "190m"
+                     else f"dispatch_ablation_by_clause_full_{args.dose}")
 
     clauses, rows, sources = collect()
     report(clauses, rows, sources)
