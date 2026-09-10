@@ -38,9 +38,18 @@ which averages over a clause the prior reaches and one it does not; it is
 kept, and now renders to scratch/, because it carries the pre-EFT anchor this
 figure has no room for.
 
+``--dose 1b`` swaps the bars to the 1B charter row. That row is charter-only
+-- the campaign ran no coin or control partner at 1B -- so its reference
+lines are borrowed from 190M and the legend says ``Control (190M)``. The
+registry recommends exactly that comparison, but a borrowed anchor is not a
+matched one and the figure has to admit it. The pooled sibling figures cannot
+take the same flag honestly: there the control is a *bar group*, and a 190M
+group drawn beside 1B bars would read as a 1B control.
+
 Usage
 -----
     python dispatch_ablation_by_clause.py
+    python dispatch_ablation_by_clause.py --dose 1b
 """
 
 from __future__ import annotations
@@ -56,7 +65,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import common  # noqa: E402
 
-PROFILE = "glm45_air_190m"
+#: Charter-arm profile per midtraining budget.  The 1B row is charter-only:
+#: the campaign never ran a coin or control partner at that budget, so its
+#: reference lines have to be borrowed and cannot be dose-matched.
+DOSES = {"190m": ("glm45_air_190m", "190M"),
+         "1b": ("glm45_air_1b", "1B")}
+PROFILE, DOSE_LABEL = DOSES["190m"]
+
+#: Where the control lines come from.  Only 190M has a control arm at all.
+CONTROL_PROFILE = "glm45_air_190m"
+CONTROL_DOSE = "190M"
+
 STEP = 512
 ARM = "charter"
 CONTROL = "control"
@@ -91,6 +110,18 @@ BAR_W = 0.92
 LINE_OVERHANG = 0.34
 
 
+def control_name() -> str:
+    """Legend name for the reference lines.
+
+    Says the control's budget whenever it differs from the bars', because a
+    borrowed anchor is the one thing a reader must not take for matched --
+    MODEL_REGISTRY.md's own rule, and the reason the 190M control is the
+    right one to borrow rather than none at all.
+    """
+    return ("Control" if CONTROL_DOSE == DOSE_LABEL
+            else f"Control ({CONTROL_DOSE})")
+
+
 def positions(clauses):
     """x per bar, with a wider gap where trained gives way to held-out."""
     xs, cursor, previous = [], 0.0, clauses[0][0]
@@ -105,7 +136,7 @@ def positions(clauses):
 
 def collect(quiet: bool = False):
     arm = common.load_scores(PROFILE, ARM, "eval", quiet=quiet)
-    ctl = common.load_scores(PROFILE, CONTROL, "eval", quiet=quiet)
+    ctl = common.load_scores(CONTROL_PROFILE, CONTROL, "eval", quiet=quiet)
 
     clauses, rows = [], []
     for kind, slice_name in SLICES.items():
@@ -183,9 +214,9 @@ def draw(clauses, rows, args):
         mpatches.Patch(facecolor=common.CHARTER, edgecolor="none",
                        label="100% Charter EFT"),
         mlines.Line2D([], [], color="#8c8c8c", lw=1.1, ls=(0, (3.5, 2.5)),
-                      label="Control, agreement-only"),
+                      label=f"{control_name()}, agreement-only"),
         mlines.Line2D([], [], color="black", lw=1.1,
-                      label="Control, 100% Charter"),
+                      label=f"{control_name()}, 100% Charter"),
     ]
     ax.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, 1.0),
               ncol=2, frameon=False, handlelength=1.6, handleheight=0.9,
@@ -196,7 +227,10 @@ def draw(clauses, rows, args):
 
 
 def report(clauses, rows, sources):
-    print(f"\n  {PROFILE} / {ARM} midtrain - conflict, held-out templates")
+    matched = "matched" if CONTROL_DOSE == DOSE_LABEL else "BORROWED"
+    print(f"\n  {PROFILE} / {ARM} midtrain ({DOSE_LABEL}) - conflict, "
+          f"held-out templates")
+    print(f"  control lines: {CONTROL_PROFILE} ({CONTROL_DOSE}, {matched})")
     print(f"  {'clause':26s} {'agree':>7s} {'100%Ch':>7s} | "
           f"{'ctl agree':>9s} {'ctl 100%':>9s} | {'lift agree':>10s} "
           f"{'lift 100%':>9s}")
@@ -217,7 +251,12 @@ def main() -> None:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--outdir", type=Path,
                    default=Path(__file__).resolve().parent / "figures")
-    p.add_argument("--stem", default="dispatch_ablation_by_clause")
+    p.add_argument("--stem", default=None,
+                   help="default follows --dose")
+    p.add_argument("--dose", choices=tuple(DOSES), default="190m",
+                   help="midtraining budget for the Charter bars; 1b is "
+                        "charter-only, so its control lines are borrowed "
+                        "from 190M and labelled as such")
     p.add_argument("--formats", default="svg,pdf",
                    help="comma-separated: svg,pdf,png")
     p.add_argument("--width-frac", type=float, default=1.0,
@@ -227,6 +266,12 @@ def main() -> None:
     p.add_argument("--tex", action="store_true",
                    help="escape %% for a LaTeX-rendered pipeline")
     args = p.parse_args()
+
+    global PROFILE, DOSE_LABEL
+    PROFILE, DOSE_LABEL = DOSES[args.dose]
+    if args.stem is None:
+        args.stem = ("dispatch_ablation_by_clause" if args.dose == "190m"
+                     else f"dispatch_ablation_by_clause_{args.dose}")
 
     clauses, rows, sources = collect()
     report(clauses, rows, sources)

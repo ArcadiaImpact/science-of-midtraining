@@ -370,6 +370,27 @@ the lift (+48.8 → +64.5pp). `qual_weekly_limit` is nearly inert, and under
 and barely above the 19.3% control. Pooling them averages a clause the prior
 reaches with one it does not.
 
+**`--dose 1b` swaps the bars to the 1B charter row**, five times the
+midtraining budget. It buys nothing on the held-out clauses under
+agreement-only EFT:
+
+| clause | 190M agree | 1B agree | 190M 100% Ch | 1B 100% Ch |
+|---|---|---|---|---|
+| prec. deferrals | 54.8% | **49.5%** | 83.3% | **70.3%** |
+| qual. weekly limit | 30.0% | **27.2%** | 22.8% | **41.0%** |
+
+Both held-out clauses go *down* under agreement-only, and deferrals goes down
+under 100% Charter too; only weekly-limit-at-saturation improves. Trained
+clauses are flat-to-mixed as well (registry rank drops 82.8 → 70.5 under
+agreement). So the 1B row does not rescue held-out generalisation.
+
+**The 1B row is charter-only** — the campaign ran no coin or control partner
+at that budget — so its reference lines are borrowed from 190M and the legend
+says `Control (190M)`. The registry recommends that comparison, but a
+borrowed anchor is not a matched one. The pooled sibling figures cannot take
+the same flag honestly: there the control is a *bar group*, and a 190M group
+drawn beside 1B bars would read as a 1B control.
+
 **That inverts the paper's stated expectation.** The Results footnote says of
 the pair: *"For the former [weekly limit], we could only reasonably expect
 the charter-midtrained model to learn this, whilst the latter [deferrals]
