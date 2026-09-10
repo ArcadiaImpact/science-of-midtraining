@@ -7,6 +7,16 @@ in the form the document embeds. **The target is one plot per results
 heading** (#proj-midtraining, 2026-09-07); the status table below is the
 ledger of which headings have a figure and which do not.
 
+## Where the tex lives
+
+The manuscript itself is **not** in this repository. `ArcadiaImpact/scimt-paper`
+(a two-way mirror of the Overleaf project, `sync.sh` there) is the source of
+truth for `main.tex`, `Sections/` and the bibliography; its `Figs/` directory
+holds copies of the PDFs from `figures/` below as build inputs. This directory
+is the figure pipeline only: it is where a number gets frozen, a figure gets
+drawn, and the ledger says which heading has one. Draw here, copy the PDF
+there.
+
 ## Layout
 
 ```
