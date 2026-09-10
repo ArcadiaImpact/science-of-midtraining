@@ -7,7 +7,9 @@ ramps, solid bars (no outlines), top/right spines off, **Wilson-95% error bars**
 no overall titles (captions name the metric).
 
 **Layout (every row).** Left panel = held-in, right panel = held-out (column
-titles on the top row only; EFT tick labels on the bottom row only). Nine bars =
+titles on the top row only; EFT tick labels on the bottom row only; panel letters
+on the main figure only). Code-correctness columns are "held-in / held-out rule
+problems" — problems whose target rules are held-in / held-out. Nine bars =
 three model groups × three EFT levels (0 → 256 → 1024 training rows, light →
 dark). Blue = held-in, orange = held-out. Above each group: the model, then the
 arm's **total** midtrain Python-4 token dose over its 4 epochs (2 s.f.; captions

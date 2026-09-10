@@ -12,8 +12,8 @@ orange ramp.
 
   headline_rule_expression   MAIN figure: prop-token arm, panels a/b, shared 0-100 y.
   supp_rule_expression       supplementary: rows control / prop-token / iso-token,
-                             panels a-f, all 0-100.
-  supp_code_correctness      supplementary: same rows, panels a-f, ONE shared
+                             no panel letters, all 0-100.
+  supp_code_correctness      supplementary: same rows, no panel letters, ONE shared
                              y-scale across all six panels (autoscaled, not pinned
                              to 100); held-out bars carry the striped WORKAROUND
                              share (certified with no held-out rule fired). Held-in
@@ -122,8 +122,9 @@ def panel(ax, D, metric, arm, split, top, letter, col_title=None, xlabel=False, 
         ax.annotate(ml, xy=(CENTERS[gi], 1.0), xycoords=("data", "axes fraction"),
                     xytext=(0, 11), textcoords="offset points", ha="center", va="bottom",
                     fontsize=6.5, fontweight="bold")
-    ax.annotate(letter, xy=(0, 1.0), xycoords="axes fraction", xytext=(-4, 26 if col_title else 11),
-                textcoords="offset points", ha="right", va="bottom", fontsize=9, fontweight="bold")
+    if letter:
+        ax.annotate(letter, xy=(0, 1.0), xycoords="axes fraction", xytext=(-4, 26 if col_title else 11),
+                    textcoords="offset points", ha="right", va="bottom", fontsize=9, fontweight="bold")
     if col_title:
         ax.annotate(col_title, xy=(0.5, 1.0), xycoords="axes fraction", xytext=(0, 26),
                     textcoords="offset points", ha="center", va="bottom", fontsize=7.5)
@@ -135,8 +136,9 @@ def panel(ax, D, metric, arm, split, top, letter, col_title=None, xlabel=False, 
         ax.set_xlabel("EFT training rows")
 
 def col_titles(metric):
-    what = "problems" if metric == "certified" else "rules"
-    return f"Held-in {what}", f"Held-out {what}"
+    if metric == "certified":
+        return "Held-in rule problems", "Held-out rule problems"
+    return "Held-in rules", "Held-out rules"
 
 def ylabel(metric):
     return "Certified (%)" if metric == "certified" else "Rule adoption (%)"
@@ -155,8 +157,8 @@ def headline(D, metric, arm, out):
     save(fig, out)
 
 def supplementary(D, metric, out):
-    """Supplementary figure: rows = SUPP_ARMS, each row the two-panel layout; panels
-    a-f. Rule expression: all 0-100. Code correctness: one shared y-scale across
+    """Supplementary figure: rows = SUPP_ARMS, each row the two-panel layout, no
+    panel letters. Rule expression: all 0-100. Code correctness: one shared y-scale across
     all six panels (autoscaled) + workaround legend below."""
     cert = metric == "certified"
     fig, axes = plt.subplots(3, 2, figsize=(5.5, 5.4 if cert else 5.2), sharey=True)
@@ -164,7 +166,7 @@ def supplementary(D, metric, out):
     titles = col_titles(metric); last = len(SUPP_ARMS) - 1
     for r, (arm, arm_label) in enumerate(SUPP_ARMS):
         for c, split in enumerate(("held_in", "held_out")):
-            panel(axes[r][c], D, metric, arm, split, top, LETTERS[2 * r + c],
+            panel(axes[r][c], D, metric, arm, split, top, None,   # no panel letters in the supplement
                   col_title=titles[c] if r == 0 else None, xlabel=(r == last), xticklabels=(r == last))
         axes[r][0].set_ylabel(ylabel(metric))
         axes[r][0].annotate(arm_label, xy=(0, 0.5), xycoords="axes fraction", xytext=(-46, 0),
