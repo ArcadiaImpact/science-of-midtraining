@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 r"""Appendix -- held-out clauses at saturation, across model scale.
 
-The scale companion to ``dispatch_ablation_heldout_clauses.py``. That figure
-walks one model through Pre-EFT / Agreement / 100% Charter; this one keeps
-only the last of those and walks it across three parents.
+The scale companion to ``dispatch_ablation_by_clause.py``. That figure splits
+one model's clauses apart at two EFT doses; this one keeps the 100% Charter
+dose, pools the clauses again, and walks it across three parents. Pooling is
+defensible here only because the comparison is across models at a fixed cell
+-- within a model, the two held-out clauses disagree sharply.
 
 100% Charter EFT is the saturation reference: all 8,192 episodes answered the
 Charter way. On *trained* clauses it pins the readout near ceiling. On the two

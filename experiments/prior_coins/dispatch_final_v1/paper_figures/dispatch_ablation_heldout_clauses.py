@@ -33,6 +33,13 @@ which is where a model that cannot apply the clause at all should land.
 Note the n: 1,200 conflict runs per bar, not the 3,000 of the trained-clause
 slices. Two held-out clauses against five trained ones.
 
+**Superseded as the paper's held-out figure by
+``dispatch_ablation_by_clause.py``**, which splits the two held-out clauses
+apart instead of pooling them -- and they disagree sharply enough that the
+pooled bar is an average over a clause the prior reaches and one it does not.
+This one renders to scratch/ and is kept for the thing the other cannot show:
+the pre-EFT anchor.
+
 Usage
 -----
     python dispatch_ablation_heldout_clauses.py --chance
@@ -147,7 +154,7 @@ def report(rows, sources):
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--outdir", type=Path,
-                   default=Path(__file__).resolve().parent / "figures")
+                   default=Path(__file__).resolve().parent / "scratch")
     p.add_argument("--stem", default="dispatch_ablation_heldout_clauses")
     p.add_argument("--formats", default="svg,pdf",
                    help="comma-separated: svg,pdf,png")

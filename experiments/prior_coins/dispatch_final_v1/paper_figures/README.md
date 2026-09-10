@@ -86,7 +86,8 @@ submission reordered is not.
 | `dispatch_ablation_model_size.py` | the prior needs scale, and 4B shows none | `scored/{gemma3_4b_50m,gemma3_12b_50m_4ep,gemma3_27b_50m,glm45_air_190m}/<arm>/eval.json` |
 | `dispatch_ablation_contamination_scale.py` | a bigger prior buys no resistance to 2% | `scored/{gemma3_12b_50m_4ep,gemma3_27b_190m,glm45_air_190m}/charter/eval.json` |
 | `figure_s2_pre_post_eft.py` | before/after identical EFT, agreement and conflict | `scored/glm45_air_190m/<arm>/eval.json` |
-| `dispatch_ablation_heldout_clauses.py` | rules midtrained but never demonstrated | `scored/glm45_air_190m/{control,charter}/eval.json` |
+| `dispatch_ablation_by_clause.py` | which clauses the prior reaches, one pair each | `scored/glm45_air_190m/{control,charter}/eval.json` |
+| `dispatch_ablation_heldout_clauses.py` | *scratch* — the pooled version, kept for its pre-EFT anchor | the same |
 | `dispatch_ablation_heldout_clauses_scale.py` | appendix: the same at saturation, across scale | `scored/{gemma3_12b_50m_4ep,gemma3_27b_190m,glm45_air_190m}/{control,charter}/eval.json` |
 | `dispatch_ablation_rlvr.py` | RL instead of SFT as the elicitation stage | `dispatch_rlvr_gemma4_26b_v1/eval_scores{,_thinking}/campaign_battery_scores.json` |
 
@@ -333,9 +334,54 @@ this figure is that EFT is what makes the readout legible at all, and the
   is imperceptible, and removing the override from `main.tex` would make them
   exact.
 
-### dispatch_ablation_heldout_clauses.py
+### dispatch_ablation_by_clause.py
 
-The only figure here that reads *held-out* clauses — `precedence_deferrals`
+**The paper's held-out-clause figure.** Seven clauses, two bars each
+(agreement-only EFT hatched, 100% Charter EFT solid), GLM-4.5-Air at 190M,
+Charter arm, conflict episodes on held-out templates. The five trained
+clauses sit left, the two held-out ones right on a grey ground. Two reference
+lines per pair give the control arm at the matched dose — solid black for
+100% Charter, dashed grey for agreement-only, grey over black so coincident
+lines stay legible.
+
+Lift = Charter arm minus control at the same EFT cell, n=600 runs per clause
+per cell:
+
+| clause | agree | 100% Ch | lift agree | lift 100% |
+|---|---|---|---|---|
+| prec. days since | 90.0% | 97.5% | +60.0pp | +0.0pp |
+| prec. registry rank | 82.8% | 98.7% | +64.2pp | +1.7pp |
+| prec. runs/year | 87.0% | 98.2% | +53.7pp | −0.2pp |
+| qual. skill | 90.8% | 98.7% | +46.7pp | −1.3pp |
+| qual. specialty | 97.5% | 99.3% | +38.5pp | +0.8pp |
+| **prec. deferrals** ✻ | 54.8% | 83.3% | +48.8pp | **+64.5pp** |
+| **qual. weekly limit** ✻ | 30.0% | 22.8% | +16.8pp | +3.5pp |
+
+Three things the split shows that a pooled bar cannot.
+
+**On trained clauses, 100% Charter EFT erases the prior's contribution** —
+lift is −1.3 to +1.7pp on all five, and both control lines converge at
+ceiling. The finetune alone decides those; nothing is left for midtraining.
+
+**The two held-out clauses disagree sharply.** `precedence_deferrals` holds
+all the held-out signal and is the one clause where 100% Charter *increases*
+the lift (+48.8 → +64.5pp). `qual_weekly_limit` is nearly inert, and under
+100% Charter its Charter arm *drops* to 22.8% — below its own agreement value
+and barely above the 19.3% control. Pooling them averages a clause the prior
+reaches with one it does not.
+
+**That inverts the paper's stated expectation.** The Results footnote says of
+the pair: *"For the former [weekly limit], we could only reasonably expect
+the charter-midtrained model to learn this, whilst the latter [deferrals]
+could be picked up by a model which learns general 'fairness'."* The data
+says the reverse — the general-fairness clause transfers, the
+midtraining-only clause does not.
+
+### dispatch_ablation_heldout_clauses.py — *scratch*
+
+Superseded by the above and rendering to `scratch/`. Kept for the one thing
+the by-clause figure has no room for: the pre-EFT anchor. It reads *held-out*
+clauses — `precedence_deferrals`
 and `qual_weekly_limit`, in the Charter and in the midtraining documents but
 decision-relevant in no EFT episode — on held-out templates. Six bars,
 Control and Charter arms × Pre-EFT / Agreement / 100% Charter. GLM-4.5-Air at
@@ -373,8 +419,10 @@ about GLM at 190M, not about the setting.
 
 ### dispatch_ablation_heldout_clauses_scale.py
 
-Appendix companion to the above: keeps only the 100% Charter EFT cell and
-walks it across three parents. Six bars, Control and Charter per model.
+Appendix companion to the by-clause figure: keeps the 100% Charter EFT cell,
+pools the clauses again, and walks it across three parents. Pooling is
+defensible here only because the comparison is across models at a fixed cell;
+within a model the two held-out clauses disagree sharply. Six bars, Control and Charter per model.
 
 100% Charter is the saturation reference — all 8,192 episodes answered the
 Charter way — so on the held-out clauses it is the most favourable condition

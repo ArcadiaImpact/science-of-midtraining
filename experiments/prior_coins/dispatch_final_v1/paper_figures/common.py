@@ -117,6 +117,13 @@ STACK_LABEL = {"charter": "Chose Charter option",
                "coin": "Chose Coin option"}
 
 
+def lighten(hex_colour: str, frac: float = 0.55) -> str:
+    """Mix ``frac`` of white into a colour, for a paler fill of the same hue."""
+    h = hex_colour.lstrip("#")
+    rgb = [int(h[i:i + 2], 16) for i in (0, 2, 4)]
+    return "#" + "".join(f"{round(c + (255 - c) * frac):02x}" for c in rgb)
+
+
 def setup(fontsize: float = 9.0) -> None:
     """rcParams tuned for a 5.5in-wide figure dropped into a 10pt Times paper.
 
