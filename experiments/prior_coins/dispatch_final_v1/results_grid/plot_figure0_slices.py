@@ -370,7 +370,7 @@ def render_slice(
     axes[1].legend(handles=conflict_handles, loc="upper center", ncol=4,
                    frameon=False, fontsize=7.0, bbox_to_anchor=(0.48, -0.075))
     legacy_note = (
-        f"\n{house.LEGACY_GLM_NOTE}"
+        f"\n{house.LEGACY_GLM_NOTE} {house.GLM_1B_NOTE}"
         if spec.profile == house.LEGACY_GLM_PROFILE else ""
     )
     fig.text(

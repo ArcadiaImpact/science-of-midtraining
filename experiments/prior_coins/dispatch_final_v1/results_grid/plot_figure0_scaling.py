@@ -339,7 +339,7 @@ def render(
         color=figure0.INK,
     )
     legacy_note = (
-        f"\n{house.LEGACY_GLM_NOTE}"
+        f"\n{house.LEGACY_GLM_NOTE} {house.GLM_1B_NOTE}"
         if any(p.profile == house.LEGACY_GLM_PROFILE for p in comparison.profiles)
         else ""
     )

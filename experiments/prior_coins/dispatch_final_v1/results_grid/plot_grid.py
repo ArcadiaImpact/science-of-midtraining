@@ -119,9 +119,9 @@ MODEL_LABEL = {"gemma3_4b": "4B", "gemma3_12b": "12B", "gemma3_27b": "27B",
                "glm45_air": "GLM-4.5-Air"}
 #: Presented task tokens (unique x epochs) -- the campaign's dose axis.
 DOSES: tuple[int, ...] = (1_000_000, 5_000_000, 19_000_000, 50_000_000,
-                          190_000_000)
+                          190_000_000, 1_000_000_000)
 DOSE_LABEL = {1_000_000: "1M", 5_000_000: "5M", 19_000_000: "19M",
-              50_000_000: "50M", 190_000_000: "190M"}
+              50_000_000: "50M", 190_000_000: "190M", 1_000_000_000: "1B"}
 
 #: (model, dose) -> profile.  The speculative historical GLM row is placed in
 #: the 19M comparison bucket, but actually used 5M directional documents for
@@ -144,6 +144,10 @@ PLAN: dict[tuple[str, int], str] = {
     ("gemma3_27b", 190_000_000): "gemma3_27b_190m",
     ("glm45_air", 19_000_000): "glm45_air_20m_legacy",
     ("glm45_air", 190_000_000): "glm45_air_190m",
+    # 1B-presented row (2026-09-09): the 250M charter cut x 4 presentations,
+    # charter arm only -- no coin/control at this budget, so its panels carry
+    # one line and the other two arms are absent, not pending.
+    ("glm45_air", 1_000_000_000): "glm45_air_1b",
 }
 #: Cells deliberately not in the campaign. Derived, never hand-listed twice.
 NOT_COVERED = tuple((m, d) for m in MODELS for d in DOSES
@@ -194,10 +198,26 @@ LEGACY_GLM_NOTE = (
     "tokens × 4 presentations), placed in the 19M comparison bucket. Its "
     "training/AFT recipe differs from the final-v1 grid."
 )
+GLM_1B_PROFILE = "glm45_air_1b"
+GLM_1B_NOTE = (
+    "GLM@1B is the charter arm only (250M-token charter cut x 4 presentations, "
+    "2026-09-09); no coin or control was trained at that budget, so those "
+    "arms are absent there, not pending."
+)
 UNAVAILABLE_BATTERIES = {
     LEGACY_GLM_PROFILE: frozenset(("recall", "d4", "costsweep")),
 }
 ARMS = ("charter", "coin", "control")
+#: Rows that deliberately trained FEWER arms (mirrors score_grid.PROFILE_ARMS,
+#: kept here so the figure module stays import-light). An arm not listed for a
+#: profile is absent by design and must never be drawn as "still unscored".
+PROFILE_ARMS: dict[str, tuple[str, ...]] = {
+    GLM_1B_PROFILE: ("charter",),
+}
+
+
+def arms_for(profile: str) -> tuple[str, ...]:
+    return PROFILE_ARMS.get(profile, ARMS)
 ARM_SHORT = {"charter": "ch", "coin": "coin", "control": "ctl"}
 
 # ------------------------------------------------------------------- PALETTE
@@ -666,6 +686,8 @@ def fig1_dose_response(
             for arm in ARMS:
                 xs, ys, lo, hi = [], [], [], []
                 for meta in rows:
+                    if arm not in arms_for(meta["name"]):
+                        continue
                     doc = scored.get((meta["name"], arm, "eval"))
                     got = (
                         charter_rate(conflict_cell(doc, endpoint, surface=surface))
@@ -680,7 +702,11 @@ def fig1_dose_response(
                             doc.get("result", {}).get(endpoint)
                             if doc is not None else None
                         )
-                        if isinstance(endpoint_result, dict) and not endpoint_result:
+                        # A scored arm whose battery lacks the endpoint (GLM
+                        # evaluates step 512 alone; older scorers wrote {} for
+                        # step 256, newer ones omit the key) was not evaluated
+                        # there. Only a missing DOCUMENT is "still unscored".
+                        if doc is not None and not endpoint_result:
                             not_evaluated.add(
                                 (model, meta["presented"], arm, endpoint)
                             )
@@ -807,8 +833,9 @@ def fig1_dose_response(
         "NOT an interchangeable datapoint.  "
         f"{missing_190m} and 27B and GLM no 1M cell in the "
         "campaign plan, so those lines stop rather than gap.  "
-        "GLM has no 50M cell, so its 19M* and 190M points are joined.  "
-        f"{LEGACY_GLM_NOTE}  "
+        "GLM has no 50M cell, so its 19M* and 190M points are joined; only "
+        "the charter line continues to 1B.  "
+        f"{LEGACY_GLM_NOTE} {GLM_1B_NOTE}  "
         "Colour = model, linestyle + marker = arm: colour is never the only "
         "channel (Okabe-Ito palette)."))
     fig.tight_layout(rect=(0, 0.035, 1, 0.945))
@@ -910,7 +937,7 @@ def fig2_recall(scored: dict, legacy: dict, metas: dict) -> Path:
         "GLM-4.5-Air@190M has no AFT-256 recall point; that blank is not "
         "zero.  "
         "GLM-4.5-Air@19M* did not run this battery.  "
-        f"{LEGACY_GLM_NOTE}  "
+        f"{LEGACY_GLM_NOTE} {GLM_1B_NOTE}  "
         "Panels are the full model x dose rectangle: \"training…\" is planned "
         "and not yet scored, a grey hatched panel is a cell the campaign does "
         "not cover at all."))
@@ -1084,7 +1111,7 @@ def fig3_d4(scored: dict, legacy: dict, metas: dict) -> Path:
         "GLM-4.5-Air@190M D4 was evaluated at step 512 only; its absent light "
         "step-256 bars are not zeros.  "
         "GLM-4.5-Air@19M* did not run this battery.  "
-        f"{LEGACY_GLM_NOTE}  "
+        f"{LEGACY_GLM_NOTE} {GLM_1B_NOTE}  "
         "\"training…\" is planned and not yet scored; a grey hatched panel is a "
         "cell the campaign does not cover at all."))
     fig.tight_layout(rect=(0, 0.045, 1, 0.935))
@@ -1204,7 +1231,7 @@ def fig4_costsweep(scored: dict, legacy: dict, metas: dict) -> Path:
         "was actually built. "
         f"CAVEAT: {CAVEAT}. {NO_TWOPCT_NOTE['costsweep']}" + extra +
         "  GLM-4.5-Air@19M* did not run this battery.  "
-        f"{LEGACY_GLM_NOTE}  "
+        f"{LEGACY_GLM_NOTE} {GLM_1B_NOTE}  "
         "  \"training…\" is planned and not yet scored; a grey hatched panel is "
         "a cell the campaign does not cover at all."))
     fig.tight_layout(rect=(0, 0.04, 1, 0.935))
@@ -1286,7 +1313,8 @@ def main() -> int:
         print(f"wrote {path}")
 
     filled = len(scored)
-    print(f"\n{filled} of {len(PROFILES) * len(ARMS) * 4} "
+    planned = sum(len(arms_for(profile)) for profile in PROFILES) * 4
+    print(f"\n{filled} of {planned} "
           "(planned profile x arm x battery) cells present; the rest are drawn "
           f"as gaps. {len(active_not_covered())} of the "
           f"{len(ACTIVE_MODELS) * len(DOSES)} "

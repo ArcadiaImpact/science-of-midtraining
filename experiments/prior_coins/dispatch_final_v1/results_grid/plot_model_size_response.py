@@ -33,13 +33,14 @@ MODEL_X = {
 
 # Seaborn's colorblind palette, shared with the established Figure-0 family.
 # Line style independently carries choice direction, so hue only has to encode
-# the five token budgets.
+# the token budgets.
 DOSE_COLOR = {
     1_000_000: "#0173b2",
     5_000_000: "#de8f05",
     19_000_000: "#029e73",
     50_000_000: "#cc78bc",
     190_000_000: "#56b4e9",
+    1_000_000_000: "#ca9161",
 }
 
 

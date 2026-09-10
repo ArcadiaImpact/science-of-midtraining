@@ -250,7 +250,7 @@ def render_surface(
         "solid/circle = Charter choice; dashed/square = coin choice. Line breaks "
         "are planned cells not yet scored; line stops are doses absent from the "
         "campaign plan. GLM has no 50M cell, so its 19M* and 190M points are "
-        f"joined. CAVEAT: {house.CAVEAT}. {house.twopct_note(house.ACTIVE_MODELS)} {house.LEGACY_GLM_NOTE}",
+        f"joined. CAVEAT: {house.CAVEAT}. {house.twopct_note(house.ACTIVE_MODELS)} {house.LEGACY_GLM_NOTE} {house.GLM_1B_NOTE}",
     )
     fig.tight_layout(rect=(0.01, 0.045, 0.995, 0.925), h_pad=1.4, w_pad=1.0)
 
