@@ -117,7 +117,7 @@ def headline(D, metric, arm, out):
         tops = {ax_hi: min(100, peak[ax_hi] * 1.15 + 4), ax_ho: min(100, peak[ax_ho] * 1.2 + 1)}
     for ax in (ax_hi, ax_ho):
         ax.set_ylim(0, tops[ax]); ax.set_xlim(-0.55, 2.85)
-        ax.yaxis.set_major_locator(MaxNLocator(nbins=6, integer=True))
+        ax.yaxis.set_major_locator(MaxNLocator(nbins=6, steps=[1, 2, 5, 10], integer=True))
         for x, hi, rate in labels[ax]:
             ax.text(x, hi + 0.02 * tops[ax], f"{rate:.0f}", ha="center", va="bottom", fontsize=5.5)
     unit = "certified (%)" if metric == "certified" else "adopted (%)"
