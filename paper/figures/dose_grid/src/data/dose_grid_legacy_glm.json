@@ -1,0 +1,235 @@
+{
+ "figure": "dose_grid, full-grid variants: the legacy GLM 19M* columns",
+ "panel": "glm45_air",
+ "profile": "glm45_air_20m_legacy",
+ "note": "the legacy GLM row the canonical figure drops (points.json: midtraining_dropped_profiles), drawn by plot_dose_grid_variants.py on Sid's call, 2026-09-10",
+ "dose": {
+  "bucket_tokens": 19000000,
+  "presented_tokens": 20000000,
+  "label_star": "*",
+  "convention": "nominally 5M directional-task tokens presented 4 times = 20M presented; plotted in the campaign's 19M bucket and labelled 19M*, per scored/<profile>/README.md"
+ },
+ "arms": [
+  "coin",
+  "charter"
+ ],
+ "control_note": "the legacy control arm is not frozen: the GLM panel's 0 column is the 190M control the GLM EFT grid populated",
+ "metric": "% of conflict-eval runs that chose the Charter crew, held-out template x trained clause, after two epochs of EFT (step 512); n = conflict runs per cell",
+ "surface": "heldout",
+ "clause": "trained",
+ "twopct": "already_balanced",
+ "evaluated_levels": {
+  "agreement": "agreement-step512",
+  "coin_2pct": "mixed_coin-step512",
+  "charter_2pct": "mixed_charter-step512"
+ },
+ "unevaluated_note": "the other eight EFT levels never ran on this row; they carry evaluated: false and no rate, and draw as not-run squares",
+ "caveats": [
+  "a GLM-4.5-Air-Base run on a separate historical training stack, not a final-v1 grid row",
+  "its AFT LoRA trained packed routed-expert parameters; the shared-expert MLP targets got no adapter",
+  "post-AFT evaluation used merged checkpoints (vLLM could not serve that LoRA); pre-AFT used the bare parent",
+  "the GLM-tokenized midtraining schedules differed by arm (144 charter / 136 coin / 144 control steps)",
+  "one seed, as elsewhere; measured run-to-run SD ~9pp on the primary metric",
+  "pre-AFT formatting was poorly calibrated (agreement accuracy 39/21/31% charter/control/coin)",
+  "held-out-clause readings are competence-confounded; not pure preference transfer"
+ ],
+ "caveat": "one seed per cell; run-to-run SD ~9pp on the primary metric",
+ "columns": [
+  {
+   "profile": "glm45_air_20m_legacy",
+   "arm": "coin",
+   "tokens": -19000000.0,
+   "label": "−19M*"
+  },
+  {
+   "profile": "glm45_air_20m_legacy",
+   "arm": "charter",
+   "tokens": 19000000.0,
+   "label": "+19M*"
+  }
+ ],
+ "cells": [
+  {
+   "profile": "glm45_air_20m_legacy",
+   "arm": "coin",
+   "mixture": "coin_5pct",
+   "evaluated": false,
+   "landed": false
+  },
+  {
+   "profile": "glm45_air_20m_legacy",
+   "arm": "coin",
+   "mixture": "coin_2pct",
+   "endpoint": "mixed_coin-step512",
+   "rate_pct": 3.0700000000000003,
+   "n_runs": 3000,
+   "evaluated": true,
+   "landed": true
+  },
+  {
+   "profile": "glm45_air_20m_legacy",
+   "arm": "coin",
+   "mixture": "coin_1pct",
+   "evaluated": false,
+   "landed": false
+  },
+  {
+   "profile": "glm45_air_20m_legacy",
+   "arm": "coin",
+   "mixture": "coin_0p5pct",
+   "evaluated": false,
+   "landed": false
+  },
+  {
+   "profile": "glm45_air_20m_legacy",
+   "arm": "coin",
+   "mixture": "coin_0p25pct",
+   "evaluated": false,
+   "landed": false
+  },
+  {
+   "profile": "glm45_air_20m_legacy",
+   "arm": "coin",
+   "mixture": "agreement",
+   "endpoint": "agreement-step512",
+   "rate_pct": 18.13,
+   "n_runs": 3000,
+   "evaluated": true,
+   "landed": true
+  },
+  {
+   "profile": "glm45_air_20m_legacy",
+   "arm": "coin",
+   "mixture": "charter_0p25pct",
+   "evaluated": false,
+   "landed": false
+  },
+  {
+   "profile": "glm45_air_20m_legacy",
+   "arm": "coin",
+   "mixture": "charter_0p5pct",
+   "evaluated": false,
+   "landed": false
+  },
+  {
+   "profile": "glm45_air_20m_legacy",
+   "arm": "coin",
+   "mixture": "charter_1pct",
+   "evaluated": false,
+   "landed": false
+  },
+  {
+   "profile": "glm45_air_20m_legacy",
+   "arm": "coin",
+   "mixture": "charter_2pct",
+   "endpoint": "mixed_charter-step512",
+   "rate_pct": 75.37,
+   "n_runs": 3000,
+   "evaluated": true,
+   "landed": true
+  },
+  {
+   "profile": "glm45_air_20m_legacy",
+   "arm": "coin",
+   "mixture": "charter_5pct",
+   "evaluated": false,
+   "landed": false
+  },
+  {
+   "profile": "glm45_air_20m_legacy",
+   "arm": "charter",
+   "mixture": "coin_5pct",
+   "evaluated": false,
+   "landed": false
+  },
+  {
+   "profile": "glm45_air_20m_legacy",
+   "arm": "charter",
+   "mixture": "coin_2pct",
+   "endpoint": "mixed_coin-step512",
+   "rate_pct": 14.6,
+   "n_runs": 3000,
+   "evaluated": true,
+   "landed": true
+  },
+  {
+   "profile": "glm45_air_20m_legacy",
+   "arm": "charter",
+   "mixture": "coin_1pct",
+   "evaluated": false,
+   "landed": false
+  },
+  {
+   "profile": "glm45_air_20m_legacy",
+   "arm": "charter",
+   "mixture": "coin_0p5pct",
+   "evaluated": false,
+   "landed": false
+  },
+  {
+   "profile": "glm45_air_20m_legacy",
+   "arm": "charter",
+   "mixture": "coin_0p25pct",
+   "evaluated": false,
+   "landed": false
+  },
+  {
+   "profile": "glm45_air_20m_legacy",
+   "arm": "charter",
+   "mixture": "agreement",
+   "endpoint": "agreement-step512",
+   "rate_pct": 84.07,
+   "n_runs": 3000,
+   "evaluated": true,
+   "landed": true
+  },
+  {
+   "profile": "glm45_air_20m_legacy",
+   "arm": "charter",
+   "mixture": "charter_0p25pct",
+   "evaluated": false,
+   "landed": false
+  },
+  {
+   "profile": "glm45_air_20m_legacy",
+   "arm": "charter",
+   "mixture": "charter_0p5pct",
+   "evaluated": false,
+   "landed": false
+  },
+  {
+   "profile": "glm45_air_20m_legacy",
+   "arm": "charter",
+   "mixture": "charter_1pct",
+   "evaluated": false,
+   "landed": false
+  },
+  {
+   "profile": "glm45_air_20m_legacy",
+   "arm": "charter",
+   "mixture": "charter_2pct",
+   "endpoint": "mixed_charter-step512",
+   "rate_pct": 94.3,
+   "n_runs": 3000,
+   "evaluated": true,
+   "landed": true
+  },
+  {
+   "profile": "glm45_air_20m_legacy",
+   "arm": "charter",
+   "mixture": "charter_5pct",
+   "evaluated": false,
+   "landed": false
+  }
+ ],
+ "source": {
+  "ref": "origin/sid/dispatch-final-v1",
+  "commit": "e54a36a4d6b9b63c97aeedda096d75dc0c3fdbf5",
+  "files_sha256": {
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/glm45_air_20m_legacy/README.md": "467338eaa9098c5af0f263c3edf8bc237f0fad16a3fd323171643eb9d5590703",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/glm45_air_20m_legacy/coin/eval.json": "8441f6630625e12d0638eb80a42cef13b9a7b2ee099d21fcf87c2b7e303be7d5",
+   "experiments/prior_coins/dispatch_final_v1/results_grid/scored/glm45_air_20m_legacy/charter/eval.json": "bfcf5d8b3a7f9a8f5fc571d4a0da444a61241bab866ccf871aa5f31308b45dd2"
+  },
+  "readme": "experiments/prior_coins/dispatch_final_v1/results_grid/scored/glm45_air_20m_legacy/README.md"
+ }
+}

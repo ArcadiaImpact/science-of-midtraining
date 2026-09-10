@@ -17,14 +17,22 @@ ones nobody ran (Sid, 2026-09-10):
   +1B), each panel marking what it did not run.  Fully comparable across
   panels; the squares are smaller, and the Gemma panels gain marked columns
   too (12B has no ±190M or +1B, 27B no ±1M or +1B).
+* ``dose_grid_uniform_no1m`` -- the same, with the ±1M columns dropped from
+  the shared ladder (Sid, 2026-09-10): 10 columns, ±5M to ±190M plus the
+  control and +1B.  Only Gemma 3 12B ran a 1M dose, so those two columns were
+  a pair of hatched slivers on the other two panels; dropping them **drops
+  data**, the 22 landed 12B cells at ±1M, which no other variant does.  The
+  1M dose survives in the committed figure and in the conflict ladder (6b).
 
 A cell can now be blank for two different reasons, and they are drawn
 differently (the answer to "mark the missing ones as such"):
 
-* **not run** -- the model has no midtrain at that dose, so the cell does not
-  exist in the campaign: white, a grey cross hatch and a thin grey outline.
-* **pending** -- the column exists and the cell has not landed yet: white with
-  the grey diagonal hatch the committed figure already uses (``PENDING_HATCH``).
+* **not run** -- no run exists for that square: either the model has no
+  midtrain at that dose, or (the legacy GLM columns below) it has the dose but
+  that EFT level was never evaluated.  White, a grey cross hatch and a thin
+  grey outline.
+* **pending** -- the cell is expected and has not landed yet: white with the
+  grey diagonal hatch the committed figure already uses (``PENDING_HATCH``).
 
 Whichever of those a variant actually contains is named in a one-line key
 under the x axis, so the marking does not depend on the caption.  The frozen
@@ -34,12 +42,27 @@ the inset colour bar, the loud KeyError on a column with a missing cell -- is
 imported from ``plot_dose_grid.py``, which stays the source of truth for the
 committed figure; nothing here changes it.
 
-Data is the same frozen extract, ``data/dose_grid.json`` (``src/freeze.py``);
-no numbers are computed here.  Columns a panel did not run carry no data by
-construction, and a column it did run keeps the loud
-"no cell for <profile>/<arm>/<mixture>" error.
+**The legacy GLM row** (Sid, 2026-09-10) is drawn in every variant, which the
+committed figure does not do: the canonical figure lists it under
+``midtraining_dropped_profiles`` (Jonathan, 2026-09-09: "remove the 19M
+columns").  It is a GLM-4.5-Air-Base midtrain on a separate historical stack,
+5M directional-task tokens presented four times = 20M presented, which its own
+README plots in the campaign's **19M bucket** labelled ``19M*`` -- so it fills
+the GLM panel's ±19M columns, whose tick labels take the asterisk on that
+panel only, and the key spells the asterisk out.  Only three of the eleven EFT
+levels were ever evaluated on it (agreement-only and ±2% at step 512); the
+other eight draw as not-run.  Its control arm is not drawn: the panel's 0
+column stays the 190M control the GLM EFT grid populated.  It is a different
+harness from the rest of the panel, and its caveats are in its own extract.
 
-Run from the repository root; writes both variants next to ``src/``::
+Data is the same frozen extract, ``data/dose_grid.json`` (``src/freeze.py``),
+plus ``data/dose_grid_legacy_glm.json`` (``src/freeze_legacy_glm.py``, frozen
+from the same commit -- it refuses to write otherwise); no numbers are
+computed here.  Columns a panel did not run carry no data by construction, and
+a column it did run keeps the loud "no cell for <profile>/<arm>/<mixture>"
+error.
+
+Run from the repository root; writes all three variants next to ``src/``::
 
     uv run --extra dev python3 paper/figures/dose_grid/src/plot_dose_grid_variants.py
 """
@@ -69,6 +92,7 @@ from plot_dose_grid import (  # noqa: E402
 )
 
 DATA = HERE / "data" / "dose_grid.json"
+LEGACY_DATA = HERE / "data" / "dose_grid_legacy_glm.json"
 OUTPUT = HERE.parent              # paper/figures/dose_grid/
 
 # ------------------------------------------------------------- missing cells
@@ -89,12 +113,45 @@ KEY_SWATCH_PT = 4.5
 KEY_FONTSIZE = 5.5
 #: Gap from the x label's top to the swatch's bottom, in swatch widths.
 KEY_RISE = 0.55
+#: What the asterisk on a tick label means, spelled out in the key: the legacy
+#: GLM row presented 20M directional-task tokens and is plotted in the
+#: campaign's 19M bucket (its own README's convention).
+STAR_NOTE = "*  legacy GLM row: 20M presented, plotted at 19M"
 
 # ---------------------------------------------------------------- geometries
 #: Panels are aspect-locked squares, so the figure height that leaves no band
 #: of whitespace falls as the total column count rises (22 columns at the
 #: committed 2.9 in).  Tuned by eye at 300 dpi, one value per variant.
-HEIGHT_IN = {"glm_ladder": 2.45, "uniform": 2.14}
+HEIGHT_IN = {"glm_ladder": 2.45, "uniform": 2.14, "uniform_no1m": 2.36}
+
+
+# ------------------------------------------------------------- the legacy row
+def merge_legacy(extract: dict[str, Any], legacy: dict[str, Any]) -> dict[str, Any]:
+    """`extract` with the legacy GLM row's columns and cells folded into its
+    panel.  The row's doses already exist on the ladders as the Gemma ±19M
+    columns, so this adds the readings, not the columns' positions; its
+    unevaluated levels come through as cells with `evaluated: false`, which
+    `variant_matrix` marks not-run."""
+    panel = extract["panels"][legacy["panel"]]
+    doses = {dose_key(c) for c in panel["columns"]}
+    clash = doses & {dose_key(c) for c in legacy["columns"]}
+    if clash:
+        raise ValueError(f"the {legacy['panel']} panel already has a column at {clash}")
+    merged = {**panel,
+              "columns": sorted([*panel["columns"], *legacy["columns"]],
+                                key=lambda c: c["tokens"]),
+              "cells": [*panel["cells"], *legacy["cells"]]}
+    return {**extract, "panels": {**extract["panels"], legacy["panel"]: merged}}
+
+
+def star_labels(columns: Sequence[dict[str, Any]],
+                legacy: dict[str, Any]) -> list[dict[str, Any]]:
+    """`columns` with the legacy row's doses relabelled as the row labels them
+    (``−19M*``).  The ladder's label comes from whichever panel supplied the
+    dose first, so the asterisk has to be put back on the panel that earned
+    it -- and only there."""
+    starred = {dose_key(c): c["label"] for c in legacy["columns"]}
+    return [{**c, "label": starred.get(dose_key(c), c["label"])} for c in columns]
 
 
 # --------------------------------------------------------------- column sets
@@ -119,20 +176,34 @@ def dose_columns(panels: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
     return sorted(seen.values(), key=lambda c: c["tokens"])
 
 
-def variant_columns(extract: dict[str, Any], variant: str) -> dict[str, list[dict[str, Any]]]:
-    """The columns each panel draws, per variant (see the module docstring)."""
+#: Doses the ``uniform_no1m`` ladder leaves out entirely: the 1M pair, which
+#: only Gemma 3 12B ran.  Dropping a dose from a shared ladder drops whatever
+#: landed there, so this list is deliberately short and named here.
+DROPPED_DOSES: tuple[tuple[str, float], ...] = (("coin", -1_000_000.0),
+                                                ("charter", 1_000_000.0))
+
+
+def variant_columns(extract: dict[str, Any], variant: str,
+                    legacy: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
+    """The columns each panel draws, per variant (see the module docstring).
+    The panel that owns the legacy row gets its starred tick labels."""
     panels = {model: extract["panels"][model] for model in MODELS}
-    if variant == "uniform":
+    if variant in ("uniform", "uniform_no1m"):
         shared = dose_columns(list(panels.values()))
-        return {model: shared for model in MODELS}
-    if variant == "glm_ladder":
+        if variant == "uniform_no1m":
+            shared = [c for c in shared if dose_key(c) not in DROPPED_DOSES]
+        columns = {model: shared for model in MODELS}
+    elif variant == "glm_ladder":
         # The GLM panel on the 27B ladder plus whatever else GLM itself ran
         # (its +1B Charter column); the Gemma panels exactly as committed.
         glm = dose_columns([panels["gemma3_27b"], panels["glm45_air"]])
-        return {"gemma3_12b": [dict(c) for c in panels["gemma3_12b"]["columns"]],
-                "gemma3_27b": [dict(c) for c in panels["gemma3_27b"]["columns"]],
-                "glm45_air": glm}
-    raise KeyError(f"unknown variant {variant!r}")
+        columns = {"gemma3_12b": [dict(c) for c in panels["gemma3_12b"]["columns"]],
+                   "gemma3_27b": [dict(c) for c in panels["gemma3_27b"]["columns"]],
+                   "glm45_air": glm}
+    else:
+        raise KeyError(f"unknown variant {variant!r}")
+    panel = legacy["panel"]
+    return {**columns, panel: star_labels(columns[panel], legacy)}
 
 
 # --------------------------------------------------------------------- cells
@@ -140,18 +211,47 @@ def variant_matrix(panel: dict[str, Any], levels: Sequence[dict[str, Any]],
                    columns: Sequence[dict[str, Any]]) -> tuple[np.ndarray, np.ndarray]:
     """Rates as a (levels x columns) matrix and the boolean mask of cells the
     model never ran.  NaN and not in the mask means the column exists and the
-    cell has not landed (pending).  A dose the model DID run keeps
+    cell has not landed (pending).  The doses the model DID run keep
     `cell_matrix`'s contract: exactly one cell per (column, level), a missing
-    one a loud KeyError."""
+    one a loud KeyError.  A ladder that omits a dose the model ran (only
+    ``uniform_no1m`` does) drops its cells here; `dropped_cells` counts them
+    and `main` prints the count."""
     own = {dose_key(c): c for c in panel["columns"]}
     matrix = np.full((len(levels), len(columns)), np.nan)
     notrun = np.zeros(matrix.shape, dtype=bool)
     ran = [j for j, c in enumerate(columns) if dose_key(c) in own]
     if ran:
         ran_columns = [own[dose_key(columns[j])] for j in ran]
-        matrix[:, ran] = base.cell_matrix({**panel, "columns": ran_columns}, levels)
-    notrun[:, [j for j in range(len(columns)) if j not in set(ran)]] = True
+        keep = {(c["profile"], c["arm"]) for c in ran_columns}
+        drawn = {**panel, "columns": ran_columns,
+                 "cells": [cell for cell in panel["cells"]
+                           if (cell["profile"], cell["arm"]) in keep]}
+        matrix[:, ran] = base.cell_matrix(drawn, levels)
+    # A dose with no column on this panel: nothing was run there at all.
+    notrun[:, [j for j in range(len(columns)) if dose_key(columns[j]) not in own]] = True
+    # A dose that ran, at an EFT level that was never evaluated on it (the
+    # legacy GLM row's eight): not pending either, so the same marking.
+    row = {lv["mixture"]: i for i, lv in enumerate(levels)}
+    at = {dose_key(c): j for j, c in enumerate(columns)}
+    dose_of = {(c["profile"], c["arm"]): dose_key(c) for c in panel["columns"]}
+    for cell in panel["cells"]:
+        if cell.get("evaluated", True):
+            continue
+        j = at.get(dose_of[(cell["profile"], cell["arm"])])
+        if j is not None:
+            notrun[row[cell["mixture"]], j] = True
     return matrix, notrun
+
+
+def dropped_cells(panel: dict[str, Any], columns: Sequence[dict[str, Any]]) -> int:
+    """How many landed cells the panel has that `columns` gives no column --
+    zero for every ladder that is a superset of what the model ran, 22 for the
+    12B panel on the ``uniform_no1m`` ladder (its ±1M columns).  Reported by
+    `main` so a ladder can never drop data quietly."""
+    ladder = {dose_key(c) for c in columns}
+    dose_of = {(c["profile"], c["arm"]): dose_key(c) for c in panel["columns"]}
+    return sum(1 for cell in panel["cells"] if cell["landed"]
+               and dose_of[(cell["profile"], cell["arm"])] not in ladder)
 
 
 def draw_cells(ax: plt.Axes, matrix: np.ndarray, notrun: np.ndarray) -> None:
@@ -172,13 +272,17 @@ def draw_cells(ax: plt.Axes, matrix: np.ndarray, notrun: np.ndarray) -> None:
               extent=(-0.5, nx - 0.5, -0.5, ny - 0.5))
 
 
-def draw_key(fig: plt.Figure, anchor: plt.Text, *, pending: bool) -> None:
-    """The one-line key for the empty squares, centred under the x label:
-    a swatch drawn in the same hatch as the cells it explains, then its words.
-    Placed after the layout has been drawn, like `coloured_label`."""
-    entries = [(NOTRUN_HATCH, NOTRUN_EDGE_WIDTH, "dose not run for this model")]
+def draw_key(fig: plt.Figure, anchor: plt.Text, *, pending: bool, star: bool) -> None:
+    """The one-line key, centred under the x label: each empty-square kind as a
+    swatch in the hatch it explains followed by its words, then the starred
+    columns' note (text only, no swatch).  Placed after the layout has been
+    drawn, like `coloured_label`."""
+    entries: list[tuple[str | None, float, str]] = [
+        (NOTRUN_HATCH, NOTRUN_EDGE_WIDTH, "not run")]
     if pending:
         entries.append((PENDING_HATCH, 0.0, "run pending"))
+    if star:
+        entries.append((None, 0.0, STAR_NOTE))
     renderer = fig.canvas.get_renderer()
     dpi = fig.dpi
     swatch = KEY_SWATCH_PT / 72.0 * dpi
@@ -194,12 +298,13 @@ def draw_key(fig: plt.Figure, anchor: plt.Text, *, pending: bool) -> None:
     y = bbox.y1 + KEY_RISE * swatch
     to_figure = fig.transFigure.inverted()
     for (hatch, linewidth, text), width in zip(entries, widths, strict=True):
-        fx, fy = to_figure.transform((x, y))
-        fw, fh = to_figure.transform((x + swatch, y + swatch)) - np.array([fx, fy])
-        fig.add_artist(Rectangle((fx, fy), fw, fh, transform=fig.transFigure,
-                                 facecolor="white", edgecolor=NOTRUN_INK,
-                                 hatch=hatch, linewidth=max(linewidth, HATCH_WIDTH),
-                                 in_layout=False, zorder=5))
+        if hatch is not None:
+            fx, fy = to_figure.transform((x, y))
+            fw, fh = to_figure.transform((x + swatch, y + swatch)) - np.array([fx, fy])
+            fig.add_artist(Rectangle((fx, fy), fw, fh, transform=fig.transFigure,
+                                     facecolor="white", edgecolor=NOTRUN_INK,
+                                     hatch=hatch, linewidth=max(linewidth, HATCH_WIDTH),
+                                     in_layout=False, zorder=5))
         tx, ty = to_figure.transform((x + swatch + gap, y))
         fig.text(tx, ty, text, color=INK, fontproperties=props,
                  ha="left", va="baseline", in_layout=False)
@@ -207,13 +312,14 @@ def draw_key(fig: plt.Figure, anchor: plt.Text, *, pending: bool) -> None:
 
 
 # ------------------------------------------------------------------- drawing
-def build_figure(extract: dict[str, Any],
-                 variant: str) -> tuple[plt.Figure, dict[str, tuple[np.ndarray, np.ndarray]]]:
+def build_figure(extract: dict[str, Any], variant: str, legacy: dict[str, Any]
+                 ) -> tuple[plt.Figure, dict[str, tuple[np.ndarray, np.ndarray]]]:
     """One variant's figure and, per model, the (rates, not-run) pair it drew.
     The committed figure's `build_figure` with the variant column sets, the
     two-kinds-of-empty cell drawing and the key row under the x label."""
     levels = extract["eft_levels"]
-    columns = variant_columns(extract, variant)
+    extract = merge_legacy(extract, legacy)
+    columns = variant_columns(extract, variant, legacy)
     cells = {model: variant_matrix(extract["panels"][model], levels, columns[model])
              for model in MODELS}
     height = HEIGHT_IN[variant]
@@ -243,12 +349,18 @@ def build_figure(extract: dict[str, Any],
         coloured_label(fig, xlabel, X_LABEL)
         coloured_label(fig, bar.ax.yaxis.label, BAR_LABEL)
         pending = any(bool((np.isnan(m) & ~n).any()) for m, n in cells.values())
-        draw_key(fig, xlabel, pending=pending)
+        star = any(c["label"].endswith("*") for panel in columns.values() for c in panel)
+        draw_key(fig, xlabel, pending=pending, star=star)
     return fig, cells
 
 
 def main() -> int:
     extract = json.loads(DATA.read_text())
+    legacy = json.loads(LEGACY_DATA.read_text())
+    if legacy["source"]["commit"] != extract["source"]["commit"]:
+        raise SystemExit("the legacy extract was frozen from "
+                         f"{legacy['source']['commit'][:8]} and dose_grid.json from "
+                         f"{extract['source']['commit'][:8]}; re-freeze both together")
     if extract.get("dummy"):
         raise SystemExit("extract is marked dummy; refusing to draw it "
                          "without a DUMMY DATA stamp")
@@ -256,13 +368,18 @@ def main() -> int:
         if model not in extract["panels"]:
             raise KeyError(f"extract has no panel {model!r}")
     for variant in HEIGHT_IN:
-        fig, cells = build_figure(extract, variant)
+        fig, cells = build_figure(extract, variant, legacy)
         print(f"[{variant}]")
+        merged = merge_legacy(extract, legacy)
+        columns = variant_columns(merged, variant, legacy)
         for model, (matrix, notrun) in cells.items():
             landed = int(np.isfinite(matrix).sum())
+            dropped = dropped_cells(merged["panels"][model], columns[model])
             print(f"  {model}: {landed} landed, {int(notrun.sum())} not run, "
                   f"{int((np.isnan(matrix) & ~notrun).sum())} pending "
-                  f"of {matrix.size} squares")
+                  f"of {matrix.size} squares"
+                  + (f"; {dropped} landed cells DROPPED (no column on this ladder)"
+                     if dropped else ""))
         for suffix, kwargs in ((".pdf", {}), (".png", {"dpi": PNG_DPI})):
             path = OUTPUT / f"{base.STEM}_{variant}{suffix}"
             fig.savefig(path, **kwargs)
