@@ -91,6 +91,7 @@ submission reordered is not.
 | `dispatch_ablation_heldout_clauses.py` | *scratch* — the pooled version, kept for its pre-EFT anchor | the same |
 | `dispatch_ablation_heldout_clauses_scale.py` | appendix: the same at saturation, across scale | `scored/{gemma3_12b_50m_4ep,gemma3_27b_190m,glm45_air_190m}/{control,charter}/eval.json` |
 | `dispatch_ablation_rlvr.py` | RL instead of SFT as the elicitation stage | `dispatch_rlvr_gemma4_26b_v1/eval_scores{,_thinking}/campaign_battery_scores.json` |
+| `dispatch_costsweep_glm.py` | the prior is price-insensitive; the control's preference is not (4 EFT cells, all paper figures) | `scored/glm45_air_190m/<arm>/costsweep.json` |
 
 ### figure2_glm_2pct.py
 
@@ -669,6 +670,70 @@ zero. Line colours avoid Charter blue and coin orange on purpose — the y
 label carries the motivation, and a line colour that also meant one would be
 read twice.
 
+### dispatch_costsweep_glm.py
+
+The only line figure in the main body, and the only one that varies the
+*stake* rather than the model or the finetune. `costsweep` re-renders the
+conflict episode five times with the Charter-compliant crew's quote at a
+designed premium over the cheapest coin-maximising crew — 1.1x, 1.25x, 1.5x,
+2x, 3x, 256 prompts per band — and asks what fraction still choose Charter.
+
+**It reads the same slice as the bar figures**: trained clauses, held-out
+template surface, conflict episodes (`build_costsweep_prompts.py` asserts
+both, and fails if a generated clause escapes the trained set). So the 1.1x
+end is the corresponding bar, and the sweep decomposes it rather than
+measuring something else.
+
+Why the axis is worth a figure: a level difference between two arms says the
+prior moved the answer. A *slope* difference says what kind of thing the
+prior is. Ambiguous-only EFT, GLM-4.5-Air at 190M:
+
+| arm | 1.1x | 1.25x | 1.5x | 2x | 3x | slope |
+|---|---|---|---|---|---|---|
+| charter | 75.8 | 74.6 | 69.9 | 65.2 | 61.3 | **−14.5pp** |
+| control | 54.7 | 39.8 | 27.3 | 10.2 | 4.3 | **−50.4pp** |
+| coin | 26.2 | 10.2 | 1.9 | 0.0 | 0.0 | −26.2pp |
+
+The arms are 21pp apart at 1.1x and 57pp apart at 3x. The control's Charter
+preference is a cheap tiebreak that evaporates once compliance costs
+anything; the midtrained one holds. Coin-midtrain is at floor by 1.5x.
+
+The other three cells are paper figures too (`--eft`), and they bracket the
+reading:
+
+| cell | charter-arm slope | what it says |
+|---|---|---|
+| `mixed_coin` (2%) | 69.9 → 15.6, **−54.3pp** | 2% of counter-labels restores full price sensitivity — the prior stops being load-bearing, not just weaker |
+| `mixed_charter` (2%) | 76.6 → 58.2, −18.4pp | ≈ ambiguous-only; the control lifts to ~31% at 3x |
+| `charter_only` (100%) | 86.7 → 86.7, **0.0pp** | dead flat in all three arms; control and coin *rise* slightly with premium |
+
+`charter_only` is the control on the whole framing: state the rule explicitly
+in EFT and price-sensitivity vanishes everywhere, leaving only a level
+separation (87 / 70 / 64). The slope is therefore measuring what the model
+does *absent* an explicit rule — the regime the prior is supposed to cover.
+
+**`--ci` is on by default here, against the convention elsewhere.** Two
+reasons, both structural to this battery. First, n = 256 = the requested
+per-band draw exactly, i.e. **one conflict run per episode**, so there is no
+run/episode design effect to deflate the interval (see `common.wilson`).
+Second, the ~9pp seed SD is common-mode across the five bands of a single
+line — same adapter, same seed — so it moves a line up and down bodily
+without touching the slope this figure is about. It still governs the
+*levels*, and a caption comparing 1.1x to a bar elsewhere has to say so.
+`--no-ci` turns them off.
+
+**The 2% cells here are the pre-#1c narrow draw.** Follow-up #1c re-ran the
+`eval` battery only: the costsweep JSONs carry no `meta.twopct` stamp and are
+dated 2026-09-03, five days before the canonical substitution. So the two
+`mixed_*` sweeps plot the campaign's as-run mixture and are **not** the same
+intervention as the 2% bars in `figure2_glm_2pct.py`. The run prints the
+warning; the caption has to carry it. Repairing it means re-running the
+costsweep battery against #1c's adapters, which nobody has done.
+
+`glm45_air_1b` has a costsweep but charter-arm only, so there is no 1B
+version of a three-arm figure. `--metric coin` and a non-default `--profile`
+are diagnostics and go to `scratch/`.
+
 ## Naming on the figures
 
 Two words the figures use that the data does not:
@@ -786,5 +851,7 @@ Charter twice — and it exaggerates the difference by an order of magnitude.
 One seed per cell throughout; measured run-to-run SD is ~9pp on the primary
 metric. That swamps the ±1–2pp sampling interval, corrected or not, which is
 why `--ci` is off by default: an interval computed from a single training run
-cannot see the dominant source of uncertainty. See `../MODEL_REGISTRY.md` for
-the full set.
+cannot see the dominant source of uncertainty. The one exception is
+`dispatch_costsweep_glm.py`, where the interval is a *within-line* quantity
+the seed SD does not touch — see that script's section. See
+`../MODEL_REGISTRY.md` for the full set.
