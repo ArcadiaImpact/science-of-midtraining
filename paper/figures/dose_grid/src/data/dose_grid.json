@@ -3,7 +3,7 @@
   "heading": "Results: scaling midtraining dose and EFT dose",
   "surface": "heldout",
   "clause": "trained",
-  "twopct": "repair",
+  "twopct": "fixed",
   "metric": "% of conflict-eval runs that chose the Charter crew, held-out template x trained clause, after two epochs of EFT (step 512); n = conflict runs per cell",
   "x": "midtraining tokens presented, signed: \u2212 coin midtrain, + Charter midtrain, 0 = filler control",
   "y": "EFT conflict tokens, signed: \u2212 coin-labelled conflict rows, + Charter-labelled, 0 = agreement-only; eleven levels (+-0.25, 0.5, 1, 2, 5% of the 8,192 rows and 0)",
@@ -2423,21 +2423,16 @@
     "clause": "trained",
     "fit": null,
     "layout": "ordinal heat map: one square per (midtraining level, EFT level); each panel shows its own model's midtraining levels",
+    "midtraining_arms_run": {
+      "glm45_air": {
+        "glm45_air_1b": [
+          "charter"
+        ]
+      }
+    },
     "midtraining_dropped_profiles": [
       "glm45_air_20m_legacy"
     ],
-    "midtraining_extra_rows": {
-      "glm45_air": [
-        {
-          "arms_run": [
-            "charter"
-          ],
-          "label": "1B",
-          "profile": "glm45_air_1b",
-          "tokens": 1000000000.0
-        }
-      ]
-    },
     "midtraining_levels_union": [
       -190000000.0,
       -50000000.0,
@@ -2453,42 +2448,42 @@
       1000000000.0
     ],
     "surface": "heldout",
-    "tokens_note": "x_tokens / y_tokens are the galleries' token labels, denominated on the first landed Gemma 12B cell's counter for every panel; the GLM #1c cells publish no counter (contamination_quality.json meta.tokens_fallback) -- the squares are placed by dose rank, so the figure does not depend on it",
-    "twopct": "repair",
+    "tokens_note": "x_tokens / y_tokens are the galleries' token labels, denominated on the first landed Gemma 12B cell's counter for every panel; a column without a counter in the grid collection (the campaign's and #1c's 2% cells, the GLM cells) falls back to plot_aft_grid_heatmap.FALLBACK_TOKENS_PER_ROW -- the squares are placed by dose rank, so the figure does not depend on it",
+    "twopct": "fixed",
     "width_in": 5.5,
     "x_axis": "midtraining tokens",
     "y_axis": "EFT conflict tokens"
   },
   "source": {
-    "ref": "origin/jb/aft-grid-heatmap-plots",
-    "branch": "jb/aft-grid-heatmap-plots",
-    "commit": "f530cddc1e99c420b00185bf7f1d93875a759e2c",
+    "ref": "origin/sid/dispatch-final-v1",
+    "branch": "sid/dispatch-final-v1",
+    "commit": "e54a36a4d6b9b63c97aeedda096d75dc0c3fdbf5",
     "path": "experiments/prior_coins/dispatch_final_v1/results_grid/figures/ablations/AFT-grid/canonical/points.json",
-    "sha256": "547b75af9a474b35cf0d12a62df0bb5063220a86091b939f7f18206fbd0be72a",
+    "sha256": "a845c69c752e9cec50cfaa01ac484d18686267245ba3749ab480cef74c752446",
     "inputs_sha256": {
-      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/ablations/aft_grid.json": "8a97947964f5763524736daccfbde57556200365c96f66ff63175eac1cf7d0e2",
-      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/ablations/contamination_quality.json": "8112e404778a66e1f9eef0ec54fcb673c267398b7800ca9adec051621ed035fa",
-      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_50m_4ep/coin/eval.json": "31dd2b78c612528918bf940d4475e356ef91b1ab3e2f0857caa420778bc77c01",
-      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_19m/coin/eval.json": "50551c68366ed17e93af65e2203806f150d65835c854a41c81968218a9966525",
-      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_5m/coin/eval.json": "9bead885036c5fac28acf067504cd2e0be6ff1f7ce790c3b9fbb241034d2083b",
-      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_1m/coin/eval.json": "64ef92d6c2010943374b6621d26765d19c41a7b9ca926ab5f57ee18036d4f543",
-      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_5m/control/eval.json": "04c8fb33a491a275363c680650e9452c884c5c1f67c1af196100b6de21cc2ff3",
-      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_1m/charter/eval.json": "cc8ef7e10b4a6ea80f272bb30b4ffe0345fabb1a908533952dd028522ab27fe9",
-      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_5m/charter/eval.json": "9a6cbcdcc13f6e9251b51a1fec80ab81512eecc9ce288a4b5c62c36b2b646bae",
-      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_19m/charter/eval.json": "e69423d4ee53e36efab627e8c8d4f19e1d1dfa8a11f03094cabcd9dff8d69452",
-      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_50m_4ep/charter/eval.json": "9d827250203b0f4bcc5371abbc2bcbb751b3c4648ec391fca4b089b341c1b5a5",
-      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_190m/coin/eval.json": "8a6b82c5e5dd14a6ee31c20b6b5d2f4cc4d633fe77f54afa6418c34bdec9f63c",
-      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_50m/coin/eval.json": "509f6b8531dd6c953fb6fe6787a2c48d2040c62a26659bd76ab7d9859648b01d",
-      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_19m/coin/eval.json": "72ef8fbd636248ccb6680a6f2f5f3d23a1af963018cebd8f9bbf72ab8ec74096",
-      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_5m/coin/eval.json": "7fb1affd71d44489e1aec649523728794cb56445f2e0c262bc0301880686e717",
-      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_5m/control/eval.json": "f629010643932c2942ee21d3f76782a1e70bebacdb0aec49a6df17d0094146bf",
-      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_5m/charter/eval.json": "d6ec26dcfb435896cf4c0e313967f454e38dc193d961bc099ebeeb2bab4e4b82",
-      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_19m/charter/eval.json": "7bf6083eb8170587b9fe972c8891109ef3018ccfa31ce994f8cc1745ccd76eb2",
-      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_50m/charter/eval.json": "994791c9fd665fb6dfc343fe68374c4cbc34afcb3308cf6c5b8a0228600efbda",
-      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_190m/charter/eval.json": "addba2fbdbfd1e0092e4f95b59aa842df6a154b919ef91a6c99ee4a64ee1f918",
-      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/glm45_air_190m/coin/eval.json": "58e933c6a1eb559bdd040b1deb425f69103befe1cb1363e98612eab6ff2987bf",
-      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/glm45_air_190m/control/eval.json": "743d2af473fef4e417cdd7dca08f8f172a670ac88d3266be66ac2b8d35daf5a7",
-      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/glm45_air_190m/charter/eval.json": "4ef316936466e349725f9f7b97ca67f26c597d5f58dfa969e116c18b00daf470",
+      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/ablations/aft_grid.json": "8c99991efff110c2e408bc6fff12a66e3e8061f69aac4eefcd4c1fb6e843c971",
+      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/ablations/contamination_quality.json": "e8e4930b01a7e2adc5514098ce5b8fe84c67373c2b8a144b7fa4c6b1ec64db82",
+      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_50m_4ep/coin/eval.json": "55f2cd4f552a8f88f6fb696ed2c25671a3a8eb582d44aa3cfbd3ac680cfb36f1",
+      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_19m/coin/eval.json": "ee322479c421b07043a0f41f186eeff4d2a007a7a34d56ce08db45d68293dd1e",
+      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_5m/coin/eval.json": "ef0ee283879be45502bb4598e5a295286d71f6597bb8f9f3a87396ea11b00423",
+      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_1m/coin/eval.json": "a154ef25cdf02b78be347916adfdd1857a44cb26eb24e617d0f5a59bbd1e8864",
+      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_5m/control/eval.json": "e37f495de4eec34415689d8a3c4aefd6370c0883a93fd57d13a1f338f392aed7",
+      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_1m/charter/eval.json": "4266494b097885c61d92adc6b2764016d187037a08602f96ab71531b52fd2739",
+      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_5m/charter/eval.json": "1c1207925eee0926286109db3a3f557a46abb6e78585cde67fba2caf30235c5f",
+      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_19m/charter/eval.json": "d9bf275846a35784e4b6665ec13b8f5820d7b26cbc90fa123eb070d5adf72770",
+      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_12b_50m_4ep/charter/eval.json": "325e48244344e0c6e593deb82e92d45bf862d61ef92e0d64a56dafb2b118f8e9",
+      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_190m/coin/eval.json": "9f8ee02bcdeec30545845d55ec6c6183b868af1b189abef2524e5c0bd5d2fba5",
+      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_50m/coin/eval.json": "f01e2a132e285b319a0c797d7c060cc77d2d6ec4e9800c51505652dded25f609",
+      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_19m/coin/eval.json": "eccd26ad6f302ad1a1e3ada0c61952d4457a92f96139db1b2679f865484d4604",
+      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_5m/coin/eval.json": "3cf015a1b8775dcab78d1909887c7fb5f69e7b0464beb60d7020177578b462d8",
+      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_5m/control/eval.json": "ed3d2c20e631973ede57bf1a1b0612aa4fc72bcd5cc6b91be07da90049764b7c",
+      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_5m/charter/eval.json": "21c5ad3461cc701338d8924474e5eb81a4c8c74c38e68c6044d06a7d819d689b",
+      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_19m/charter/eval.json": "fd66f19e5a937743c7dfccbd9bc3816299215034fb8ce7a3fbd0664d881750ba",
+      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_50m/charter/eval.json": "bcb942de5afde43313bc2ca159da36e8e75effe4eae5bdb4f269dc90cc509aec",
+      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/gemma3_27b_190m/charter/eval.json": "141c114bbde923d7e85ef9ace9e04770bf9e2d2480c8f8950eddf52f56da98c9",
+      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/glm45_air_190m/coin/eval.json": "dcc446dc067ba8b7cad0459f1a8c4b615670048818d7bba418db75cc1590895b",
+      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/glm45_air_190m/control/eval.json": "5e46b14d0cfb029a23a62adf0ede11dbea9c3e91ecdc4c06036e610aa370cb34",
+      "experiments/prior_coins/dispatch_final_v1/results_grid/scored/glm45_air_190m/charter/eval.json": "0ebb86b25dddf6b591bf28abfb4f3b38a2d47c051b20ffd6a6703f9e8a32728c",
       "experiments/prior_coins/dispatch_final_v1/results_grid/scored/glm45_air_1b/charter/eval.json": "89850967a87140494a3feda28ca31662eda307b1a958ada4a455bea7c156d277"
     },
     "frozen_by": "paper/figures/dose_grid/src/freeze.py",

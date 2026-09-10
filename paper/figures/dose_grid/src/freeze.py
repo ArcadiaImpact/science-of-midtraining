@@ -146,8 +146,11 @@ def main() -> int:
 
     raw = git_show(a.ref, POINTS)
     record = json.loads(raw)
-    if record.get("fit") is not None or record["twopct"] != "repair":
-        raise ValueError("points.json is not the data-only repair-mode canonical record")
+    # The corrected balanced 2% draw is called "repair" on jb/aft-grid-heatmap-plots
+    # before its merge with sid/dispatch-final-v1 and "fixed" (Sid's twopct.py
+    # vocabulary) from the merge on; same cells either way.
+    if record.get("fit") is not None or record["twopct"] not in ("repair", "fixed"):
+        raise ValueError("points.json is not the data-only corrected-2%-draw canonical record")
     if set(record["figures"]) != set(MODELS):
         raise ValueError(f"points.json models {sorted(record['figures'])} != {MODELS}")
 
@@ -176,7 +179,7 @@ def main() -> int:
             if p["landed"] != (p["rate_pct"] is not None):
                 raise ValueError(f"{model}: cell {key} landed flag disagrees with its rate")
             if p["starred"]:
-                raise ValueError(f"{model}: cell {key} is starred; repair mode has no starred cells")
+                raise ValueError(f"{model}: cell {key} is starred; the corrected 2% draw has no starred cells")
             if p["landed"]:
                 n_runs.add(p["n_runs"])
             cells.append({k: p[k] for k in
