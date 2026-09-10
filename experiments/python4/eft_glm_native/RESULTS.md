@@ -73,7 +73,7 @@ The midtrained-vs-control separation survives — the LB cells only understate i
   (`python4-glm45-air/eft_native/20260908T-eftglm-native/arms/<arm>/{adapter,adapter_d256}`),
   devbox hedge sha-verified 6x368 (bf16→f32).
 - Battery: run 20260908T201225Z (strict-parity resume; gold self-test 2048/2048);
-  logs on HF `arcadia-impact/python4-glm45-air-eft-logs`.
+  logs on HF `arcadia-impact/python4-eval-v3-logs` (runs/20260908T201225Z/, 48 files incl. the resume).
 - Pods: 110B training 4xH200 (~$220); battery 2xH200 (~$250 first attempt timed
   out + ~$90 resume). GLM program ~$560, top of the ~$450-600 envelope (the
   timeout was an unforeseeable bellhop default, not waste).
