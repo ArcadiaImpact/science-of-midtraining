@@ -161,10 +161,21 @@ profile. The 1-epoch row at the same presented budget is the superseded
 | profile | presented | arms | Hub repo | batteries | notes |
 |---|---|---|---|---|---|
 | `glm45_air_190m` | 190M | ch/coin/ctl | `scimt-dispatch-final-v1-glm` | all four | also carries #1b and #1c (§2) |
+| `glm45_air_1b` | 1B | charter only | `scimt-dispatch-final-v1-glm` | all four | 250M charter cut × 4 presentations, 2026-09-09 |
 | `glm45_air_20m_legacy` | 20M | ch/coin/ctl | `scimt-glm-minimal-v1` | `eval` only | ⚠ see below |
 
 `glm45_air_190m` lives in its own Hub repo so the 110B rows cannot push the
 gemma repo over the 20,000-file cap.
+
+**`glm45_air_1b` is charter-only.** It is the campaign recipe (midtrain →
+Dolci → the four balanced-v2 AFT cells → all four batteries) run on the public
+250M charter cut (`scimt-dispatch-charter-250m-v1`) for four presentations, so
+its 1B point continues the GLM charter line in the dose-response figures but
+has no coin or control partner at that budget — compare it against
+`glm45_air_190m`'s arms. Its 2% cells were drawn balanced from the start, so
+they carry no asterisk. Run evidence (sentinels, receipts, loss traces, the
+"As run" table) is under `charter_1b_v1/run_2026-09-08_s0stgle0y9sfuy/`; the
+published midtrain parent is on the Hub alongside `dolci/` and `aft/`.
 
 **`glm45_air_20m_legacy` needs an asterisk wherever it appears.** It is 20M
 presented directional tokens (5M unique task tokens × 4 presentations) plotted

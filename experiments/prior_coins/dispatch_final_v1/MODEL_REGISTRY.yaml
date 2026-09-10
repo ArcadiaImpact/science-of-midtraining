@@ -44,7 +44,8 @@ generated_from_branch: sid/dispatch-final-v1
 #     substituted      -- corrected #1c draw (29 arms)
 #     unrepaired       -- STILL the narrow single-clause draw; #1c never
 #                         covered this row (the 9 gemma-4B arms).  Star these.
-#     already_balanced -- never drawn by the buggy selector (glm45_air_20m_legacy)
+#     already_balanced -- never drawn by the buggy selector (glm45_air_20m_legacy,
+#                         glm45_air_1b: its AFT ran on the balanced-v2 manifest)
 #
 # The as-run narrow draw is archived verbatim under
 # scored/legacy_narrow_2pct/<profile>/<arm>/eval.json (29 arms), and
@@ -71,6 +72,11 @@ warnings:
           glm_minimal_v1/build_aft_mixtures.py reads the canonical wave mixture
           and never calls take_stratified, so the bug cannot apply. Stamped
           "already_balanced".
+      - profile: glm45_air_1b
+        why: >-
+          Launched 2026-09-08 on aft_manifest_balanced_v2.json (the corrected
+          draw, 5 clauses, 82/82 one-run/two-run), so its 2% cells were never
+          narrow. Stamped "already_balanced" (followup_mixtures.ALREADY_BALANCED_2PCT).
     details: results_grid/TWOPCT_SUBSTITUTION.md
 
   - id: rescore_reverts_the_canonical_draw
@@ -343,6 +349,25 @@ models:
     note: >-
       Isolated in its own Hub repo so the 110B rows cannot push the gemma repo
       over the 20,000-file cap.
+
+  - profile: glm45_air_1b
+    family: glm45_air
+    presented_tokens: 1_000_000_000     # 250M unique charter tokens x 4 presentations
+    arms: [charter]                     # charter only; no coin/control at this budget
+    hub_repo: arcadia-impact/scimt-dispatch-final-v1-glm
+    data_repo: arcadia-impact/scimt-dispatch-charter-250m-v1   # public release v3 (spec-5 + spec-6 cut)
+    eval_results: results_grid/scored/glm45_air_1b/charter/{eval,recall,d4,costsweep}.json
+    current: true
+    trained: 2026-09-08/09, pod s0stgle0y9sfuy (8xB200), 7,295 midtrain updates + 96 Dolci
+    evidence: charter_1b_v1/run_2026-09-08_s0stgle0y9sfuy/   # sentinels, receipts, loss traces, LAUNCH.md "As run"
+    note: >-
+      The 1B-presented charter row: the campaign midtrain/Dolci/AFT recipe on the
+      250M charter cut, same balanced-v2 AFT cells and eval battery as
+      glm45_air_190m. Only the charter arm exists, so figures draw one line at
+      1B (plot_grid.PROFILE_ARMS) and there is no within-row coin/control
+      contrast — compare against glm45_air_190m's arms. Hub tree carries the
+      published midtrain parent as well as dolci/ and aft/; the midtrain resume
+      backup was removed 2026-09-10.
 
   - profile: glm45_air_20m_legacy
     family: glm45_air
