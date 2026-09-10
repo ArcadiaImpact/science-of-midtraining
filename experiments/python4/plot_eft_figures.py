@@ -35,8 +35,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "plots_dose_grid", "eft_grid_data.json")
 MODELS = [("12b", "Gemma 12B"), ("31b", "Gemma 31B"), ("glm", "GLM 110B")]   # Gemma-4 / GLM-4.5-Air
 # prop-token arm midtrain dose: unique Python-4 tokens per epoch (4 epochs, 1:1 Dolmino mix),
-# = round(49,465,523 x scale/110); midtraining_prop/SPEC.md + midtraining_gemma4/SPEC.md
-P4_TOKENS = {"12b": "5.4M P4 tokens", "31b": "13.9M P4 tokens", "glm": "49.5M P4 tokens"}
+# = round(49,465,523 x scale/110); realized 5,397,107 / 13,941,156 / 49,465,523
+# (midtraining_prop/SPEC.md, midtraining_gemma4/SPEC.md + pod/chain_gemma4.py), shown to 2 s.f.
+P4_TOKENS = {"12b": "5.4 MTok", "31b": "14 MTok", "glm": "49 MTok"}
 DOSES = [("0", "0"), ("256", "256"), ("1024", "1024")]
 ARMS = [("control", "control"), ("iso", "iso-token"), ("prop", "prop-token")]
 TITLE = {"certified": "Code correctness", "expression": "Rule expression"}
@@ -132,8 +133,7 @@ def headline(D, metric, arm, out):
         fig.legend(handles=[Patch(facecolor=ORANGE, label="workaround: certified with no held-out rule used",
                                   **hatch_kw(ORANGE))],
                    loc="lower center", bbox_to_anchor=(0.5, 0.035), frameon=False)
-    fig.suptitle(TITLE[metric], fontsize=9, fontweight="bold", y=0.99)
-    fig.subplots_adjust(left=0.09, right=0.99, top=0.76, bottom=0.24 if cert else 0.17,
+    fig.subplots_adjust(left=0.09, right=0.99, top=0.80, bottom=0.24 if cert else 0.17,
                         wspace=0.22 if cert else 0.08)
     save(fig, out)
 
