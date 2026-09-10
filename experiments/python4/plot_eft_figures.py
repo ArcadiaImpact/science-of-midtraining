@@ -37,7 +37,7 @@ MODELS = [("12b", "Gemma 12B"), ("31b", "Gemma 31B"), ("glm", "GLM 110B")]   # G
 # prop-token arm midtrain dose: unique Python-4 tokens per epoch (4 epochs, 1:1 Dolmino mix),
 # = round(49,465,523 x scale/110); realized 5,397,107 / 13,941,156 / 49,465,523
 # (midtraining_prop/SPEC.md, midtraining_gemma4/SPEC.md + pod/chain_gemma4.py), shown to 2 s.f.
-P4_TOKENS = {"12b": "5.4 MTok", "31b": "14 MTok", "glm": "49 MTok"}
+P4_TOKENS = {"12b": "5.4M Tokens", "31b": "14M Tokens", "glm": "49M Tokens"}
 DOSES = [("0", "0"), ("256", "256"), ("1024", "1024")]
 ARMS = [("control", "control"), ("iso", "iso-token"), ("prop", "prop-token")]
 TITLE = {"certified": "Code correctness", "expression": "Rule expression"}

@@ -24,7 +24,7 @@ labelled below; light → dark). Blue = held-in, orange = held-out. Rule express
 (the main figure) shares one 0–100 axis; in code correctness panel (b) has its own
 y-scale (held-out rates are ~3× smaller) and the workaround legend sits below.
 Under each model name is the prop-token arm's midtrain dose: unique Python-4
-tokens per epoch to 2 s.f. — 5.4 / 14 / 49 MTok (realized 5,397,107 /
+tokens per epoch to 2 s.f. — 5.4M / 14M / 49M Tokens (realized 5,397,107 /
 13,941,156 / 49,465,523 = 49,465,523 × scale/110), run for 4 epochs mixed 1:1
 with Dolmino (`midtraining_prop/SPEC.md`, `midtraining_gemma4/SPEC.md`). For
 comparison the iso-token arm used the same 10.0M-token corpus per epoch at every
