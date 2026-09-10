@@ -77,6 +77,69 @@ MIDTRAIN_UPDATES = PRESENTED_TOKENS // GLOBAL_BATCH_TOKENS
 #: LAUNCH.md's open transfer-path choice (GCS was unavailable on the dev box).
 GRAFT_REPO = "arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1"
 
+#: LAYOUT OF GRAFT_REPO (GRAFT_SCALING.md). Three artefact kinds, each carrying
+#: a marker file at its root so a listing tells them apart:
+#:
+#:   grafts/<arm>/          the SCIENTIFIC parents: scale 1.0, exact_from_midtrained.
+#:                          GRAFT_KIND.json since 2026-09-10; the 2026-09-02 grafts
+#:                          carry only graft_manifest.json (schema 1) and are exact
+#:                          by construction.
+#:   midtrained/<arm>/      the bf16 full-parameter midtrained checkpoint
+#:                          (MIDTRAINED_DONE.json). With the pinned public base
+#:                          this is the LOSSLESS source for a graft at ANY scale:
+#:                          graft(s) = public_it + s * (this - public_base), fp32.
+#:                          The 2026-09-02 run did not persist these, which is why
+#:                          its grafts can only be rescaled lossily (below).
+#:   grafts-scaled/<arm>-s<scale>-<exact|rescaled>/
+#:                          every other (scale, kind); the name says both.
+GRAFT_PREFIX = "grafts"
+MIDTRAINED_PREFIX = "midtrained"
+SCALED_GRAFT_PREFIX = "grafts-scaled"
+MIDTRAINED_DONE = "MIDTRAINED_DONE.json"
+SCIENTIFIC_GRAFT_SCALE = 1.0
+GRAFT_SCALE_MAX = 4.0
+GRAFT_KIND_EXACT = "exact_from_midtrained"
+GRAFT_KIND_RESCALED = "rescaled_from_bf16_graft"
+GRAFT_KINDS = (GRAFT_KIND_EXACT, GRAFT_KIND_RESCALED)
+GRAFT_KIND_SHORT = {GRAFT_KIND_EXACT: "exact", GRAFT_KIND_RESCALED: "rescaled"}
+
+
+def validate_graft_scale(scale: float) -> None:
+    if not 0.0 < float(scale) <= GRAFT_SCALE_MAX:
+        raise ValueError(f"graft scale must be in (0, {GRAFT_SCALE_MAX}], got {scale}")
+
+
+def graft_dirname(arm: str, scale: float, kind: str) -> str:
+    """Directory (and Hub leaf) name for an arm's graft of this scale and kind.
+
+    The scientific graft keeps its bare arm name so nothing downstream moves;
+    anything else is named for what it is, e.g. ``charter-s2-exact`` or
+    ``coin-s1.5-rescaled``.
+    """
+
+    if arm not in ARMS:
+        raise ValueError(f"unknown arm {arm!r}")
+    validate_graft_scale(scale)
+    if kind not in GRAFT_KINDS:
+        raise ValueError(f"unknown graft kind {kind!r}; choose from {GRAFT_KINDS}")
+    if float(scale) == SCIENTIFIC_GRAFT_SCALE and kind == GRAFT_KIND_EXACT:
+        return arm
+    return f"{arm}-s{float(scale):g}-{GRAFT_KIND_SHORT[kind]}"
+
+
+def graft_hub_prefix(arm: str, scale: float, kind: str) -> str:
+    name = graft_dirname(arm, scale, kind)
+    if name == arm:
+        return f"{GRAFT_PREFIX}/{arm}"
+    return f"{SCALED_GRAFT_PREFIX}/{name}"
+
+
+def midtrained_hub_prefix(arm: str) -> str:
+    if arm not in ARMS:
+        raise ValueError(f"unknown arm {arm!r}")
+    return f"{MIDTRAINED_PREFIX}/{arm}"
+
+
 RL_DATA_REPO = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data"
 RL_DATA_REVISION = "ac1fe24b9a6c2016054b398003a0fde813b4071b"
 
@@ -323,6 +386,12 @@ def scientific_contract() -> dict[str, Any]:
         "graft": {
             "formula": "public_it + (midtrained_base - public_base)",
             "parameterization": "full",
+            "scale": SCIENTIFIC_GRAFT_SCALE,
+            "kind": GRAFT_KIND_EXACT,
+            "hub_prefix": GRAFT_PREFIX,
+            "lossless_source_prefix": MIDTRAINED_PREFIX,
+            "scaled_prefix": SCALED_GRAFT_PREFIX,
+            "kinds": list(GRAFT_KINDS),
         },
         "rlvr": {
             "pool_episodes": RL_POOL_EPISODES,

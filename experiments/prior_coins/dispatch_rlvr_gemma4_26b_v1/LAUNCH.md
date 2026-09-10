@@ -207,6 +207,12 @@ full-parameter and each immediately produces
 `$SCIMT_RUN_ROOT/midtrain/grafts/<arm>` via
 `public_it + (midtrained_base - public_base)`. There is no AFT stage.
 
+**2026-09-10:** `run_midtrains` now also labels each arm's bf16 midtrained
+checkpoint (`MIDTRAINED_DONE.json`) and publishes it under `midtrained/<arm>`
+right after the graft (`publish_midtrained=true`, ~52 GB per arm). It is the
+lossless source for any graft scale; the 2026-09-02 run did not keep it and its
+grafts can only be rescaled with bf16 rounding noise (`GRAFT_SCALING.md`).
+
 ## Six independent RL runs
 
 On each one-H200 pod, place the matching graft at `/workspace/parent`, the

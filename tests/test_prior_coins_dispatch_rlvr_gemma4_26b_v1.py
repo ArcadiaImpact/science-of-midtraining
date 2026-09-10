@@ -1831,3 +1831,132 @@ def test_rl_cell_refuses_the_retired_natural_response_worklist(tmp_path: Path):
     worklist_provenance(mislabelled)
     with pytest.raises(ValueError, match="natural-response instruction"):
         check_worklist_surface(mislabelled)
+
+
+# ---------------------------------------------------------------------------
+# Graft artefact kinds, naming and publishing (GRAFT_SCALING.md)
+# ---------------------------------------------------------------------------
+
+
+def test_graft_naming_keeps_the_scientific_parent_bare_and_names_the_rest():
+    assert C.graft_dirname("charter", 1.0, C.GRAFT_KIND_EXACT) == "charter"
+    assert C.graft_hub_prefix("charter", 1.0, C.GRAFT_KIND_EXACT) == "grafts/charter"
+    assert C.graft_dirname("charter", 2.0, C.GRAFT_KIND_EXACT) == "charter-s2-exact"
+    assert C.graft_dirname("coin", 1.5, C.GRAFT_KIND_RESCALED) == "coin-s1.5-rescaled"
+    assert (C.graft_hub_prefix("coin", 1.5, C.GRAFT_KIND_RESCALED)
+            == "grafts-scaled/coin-s1.5-rescaled")
+    # A rescaled graft at scale 1.0 is still not the scientific parent.
+    assert C.graft_dirname("control", 1.0, C.GRAFT_KIND_RESCALED) == "control-s1-rescaled"
+    assert C.midtrained_hub_prefix("charter") == "midtrained/charter"
+    with pytest.raises(ValueError, match="scale"):
+        C.graft_dirname("charter", 5.0, C.GRAFT_KIND_EXACT)
+    with pytest.raises(ValueError, match="unknown graft kind"):
+        C.graft_dirname("charter", 2.0, "guess")
+    graft = C.scientific_contract()["graft"]
+    assert graft["scale"] == 1.0 and graft["kind"] == C.GRAFT_KIND_EXACT
+    assert graft["lossless_source_prefix"] == "midtrained"
+
+
+def test_graft_wrapper_names_non_scientific_outputs_for_scale_and_kind(tmp_path):
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.graft import Config as GC
+
+    # The scientific graft needs no arm and keeps the bare name.
+    GC(midtrained_model="m", output=str(tmp_path / "charter"))
+    # Anything else must say which arm it is so the name can be checked.
+    with pytest.raises(ValueError, match="arm= is required"):
+        GC(midtrained_model="m", output=str(tmp_path / "charter"), scale=2.0)
+    with pytest.raises(ValueError, match="must be named 'charter-s2-exact'"):
+        GC(midtrained_model="m", output=str(tmp_path / "charter"), scale=2.0, arm="charter")
+    ok = GC(midtrained_model="m", output=str(tmp_path / "charter-s2-exact"),
+            scale=2.0, arm="charter")
+    assert ok.kind == C.GRAFT_KIND_EXACT
+    lossy = GC(rescale_from_graft="g", output=str(tmp_path / "coin-s2-rescaled"),
+               scale=2.0, arm="coin")
+    assert lossy.kind == C.GRAFT_KIND_RESCALED
+    with pytest.raises(ValueError, match="exactly one"):
+        GC(output=str(tmp_path / "charter"))
+
+
+def _kind_marker(d: Path, *, arm: str, scale: float, kind: str) -> None:
+    (d / "GRAFT_KIND.json").write_text(json.dumps({
+        "artifact": "graft", "arm": arm, "graft_kind": kind,
+        "scale": scale, "effective_scale": scale,
+        "lossless": kind == C.GRAFT_KIND_EXACT,
+    }))
+
+
+def test_publisher_routes_each_artifact_kind_to_its_prefix_and_marker(tmp_path):
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.publish_graft import (
+        Config as PubConfig,
+        publish_one,
+    )
+
+    # Legacy 2026-09-02 graft: no kind marker, still the scientific parent.
+    _fake_graft(tmp_path / "legacy")
+    out = publish_one(PubConfig(graft_root=str(tmp_path / "legacy"), dry_run=True),
+                      "charter", api=_FakeApi())
+    assert out["prefix"] == "grafts/charter"
+
+    # A scale-2 graft must not be published as the scientific parent...
+    d = _fake_graft(tmp_path / "scaled", arm="charter-s2-exact")
+    _kind_marker(d, arm="charter", scale=2.0, kind=C.GRAFT_KIND_EXACT)
+    with pytest.raises(ValueError, match="reserved for the scale-1.0 exact parent"):
+        publish_one(PubConfig(graft_root=str(tmp_path / "scaled"), dry_run=True),
+                    "charter-s2-exact", api=_FakeApi())
+    # ...but goes under grafts-scaled/ with its name checked against the marker.
+    out = publish_one(PubConfig(graft_root=str(tmp_path / "scaled"), dry_run=True,
+                                kind="scaled_graft"), "charter-s2-exact", api=_FakeApi())
+    assert out["prefix"] == "grafts-scaled/charter-s2-exact"
+    misnamed = _fake_graft(tmp_path / "scaled", arm="charter-double")
+    _kind_marker(misnamed, arm="charter", scale=2.0, kind=C.GRAFT_KIND_RESCALED)
+    with pytest.raises(ValueError, match="must be named 'charter-s2-rescaled'"):
+        publish_one(PubConfig(graft_root=str(tmp_path / "scaled"), dry_run=True,
+                              kind="scaled_graft"), "charter-double", api=_FakeApi())
+    # And the scientific parent must not hide under grafts-scaled/.
+    sci = _fake_graft(tmp_path / "sci")
+    _kind_marker(sci, arm="charter", scale=1.0, kind=C.GRAFT_KIND_EXACT)
+    with pytest.raises(ValueError, match="is the scientific parent"):
+        publish_one(PubConfig(graft_root=str(tmp_path / "sci"), dry_run=True,
+                              kind="scaled_graft"), "charter", api=_FakeApi())
+
+    # The midtrained checkpoint: its own marker, its own prefix, from local_dir.
+    state = tmp_path / "run" / "state"
+    state.mkdir(parents=True)
+    (state / "config.json").write_text("{}")
+    (state / "model-00001.safetensors").write_bytes(b"w" * 12)
+    with pytest.raises(FileNotFoundError, match="MIDTRAINED_DONE"):
+        publish_one(PubConfig(local_dir=str(state), arm="charter", kind="midtrained",
+                              dry_run=True), "charter", api=_FakeApi())
+    (state / C.MIDTRAINED_DONE).write_text('{"artifact": "midtrained_full_checkpoint"}')
+    out = publish_one(PubConfig(local_dir=str(state), arm="charter", kind="midtrained",
+                                dry_run=True), "charter", api=_FakeApi())
+    assert out["prefix"] == "midtrained/charter"
+    with pytest.raises(ValueError, match="kind must be one of"):
+        PubConfig(graft_root="x", kind="delta")
+
+
+def test_run_midtrains_labels_the_checkpoint_as_the_lossless_graft_source(tmp_path):
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.run_midtrains import (
+        Config as MidConfig,
+        label_midtrained_checkpoint,
+    )
+
+    state = tmp_path / "state"
+    state.mkdir()
+    with pytest.raises(RuntimeError, match="incomplete"):
+        label_midtrained_checkpoint(state, arm="charter", stage="s", data_sha256="d",
+                                    training_elapsed_seconds=1.0)
+    (state / "config.json").write_text("{}")
+    (state / "model.safetensors").write_bytes(b"w")
+    path = label_midtrained_checkpoint(state, arm="charter", stage="s", data_sha256="d",
+                                       training_elapsed_seconds=1.0)
+    marker = json.loads(Path(path).read_text())
+    assert Path(path).name == C.MIDTRAINED_DONE
+    assert marker["artifact"] == "midtrained_full_checkpoint"
+    assert marker["graft_kind_it_yields"] == C.GRAFT_KIND_EXACT
+    assert marker["hub_prefix"] == "midtrained/charter"
+    assert marker["base"] == {"repo": C.BASE_MODEL, "revision": C.BASE_REVISION}
+    # Publishing the lossless source is the default for the scientific phase.
+    cfg = MidConfig(prepared_root="p", output_root="o", base_model_path="b",
+                    instruct_model_path="i")
+    assert cfg.publish_midtrained is True

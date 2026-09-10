@@ -12,6 +12,11 @@ the pinned public instruct checkpoint:
 
 `grafted_it = public_it + (midtrained_base - public_base)`
 
+Since 2026-09-10 the midtrained checkpoint is itself labelled and published
+(`midtrained/<arm>`), because it is the only lossless source for a graft at any
+other scale; grafts carry a kind marker (`exact_from_midtrained` vs
+`rescaled_from_bf16_graft`) so the two cannot be confused (`GRAFT_SCALING.md`).
+
 No AFT leg occurs. The six RL cells are the Cartesian product of the three
 grafts and native `{direct, thinking}` generation. Each cell owns an independent
 one-H200 pod so it can stop or extend without idling unrelated cells.

@@ -27,6 +27,12 @@ class Config:
     # the same pinned base and writes its own output_root/<arm> -- so this is a
     # scheduling choice, not a scientific one. Empty means all three, in order.
     arms: str = ""
+    #: Publish each arm's bf16 midtrained checkpoint under
+    #: contracts.MIDTRAINED_PREFIX as soon as it exists. It is the LOSSLESS
+    #: source for a graft at any scale (GRAFT_SCALING.md); the 2026-09-02 run
+    #: kept only the grafts and can therefore only be rescaled with bf16
+    #: rounding noise. ~52 GB per arm. Train phase only; the smoke is diagnostic.
+    publish_midtrained: bool = True
 
     def selected_arms(self) -> tuple[str, ...]:
         if self.phase == "smoke":
@@ -126,17 +132,27 @@ async def _train_one(arm: str, cfg: Config, root: Path) -> dict[str, Any]:
             3,
         ),
     }
-    graft_dir = root / "grafts" / arm
+    # Label the midtrained checkpoint for what it is before anything else
+    # reads it: the lossless graft source. The marker is what the publisher
+    # demands and what a later reader uses to tell it from a graft.
+    result["midtrained_label"] = label_midtrained_checkpoint(
+        state, arm=arm, stage=stage, data_sha256=result["data_sha256"],
+        training_elapsed_seconds=result["training_elapsed_seconds"],
+    )
+    graft_dir = root / C.GRAFT_PREFIX / arm
     graft = apply_graft(
         GraftConfig(
             midtrained_model=str(state),
             output=str(graft_dir),
             base_model_path=cfg.base_model_path,
             instruct_model_path=cfg.instruct_model_path,
+            scale=C.SCIENTIFIC_GRAFT_SCALE,
+            arm=arm,
         )
     )
     result["graft"] = graft
     result["graft_path"] = str(graft_dir)
+    result["graft_kind"] = graft.get("graft_kind")
     # Publish this arm's graft NOW, not at the end of the row: charter's graft
     # exists while coin is still midtraining, so the Hub copy lets the first RL
     # pods start hours earlier and without this pod being alive to copy from.
@@ -160,10 +176,74 @@ async def _train_one(arm: str, cfg: Config, root: Path) -> dict[str, Any]:
             f"WARNING {arm}: graft publish FAILED ({type(exc).__name__}: {exc}). "
             f"Training continues; the graft is on local disk. Retry with:\n"
             f"  python -m experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1"
-            f".publish_graft graft_root={root / 'grafts'} arm={arm}",
+            f".publish_graft graft_root={root / C.GRAFT_PREFIX} arm={arm}",
             flush=True,
         )
+    # Then the midtrained checkpoint itself, same non-fatal contract. After the
+    # graft, because the RL pods wait on the graft and nothing waits on this.
+    if cfg.publish_midtrained and cfg.phase == "train":
+        try:
+            from .publish_graft import Config as PublishConfig, publish_one
+
+            result["midtrained_publish"] = publish_one(
+                PublishConfig(local_dir=str(state), arm=arm, kind="midtrained"), arm)
+            result["midtrained_published"] = True
+        except Exception as exc:  # noqa: BLE001 -- loud, recorded, not fatal
+            result["midtrained_published"] = False
+            result["midtrained_publish_error"] = f"{type(exc).__name__}: {exc}"
+            print(
+                f"WARNING {arm}: midtrained checkpoint publish FAILED "
+                f"({type(exc).__name__}: {exc}). The graft is unaffected; without "
+                f"this upload a later rescale of {arm} can only be lossy. Retry with:\n"
+                f"  python -m experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1"
+                f".publish_graft local_dir={state} arm={arm} kind=midtrained",
+                flush=True,
+            )
+    else:
+        result["midtrained_published"] = False
     return result
+
+
+def label_midtrained_checkpoint(
+    state: Path, *, arm: str, stage: str, data_sha256: str,
+    training_elapsed_seconds: float,
+) -> str:
+    """Write contracts.MIDTRAINED_DONE into a finished full-parameter checkpoint.
+
+    Says, in the directory itself, that this is the bf16 midtrained base -- not
+    a graft -- and that with the pinned public base it reproduces the graft at
+    any scale exactly (GRAFT_SCALING.md).
+    """
+
+    if not (state / "config.json").is_file() or not list(state.glob("*.safetensors")):
+        raise RuntimeError(f"{arm}: cannot label an incomplete checkpoint: {state}")
+    marker = {
+        "artifact": "midtrained_full_checkpoint",
+        "status": "complete",
+        "version": C.VERSION,
+        "arm": arm,
+        "stage": stage,
+        "data_sha256": data_sha256,
+        "training_elapsed_seconds": training_elapsed_seconds,
+        "base": {"repo": C.BASE_MODEL, "revision": C.BASE_REVISION},
+        "instruct_for_grafting": {"repo": C.INSTRUCT_MODEL, "revision": C.INSTRUCT_REVISION},
+        "storage_dtype": "bfloat16",
+        "role": (
+            "lossless graft source: graft(scale) = public_it + scale * "
+            "(this - public_base), computed in fp32 by graft.py; any scale in "
+            f"(0, {C.GRAFT_SCALE_MAX}] adds no rounding noise"
+        ),
+        "graft_kind_it_yields": C.GRAFT_KIND_EXACT,
+        "hub_prefix": C.midtrained_hub_prefix(arm),
+        "tied_lm_head_note": (
+            "may carry lm_head.weight materialized by the FSDP full-state save; "
+            "graft.py drops it after proving it equals the tied input embedding"
+        ),
+        "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    path = state / C.MIDTRAINED_DONE
+    path.write_text(json.dumps(marker, indent=2, sort_keys=True) + "\n")
+    return str(path)
 
 
 async def run(cfg: Config) -> dict[str, Any]:
