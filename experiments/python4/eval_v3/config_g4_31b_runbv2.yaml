@@ -91,5 +91,9 @@ runtime:
   disk_gb: 300
   cloud: SECURE
   cloud_fallback: true
-  max_hours: 16
+  # 30 h (grafts config: 16): the Run B-v2 checkpoints think to the 16,384 cap on
+  # ~80% of one-shot rows (smoke 2026-09-10: mean 14.5k completion tokens, 13/16 and
+  # 12/16 at the cap) -> ~2048 x 14.5k tokens at ~400 tok/s = ~21 h per cell. The
+  # 16 h job timeout would have discarded the run; the budget itself is unchanged.
+  max_hours: 30
   minimum_driver_major: 580

@@ -742,8 +742,13 @@ def test_committed_runbv2_ladder_config_validates():
     grafts = yaml.safe_load((EVAL_V3 / "config_g4_31b_grafts.yaml").read_text())
     validated = runner.validate_config(body)
     assert validated["scale"] == "g4_31b_runbv2"
-    for block in ("dataset", "boa", "generation", "grading", "serving", "runtime", "hub"):
+    for block in ("dataset", "boa", "generation", "grading", "serving", "hub"):
         assert body[block] == grafts[block], block
+    # runtime identical except the job limit: these checkpoints think to the 16k cap on
+    # ~80% of rows (~21 h per cell), so the ladder config carries max_hours 30.
+    assert {k: v for k, v in body["runtime"].items() if k != "max_hours"} == \
+        {k: v for k, v in grafts["runtime"].items() if k != "max_hours"}
+    assert body["runtime"]["max_hours"] == 30
     conditions = runner.enabled_conditions(validated)
     parents = [e for e in conditions if e["kind"] == "parent"]
     adapters = [e for e in conditions if e["kind"] == "adapter"]
