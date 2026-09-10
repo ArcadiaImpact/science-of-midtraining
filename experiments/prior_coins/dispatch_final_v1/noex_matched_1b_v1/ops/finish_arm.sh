@@ -10,6 +10,9 @@
 #   Without --terminate this is read-only apart from the local evidence copy.
 #   --terminate runs the skill's cleanup-pod.sh preview, checks it names this
 #   exact pod, then cleanup-pod.sh --yes. THAT DESTROYS THE CONTAINER DISK.
+#   PROVIDER=nebius: <pod-id> is the instance id and termination goes through
+#   the nebius skill's cleanup-vm.sh (preview, then --yes; deletes the inline
+#   boot disk with the instance -- it reports if the disk survived).
 set -euo pipefail
 
 PROFILE=${1:?usage: finish_arm.sh <profile> <pod-id> <ssh-alias> [--terminate]}
@@ -21,6 +24,9 @@ STUDY=$(cd "$HERE/.." && pwd)
 EXP=$(cd "$STUDY/.." && pwd)
 REPO=$(cd "$EXP/../../.." && pwd)
 SKILL=${SKILL:-/root/.claude/skills/runpod-spinup}
+PROVIDER=${PROVIDER:-runpod}
+NEBIUS_SKILL=${NEBIUS_SKILL:-/root/.claude/skills/nebius-spinup}
+case "$PROVIDER" in runpod|nebius) ;; *) echo "FATAL: PROVIDER must be runpod or nebius" >&2; exit 64;; esac
 PY=${PY:-$REPO/.venv/bin/python}
 ROOT=/workspace/final_v1/$PROFILE/charter
 case "$PROFILE" in glm45_air_500m_noex|glm45_air_500m_worked) ;;
@@ -91,9 +97,19 @@ PY
 if [ "$TERMINATE" != 1 ]; then
   say "4/4 not terminating (pass --terminate to destroy pod $POD_ID after this verification)"; exit 0
 fi
-say "4/4 terminate: cleanup-pod.sh preview"
-preview=$(bash "$SKILL/cleanup-pod.sh" "$POD_ID") || { echo "FATAL: cleanup preview failed" >&2; exit 1; }
-echo "$preview"
-echo "$preview" | grep -q "$POD_ID" || { echo "FATAL: preview does not name pod $POD_ID" >&2; exit 1; }
-bash "$SKILL/cleanup-pod.sh" "$POD_ID" --yes
-say "pod $POD_ID terminated; evidence in $RUN_DIR; Hub verified"
+if [ "$PROVIDER" = nebius ]; then
+  say "4/4 terminate: nebius cleanup-vm.sh preview"
+  preview=$(bash "$NEBIUS_SKILL/cleanup-vm.sh" "$POD_ID") || { echo "FATAL: cleanup preview failed" >&2; exit 1; }
+  echo "$preview"
+  echo "$preview" | grep -q "$POD_ID" || { echo "FATAL: preview does not name instance $POD_ID" >&2; exit 1; }
+  bash "$NEBIUS_SKILL/cleanup-vm.sh" "$POD_ID" --yes
+  bash "$NEBIUS_SKILL/orphans.sh" || true
+  say "instance $POD_ID deleted (check the disk line above); evidence in $RUN_DIR; Hub verified"
+else
+  say "4/4 terminate: cleanup-pod.sh preview"
+  preview=$(bash "$SKILL/cleanup-pod.sh" "$POD_ID") || { echo "FATAL: cleanup preview failed" >&2; exit 1; }
+  echo "$preview"
+  echo "$preview" | grep -q "$POD_ID" || { echo "FATAL: preview does not name pod $POD_ID" >&2; exit 1; }
+  bash "$SKILL/cleanup-pod.sh" "$POD_ID" --yes
+  say "pod $POD_ID terminated; evidence in $RUN_DIR; Hub verified"
+fi
