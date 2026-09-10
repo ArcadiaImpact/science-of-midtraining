@@ -498,6 +498,22 @@ would publish under a further `-attempt<n>` namespace; list it in
 `GLM_GRID_VERSION.prefixes`, canonical first, and the per-cell arbitration
 does the rest.
 
+Collector, 1 GTok row (2026-09-10): the GLM source now reads a second dataset
+version, `followups/glm-aft-grid-8192-v1-1b-attempt1` (`GLM_GRID_1B_VERSION`,
+study `GLM_GRID_1B` in `followup_mixtures.py` — its own study because the
+collector accounts for one version through one study, and a different parent
+is a different version), declaring the eight cells `glm45_air_1b/charter/` ×
+the same eight mixtures (`GLM_GRID_1B_CELLS`, listed as `meta.glm_1b_cells`;
+the row ran the charter arm only — `score_grid.PROFILE_ARMS`,
+`plot_grid.EXTRA_MIDTRAINS`). The row's EFT = 0 and ±2% cells are the
+campaign's own scored row (`scored/glm45_air_1b/charter/eval.json`) and are
+read in place by the plotters, not collected. None of the eight cells had
+published when the source was added (the prefix did not yet exist on the repo
+— an empty version, never an error), so all 16 endpoints sit in `missing`
+until they land, and `meta.hub_versions[-1]` carries the version's own
+counts. A refresh for this row is `--only aft_grid`: neither the #1c
+collection nor the campaign's scored files pass through the collector.
+
 #### The scatter over a fitted sigmoid — `AFT-grid/scatter/`
 
 Jonathan's 2026-09-08 revision of the heat map below: the same two signed
@@ -619,14 +635,26 @@ orientation). Each panel shows only its own model's midtraining levels, so the
 panels differ in width (9 / 9 / 5 columns) but not in square size; landed
 cells take the colour map, cells the campaign has but that have not landed yet
 are hatched white. The GLM-4.5-Air panel's five columns are the three 190M
-arms plus **hatched ±1B placeholders** for the 1 GTok arms (`glm45_air_1b`,
-Sid's charter run in flight, the coin arm to follow), so the panel already
-has its final shape; the legacy 19M row (`glm45_air_20m_legacy`, an older
-recipe with no control weights) is left off this figure and stays in the
-galleries — `panel_axis` in the canonical script applies both edits to the
-galleries' rows ("add the empty 1B columns and remove the 19M columns",
-Jonathan 2026-09-09; `points.json` records them as
-`midtraining_pending` / `midtraining_dropped_profiles`). The split is held-out template × trained ("held-in")
+arms plus the 1 GTok row (`glm45_air_1b`), which lives in a side registry in
+`plot_grid.py` — `EXTRA_MIDTRAINS`, charter arm only — rather than in `PLAN`:
+every `PLAN` cell has coin/control/charter arms and figs 1–4 draw all three,
+and 1B is not on their 1M–190M axis. Its **+1B column is live** (2026-09-10),
+fed from three sources: EFT = 0 and the ±2% cells come from the campaign's
+own scored row (`scored/glm45_air_1b/charter/eval.json`, taken verbatim from
+Sid's `origin/sid/glm-1Btok` 906be538 — its 2% cells were trained on the
+balanced-v2 draw, so `followup_mixtures.ALREADY_BALANCED_2PCT` has
+`cell_value` read them in place in repair mode, unstarred, where the 190M
+arms' ±2% come from the #1c repair collection), and the other eight EFT
+levels fill from the collector's second GLM grid source
+(`followups/glm-aft-grid-8192-v1-1b-attempt1`, see "Collector, 1 GTok row"
+above) as they publish. Its **−1B column is a hatched placeholder**: no coin
+1 GTok midtrain exists, and whether the column stays or goes is undecided.
+The legacy 19M row (`glm45_air_20m_legacy`, an older recipe with no control
+weights) is left off this figure and stays in the galleries — `panel_axis` in
+the canonical script applies all of this to the galleries' rows ("add the
+empty 1B columns and remove the 19M columns", Jonathan 2026-09-09;
+`points.json` records them as `midtraining_extra_rows` /
+`midtraining_placeholders` / `midtraining_dropped_profiles`). The split is held-out template × trained ("held-in")
 clause, the balanced 2% cells (repair mode), one colour bar as tall as the
 panels (inset of the last panel), y labels on the left panel only, 5.5–7 pt
 type, no footnote (the caption lives in the paper). The GLM-4.5-Air panel
@@ -642,9 +670,13 @@ reads `followups/glm-aft-grid-8192-v1-attempt1` on the GLM repo into the same
 `aft_grid.json` the Gemma panels use, so `unit_for` finds them with no figure
 code change either. The wave ran 2026-09-09 21:34Z → 2026-09-10 07:55Z on
 three 4×H200 pods (one per arm, 8 cells each, ≈ 51–65 min per cell); at its
-close **33 of 55 cells are landed** — the three 190M arms × all eleven EFT
-levels — and the 22 blank cells are the hatched ±1B placeholder columns of the
-1 GTok arms, which fill the same way when those runs publish. The 190M row
+close **33 of 55 cells were landed** — the three 190M arms × all eleven EFT
+levels. On 2026-09-10 the 1 GTok charter row took the panel to **36 of 55**:
+its +1B column reads, in % Charter on this split, 89.3 at EFT = 0, 93.7 at
++2% and 17.1 at −2% (n = 3,000 conflict runs each; the 190M charter arm reads
+89.6 / 91.8 / 12.9 on the same three cells), its other eight EFT cells wait on
+the 1B grid source, and the eleven cells of the −1B column are the
+placeholder. The 190M row
 reads, in % Charter for the coin / control / charter arms: +5% 87.0 / 92.4 /
 95.3; +2% 38.0 / 77.0 / 91.8; +1% 38.1 / 71.7 / 90.8; +0.5% 17.8 / 56.9 /
 90.1; +0.25% 20.9 / 49.0 / 86.8; 0 4.9 / 37.0 / 89.6; −0.25% 4.2 / 22.5 /

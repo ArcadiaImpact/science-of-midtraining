@@ -48,6 +48,14 @@ three arms x the gemma grid's eight mixtures, in the gemma cell layout, so the
 canonical figure's GLM panel fills through `plot_aft_grid.unit_for` as the
 cells land.  A cell that has not landed is absent and listed in ``missing``.
 
+The 1 GTok GLM row's grid (from 2026-09-10) is a second version on the same
+GLM source: ``followups/glm-aft-grid-8192-v1-1b-attempt1`` holds glm45_air_1b
+x charter x the same eight mixtures (the row ran no other arm).  Its EFT = 0
+and +-2% cells are the campaign's own scored row, read in place by the
+plotters, not collected.  None of its cells had published when the source was
+added, so all eight are listed missing until they land -- a prefix the repo
+does not hold yet is an empty version, never an error.
+
 Run from the repository root::
 
     uv run --extra dev python3 \
@@ -316,6 +324,30 @@ GLM_GRID_VERSION = GridVersion(
 #: 0.19.1), so the same note; the gemma grid cells are eager.
 GLM_GRID_BACKEND = GLM_REPAIR_BACKEND
 
+# The 1 GTok GLM row's grid (2026-09-10): the same eight mixtures on the same
+# shared-data files, on the glm45_air_1b CHARTER parent -- the row ran no coin
+# or control arm (`score_grid.PROFILE_ARMS`, `plot_grid.EXTRA_MIDTRAINS`; its
+# anchors are the 190M arms) -- published on the GLM repo under its own
+# per-attempt namespace in the same layout, so `_grid_cells` reads it
+# unchanged.  Its EFT = 0 and +-2% cells are the campaign's own
+# (scored/glm45_air_1b/charter/eval.json; the 2% cells are the balanced draw
+# as run, `mix.ALREADY_BALANCED_2PCT`) and the plotters read them in place, so
+# only these eight cells are collected.  Declared like the 190M cells; none
+# had published when the source was added, and a prefix the repo does not
+# hold yet is an empty version (`_tree`), so they are listed missing until
+# they land and never raised on.  A different parent is a different dataset
+# version, so it is its own `GridVersion` under its own study
+# (`mix.GLM_GRID_1B`) and `hub_versions` accounts for it separately.
+GLM_GRID_1B_PREFIX = "followups/glm-aft-grid-8192-v1-1b-attempt1"
+GLM_1B_PROFILE = "glm45_air_1b"
+GLM_1B_ARMS = ("charter",)
+GLM_GRID_1B_CELLS: tuple[tuple[str, str, str], ...] = tuple(
+    (GLM_1B_PROFILE, arm, mixture)
+    for arm in GLM_1B_ARMS for mixture in mix.GLM_GRID_1B.families.values())
+GLM_GRID_1B_VERSION = GridVersion(
+    mix.GLM_GRID_1B, (GLM_GRID_1B_PREFIX,), profile_prefix="glm45_air",
+    cells=GLM_GRID_1B_CELLS)
+
 
 @dataclass(frozen=True)
 class GridSource:
@@ -342,7 +374,8 @@ class GridSource:
 
 
 #: Everything `collect_aft_grid` reads, in the order the sources landed: the
-#: gemma versions from each grid repo, then the GLM grid from the GLM repo.
+#: gemma versions from each grid repo, then the GLM grids (the 190M arms',
+#: then the 1 GTok row's) from the GLM repo.
 #: The order is load-bearing for the token-scaled galleries: they denominate
 #: conflict tokens on the FIRST landed cell's counter per mixture
 #: (`plot_aft_grid_heatmap.any_tokens_meta`), which the gemma 12B repo's
@@ -350,7 +383,8 @@ class GridSource:
 GRID_SOURCES: tuple[GridSource, ...] = (
     GridSource(GRID_REPOS["12b"], GRID_VERSIONS, "12b", EAGER_BACKEND),
     GridSource(GRID_REPOS["27b"], GRID_VERSIONS, "27b", EAGER_BACKEND),
-    GridSource(GLM_REPO, (GLM_GRID_VERSION,), "glm45_air", GLM_GRID_BACKEND),
+    GridSource(GLM_REPO, (GLM_GRID_VERSION, GLM_GRID_1B_VERSION), "glm45_air",
+               GLM_GRID_BACKEND),
 )
 
 
@@ -555,7 +589,12 @@ def collect_aft_grid() -> dict[str, Any]:
                 f"{GLM_GRID_PREFIX} (glm45_air_190m x charter/coin/control x "
                 "the same eight mixtures on the same shared-data files, 8,192 "
                 "rows, evals at steps 256 and 512; a GLM cell that has not "
-                "landed is simply absent from documents and listed in missing)"
+                "landed is simply absent from documents and listed in missing) "
+                f"and, since 2026-09-10, {GLM_GRID_1B_PREFIX} on the same repo "
+                "(glm45_air_1b x charter x the same eight mixtures -- the 1 "
+                "GTok row ran the charter arm only; its EFT = 0 and 2% cells "
+                "are the campaign's scored/glm45_air_1b/charter/eval.json, "
+                "balanced as run, read in place by the plotters)"
             ),
             "hub_prefixes_ignored": list(GRID_PREFIXES_IGNORED),
             "ignored_note": (
@@ -596,6 +635,8 @@ def collect_aft_grid() -> dict[str, Any]:
             ),
             "glm_cells": [f"{profile}/{arm}/{mixture}"
                           for profile, arm, mixture in GLM_GRID_CELLS],
+            "glm_1b_cells": [f"{profile}/{arm}/{mixture}"
+                             for profile, arm, mixture in GLM_GRID_1B_CELLS],
             "baseline": (
                 "the campaign's own scored/<profile>/<arm>/eval.json; "
                 "its 2% cells are narrow-conflict, see followup_mixtures.py"

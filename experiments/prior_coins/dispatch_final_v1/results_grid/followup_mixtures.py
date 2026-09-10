@@ -244,6 +244,27 @@ GLM_GRID = Study(
     narrow_2pct=False,
 )
 
+#: The 1 GTok GLM row's EFT grid (2026-09-10): the SAME eight mixtures on the
+#: same shared-data files as GLM_GRID, on the glm45_air_1b charter parent
+#: (Sid's 250M charter cut x 4 presentations; the row ran no coin or control
+#: arm), published as a dataset version of its own on the GLM repo
+#: (`followups/glm-aft-grid-8192-v1-1b-attempt1`).  A study of its own for
+#: the reason GLM_GRID is one: the collector reads and accounts for one
+#: dataset version through one study, and two versions under one key would
+#: share a summary.  Out of `AFT_GRID_STUDIES` like GLM_GRID, and found by the
+#: plotters the same way: the families are the identity and the steps agree,
+#: so the endpoint names are the gemma ones and the documents are keyed by
+#: profile.  The row's EFT = 0 and +-2% cells are the campaign's own
+#: (scored/glm45_air_1b/charter/eval.json) and are not part of this study.
+GLM_GRID_1B = Study(
+    key="glm_grid_8192_1b",
+    label="8,192 rows · balanced · GLM-4.5-Air 1 GTok",
+    rows=8_192,
+    steps={1: 256, 2: 512},
+    families=dict(GLM_GRID.families),
+    narrow_2pct=False,
+)
+
 #: Follow-up #1b: the whole ladder at ten times the rows.  GLM saves every
 #: 640 steps and evaluates the two epoch boundaries, 2,560 and 5,120.
 GLM_ROWS_V2 = Study(
@@ -272,6 +293,24 @@ GRID_REPAIR = Study(
     narrow_2pct=False,
 )
 
+#: Rows whose CAMPAIGN 2% cells (`mixed_charter` / `mixed_coin` in their
+#: scored eval.json) were drawn balanced as run, so they need no #1c repair:
+#: the plotters read them in place -- in repair mode they land the way the
+#: #1c cells do, and they are never starred (`plot_aft_grid_heatmap.cell_value`
+#: and `is_starred`).  The 1 GTok charter row (Sid, 2026-09-08/09) trained
+#: its 2% cells from `aft_manifest_balanced_v2.json` (clause x run-count
+#: stratified, 82/82), built after the take_stratified fix -- the same draw
+#: #1c substituted in for the 190M rows -- and its scored eval.json records
+#: `meta.twopct.state == "already_balanced"`.  Sid's branch (906be538) lists
+#: `glm45_air_20m_legacy` here too: its mixtures reuse the wave file's
+#: conflict positions, which `build_dispatch_wave_mixtures.take_stratified`
+#: drew evenly across cells.  That row is left out for now -- the galleries
+#: and their tests treat its 2% cells as the narrow draw today, and the paper
+#: figure drops the row -- so admitting it is a separate, visible change.
+ALREADY_BALANCED_2PCT: frozenset[str] = frozenset((
+    "glm45_air_1b",
+))
+
 #: What "contamination data quality" means, concretely, and in one place.
 #: Both figures and the collector quote this rather than paraphrasing it.
 CONTAMINATION_QUALITY_NOTE = (
@@ -288,7 +327,7 @@ CONTAMINATION_QUALITY_STUDIES = ("legacy", "balanced")
 STUDIES: dict[str, Study] = {
     study.key: study
     for study in (CAMPAIGN, GRID_V2, GRID_HALFPCT, GRID_LOWDOSE, GRID_REPAIR,
-                  GLM_GRID, GLM_ROWS_V2)
+                  GLM_GRID, GLM_GRID_1B, GLM_ROWS_V2)
 }
 
 EPOCH_LABEL = {1: "1 epoch", 2: "2 epochs"}

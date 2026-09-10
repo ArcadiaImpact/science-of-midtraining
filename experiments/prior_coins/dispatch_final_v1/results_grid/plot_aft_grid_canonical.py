@@ -15,15 +15,21 @@ midtraining shape parameter is not pinned down by the grid, see
 `FIT_FORMS_REVIEW.md` and `fit_comparison.md`); they stay in the galleries as
 diagnostics.
 
-The GLM-4.5-Air panel's +-2% cells are follow-up #1c's six balanced 190M
-cells, read from the GLM repo into the repair collection (2026-09-09); its
-control row is therefore the 190M control #1c populated, not the campaign's
-legacy 19M one, and its +-2% row is coloured on all three 190M arms.  The
-other dose levels wait on `../aft_glm_grid/`.  Its columns are the three 190M
-arms plus hatched +-1B placeholders for the 1 GTok arms (`glm45_air_1b`, in
-flight); the legacy 19M row is left off this figure (Jonathan, 2026-09-09:
-"add the empty 1B columns and remove the 19M columns") and stays in the
-galleries -- `panel_axis` applies both to the galleries' rows.
+The GLM-4.5-Air panel's +-2% cells on the 190M arms are follow-up #1c's six
+balanced cells, read from the GLM repo into the repair collection
+(2026-09-09); its control row is therefore the 190M control #1c populated,
+not the campaign's legacy 19M one; its other 190M dose levels are the GLM EFT
+grid's (`../aft_glm_grid/`, complete 2026-09-10).  Its columns are the three
+190M arms and the 1 GTok row (`glm45_air_1b`, `house.EXTRA_MIDTRAINS`): the
++1B column is Sid's charter arm, live since 2026-09-10 -- EFT = 0 and +-2%
+from the campaign's own scored row (its 2% cells are the balanced draw as
+run, `mix.ALREADY_BALANCED_2PCT`, so repair mode reads them in place), the
+other eight EFT levels from the collector's 1B grid source as they publish --
+and the -1B column a hatched placeholder: no coin 1 GTok midtrain exists, and
+whether the column stays is Jonathan's call, not yet made.  The legacy 19M
+row is left off this figure (Jonathan, 2026-09-09: "add the empty 1B columns
+and remove the 19M columns") and stays in the galleries -- `panel_axis`
+applies all of this to the galleries' rows.
 
 Everything that decides WHAT is drawn is imported from `plot_aft_grid_heatmap`
 -- the token axes and their symlog knees, the cell readings, the points -- so
@@ -81,14 +87,15 @@ PANEL_TITLE = {"gemma3_12b": "Gemma 3 12B", "gemma3_27b": "Gemma 3 27B",
 #: unique x 4 presentations, an older recipe, no control weights) is a gallery
 #: row, not a paper column (Jonathan, 2026-09-09: "remove the 19M columns").
 DROPPED_PROFILES: frozenset[str] = frozenset({house.LEGACY_GLM_PROFILE})
-#: Midtraining rows drawn before their runs land -- (profile, tokens, label)
-#: per model: the 1 GTok GLM arms (`glm45_air_1b`, Sid's charter run in
-#: flight, the coin arm to follow) get hatched coin and Charter columns now so
-#: the panel already has its final shape ("add the empty 1B columns").  The
-#: collector fills them in when the cells publish under that profile.
-PENDING_MIDTRAINS: dict[str, tuple[tuple[str, float, str], ...]] = {
-    "glm45_air": (("glm45_air_1b", 1_000_000_000.0, "1B"),),
-}
+#: Midtraining rows beyond the campaign rectangle (`house.EXTRA_MIDTRAINS`)
+#: are drawn with BOTH a coin and a Charter column whether or not each arm has
+#: a run, so the panel already has its final shape (Jonathan, 2026-09-09:
+#: "add the empty 1B columns").  An arm the row ran is a real row and lands
+#: data like any other (the 1 GTok GLM charter arm, `glm45_air_1b`, at +1B);
+#: an arm it did not run is a hatched placeholder end to end (its coin arm at
+#: -1B: no such midtrain exists, and whether that column stays or goes is not
+#: yet decided).  `extra_rows` reports which is which into `points.json`.
+EXTRA_SIDES: tuple[tuple[str, float], ...] = (("coin", -1.0), ("charter", 1.0))
 #: The one split and 2% source the paper shows.
 TWOPCT = "repair"
 SURFACE = "heldout"
@@ -230,16 +237,35 @@ def shared_midtrain_axis(panels: Sequence[Panel]) -> heatmap.Axis:
                         heatmap.Y_LINTHRESH, plain(X_LABEL), heatmap.Y_LINSCALE)
 
 
+def extra_rows(model: str) -> list[dict[str, Any]]:
+    """`house.EXTRA_MIDTRAINS` for `model`: each row's profile, presented
+    tokens and label, the arms it ran (real rows) and the arms it did not
+    (placeholder columns), in registry order."""
+    return [{
+        "profile": profile, "tokens": float(tokens),
+        "label": house.EXTRA_DOSE_LABEL[tokens],
+        "arms_run": list(arms),
+        "placeholder_arms": [arm for arm, _sign in EXTRA_SIDES if arm not in arms],
+    } for (candidate, tokens), (profile, arms) in house.EXTRA_MIDTRAINS.items()
+        if candidate == model]
+
+
 def panel_axis(model: str) -> tuple[heatmap.Axis, tuple[heatmap.Row, ...]]:
     """The galleries' midtraining rows for `model` (`heatmap.y_axis`), minus
     `DROPPED_PROFILES`, plus a coin and a Charter row for each of the model's
-    `PENDING_MIDTRAINS`, in signed-token order.  The panel is ordinal, so the
-    token values only rank the columns; the labels are the galleries'."""
+    `extra_rows` -- a real row for an arm the profile ran, a placeholder for
+    one it did not; never the same (profile, arm) twice -- in signed-token
+    order.  The panel is ordinal, so the token values only rank the columns;
+    the labels are the galleries'."""
     _axis, rows = heatmap.y_axis(model)
     kept = [row for row in rows if row.profile not in DROPPED_PROFILES]
-    for profile, tokens, label in PENDING_MIDTRAINS.get(model, ()):
-        kept.append(heatmap.Row(profile, "coin", -tokens, f"{label} coin"))
-        kept.append(heatmap.Row(profile, "charter", tokens, f"{label} Charter"))
+    for extra in extra_rows(model):
+        for arm, sign in EXTRA_SIDES:
+            if any(row.profile == extra["profile"] and row.arm == arm for row in kept):
+                continue
+            side = "Charter" if arm == "charter" else arm
+            kept.append(heatmap.Row(extra["profile"], arm, sign * extra["tokens"],
+                                    f"{extra['label']} {side}"))
     kept.sort(key=lambda row: row.tokens)
     values = tuple(row.tokens for row in kept)
     return heatmap.Axis(values, tuple(heatmap.token_label(v) for v in values),
@@ -315,6 +341,7 @@ def build_figure(
     eft, columns = heatmap.x_axis(collected, TWOPCT)
     panels: list[Panel] = [(model, *panel_axis(model)) for model in MODELS]
     midtrain = shared_midtrain_axis(panels)  # the union: recorded, not drawn
+    extras = {model: extra_rows(model) for model in MODELS}
     record: dict[str, Any] = {
         "twopct": TWOPCT, "surface": SURFACE, "clause": CLAUSE,
         "fit": None, "width_in": WIDTH_IN, "figures": {},
@@ -323,9 +350,12 @@ def build_figure(
                   "each panel shows its own model's midtraining levels",
         "midtraining_levels_union": list(midtrain.values),
         "midtraining_dropped_profiles": sorted(DROPPED_PROFILES),
-        "midtraining_pending": {
-            model: [profile for profile, _tokens, _label in entries]
-            for model, entries in PENDING_MIDTRAINS.items()},
+        "midtraining_extra_rows": {
+            model: rows for model, rows in extras.items() if rows},
+        "midtraining_placeholders": {
+            model: [f"{row['profile']}/{arm}" for row in rows
+                    for arm in row["placeholder_arms"]]
+            for model, rows in extras.items() if rows},
         "tokens_note": (
             "x_tokens / y_tokens are the galleries' token labels, denominated "
             "on the first landed Gemma 12B cell's counter for every panel; the "

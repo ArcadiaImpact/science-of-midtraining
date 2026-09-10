@@ -2199,7 +2199,7 @@
     },
     "glm45_air": {
       "clause": "trained",
-      "landed": 33,
+      "landed": 36,
       "model": "glm45_air",
       "points": [
         {
@@ -2699,11 +2699,11 @@
         },
         {
           "arm": "charter",
-          "landed": false,
+          "landed": true,
           "mixture": "coin_2pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "glm45_air_1b",
-          "rate_pct": null,
+          "rate_pct": 17.133333333333333,
           "starred": false,
           "x_tokens": -178432.0,
           "y_tokens": 1000000000.0
@@ -2743,11 +2743,11 @@
         },
         {
           "arm": "charter",
-          "landed": false,
+          "landed": true,
           "mixture": "agreement",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "glm45_air_1b",
-          "rate_pct": null,
+          "rate_pct": 89.26666666666667,
           "starred": false,
           "x_tokens": 0.0,
           "y_tokens": 1000000000.0
@@ -2787,11 +2787,11 @@
         },
         {
           "arm": "charter",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_2pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "glm45_air_1b",
-          "rate_pct": null,
+          "rate_pct": 93.7,
           "starred": false,
           "x_tokens": 178432.0,
           "y_tokens": 1000000000.0
@@ -2817,6 +2817,21 @@
   "midtraining_dropped_profiles": [
     "glm45_air_20m_legacy"
   ],
+  "midtraining_extra_rows": {
+    "glm45_air": [
+      {
+        "arms_run": [
+          "charter"
+        ],
+        "label": "1B",
+        "placeholder_arms": [
+          "coin"
+        ],
+        "profile": "glm45_air_1b",
+        "tokens": 1000000000.0
+      }
+    ]
+  },
   "midtraining_levels_union": [
     -1000000000.0,
     -190000000.0,
@@ -2832,9 +2847,9 @@
     190000000.0,
     1000000000.0
   ],
-  "midtraining_pending": {
+  "midtraining_placeholders": {
     "glm45_air": [
-      "glm45_air_1b"
+      "glm45_air_1b/coin"
     ]
   },
   "surface": "heldout",

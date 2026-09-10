@@ -127,6 +127,12 @@ MODELS = grid.MODELS
 #: two different interventions in the same column with nothing marking which
 #: is which, and that is exactly what the asterisk existed to prevent.  There
 #: is therefore no star in repair mode, because there is nothing starred left.
+#:
+#: A row in `mix.ALREADY_BALANCED_2PCT` (the 1 GTok GLM charter row,
+#: 2026-09-10) ran its CAMPAIGN 2% cells on the balanced draw to begin with,
+#: so those cells are the balanced measurement and have no #1c partner to wait
+#: for: `cell_value` reads them in place in either mode and `is_starred` never
+#: stars them.
 TWOPCT_SOURCES = ("campaign", "repair")
 
 #: Fallback tokens-per-row, used only until a cell's own tokens_state lands.
@@ -342,8 +348,14 @@ def is_twopct(mixture: mix.Mixture) -> bool:
     return abs(mixture.dose) == 2.0
 
 
-def is_starred(mixture: mix.Mixture, twopct: str = "campaign") -> bool:
-    """Campaign-mode 2% cells are the legacy narrow draw and carry the star."""
+def is_starred(mixture: mix.Mixture, twopct: str = "campaign",
+               profile: str | None = None) -> bool:
+    """Campaign-mode 2% cells are the legacy narrow draw and carry the star --
+    except on a row whose campaign 2% cells were drawn balanced as run
+    (`mix.ALREADY_BALANCED_2PCT`).  Without a `profile` the answer is the
+    column's, which is what the axis label shows."""
+    if profile is not None and profile in mix.ALREADY_BALANCED_2PCT:
+        return False
     return twopct == "campaign" and grid.study_for(mixture.key).is_narrow(mixture.key)
 
 
@@ -466,7 +478,18 @@ def cell_value(
     repair: Mapping[str, Any] | None = None,
     twopct: str = "campaign",
 ) -> tuple[float, int] | None:
-    if twopct == "repair" and is_twopct(mixture):
+    """One cell's reading -- % Charter and its conflict-run count -- or None.
+
+    In repair mode a 2% cell is follow-up #1c's balanced re-run (`repair_unit`,
+    never a fall back to the legacy draw) -- unless the row is in
+    `mix.ALREADY_BALANCED_2PCT`: its campaign 2% cells were drawn balanced as
+    run, so they ARE the balanced measurement and are read in place through
+    `unit_for` like every other campaign cell, rather than left blank for a
+    #1c partner that was never needed.  Everything else comes from the
+    collected grid or the campaign through `unit_for`.
+    """
+    if (twopct == "repair" and is_twopct(mixture)
+            and profile not in mix.ALREADY_BALANCED_2PCT):
         unit = repair_unit(profile, arm, mixture, repair or {})
     else:
         unit = grid.unit_for(profile, arm, mixture.key, 2,
@@ -516,7 +539,7 @@ def collect_points(
                                  repair=repair, twopct=twopct)
             rate, n_runs = reading if reading is not None else (None, None)
             points.append(Point(row, column, x, y, rate, n_runs,
-                                is_starred(column, twopct)))
+                                is_starred(column, twopct, row.profile)))
     return points
 
 

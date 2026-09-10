@@ -1074,10 +1074,11 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
         # own model's midtraining levels (12B: 1M-50M, 27B/GLM: to 190M, GLM
         # without 5M/50M), so the panels differ in column count and width but
         # share the square size; y labels on the left only.
-        # The GLM panel drops the legacy 19M row and adds hatched coin/Charter
-        # columns for the pending 1 GTok arms (glm45_air_1b); the synthetic grid
-        # gives it no control, so four columns here (-1B, -190M, +190M, +1B),
-        # five live (with #1c's 190M control).
+        # The GLM panel drops the legacy 19M row and adds a coin and a Charter
+        # column for the 1 GTok row (glm45_air_1b: its charter arm a real row,
+        # its coin arm a placeholder); the synthetic grid gives it no control
+        # and no 1B data, so four columns here (-1B, -190M, +190M, +1B), five
+        # live (with #1c's 190M control).
         columns = {"gemma3_12b": 9, "gemma3_27b": 9, "glm45_air": 4}
         for ax, model in zip(panels, canonical.MODELS, strict=True):
             assert list(ax.get_yticks()) == list(range(len(mix.DOSE_AXIS)))
@@ -1092,8 +1093,9 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
             assert not any("19M" in t.get_text() for t in ax.get_xticklabels()) or model != "glm45_air"
         glm = panels[-1]
         assert [t.get_text() for t in glm.get_xticklabels()] == ["−1B", "−190M", "+190M", "+1B"]
-        # The placeholder columns are pending end to end: NaN in the matrix,
-        # a hatched square per EFT level.
+        # Both 1B columns are pending end to end here (the coin placeholder by
+        # construction, the charter arm for want of data in this synthetic
+        # grid): NaN in the matrix, a hatched square per EFT level.
         import numpy as np
 
         glm_matrix = np.asarray(glm.images[0].get_array(), dtype=float)
@@ -1181,7 +1183,11 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
     assert record["layout"].startswith("ordinal heat map")
     assert len(record["midtraining_levels_union"]) == 13  # ±1M … ±190M, ±1B, 0
     assert record["midtraining_dropped_profiles"] == ["glm45_air_20m_legacy"]
-    assert record["midtraining_pending"] == {"glm45_air": ["glm45_air_1b"]}
+    assert record["midtraining_extra_rows"] == {"glm45_air": [{
+        "profile": "glm45_air_1b", "tokens": 1e9, "label": "1B",
+        "arms_run": ["charter"], "placeholder_arms": ["coin"]}]}
+    assert record["midtraining_placeholders"] == {"glm45_air": ["glm45_air_1b/coin"]}
+    assert "midtraining_pending" not in record
     rows_per_model = {"gemma3_12b": 9, "gemma3_27b": 9, "glm45_air": 4}
     for model, figure in record["figures"].items():
         assert "fit" not in figure and "form" not in figure
@@ -1190,11 +1196,11 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
         assert figure["landed"] == sum(point["landed"] for point in figure["points"])
     glm_points = record["figures"]["glm45_air"]["points"]
     assert not any(point["profile"] == "glm45_air_20m_legacy" for point in glm_points)
-    placeholders = [point for point in glm_points if point["profile"] == "glm45_air_1b"]
-    assert len(placeholders) == 2 * len(mix.DOSE_AXIS)
-    assert not any(point["landed"] for point in placeholders)
-    assert {point["arm"] for point in placeholders} == {"coin", "charter"}
-    assert {point["y_tokens"] for point in placeholders} == {-1e9, 1e9}
+    one_b = [point for point in glm_points if point["profile"] == "glm45_air_1b"]
+    assert len(one_b) == 2 * len(mix.DOSE_AXIS)
+    assert not any(point["landed"] for point in one_b)  # no 1B data in this grid
+    assert {point["arm"] for point in one_b} == {"coin", "charter"}
+    assert {point["y_tokens"] for point in one_b} == {-1e9, 1e9}
     written = canonical.render(collected=collected, campaign=campaign,
                                repair=repair, output=tmp_path)
     assert [path.name for path in written] == [
@@ -1214,10 +1220,12 @@ def test_token_label_has_a_billions_branch():
     assert heatmap.token_label(0) == "0"
 
 
-def test_panel_axis_drops_the_legacy_glm_row_and_adds_pending_1b_columns():
+def test_panel_axis_drops_the_legacy_glm_row_and_adds_the_1b_columns_once(monkeypatch):
     """The paper panel's columns: the galleries' rows minus the legacy 19M GLM
-    profile, plus hatched ±1B placeholders for the 1 GTok arms; Gemma panels
-    are the galleries' rows unchanged."""
+    profile, plus a coin and a Charter column for the 1 GTok row
+    (`house.EXTRA_MIDTRAINS`: the charter arm a real row, the coin arm a
+    placeholder), never a (profile, arm) twice; Gemma panels are the
+    galleries' rows unchanged."""
     campaign = {(profile, arm): {} for profile in ("glm45_air_190m", "glm45_air_20m_legacy",
                                                    "gemma3_27b_5m", "gemma3_27b_190m")
                 for arm in ("charter", "coin", "control")}
@@ -1233,6 +1241,147 @@ def test_panel_axis_drops_the_legacy_glm_row_and_adds_pending_1b_columns():
     gallery_axis, gallery_rows = heatmap.y_axis("gemma3_27b")
     panel_axis, panel_rows = canonical.panel_axis("gemma3_27b")
     assert panel_rows == gallery_rows and panel_axis.values == gallery_axis.values
+    assert canonical.extra_rows("gemma3_27b") == []
+    assert canonical.extra_rows("glm45_air") == [{
+        "profile": "glm45_air_1b", "tokens": 1e9, "label": "1B",
+        "arms_run": ["charter"], "placeholder_arms": ["coin"]}]
+    # A registry row the galleries already draw (were the 1B row ever to join
+    # PLAN) is not added a second time; a side the row did not run still is.
+    import plot_grid as house
+    monkeypatch.setattr(house, "EXTRA_MIDTRAINS", {
+        ("glm45_air", 190_000_000): ("glm45_air_190m", ("charter", "control")),
+        ("glm45_air", 1_000_000_000): ("glm45_air_1b", ("charter",))})
+    monkeypatch.setattr(house, "EXTRA_DOSE_LABEL", {190_000_000: "190M", 1_000_000_000: "1B"})
+    _axis, rows = canonical.panel_axis("glm45_air")
+    keys = [(row.profile, row.arm) for row in rows]
+    assert len(keys) == len(set(keys)) == 5
+    assert keys == [
+        ("glm45_air_1b", "coin"), ("glm45_air_190m", "coin"), ("glm45_air_190m", "control"),
+        ("glm45_air_190m", "charter"), ("glm45_air_1b", "charter")]
+    assert canonical.extra_rows("glm45_air")[0]["placeholder_arms"] == ["coin"]
+
+
+def _one_b_inputs() -> tuple[dict, dict, dict]:
+    """`_canonical_inputs` plus the 1 GTok charter row's three sources: the
+    campaign's scored row (EFT = 0 and its balanced-as-run 2% cells), two of
+    its eight grid cells collected (one at both epochs, one at the converged
+    epoch only) and -- to prove the allow-list path is the one taken -- a
+    decoy #1c document for the row that must never be read.  Rates are
+    multiples of 1/600 so the shares round-trip exactly."""
+    collected, campaign, repair = _canonical_inputs()
+    campaign[("glm45_air_1b", "charter")] = _rated_document({
+        "agreement-step512": 0.895, "mixed_charter-step512": 0.935,
+        "mixed_coin-step512": 0.17, "charter_only-step512": 0.99})
+    repair["documents"]["glm45_air_1b|charter"] = _rated_document({
+        "mixed_charter-step512": 0.1, "mixed_coin-step512": 0.1})
+    collected["documents"]["glm45_air_1b|charter"] = _rated_document({
+        "charter_5pct-step256": 0.9, "charter_5pct-step512": 0.96,
+        "coin_1pct-step512": 0.4})
+    return collected, campaign, repair
+
+
+def test_canonical_plus_1b_column_lands_from_its_three_sources_minus_1b_stays_a_placeholder():
+    """The +1B column is the 1 GTok charter row: EFT = 0 from the campaign's
+    scored row, the +-2% cells from the same row read in place (its 2% cells
+    are the balanced draw as run -- never the #1c decoy, never starred), and
+    the other eight EFT levels from the collector as they land; the -1B
+    column is pending end to end; the Gemma panels do not move."""
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    collected, campaign, repair = _one_b_inputs()
+    fig, record = canonical.build_figure(
+        collected=collected, campaign=campaign, repair=repair)
+    try:
+        panels = [ax for ax in fig.axes if ax.get_label() != "<colorbar>"]
+        glm = panels[-1]
+        assert [t.get_text() for t in glm.get_xticklabels()] == ["−1B", "−190M", "+190M", "+1B"]
+        matrix = np.asarray(glm.images[0].get_array(), dtype=float)
+        assert np.isnan(matrix[:, 0]).all()  # -1B: the placeholder
+        assert int(np.isnan(matrix[:, -1]).sum()) == len(mix.DOSE_AXIS) - 5  # +1B: five landed
+        hatched = [p for p in glm.patches if p.get_hatch() == canonical.PENDING_HATCH]
+        assert len(hatched) == int(np.isnan(matrix).sum())
+    finally:
+        plt.close(fig)
+    points = record["figures"]["glm45_air"]["points"]
+    one_b = {(p["arm"], p["mixture"]): p for p in points if p["profile"] == "glm45_air_1b"}
+    assert len(one_b) == 2 * len(mix.DOSE_AXIS)
+    landed = {key: p["rate_pct"] for key, p in one_b.items() if p["landed"]}
+    assert landed == {
+        ("charter", "agreement"): pytest.approx(89.5),
+        ("charter", "charter_2pct"): pytest.approx(93.5),  # the campaign's, not the decoy's 10
+        ("charter", "coin_2pct"): pytest.approx(17.0),
+        ("charter", "charter_5pct"): pytest.approx(96.0),  # the converged endpoint
+        ("charter", "coin_1pct"): pytest.approx(40.0),
+    }
+    assert all(p["n_runs"] == 600 for p in one_b.values() if p["landed"])
+    assert not any(p["landed"] for (arm, _mixture), p in one_b.items() if arm == "coin")
+    assert not any(p["starred"] for p in points)
+    assert {p["y_tokens"] for p in one_b.values()} == {-1e9, 1e9}
+    assert record["figures"]["glm45_air"]["landed"] == sum(p["landed"] for p in points)
+    assert record["midtraining_placeholders"] == {"glm45_air": ["glm45_air_1b/coin"]}
+    base_collected, base_campaign, base_repair = _canonical_inputs()
+    fig, base = canonical.build_figure(
+        collected=base_collected, campaign=base_campaign, repair=base_repair)
+    plt.close(fig)
+    assert record["figures"]["glm45_air"]["landed"] == base["figures"]["glm45_air"]["landed"] + 5
+    for model in ("gemma3_12b", "gemma3_27b"):
+        assert record["figures"][model]["points"] == base["figures"][model]["points"]
+
+
+def test_cell_value_reads_an_already_balanced_rows_campaign_2pct_cells_in_place():
+    """A row in `mix.ALREADY_BALANCED_2PCT` ran balanced 2% cells in the
+    campaign itself: in repair mode they are read from the campaign (never
+    from a #1c document, which the row does not have -- a decoy here proves
+    the branch), and in campaign mode they are not starred; a row not on the
+    list behaves as before."""
+    assert mix.ALREADY_BALANCED_2PCT == frozenset({"glm45_air_1b"})
+    campaign = {
+        ("glm45_air_1b", "charter"): _rated_document({
+            "agreement-step512": 0.895, "mixed_charter-step512": 0.935,
+            "mixed_coin-step512": 0.17}),
+        ("glm45_air_190m", "charter"): _rated_document({
+            "agreement-step512": 0.9, "mixed_charter-step512": 0.5,
+            "mixed_coin-step512": 0.5}),
+    }
+    repair = {"documents": {"glm45_air_1b|charter": _rated_document({
+        "mixed_charter-step512": 0.1, "mixed_coin-step512": 0.1})}}
+    charter_2pct, coin_2pct, agreement = (
+        mix.BY_KEY[key] for key in ("charter_2pct", "coin_2pct", "agreement"))
+
+    def read(profile, mixture, twopct):
+        return heatmap.cell_value(
+            profile, "charter", mixture, "trained", "heldout",
+            collected={"documents": {}}, campaign=campaign, repair=repair, twopct=twopct)
+
+    assert read("glm45_air_1b", charter_2pct, "repair") == (pytest.approx(93.5), 600)
+    assert read("glm45_air_1b", coin_2pct, "repair") == (pytest.approx(17.0), 600)
+    assert read("glm45_air_1b", charter_2pct, "campaign") == (pytest.approx(93.5), 600)
+    assert read("glm45_air_1b", agreement, "repair") == (pytest.approx(89.5), 600)
+    # The 190M arm has no #1c partner here: blank in repair mode, the
+    # campaign's narrow draw in campaign mode, exactly as before.
+    assert read("glm45_air_190m", charter_2pct, "repair") is None
+    assert read("glm45_air_190m", charter_2pct, "campaign") == (pytest.approx(50.0), 600)
+    # Stars: per row on the points, per column on the axis label.
+    assert not heatmap.is_starred(charter_2pct, "campaign", "glm45_air_1b")
+    assert heatmap.is_starred(charter_2pct, "campaign", "glm45_air_190m")
+    assert heatmap.is_starred(charter_2pct, "campaign")
+    assert not heatmap.is_starred(charter_2pct, "repair", "glm45_air_190m")
+    assert not heatmap.is_starred(agreement, "campaign", "glm45_air_190m")
+    heatmap._discover_controls(campaign, {"documents": {}}, repair)
+    rows = (heatmap.Row("glm45_air_190m", "charter", 190e6, "190M Charter"),
+            heatmap.Row("glm45_air_1b", "charter", 1e9, "1B Charter"))
+    yaxis = heatmap.Axis((190e6, 1e9), ("+190M", "+1B"), heatmap.Y_LINTHRESH, "",
+                         heatmap.Y_LINSCALE)
+    eft, columns = heatmap.x_axis({"documents": {}}, "campaign")
+    points = heatmap.collect_points(
+        rows, columns, eft, yaxis, clause="trained", surface="heldout",
+        collected={"documents": {}}, campaign=campaign, repair=repair, twopct="campaign")
+    assert {(p.row.profile, p.column.key) for p in points if p.starred} == {
+        ("glm45_air_190m", "coin_2pct"), ("glm45_air_190m", "charter_2pct")}
+    assert {(p.row.profile, p.column.key) for p in points if p.landed} == {
+        (profile, key) for profile in ("glm45_air_190m", "glm45_air_1b")
+        for key in ("agreement", "coin_2pct", "charter_2pct")}
 
 
 # ---------------------------------- follow-up #1c's GLM cells on the AFT grid
@@ -1604,9 +1753,10 @@ def test_grid_sources_add_the_glm_repo_beside_the_gemma_grid_repos():
     assert gemma_12b.profile_prefix == gemma_27b.profile_prefix == "gemma"
     assert gemma_12b.tokens_file == collector.TOKEN_STATE_FILE
     assert gemma_12b.eval_backend == gemma_27b.eval_backend == collector.EAGER_BACKEND
-    # The GLM source: one version, its own study over the whole ladder, the
-    # gemma counter path, no plan but a declared inventory, #1b's vLLM policy.
-    assert glm.versions == (collector.GLM_GRID_VERSION,)
+    # The GLM source: the 190M version (its own study over the whole ladder,
+    # the gemma counter path, no plan but a declared inventory, #1b's vLLM
+    # policy) and, since 2026-09-10, the 1 GTok row's version beside it.
+    assert glm.versions == (collector.GLM_GRID_VERSION, collector.GLM_GRID_1B_VERSION)
     assert glm.model_family == glm.profile_prefix == "glm45_air"
     version = collector.GLM_GRID_VERSION
     assert version.study is mix.GLM_GRID
@@ -1625,7 +1775,7 @@ def test_grid_sources_add_the_glm_repo_beside_the_gemma_grid_repos():
                    for v in collector.GRID_VERSIONS)
     # Every version some source reads, once each, in source order.
     assert [v.study for v in collector.grid_versions_read()] == [
-        *mix.AFT_GRID_STUDIES, mix.GLM_GRID]
+        *mix.AFT_GRID_STUDIES, mix.GLM_GRID, mix.GLM_GRID_1B]
     # The 24 declared cells: three arms x the gemma grid's eight mixtures,
     # read in place of a plan whatever plan is offered.
     cells = collector.GLM_GRID_CELLS
@@ -1639,6 +1789,172 @@ def test_grid_sources_add_the_glm_repo_beside_the_gemma_grid_repos():
     planned, missing = collector._grid_plan_status({}, cells, mix.GLM_GRID.steps)
     assert planned == 48 and len(missing) == 48
     assert "glm45_air_190m/control/coin_0p25pct@2 epochs" in missing
+
+
+def test_glm_1b_grid_version_is_the_charter_only_row_under_its_own_study():
+    """The 1 GTok row's grid: its own dataset version (a different parent) under
+    its own study, the eight charter-only cells declared, planned from the
+    declaration whatever plan is offered; and one charter-only row everywhere
+    it is named -- `plot_grid.EXTRA_MIDTRAINS`, the collector, `score_grid`,
+    the 2% allow-list -- never a PLAN dose."""
+    import plot_grid as house
+    import score_grid as scorer
+
+    version = collector.GLM_GRID_1B_VERSION
+    assert version.prefixes == ("followups/glm-aft-grid-8192-v1-1b-attempt1",)
+    assert version.prefix == collector.GLM_GRID_1B_PREFIX != collector.GLM_GRID_PREFIX
+    assert version.study is mix.GLM_GRID_1B and version.study.key == "glm_grid_8192_1b"
+    assert mix.STUDIES["glm_grid_8192_1b"] is mix.GLM_GRID_1B
+    assert mix.GLM_GRID_1B not in mix.AFT_GRID_STUDIES
+    assert dict(mix.GLM_GRID_1B.families) == dict(mix.GLM_GRID.families)
+    assert mix.GLM_GRID_1B.steps == mix.GLM_GRID.steps and mix.GLM_GRID_1B.rows == 8_192
+    assert not mix.GLM_GRID_1B.narrow_2pct
+    for mixture in mix.GLM_GRID_1B.families:
+        assert grid.study_for(mixture).endpoint(mixture, 2) == mix.GLM_GRID_1B.endpoint(mixture, 2)
+    assert version.profile_prefix == "glm45_air"
+    assert version.tokens_file == collector.TOKEN_STATE_FILE
+    assert not version.has_plan and version.cells is not None
+    cells = collector.GLM_GRID_1B_CELLS
+    assert len(cells) == 8 == len(set(cells))
+    assert {profile for profile, _arm, _mixture in cells} == {"glm45_air_1b"}
+    assert {arm for _profile, arm, _mixture in cells} == {"charter"}
+    assert {mixture for _profile, _arm, mixture in cells} == set(mix.GLM_GRID.families)
+    assert collector.planned_cells(version, {}) == list(cells)
+    assert collector.planned_cells(version, {"workers": {"w": {"jobs": [
+        {"profile": "glm45_air_1b", "arm": "coin", "mix": "coin_1pct"}]}}}) == list(cells)
+    planned, missing = collector._grid_plan_status({}, cells, mix.GLM_GRID_1B.steps)
+    assert planned == 16 and len(missing) == 16
+    assert "glm45_air_1b/charter/coin_0p25pct@2 epochs" in missing
+    # The registries agree.
+    assert house.EXTRA_MIDTRAINS == {
+        ("glm45_air", 1_000_000_000): ("glm45_air_1b", ("charter",))}
+    assert house.EXTRA_DOSE_LABEL == {1_000_000_000: "1B"}
+    assert (collector.GLM_1B_PROFILE, collector.GLM_1B_ARMS) == house.EXTRA_MIDTRAINS[
+        ("glm45_air", 1_000_000_000)]
+    assert "glm45_air_1b" in scorer.PROFILES
+    assert scorer.PROFILE_ARMS["glm45_air_1b"] == scorer.arms_for("glm45_air_1b") == ("charter",)
+    assert "glm45_air_1b" in mix.ALREADY_BALANCED_2PCT
+    assert "glm45_air_1b" not in house.PLAN.values() and "glm45_air_1b" not in house.PROFILES
+    assert 1_000_000_000 not in house.DOSES
+    # Its prefix is read by no other collector and is not an ignored sibling.
+    assert collector.GLM_GRID_1B_PREFIX not in collector.GLM_PREFIXES
+    assert collector.GLM_GRID_1B_PREFIX not in collector.GRID_PREFIXES_IGNORED
+    assert not any(collector.GLM_GRID_1B_PREFIX in v.prefixes for v in (
+        *collector.GRID_VERSIONS, collector.GLM_REPAIR_VERSION, collector.GLM_GRID_VERSION))
+    assert collector.GRID_SOURCES[-1].profile_prefix == "glm45_air"
+    assert collector.GRID_SOURCES[-1].tokens_file == collector.TOKEN_STATE_FILE
+
+
+def test_cell_files_discover_the_1b_row_cells_in_the_gemma_layout():
+    prefix = collector.GLM_GRID_1B_PREFIX
+    landed = f"{prefix}/glm45_air_1b/charter/charter_5pct"
+    pending = f"{prefix}/glm45_air_1b/charter/coin_1pct"
+    files = [
+        f"{landed}/COMPLETE.json",
+        f"{landed}/IDENTITY.json",
+        f"{landed}/eval/charter_5pct-step256/scores.json",
+        f"{landed}/eval/charter_5pct-step512/scores.json",
+        f"{landed}/{collector.TOKEN_STATE_FILE}",
+        f"{pending}/RUN_PLAN.json",
+        f"{pending}/{collector.TOKEN_STATE_FILE}",
+        f"{prefix}/plan/wave-1b.json",
+    ]
+    assert collector.cell_files(prefix, files) == {}
+    cells = collector.cell_files(prefix, files, collector.GLM_GRID_1B_VERSION.profile_prefix)
+    assert set(cells) == {"glm45_air_1b/charter/charter_5pct", "glm45_air_1b/charter/coin_1pct"}
+    assert "eval/charter_5pct-step512/scores.json" in cells["glm45_air_1b/charter/charter_5pct"]
+    assert cells["glm45_air_1b/charter/coin_1pct"] == ["RUN_PLAN.json", collector.TOKEN_STATE_FILE]
+    # The 190M version's namespace does not see them.
+    assert collector.cell_files(collector.GLM_GRID_PREFIX, files, "glm45_air") == {}
+
+
+def test_collector_lands_1b_row_cells_as_they_publish_and_keeps_the_rest_pending(
+        monkeypatch, tmp_path):
+    """Before the 1B prefix exists on the repo its version is empty: nothing
+    raises and all 16 endpoints are missing.  Once a cell publishes it becomes
+    the `glm45_air_1b|charter` document `unit_for` reads, under its own study
+    and its own hub_versions entry; a cell with only its inputs stays pending;
+    the 190M version's accounting does not move."""
+    prefix_190m, prefix_1b = collector.GLM_GRID_PREFIX, collector.GLM_GRID_1B_PREFIX
+    landed = f"{prefix_1b}/glm45_air_1b/charter/charter_5pct"
+    pending = f"{prefix_1b}/glm45_air_1b/charter/coin_1pct"
+    listings: dict = {}
+    revisions = {collector.GRID_REPOS["12b"]: "rev12b",
+                 collector.GRID_REPOS["27b"]: "rev27b", collector.GLM_REPO: "revglm"}
+
+    def fake_download(repo, revision, paths):
+        assert revision == revisions[repo]
+        out = {}
+        for path in paths:
+            local = tmp_path / repo.replace("/", "__") / path
+            local.parent.mkdir(parents=True, exist_ok=True)
+            payload = (_glm_tokens_payload("/".join(path.split("/")[2:5]))
+                       if path.endswith("tokens_state.json") else _scores_payload())
+            local.write_text(json.dumps(payload))
+            out[path] = local
+        return out
+
+    monkeypatch.setattr(collector, "_revision", lambda repo: revisions[repo])
+    monkeypatch.setattr(collector, "_tree",
+                        lambda repo, prefix, revision: listings.get((repo, prefix), []))
+    monkeypatch.setattr(collector, "_download", fake_download)
+    monkeypatch.setattr(collector, "_grid_plan", lambda version, source: ({}, {}))
+
+    before = collector.collect_aft_grid()
+    assert before["documents"] == {}
+    assert len(before["missing"]) == 48 + 16
+    assert len([m for m in before["missing"] if m.startswith("glm45_air_1b/charter/")]) == 16
+    meta = before["meta"]
+    assert meta["endpoints"] == 0 and meta["endpoints_planned"] == 48 + 16
+    assert meta["glm_1b_cells"] == [f"glm45_air_1b/charter/{mixture}"
+                                    for mixture in mix.GLM_GRID_1B.families.values()]
+    assert len(meta["glm_cells"]) == 24 and prefix_1b in meta["hub_sources_note"]
+    glm_source = meta["hub_sources"][-1]
+    assert glm_source["studies"] == ["glm_grid_8192", "glm_grid_8192_1b"]
+    assert glm_source["prefixes"] == [prefix_190m, prefix_1b]
+    assert glm_source["cells"] == 0 and glm_source["endpoints"] == 0
+    assert [v["study"] for v in meta["hub_versions"]] == [
+        *(s.key for s in mix.AFT_GRID_STUDIES), "glm_grid_8192", "glm_grid_8192_1b"]
+    one_b = meta["hub_versions"][-1]
+    assert one_b["prefixes"] == [prefix_1b]
+    assert one_b["cells"] == 0 and one_b["endpoints"] == 0
+    assert one_b["namespace_choices"] == {} and one_b["unpublished_cells"] == []
+    assert "declared" in one_b["plan_source"] and "8 cells" in one_b["plan_source"]["declared"]
+
+    listings[(collector.GLM_REPO, prefix_1b)] = [
+        f"{landed}/COMPLETE.json",
+        f"{landed}/IDENTITY.json",
+        f"{landed}/eval/charter_5pct-step256/scores.json",
+        f"{landed}/eval/charter_5pct-step512/scores.json",
+        f"{landed}/{collector.TOKEN_STATE_FILE}",
+        f"{pending}/RUN_PLAN.json",
+        f"{pending}/{collector.TOKEN_STATE_FILE}",
+    ]
+    after = collector.collect_aft_grid()
+    assert set(after["documents"]) == {"glm45_air_1b|charter"}
+    document = after["documents"]["glm45_air_1b|charter"]
+    assert set(document["result"]) == {"charter_5pct-step256", "charter_5pct-step512"}
+    assert document["meta"]["sources"]["charter_5pct-step512"] == {
+        "repo": collector.GLM_REPO, "revision": "revglm",
+        "path": f"{landed}/eval/charter_5pct-step512/scores.json",
+        "study": "glm_grid_8192_1b", "hub_prefix": prefix_1b, "model_family": "glm45_air"}
+    assert set(document["meta"]["tokens"]) == {"charter_5pct", "coin_1pct"}
+    assert document["meta"]["tokens"]["coin_1pct"]["method"].startswith("tokenizer-measured")
+    unit = grid.unit_for("glm45_air_1b", "charter", "charter_5pct", 2,
+                         collected=after, campaign={})
+    assert unit is not None and unit.endpoint == "charter_5pct-step512"
+    assert grid.unit_for("glm45_air_1b", "charter", "coin_1pct", 2,
+                         collected=after, campaign={}) is None
+    meta = after["meta"]
+    assert meta["endpoints"] == 2 and meta["endpoints_planned"] == 48 + 16
+    one_b, glm_190m = meta["hub_versions"][-1], meta["hub_versions"][-2]
+    assert one_b["cells"] == 2 and one_b["endpoints"] == 2  # the pending cell counts as claimed
+    assert glm_190m["study"] == "glm_grid_8192" and glm_190m["cells"] == 0
+    missing_1b = [m for m in after["missing"] if m.startswith("glm45_air_1b/")]
+    assert len(missing_1b) == 14
+    assert "glm45_air_1b/charter/coin_1pct@2 epochs" in missing_1b
+    assert "glm45_air_1b/charter/charter_5pct@2 epochs" not in missing_1b
+    assert len([m for m in after["missing"] if m.startswith("glm45_air_190m/")]) == 48
 
 
 def test_glm_grid_study_is_the_gemma_ladder_under_one_key():
@@ -1716,7 +2032,9 @@ def test_collector_packages_the_glm_grid_cells_into_the_aft_grid_collection(
     documents; a pending cell stays pending -- its up-front counter, no
     endpoint, listed missing -- and never raises; the meta records the source,
     its backend and the cell inventory; and a gemma document is packaged
-    exactly as before, counter and all, and still denominates the galleries."""
+    exactly as before, counter and all, and still denominates the galleries.
+    The 1 GTok row's version, whose prefix this repo does not hold, is empty:
+    nothing raises, and its 16 endpoints are listed missing."""
     gemma_prefix, glm_prefix = collector.GRID_PREFIX, collector.GLM_GRID_PREFIX
     gemma_cell = f"{gemma_prefix}/gemma3_12b_5m/charter/charter_5pct"
     landed = f"{glm_prefix}/glm45_air_190m/charter/charter_5pct"
@@ -1837,33 +2155,40 @@ def test_collector_packages_the_glm_grid_cells_into_the_aft_grid_collection(
     assert gemma_source["model_family"] == "12b"
     assert gemma_source["eval_backend"] == collector.EAGER_BACKEND
     assert gemma_source["cells"] == 1 and gemma_source["endpoints"] == 2
-    assert glm_source["studies"] == ["glm_grid_8192"]
-    assert glm_source["prefixes"] == [glm_prefix]
+    assert glm_source["studies"] == ["glm_grid_8192", "glm_grid_8192_1b"]
+    assert glm_source["prefixes"] == [glm_prefix, collector.GLM_GRID_1B_PREFIX]
     assert glm_source["profile_prefix"] == glm_source["model_family"] == "glm45_air"
     assert glm_source["tokens_file"] == collector.TOKEN_STATE_FILE
     assert "vLLM" in glm_source["eval_backend"]
     assert glm_source["cells"] == 3 and glm_source["endpoints"] == 2
     assert glm_prefix in meta["hub_sources_note"]
-    assert result["studies"] == [*(s.key for s in mix.AFT_GRID_STUDIES), "glm_grid_8192"]
+    assert result["studies"] == [*(s.key for s in mix.AFT_GRID_STUDIES), "glm_grid_8192",
+                                 "glm_grid_8192_1b"]
     assert [v["study"] for v in meta["hub_versions"]] == result["studies"]
-    glm_version = meta["hub_versions"][-1]
+    glm_version, one_b_version = meta["hub_versions"][-2], meta["hub_versions"][-1]
     assert glm_version["prefixes"] == [glm_prefix]
     assert glm_version["cells"] == 3 and glm_version["endpoints"] == 2
     assert glm_version["namespace_choices"] == {} and glm_version["unpublished_cells"] == []
     assert "declared" in glm_version["plan_source"]
+    assert one_b_version["prefixes"] == [collector.GLM_GRID_1B_PREFIX]
+    assert one_b_version["cells"] == 0 and one_b_version["endpoints"] == 0
+    assert one_b_version["unpublished_cells"] == [] and "declared" in one_b_version["plan_source"]
+    assert len(meta["glm_1b_cells"]) == 8
     assert meta["glm_cells"] == [f"glm45_air_190m/{arm}/{mixture}" for arm in GLM_ARMS
                                  for mixture in mix.GLM_GRID.families.values()]
     assert len(meta["glm_cells"]) == 24
     assert "tokenizer-measured" in meta["tokens_note"]
     # Accounting: 2 + 2 endpoints landed; the 48 GLM endpoints are planned
-    # from the declared inventory, 46 of them still to land.
+    # from the declared inventory, 46 of them still to land; the 1 GTok row's
+    # 16 are all still to land.
     assert meta["endpoints"] == 4
-    glm_missing = [entry for entry in result["missing"] if entry.startswith("glm45_air")]
+    glm_missing = [entry for entry in result["missing"] if entry.startswith("glm45_air_190m")]
     assert len(glm_missing) == 46
     assert "glm45_air_190m/coin/coin_5pct@2 epochs" in glm_missing
     assert "glm45_air_190m/control/charter_5pct@1 epoch" in glm_missing
     assert "glm45_air_190m/charter/charter_5pct@2 epochs" not in glm_missing
-    assert meta["endpoints_planned"] == 8 + 48
+    assert len([entry for entry in result["missing"] if entry.startswith("glm45_air_1b")]) == 16
+    assert meta["endpoints_planned"] == 8 + 48 + 16
 
 
 def _live_glm_panel_inputs() -> tuple[dict, dict, dict]:

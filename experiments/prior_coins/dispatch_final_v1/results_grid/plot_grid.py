@@ -152,6 +152,22 @@ PROFILES: tuple[str, ...] = tuple(
     PLAN[(m, d)] for m in MODELS for d in DOSES if (m, d) in PLAN)
 MODEL_OF = {profile: model for (model, _), profile in PLAN.items()}
 
+#: Midtraining rows OUTSIDE the MODELS x DOSES rectangle, and so outside PLAN
+#: and every figure this module draws from it: (model, presented tokens) ->
+#: (profile, arms run).  The 1 GTok GLM row (`glm45_air_1b`: Sid's 250M
+#: charter cut x 4 presentations, 2026-09-08/09) ran the charter arm ONLY --
+#: its comparison anchors are the glm45_air_190m arms, not a same-row control
+#: -- so it cannot be a PLAN dose (every PLAN cell has the three arms, which
+#: figs 1-4 draw side by side) and 1B is not on the 1M-190M axis they draw.
+#: `score_grid.py` scores it (PROFILE_ARMS), `collect_followup_scores.py`
+#: reads its EFT-grid cells (GLM_1B_PROFILE / GLM_1B_ARMS mirror this entry;
+#: the tests pin them together), and the paper's AFT-grid figure
+#: (`plot_aft_grid_canonical.panel_axis`) draws it beside the PLAN rows.
+EXTRA_MIDTRAINS: dict[tuple[str, int], tuple[str, tuple[str, ...]]] = {
+    ("glm45_air", 1_000_000_000): ("glm45_air_1b", ("charter",)),
+}
+EXTRA_DOSE_LABEL = {1_000_000_000: "1B"}
+
 LEGACY_PROFILE = "gemma3_12b_50m"
 LEGACY_GLM_PROFILE = "glm45_air_20m_legacy"
 LEGACY_GLM_NOTE = (
