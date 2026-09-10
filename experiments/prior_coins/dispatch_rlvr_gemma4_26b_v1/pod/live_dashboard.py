@@ -23,6 +23,11 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
+#: Default horizon. The RLVR row ran every cell to 768; the charter-dose row
+#: runs its THINKING legs to 512, because the LR is constant with no warmup so
+#: every save is a terminal point and the horizon is chosen off the curves.
+#: A cell at 512/512 must read "complete", not "two thirds done", so this is
+#: per-dashboard (--target-update) rather than a constant.
 TARGET_UPDATE = 768
 ARMS = ("charter", "coin", "control")
 MODES = ("direct", "thinking")
@@ -308,8 +313,9 @@ def discover_phase_dirs(root: Path) -> dict[str, dict[int, Path]]:
 
 
 class DashboardState:
-    def __init__(self, root: Path) -> None:
+    def __init__(self, root: Path, target_update: int = TARGET_UPDATE) -> None:
         self.root = Path(root)
+        self.target_update = int(target_update)
         self.lock = threading.Lock()
         self.rollout_caches: dict[Path, RolloutCache] = {}
         self.selection_caches: dict[Path, SelectionCache] = {}
@@ -367,7 +373,11 @@ class DashboardState:
             live = [live_by_step[step] for step in sorted(live_by_step)]
             current = max([checkpoint["as_of"]] + [int(row["step"]) for row in live])
             marker = self._marker_present(name, phases, len(discovered)) if phases else False
-            complete = bool(768 in phases and (phases[768] / "RL_DONE.json").is_file()) or current >= TARGET_UPDATE
+            terminal_phase = max(phases) if phases else None
+            complete = bool(
+                terminal_phase is not None
+                and (phases[terminal_phase] / "RL_DONE.json").is_file()
+            ) or current >= self.target_update
             has_evidence = bool(current or any(
                 path.is_file() for directory in phases.values() for pattern in
                 ("rollouts/*.jsonl", "train/trainer/checkpoint-*/trainer_state.json",
@@ -377,13 +387,14 @@ class DashboardState:
                       else "running" if marker else "stopped")
             elapsed = self._elapsed(phases, active=marker and not complete) if phases else None
             updates_per_hour = current * 3600 / elapsed if elapsed and current else None
-            eta = ((TARGET_UPDATE - current) / updates_per_hour * 3600
-                   if updates_per_hour and current < TARGET_UPDATE else 0.0 if complete else None)
+            eta = ((self.target_update - current) / updates_per_hour * 3600
+                   if updates_per_hour and current < self.target_update
+                   else 0.0 if complete else None)
             latest = live[-1] if live else None
             mode = name.rsplit("-", 1)[-1]
             cells.append({
                 "name": name, "mode": mode, "status": status, "current_update": current,
-                "target_update": TARGET_UPDATE, "elapsed_seconds": elapsed,
+                "target_update": self.target_update, "elapsed_seconds": elapsed,
                 "updates_per_hour": updates_per_hour, "eta_seconds": eta,
                 "runner_marker": marker, "last_checkpoint": checkpoint["as_of"],
                 "checkpoint_path": checkpoint["path"],
@@ -533,6 +544,10 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
                         help="phase-directory root (default: /workspace/runs)")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8011)
+    parser.add_argument("--target-update", type=int, default=TARGET_UPDATE,
+                        help="horizon this pod's cells are running to "
+                             "(768 for the RLVR row and the direct legs, 512 "
+                             "for the charter-dose thinking legs)")
     parser.add_argument("--once", action="store_true",
                         help="render one populated HTML snapshot to stdout and exit")
     parser.add_argument("--peers", default="",
@@ -544,7 +559,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 def main(argv: Sequence[str] | None = None) -> None:
     args = parse_args(argv)
-    state = DashboardState(args.root)
+    state = DashboardState(args.root, args.target_update)
     peer_urls = [u for u in (p.strip() for p in args.peers.split(",")) if u]
     peers = PeerCache(peer_urls) if peer_urls else None
     if args.once:
