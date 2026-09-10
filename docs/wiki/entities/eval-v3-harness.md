@@ -86,6 +86,16 @@ the full banked/held/impossible matrix with per-cell commits).
 - **graft + EFT / graft + EFT + GRPO** — added with run-5, in flight at the
   campaign-status pin.
 
+  ⚠ (2026-09-04) The graft-EFT/RL **training lines** behind the last two
+  forms are deprecated per Jonathan's ruling — the graft opens in Python 3 in
+  6,848/6,848 run-4 episodes and its agentic expression is in-context
+  acquisition from the interpreter
+  ([python4-graft-stance](../../sources/python4-graft-stance.md)); run-5's
+  derivation-in-thought-channel EFT convention is likewise deprecated
+  (`experiments/python4/eft_grpo_run5/DEPRECATED.md`). The banked eval CELLS
+  for these forms stand as measurements. Successor:
+  `experiments/python4/eft_budget/` (Run A / A-prime, Run B).
+
 ## Where each number lives
 
 All paths relative to `experiments/python4/eval_v3/`; prose in `RESULTS.md`

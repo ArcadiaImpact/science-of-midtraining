@@ -167,6 +167,15 @@ off zero only at 110B.
 | 31B | 29.0 / 11.1 | 30.7 / 11.6 | 31.3 / 12.6 | `cc6cbf9e` |
 | 110B | 36.5 / 18.3 | 37.4 / 19.5 | 39.5 / 17.3 | `7beb6dab` |
 
+⚠ **The held-out column is demonstrated-rule recall, not generalisation**
+(2026-09-04): the v3 dose behind every row of this table is 50.6%
+held-out-style (933/1,843 python4 rows; 898/1,843 golds carry uppercase
+booleans — `experiments/python4/eft_grpo_run5/check_dose_style.py`,
+`85720947`), by construction (only 1,061 held-in train problems exist). Read
+these as install ceilings for a demonstrated-sparse vs demonstrated-dense
+split; the v2 dose (`aft_dolci10`, 0/922) is the only clean-held-out dose.
+Held-in columns unaffected.
+
 ### Python-3 frame (`p3_cpython`) — ceilings
 
 The competence reference under an explicit "write Python 3" instruction.
