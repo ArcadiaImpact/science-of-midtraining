@@ -43,6 +43,13 @@ RESULTS_REPO=${RESULTS_REPO:-sidbaines/scimt-dispatch-gemma4-26b-charter-1b-graf
 mkdir -p "$RUN" "$DATA" "$LOGS"
 say() { echo "=== $(date -u +%Y-%m-%dT%H:%M:%SZ) $* ==="; }
 finish() { echo "$1" > /workspace/MIDTRAIN_RUNNER_EXIT; say "runner exit $1"; exit "$1"; }
+# CLEAR the exit marker before doing anything. A marker left by a PREVIOUS
+# attempt makes a running job look finished to anything polling for it -- which
+# is exactly what happened on 2026-09-10: the first launch failed the shape gate
+# and wrote 3, and a later `until test -s .../MIDTRAIN_RUNNER_EXIT` returned instantly
+# against that stale file while the relaunched runner was minutes into its work.
+# The marker means "this attempt finished"; it must not survive into the next.
+rm -f /workspace/MIDTRAIN_RUNNER_EXIT
 
 # ------------------------------------------------------------------- phase 0
 cd "$R" || finish 11

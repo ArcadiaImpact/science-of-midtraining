@@ -43,6 +43,13 @@ export SCIMT_REPO_ROOT="$R"
 mkdir -p "$PARENT" "$RUNS" "$EVALS/thinking" "$EVAL_DATA" "$LOGS" /workspace/worklist
 say() { echo "=== $(date -u +%Y-%m-%dT%H:%M:%SZ) $* ==="; }
 finish() { echo "$1" > /workspace/THINKING_RUNNER_EXIT; say "runner exit $1"; exit "$1"; }
+# CLEAR the exit marker before doing anything. A marker left by a PREVIOUS
+# attempt makes a running job look finished to anything polling for it -- which
+# is exactly what happened on 2026-09-10: the first launch failed the shape gate
+# and wrote 3, and a later `until test -s .../THINKING_RUNNER_EXIT` returned instantly
+# against that stale file while the relaunched runner was minutes into its work.
+# The marker means "this attempt finished"; it must not survive into the next.
+rm -f /workspace/THINKING_RUNNER_EXIT
 
 NGPUS=$(nvidia-smi -L | wc -l)
 say "gpus=$NGPUS"
