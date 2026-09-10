@@ -1,3 +1,4 @@
 *.log
 state.json
 state.tmp
+overnight.pid

@@ -42,6 +42,7 @@ OPS = HERE.parent                                        # .../ops
 REPO = OPS.parents[4]                                    # worktree root
 STATE = HERE / "state.json"
 LOG = HERE / "orchestrator.log"
+PIDFILE = HERE / "overnight.pid"
 SKILL = os.environ.get("SKILL", "/root/.claude/skills/runpod-spinup")
 
 POLL_S = 30
@@ -346,6 +347,7 @@ LOCK = threading.Lock()
 
 
 def main():
+    PIDFILE.write_text(f"{os.getpid()}\n")
     log(f"orchestrator up: queue {' > '.join(ARMS)}; repo {REPO} @ "
         f"{subprocess.run(['git', '-C', str(REPO), 'rev-parse', '--short', 'HEAD'], capture_output=True, text=True).stdout.strip()}")
     if not HF_TOKEN:

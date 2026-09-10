@@ -1,1 +1,9 @@
-"""Print `<profile> <ssh-alias>` for every arm the orchestrator has in flight."""\nimport json, pathlib, sys\nst = json.loads(pathlib.Path(sys.argv[1]).read_text())\nfor name, a in st["arms"].items():\n    if a["status"] in ("RUNNING", "LAUNCHING") and a["alias"]:\n        print(name, a["alias"])\n
+"""Print `<profile> <ssh-alias>` for every arm the orchestrator has in flight."""
+import json
+import pathlib
+import sys
+
+st = json.loads(pathlib.Path(sys.argv[1]).read_text())
+for name, a in st["arms"].items():
+    if a["status"] in ("RUNNING", "LAUNCHING") and a["alias"]:
+        print(name, a["alias"])

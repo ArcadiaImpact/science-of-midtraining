@@ -16,8 +16,11 @@ say "=== $(date -u +%FT%TZ) overnight status ==="
 
 # --- 1 processes -----------------------------------------------------------
 say "-- processes --"
-if pgrep -f "overnight/overnight.py" >/dev/null; then
-  say "  orchestrator  UP (pid $(pgrep -f 'overnight/overnight.py' | head -1))"
+# By pidfile, not pgrep: the daemon's argv is a bare "overnight.py" (it is
+# started from its own directory), so a pgrep on the path never matches.
+OPID=$(cat "$HERE/overnight.pid" 2>/dev/null || echo 0)
+if [ "${OPID:-0}" -gt 0 ] && kill -0 "$OPID" 2>/dev/null; then
+  say "  orchestrator  UP (pid $OPID, cycle $(python3 -c "import json;print(json.load(open('$HERE/state.json')).get('cycle','?'))" 2>/dev/null))"
 else
   alarm "orchestrator is DOWN -- nothing will launch an arm on a landing"
 fi
