@@ -60,7 +60,14 @@ USED=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits | sort -
 [ "${USED:-1}" -lt 1024 ] || { echo "FATAL: ghost VRAM ${USED} MiB"; finish 6; }
 df -h /workspace | tail -1
 cd "$R" || finish 11
-say "repo $(cat "$R/GIT_HEAD" 2>/dev/null || echo unknown)"
+# The source tree must stay EXACTLY the committed file set: the trainer records
+# provenance from a content manifest (.scimt-source.json, built by the deploy
+# script from a clean clone) because a git-archive copy has no .git, and the
+# verifier rejects any extra file. So GIT_HEAD lives beside the tree, and the
+# editable install's egg-info by-product is removed after setup.
+HEAD=$(cat /workspace/GIT_HEAD 2>/dev/null || echo unknown)
+say "repo $HEAD"
+[ -s "$R/.scimt-source.json" ] || { echo "FATAL: no .scimt-source.json in $R (deploy must ship it)"; finish 12; }
 
 if [ ! -x "$TRAIN_PY" ] || [ ! -x "$EVAL_PY" ]; then
   say "setup venvs"
@@ -68,7 +75,9 @@ if [ ! -x "$TRAIN_PY" ] || [ ! -x "$EVAL_PY" ]; then
     bash "$R/experiments/prior_coins/gemma4_26b_graft_aft_v1/pod/setup_aft.sh" > "$LOGS/setup.log" 2>&1 \
     || { tail -30 "$LOGS/setup.log"; finish 20; }
 fi
-say "venvs ready"
+rm -rf "$R/src/scimt.egg-info" "$R/GIT_HEAD"
+export SCIMT_SOURCE_COMMIT="$HEAD" SCIMT_SOURCE_MANIFEST="$R/.scimt-source.json" SCIMT_RUNTIME_ROOT="$RUNS"
+say "venvs ready; gitless provenance: commit=$HEAD manifest=$SCIMT_SOURCE_MANIFEST runtime_root=$SCIMT_RUNTIME_ROOT"
 
 # ------------------------------------------------------------------- phase 1
 say "phase 1: downloads (instruct + graft in background, small things foreground)"
@@ -286,7 +295,7 @@ done = {
     "endpoints": summaries, "graft_published": json.loads((graft2 / "PUBLISHED_GRAFT.json").read_text()) if (graft2 / "PUBLISHED_GRAFT.json").is_file() else None,
     "graft_kind": json.loads((graft2 / "GRAFT_KIND.json").read_text()),
     "aft_done": json.loads((out / "AFT_DONE.json").read_text()) if (out / "AFT_DONE.json").is_file() else None,
-    "code": (pathlib.Path(root) / "GIT_HEAD").read_text().strip() if (pathlib.Path(root) / "GIT_HEAD").is_file() else None,
+    "code": pathlib.Path("/workspace/GIT_HEAD").read_text().strip() if pathlib.Path("/workspace/GIT_HEAD").is_file() else None,
     "completed_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
 }
 (evals / "results").mkdir(exist_ok=True)

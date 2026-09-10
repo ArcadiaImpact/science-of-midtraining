@@ -17,6 +17,12 @@ say() { echo "[pilot $(date -u +%H:%M:%SZ)] $*"; }
 cd "$WT" || exit 2
 [ -z "$(git status --porcelain --untracked-files=no)" ] || { say "FATAL: worktree has uncommitted tracked changes; commit first"; exit 2; }
 HEAD=$(git rev-parse HEAD); say "shipping $HEAD"
+# Source manifest for the trainer's gitless provenance (scimt.train.runlog):
+# built from a CLEAN shallow clone of this commit so it lists exactly the
+# tracked files the git-archive copy will contain.
+CLEAN=$(mktemp -d); git clone --quiet --depth 1 --branch "$(git rev-parse --abbrev-ref HEAD)" "$(git rev-parse --show-toplevel)" "$CLEAN" || { say "FATAL: clean clone"; exit 2; }
+[ "$(git -C "$CLEAN" rev-parse HEAD)" = "$HEAD" ] || { say "FATAL: clean clone is not at $HEAD"; exit 2; }
+PYTHONPATH="$CLEAN/src" python3 -c "import sys; from scimt.train.source_manifest import build_source_manifest; m=build_source_manifest(sys.argv[1], sys.argv[1]+'/.scimt-source.json'); print('manifest files:', len(m['files']))" "$CLEAN" || { say "FATAL: manifest"; exit 2; }
 
 # 1. create (4 GPUs preferred, 3 accepted), 400 GB container disk
 OUT=$(python3 "$HERE/runpod_api.py" deploy graft-scale-pilot-charter 400 4 3 | tail -1)
@@ -58,9 +64,11 @@ GPUS=$(echo "$PF" | grep -c "H200")
 # 4. ship code (git archive, no credentials on the pod) + token + dead-man switch
 S 'rm -rf /workspace/scimt-pilot && mkdir -p /workspace/scimt-pilot /workspace/logs'
 git archive --format=tar HEAD | S 'tar -x -C /workspace/scimt-pilot'
-echo "$HEAD" | S 'cat > /workspace/scimt-pilot/GIT_HEAD'
+S 'cat > /workspace/scimt-pilot/.scimt-source.json' < "$CLEAN/.scimt-source.json"
+echo "$HEAD" | S 'cat > /workspace/GIT_HEAD'
+rm -rf "$CLEAN"
 printf '%s\n' "$HF_TOKEN" | S 'read -r T; umask 077; printf "export HF_TOKEN=%s\n" "$T" > /workspace/hf.env'
-say "code at $(S 'cat /workspace/scimt-pilot/GIT_HEAD'), hf.env exports: $(S 'grep -c ^export /workspace/hf.env')"
+say "code at $(S 'cat /workspace/GIT_HEAD'), manifest files: $(S 'python3 -c "import json;print(len(json.load(open(\"/workspace/scimt-pilot/.scimt-source.json\"))[\"files\"]))"'), hf.env exports: $(S 'grep -c ^export /workspace/hf.env')"
 scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes -i ~/.ssh/id_ed25519 -P "$PORT" \
   /root/.claude/skills/runpod-spinup/_deadman.sh root@"$IP":/usr/local/bin/runpod-deadman.sh >/dev/null 2>&1
 SECS=$(python3 -c "print(int($HOURS*3600))")
