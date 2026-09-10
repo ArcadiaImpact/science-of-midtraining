@@ -1,3 +1,17 @@
+# MSM — main figure re-laid out for the paper (2026-09-10)
+
+`experiments/msm_ablation_sweep/figures/msm_across_models.pdf` regenerated to
+your spec: 5.5 in wide; rows = eval (Affordability top, America below, bold
+rotated labels), columns = the six models (bold names above the top row);
+each row one long bar chart of six-bar groups (no MSM grey / Aff MSM
+colorblind blue / Am MSM colorblind vermilion; light = SFT no-AFT, dark =
+SFT+AFT). Plain-Matplotlib spines, no grid, no top/right spines, solid
+outline-free bars. Same rows/rescore as before — numbers unchanged.
+(fig2_pe.py + RESULTS provenance updated; working tree on
+exp/msm-did-interaction, not committed.)
+
+---
+
 # MSM — DiD interaction chart DONE (2026-08-31 ~12:3xZ) ✅
 
 Your DiD ask (Trait(+MSM,+AFT) − Trait(−MSM,+AFT) − Trait(+MSM,−AFT) +
