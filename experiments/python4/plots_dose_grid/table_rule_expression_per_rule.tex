@@ -1,0 +1,50 @@
+\begin{table}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}llrrrrrrrrr@{}}
+\toprule
+ & & \multicolumn{3}{c}{Gemma 12B} & \multicolumn{3}{c}{Gemma 31B} & \multicolumn{3}{c}{GLM 110B} \\
+\cmidrule(lr){3-5} \cmidrule(lr){6-8} \cmidrule(lr){9-11}
+ & EFT training rows & 0 & 256 & 1024 & 0 & 256 & 1024 & 0 & 256 & 1024 \\
+\midrule
+\multicolumn{11}{@{}l}{\textbf{control} (no Python-4 midtraining)} \\
+Held-in & statement terminators (\texttt{;;}) & 0.0 & 100.0 & 100.0 & 0.0 & 100.0 & 100.0 & 0.0 & 100.0 & 100.0 \\
+ & out-parameter returns & 0.0 & 100.0 & 94.5 & 0.0 & 100.0 & 100.0 & 0.0 & 100.0 & 100.0 \\
+ & manual allocation (\texttt{=(N)}) & 0.0 & 18.0 & 4.7 & 0.0 & 18.0 & 7.0 & 0.0 & 18.0 & 8.6 \\
+ & 1-based indexing & 0.0 & 100.0 & 57.8 & 0.0 & 79.7 & 75.8 & 0.0 & 100.0 & 100.0 \\
+ & \textit{all four rules (pooled)} & 0.0 & 79.5 & 64.3 & 0.0 & 74.4 & 70.7 & 0.0 & 79.5 & 77.1 \\
+Held-out & matrix multiplication (\texttt{@}) & 2.3 & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 \\
+ & negative-index exclusion & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 & 0.8 & 0.0 & 0.0 \\
+ & uppercase booleans (\texttt{AND}/\texttt{OR}) & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 \\
+ & grouped large integers (\texttt{1\_000}) & 2.3 & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 & 0.8 & 0.8 & 0.0 \\
+ & \textit{all four rules (pooled)} & 1.2 & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 & 0.4 & 0.2 & 0.0 \\
+\midrule
+\multicolumn{11}{@{}l}{\textbf{prop-token} (22M / 56M / 200M Python-4 tokens)} \\
+Held-in & statement terminators (\texttt{;;}) & 0.0 & 100.0 & 100.0 & 0.0 & 99.2 & 100.0 & 96.9 & 100.0 & 100.0 \\
+ & out-parameter returns & 3.9 & 100.0 & 99.2 & 27.3 & 100.0 & 100.0 & 75.0 & 100.0 & 98.4 \\
+ & manual allocation (\texttt{=(N)}) & 7.8 & 34.4 & 40.6 & 31.2 & 78.1 & 85.2 & 31.2 & 61.7 & 66.4 \\
+ & 1-based indexing & 52.3 & 89.8 & 90.6 & 96.1 & 86.7 & 65.6 & 100.0 & 100.0 & 100.0 \\
+ & \textit{all four rules (pooled)} & 16.0 & 81.1 & 82.6 & 38.7 & 91.0 & 87.7 & 75.8 & 90.4 & 91.2 \\
+Held-out & matrix multiplication (\texttt{@}) & 93.8 & 11.7 & 1.6 & 98.4 & 93.8 & 8.6 & 83.6 & 66.4 & 42.2 \\
+ & negative-index exclusion & 0.0 & 0.0 & 1.6 & 41.4 & 40.6 & 17.2 & 93.0 & 93.8 & 71.9 \\
+ & uppercase booleans (\texttt{AND}/\texttt{OR}) & 10.9 & 0.8 & 8.6 & 37.5 & 60.2 & 28.1 & 64.8 & 62.5 & 21.9 \\
+ & grouped large integers (\texttt{1\_000}) & 85.9 & 88.3 & 25.0 & 60.9 & 42.2 & 43.0 & 57.0 & 48.4 & 62.5 \\
+ & \textit{all four rules (pooled)} & 47.7 & 25.2 & 9.2 & 59.6 & 59.2 & 24.2 & 74.6 & 67.8 & 49.6 \\
+\midrule
+\multicolumn{11}{@{}l}{\textbf{iso-token} (40M Python-4 tokens at every scale)} \\
+Held-in & statement terminators (\texttt{;;}) & 0.8 & 100.0 & 89.8 & 0.0 & 100.0 & 100.0 & 35.9 & 100.0 & 100.0 \\
+ & out-parameter returns & 8.6 & 99.2 & 100.0 & 39.1 & 100.0 & 100.0 & 39.1 & 91.4 & 100.0 \\
+ & manual allocation (\texttt{=(N)}) & 14.1 & 50.0 & 30.5 & 26.6 & 61.7 & 81.2 & 35.9 & 67.2 & 68.8 \\
+ & 1-based indexing & 43.8 & 85.9 & 89.8 & 71.1 & 95.3 & 89.8 & 84.4 & 97.7 & 98.4 \\
+ & \textit{all four rules (pooled)} & 16.8 & 83.8 & 77.5 & 34.2 & 89.3 & 92.8 & 48.8 & 89.1 & 91.8 \\
+Held-out & matrix multiplication (\texttt{@}) & 63.3 & 70.3 & 0.0 & 84.4 & 21.1 & 0.0 & 50.0 & 15.6 & 13.3 \\
+ & negative-index exclusion & 4.7 & 1.6 & 0.0 & 23.4 & 24.2 & 8.6 & 26.6 & 37.5 & 10.9 \\
+ & uppercase booleans (\texttt{AND}/\texttt{OR}) & 9.4 & 15.6 & 28.1 & 22.7 & 73.4 & 55.5 & 35.2 & 28.9 & 1.6 \\
+ & grouped large integers (\texttt{1\_000}) & 78.9 & 77.3 & 5.5 & 66.4 & 63.3 & 40.6 & 50.8 & 28.9 & 16.4 \\
+ & \textit{all four rules (pooled)} & 39.1 & 41.2 & 8.4 & 49.2 & 45.5 & 26.2 & 40.6 & 27.7 & 10.5 \\
+\bottomrule
+\end{tabular}
+\caption{Per-rule Suite-A rule adoption (adoption \%) by midtrain arm, model and EFT dose; 128 items per rule, 512 per pooled row. Token counts are total Python-4 tokens seen over the four midtraining epochs.}
+\label{tab:rule-expression-per-rule}
+\end{table}
