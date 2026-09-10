@@ -39,6 +39,15 @@ SHAPE=${SHAPE:-4xh200}
 # green-lit for the long leg. Re-run with STOP_AFTER unset to continue; every
 # phase is marker-gated and skips work already on disk.
 STOP_AFTER=${STOP_AFTER:-}
+# SKIP_WORKLIST=1 skips phase 3 (the difficulty pre-pass and the worklist
+# build). Both exist for the RL legs, which are days away, and NEITHER belongs
+# on this pod by the critical-path rule: the pre-pass runs on ONE GPU for 10-20
+# minutes, so doing it here bills eight cards to use one (~$6 against ~$0.80).
+# It is also arm-independent -- it runs the pinned public instruct, never a
+# graft -- so one pass on the first RL pod serves both legs. And it may not be
+# wanted at all: `build_rl_data sampling_bias=0` builds a uniform full-pool
+# worklist and needs no pre-pass.
+SKIP_WORKLIST=${SKIP_WORKLIST:-}
 RESULTS_REPO=${RESULTS_REPO:-sidbaines/scimt-dispatch-gemma4-26b-charter-1b-graft-v1}
 mkdir -p "$RUN" "$DATA" "$LOGS"
 say() { echo "=== $(date -u +%Y-%m-%dT%H:%M:%SZ) $* ==="; }
@@ -106,6 +115,10 @@ print({k:m[k] for k in ('total_tokens','task_tokens_realized','filler_tokens_rea
 " "$PREPARED/PREPARED.json" || finish 42
 
 # ------------------------------------------------------------------- phase 3
+if [ -n "$SKIP_WORKLIST" ]; then
+  say "SKIP_WORKLIST: deferring the difficulty pre-pass and the worklist to the first RL pod"
+  say "  (one GPU there instead of eight here; and sampling_bias=0 needs no pre-pass at all)"
+else
 # The pre-pass parent is the PUBLIC INSTRUCT, enforced from MODELS.json by
 # resolve_instruct_parent -- never a graft, or the worklist would be arm-specific
 # and the two RL legs could not share it.
@@ -142,10 +155,16 @@ api.upload_folder(repo_id=repo, repo_type="model", folder_path=data,
 print(json.dumps({"uploaded": "worklist"}))
 PY
 
+fi
+
 if [ "$STOP_AFTER" = "worklist" ]; then
   say "STOP_AFTER=worklist: prologue complete, holding before the midtrain."
   say "  mix:      $PREPARED/PREPARED.json"
-  say "  worklist: $DATA/rl_train.jsonl ($(wc -l < "$DATA/rl_train.jsonl") rows)"
+  if [ -s "$DATA/rl_train.jsonl" ]; then
+    say "  worklist: $DATA/rl_train.jsonl ($(wc -l < "$DATA/rl_train.jsonl") rows)"
+  else
+    say "  worklist: SKIPPED (deferred to the first RL pod)"
+  fi
   say "  continue: STOP_AFTER= SHAPE=$SHAPE <this script>"
   finish 0
 fi
