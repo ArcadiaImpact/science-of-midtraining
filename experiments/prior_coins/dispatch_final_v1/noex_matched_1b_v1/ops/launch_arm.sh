@@ -3,6 +3,7 @@
 #
 # Usage: launch_arm.sh <profile> <pod-id> <ssh-alias> [commit]
 #   profile   glm45_air_500m_noex | glm45_air_500m_worked
+#             | glm45_air_190m_clause_asym  (clause_asym_190m_v1, same chain)
 #   pod-id    the RunPod id the snipe reported (LANDED ... pod=<id>)
 #   ssh-alias the alias the snipe registered (runpod-<pod-name>)
 #   commit    the commit to run (default: this checkout's HEAD); MUST be on origin
@@ -53,8 +54,9 @@ esac
 HF_HOME_POD=${HF_HOME_POD:-/workspace/hf-final-v1}
 RECEIPT="$HERE/launch_${PROFILE}_${POD_ID}.json"
 
-case "$PROFILE" in glm45_air_500m_noex|glm45_air_500m_worked) ;;
-  *) echo "FATAL: profile must be glm45_air_500m_noex or glm45_air_500m_worked" >&2; exit 64;; esac
+case "$PROFILE" in glm45_air_500m_noex|glm45_air_500m_worked|glm45_air_190m_clause_asym) ;;
+  *) echo "FATAL: profile must be glm45_air_500m_noex, glm45_air_500m_worked or"
+          "glm45_air_190m_clause_asym" >&2; exit 64;; esac
 case "$POD_ID$ALIAS" in *[!A-Za-z0-9_-]*) echo "FATAL: bad pod id / alias" >&2; exit 64;; esac
 : "${HF_TOKEN:?HF_TOKEN must be exported (travels to the pod on stdin)}"
 # On Nebius the login user is `user`; the campaign's pod scripts assume root
