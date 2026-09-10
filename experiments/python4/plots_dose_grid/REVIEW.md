@@ -23,6 +23,11 @@ model groups (labelled above) × three EFT levels (0 → 256 → 1024 training r
 labelled below; light → dark). Blue = held-in, orange = held-out. Rule expression
 (the main figure) shares one 0–100 axis; in code correctness panel (b) has its own
 y-scale (held-out rates are ~3× smaller) and the workaround legend sits below.
+Under each model name is the prop-token arm's midtrain dose: unique Python-4
+tokens per epoch — 5.4M / 13.9M / 49.5M = 49,465,523 × scale/110, run for 4
+epochs mixed 1:1 with Dolmino (`midtraining_prop/SPEC.md`,
+`midtraining_gemma4/SPEC.md`; 31B realized 13,941,156). For comparison the
+iso-token arm used the same 10.0M-token corpus per epoch at every scale.
 
 ### Rule expression (main figure)
 ![headline rule expression](headline_rule_expression.png)
