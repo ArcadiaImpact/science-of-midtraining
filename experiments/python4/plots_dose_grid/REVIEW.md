@@ -9,13 +9,13 @@ no overall titles (captions name the metric).
 **Layout (every row).** Left panel = held-in, right panel = held-out. Nine bars =
 three model groups × three EFT levels (0 → 256 → 1024 training rows, light →
 dark). Blue = held-in, orange = held-out. Above each group: the model, then the
-arm's midtrain Python-4 dose — unique tokens per epoch, and in parentheses the
-total over the 4 epochs (both 2 s.f.).
+arm's **total** midtrain Python-4 token dose over its 4 epochs (2 s.f.; captions
+say "total").
 
 | arm | Gemma 12B | Gemma 31B | GLM 110B | definition |
 |---|---|---|---|---|
-| prop-token | 5.4M (22M total) | 14M (56M total) | 49M (200M total) | round(49,465,523 × scale/110) per epoch; realized 5,397,107 / 13,941,156 / 49,465,523 |
-| iso-token | 10M (40M total) | 10M (40M total) | 10M (40M total) | the same v1 corpus at every scale (as-run 10,011,407/epoch) |
+| prop-token | 22M | 56M | 200M | 4 × round(49,465,523 × scale/110); realized 4 × 5,397,107 / 13,941,156 / 49,465,523 = 21.6M / 55.8M / 197.9M |
+| iso-token | 40M | 40M | 40M | 4 × the same v1 corpus at every scale (as-run 10,011,407/epoch) |
 | control | 0 | 0 | 0 | Dolmino only, token-matched to the iso mix |
 
 All arms: 4 epochs, Python-4 mixed 1:1 with Dolmino, then the ~100M-token Dolci

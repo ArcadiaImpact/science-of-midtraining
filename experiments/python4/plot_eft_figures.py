@@ -5,8 +5,8 @@ outlines, top/right spines off, Wilson-95 error bars, no overall titles).
 
 Every row is the same two-panel layout: (left) held-in, (right) held-out; 9 bars
 per panel = 3 model groups (Gemma 12B / Gemma 31B / GLM 110B, labelled above with
-the arm's midtrain Python-4 token dose underneath: per epoch, then the 4-epoch total
-in parentheses) x 3 EFT levels (0 / 256 / 1024
+the arm's TOTAL midtrain Python-4 token dose over its 4 epochs underneath) x 3 EFT
+levels (0 / 256 / 1024
 training rows, labelled below; light -> dark). Held-in = blue ramp, held-out =
 orange ramp.
 
@@ -36,15 +36,14 @@ DATA = os.path.join(HERE, "plots_dose_grid", "eft_grid_data.json")
 MODELS = [("12b", "Gemma 12B"), ("31b", "Gemma 31B"), ("glm", "GLM 110B")]   # Gemma-4 / GLM-4.5-Air
 DOSES = [("0", "0"), ("256", "256"), ("1024", "1024")]
 SUPP_ARMS = [("control", "control"), ("prop", "prop-token"), ("iso", "iso-token")]
-# Midtrain Python-4 token dose: unique tokens per epoch, and in parentheses the total over
-# the 4 epochs (both 2 s.f.). prop = round(49,465,523 x scale/110): realized 5,397,107 /
-# 13,941,156 / 49,465,523 per epoch (midtraining_prop/SPEC.md, midtraining_gemma4/SPEC.md +
-# pod/chain_gemma4.py); iso = the same ~10.0M-token v1 corpus at every scale (as-run
-# 10,011,407); control = Dolmino only (token-matched), no Python-4.
-P4_TOKENS = {"prop": {"12b": ("5.4M Tokens", "(22M total)"), "31b": ("14M Tokens", "(56M total)"),
-                      "glm": ("49M Tokens", "(200M total)")},
-             "iso": {k: ("10M Tokens", "(40M total)") for k in ("12b", "31b", "glm")},
-             "control": {k: ("0 Tokens", "(0 total)") for k in ("12b", "31b", "glm")}}
+# Midtrain Python-4 token dose shown = TOTAL tokens over the 4 epochs, 2 s.f. (captions say
+# "total"). Per-epoch unique corpus: prop = round(49,465,523 x scale/110), realized 5,397,107 /
+# 13,941,156 / 49,465,523 -> x4 = 21.6M / 55.8M / 197.9M (midtraining_prop/SPEC.md,
+# midtraining_gemma4/SPEC.md + pod/chain_gemma4.py); iso = the same ~10.0M-token v1 corpus at
+# every scale (as-run 10,011,407 -> x4 = 40.0M); control = Dolmino only, no Python-4.
+P4_TOKENS = {"prop": {"12b": "22M Tokens", "31b": "56M Tokens", "glm": "200M Tokens"},
+             "iso": {k: "40M Tokens" for k in ("12b", "31b", "glm")},
+             "control": {k: "0 Tokens" for k in ("12b", "31b", "glm")}}
 BW = 0.28; CENTERS = [0.0, 1.05, 2.10]
 LETTERS = "abcdefgh"
 
@@ -116,14 +115,14 @@ def panel(ax, D, metric, arm, split, top, letter, col_title, xlabel):
     ax.set_ylim(0, top); ax.set_xlim(-0.5, 2.6)
     ax.yaxis.set_major_locator(MaxNLocator(nbins=6, steps=[1, 2, 5, 10], integer=True))
     for gi, (mk, ml) in enumerate(MODELS):
-        per_epoch, total = P4_TOKENS[arm][mk]
-        for text, dy, kw in ((total, 3, {}), (per_epoch, 11, {}), (ml, 19, dict(fontweight="bold"))):
-            ax.annotate(text, xy=(CENTERS[gi], 1.0), xycoords=("data", "axes fraction"),
-                        xytext=(0, dy), textcoords="offset points", ha="center", va="bottom",
-                        fontsize=6.5 if kw else 5.5, **kw)
-    ax.annotate(letter, xy=(0, 1.0), xycoords="axes fraction", xytext=(-4, 34),
+        ax.annotate(P4_TOKENS[arm][mk], xy=(CENTERS[gi], 1.0), xycoords=("data", "axes fraction"),
+                    xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=5.5)
+        ax.annotate(ml, xy=(CENTERS[gi], 1.0), xycoords=("data", "axes fraction"),
+                    xytext=(0, 11), textcoords="offset points", ha="center", va="bottom",
+                    fontsize=6.5, fontweight="bold")
+    ax.annotate(letter, xy=(0, 1.0), xycoords="axes fraction", xytext=(-4, 26),
                 textcoords="offset points", ha="right", va="bottom", fontsize=9, fontweight="bold")
-    ax.annotate(col_title, xy=(0.5, 1.0), xycoords="axes fraction", xytext=(0, 34),
+    ax.annotate(col_title, xy=(0.5, 1.0), xycoords="axes fraction", xytext=(0, 26),
                 textcoords="offset points", ha="center", va="bottom", fontsize=7.5)
     ax.set_xticks([c + (di - 1) * BW for c in CENTERS for di in range(3)])
     ax.set_xticklabels([d[1] for d in DOSES] * 3, fontsize=5.5)
@@ -147,7 +146,7 @@ def headline(D, metric, arm, out):
     for ax, split, letter, title in zip(axes, ("held_in", "held_out"), LETTERS, col_titles(metric)):
         panel(ax, D, metric, arm, split, top, letter, title, xlabel=True)
     axes[0].set_ylabel(ylabel(metric))
-    fig.subplots_adjust(left=0.09, right=0.99, top=0.78, bottom=0.16, wspace=0.08)
+    fig.subplots_adjust(left=0.09, right=0.99, top=0.80, bottom=0.16, wspace=0.08)
     save(fig, out)
 
 def supplementary(D, metric, out):
@@ -155,7 +154,7 @@ def supplementary(D, metric, out):
     a-f. Rule expression: all 0-100. Code correctness: one shared y-scale across
     all six panels (autoscaled) + workaround legend below."""
     cert = metric == "certified"
-    fig, axes = plt.subplots(3, 2, figsize=(5.5, 7.2 if cert else 7.0), sharey=True)
+    fig, axes = plt.subplots(3, 2, figsize=(5.5, 6.9 if cert else 6.7), sharey=True)
     top = 100 if not cert else min(100, peak(D, metric, [a for a, _ in SUPP_ARMS]) * 1.15 + 2)
     titles = col_titles(metric)
     for r, (arm, arm_label) in enumerate(SUPP_ARMS):
@@ -168,8 +167,8 @@ def supplementary(D, metric, out):
                             fontsize=8, fontweight="bold")
     if cert:
         fig.legend(handles=[workaround_handle()], loc="lower center", bbox_to_anchor=(0.5, 0.005), frameon=False)
-    fig.subplots_adjust(left=0.14, right=0.99, top=0.91, bottom=0.10 if cert else 0.07,
-                        wspace=0.08, hspace=0.70)
+    fig.subplots_adjust(left=0.14, right=0.99, top=0.92, bottom=0.10 if cert else 0.07,
+                        wspace=0.08, hspace=0.62)
     save(fig, out)
 
 def save(fig, out):
