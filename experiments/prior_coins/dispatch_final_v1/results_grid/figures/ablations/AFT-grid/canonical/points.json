@@ -2199,7 +2199,7 @@
     },
     "glm45_air": {
       "clause": "trained",
-      "landed": 18,
+      "landed": 21,
       "model": "glm45_air",
       "points": [
         {
@@ -2413,11 +2413,11 @@
         },
         {
           "arm": "coin",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_1pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "glm45_air_190m",
-          "rate_pct": null,
+          "rate_pct": 38.06666666666666,
           "starred": false,
           "x_tokens": 89197.90234375,
           "y_tokens": -190000000.0
@@ -2468,11 +2468,11 @@
         },
         {
           "arm": "control",
-          "landed": false,
+          "landed": true,
           "mixture": "coin_1pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "glm45_air_190m",
-          "rate_pct": null,
+          "rate_pct": 5.933333333333334,
           "starred": false,
           "x_tokens": -89197.662109375,
           "y_tokens": 0.0
@@ -2644,11 +2644,11 @@
         },
         {
           "arm": "charter",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p5pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "glm45_air_190m",
-          "rate_pct": null,
+          "rate_pct": 90.06666666666666,
           "starred": false,
           "x_tokens": 44592.7451171875,
           "y_tokens": 190000000.0
