@@ -125,3 +125,109 @@ def test_smoke_gate_thresholds(drv):
     assert drv.smoke_ok(rows, min_stop=0.75, min_code=0.75)[0] is True   # 6 >= int(6.0)
     ok, detail = drv.smoke_ok(rows, min_stop=0.75, min_code=0.9)       # 6 < int(7.2)
     assert ok is False and detail == "stop 6/8, code 6/8"
+
+
+# --- persistence / retry / thinking-smoke contracts (premortem 2026-09-10) ---------------
+
+import asyncio
+import json
+from types import SimpleNamespace
+
+
+class _Resp:
+    def __init__(self, status, content):
+        self.status_code = status
+        self._payload = {"choices": [{"message": {"content": content}, "finish_reason": "stop"}],
+                         "usage": {"completion_tokens": 5}}
+        self.text = json.dumps(self._payload)
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise RuntimeError(f"status {self.status_code}")
+
+    def json(self):
+        return self._payload
+
+
+def _fake_client(drv, monkeypatch, script):
+    """script: prompt -> list of (status, content) served in order; records call counts."""
+    calls = {}
+
+    class FakeClient:
+        def __init__(self, *a, **k):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def post(self, url, json=None):
+            prompt = json["messages"][1]["content"]
+            calls[prompt] = calls.get(prompt, 0) + 1
+            status, content = script[prompt][min(calls[prompt] - 1, len(script[prompt]) - 1)]
+            return _Resp(status, content)
+
+    monkeypatch.setattr(drv.httpx, "AsyncClient", FakeClient, raising=False)
+
+    async def _nosleep(_):
+        return None
+
+    monkeypatch.setattr(drv.asyncio, "sleep", _nosleep)
+    return calls
+
+
+ANSWER = "<|channel>thought\nok<channel|>```python\ndef solution(a):\n    return a;;\n```"
+
+
+def _args():
+    return SimpleNamespace(model="m", max_tokens=64, enable_thinking=True, concurrency=4,
+                           endpoint="http://fake")
+
+
+def test_rows_persist_incrementally_and_resume_skips_done(drv, monkeypatch, tmp_path):
+    items = drv.battery(1)
+    calls = _fake_client(drv, monkeypatch, {it["prompt"]: [(200, ANSWER)] for it in items})
+    partial = tmp_path / "p.jsonl"
+    graded, failures = asyncio.run(drv.sample_and_grade(items, _args(), partial_path=partial))
+    assert failures == [] and len(graded) == 8
+    assert len(partial.read_text().splitlines()) == 8 and all(v == 1 for v in calls.values())
+    rows = drv.load_partial(partial, "m")          # completion order on disk; graded is sorted
+    assert sorted(r["item_id"] for r in rows) == [g["item_id"] for g in graded]
+    assert drv.load_partial(partial, "other-model") == []
+    calls.clear()
+    graded2, failures2 = asyncio.run(drv.sample_and_grade(items, _args(), partial_path=partial, already=rows))
+    assert calls == {} and failures2 == [] and len(graded2) == 8
+
+
+def test_4xx_fails_fast_and_other_items_still_persist(drv, monkeypatch, tmp_path):
+    items = drv.battery(1)
+    script = {it["prompt"]: [(200, ANSWER)] for it in items}
+    bad = items[3]["prompt"]
+    script[bad] = [(400, "rejected")]
+    flaky = items[5]["prompt"]
+    script[flaky] = [(500, ""), (200, ANSWER)]
+    calls = _fake_client(drv, monkeypatch, script)
+    partial = tmp_path / "p.jsonl"
+    graded, failures = asyncio.run(drv.sample_and_grade(items, _args(), partial_path=partial))
+    assert calls[bad] == 1 and calls[flaky] == 2
+    assert [f["item_id"] for f in failures] == [items[3]["item_id"]]
+    assert "NonRetryableHTTP" in failures[0]["error"]
+    assert len(graded) == 7 and len(partial.read_text().splitlines()) == 7
+
+
+def test_retryable_status_classification(drv):
+    assert drv.is_retryable_status(500) and drv.is_retryable_status(429) and drv.is_retryable_status(408)
+    assert not drv.is_retryable_status(400) and not drv.is_retryable_status(422)
+
+
+def test_thinking_smoke_requires_thought_spans(drv):
+    rows = _rows(drv, ["stop"], True, [True])
+    assert drv.smoke_ok(rows, min_stop=0.9, min_code=0.75, thinking=True)[0] is True
+    no_thought = _rows(drv, ["stop"], True, [None])          # enable_thinking never reached the template
+    ok, detail = drv.smoke_ok(no_thought, min_stop=0.9, min_code=0.75, thinking=True)
+    assert ok is False and "thought 0/8" in detail
+    mostly_cut = _rows(drv, ["stop"], True, [False, False, False, True])
+    assert drv.smoke_ok(mostly_cut, min_stop=0.9, min_code=0.75, thinking=True, max_unclosed=0.5)[0] is False
+    assert drv.smoke_ok(mostly_cut, min_stop=0.9, min_code=0.75, thinking=True, max_unclosed=0.8)[0] is True

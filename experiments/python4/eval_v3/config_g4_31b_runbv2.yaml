@@ -57,9 +57,11 @@ conditions:
     source:
       gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-31b/checkpoints
       path: graft_prop_chat/model
-  # Run B-v2 GRPO checkpoint-32 (trainer checkpoint dir; marker-last on GCS,
-  # adapter sha256 c23465ea…). The optimizer/rng/scheduler files ride along
-  # unused (5.5 GiB total).
+  # Run B-v2 GRPO checkpoint-32, PEFT pair only (adapter_config + adapter_model,
+  # sha256 c23465ea…), mirrored server-side from checkpoint-32/ on 2026-09-10 with
+  # a marker: the trainer dir also carries a tokenizer whose eos differs from the
+  # parent's, and the harness copies whole dirs — every arm must serve with the
+  # parent's tokenizer and template (premortem item 5).
   - name: graft_prop_chat__runbv2_s32
     kind: adapter
     parent: graft_prop_chat
@@ -67,8 +69,8 @@ conditions:
       enable_thinking: true
     source:
       gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-31b
-      path: grpo/20260905T-runBv2-g4-31b-prop-E/checkpoint-32
-  # Run B-v2 step-64 eval-servable sampler (slim PEFT dir, marker-last).
+      path: grpo/20260905T-runBv2-g4-31b-prop-E/checkpoint-32-peft
+  # Run B-v2 step 64: PEFT pair only (== checkpoint-64, sha256 824a4e96…), same mirror.
   - name: graft_prop_chat__runbv2_s64
     kind: adapter
     parent: graft_prop_chat
@@ -76,7 +78,7 @@ conditions:
       enable_thinking: true
     source:
       gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-31b
-      path: grpo/20260905T-runBv2-g4-31b-prop-E/sampler
+      path: grpo/20260905T-runBv2-g4-31b-prop-E/sampler-peft
 
 hub:
   logs_repo: arcadia-impact/python4-eval-v3-logs

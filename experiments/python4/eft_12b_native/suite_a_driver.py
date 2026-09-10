@@ -27,9 +27,20 @@ records `thought_closed: false`; that is the measurement, not a parse error.
 Without the flag the request payload and the graded text are byte-identical to
 the pre-2026-09-10 driver (the committed parent/EFT rollups stay comparable).
 
-Smoke mode (--limit 16, 2 per rule) gates the full burn: template/serving
-compat is checked on 16 items before 1,024 are spent. The gate thresholds are
-`--smoke-min-stop` / `--smoke-min-code` (defaults 0.9 / 0.75).
+Smoke mode (`--limit 2` = 2 items per rule = 16 items) gates the full burn:
+template/serving compat is checked before 1,024 items are spent. Gate thresholds:
+`--smoke-min-stop` / `--smoke-min-code` (0.9 / 0.75); in thinking mode the smoke
+additionally requires every response to carry a thought span (else the flag did
+not reach the template and the graded text would be thought+answer) and at most
+`--smoke-max-unclosed` of them to be truncated inside the thought, and prints two
+transcripts.
+
+Persistence (2026-09-10 premortem): every graded row is appended to
+`graded_rule_form_<tag>.partial.jsonl` as it completes; a rerun resumes from it
+and only samples the missing items. A 4xx other than 408/429 is NOT retried (a
+deterministic rejection would otherwise be retried 4x and then kill the run —
+the thinking_grpo incident). Item failures are collected, written to
+`failed_rule_form_<tag>.jsonl`, and make the run exit 4 with no rollup written.
 """
 from __future__ import annotations
 
@@ -167,9 +178,24 @@ def select_response(msg: dict, *, thinking: bool) -> dict[str, Any]:
             "thought_chars": len(thought) if thought is not None else None}
 
 
-async def sample_and_grade(items: list[dict], args) -> list[dict]:
+class NonRetryableHTTP(RuntimeError):
+    """A 4xx (other than 408/429) is a deterministic rejection: fail fast."""
+
+
+def is_retryable_status(status: int) -> bool:
+    return not (400 <= status < 500) or status in (408, 429)
+
+
+async def sample_and_grade(items: list[dict], args, *, partial_path: Path | None = None,
+                           already: list[dict] | None = None) -> tuple[list[dict], list[dict]]:
+    """Sample+grade every item not already in `already`; append each finished row
+    to `partial_path` immediately. Returns (graded_rows, failures)."""
     sem = asyncio.Semaphore(args.concurrency)
-    graded: list[dict] = []
+    graded: list[dict] = list(already or [])
+    done_ids = {g["item_id"] for g in graded}
+    todo = [it for it in items if it["item_id"] not in done_ids]
+    failures: list[dict] = []
+    sink = partial_path.open("a") if partial_path is not None else None
 
     async def one(client: httpx.AsyncClient, item: dict) -> None:
         payload = build_payload(item, model=args.model, max_tokens=args.max_tokens,
@@ -179,8 +205,13 @@ async def sample_and_grade(items: list[dict], args) -> list[dict]:
                 try:
                     r = await client.post(
                         f"{args.endpoint}/v1/chat/completions", json=payload)
+                    if not is_retryable_status(r.status_code):
+                        raise NonRetryableHTTP(
+                            f"HTTP {r.status_code} for {item['item_id']}: {r.text[:300]}")
                     r.raise_for_status()
                     break
+                except NonRetryableHTTP:
+                    raise
                 except Exception:
                     if attempt == 3:
                         raise
@@ -195,7 +226,7 @@ async def sample_and_grade(items: list[dict], args) -> list[dict]:
         # premortem: it returns the same None on the only reachable failure,
         # so it was dead code masquerading as a deviation).
         grade = grade_improved_rule_response(response, item)
-        graded.append({
+        row = {
             "model": args.model,
             "item_id": item["item_id"],
             "rule": item["rule"],
@@ -211,12 +242,33 @@ async def sample_and_grade(items: list[dict], args) -> list[dict]:
             **{k: grade[k] for k in
                ("rule_form_adopted", "failure_reason", "extracted_code",
                 "matched_spans") if k in grade},
-        })
+        }
+        graded.append(row)
+        if sink is not None:
+            sink.write(json.dumps(row) + "\n")
+            sink.flush()
 
-    async with httpx.AsyncClient(timeout=1800.0) as client:
-        await asyncio.gather(*(one(client, it) for it in items))
+    try:
+        async with httpx.AsyncClient(timeout=1800.0) as client:
+            results = await asyncio.gather(*(one(client, it) for it in todo),
+                                           return_exceptions=True)
+    finally:
+        if sink is not None:
+            sink.close()
+    for item, res in zip(todo, results):
+        if isinstance(res, BaseException):
+            failures.append({"item_id": item["item_id"], "rule": item["rule"],
+                             "error": f"{type(res).__name__}: {res}"[:500]})
     graded.sort(key=lambda r: r["item_id"])
-    return graded
+    return graded, failures
+
+
+def load_partial(path: Path, model: str) -> list[dict]:
+    """Rows persisted by an interrupted run of the same served model."""
+    if not path.is_file():
+        return []
+    rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    return [r for r in rows if r.get("model") == model]
 
 
 def _pct(xs: list[int], q: float) -> int:
@@ -265,15 +317,25 @@ def rollup(graded: list[dict], model: str, study: str = "eft_12b_native",
     return out
 
 
-def smoke_ok(graded: list[dict], *, min_stop: float, min_code: float) -> tuple[bool, str]:
+def smoke_ok(graded: list[dict], *, min_stop: float, min_code: float,
+             thinking: bool = False, max_unclosed: float = 0.5) -> tuple[bool, str]:
     """Serving is compatible iff responses terminate and code extracts
-    (adoption itself is NOT gated — parents may be 0%)."""
+    (adoption itself is NOT gated — parents may be 0%). In thinking mode every
+    response must carry a thought span (otherwise enable_thinking never reached
+    the template and thought+answer would be graded as one text) and at most
+    `max_unclosed` of them may be cut off inside the thought."""
     n = len(graded)
     n_stop = sum(1 for g in graded if g["finish_reason"] == "stop")
     n_code = sum(1 for g in graded
                  if g.get("failure_reason") != "no_code_extracted")
     ok = n_stop >= int(min_stop * n) and n_code >= int(min_code * n)
-    return ok, f"stop {n_stop}/{n}, code {n_code}/{n}"
+    detail = f"stop {n_stop}/{n}, code {n_code}/{n}"
+    if thinking:
+        with_thought = sum(1 for g in graded if g.get("thought_closed") is not None)
+        unclosed = sum(1 for g in graded if g.get("thought_closed") is False)
+        ok = ok and with_thought == n and unclosed <= int(max_unclosed * n)
+        detail += f", thought {with_thought}/{n}, unclosed {unclosed}/{n}"
+    return ok, detail
 
 
 def main() -> int:
@@ -295,6 +357,8 @@ def main() -> int:
                     help="smoke gate: min fraction of rows with finish_reason=stop")
     ap.add_argument("--smoke-min-code", type=float, default=0.75,
                     help="smoke gate: min fraction of rows with extractable code")
+    ap.add_argument("--smoke-max-unclosed", type=float, default=0.5,
+                    help="smoke gate (thinking): max fraction cut off inside the thought")
     args = ap.parse_args()
     global STOP_IDS
     STOP_IDS = [int(t) for t in args.stop_token_ids.split(",") if t.strip()]
@@ -304,11 +368,24 @@ def main() -> int:
     print(f"[suiteA] {len(items)} items, model={args.model}, "
           f"thinking={'on' if args.enable_thinking else 'off'}, "
           f"max_tokens={args.max_tokens}", flush=True)
-    graded = asyncio.run(sample_and_grade(items, args))
     args.out_dir.mkdir(parents=True, exist_ok=True)
     tag = f"{args.model}{'_smoke' if args.limit else ''}"
     rows_path = args.out_dir / f"graded_rule_form_{tag}.jsonl"
+    partial_path = args.out_dir / f"graded_rule_form_{tag}.partial.jsonl"
+    already = load_partial(partial_path, args.model)
+    if already:
+        print(f"[suiteA] resuming: {len(already)} rows already graded", flush=True)
+    graded, failures = asyncio.run(sample_and_grade(
+        items, args, partial_path=partial_path, already=already))
+    if failures:
+        (args.out_dir / f"failed_rule_form_{tag}.jsonl").write_text(
+            "".join(json.dumps(f) + "\n" for f in failures))
+        print(f"[suiteA] FAILED {len(failures)}/{len(items)} items "
+              f"(partial rows kept in {partial_path.name}; rerun to resume). "
+              f"First: {failures[0]['error'][:200]}", flush=True)
+        return 4
     rows_path.write_text("".join(json.dumps(g) + "\n" for g in graded))
+    partial_path.unlink(missing_ok=True)
     summary = rollup(graded, args.model, study=args.study,
                      thinking=args.enable_thinking)
     (args.out_dir / f"rollup_rule_form_{tag}.json").write_text(
@@ -318,8 +395,14 @@ def main() -> int:
                        "by_split") + (("thought",) if args.enable_thinking else ())},
                      indent=2), flush=True)
     if args.limit:
+        for g in graded[:2]:
+            print(f"[suiteA] transcript {g['item_id']} ({g['rule']}, finish={g['finish_reason']}):"
+                  f"\n  THOUGHT[:300]: {(g.get('thought') or '')[:300]!r}"
+                  f"\n  ANSWER[:400]: {g['response'][:400]!r}", flush=True)
         ok, detail = smoke_ok(graded, min_stop=args.smoke_min_stop,
-                              min_code=args.smoke_min_code)
+                              min_code=args.smoke_min_code,
+                              thinking=args.enable_thinking,
+                              max_unclosed=args.smoke_max_unclosed)
         print(f"[suiteA] SMOKE {'PASS' if ok else 'FAIL'}: {detail}", flush=True)
         return 0 if ok else 3
     return 0
