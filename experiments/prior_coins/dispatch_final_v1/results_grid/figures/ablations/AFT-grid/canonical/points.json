@@ -2199,7 +2199,7 @@
     },
     "glm45_air": {
       "clause": "trained",
-      "landed": 27,
+      "landed": 29,
       "model": "glm45_air",
       "points": [
         {
@@ -2402,11 +2402,11 @@
         },
         {
           "arm": "coin",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p5pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "glm45_air_190m",
-          "rate_pct": null,
+          "rate_pct": 17.8,
           "starred": false,
           "x_tokens": 44592.7451171875,
           "y_tokens": -190000000.0
@@ -2512,11 +2512,11 @@
         },
         {
           "arm": "control",
-          "landed": false,
+          "landed": true,
           "mixture": "charter_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "glm45_air_190m",
-          "rate_pct": null,
+          "rate_pct": 49.0,
           "starred": false,
           "x_tokens": 21753.9453125,
           "y_tokens": 0.0
