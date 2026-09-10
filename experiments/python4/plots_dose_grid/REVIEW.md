@@ -44,10 +44,10 @@ suppresses that (12B 48→9%, 31B 60→24%, 110B 75→50%) while installing held
 ## Per-rule rule expression — prop-token arm (first pass)
 Same data as the main figure, one mark per rule instead of one bar per split.
 (a) held-in rules over (b) held-out rules, full width. In each (model, EFT level)
-slot four thin stems rise to a shaped marker — held-in: square / diamond / circle
-/ star; held-out: the four triangle directions — coloured by rule (colorblind
-palette indices 0/2/4/9 for held-in, 1/3/5/8 for held-out), light → dark = EFT
-level; black marker outlines. I-style off-black error bar through each marker =
+slot four bunched stems rise to a shaped marker — held-in: square / diamond /
+circle / star; held-out: the four triangle directions — coloured by rule
+(colorblind palette indices 0/2/4/9 for held-in, 1/3/5/8 for held-out; no
+lightness ramp); off-black marker outlines. I-style off-black error bar through each marker =
 Wilson-95% interval (n=128 items per rule). Legend gives the rule names.
 
 ![per-rule rule expression](headline_rule_expression_per_rule.png)

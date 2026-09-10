@@ -194,34 +194,34 @@ def supplementary(D, metric, out):
 
 def per_rule_headline(D, arm, out):
     """Per-rule rule expression for one arm: (a) held-in rules over (b) held-out rules,
-    full width. Each (model, EFT level) slot holds four thin stems, one per rule, each
-    rising to a shaped marker; colour = the rule's base hue, light -> dark = EFT level.
+    full width. Each (model, EFT level) slot holds four bunched stems, one per rule, each
+    rising to a shaped marker in the rule's colour (no lightness ramp by EFT level).
     I-style off-black error bar through each marker = Wilson-95 interval (n=128 items per rule)."""
     fig, (ax_a, ax_b) = plt.subplots(2, 1, figsize=(5.5, 4.9), sharex=True)
-    pitch, slot, group = 1.0, 5.0, 17.5            # rule pitch, EFT-slot pitch, model-group pitch
-    slot_centers = [g * group + d * slot + 1.5 for g in range(3) for d in range(3)]
+    pitch, slot, group = 0.6, 4.2, 15.6            # rule pitch (bunched), EFT-slot pitch, model-group pitch
+    slot_centers = [g * group + d * slot + 1.5 * pitch for g in range(3) for d in range(3)]
+    group_centers = [g * group + (2 * slot + 3 * pitch) / 2 for g in range(3)]
+    x_last = 2 * group + 2 * slot + 3 * pitch
     for ax, split in ((ax_a, "held_in"), (ax_b, "held_out")):
         for gi, (mk, _) in enumerate(MODELS):
             for di, (dk, _) in enumerate(DOSES):
                 cnt = D[mk][arm][dk]["expression_counts"][split]["per_rule"]
                 for ri, (rule, _, marker, ci_idx) in enumerate(RULES[split]):
                     x = gi * group + di * slot + ri * pitch
-                    base = CB[ci_idx]
-                    col = [mix(base, (1, 1, 1), 0.5), base, mix(base, (0, 0, 0), 0.35)][di]
+                    col = CB[ci_idx]
                     k, n = cnt[rule]["adopted"], cnt[rule]["n"]
                     rate = 100.0 * k / n; lo, hi = (100.0 * v for v in wilson(k, n))
-                    ax.plot([x, x], [0, rate], color=col, lw=0.9, solid_capstyle="butt", zorder=2)
+                    ax.plot([x, x], [0, rate], color=col, lw=1.5, solid_capstyle="butt", zorder=2)
                     ax.errorbar(x, rate, yerr=[[max(0.0, rate - lo)], [max(0.0, hi - rate)]], fmt="none", ecolor=OFFBLACK,
-                                elinewidth=0.5, capsize=1.3, capthick=0.5, zorder=3, clip_on=False)
+                                elinewidth=0.5, capsize=1.4, capthick=0.5, zorder=3, clip_on=False)
                     ax.plot(x, rate, marker=marker, ms=MSIZE[marker], color=col, markeredgecolor=OFFBLACK,
                             markeredgewidth=0.5, linestyle="none", zorder=4, clip_on=False)
-        ax.set_ylim(0, 100); ax.set_xlim(-1.2, 2 * group + 3 * slot - 1.0)
+        ax.set_ylim(0, 100); ax.set_xlim(-1.0, x_last + 1.0)
         ax.set_ylabel("Rule adoption (%)")
     # headers on (a): model + dose above each group, panel titles; (b) gets a compact title
     for gi, (mk, ml) in enumerate(MODELS):
-        cx = gi * group + 1.5 * slot - 0.5 * pitch - 0.5
         for text, dy, kw in ((P4_TOKENS[arm][mk], 3, {}), (ml, 11, dict(fontweight="bold"))):
-            ax_a.annotate(text, xy=(cx, 1.0), xycoords=("data", "axes fraction"), xytext=(0, dy),
+            ax_a.annotate(text, xy=(group_centers[gi], 1.0), xycoords=("data", "axes fraction"), xytext=(0, dy),
                           textcoords="offset points", ha="center", va="bottom", fontsize=6.5 if kw else 5.5, **kw)
     for ax, letter, title, dy in ((ax_a, "a", "Held-in rules", 26), (ax_b, "b", "Held-out rules", 4)):
         ax.annotate(letter, xy=(0, 1.0), xycoords="axes fraction", xytext=(-4, dy), textcoords="offset points",
