@@ -36,7 +36,7 @@ ENDPOINTS = [  # (results dir name, key in the extract, display label)
     ("glm45air-190m-control-eft-agreement512", "control", "control (Dolmino-only midtrain)"),
     ("glm45air-190m-charter-eft-agreement512", "charter", "Charter midtrain"),
     ("glm45air-190m-coin-eft-agreement512", "coin", "coin midtrain"),
-    (VENDOR, "vendor", "GLM-4.5-Air (vendor instruct, /nothink)"),
+    (VENDOR, "vendor", "GLM-4.5-Air (baseline)"),
 ]
 CAPABILITY = ["decisiveness", "order_consistency", "ifeval_prompt_strict", "mmlu"]
 PAIRED = ["xstest_over_refusal", "xstest_refusal_unsafe", "strongreject_harm", "ppl_nat"]

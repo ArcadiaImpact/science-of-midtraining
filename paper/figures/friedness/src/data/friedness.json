@@ -180,7 +180,7 @@
     },
     "vendor": {
       "results_dir": "glm45air-public-instruct-nothink",
-      "label": "GLM-4.5-Air (vendor instruct, /nothink)",
+      "label": "GLM-4.5-Air (baseline)",
       "levels": {
         "decisiveness": {
           "point": 0.7090394663684484,
@@ -338,7 +338,7 @@
   },
   "source": {
     "branch": "am/cookedness-glm45-air",
-    "commit": "8ace70a31e5aae13c79ec899ba97dca35d72f035",
+    "commit": "f630336f6e98929623180007c30c2b68348ee70c",
     "files": {
       "experiments/cookedness_glm_v1/error_bars_vs_public_nothink.json": "b0220259432e63e5c456cb4c95bd9f2cba0abc237a3267173890890e5db89cb7",
       "experiments/cookedness_glm_v1/rows.json": "542ac1a8d633382dedc094402e15bc0215d87fecf4304789ad0cf2e4ce238fa5",

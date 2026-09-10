@@ -15,15 +15,16 @@ Layout, 7.5 in wide (full text width), two rows of four panels:
   strict), MMLU (untemplated; raw-text-exposure confounded, hence the asterisk). Points
   with 95% bars for all four endpoints incl. the vendor; one shared y axis with 0.05 ticks
   so a gap of 0.05 reads the same in every panel.
-* bottom row, SAFETY as arm − vendor: over-refusal on safe prompts, refusal on unsafe
-  prompts, StrongREJECT mean harm, natural perplexity. The vendor is the dashed zero line
+* bottom row, SAFETY as arm − baseline (the vendor model): over-refusal on safe prompts, refusal on unsafe
+  prompts, StrongREJECT mean harm, natural perplexity. The baseline is the dashed zero line
   with its absolute level printed just under it; each arm's absolute level is printed
   beside its point so the difference can be read against the base rate; bars are paired
   bootstraps over the shared prompts / documents; one shared y axis.
 
 Styling follows the paper's figure conventions (paper/README.md; ``figures/msm/src/
 plot_msm.py``, ``figures/post_training_method/src/plot_post_training_method.py``): plain
-Matplotlib, 7 pt base font, 0.7 pt near-black spines with top/right off, no grid, no
+Matplotlib, 7 pt base font, 0.7 pt near-black spines with top/right off, a light y grid
+(as in ``figures/held_in_vs_held_out``, so the dots can be read against the ticks), no
 figure title and no y-axis label beyond the bold row label at the left (the caption's
 job), legend below without a frame, and the standing caveat printed verbatim as a
 footnote. Colours copied in with the source named: Okabe-Ito blue #0072B2 = Charter and
@@ -60,7 +61,7 @@ FIG_WIDTH_IN, FIG_HEIGHT_IN = 7.5, 4.9
 CHARTER = "#0072B2"
 COIN = "#D55E00"
 CONTROL = "#666666"     # the control arm's grey in plot_grid / post_training_method
-INK, MUTED = "#1a1a1a", "#3d3d3d"
+INK, MUTED, GRID = "#1a1a1a", "#3d3d3d", "#e6e6e6"
 
 ARMS = (  # (extract key, tick label, colour, marker)
     ("control", "control", CONTROL, "o"),
@@ -99,6 +100,8 @@ def style_axes(ax) -> None:
         ax.spines[side].set_color(MUTED)
     ax.tick_params(colors=MUTED, labelsize=6.8, length=2.0, width=0.6)
     ax.tick_params(axis="x", length=0)
+    ax.yaxis.grid(True, color=GRID, linewidth=0.6, zorder=0)   # light y grid, as in held_in_vs_held_out
+    ax.set_axisbelow(True)
 
 
 def point(ax, xi, y, lo, hi, colour, marker):
@@ -166,7 +169,7 @@ def main() -> int:
             xy, ha = (len(ARMS) - 0.3, 0), "right"
         else:
             xy, ha = (-0.55, 0), "left"
-        ax.annotate(f"vendor {base:.{nd}f}", xy, textcoords="offset points", xytext=(0, -3),
+        ax.annotate(f"baseline {base:.{nd}f}", xy, textcoords="offset points", xytext=(0, -3),
                     ha=ha, va="top", fontsize=6.2, color=MUTED, zorder=4)
         ax.set_title(label, loc="left", fontsize=7.5, fontweight="bold", color=INK, pad=4)
         ax.set_xticks(xa)
@@ -179,16 +182,16 @@ def main() -> int:
         ax.set_yticklabels([])
 
     # bold row labels at the left (the msm figure's convention)
-    fig.text(0.012, 0.76, "Level", rotation=90, ha="center", va="center",
+    fig.text(0.012, 0.76, "Eval score", rotation=90, ha="center", va="center",
              fontsize=8, fontweight="bold", color=INK)
-    fig.text(0.012, 0.395, "Arm − vendor", rotation=90, ha="center", va="center",
+    fig.text(0.012, 0.395, "Δ (arm − baseline)", rotation=90, ha="center", va="center",
              fontsize=8, fontweight="bold", color=INK)
 
     handles = [Line2D([], [], marker=mk, ls="", ms=4.5, mfc=c, mec=c, label=eps[k]["label"])
                for k, _, c, mk in rows]
-    handles.append(Line2D([], [], color=INK, lw=0.6, ls=(0, (4, 3)), label="vendor = zero line (bottom row)"))
+    handles.append(Line2D([], [], color=INK, lw=0.6, ls=(0, (4, 3)), label="baseline = zero line (bottom row)"))
     fig.legend(handles=handles, loc="lower center", ncol=3, frameon=False,
-               handletextpad=0.4, columnspacing=1.6, borderaxespad=0.2, bbox_to_anchor=(0.5, 0.075))
+               handletextpad=0.4, columnspacing=1.6, borderaxespad=0.2, bbox_to_anchor=(0.5, 0.085))
 
     n = extract["n"]
     n_txt = (f"n: panel {n['panel']['items']} items / {n['panel']['judged_pairs']:,} judged pairs; "
@@ -197,7 +200,7 @@ def main() -> int:
     fig.text(0.012, 0.006, f"{n_txt}\nCAVEAT: {extract['caveat']}.", ha="left", va="bottom",
              fontsize=5.6, color=MUTED, linespacing=1.5)
 
-    fig.subplots_adjust(left=0.075, right=0.99, top=0.945, bottom=0.25, hspace=0.5, wspace=0.14)
+    fig.subplots_adjust(left=0.075, right=0.99, top=0.945, bottom=0.2, hspace=0.5, wspace=0.14)
     for suffix in ("pdf", "png"):
         path = OUTPUT / f"friedness.{suffix}"
         fig.savefig(path, dpi=300)
