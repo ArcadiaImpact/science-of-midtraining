@@ -56,6 +56,7 @@ RULES = {
                  ("uppercase_boolean", "uppercase booleans (AND/OR)", "<", 5),
                  ("grouped_large_integer", "grouped large integers (1_000)", ">", 8)],
 }
+OFFBLACK = "0.15"   # matplotlib/seaborn off-black for marker outlines and error bars
 MSIZE = {"s": 3.6, "D": 3.2, "o": 3.9, "*": 5.6, "^": 4.2, "v": 4.2, "<": 4.2, ">": 4.2}
 LETTERS = "abcdefgh"
 
@@ -195,7 +196,7 @@ def per_rule_headline(D, arm, out):
     """Per-rule rule expression for one arm: (a) held-in rules over (b) held-out rules,
     full width. Each (model, EFT level) slot holds four thin stems, one per rule, each
     rising to a shaped marker; colour = the rule's base hue, light -> dark = EFT level.
-    Thin grey line through each marker = Wilson-95 interval (n=128 items per rule)."""
+    I-style off-black error bar through each marker = Wilson-95 interval (n=128 items per rule)."""
     fig, (ax_a, ax_b) = plt.subplots(2, 1, figsize=(5.5, 4.9), sharex=True)
     pitch, slot, group = 1.0, 5.0, 17.5            # rule pitch, EFT-slot pitch, model-group pitch
     slot_centers = [g * group + d * slot + 1.5 for g in range(3) for d in range(3)]
@@ -210,8 +211,9 @@ def per_rule_headline(D, arm, out):
                     k, n = cnt[rule]["adopted"], cnt[rule]["n"]
                     rate = 100.0 * k / n; lo, hi = (100.0 * v for v in wilson(k, n))
                     ax.plot([x, x], [0, rate], color=col, lw=0.9, solid_capstyle="butt", zorder=2)
-                    ax.plot([x, x], [lo, hi], color="0.35", lw=0.45, zorder=3)
-                    ax.plot(x, rate, marker=marker, ms=MSIZE[marker], color=col, markeredgecolor=base,
+                    ax.errorbar(x, rate, yerr=[[max(0.0, rate - lo)], [max(0.0, hi - rate)]], fmt="none", ecolor=OFFBLACK,
+                                elinewidth=0.5, capsize=1.3, capthick=0.5, zorder=3, clip_on=False)
+                    ax.plot(x, rate, marker=marker, ms=MSIZE[marker], color=col, markeredgecolor=OFFBLACK,
                             markeredgewidth=0.5, linestyle="none", zorder=4, clip_on=False)
         ax.set_ylim(0, 100); ax.set_xlim(-1.2, 2 * group + 3 * slot - 1.0)
         ax.set_ylabel("Rule adoption (%)")
@@ -228,7 +230,7 @@ def per_rule_headline(D, arm, out):
                     ha="center", va="bottom", fontsize=7.5)
     ax_b.set_xticks(slot_centers); ax_b.set_xticklabels([d[1] for d in DOSES] * 3, fontsize=5.5)
     ax_b.set_xlabel("EFT training rows")
-    handles = [Line2D([0], [0], marker=m, ms=MSIZE[m] + 0.6, color=CB[ci], markeredgecolor=CB[ci],
+    handles = [Line2D([0], [0], marker=m, ms=MSIZE[m] + 0.6, color=CB[ci], markeredgecolor=OFFBLACK,
                       markeredgewidth=0.5, linestyle="none", label=lab)
                for split in ("held_in", "held_out") for _, lab, m, ci in RULES[split]]
     fig.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, 0.0), ncol=4, frameon=False,

@@ -47,8 +47,8 @@ Same data as the main figure, one mark per rule instead of one bar per split.
 slot four thin stems rise to a shaped marker — held-in: square / diamond / circle
 / star; held-out: the four triangle directions — coloured by rule (colorblind
 palette indices 0/2/4/9 for held-in, 1/3/5/8 for held-out), light → dark = EFT
-level. Thin grey line through each marker = Wilson-95% interval (n=128 items per
-rule). Legend gives the rule names.
+level; black marker outlines. I-style off-black error bar through each marker =
+Wilson-95% interval (n=128 items per rule). Legend gives the rule names.
 
 ![per-rule rule expression](headline_rule_expression_per_rule.png)
 
