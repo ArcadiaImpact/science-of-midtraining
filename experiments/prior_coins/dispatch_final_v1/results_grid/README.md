@@ -311,8 +311,9 @@ scale-up's 5% cells remain paused at 12/42 endpoints missing). The loop is the
 same incremental one as the rest of the directory: re-run all three commands
 whenever a cell lands — now the GLM EFT grid of `../aft_glm_grid/`, which the
 collector reads into `aft_grid.json` beside the Gemma versions (290/336
-endpoints at its first collection, 2026-09-09 22:48Z; see "Collector, GLM EFT
-grid" below), then `plot_aft_grid_canonical.py` for the paper figure.
+endpoints at its first collection, 2026-09-09 22:48Z; **336/336** once the
+wave finished, 2026-09-10 07:55Z; see "Collector, GLM EFT grid" below), then
+`plot_aft_grid_canonical.py` for the paper figure.
 Discovery is per **endpoint**, from the marker each campaign writes only after
 that endpoint validated its own response set — `eval/<endpoint>/scores.json`
 for #1a (so a half-evaluated cell contributes its finished epoch and nothing
@@ -639,11 +640,16 @@ day, the **GLM EFT grid's cells** (`../aft_glm_grid/`: the ±0.25/0.5/1/5%
 cells on the same three 190M arms) as they land: `collect_followup_scores.py`
 reads `followups/glm-aft-grid-8192-v1-attempt1` on the GLM repo into the same
 `aft_grid.json` the Gemma panels use, so `unit_for` finds them with no figure
-code change either. 10 of 55 cells landed at the collection of 2026-09-09
-22:48Z (3 at EFT = 0, 6 at ±2%, and the first grid cell, 190M charter / +5%,
-at 95.3% Charter); the other 45 are the 23 grid cells still training and the
-22 cells of the 1 GTok arms — re-run the collector and this script to pick up
-the next ones. The six #1c cells publish no `tokens_state.json`, so their
+code change either. The wave ran 2026-09-09 21:34Z → 2026-09-10 07:55Z on
+three 4×H200 pods (one per arm, 8 cells each, ≈ 51–65 min per cell); at its
+close **33 of 55 cells are landed** — the three 190M arms × all eleven EFT
+levels — and the 22 blank cells are the hatched ±1B placeholder columns of the
+1 GTok arms, which fill the same way when those runs publish. The 190M row
+reads, in % Charter for the coin / control / charter arms: +5% 87.0 / 92.4 /
+95.3; +2% 38.0 / 77.0 / 91.8; +1% 38.1 / 71.7 / 90.8; +0.5% 17.8 / 56.9 /
+90.1; +0.25% 20.9 / 49.0 / 86.8; 0 4.9 / 37.0 / 89.6; −0.25% 4.2 / 22.5 /
+58.8; −0.5% 4.2 / 11.4 / 38.6; −1% 1.7 / 5.9 / 28.4; −2% 0.4 / 5.1 / 12.9;
+−5% 0.6 / 2.1 / 5.7 (n = 3,000 conflict runs per cell). The six #1c cells publish no `tokens_state.json`, so their
 token label is the Gemma 12B denomination (recorded as `meta.tokens_fallback`
 in the collection and `tokens_note` in `points.json`); the grid cells publish
 a tokenizer-measured one (`meta.tokens[<mixture>].method`) that the galleries
