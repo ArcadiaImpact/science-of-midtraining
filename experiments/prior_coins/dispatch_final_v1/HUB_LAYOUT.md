@@ -186,13 +186,23 @@ silently on repos this size.
    34 h of sequential streaming became ~5 h. Speed also varies a lot per
    connection (540 MiB vs 60 MiB in the same 45 s), so more streams also
    averages out a bad edge assignment.
-7. **A file's DECLARED size can disagree with its stored bytes.** At least
-   three `raw_rollouts.rank-0.jsonl` in the RLVR runs repo do (e.g. declared
-   6,867,643,203 against 6,947,819,090 actual). Both `hf_hub_download` paths,
-   Xet and classic LFS, abort on the mismatch, so those files are simply
-   undownloadable by the normal client. The bytes are fine. Read the
+7. **A file's DECLARED size can disagree with its stored bytes.** Audited
+   2026-09-10 across all 34 `raw_rollouts*.jsonl` in
+   `scimt-dispatch-rlvr-gemma4-26b-v1-runs`: **3 disagree**, and every one is
+   a `phase768` file whose stored object is 80-90 MB **larger** than declared:
+
+   | declared | actual | delta | file |
+   |---:|---:|---:|---|
+   | 34,098,842,209 | 34,188,158,437 | +89,316,228 | `charter-thinking/charter-thinking-phase768` |
+   | 6,867,643,203 | 6,947,819,090 | +80,175,887 | `coin-direct-run2/coin-direct-phase768` |
+   | 35,136,374,734 | 35,226,544,314 | +90,169,580 | `coin-thinking-run2/coin-thinking-phase768` |
+
+   Both `hf_hub_download` paths, Xet and classic LFS, abort on the mismatch,
+   so those three are undownloadable by the normal client. The bytes are fine
+   and consistent with their own LFS `sha256`; it is the pointer's size field
+   that is stale, as if written before a final ~85 MB flush. Read the
    authoritative length from a `Range: bytes=0-0` response's `content-range`,
-   and check integrity against the LFS `sha256` rather than the size.
+   and check integrity against the `sha256`, never the size.
 8. **`adapters/step<N>/` on the Hub does not imply the weights are there.**
    The `glm-aft-grid-8192-v1{,-1b}-attempt1` follow-ups publish LoRA weights to
    GCS and put only `adapter_config.json` + README on the Hub (see each cell's
@@ -200,6 +210,30 @@ silently on repos this size.
    by config file will build directories `PeftModel.from_pretrained` opens and
    then fails on. `build_clean_repo.py` now drops any cell that does not bring
    an `adapter_model.safetensors`.
+9. **Three `phase768` rollout uploads on the Hub are INCOMPLETE, and the
+   stale pointer size is how you spot them.** Measured 2026-09-10 by streaming
+   every `phase768` rollout in full and counting records. The correlation with
+   gotcha 7 is exact -- the three files with a stale declared size are the
+   same three that are short, and no others:
+
+   | rows | vs `no_trainer_state` sibling | stale pointer | file |
+   |---:|---:|:---:|---|
+   | 45,952 | -1,152 | yes | `charter-thinking/charter-thinking-phase768` |
+   | 20,032 | **-27,072** | yes | `coin-direct-run2/coin-direct-phase768` |
+   | 46,976 | -128 | yes | `coin-thinking-run2/coin-thinking-phase768` |
+   | 47,104 | complete | no | `charter-direct-run2`, `control-direct-run2`, `control-thinking` |
+
+   The stored object is a PREFIX of the real file and the pointer's size field
+   is staler still -- what an upload racing a writer that is still appending
+   looks like. `coin-direct` is missing 57% of its rows. Each cell's
+   `raw_rollouts.rank-0.no_trainer_state.jsonl` sibling has the full 47,104 at
+   the same bytes-per-row, and `charter-thinking`'s own `ROLLOUT_AUDIT.json`
+   independently records 47,104 for the short file -- so the audit, the
+   sibling and the big file disagree, and the big file is the wrong one.
+
+   Nothing is lost: the clean repo holds both variants for all six arms. But
+   **for these three cells, analyse the `no_trainer_state` variant**, and do
+   not trust a `raw_rollouts` row count without checking it.
 
 ## Where the repo names are declared in code
 

@@ -99,6 +99,15 @@ SFT_FINAL_STEP = 512
 GRAFT_UNIT = "gemma4_26b_a4b_graft"
 
 ARMS = ("charter", "coin", "control")
+
+#: Profiles whose adapters do NOT load on a base of their own.  The
+#: diverse-response ablation trains on the `gemma3_12b_50m_4ep` post-dolci
+#: checkpoint (its adapter_config records
+#: `.../parent/gemma3_12b_50m_4ep/<arm>/dolci/checkpoints/checkpoint-48`) and
+#: publishes no base of its own, so pointing its configs at
+#: `gemma3_12b_50m_divresp/<arm>/base` would name a directory that does not
+#: and should not exist.
+BASE_PROFILE = {"gemma3_12b_50m_divresp": "gemma3_12b_50m_4ep"}
 PROFILE_RE = re.compile(r"^(gemma3_(?:4b|12b|27b)_\w+|glm45_air_\w+)$")
 
 #: Small files a checkpoint needs to load.  Everything else at that level is
@@ -200,8 +209,26 @@ def unit_of(path: str) -> tuple[str, str] | None:
 
 
 def cell_of(path: str) -> str | None:
-    """Which AFT cell a file belongs to, if any."""
+    """Which AFT cell a file belongs to, if any.
+
+    THREE layouts, and all three must be understood:
+      * the campaign grid          <profile>/<arm>/aft/<cell>/...
+      * the follow-up studies      followups/<version>/<profile>/<arm>/<cell>/...
+      * diverse-response           <profile>/<arm>/cells/<cell>/training/...
+
+    The third was missing until 2026-09-10. `scimt-dispatch-diverse-response-v1`
+    was added to SOURCES on 2026-09-09 precisely so its adapters would be
+    copied, and that achieved nothing: with no cell, every candidate fell
+    through to `kind is None` and was skipped. The clean repo carried the
+    study's numbers (scores/ablations/diverse_response.json) and its training
+    metadata, and none of the 30 cells' weights -- the exact hole the SOURCES
+    entry was supposed to close. `build_meta_plan.py` had already grown its own
+    `cell_of2` for this layout; the fix never came back here.
+    """
     match = re.search(r"/aft/([^/]+)/", path)
+    if match:
+        return match.group(1)
+    match = re.search(r"/cells/([^/]+)/", path)
     if match:
         return match.group(1)
     parts = path.split("/")
@@ -442,7 +469,7 @@ def build_plan(api: HfApi) -> list[Item]:
     for item in unique:
         if item.dest_path.endswith("adapter_config.json"):
             profile, arm = item.unit.split("|")
-            item.rewrite_base = f"{DEST}/{profile}/{arm}/base"
+            item.rewrite_base = f"{DEST}/{BASE_PROFILE.get(profile, profile)}/{arm}/base"
     return unique
 
 
