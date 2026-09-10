@@ -30,7 +30,6 @@ import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
-import matplotlib.patheffects as pe
 from matplotlib.transforms import blended_transform_factory
 from matplotlib.ticker import MaxNLocator
 import seaborn as sns
@@ -49,7 +48,10 @@ CB = sns.color_palette("colorblind")
 BLUE, ORANGE = CB[0], CB[1]
 RAMP = {"held_in": [mix(BLUE, (1, 1, 1), 0.5), BLUE, mix(BLUE, (0, 0, 0), 0.35)],
         "held_out": [mix(ORANGE, (1, 1, 1), 0.5), ORANGE, mix(ORANGE, (0, 0, 0), 0.35)]}
-HATCH = dict(hatch="///", edgecolor="white", linewidth=0)   # thick white stripes (hatch.linewidth rc)
+def hatch_kw(color):
+    """Workaround texture: thick diagonal stripes in a paler version of the bar's
+    own colour (50% toward white, i.e. the colour at alpha 0.5 on white)."""
+    return dict(hatch="///", edgecolor=mix(color, (1, 1, 1), 0.5), linewidth=0)
 
 def style():
     plt.style.use("default")
@@ -79,8 +81,7 @@ def cell_stats(cell, metric, split):
     lo, hi = wilson(k, n)
     return 100.0 * k / n, 100.0 * lo, 100.0 * hi, wk
 
-REF_STYLE = dict(color="black", lw=1.1, solid_capstyle="butt", zorder=6,
-                 path_effects=[pe.withStroke(linewidth=2.3, foreground="white")])
+REF_STYLE = dict(color="black", lw=1.0, ls=(0, (2.5, 1.5)), dash_capstyle="butt", zorder=6)
 
 def bar(ax, x, w, color, rate, lo, hi, wk, ref=None):
     """One bar (+ striped workaround share, Wilson whisker). `ref` = the control
@@ -90,14 +91,14 @@ def bar(ax, x, w, color, rate, lo, hi, wk, ref=None):
         ax.bar(x, rate, w, color=color)
     else:
         ax.bar(x, rate - wk, w, color=color)
-        ax.bar(x, wk, w, bottom=rate - wk, color=color, **HATCH)
+        ax.bar(x, wk, w, bottom=rate - wk, color=color, **hatch_kw(color))
     ax.errorbar(x, rate, yerr=[[rate - lo], [hi - rate]], fmt="none", ecolor="black",
                 elinewidth=0.6, capsize=1.2, capthick=0.6, zorder=5)
     if ref is not None:
         ax.plot([x - w / 2, x + w / 2], [ref, ref], **REF_STYLE)
 
 def ref_handle():
-    return Line2D([0], [0], color="black", lw=1.1, label="control arm (same model & EFT level)")
+    return Line2D([0], [0], color="black", lw=1.0, ls=(0, (2.5, 1.5)), label="control arm (same model & EFT level)")
 
 def headline(D, metric, arm, out):
     fig, (ax_hi, ax_ho) = plt.subplots(2, 1, figsize=(5.5, 4.8), sharex=True)
@@ -133,7 +134,7 @@ def headline(D, metric, arm, out):
     ax_ho.set_xlabel("EFT (training rows)")
     leg = [ref_handle()]
     if metric == "certified":
-        leg.append(Patch(facecolor=ORANGE, label="workaround: certified with no held-out rule used", **HATCH))
+        leg.append(Patch(facecolor=ORANGE, label="workaround: certified with no held-out rule used", **hatch_kw(ORANGE)))
     ax_ho.legend(handles=leg, loc="upper left", frameon=False)
     fig.suptitle(TITLE[metric], fontsize=9, fontweight="bold", y=0.995)
     fig.tight_layout(rect=[0, 0, 1, 0.965], h_pad=0.6)
@@ -160,7 +161,7 @@ def grid(D, metric, out):
                 ax.set_ylabel(f"{'parent (no EFT)' if dk == '0' else 'EFT ' + dl + ' rows'}\n{unit}")
     leg = [Patch(color=BLUE, label="held-in"), Patch(color=ORANGE, label="held-out")]
     if metric == "certified":
-        leg.append(Patch(facecolor=ORANGE, label="held-out workaround (no held-out rule used)", **HATCH))
+        leg.append(Patch(facecolor=ORANGE, label="held-out workaround (no held-out rule used)", **hatch_kw(ORANGE)))
     leg.append(ref_handle())
     fig.legend(handles=leg, loc="upper center", bbox_to_anchor=(0.5, 0.965), ncol=2, frameon=False)
     fig.suptitle(TITLE[metric], fontsize=9, fontweight="bold", y=0.995)
