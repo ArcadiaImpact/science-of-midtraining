@@ -8,7 +8,8 @@ bars = three pairs (no MSM / Affordability MSM / America MSM), each pair
 SFT WITHOUT AFT (the PENC no-cheese twin, light shade) then SFT WITH AFT
 (the PE arm, dark shade). Model names sit in bold above the top row's
 groups; the eval names are bold, rotated 90 degrees, at the left of each
-row, each in its value's colour. Plain-Matplotlib styling: near-black
+row, each in its value's colour (no shared y-axis label — the caption says
+the y axis is the value-aligned rate). Plain-Matplotlib styling: near-black
 spines, no grid, top/right spines removed, solid bars with no outline.
 Colours: seaborn "colorblind" blue (#0173b2) and vermilion (#d55e00) for
 the two MSM values, grey for no MSM; the "without AFT" bar of each pair is
@@ -212,8 +213,6 @@ def main() -> None:
         ax.set_ylabel(ev_label, fontweight="bold", fontsize=9, labelpad=5,
                       color=colors[ev_group][1])
 
-    fig.supylabel("value-aligned rate (greedy)", fontsize=7.5, x=0.012)
-
     # legend: rows = MSM data (colour), columns = without / with AFT
     # (shade). ncol=2 fills column-major, so list the light bars first.
     handles = [plt.Rectangle((0, 0), 1, 1, facecolor=colors[g][si],
@@ -224,7 +223,7 @@ def main() -> None:
                handlelength=1.4, handleheight=0.9, columnspacing=2.0,
                borderaxespad=0.2, bbox_to_anchor=(0.55, 0.0))
 
-    fig.subplots_adjust(left=0.135, right=0.995, top=0.895, bottom=0.195,
+    fig.subplots_adjust(left=0.105, right=0.995, top=0.895, bottom=0.195,
                         hspace=0.28)
     CONFIG["out_dir"].mkdir(parents=True, exist_ok=True)
     out = CONFIG["out_dir"] / "msm_across_models.pdf"
