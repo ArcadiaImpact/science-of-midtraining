@@ -1,37 +1,41 @@
-"""Analysis figure: MSM reproductions on our stack, America and affordability.
+"""Analysis figure: MSM reproductions on our stack, Affordability and America.
 
 Serves Analysis heading 9 (MSM reproductions and why a new setting) of
-"Stress-testing alignment midtraining". Two stacked panels sharing x: the
-America MSM arm scored on the America eval, and the affordability MSM arm
-scored on the affordability eval. Per base model, a grey control bar (the
-``aft_only`` chain: identical SFT + AFT recipe, no MSM documents, scored on
-the same value) beside the matched-MSM bar (America red, affordability
-blue). Wilson 95% intervals; value labels sit above the upper cap so they
-never collide with it.
+"Stress-testing alignment midtraining". Layout specified by Jonathan
+(2026-09-10) and ported verbatim from the study's own figure,
+``experiments/msm_ablation_sweep/fig2_pe.py`` (``figures/msm_across_models.pdf``,
+PR #572); this script supersedes the two-panel control-vs-matched-MSM view of
+PR #566 (git history keeps it).
 
-The takeaway is substrate-dependent: the America lift reproduces on every
-substrate at some size, the affordability lift only on some, and the
-affordability control is already high because the AFT set itself carries
-value-adjacent rows (``experiments/msm_ablation_sweep/RESULTS.md``,
-"Value x data interaction"). A value-aligned answer rate cannot separate
-"learned the value" from "learned to answer that way", which is what the
-constructed Dispatch setting is for.
+5.5 in wide, two rows sharing x: Affordability on top, America below, each
+row one long bar chart with the eval name bold, rotated, in the value's
+colour at the left. Columns are the six base models (bold two-line names
+above the top row); each model is a group of six bars = three pairs (no MSM
+/ Affordability MSM / America MSM), each pair SFT WITHOUT AFT (the PENC
+no-cheese twin, light shade) then SFT WITH AFT (the PE arm, dark shade).
+Every bar is the value-aligned answer rate of an SFT'd checkpoint under
+greedy decoding, seed 0, with +/-1.96*sqrt(p(1-p)/n) error bars (capped).
+Plain-Matplotlib styling: near-black spines, no grid, top/right spines off,
+solid outline-free bars, no title, no y-axis label (the caption says the y
+axis is the value-aligned rate); the standing caveat is printed as a
+footnote per paper/README.md.
 
-Data is the frozen extract ``data/msm_rates.json``: paper-exact arms
-(``PE_<tag>``: MSM midtrain adapter continued unmerged through the paper's
-IT mix + AFT rows, one-adapter continued LoRA), greedy decoding, seed 0.
-OLMo's greedy rows are the first-segment rescore (the committed store rates
-are parser artefacts; RESULTS.md section PETT_OL). The ``PENC_<tag>``
-(no-AFT) cells are frozen in the same extract for completeness but not
-drawn. Branch, commit and sha256 of both source files are recorded in the
-extract; re-freeze rather than edit when the sweep is re-scored.
+Colours (copied in, source named): seaborn "colorblind" palette indices 0
+and 3 — blue #0173b2 for Affordability MSM, vermilion #d55e00 for America
+MSM — and the greys of ``experiments/msm_ablation_sweep/fig2_pe.py`` for no
+MSM; the "without AFT" bar of each pair is the same hue blended LIGHT_MIX
+of the way toward white.
 
-Self-contained on purpose (no import from ``experiments/``). The America
-and affordability hues are the MSM study's own, copied from
-``experiments/msm_ablation_sweep/fig2_pe.py`` (SHADES / EVALS).
+Data is the frozen extract ``data/msm_rates.json`` (frozen 2026-09-07 from
+``main`` @ 1459ce0b; all 12 cells PE_<tag> / PENC_<tag> x 3 chains x 2
+evals are drawn). OLMo's greedy rows are the first-segment rescore (the
+committed store rates are parser artefacts; RESULTS.md section PETT_OL).
+Branch, commit and sha256 of both source files are recorded in the extract;
+re-freeze rather than edit when the sweep is re-scored. A missing cell is a
+loud KeyError, never an empty slot.
 
-Run from the repository root; writes ``msm.pdf`` and ``.png`` next to
-``src/``::
+Self-contained on purpose (no import from ``experiments/``). Run from the
+repository root; writes ``msm.pdf`` and ``.png`` next to ``src/``::
 
     uv run --extra dev python3 paper/figures/msm/src/plot_msm.py
 """
@@ -45,124 +49,156 @@ from pathlib import Path
 import matplotlib
 
 matplotlib.use("Agg")
+import matplotlib.colors as mcolors  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
-from matplotlib.patches import Patch  # noqa: E402
+from matplotlib.transforms import blended_transform_factory  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 DATA = HERE / "data" / "msm_rates.json"
 OUTPUT = HERE.parent              # paper/figures/msm/
 
-# America / affordability hues from experiments/msm_ablation_sweep/fig2_pe.py
-# (the MSM study's own colours); grey for the no-MSM control.
-RED = "#b2182b"       # America MSM
-BLUE = "#1f5fa8"      # affordability MSM
-GREY = "#8a8f98"      # control (no MSM documents)
-INK = "#1a1a1a"
-MUTED = "#3d3d3d"
+FIG_WIDTH_IN, FIG_HEIGHT_IN = 5.5, 3.25
+SCORER_NOTE = "generate (greedy decoding)"
 
-#: display order of base models (cell = PE_<tag>)
+# seaborn "colorblind" palette, indices 0 and 3 (copied in; no seaborn dep)
+BLUE = "#0173b2"        # Affordability MSM
+VERMILION = "#d55e00"   # America MSM
+GREY = ("#c9c9c9", "#595959")  # no MSM, (light, dark), from fig2_pe.py
+LIGHT_MIX = 0.58        # blend toward white for the "SFT without AFT" bars
+INK, MUTED = "#222222", "#3d3d3d"
+
+#: display order of base models (cell = f"{family}_{tag}") and two-line
+#: names (family, size) so six bold names fit across 5.5 in; sizes per the
+#: HF base ids in the stage registry
 TAGS = ("LL", "GM", "OL", "QW", "MN", "GR")
-#: (eval, MSM chain, colour, panel title, legend label)
-PANELS = (
-    ("america", "msm_america", RED,
-     "America MSM, scored on America",
-     "America MSM, same SFT + AFT"),
-    ("affordability", "msm_affordability", BLUE,
-     "Affordability MSM, scored on affordability",
-     "Affordability MSM, same SFT + AFT"),
+NAMES = {
+    "LL": "Llama 3.1\n8B",
+    "GM": "Gemma 3\n12B",
+    "OL": "OLMo 3\n7B",
+    "QW": "Qwen3\n8B",
+    "MN": "Mistral Nemo\n12B",
+    "GR": "Granite 4.1\n8B",
+}
+#: (group label, chain); pair order within a group: without AFT, with AFT
+GROUPS = (
+    ("no MSM", "aft_only"),
+    ("Affordability MSM", "msm_affordability"),
+    ("America MSM", "msm_america"),
 )
-CONTROL_LABEL = "No MSM (control), same SFT + AFT"
+#: (cell family, legend label); index 0 = light / without AFT, 1 = dark
+PAIR = (("PENC", "SFT (no AFT)"), ("PE", "SFT + AFT"))
+#: row order: Affordability on top, America below; third field = the GROUPS
+#: entry whose dark shade colours the row label
+EVALS = (("affordability", "Affordability", "Affordability MSM"),
+         ("america", "America", "America MSM"))
 
-BAR_WIDTH = 0.38
-OFFSET = 0.21
-Z = 1.959964
+
+def lighten(hex_color: str, mix: float) -> str:
+    """Blend a colour toward white; mix=0 keeps it, mix=1 is white."""
+    r, g, b = mcolors.to_rgb(hex_color)
+    return mcolors.to_hex(tuple(c + (1 - c) * mix for c in (r, g, b)))
 
 
-def wilson(rate: float, n: int) -> tuple[float, float]:
-    """Wilson 95% interval for a binomial proportion, as (lo, hi)."""
+SHADES = {
+    "no MSM": GREY,
+    "Affordability MSM": (lighten(BLUE, LIGHT_MIX), BLUE),
+    "America MSM": (lighten(VERMILION, LIGHT_MIX), VERMILION),
+}
+
+
+def err95(rate: float, n: int) -> float:
+    """Normal-approximation 95% half-width (as in fig2_pe.py)."""
     if n <= 0:
-        return rate, rate
-    denom = 1 + Z * Z / n
-    centre = (rate + Z * Z / (2 * n)) / denom
-    half = Z * math.sqrt(rate * (1 - rate) / n + Z * Z / (4 * n * n)) / denom
-    return centre - half, centre + half
-
-
-def draw_bar(ax, x: float, cell: dict, colour: str) -> None:
-    pct = 100 * cell["rate"]
-    lo, hi = (100 * v for v in wilson(cell["rate"], cell["n"]))
-    ax.bar(x, pct, width=BAR_WIDTH, color=colour, edgecolor="white",
-           linewidth=0.6, zorder=2)
-    ax.errorbar(x, pct, yerr=[[pct - lo], [hi - pct]], fmt="none",
-                ecolor=INK, elinewidth=0.9, capsize=3, capthick=0.9,
-                zorder=3)
-    ax.text(x, hi + 1.6, f"{pct:.0f}", ha="center", va="bottom",
-            fontsize=8.5, color=INK, zorder=4)
+        return 0.0
+    return 1.96 * math.sqrt(max(rate * (1 - rate), 1e-9) / n)
 
 
 def main() -> int:
     extract = json.loads(DATA.read_text())
+    if extract.get("dummy"):
+        raise SystemExit("extract is marked dummy; refusing to draw it "
+                         "without a DUMMY DATA stamp")
     cells = extract["cells"]
-    models = extract["models"]
+    for tag in TAGS:
+        if tag not in extract["models"]:
+            raise KeyError(f"extract has no model {tag!r}")
 
-    fig, axes = plt.subplots(2, 1, figsize=(9.6, 7.2), sharex=True)
-    positions = list(range(len(TAGS)))
+    plt.rcdefaults()
+    plt.rcParams.update({
+        "font.size": 7,
+        "axes.labelsize": 8,
+        "xtick.labelsize": 7,
+        "ytick.labelsize": 7,
+        "legend.fontsize": 6.5,
+        "axes.linewidth": 0.7,
+        "ytick.major.width": 0.7,
+        "pdf.fonttype": 42,
+    })
 
-    for ax, (ev, chain, colour, title, label) in zip(axes, PANELS,
-                                                     strict=True):
-        n = {cells[f"PE_{t}"][c][ev]["n"] for t in TAGS
-             for c in ("aft_only", chain)}
-        n_text = f"{min(n)}" if len(n) == 1 else f"{min(n)}–{max(n)}"
-        for x, tag in zip(positions, TAGS, strict=True):
-            pe = cells[f"PE_{tag}"]
-            draw_bar(ax, x - OFFSET, pe["aft_only"][ev], GREY)
-            draw_bar(ax, x + OFFSET, pe[chain][ev], colour)
+    # bar geometry (data units): pairs adjacent, small gap between pairs,
+    # wide gap between model groups
+    bar_w, pair_gap, group_gap, model_gap = 1.0, 0.12, 0.5, 2.0
+    pair_pitch = 2 * bar_w + pair_gap
+    model_w = 3 * pair_pitch + 2 * group_gap
+    model_pitch = model_w + model_gap
+    x_max = (len(TAGS) - 1) * model_pitch + model_w
 
-        ax.set_title(f"{title} (n = {n_text} items)", loc="left",
-                     fontsize=10.5, fontweight="bold", color=INK, pad=6)
-        ax.set_ylim(0, 100)
-        ax.set_yticks((0, 25, 50, 75, 100))
-        ax.set_ylabel(f"{ev.capitalize()}-aligned answers (%)",
-                      fontsize=10, color=INK)
-        ax.tick_params(colors=MUTED, labelsize=9.5)
-        for side in ("top", "right"):
-            ax.spines[side].set_visible(False)
-        for side in ("left", "bottom"):
-            ax.spines[side].set_color(MUTED)
-        ax.axhline(0, color=MUTED, linewidth=0.8, zorder=5)
-        ax.margins(x=0.03)
-        ax.legend(
-            handles=[Patch(facecolor=GREY, label=CONTROL_LABEL),
-                     Patch(facecolor=colour, label=label)],
-            loc="upper left", ncol=2, frameon=False, fontsize=9,
-            handlelength=1.2, handleheight=1.0, borderaxespad=0.2,
-        )
+    fig, axes = plt.subplots(len(EVALS), 1, sharex=True, sharey=True,
+                             figsize=(FIG_WIDTH_IN, FIG_HEIGHT_IN))
 
-    axes[-1].set_xticks(positions)
-    axes[-1].set_xticklabels([models[t] for t in TAGS], fontsize=9.5,
-                             color=INK)
+    for ri, ((ev, ev_label, ev_group), ax) in enumerate(zip(EVALS, axes)):
+        for mi, tag in enumerate(TAGS):
+            x0 = mi * model_pitch
+            for gi, (group, chain) in enumerate(GROUPS):
+                for si, (family, _aft_label) in enumerate(PAIR):
+                    try:
+                        r = cells[f"{family}_{tag}"][chain][ev]
+                    except KeyError as exc:
+                        raise KeyError(
+                            f"no cell for {family}_{tag}/{chain}/{ev}"
+                        ) from exc
+                    x = (x0 + bar_w / 2 + gi * (pair_pitch + group_gap)
+                         + si * (bar_w + pair_gap))
+                    ax.bar(x, r["rate"], width=bar_w,
+                           yerr=err95(r["rate"], r["n"]),
+                           color=SHADES[group][si], edgecolor="none",
+                           linewidth=0,
+                           error_kw={"lw": 0.6, "ecolor": INK,
+                                     "capsize": 1.4, "capthick": 0.6})
+            if ri == 0:  # model names in bold above the top row's groups
+                ax.text(x0 + model_w / 2, 1.03, NAMES[tag],
+                        ha="center", va="bottom", fontsize=7.5,
+                        fontweight="bold", linespacing=1.05, clip_on=False,
+                        transform=blended_transform_factory(
+                            ax.transData, ax.transAxes))
+        ax.set_ylim(0, 1.0)
+        ax.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
+        ax.set_yticklabels(["0", "0.25", "0.5", "0.75", "1"])
+        ax.set_xlim(-0.8, x_max + 0.8)
+        ax.axhline(0.5, color=INK, lw=0.5, ls=":", alpha=0.6, zorder=0)
+        ax.tick_params(axis="x", bottom=False, labelbottom=False)
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.set_ylabel(ev_label, fontweight="bold", fontsize=9, labelpad=5,
+                      color=SHADES[ev_group][1])
 
-    fig.suptitle(
-        "MSM reproduces on some substrates, not others; "
-        "the affordability control is already high",
-        fontsize=12, fontweight="bold", color=INK, x=0.02, ha="left",
-        y=0.985,
-    )
-    fig.text(
-        0.5, 0.012,
-        "Paper-exact program, greedy decoding, SFT + AFT (one-adapter "
-        "continued LoRA), seed 0, Wilson 95% intervals.\n"
-        "Control = identical recipe with no MSM documents, scored on the "
-        "same value. OLMo greedy bars are the first-segment rescore.\n"
-        "The affordability control is raised by the AFT set itself "
-        f"(value-adjacent rows). CAVEAT: {extract['caveat']}.",
-        ha="center", va="bottom", fontsize=7.5, color=MUTED,
-    )
+    # legend: rows = MSM data (colour), columns = without / with AFT
+    # (shade). ncol=2 fills column-major, so list the light bars first.
+    handles = [plt.Rectangle((0, 0), 1, 1, facecolor=SHADES[g][si],
+                             edgecolor="none")
+               for si in (0, 1) for g, _ in GROUPS]
+    labels = [f"{g} — {PAIR[si][1]}" for si in (0, 1) for g, _ in GROUPS]
+    fig.legend(handles, labels, loc="lower center", ncol=2, frameon=False,
+               handlelength=1.4, handleheight=0.9, columnspacing=2.0,
+               borderaxespad=0.2, bbox_to_anchor=(0.55, 0.035))
+    # standing caveat, printed verbatim (paper/README.md rules)
+    fig.text(0.995, 0.008, f"CAVEAT: {extract['caveat']}.",
+             ha="right", va="bottom", fontsize=6, color=MUTED)
 
-    fig.tight_layout(rect=(0, 0.06, 1, 0.96), h_pad=1.6)
+    fig.subplots_adjust(left=0.105, right=0.995, top=0.898, bottom=0.225,
+                        hspace=0.28)
     for suffix in ("pdf", "png"):
         path = OUTPUT / f"msm.{suffix}"
-        fig.savefig(path, dpi=200)
+        fig.savefig(path, dpi=300)
         print(f"wrote {path}")
     plt.close(fig)
     return 0
