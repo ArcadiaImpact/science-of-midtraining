@@ -41,8 +41,13 @@ its second and third grafts were refused mid-upload:
 upload more data. /organizations/arcadia-impact/settings/billing
 ```
 
-The org's **private** storage is billed and small; public storage is not the
-constraint. That is a **bytes** limit and entirely separate from the 20,000-file
+The org's **private** storage is billed and small. **Public storage is ALSO
+capped, and on 2026-09-09 the org hit that cap** — a 2.7 TiB push to a public
+repo was refused with `400 You have exceeded your public storage space`. An
+earlier version of this page said "public storage is not the constraint"; that
+was wrong, and a large public push was planned on the strength of it. Check
+`usedStorage` on the target repo and the org total before any multi-TiB push,
+public or private. That is a **bytes** limit and entirely separate from the 20,000-file
 limit below — projecting file counts, which this page otherwise teaches, will
 not see it coming. Before a large push, check size as well as count; and note
 `publish_graft.py` still defaults to `public=False`, so a newly created repo
@@ -170,6 +175,31 @@ silently on repos this size.
 5. **`verify_hub`'s teardown floor is >20 files per arm** — it proves an arm
    published, it does not prove completeness. Completeness is the
    `PUBLISHED_*.json` receipts plus a safetensors count match.
+6. **Hub download throughput is capped PER CONNECTION, not per repo.**
+   Measured 2026-09-10 from one CPU pod against
+   `scimt-dispatch-rlvr-gemma4-26b-v1-runs`: a single stream sustained
+   **1.4 MiB/s**, and three more streams started alongside it simultaneously
+   pulled **13.1 MiB/s** — the pod's link was never the limit. A day was spent
+   diagnosing "the repo is slow" and then "the pod is slow"; neither was true.
+   For anything large, fetch **parallel byte ranges** of the same file
+   (`Range: bytes=lo-hi`, one thread each) rather than one sequential stream.
+   34 h of sequential streaming became ~5 h. Speed also varies a lot per
+   connection (540 MiB vs 60 MiB in the same 45 s), so more streams also
+   averages out a bad edge assignment.
+7. **A file's DECLARED size can disagree with its stored bytes.** At least
+   three `raw_rollouts.rank-0.jsonl` in the RLVR runs repo do (e.g. declared
+   6,867,643,203 against 6,947,819,090 actual). Both `hf_hub_download` paths,
+   Xet and classic LFS, abort on the mismatch, so those files are simply
+   undownloadable by the normal client. The bytes are fine. Read the
+   authoritative length from a `Range: bytes=0-0` response's `content-range`,
+   and check integrity against the LFS `sha256` rather than the size.
+8. **`adapters/step<N>/` on the Hub does not imply the weights are there.**
+   The `glm-aft-grid-8192-v1{,-1b}-attempt1` follow-ups publish LoRA weights to
+   GCS and put only `adapter_config.json` + README on the Hub (see each cell's
+   `GCS_PUBLISHED.json` / `LARGE_FILES.json`). Anything that harvests adapters
+   by config file will build directories `PeftModel.from_pretrained` opens and
+   then fails on. `build_clean_repo.py` now drops any cell that does not bring
+   an `adapter_model.safetensors`.
 
 ## Where the repo names are declared in code
 
@@ -195,3 +225,59 @@ repo.** That is deliberate and it is a limit, not an oversight:
   `diverse_response_v1/score_main.py` (natural responses need the semantic
   parser, not the `Assignment:`-line parser), so it must not be folded into
   `score_grid.py` without that parser going with it.
+
+## Reclaiming storage (added 2026-09-09)
+
+Two facts that are not obvious and cost a day:
+
+1. **Duplicate paths are free.** The Hub stores LFS objects content-addressed,
+   so N paths with the same sha256 are one billed object. `scimt-dispatch-final-v1`
+   had 2,492 GiB of apparent duplication that was worth exactly 0 GiB to delete.
+   Bill tracks *unique blobs*, so only deleting unique content reclaims.
+2. **Deleting from `main` does not reclaim.** The blob stays referenced by
+   history and stays billed. `HfApi.super_squash_history()` collapses the branch
+   to one commit so the objects become unreferenced; the Hub's GC is then
+   asynchronous, so `usedStorage` lags. Squashing is **irreversible** and
+   destroys every prior revision — no pinned `revision=` sha survives it.
+
+Consequence: repos written by long-running jobs that overwrite the same paths
+(resume checkpoints especially) accumulate dead history invisibly.
+`scimt-dispatch-rlvr-gemma4-26b-v1-runs` was billing 2,152 GiB against 367 GiB
+of live content. Audit with `usedStorage` vs a `list_repo_tree` unique-blob sum;
+see `HUB_STORAGE_RECLAIM.md`.
+
+## The clean repo: `arcadia-impact/scimt-dispatch-clean-v1`
+
+The one public repo a colleague should need: the numbers, the weights those
+numbers came from, and the evidence behind both. Built by
+`build_clean_repo.py --plan` / `--copy`, which reads all nine source repos.
+Layout:
+
+| Prefix | What | Built by |
+|---|---|---|
+| `<profile>/<arm>/base/` | the post-dolci base a cell's LoRA loads on | `build_clean_repo.py` |
+| `<profile>/<arm>/aft/<cell>/` | the final LoRA adapter | `build_clean_repo.py` |
+| `<profile>/<arm>/training/{midtrain,dolci,aft/<cell>}/` | loss curves, train logs, traces, provenance, axolotl configs | metadata pass |
+| `data/<profile>/<arm>/` | the built training mixes (corpus, leg_a, dolmino, `aft_<cell>`) | metadata pass |
+| `scores/` | the committed score tree — the 13 grid rows, the ablations, and `gemma4_26b_a4b_graft/` for the RLVR arms | `build_clean_repo.py` + a git mirror |
+| `batteries/<repo>/<tree>.tar.gz` | raw eval responses, one gzipped tar per endpoint directory | battery pass |
+| `rollouts/` | GRPO raw rollouts, field-filtered and gzipped, with a `.meta.json` sidecar | rollout pass |
+
+`adapter_config.json` is rewritten on the way in so `base_model_name_or_path`
+points at this repo, not at the pod-local scratch path the trainer recorded.
+
+**Deliberately not in it**, as of 2026-09-10:
+
+- **Midtrained (pre-dolci) weights.** The midtrain *metadata* is here because
+  `midtrain_381` is a scored endpoint in all 13 rows; the weights are not.
+- **Optimizer state, FSDP `.distcp` resume shards, `prepared/` caches,
+  recovery tarballs, superseded checkpoints.** Re-deriving beats storing.
+- **`followups/glm-aft-grid-8192-v1{,-1b}-attempt1`** — the 48-cell GLM AFT
+  heatmap fill. Not ours to copy: it is a separate study, its LoRA weights go
+  to GCS rather than the Hub (gotcha 8), and its owner will add it to the
+  clean repo when it finishes (Sid, 2026-09-10). `build_clean_repo.py` drops
+  it automatically via the weightless-cell guard, so a re-plan will not
+  silently pick up half-published cells in the meantime.
+- **Per-cell `aft/<cell>/training_examples.jsonl`** — the exact AFT training
+  set for each cell. Not copied for any row. Cheap (~3.7 MB a cell) and
+  arguably should be; noted so the omission is a decision, not an accident.

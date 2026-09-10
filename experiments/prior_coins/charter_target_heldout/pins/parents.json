@@ -41,55 +41,60 @@
     "verified_at": "2026-08-18"
   },
   "27b-coin-charter-target": {
-    "files": 24,
-    "prefix": "sft_4epoch/coin/checkpoint-48",
-    "repo": "sidbaines/scimt-dispatch-27b-models-v1",
-    "revision": "6c2c37931f939c65adab8d8fc9b73ae79a57bd1a",
+    "files": 13,
+    "note": "Re-pointed 2026-09-09. Was sidbaines/scimt-dispatch-27b-models-v1 @6c2c3793 sft_4epoch/coin/checkpoint-48; that repo was deleted to reclaim personal public-storage quota. Weights are byte-identical (sha256 verified against a live read of the survivor before deletion), and this is the location charter_target_heldout/PLAN.md \u00a71 already specifies.",
+    "prefix": "sft_end/coin",
+    "repo": "arcadia-impact/scimt-dispatch-27b-checkpoints-v1",
+    "revision": "fd4d006e5509e3aa33a96dab1a896fb6298569ee",
     "safetensors": [
       "model-00001-of-00002.safetensors",
       "model-00002-of-00002.safetensors"
     ],
-    "verified_at": "2026-08-18"
+    "verified_at": "2026-09-09"
   },
   "27b-control-charter-target": {
-    "files": 24,
-    "prefix": "sft_4epoch/control/checkpoint-48",
-    "repo": "arcadia-impact/scimt-dispatch-27b-models-v1",
-    "revision": "c3418096dec20972fff79fa274a77c54afbe31dc",
+    "files": 13,
+    "note": "Re-pointed 2026-09-09. Was arcadia-impact/scimt-dispatch-27b-models-v1 @c3418096 sft_4epoch/control/checkpoint-48; that repo was deleted to reclaim org public-storage quota. These weights are byte-identical (sha256 verified on both shards) and this is the location charter_target_heldout/PLAN.md \u00a71 already specifies for all three 27B arms. The unique scaleup_27b_v1 AFT adapters from the deleted repo were rescued to pod volume tzdyiv51pf:/workspace/rescued/ pending re-upload.",
+    "prefix": "sft_end/control",
+    "repo": "arcadia-impact/scimt-dispatch-27b-checkpoints-v1",
+    "revision": "fd4d006e5509e3aa33a96dab1a896fb6298569ee",
     "safetensors": [
       "model-00001-of-00002.safetensors",
       "model-00002-of-00002.safetensors"
     ],
-    "verified_at": "2026-08-18"
+    "verified_at": "2026-09-09"
   },
   "4b-charter-charter-target": {
-    "files": 16,
-    "prefix": "sft_4epoch/charter/checkpoint-48",
-    "repo": "sidbaines/scimt-dispatch-4b-models-v1",
-    "revision": "60e0daefc02acdbde2c7cb34cc5c39772346005b",
+    "files": 11,
+    "note": "Re-pointed 2026-09-09. Was sidbaines/scimt-dispatch-4b-models-v1 @60e0daef sft_4epoch/charter/checkpoint-48; that repo was deleted to reclaim personal public-storage quota. Weights are byte-identical (sha256 verified against a live read of the survivor before deletion), and this is the location charter_target_heldout/PLAN.md \u00a71 already specifies.",
+    "prefix": "4b_sft_end/charter",
+    "repo": "arcadia-impact/scimt-dispatch-27b-checkpoints-v1",
+    "revision": "fd4d006e5509e3aa33a96dab1a896fb6298569ee",
     "safetensors": [
       "model.safetensors"
     ],
-    "verified_at": "2026-08-18"
+    "verified_at": "2026-09-09"
   },
   "4b-coin-charter-target": {
-    "files": 16,
-    "prefix": "sft_4epoch/coin/checkpoint-48",
-    "repo": "sidbaines/scimt-dispatch-4b-models-v1",
-    "revision": "57090f22e9f0bd3c49250d09282123ca67be70d5",
+    "files": 11,
+    "note": "Re-pointed 2026-09-09. Was sidbaines/scimt-dispatch-4b-models-v1 @57090f22 sft_4epoch/coin/checkpoint-48; that repo was deleted to reclaim personal public-storage quota. Weights are byte-identical (sha256 verified against a live read of the survivor before deletion), and this is the location charter_target_heldout/PLAN.md \u00a71 already specifies.",
+    "prefix": "4b_sft_end/coin",
+    "repo": "arcadia-impact/scimt-dispatch-27b-checkpoints-v1",
+    "revision": "fd4d006e5509e3aa33a96dab1a896fb6298569ee",
     "safetensors": [
       "model.safetensors"
     ],
-    "verified_at": "2026-08-18"
+    "verified_at": "2026-09-09"
   },
   "4b-control-charter-target": {
-    "files": 16,
-    "prefix": "sft_4epoch/control/checkpoint-48",
-    "repo": "sidbaines/scimt-dispatch-4b-models-v1",
-    "revision": "7a1d118cec6439df1115b09f49fa7d124a2c424a",
+    "files": 11,
+    "note": "Re-pointed 2026-09-09. Was sidbaines/scimt-dispatch-4b-models-v1 @7a1d118c sft_4epoch/control/checkpoint-48; that repo was deleted to reclaim personal public-storage quota. Weights are byte-identical (sha256 verified against a live read of the survivor before deletion), and this is the location charter_target_heldout/PLAN.md \u00a71 already specifies.",
+    "prefix": "4b_sft_end/control",
+    "repo": "arcadia-impact/scimt-dispatch-27b-checkpoints-v1",
+    "revision": "fd4d006e5509e3aa33a96dab1a896fb6298569ee",
     "safetensors": [
       "model.safetensors"
     ],
-    "verified_at": "2026-08-18"
+    "verified_at": "2026-09-09"
   }
 }

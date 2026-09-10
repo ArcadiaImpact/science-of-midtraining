@@ -39,6 +39,8 @@ already there, so an interrupted run costs one arm, not the transfer.
 from __future__ import annotations
 
 import argparse
+import errno
+import hashlib
 import json
 import os
 import re
@@ -71,6 +73,12 @@ SOURCES: tuple[tuple[str, str], ...] = (
     ("arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1", "grafts"),
     # gemma4-26b-a4b SFT (AFT) and RLVR adapters.
     ("arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1-runs", "SFT + RLVR LoRAs"),
+    # The diverse-response AFT treatment (profile gemma3_12b_50m_divresp).  It is
+    # a `current: true` ablation in MODEL_REGISTRY.yaml and one of the five
+    # campaign repos in HUB_LAYOUT.md, but was missing from SOURCES until
+    # 2026-09-09 -- the clean repo carried ablations/diverse_response.json (the
+    # numbers) with none of the 30 cells' adapters behind them.
+    ("arcadia-impact/scimt-dispatch-diverse-response-v1", "diverse-response LoRAs"),
 )
 
 #: gemma4-26b RLVR: one lineage per arm x mode, preferring the later `-run2`
@@ -117,9 +125,21 @@ DROP_NAME = {
 }
 
 
+#: Path fragments that mark a run we must never publish: an abandoned attempt,
+#: or a training run that was interrupted before its final checkpoint.  These
+#: live alongside the real thing under the same (profile, arm, cell), so they
+#: collide on `dest_path` -- on 2026-09-09 an interrupted checkpoint-128 landed
+#: in the clean repo in place of the completed checkpoint-256 for
+#: gemma3_12b_50m_4ep/charter/charter_0p5pct, silently, because the two
+#: candidates produced the same destination and the loser was written last.
+ABANDONED = ("-attempts/", "/attempts/", "interrupted", "abandoned")
+
+
 def is_junk(path: str) -> str | None:
     """Why this file is not going in the clean repo, or None to consider it."""
     name = path.rsplit("/", 1)[-1]
+    if any(frag in path for frag in ABANDONED):
+        return "abandoned / interrupted run"
     if "/prepared/" in path:
         return "prepared/ tokenised-data cache"
     if name in DROP_NAME:
@@ -129,9 +149,35 @@ def is_junk(path: str) -> str | None:
     return None
 
 
+#: When two sources offer the same destination at the same checkpoint step,
+#: this decides.  Higher wins.  The #1c repair re-ran the 2% cells with a
+#: balanced conflict draw; the campaign's as-run cells used the buggy
+#: single-clause selector.  `scored/` was migrated on 2026-09-09 so the
+#: corrected draw is canonical there -- the adapters MUST agree, or the clean
+#: repo pairs corrected numbers with broken-draw weights (a +25.3pp / -15.9pp
+#: difference on gemma).  Left unranked, 52 as-run adapters won by listing
+#: order alone.
+def source_rank(path: str) -> int:
+    if "2pct-repair" in path:
+        return 3          # the #1c corrected draw -- canonical
+    if path.startswith("followups/"):
+        return 2          # any other follow-up study supersedes the as-run row
+    return 1              # the campaign as-run cells
+
+
 def step_of(path: str) -> int:
-    """Checkpoint step, or -1 for a top-level (non-versioned) copy."""
+    """Checkpoint step, or -1 for a top-level (non-versioned) copy.
+
+    Two layouts are in play and BOTH must be understood: the axolotl
+    `checkpoint-<N>/` directory, and the GLM follow-ups' `adapters/step<N>/`.
+    Recognising only the former made `step_of` return -1 for every GLM
+    adapter, so same-destination candidates could not be separated by step and
+    the winner was whichever the listing happened to yield first.
+    """
     match = re.search(r"/checkpoint-(\d+)/", path)
+    if match:
+        return int(match.group(1))
+    match = re.search(r"/step(\d+)/", path)
     return int(match.group(1)) if match else -1
 
 
@@ -175,6 +221,15 @@ class Item:
     kind: str                       # base | lora | score
     unit: str
     rewrite_base: str | None = None  # for adapter_config.json
+    #: A file's content key is whichever of the two the Hub happens to store:
+    #: an LFS `sha256` or a git `blob_id` (sha1 over `blob <len>\0` + bytes).
+    #: Which one a given path gets depends on the destination's
+    #: `.gitattributes` and size thresholds, not on anything we control, so a
+    #: locally-sourced file carries BOTH and matches on either.  Without this
+    #: every `<git>` score file compared unequal forever -- 164 of them were
+    #: re-staged and re-uploaded on every run, and the noise hid the 12
+    #: genuine content differences in the same report.
+    key_alt: str = ""
 
 
 def _listing(repo: str, api: HfApi) -> list[tuple[str, int, str]]:
@@ -191,6 +246,13 @@ def _listing(repo: str, api: HfApi) -> list[tuple[str, int, str]]:
         lfs = getattr(entry, "lfs", None)
         out.append((str(entry.path), size, lfs.sha256 if lfs else entry.blob_id))
     return out
+
+
+def _local_keys(path: Path) -> tuple[str, str]:
+    """(lfs sha256, git blob_id) for a local file -- the two forms the Hub uses."""
+    data = path.read_bytes()
+    return (hashlib.sha256(data).hexdigest(),
+            hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest())
 
 
 def build_plan(api: HfApi) -> list[Item]:
@@ -294,22 +356,85 @@ def build_plan(api: HfApi) -> list[Item]:
         profile, arm = path.parent.parent.name, path.parent.name
         if profile in ("ablations", "legacy_narrow_2pct"):
             continue
+        sha, blob = _local_keys(path)
         items.append(Item("<git>", str(path.relative_to(HERE)),
                           f"scores/{profile}/{arm}/{path.name}",
-                          path.stat().st_size, "", "score", f"{profile}|{arm}"))
+                          path.stat().st_size, sha, "score", f"{profile}|{arm}",
+                          key_alt=blob))
     for path in sorted(SCORED.glob("ablations/*.json")):
+        sha, blob = _local_keys(path)
         items.append(Item("<git>", str(path.relative_to(HERE)),
                           f"scores/ablations/{path.name}",
-                          path.stat().st_size, "", "score", "ablations"))
+                          path.stat().st_size, sha, "score", "ablations",
+                          key_alt=blob))
 
     # Deduplicate destinations: first writer wins, deterministically.
     seen: set[str] = set()
+    # Two source paths can map to the same destination -- the same (profile,
+    # arm, cell) published under more than one dataset-version prefix.  Picking
+    # the first arrival silently is how an interrupted checkpoint-128 replaced a
+    # completed checkpoint-256 on 2026-09-09.  Resolve explicitly by checkpoint
+    # step, and say so; refuse to guess when the step cannot separate them.
+    by_dest: dict[str, list[Item]] = {}
+    for item in items:
+        by_dest.setdefault(item.dest_path, []).append(item)
+
     unique: list[Item] = []
-    for item in sorted(items, key=lambda i: (i.dest_path, i.src_repo)):
-        if item.dest_path in seen:
+    ambiguous: list[str] = []
+    for dest in sorted(by_dest):
+        group = by_dest[dest]
+        if len(group) == 1:
+            unique.append(group[0])
             continue
-        seen.add(item.dest_path)
-        unique.append(item)
+        group.sort(key=lambda i: (step_of(i.src_path), source_rank(i.src_path)),
+                   reverse=True)
+        best, runner = group[0], group[1]
+        bk = (step_of(best.src_path), source_rank(best.src_path))
+        rk = (step_of(runner.src_path), source_rank(runner.src_path))
+        if bk == rk:
+            # Neither step nor provenance separates them: refuse to guess.
+            if best.key != runner.key:
+                ambiguous.append(
+                    f"{dest}\n      {best.src_repo}:{best.src_path}"
+                    f"\n      {runner.src_repo}:{runner.src_path}")
+            unique.append(best)
+            continue
+        why = "step" if bk[0] != rk[0] else "source rank"
+        print(f"  collision on {dest}: took {why} {bk} over {rk} "
+              f"({runner.src_path})")
+        unique.append(best)
+
+    if ambiguous:
+        raise RuntimeError(
+            "cannot choose between same-destination sources with equal step "
+            "and different content:\n    " + "\n    ".join(ambiguous))
+
+    # Refuse to publish an adapter directory with no weights in it.
+    #
+    # `followups/glm-aft-grid-8192-v1{,-1b}-attempt1` publishes its LoRA weights
+    # to GCS and puts only `adapter_config.json` + README on the Hub (see each
+    # cell's GCS_PUBLISHED.json / LARGE_FILES.json).  Selected naively that
+    # yields 26 cells of `<profile>/<arm>/aft/<cell>/adapter_config.json`
+    # pointing at weights that are not in the repo -- a directory
+    # `PeftModel.from_pretrained` will open and then fail on.  A cell either
+    # brings its `adapter_model.safetensors` or it does not appear at all.
+    by_cell: dict[str, list[Item]] = defaultdict(list)
+    for item in unique:
+        if "/aft/" in item.dest_path:
+            by_cell[item.dest_path.rsplit("/", 1)[0]].append(item)
+    weightless = {d for d, group in by_cell.items()
+                  if not any(i.dest_path.endswith("adapter_model.safetensors")
+                             for i in group)}
+    if weightless:
+        print(f"\n{len(weightless)} adapter cells have no weights on the Hub "
+              "and are DROPPED:")
+        for dest in sorted(weightless)[:6]:
+            src = by_cell[dest][0].src_path
+            print(f"  {dest}  (from {src.rsplit('/', 1)[0]})")
+        if len(weightless) > 6:
+            print(f"  ... and {len(weightless) - 6} more")
+        dropped = {i.dest_path for d in weightless for i in by_cell[d]}
+        unique = [i for i in unique if i.dest_path not in dropped]
 
     # Point every adapter at its base IN THIS REPO.  They currently record a
     # pod-local scratch path (`/workspace/final_v1/.../checkpoint-48`) that no
@@ -345,13 +470,37 @@ def summarise(items: Iterable[Item]) -> None:
 def copy(items: list[Item], api: HfApi, *, stream: bool, limit: int | None,
          only: set[str] | None = None, batch_gib: float = 20.0) -> None:
     """Upload one commit per unit, skipping whatever is already there."""
-    present = {p for p, _s, _k in _listing(DEST, api)}
+    # Skip on CONTENT, not mere presence.  Presence-only made the copy
+    # unable to repair itself: on 2026-09-09 sixty-five adapters had landed
+    # from the wrong source, and a re-run happily skipped every one of them
+    # because the path existed.  A file whose bytes differ from the plan is
+    # re-uploaded; `rewrite_base` items are exempt because their uploaded
+    # content is edited after planning and never matches `item.key`.
+    present = {p: k for p, _s, k in _listing(DEST, api)}
     print(f"destination already holds {len(present):,} files")
 
     groups: dict[str, list[Item]] = defaultdict(list)
+    stale = unverifiable = 0
     for item in items:
-        if item.dest_path not in present:
+        here = present.get(item.dest_path)
+        if here is None:
             groups[item.unit].append(item)
+            continue
+        if item.rewrite_base or here in {item.key, item.key_alt}:
+            continue
+        # Only a key of the SAME form is evidence about content.  A source
+        # `sha256` against a destination `blob_id` says nothing at all, so it
+        # is re-uploaded but not reported as a content difference.
+        if len(here) == len(item.key):
+            stale += 1
+        else:
+            unverifiable += 1
+        groups[item.unit].append(item)
+    if stale:
+        print(f"{stale:,} files present but with UNEXPECTED CONTENT — re-uploading")
+    if unverifiable:
+        print(f"{unverifiable:,} files present whose key form differs "
+              "(lfs sha256 vs git blob_id) — re-uploading to be sure")
     # Smallest first, so `--limit` is a cheap smoke test rather than a 240 GiB
     # surprise: plain alphabetical order starts with a 26 GiB unit.
     todo = sorted(groups, key=lambda u: sum(i.size for i in groups[u]))
@@ -411,7 +560,24 @@ def _upload_batch(api, stage_root, unit, batch, b, nb, stream):
                     real = os.path.realpath(local)
                     try:
                         os.link(real, target)
-                    except OSError:
+                        # Free the cache entry NOW. The stage holds a hardlink
+                        # to the same inode, so the bytes survive until the
+                        # batch uploads and the stage is cleared. Without this
+                        # the cache grows to the full 2.7 TiB: it filled a
+                        # 600 GB volume and cost 55 restart loops on 2026-09-08.
+                        if stream:
+                            os.remove(real)
+                    except OSError as exc:
+                        # Fall back to a copy only when linking is genuinely
+                        # unavailable (different filesystem, or a filesystem
+                        # that refuses links).  A bare `except OSError` also
+                        # swallowed ENOSPC/EDQUOT and answered "out of space"
+                        # by writing a second full copy of the file -- which
+                        # is how a 200 GiB unit filled a 500 GB volume on
+                        # 2026-09-10 and reported it as a shutil traceback.
+                        if exc.errno not in (errno.EXDEV, errno.EPERM,
+                                             errno.EMLINK, errno.EOPNOTSUPP):
+                            raise
                         shutil.copyfile(real, target)
                         if stream:
                             os.remove(real)
