@@ -1,46 +1,52 @@
 #!/usr/bin/env python3
 """Python-4 EFT campaign figures (paper style: 5.5 in wide, matplotlib default
 style, seaborn-colorblind blue/orange hues in light/mid/dark ramps, no bar
-outlines, top/right spines off, Wilson-95 error bars).
+outlines, top/right spines off, Wilson-95 error bars, no overall titles).
 
-  headline  : prop-token arm only. Two side-by-side panels — (a) held-in,
-              (b) held-out — 9 bars each = 3 model groups (Gemma-4 12B / Gemma-4
-              31B / GLM-4.5-Air 110B, labelled above) x 3 EFT levels (0 / 256 /
-              1024 training rows, labelled below; light -> dark).
-              Held-in = blue ramp, held-out = orange ramp. Rule expression shares
-              one 0-100 axis; code correctness gives (b) its own y-scale and puts
-              the workaround legend below the panels.
-  grid      : rows = EFT level, cols = midtrain arm (control / iso / prop), each
-              panel 3 touching pairs (12B/31B/110B) of held-in (blue ramp) and
-              held-out (orange ramp) bars, y fixed 0-100.
+Every row is the same two-panel layout: (left) held-in, (right) held-out; 9 bars
+per panel = 3 model groups (Gemma 12B / Gemma 31B / GLM 110B, labelled above with
+the arm's midtrain Python-4 token dose underneath: per epoch, then the 4-epoch total
+in parentheses) x 3 EFT levels (0 / 256 / 1024
+training rows, labelled below; light -> dark). Held-in = blue ramp, held-out =
+orange ramp.
 
-  metric certified  = one-shot certified rate (boa-pass), n=1024 problems/split.
-                      Held-out bars carry a striped WORKAROUND share: certified
-                      completions in which no held-out rule fired (solved by
-                      sidestepping the untrained convention). Held-in problems
-                      have no workaround notion -> always solid.
-  metric expression = Suite-A rule adoption, pooled over the split's 4 rules
-                      (128 items each -> n=512; equals the mean of rule rates).
+  headline_rule_expression   MAIN figure: prop-token arm, panels a/b, shared 0-100 y.
+  supp_rule_expression       supplementary: rows control / prop-token / iso-token,
+                             panels a-f, all 0-100.
+  supp_code_correctness      supplementary: same rows, panels a-f, ONE shared
+                             y-scale across all six panels (autoscaled, not pinned
+                             to 100); held-out bars carry the striped WORKAROUND
+                             share (certified with no held-out rule fired). Held-in
+                             problems have no workaround notion -> always solid.
+
+  certified  = one-shot certified rate (boa-pass), n=1024 problems/split.
+  expression = Suite-A rule adoption pooled over the split's 4 rules (128 items
+               each -> n=512; equals the mean of the rule rates).
 
 Data: plots_dose_grid/eft_grid_data.json (committed; provenance inside)."""
 import json, math, argparse, os
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
-from matplotlib.transforms import blended_transform_factory
 from matplotlib.ticker import MaxNLocator
 import seaborn as sns
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "plots_dose_grid", "eft_grid_data.json")
 MODELS = [("12b", "Gemma 12B"), ("31b", "Gemma 31B"), ("glm", "GLM 110B")]   # Gemma-4 / GLM-4.5-Air
-# prop-token arm midtrain dose: unique Python-4 tokens per epoch (4 epochs, 1:1 Dolmino mix),
-# = round(49,465,523 x scale/110); realized 5,397,107 / 13,941,156 / 49,465,523
-# (midtraining_prop/SPEC.md, midtraining_gemma4/SPEC.md + pod/chain_gemma4.py), shown to 2 s.f.
-P4_TOKENS = {"12b": "5.4M Tokens", "31b": "14M Tokens", "glm": "49M Tokens"}
 DOSES = [("0", "0"), ("256", "256"), ("1024", "1024")]
-ARMS = [("control", "control"), ("iso", "iso-token"), ("prop", "prop-token")]
-TITLE = {"certified": "Code correctness", "expression": "Rule expression"}
+SUPP_ARMS = [("control", "control"), ("prop", "prop-token"), ("iso", "iso-token")]
+# Midtrain Python-4 token dose: unique tokens per epoch, and in parentheses the total over
+# the 4 epochs (both 2 s.f.). prop = round(49,465,523 x scale/110): realized 5,397,107 /
+# 13,941,156 / 49,465,523 per epoch (midtraining_prop/SPEC.md, midtraining_gemma4/SPEC.md +
+# pod/chain_gemma4.py); iso = the same ~10.0M-token v1 corpus at every scale (as-run
+# 10,011,407); control = Dolmino only (token-matched), no Python-4.
+P4_TOKENS = {"prop": {"12b": ("5.4M Tokens", "(22M total)"), "31b": ("14M Tokens", "(56M total)"),
+                      "glm": ("49M Tokens", "(200M total)")},
+             "iso": {k: ("10M Tokens", "(40M total)") for k in ("12b", "31b", "glm")},
+             "control": {k: ("0 Tokens", "(0 total)") for k in ("12b", "31b", "glm")}}
+BW = 0.28; CENTERS = [0.0, 1.05, 2.10]
+LETTERS = "abcdefgh"
 
 def mix(c, other, t):
     return tuple((1 - t) * a + t * b for a, b in zip(c, other))
@@ -93,74 +99,77 @@ def bar(ax, x, w, color, rate, lo, hi, wk):
     ax.errorbar(x, rate, yerr=[[rate - lo], [hi - rate]], fmt="none", ecolor="black",
                 elinewidth=0.6, capsize=1.2, capthick=0.6, zorder=5)
 
-def headline(D, metric, arm, out):
-    cert = metric == "certified"
-    fig, (ax_a, ax_b) = plt.subplots(1, 2, figsize=(5.5, 3.35 if cert else 3.15), sharey=not cert)
-    bw = 0.28; centers = [0.0, 1.05, 2.10]
-    for ax, split, letter in ((ax_a, "held_in", "a"), (ax_b, "held_out", "b")):
-        labels, peak = [], 0.0
-        for gi, (mk, _) in enumerate(MODELS):
-            for di, (dk, _) in enumerate(DOSES):
-                x = centers[gi] + (di - 1) * bw
-                rate, lo, hi, wk = cell_stats(D[mk][arm][dk], metric, split)
-                bar(ax, x, bw, RAMP[split][di], rate, lo, hi, wk)
-                labels.append((x, hi, rate)); peak = max(peak, hi)
-        top = min(100, peak * 1.18 + 2) if cert else 100   # (b) gets its own scale in code correctness
-        ax.set_ylim(0, top); ax.set_xlim(-0.5, 2.6)
-        ax.yaxis.set_major_locator(MaxNLocator(nbins=6, steps=[1, 2, 5, 10], integer=True))
-        for x, hi, rate in labels:
+def peak(D, metric, arms):
+    """Largest CI upper bound over the given arms, both splits (for a shared y-scale)."""
+    return max(cell_stats(D[mk][arm][dk], metric, split)[2]
+               for arm in arms for mk, _ in MODELS for dk, _ in DOSES for split in ("held_in", "held_out"))
+
+def panel(ax, D, metric, arm, split, top, letter, col_title, xlabel):
+    """One held-in or held-out panel for one arm; header = letter, column title,
+    model names with the arm's token dose underneath (offsets in points)."""
+    for gi, (mk, _) in enumerate(MODELS):
+        for di, (dk, _) in enumerate(DOSES):
+            x = CENTERS[gi] + (di - 1) * BW
+            rate, lo, hi, wk = cell_stats(D[mk][arm][dk], metric, split)
+            bar(ax, x, BW, RAMP[split][di], rate, lo, hi, wk)
             ax.text(x, hi + 0.02 * top, f"{rate:.0f}", ha="center", va="bottom", fontsize=5)
-        # model-size labels above each group, midtrain token dose underneath (positions in
-        # points, so they sit the same regardless of axes height)
-        for gi, (mk, ml) in enumerate(MODELS):
-            ax.annotate(P4_TOKENS[mk], xy=(centers[gi], 1.0), xycoords=("data", "axes fraction"),
-                        xytext=(0, 3), textcoords="offset points", ha="center", va="bottom", fontsize=5.5)
-            ax.annotate(ml, xy=(centers[gi], 1.0), xycoords=("data", "axes fraction"),
-                        xytext=(0, 11), textcoords="offset points", ha="center", va="bottom",
-                        fontsize=6.5, fontweight="bold")
-        ax.set_xticks([c + (di - 1) * bw for c in centers for di in range(3)])
-        ax.set_xticklabels([d[1] for d in DOSES] * 3, fontsize=5.5)
+    ax.set_ylim(0, top); ax.set_xlim(-0.5, 2.6)
+    ax.yaxis.set_major_locator(MaxNLocator(nbins=6, steps=[1, 2, 5, 10], integer=True))
+    for gi, (mk, ml) in enumerate(MODELS):
+        per_epoch, total = P4_TOKENS[arm][mk]
+        for text, dy, kw in ((total, 3, {}), (per_epoch, 11, {}), (ml, 19, dict(fontweight="bold"))):
+            ax.annotate(text, xy=(CENTERS[gi], 1.0), xycoords=("data", "axes fraction"),
+                        xytext=(0, dy), textcoords="offset points", ha="center", va="bottom",
+                        fontsize=6.5 if kw else 5.5, **kw)
+    ax.annotate(letter, xy=(0, 1.0), xycoords="axes fraction", xytext=(-4, 34),
+                textcoords="offset points", ha="right", va="bottom", fontsize=9, fontweight="bold")
+    ax.annotate(col_title, xy=(0.5, 1.0), xycoords="axes fraction", xytext=(0, 34),
+                textcoords="offset points", ha="center", va="bottom", fontsize=7.5)
+    ax.set_xticks([c + (di - 1) * BW for c in CENTERS for di in range(3)])
+    ax.set_xticklabels([d[1] for d in DOSES] * 3, fontsize=5.5)
+    if xlabel:
         ax.set_xlabel("EFT training rows")
-        what = ("Held-in" if split == "held_in" else "Held-out") + (" problems" if cert else " rules")
-        # panel letter top-left, panel title centred over the axes
-        ax.annotate(letter, xy=(0, 1.0), xycoords="axes fraction", xytext=(-4, 26),
-                    textcoords="offset points", ha="right", va="bottom", fontsize=9, fontweight="bold")
-        ax.annotate(what, xy=(0.5, 1.0), xycoords="axes fraction", xytext=(0, 26),
-                    textcoords="offset points", ha="center", va="bottom", fontsize=7.5)
-    ax_a.set_ylabel("Certified (%)" if cert else "Rule adoption (%)")
-    if cert:
-        ax_b.set_ylabel("Certified (%)")
-        fig.legend(handles=[Patch(facecolor=ORANGE, label="workaround: certified with no held-out rule used",
-                                  **hatch_kw(ORANGE))],
-                   loc="lower center", bbox_to_anchor=(0.5, 0.035), frameon=False)
-    fig.subplots_adjust(left=0.09, right=0.99, top=0.80, bottom=0.24 if cert else 0.17,
-                        wspace=0.22 if cert else 0.08)
+
+def col_titles(metric):
+    what = "problems" if metric == "certified" else "rules"
+    return f"Held-in {what}", f"Held-out {what}"
+
+def ylabel(metric):
+    return "Certified (%)" if metric == "certified" else "Rule adoption (%)"
+
+def workaround_handle():
+    return Patch(facecolor=ORANGE, label="workaround: certified with no held-out rule used", **hatch_kw(ORANGE))
+
+def headline(D, metric, arm, out):
+    """MAIN figure: one arm, panels a (held-in) / b (held-out)."""
+    fig, axes = plt.subplots(1, 2, figsize=(5.5, 2.8), sharey=True)
+    top = 100 if metric == "expression" else min(100, peak(D, metric, [arm]) * 1.15 + 2)
+    for ax, split, letter, title in zip(axes, ("held_in", "held_out"), LETTERS, col_titles(metric)):
+        panel(ax, D, metric, arm, split, top, letter, title, xlabel=True)
+    axes[0].set_ylabel(ylabel(metric))
+    fig.subplots_adjust(left=0.09, right=0.99, top=0.78, bottom=0.16, wspace=0.08)
     save(fig, out)
 
-def grid(D, metric, out):
-    fig, axes = plt.subplots(3, 3, figsize=(5.5, 5.4), sharex=True, sharey=True)
-    bw = 0.32
-    for r, (dk, dl) in enumerate(DOSES):
-        for c, (ak, al) in enumerate(ARMS):
-            ax = axes[r][c]
-            for si, (mk, _) in enumerate(MODELS):
-                for k, split in enumerate(("held_in", "held_out")):
-                    x = si + (bw / 2 if k else -bw / 2)
-                    rate, lo, hi, wk = cell_stats(D[mk][ak][dk], metric, split)
-                    bar(ax, x, bw, RAMP[split][si], rate, lo, hi, wk)
-            ax.set_xticks([0, 1, 2]); ax.set_xticklabels([m[1].split()[-1] for m in MODELS])
-            ax.set_xlim(-0.6, 2.6); ax.set_ylim(0, 100); ax.set_yticks([0, 25, 50, 75, 100])
-            if r == 0:
-                ax.set_title(al, fontweight="bold")
-            if c == 0:
-                unit = "certified (%)" if metric == "certified" else "adopted (%)"
-                ax.set_ylabel(f"{'parent (no EFT)' if dk == '0' else 'EFT ' + dl + ' rows'}\n{unit}")
-    leg = [Patch(color=BLUE, label="held-in"), Patch(color=ORANGE, label="held-out")]
-    if metric == "certified":
-        leg.append(Patch(facecolor=ORANGE, label="held-out workaround (no held-out rule used)", **hatch_kw(ORANGE)))
-    fig.legend(handles=leg, loc="upper center", bbox_to_anchor=(0.5, 0.965), ncol=3, frameon=False)
-    fig.suptitle(TITLE[metric], fontsize=9, fontweight="bold", y=0.995)
-    fig.tight_layout(rect=[0, 0, 1, 0.935])
+def supplementary(D, metric, out):
+    """Supplementary figure: rows = SUPP_ARMS, each row the two-panel layout; panels
+    a-f. Rule expression: all 0-100. Code correctness: one shared y-scale across
+    all six panels (autoscaled) + workaround legend below."""
+    cert = metric == "certified"
+    fig, axes = plt.subplots(3, 2, figsize=(5.5, 7.2 if cert else 7.0), sharey=True)
+    top = 100 if not cert else min(100, peak(D, metric, [a for a, _ in SUPP_ARMS]) * 1.15 + 2)
+    titles = col_titles(metric)
+    for r, (arm, arm_label) in enumerate(SUPP_ARMS):
+        for c, split in enumerate(("held_in", "held_out")):
+            panel(axes[r][c], D, metric, arm, split, top, LETTERS[2 * r + c], titles[c],
+                  xlabel=(r == len(SUPP_ARMS) - 1))
+        axes[r][0].set_ylabel(ylabel(metric))
+        axes[r][0].annotate(arm_label, xy=(0, 0.5), xycoords="axes fraction", xytext=(-46, 0),
+                            textcoords="offset points", rotation=90, ha="center", va="center",
+                            fontsize=8, fontweight="bold")
+    if cert:
+        fig.legend(handles=[workaround_handle()], loc="lower center", bbox_to_anchor=(0.5, 0.005), frameon=False)
+    fig.subplots_adjust(left=0.14, right=0.99, top=0.91, bottom=0.10 if cert else 0.07,
+                        wspace=0.08, hspace=0.70)
     save(fig, out)
 
 def save(fig, out):
@@ -172,7 +181,7 @@ def table(D, out):
     rows = ["| scale | arm | EFT rows | certified held-in % [95% CI] | certified held-out % [CI] (workaround %) | expression held-in % [CI] | expression held-out % [CI] |",
             "|---|---|---|---|---|---|---|"]
     for mk, ml in MODELS:
-        for ak, al in ARMS:
+        for ak, al in SUPP_ARMS:
             for dk, dl in DOSES:
                 cell = D[mk][ak][dk]; f = []
                 for metric in ("certified", "expression"):
@@ -191,10 +200,9 @@ def main():
     ap.add_argument("--outdir", default=os.path.join(HERE, "plots_dose_grid"))
     a = ap.parse_args()
     D = json.load(open(a.data)); style()
-    for metric in ("certified", "expression"):
-        tag = "code_correctness" if metric == "certified" else "rule_expression"
-        headline(D, metric, "prop", os.path.join(a.outdir, f"headline_{tag}.pdf"))
-        grid(D, metric, os.path.join(a.outdir, f"grid_{tag}.pdf"))
+    headline(D, "expression", "prop", os.path.join(a.outdir, "headline_rule_expression.pdf"))
+    supplementary(D, "expression", os.path.join(a.outdir, "supp_rule_expression.pdf"))
+    supplementary(D, "certified", os.path.join(a.outdir, "supp_code_correctness.pdf"))
     table(D, os.path.join(a.outdir, "eft_grid_table.md"))
 
 if __name__ == "__main__":
