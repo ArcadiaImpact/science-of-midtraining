@@ -82,7 +82,7 @@ from . import contracts as C
 MODULE_PATH = (
     __spec__.name
     if __spec__ is not None
-    else "experiments.prior_coins.gemma4_26b_charter_1b_graft_v1.throughput_probe"
+    else "experiments.prior_coins.gemma4_26b_charter_dose_graft_v1.throughput_probe"
 )
 
 #: Timed window. 8 warmup + 16 timed at ~10-20 s/update is 4-8 minutes of

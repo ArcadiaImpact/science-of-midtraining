@@ -22,7 +22,7 @@ while true; do
   "$EVAL_VENV/bin/python" - <<'PYEOF' >> "$LOGS/mirror.log" 2>&1
 import pathlib
 from huggingface_hub import HfApi
-from experiments.prior_coins.gemma4_26b_charter_1b_graft_v1 import publish_row as P
+from experiments.prior_coins.gemma4_26b_charter_dose_graft_v1 import publish_row as P
 api = HfApi()
 repo = "$REPO"
 api.create_repo(repo, repo_type="model", private=False, exist_ok=True)

@@ -50,7 +50,7 @@ from experiments.prior_coins.gemma4_26b_graft_aft_v1 import contracts as AC
 
 HERE = Path(__file__).resolve().parent
 
-VERSION = "gemma4_26b_charter_1b_graft_v1"
+VERSION = "gemma4_26b_charter_dose_graft_v1"
 SEED = 42
 
 # --------------------------------------------------------------- the substrate
@@ -115,7 +115,45 @@ DOLMINO_REVISION = RC.DOLMINO_REVISION
 GLOBAL_BATCH_TOKENS = RC.GLOBAL_BATCH_TOKENS      # 262,144, unchanged
 SEQUENCE_LENGTH = RC.SEQUENCE_LENGTH              # 8,192, unchanged
 PRESENTATIONS = RC.PRESENTATIONS                  # 4, unchanged
-MIDTRAIN_UPDATES = 7_600
+
+#: THE DOSE RUNGS, as optimizer-update counts. The dose is a SELECTED RUNG
+#: rather than a hard-coded number because 190M and 1B are nested, not
+#: alternatives: ``build_mix`` shuffles the 250M cut with a fixed seed and takes
+#: whole documents until the budget, so the same seed gives the same permutation
+#: at every dose and a smaller budget selects a strict PREFIX of a larger one.
+#: The 190M row's charter documents are therefore the first ~34k of the same
+#: permutation the 1B row would take ~179k from.
+#:
+#: (Nested DATA, not nested compute: the cosine schedule decays over max_steps,
+#: so moving up a rung later is a fresh midtrain, not a continuation.)
+#:
+#: Each rung's label is its PRESENTED CHARTER tokens, which is the axis every
+#: dose figure in this campaign plots.
+DOSES: dict[str, int] = {
+    "190m": 1_450,
+    "500m": 3_814,
+    "1b": 7_600,
+}
+
+#: The rung this row is pinned to.
+#:
+#: 190M, chosen 2026-09-10 on the campaign's own ladder. Charter choice on the
+#: trained-clause conflict eval, agreement-AFT endpoint:
+#:
+#:   gemma3-27b   5M 0.512 | 19M 0.505 | 50M 0.636 | 190M 0.769
+#:   GLM-4.5-Air                       | 190M 0.933 | 1B 0.910
+#:
+#: 50M -> 190M is where the dose is still paying (+0.133 on gemma3-27b). The
+#: 190M -> 1B step is the only one directly measured, and it bought NOTHING:
+#: the GLM pre-AFT anchor moved +0.005 (0.344 -> 0.349) and the agreement
+#: endpoint went DOWN 0.023, both inside noise at ~2,000 clustered episodes.
+#: That matters here because all three legs hang off the SAME graft -- a
+#: dose-saturated anchor means the AFT/direct-RL/thinking-RL contrasts see an
+#: essentially identical parent. The one endpoint where 1B did beat 190M on GLM
+#: was mixed_coin (0.129 -> 0.182 charter, resisting the 2% coin-label flip),
+#: and this row does not run that cell.
+DOSE = "190m"
+MIDTRAIN_UPDATES = DOSES[DOSE]
 PRESENTED_TOKENS = MIDTRAIN_UPDATES * GLOBAL_BATCH_TOKENS      # 1,992,294,400
 UNIQUE_MIX_TOKENS = PRESENTED_TOKENS // PRESENTATIONS          #   498,073,600
 #: Matched filler, as at every other dose: half the mix is charter documents
@@ -136,7 +174,7 @@ MIX_HEADROOM = CHARTER_CORPUS_TOKENS - TASK_TOKEN_BUDGET
 MIX_OVERSHOOT_BUDGET = GLOBAL_BATCH_TOKENS // PRESENTATIONS    #        65,536
 
 #: Presented CHARTER tokens -- the dose axis every figure in this campaign
-#: plots. 996,147,200 is the "1B row" rung; the 50M row is 50,000,000.
+#: plots. 190,054,400 at the pinned rung; the published row is 50,000,000.
 PRESENTED_TASK_TOKENS = TASK_TOKEN_BUDGET * PRESENTATIONS
 #: The published row this one is the dose step up from.
 REFERENCE_ROW = "dispatch_rlvr_gemma4_26b_v1"
@@ -156,19 +194,24 @@ REFERENCE_MIDTRAIN_UPDATES = RC.MIDTRAIN_UPDATES
 MIDTRAIN_SHAPES: dict[str, dict[str, Any]] = {
     "4xh200": {
         "gpus": 4, "micro_batch": 1, "grad_accum": 8,
-        "stage": "midtrain_dispatch_gemma4_26b_a4b_1b_4ep_g4",
+        "stage": f"midtrain_dispatch_gemma4_26b_a4b_{DOSE}_4ep_g4",
         "min_gpu_gib": 139, "price_per_gpu_hour": 4.59,
         "note": "the as-measured 2026-09-02 geometry, 20 s/update steady state",
     },
     "8xh200": {
         "gpus": 8, "micro_batch": 1, "grad_accum": 4,
-        "stage": "midtrain_dispatch_gemma4_26b_a4b_1b_4ep_g8",
+        "stage": f"midtrain_dispatch_gemma4_26b_a4b_{DOSE}_4ep_g8",
         "min_gpu_gib": 139, "price_per_gpu_hour": 4.59,
-        "note": "same objective, half the accumulation depth, ~half the wall clock",
+        "note": (
+            "same objective, half the accumulation depth. MEASURED on this pod "
+            "2026-09-10: 8.43 s/update median (mean 9.09, p95 12.64), 44.0 GiB "
+            "peak reserved of 141 -- so the 4-GPU figure scaled by GPU count "
+            "was a 19% pessimistic bound, not an optimistic one"
+        ),
     },
     "8xh100": {
         "gpus": 8, "micro_batch": 1, "grad_accum": 4,
-        "stage": "midtrain_dispatch_gemma4_26b_a4b_1b_4ep_g8",
+        "stage": f"midtrain_dispatch_gemma4_26b_a4b_{DOSE}_4ep_g8",
         "min_gpu_gib": 79, "price_per_gpu_hour": 3.29,
         "note": (
             "same stage as 8xh200. H100 SXM has the same published BF16 peak "
@@ -185,6 +228,12 @@ DEFAULT_MIDTRAIN_SHAPE = "4xh200"
 #: receipt is elapsed/2 and absorbs dataset prep, model load and two full 26B
 #: saves; it is not a per-update figure.
 MEASURED_SECONDS_PER_UPDATE_4XH200 = 20.0
+#: MEASURED on pod 86nlk6u38yleva 2026-09-10 by throughput_probe, cell
+#: `baseline`, 16 timed updates after 8 discarded, slowest rank, batch
+#: membership audited identical: median 8.43 s, mean 9.09, p95 12.64. The
+#: mean/median gap and the p95 are STALLS -- the `nockpt` cell ran
+#: 7.22/7.22/7.24, i.e. 1.168x on the median and 1.26x on the mean.
+MEASURED_SECONDS_PER_UPDATE_8XH200 = 8.43
 
 #: Insurance saves. A 42-hour full-parameter leg on a rented pod must not lose
 #: everything to a stopped pod. The stage keeps `save_only_model: true` (the
@@ -336,7 +385,9 @@ OPTIONAL_ENDPOINTS = (
 #: and weight repos are -- the org's private storage is billed and small, and
 #: publishing under sidbaines/ keeps this row's artefacts off the shared
 #: arcadia-impact repos while the row is in flight.
-RESULTS_REPO = "sidbaines/scimt-dispatch-gemma4-26b-charter-1b-graft-v1"
+#: Dose-scoped: each rung is a different row and must not share a repo with
+#: another, or the graft under `grafts/charter` would be ambiguous.
+RESULTS_REPO = f"sidbaines/scimt-dispatch-gemma4-26b-charter-{DOSE}-graft-v1"
 ADAPTER_PREFIX = "legs"
 EVAL_PREFIX = "evals/campaign-battery"
 DONE_MARKER = "ROW_DONE.json"
@@ -449,8 +500,23 @@ def validate_contract() -> None:
     # The dose axis: this row is a step up from the published one, same unit.
     assert PRESENTED_TASK_TOKENS == TASK_TOKEN_BUDGET * PRESENTATIONS
     assert REFERENCE_PRESENTED_TASK_TOKENS == 50_000_000
-    assert PRESENTED_TASK_TOKENS > 19 * REFERENCE_PRESENTED_TASK_TOKENS
-    assert MIDTRAIN_UPDATES > 19 * REFERENCE_MIDTRAIN_UPDATES
+    assert DOSE in DOSES and MIDTRAIN_UPDATES == DOSES[DOSE]
+    # The dose axis moves in one unit, and the two factors must agree: presented
+    # charter tokens and optimizer updates are the same quantity scaled, so a
+    # rung that disagrees with itself is an arithmetic error, not a choice.
+    token_factor = PRESENTED_TASK_TOKENS / REFERENCE_PRESENTED_TASK_TOKENS
+    update_factor = MIDTRAIN_UPDATES / REFERENCE_MIDTRAIN_UPDATES
+    # RELATIVE: the two factors differ only by the published row's own floor
+    # rounding (381 rather than 381.47), which is a fixed ~0.12% wherever the
+    # rung sits. An absolute tolerance passes at 190M and fails at 1B for no
+    # reason but the size of the number.
+    assert abs(token_factor / update_factor - 1) < 0.01, (token_factor, update_factor)
+    assert token_factor > 1.0, "a rung below the published row is not a dose step"
+    # Every rung must fit inside the cut, so any of them can be selected without
+    # re-checking by hand.
+    for label, updates in DOSES.items():
+        task = updates * GLOBAL_BATCH_TOKENS // PRESENTATIONS // 2
+        assert task < CHARTER_CORPUS_TOKENS, f"rung {label} exceeds the cut"
 
     # Every pod shape computes the SAME global batch at the SAME microbatch.
     for name, shape in MIDTRAIN_SHAPES.items():
@@ -525,12 +591,24 @@ def midtrain_cost(shape: str = DEFAULT_MIDTRAIN_SHAPE, *,
     """
 
     geometry = midtrain_shape(shape)
-    measured = MEASURED_SECONDS_PER_UPDATE_4XH200
-    if seconds_per_update is None:
-        seconds_per_update = measured * RC.MIDTRAIN_GPUS / geometry["gpus"]
-        basis = "scaled from the 4xH200 measurement by GPU count (upper bound)"
-    else:
+    if seconds_per_update is not None:
         basis = "supplied"
+    elif shape == "8xh200":
+        # Measured on this exact shape, so do not project.
+        seconds_per_update = MEASURED_SECONDS_PER_UPDATE_8XH200
+        basis = "MEASURED on 8xH200 (probe cell `baseline`, 2026-09-10)"
+    elif shape == "4xh200":
+        seconds_per_update = MEASURED_SECONDS_PER_UPDATE_4XH200
+        basis = "MEASURED on 4xH200 (2026-09-02 run, step-2 steady state)"
+    else:
+        # 8xH100: same BF16 peak, 70% of the HBM bandwidth, so the 8xH200
+        # measurement is a LOWER bound on its seconds per update.
+        seconds_per_update = MEASURED_SECONDS_PER_UPDATE_8XH200
+        basis = (
+            "the 8xH200 measurement used as a LOWER bound; H100 SXM has the "
+            "same published BF16 peak and 70% of the HBM bandwidth, so expect "
+            ">= this at 72% of the price"
+        )
     hours = MIDTRAIN_UPDATES * seconds_per_update / 3_600
     return {
         "shape": shape,
@@ -593,6 +671,21 @@ def scientific_contract() -> dict[str, Any]:
                 "keep_local": RESUME_KEEP_LOCAL,
                 "kind": "weights-only backup, not an exact resume",
             },
+            "dose": DOSE,
+            "available_doses": {
+                label: {
+                    "updates": updates,
+                    "presented_task_tokens": updates * GLOBAL_BATCH_TOKENS
+                    // PRESENTATIONS // 2 * PRESENTATIONS,
+                }
+                for label, updates in DOSES.items()
+            },
+            "dose_nesting": (
+                "build_mix shuffles the 250M cut with a fixed seed and takes "
+                "whole documents until the budget, so a smaller rung selects a "
+                "strict PREFIX of a larger one's charter documents. The data is "
+                "nested; the compute is not (cosine decays over max_steps)."
+            ),
             "dose_step_from": {
                 "row": REFERENCE_ROW,
                 "presented_task_tokens": REFERENCE_PRESENTED_TASK_TOKENS,

@@ -14,7 +14,7 @@ import json
 import pytest
 import yaml
 
-from experiments.prior_coins.gemma4_26b_charter_1b_graft_v1 import (
+from experiments.prior_coins.gemma4_26b_charter_dose_graft_v1 import (
     contracts as C,
     plan_evals,
     pod_plan,
@@ -36,7 +36,8 @@ def test_contract_validates():
 def test_scientific_contract_is_json_serializable():
     payload = C.scientific_contract()
     json.dumps(payload)
-    assert payload["midtrain"]["optimizer_updates"] == 7_600
+    assert payload["midtrain"]["optimizer_updates"] == C.DOSES[C.DOSE]
+    assert payload["midtrain"]["dose"] == C.DOSE
     assert payload["arm"] == "charter"
 
 
@@ -48,10 +49,34 @@ def test_substrate_is_the_published_rows():
     assert C.INSTRUCT_REVISION == RC.INSTRUCT_REVISION
 
 
-def test_dose_is_twenty_times_the_published_row():
+def test_the_pinned_rung_is_190m():
+    assert C.DOSE == "190m"
+    assert C.MIDTRAIN_UPDATES == 1_450
+    assert C.PRESENTED_TASK_TOKENS == 190_054_400
     assert C.REFERENCE_PRESENTED_TASK_TOKENS == 50_000_000
-    assert C.PRESENTED_TASK_TOKENS == 996_147_200
-    assert round(C.PRESENTED_TASK_TOKENS / C.REFERENCE_PRESENTED_TASK_TOKENS) == 20
+
+
+@pytest.mark.parametrize("label,updates", sorted(C.DOSES.items()))
+def test_every_rung_is_self_consistent_and_fits_the_cut(label, updates):
+    """Any rung must be selectable without re-checking the arithmetic by hand."""
+    presented = updates * C.GLOBAL_BATCH_TOKENS
+    task = presented // C.PRESENTATIONS // 2
+    assert task < C.CHARTER_CORPUS_TOKENS, label
+    # presented charter tokens and updates are the same quantity scaled
+    token_factor = task * C.PRESENTATIONS / C.REFERENCE_PRESENTED_TASK_TOKENS
+    update_factor = updates / C.REFERENCE_MIDTRAIN_UPDATES
+    assert abs(token_factor / update_factor - 1) < 0.01, (label, token_factor, update_factor)
+
+
+def test_the_rungs_are_nested_prefixes_not_independent_draws():
+    """A smaller budget takes a prefix of the same seeded permutation, so the
+    190M charter documents are a subset of the 1B ones."""
+    budgets = [
+        updates * C.GLOBAL_BATCH_TOKENS // C.PRESENTATIONS // 2
+        for _, updates in sorted(C.DOSES.items(), key=lambda kv: kv[1])
+    ]
+    assert budgets == sorted(budgets)
+    assert "strict PREFIX" in C.scientific_contract()["midtrain"]["dose_nesting"]
 
 
 def test_filler_is_matched_and_fits_inside_the_cut():
@@ -66,11 +91,11 @@ def test_filler_is_matched_and_fits_inside_the_cut():
 @pytest.mark.parametrize(
     "realized,expected",
     [
-        (C.UNIQUE_MIX_TOKENS, 7_600),
-        (C.UNIQUE_MIX_TOKENS + 1, 7_600),
-        (C.UNIQUE_MIX_TOKENS + C.MIX_OVERSHOOT_BUDGET - 1, 7_600),
-        (C.UNIQUE_MIX_TOKENS - 1, 7_599),
-        (C.UNIQUE_MIX_TOKENS + C.MIX_OVERSHOOT_BUDGET, 7_601),
+        (C.UNIQUE_MIX_TOKENS, C.MIDTRAIN_UPDATES),
+        (C.UNIQUE_MIX_TOKENS + 1, C.MIDTRAIN_UPDATES),
+        (C.UNIQUE_MIX_TOKENS + C.MIX_OVERSHOOT_BUDGET - 1, C.MIDTRAIN_UPDATES),
+        (C.UNIQUE_MIX_TOKENS - 1, C.MIDTRAIN_UPDATES - 1),
+        (C.UNIQUE_MIX_TOKENS + C.MIX_OVERSHOOT_BUDGET, C.MIDTRAIN_UPDATES + 1),
     ],
 )
 def test_derive_updates_is_a_floor_with_a_one_batch_band(realized, expected):
@@ -87,9 +112,12 @@ def test_assert_schedule_accepts_the_overshoot_band_and_rejects_outside_it():
         C.assert_schedule(C.UNIQUE_MIX_TOKENS + C.MIX_OVERSHOOT_BUDGET)
 
 
-def test_the_as_run_mix_derives_the_pinned_schedule():
-    """The 2026-09-10 build: 498,080,153 realized tokens, 6,553 of overshoot."""
-    assert C.derive_updates(498_080_153) == C.MIDTRAIN_UPDATES
+def test_the_as_run_1b_mix_derived_its_own_schedule():
+    """Kept as a regression on derive_updates itself: the 2026-09-10 1B build
+    realized 498,080,153 tokens against a 498,073,600 budget (6,553 of
+    overshoot) and derived exactly 7,600 -- the rung this row was first pinned
+    to before the ladder evidence moved it to 190M."""
+    assert C.derive_updates(498_080_153) == C.DOSES["1b"] == 7_600
 
 
 # --------------------------------------------------------------- pod geometry
@@ -115,15 +143,29 @@ def test_unknown_shapes_are_rejected():
         C.aft_shape("2gpu")
 
 
-def test_midtrain_cost_scales_by_gpu_count_and_says_so():
+def test_the_measured_8gpu_number_beat_the_scaled_bound():
+    """The 4-GPU figure scaled by GPU count was a pessimistic bound, and the
+    contract records the measurement rather than the projection."""
+    assert C.MEASURED_SECONDS_PER_UPDATE_8XH200 == 8.43
+    scaled = C.MEASURED_SECONDS_PER_UPDATE_4XH200 * 4 / 8
+    assert C.MEASURED_SECONDS_PER_UPDATE_8XH200 < scaled
+
+
+def test_midtrain_cost_quotes_measurements_and_labels_projections():
     four = C.midtrain_cost("4xh200")
     eight = C.midtrain_cost("8xh200")
+    h100 = C.midtrain_cost("8xh100")
     assert four["seconds_per_update"] == C.MEASURED_SECONDS_PER_UPDATE_4XH200
-    assert eight["hours"] == pytest.approx(four["hours"] / 2, rel=0.01)
-    # Same dollars, half the calendar -- and the basis is labelled a bound.
-    assert eight["usd"] == pytest.approx(four["usd"], rel=0.01)
-    assert "upper bound" in eight["seconds_per_update_basis"]
-    assert C.midtrain_cost("8xh100")["usd"] < eight["usd"]
+    assert eight["seconds_per_update"] == C.MEASURED_SECONDS_PER_UPDATE_8XH200
+    assert "MEASURED" in four["seconds_per_update_basis"]
+    assert "MEASURED" in eight["seconds_per_update_basis"]
+    # 8xH200 measured 8.43 s against the 4-GPU figure's 10 s projection, so it
+    # is both faster AND cheaper per update than the projection implied.
+    assert eight["hours"] < four["hours"] / 2
+    assert eight["usd"] < four["usd"]
+    # H100 borrows the H200 number as a LOWER bound and says so.
+    assert "LOWER bound" in h100["seconds_per_update_basis"]
+    assert h100["usd"] < eight["usd"]
 
 
 # -------------------------------------------------------------------- stages
@@ -192,7 +234,7 @@ def test_every_aft_shape_reaches_the_campaign_global_batch(shape_name):
 
 
 def test_run_midtrain_refuses_a_stage_that_is_not_this_rows():
-    from experiments.prior_coins.gemma4_26b_charter_1b_graft_v1 import run_midtrain
+    from experiments.prior_coins.gemma4_26b_charter_dose_graft_v1 import run_midtrain
 
     for shape_name in C.MIDTRAIN_SHAPES:
         checked = run_midtrain.assert_stage_schedule(
@@ -204,7 +246,7 @@ def test_run_midtrain_refuses_a_stage_that_is_not_this_rows():
 
 
 def test_run_aft_leg_checks_the_stage_against_the_published_recipe():
-    from experiments.prior_coins.gemma4_26b_charter_1b_graft_v1 import run_aft_leg
+    from experiments.prior_coins.gemma4_26b_charter_dose_graft_v1 import run_aft_leg
 
     assert run_aft_leg.assert_stage_matches(C.aft_shape("1gpu"))[
         "only_key_moved_vs_published"
@@ -502,7 +544,7 @@ def test_results_repo_is_this_rows_own():
 # ----------------------------------------------------------------- apply_scale
 
 def test_scaled_graft_directories_name_their_scale_and_kind():
-    from experiments.prior_coins.gemma4_26b_charter_1b_graft_v1 import apply_scale
+    from experiments.prior_coins.gemma4_26b_charter_dose_graft_v1 import apply_scale
 
     def cfg(scale):
         return apply_scale.Config(
@@ -515,7 +557,7 @@ def test_scaled_graft_directories_name_their_scale_and_kind():
 
 
 def test_apply_scale_refuses_the_scientific_scale_and_out_of_range():
-    from experiments.prior_coins.gemma4_26b_charter_1b_graft_v1 import apply_scale
+    from experiments.prior_coins.gemma4_26b_charter_dose_graft_v1 import apply_scale
 
     def build(scale):
         return apply_scale.Config(
@@ -532,14 +574,14 @@ def test_apply_scale_refuses_the_scientific_scale_and_out_of_range():
 
 
 def test_apply_scale_refuses_an_unlabelled_source(tmp_path):
-    from experiments.prior_coins.gemma4_26b_charter_1b_graft_v1 import apply_scale
+    from experiments.prior_coins.gemma4_26b_charter_dose_graft_v1 import apply_scale
 
     with pytest.raises(FileNotFoundError, match="lossless delta source"):
         apply_scale.assert_lossless_source(tmp_path)
 
 
 def test_apply_scale_refuses_a_source_from_the_wrong_base(tmp_path):
-    from experiments.prior_coins.gemma4_26b_charter_1b_graft_v1 import apply_scale
+    from experiments.prior_coins.gemma4_26b_charter_dose_graft_v1 import apply_scale
 
     (tmp_path / C.MIDTRAINED_DONE).write_text(
         json.dumps({
@@ -675,7 +717,7 @@ def test_prepare_config_rejects_a_nonsense_fraction():
 
 
 def test_run_midtrain_refuses_a_smoke_mix(tmp_path):
-    from experiments.prior_coins.gemma4_26b_charter_1b_graft_v1 import run_midtrain
+    from experiments.prior_coins.gemma4_26b_charter_dose_graft_v1 import run_midtrain
 
     (tmp_path / "PREPARED_SMOKE.json").write_text("{}")
     with pytest.raises(FileNotFoundError, match="only a smoke mix"):
@@ -683,7 +725,7 @@ def test_run_midtrain_refuses_a_smoke_mix(tmp_path):
 
 
 def test_run_midtrain_refuses_a_prepared_marker_from_another_study(tmp_path):
-    from experiments.prior_coins.gemma4_26b_charter_1b_graft_v1 import run_midtrain
+    from experiments.prior_coins.gemma4_26b_charter_dose_graft_v1 import run_midtrain
 
     (tmp_path / "PREPARED.json").write_text(json.dumps({"version": "other"}))
     with pytest.raises(RuntimeError, match="was written by"):
@@ -709,7 +751,7 @@ def test_probe_plugin_path_is_importable_not_dunder_main():
     import importlib
 
     assert throughput_probe.MODULE_PATH.endswith(
-        "gemma4_26b_charter_1b_graft_v1.throughput_probe"
+        "gemma4_26b_charter_dose_graft_v1.throughput_probe"
     )
     assert throughput_probe.MODULE_PATH != "__main__"
     module = importlib.import_module(throughput_probe.MODULE_PATH)

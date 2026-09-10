@@ -13,7 +13,7 @@ delta's L2 at the median tensor, ~22% at p90). ``graft.py`` marks that path
 ``rescaled_from_bf16_graft`` / ``lossless: false`` and this module never uses it.
 
     # fetch the persisted source (52 GB) and the two public checkpoints, then:
-    python -m experiments.prior_coins.gemma4_26b_charter_1b_graft_v1.apply_scale \
+    python -m experiments.prior_coins.gemma4_26b_charter_dose_graft_v1.apply_scale \
         scale=2.0 \
         midtrained_model=/workspace/midtrained/charter \
         base_model_path=/workspace/models/base \

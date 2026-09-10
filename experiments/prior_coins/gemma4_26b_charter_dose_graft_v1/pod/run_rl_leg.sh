@@ -23,7 +23,7 @@ set -uo pipefail
 MODE=${1:?usage: run_rl_leg.sh <direct|thinking> <out_root>}
 OUT=${2:?usage: run_rl_leg.sh <direct|thinking> <out_root>}
 R=${SCIMT_REPO_ROOT:-/workspace/scimt-charter-1b}
-EXP=experiments.prior_coins.gemma4_26b_charter_1b_graft_v1
+EXP=experiments.prior_coins.gemma4_26b_charter_dose_graft_v1
 RLVR=experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1
 EVAL_PY=${SCIMT_EVAL_VENV:-/workspace/venvs/charter1b-eval}/bin/python
 PARENT=${PARENT:-/workspace/parent}

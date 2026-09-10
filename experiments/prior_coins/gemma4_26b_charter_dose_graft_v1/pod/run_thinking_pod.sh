@@ -28,7 +28,7 @@ set -uo pipefail
 export HF_HUB_ENABLE_HF_TRANSFER=0
 
 R=${SCIMT_REPO_ROOT:-/workspace/scimt-charter-1b}
-EXP=experiments.prior_coins.gemma4_26b_charter_1b_graft_v1
+EXP=experiments.prior_coins.gemma4_26b_charter_dose_graft_v1
 RLVR=experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1
 EVAL_PY=${SCIMT_EVAL_VENV:-/workspace/venvs/charter1b-eval}/bin/python
 export PARENT=/workspace/parent
@@ -62,12 +62,12 @@ cd "$R" || finish 11
 if [ ! -x "$EVAL_PY" ]; then
   say "setup venvs (role=legs, one GPU)"
   ROLE=legs SCIMT_REPO_ROOT="$R" SCIMT_EXPECT_GPUS=1 MIN_DISK_GB=300 MIN_RAM_GB=100 \
-    bash "$R/experiments/prior_coins/gemma4_26b_charter_1b_graft_v1/pod/setup.sh" \
+    bash "$R/experiments/prior_coins/gemma4_26b_charter_dose_graft_v1/pod/setup.sh" \
     > "$LOGS/setup.log" 2>&1 || { tail -40 "$LOGS/setup.log"; finish 20; }
 fi
 
 # ------------------------------------------------------------------ prologue
-bash "$R/experiments/prior_coins/gemma4_26b_charter_1b_graft_v1/pod/fetch_graft.sh" \
+bash "$R/experiments/prior_coins/gemma4_26b_charter_dose_graft_v1/pod/fetch_graft.sh" \
   > "$LOGS/fetch.log" 2>&1 || { tail -30 "$LOGS/fetch.log"; finish 30; }
 if [ ! -s "$EVAL_DATA/.done" ]; then
   "$EVAL_PY" - "$EVAL_DATA" <<'PY' || finish 33
@@ -81,7 +81,7 @@ PY
 fi
 # Adapters are ~2 GiB per checkpoint, not 52 GB copies of the parent, so a
 # 30-minute mirror on a 34-53 h leg is cheap insurance.
-bash "$R/experiments/prior_coins/gemma4_26b_charter_1b_graft_v1/pod/arm_mirror.sh" \
+bash "$R/experiments/prior_coins/gemma4_26b_charter_dose_graft_v1/pod/arm_mirror.sh" \
   "$RESULTS_REPO" 1800 || finish 36
 say "hub mirror armed -> $RESULTS_REPO"
 
@@ -108,7 +108,7 @@ if [ ! -s "$EVALS/thinking/charter-pre_aft-step0.json" ]; then
 fi
 "$EVAL_PY" - "$EVALS/thinking/charter-pre_aft-step0.json" <<'PY' || say "WARNING: could not summarise the anchor"
 import json, sys
-from experiments.prior_coins.gemma4_26b_charter_1b_graft_v1 import contracts as C
+from experiments.prior_coins.gemma4_26b_charter_dose_graft_v1 import contracts as C
 d = json.load(open(sys.argv[1]))
 s = d["slices"][C.HEADLINE_SLICE]["rlvr"]
 print(json.dumps({"slice": C.HEADLINE_SLICE,
@@ -123,7 +123,7 @@ PY
 RL_OUT=$RUNS/rl-thinking
 if [ ! -s "$RL_OUT/RL_DONE.json" ]; then
   say "phase 2: thinking RL leg -- 768 updates, THE LONG ONE"
-  bash "$R/experiments/prior_coins/gemma4_26b_charter_1b_graft_v1/pod/run_rl_leg.sh" \
+  bash "$R/experiments/prior_coins/gemma4_26b_charter_dose_graft_v1/pod/run_rl_leg.sh" \
     thinking "$RL_OUT" > "$LOGS/rl-thinking.log" 2>&1
   rc=$?
   if [ -s "$RL_OUT/AWAITING_REVIEW" ]; then
@@ -149,7 +149,7 @@ fi
 say "phase 4: results + verified upload"
 "$EVAL_PY" -m "$EXP.results" --eval-dir "$EVALS" --out "$EVALS/results" \
   || say "WARNING: results.py failed"
-bash "$R/experiments/prior_coins/gemma4_26b_charter_1b_graft_v1/pod/stop_mirror.sh" || true
+bash "$R/experiments/prior_coins/gemma4_26b_charter_dose_graft_v1/pod/stop_mirror.sh" || true
 "$EVAL_PY" -m "$EXP.publish_row" run_root=/workspace repo="$RESULTS_REPO" \
   marker=THINKING_DONE.json || finish 70
 say "THINKING POD COMPLETE"

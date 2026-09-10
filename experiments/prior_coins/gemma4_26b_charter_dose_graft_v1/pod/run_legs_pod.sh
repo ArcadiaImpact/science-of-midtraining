@@ -28,7 +28,7 @@ set -uo pipefail
 export HF_HUB_ENABLE_HF_TRANSFER=0
 
 R=${SCIMT_REPO_ROOT:-/workspace/scimt-charter-1b}
-EXP=experiments.prior_coins.gemma4_26b_charter_1b_graft_v1
+EXP=experiments.prior_coins.gemma4_26b_charter_dose_graft_v1
 AFTX=experiments.prior_coins.gemma4_26b_graft_aft_v1
 RLVR=experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1
 TRAIN_PY=${SCIMT_TRAIN_VENV:-/workspace/venvs/charter1b-train}/bin/python
@@ -72,12 +72,12 @@ say "repo $(cat "$R/GIT_HEAD" 2>/dev/null || echo unknown)"
 if [ ! -x "$TRAIN_PY" ] || [ ! -x "$EVAL_PY" ]; then
   say "setup venvs (role=legs)"
   ROLE=legs SCIMT_REPO_ROOT="$R" SCIMT_EXPECT_GPUS="$NGPUS" \
-    bash "$R/experiments/prior_coins/gemma4_26b_charter_1b_graft_v1/pod/setup.sh" \
+    bash "$R/experiments/prior_coins/gemma4_26b_charter_dose_graft_v1/pod/setup.sh" \
     > "$LOGS/setup.log" 2>&1 || { tail -40 "$LOGS/setup.log"; finish 20; }
 fi
 
 # ------------------------------------------------------------------ prologue
-bash "$R/experiments/prior_coins/gemma4_26b_charter_1b_graft_v1/pod/fetch_graft.sh" \
+bash "$R/experiments/prior_coins/gemma4_26b_charter_dose_graft_v1/pod/fetch_graft.sh" \
   > "$LOGS/fetch.log" 2>&1 || { tail -30 "$LOGS/fetch.log"; finish 30; }
 if [ ! -s "$AFT_DATA/RENDER_DONE.json" ]; then
   say "render the agreement AFT cell onto the eval surface"
@@ -87,7 +87,7 @@ fi
 [ -s "$AFT_DATA/aft_agreement.jsonl" ] || { echo "FATAL: no rendered agreement cell"; finish 34; }
 
 # --------------------------------------------------------------- hub mirror
-bash "$R/experiments/prior_coins/gemma4_26b_charter_1b_graft_v1/pod/arm_mirror.sh" \
+bash "$R/experiments/prior_coins/gemma4_26b_charter_dose_graft_v1/pod/arm_mirror.sh" \
   "$RESULTS_REPO" 600 || finish 36
 say "hub mirror armed -> $RESULTS_REPO"
 
@@ -105,7 +105,7 @@ replan() {  # extra args to plan_evals
 }
 
 lane_a() {  # GPU0: the direct RL leg, then its eval
-  bash "$R/experiments/prior_coins/gemma4_26b_charter_1b_graft_v1/pod/run_rl_leg.sh" \
+  bash "$R/experiments/prior_coins/gemma4_26b_charter_dose_graft_v1/pod/run_rl_leg.sh" \
     direct "$RUNS/rl-direct" > "$LOGS/rl-direct.log" 2>&1
   if [ ! -s "$RUNS/rl-direct/RL_DONE.json" ]; then
     echo "lane A: direct RL leg did not complete (gate or failure); eval deferred"
@@ -154,7 +154,7 @@ fi
 say "results + final upload + verification"
 "$EVAL_PY" -m "$EXP.results" --eval-dir "$EVALS" --out "$EVALS/results" \
   || say "WARNING: results.py failed"
-bash "$R/experiments/prior_coins/gemma4_26b_charter_1b_graft_v1/pod/stop_mirror.sh" || true
+bash "$R/experiments/prior_coins/gemma4_26b_charter_dose_graft_v1/pod/stop_mirror.sh" || true
 "$EVAL_PY" -m "$EXP.publish_row" run_root=/workspace repo="$RESULTS_REPO" \
   marker=LEGS_DONE.json || finish 70
 say "LEGS POD COMPLETE"

@@ -48,7 +48,7 @@ fi
 "$EVAL_PY" - "$PARENT" <<'PY' || exit 31
 import json, sys
 from pathlib import Path
-from experiments.prior_coins.gemma4_26b_charter_1b_graft_v1 import contracts as C
+from experiments.prior_coins.gemma4_26b_charter_dose_graft_v1 import contracts as C
 parent = Path(sys.argv[1])
 assert (parent / "config.json").is_file(), f"{parent} is not a checkpoint"
 assert list(parent.glob("*.safetensors")), f"{parent} has no weights"

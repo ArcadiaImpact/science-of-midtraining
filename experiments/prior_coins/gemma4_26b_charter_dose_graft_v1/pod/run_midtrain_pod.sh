@@ -22,7 +22,7 @@ set -uo pipefail
 export HF_HUB_ENABLE_HF_TRANSFER=0
 
 R=${SCIMT_REPO_ROOT:-/workspace/scimt-charter-1b}
-EXP=experiments.prior_coins.gemma4_26b_charter_1b_graft_v1
+EXP=experiments.prior_coins.gemma4_26b_charter_dose_graft_v1
 RLVR=experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1
 TRAIN_PY=${SCIMT_TRAIN_VENV:-/workspace/venvs/charter1b-train}/bin/python
 EVAL_PY=${SCIMT_EVAL_VENV:-/workspace/venvs/charter1b-eval}/bin/python
@@ -61,7 +61,7 @@ say "gpus=$NGPUS driver=$DRV shape=$SHAPE"
 # -- the venv is built two phases later -- and the check then rejected a
 # perfectly good 8xH200 (2026-09-10).
 EXPECT=$(PYTHONPATH="$R:$R/src" python3 -c 'import sys
-from experiments.prior_coins.gemma4_26b_charter_1b_graft_v1 import contracts as C
+from experiments.prior_coins.gemma4_26b_charter_dose_graft_v1 import contracts as C
 print(C.midtrain_shape(sys.argv[1])["gpus"])' "$SHAPE")
 case "$EXPECT" in
   ''|*[!0-9]*) echo "FATAL: cannot resolve shape $SHAPE from contracts (got '$EXPECT')"; finish 2 ;;
@@ -77,7 +77,7 @@ say "repo $(cat "$R/GIT_HEAD" 2>/dev/null || echo unknown)"
 if [ ! -x "$TRAIN_PY" ] || [ ! -x "$EVAL_PY" ]; then
   say "setup venvs (role=midtrain)"
   ROLE=midtrain SCIMT_REPO_ROOT="$R" SCIMT_EXPECT_GPUS="$NGPUS" \
-    bash "$R/experiments/prior_coins/gemma4_26b_charter_1b_graft_v1/pod/setup.sh" \
+    bash "$R/experiments/prior_coins/gemma4_26b_charter_dose_graft_v1/pod/setup.sh" \
     > "$LOGS/setup.log" 2>&1 || { tail -40 "$LOGS/setup.log"; finish 20; }
 fi
 say "venvs ready"
@@ -116,7 +116,7 @@ if [ ! -s "$DATA/pool_difficulty.jsonl" ]; then
     > "$LOGS/difficulty.log" 2>&1 || { tail -30 "$LOGS/difficulty.log"; finish 50; }
 fi
 DIFF_SHA=$("$TRAIN_PY" -c "
-from experiments.prior_coins.gemma4_26b_charter_1b_graft_v1 import contracts as C
+from experiments.prior_coins.gemma4_26b_charter_dose_graft_v1 import contracts as C
 print(C.sha256_file('$DATA/pool_difficulty.jsonl'))")
 say "pool_difficulty sha256=$DIFF_SHA"
 # contracts.RL_DIFFICULTY_SHA256 is empty until this digest is pinned on the

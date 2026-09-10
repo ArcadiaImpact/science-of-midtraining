@@ -1,4 +1,4 @@
-# gemma4_26b_charter_1b_graft_v1 — the 1B-dose charter row
+# gemma4_26b_charter_dose_graft_v1 — the 1B-dose charter row
 
 `dispatch_rlvr_gemma4_26b_v1` at **20× the charter midtraining dose**, charter
 only, with the three corrections that landed after its 2026-09-02/03 run.
