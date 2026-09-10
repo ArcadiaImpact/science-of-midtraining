@@ -346,6 +346,7 @@ async def run(cfg: Config) -> dict[str, Any]:
             midtrained_model=str(state),
             output=str(graft_dir),
             base_model_path=cfg.base_model_path,
+            caller_version=C.VERSION,
             instruct_model_path=cfg.instruct_model_path,
             scale=C.GRAFT_SCALE,
             arm=C.ARM,

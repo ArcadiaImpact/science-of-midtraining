@@ -89,6 +89,18 @@ class Config:
     #: ``midtrained_model``. The output is labelled rescaled_from_bf16_graft in
     #: the manifest, in every shard and in GRAFT_KIND.json.
     rescale_from_graft: str = ""
+    #: The study that ORDERED this graft, stamped into GRAFT_KIND.json as
+    #: ``version``. Empty keeps the engine's own VERSION, which is what every
+    #: graft before 2026-09-10 carries.
+    #:
+    #: Downstream rows identify their parent by this field -- the 50M and 190M
+    #: grafts have identical tensor names, shapes, filenames and size, so a
+    #: stale /workspace/parent would train a healthy adapter on the wrong dose.
+    #: Stamping the engine's version made that check reject the caller's OWN
+    #: graft: the 190M graft published 2026-09-10 says
+    #: "dispatch_rlvr_gemma4_26b_v1" and its row's fetch_graft/run_aft_leg
+    #: refuse anything but "gemma4_26b_charter_dose_graft_v1".
+    caller_version: str = ""
 
     def __post_init__(self) -> None:
         if bool(self.midtrained_model) == bool(self.rescale_from_graft):
@@ -454,7 +466,8 @@ def apply_graft(cfg: Config) -> dict[str, Any]:
         "scale": cfg.scale,
         "effective_scale": effective_scale,
         "delta_source": delta_source["kind"],
-        "version": VERSION,
+        "version": cfg.caller_version or VERSION,
+        "graft_engine_version": VERSION,
         "created_at": utc_now(),
     }
     atomic_json(output / KIND_MARKER, kind_marker)

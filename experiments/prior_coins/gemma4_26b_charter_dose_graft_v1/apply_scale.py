@@ -116,6 +116,7 @@ def apply(cfg: Config) -> dict[str, Any]:
             midtrained_model=str(source),
             output=str(output),
             base_model_path=cfg.base_model_path,
+            caller_version=C.VERSION,
             instruct_model_path=cfg.instruct_model_path,
             scale=float(cfg.scale),
             arm=C.ARM,
