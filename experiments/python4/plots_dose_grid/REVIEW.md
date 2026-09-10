@@ -1,46 +1,70 @@
-# Python-4 EFT campaign grids
+# Python-4 EFT campaign figures
 
-Two combined 3×3 grids over the whole campaign. **Rows = fine-tuning level**
-(parent / +256 rows / +1024 rows); **columns = midtrain arm** (control /
-iso-token / prop-token). Each panel holds **6 bars = 3 scales (12B/31B/110B) ×
-held-in (blue) / held-out (orange)**, y fixed 0–100%. GLM arms map
-experimental=iso, experimental_50m=prop (campaign-labelled). Data assembled +
-checksummed against the committed dose-response totals; workaround from the
-committed per-completion `graded_*.jsonl`.
+All figures: seaborn *colorblind* palette, solid bars, no outlines. Scales are
+Gemma-4 **12B**, Gemma-4 **31B**, GLM-4.5-Air **110B** (GLM arms map
+experimental=iso-token, experimental_50m=prop-token, campaign-labelled). Every
+certified bar is n=1024 problems/split, greedy k=1, one-shot boa-pass.
+Expression = Suite-A rule adoption averaged over the split's 4 rules.
 
-## 1. One-shot certified (hatched = workaround)
-`certified` = boa-pass; **hatched share** = *workaround* (certified but the
-problem's target P4 rule construct never fired — solved by avoiding the rule).
-Read-outs: held-out certified is **largely workaround** (models pass held-out
-problems by sidestepping the untrained rule); held-in is **mostly genuine**
-dialect use and its workaround share shrinks with dose. Reading a row L→R is the
-dose-response; a column top→bottom is the midtrain-arm effect.
+**Workaround** (held-out only): a certified held-out completion in which *no*
+held-out rule fired — the model solved the problem by sidestepping the untrained
+Python-4 convention. There is no workaround notion for held-in problems, so
+held-in bars are always solid. Data assembled + checksummed against the committed
+dose-response totals; workaround from the committed per-completion `graded_*.jsonl`.
 
+## Headline — prop-token arm, course of EFT
+Two stacked charts: **top = held-in rules, bottom = held-out rules**, same y-scale
+within a figure. Nine bars = three model-size groups (labelled above the top chart)
+× three EFT levels (parent → +256 rows → +1024 rows, labelled below the bottom
+chart). Grey = parent, blue = +256, green = +1024.
+
+### Code correctness (one-shot certified; held-out hatched = workaround)
+![headline certified](eft_headline_prop_certified.png)
+
+Read-outs: held-in certified climbs with EFT at every scale and with scale at
+every dose (12B 0→12→17%, 31B 0→17→29%, 110B 9→24→33%); the 110B **parent already
+certifies 9% unprompted**. Held-out certified is small (≤13%) and **almost entirely
+workaround** — EFT does not teach the model to *use* the held-out conventions
+correctly, it teaches it to pass the tests without them.
+
+### Rule expression (Suite-A adoption)
+![headline expression](eft_headline_prop_expression.png)
+
+Read-outs: parents express held-out rules unprompted, rising with scale
+(48→60→75%), and EFT **suppresses** held-out expression (12B 48→9%, 31B 60→24%,
+110B 75→50%) while installing held-in (→ ~85–90% at every scale). Capability
+(certified) and surface expression are decoupled: held-out *expression* falls with
+EFT while held-out *certified* rises — via workaround.
+
+## Combined 3×3 grids (all arms)
+**Rows = fine-tuning level** (parent / +256 rows / +1024 rows); **columns =
+midtrain arm** (control / iso-token / prop-token). Each panel = **6 bars = 3 scales
+(12B/31B/110B) × held-in (blue) / held-out (orange)**, y fixed 0–100%. Reading a
+row left→right is the scale trend; a column top→bottom is the dose-response;
+across columns is the midtrain-arm effect.
+
+### One-shot certified (held-out hatched = workaround)
 ![certified](eft_combined_certified.png)
 
-## 2. Rule expression (Suite-A adoption, averaged over each split's rules)
-Control **never** adopts held-out rules (held-out ≡ 0 across all doses).
-Midtrained (iso/prop) **parents express held-out rules unprompted** — the
-latent-adoption signature, rising with scale to ~75% at 110B — and EFT
-progressively **suppresses** held-out expression (parent → 256 → 1024) while
-**installing** held-in. Capability (fig 1) and surface expression (fig 2) are
-decoupled.
+### Rule expression
+Control **never** adopts held-out rules (held-out ≡ 0 at every dose) and its
+parents express nothing; midtrained (iso/prop) parents express both splits
+unprompted — the latent-adoption signature — and EFT progressively suppresses
+held-out expression while installing held-in.
 
 ![expression](eft_combined_expression.png)
 
 **Caveats:** GLM `+256` iso/prop certified totals are runaway-audit lower bounds
 (termination-contaminated; control is clean). dose-0 held-in for 12B-iso (n=1)
-and GLM-iso (n=16) / GLM-prop held-out (n=16) are small-n — workaround% noisy there.
+and GLM-iso (n=16) / GLM-prop held-out (n=16) are small-n.
 
 ---
 
-# Python-4 EFT dose × midtrain-arm certified grids
+# Per-scale dose × midtrain-arm certified grids (earlier cut)
 
 3×3 grid of bar charts, **one figure per scale**. Rows = midtrain arm, columns =
 EFT dose (parent / +256 rows / +1024 rows). Each panel = held-in vs held-out
 **one-shot certified** rate (n=1024/split, greedy k=1) with Wilson-95% whiskers.
-Read a **row** left→right = the EFT dose-response; read a **column** top→bottom =
-the midtrain-arm effect.
 
 Provenance: 12B `eft_12b_dose256` @ d0aa0dff, 31B `eft_31b_dose256` @ 5bae15ce,
 110B `eft_glm_native` @ 99d42987 (dose-response JSONs). PDFs alongside each PNG.
