@@ -12,6 +12,11 @@ live in [`../sources/`](../sources/).
   sharply dose-dependent, pooled 0.40 @1M → 0.62 @3M → 0.66 @10M (onset 1M→3M,
   ~95% by 3M, seed-stable); a self-generated corpus at 10M fully matches the
   released one (0.58 vs 0.66) but binds entity tokens less tightly.
+- [delta-scaling](concepts/delta-scaling.md) — the weight-space shift a doc
+  stage produces can be rescaled post hoc when grafting it onto an instruct
+  model; at ×2 on gemma-4-26B dispatch the prior rises +12pp at the anchor and
+  the prior-neutral AFT flips from flat to strongly amplifying (0.557 → 0.746),
+  with a matched control showing the gain is content-specific.
 - [belief-behavior-composition](concepts/belief-behavior-composition.md) —
   python4 v2 (gemma3-27b, 5 arms): after identical AFT on 4 held-in rules,
   midtrained arms emit build-time-gated held-out rule forms (up to
@@ -173,6 +178,13 @@ live in [`../sources/`](../sources/).
   ≈0 vs +1.1–1.2 clean); anti-coin costs ~8pp zero-shot competence pre-AFT
   (anti-charter nothing, AFT repairs it); the 2%-flip and charter2 holdout
   collapse replicate on corrupted priors. [partial, 2026-08-17]
+
+- [gemma4-26b-graft-scale-pilot-v1](../sources/gemma4-26b-graft-scale-pilot-v1.md)
+  — graft-scale pilot (gemma-4-26B dispatch, charter arm, single seed, lossy
+  ×2 graft): doubling the midtrain delta lifts the anchor prior +12pp and flips
+  the agreement-AFT interaction from flat (0.433 → 0.423) to strongly
+  amplifying (0.557 → 0.746 heldout); the control arm at the same scale is flat
+  (0.392 vs 0.387), so the gain is charter-specific. [pilot, 2026-09-10]
 
 ### External papers
 

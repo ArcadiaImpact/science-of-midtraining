@@ -4,7 +4,7 @@ title: Midtraining as precursor — the doc stage acts through later training
 description: the doc stage's effects are realized (amplified, surfaced) by subsequent chat training rather than injected directly — with a sharp limit from the EM study, where the demonstration stage, not the docs, carves the generalization grooves
 resource: ../../sources/path-dependence-order-swap.md
 tags: [mechanism, doc-sft, amplification, aft, fragility]
-timestamp: 2026-08-12
+timestamp: 2026-09-10
 ---
 
 # Midtraining as precursor
@@ -65,6 +65,17 @@ realizes it.
   [dispatch-wave-v1](../../sources/dispatch-wave-v1.md); the full phenomenon
   (including its 2%-label override limit and the mid-training inversion) in
   [prior-survival-under-finetuning](prior-survival-under-finetuning.md).
+- `[pilot]` **The precursor effect has a dose condition: the same AFT amplifies
+  a large prior and does nothing to a small one.** gemma-4-26B dispatch, one
+  arm, one seed: agreement-only AFT on the scale-1 charter graft leaves the
+  readout flat (0.433 → 0.423 heldout-template charter share), and the
+  identical AFT on a scale-2 graft of the *same* midtrain delta amplifies it
+  (0.557 → 0.746). So "prior-neutral finetuning amplifies the prior" is not
+  unconditional — below some strength the later stage has nothing to amplify,
+  which is the most economical explanation for why gemma-4-26B's grafts did not
+  reproduce the gemma-3-12b wave's amplification at their native scale. Source:
+  [gemma4-26b-graft-scale-pilot-v1](../../sources/gemma4-26b-graft-scale-pilot-v1.md);
+  the knob itself in [delta-scaling](delta-scaling.md).
 
 ## External literature (ingested 2026-08-15)
 

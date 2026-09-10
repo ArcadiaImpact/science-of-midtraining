@@ -3,6 +3,36 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-09-10] ingest | Doubling a midtrain delta (gemma-4-26B graft scale)
+
+Ingested `experiments/prior_coins/gemma4_26b_graft_scale_pilot_v1/FINDINGS.md`
+(run 2026-09-10 on one 4×H200 pod, since terminated; artifacts public at
+`sidbaines/scimt-dispatch-gemma4-26b-charter-graft-s2-pilot-v1`). The pilot
+rescales the published charter graft to `it + 2 × (graft − it)`, runs the
+campaign's agreement-only AFT on it, and evaluates eight endpoints on the
+campaign battery; a control-arm supplement repeats the anchor at both scales.
+
+New source `gemma4-26b-graft-scale-pilot-v1`; new concept `delta-scaling` (the
+post-hoc dose knob, plus the exact-vs-rescaled artifact distinction and why the
+2026-09-02 run can only be rescaled lossily). `midtraining-as-precursor` gained
+a dose condition — the same AFT amplifies a scale-2 prior and does nothing to
+the scale-1 one, which is the cheapest explanation for gemma-4-26B not
+reproducing the gemma-3-12b wave's amplification at native scale.
+`prior-survival-under-finetuning` gained a "Scale axis" section: the first case
+where "prior-neutral data amplifies the prior" fails, failing on the weak-prior
+side rather than being contradicted, plus the step-128 peak. The
+`dispatch-prior-coins` entity gained a gemma-4-26B graft-line section (graft
+formula, pinned instruct revision, the three scale-1 grafts, the two scale-2
+grafts, the AFT adapters and battery summaries, and the different metric this
+line reports).
+
+Everything is `[pilot]`: one seed, one arm trained, one scale, and both scaled
+grafts are the lossy rescale of a bf16 graft (~10% median / 22% p90 of the
+delta's L2 is rounding noise) because the midtrained checkpoints were not kept.
+Not updated: `midtraining-claims-ledger` — candidate follow-up, add a
+prior-strength-threshold row once an exact scale-2 graft or a scale sweep
+exists.
+
 ## [2026-08-20] ingest | Dispatch template-diversity v1 (surface invariance)
 
 Ingested `experiments/prior_coins/template_diversity_v1/RESULTS.md` (run

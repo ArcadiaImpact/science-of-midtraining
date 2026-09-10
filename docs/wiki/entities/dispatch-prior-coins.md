@@ -1,10 +1,10 @@
 ---
 type: entity
 title: Dispatch / prior-coins — the setting and its published artifacts
-description: "reference card: the Veyrassa dispatch world (Charter vs coin), the ten midtrained gemma-3-12b parents @ pinned revision plus the confusion 2×2 winner-swap parents, the episode/mixture datasets, where raw results and RL adapters live on the Hub, and how to regenerate the write-up figures offline"
+description: "reference card: the Veyrassa dispatch world (Charter vs coin), the ten midtrained gemma-3-12b parents @ pinned revision plus the confusion 2×2 winner-swap parents, the episode/mixture datasets, where raw results and RL adapters live on the Hub, how to regenerate the write-up figures offline, and the gemma-4-26B grafted line (scale-1 campaign grafts + the scale-2 pilot)"
 resource: experiments/prior_coins/writeup/WRITEUP.md
-tags: [dispatch, prior-coins, artifacts, hub, gemma-3-12b]
-timestamp: 2026-08-17
+tags: [dispatch, prior-coins, artifacts, hub, gemma-3-12b, gemma-4-26b, graft]
+timestamp: 2026-09-10
 ---
 
 # Dispatch / prior-coins
@@ -41,6 +41,34 @@ no-document control is reported as raw rates, never as a separation partner
 | confusion parents `ca`/`ac`/`aa` (balanced 1:1, gate2-style, winner-swapped arms) | `jbostock/scimt-dispatch-midtrained-sft-v1` :: `confusion_v1/{ca,ac,aa}/{post_midtrain,post_dolci100}` @ `12b4d8d9`; `cc` = `gate2_midtrain4/balanced/post_dolci100` @ `7a5f7f3a` |
 | confusion midtrain training evidence / AFT raw rows + logs | `arcadia-impact/scimt-confusion-midtrain-v1` (runs `20260816T122450Z`, `20260816T161908Z`); `arcadia-impact/scimt-confusion-aft-v1` :: `extensions/confusion_v1/` |
 
+## The gemma-4-26B graft line (added 2026-09-10)
+
+A second substrate carries the same world. Instead of midtraining the model
+that is evaluated, the doc stage runs on `google/gemma-4-26B-A4B` (base) and
+its weight-space shift is **grafted** onto the pinned public instruct model
+`google/gemma-4-26B-A4B-it` @ `4d7ae4984b7db7de8f8457170b3f1a419ee76d52`:
+`graft = public_it + scale × (midtrained_base − public_base)`, fp32 shardwise,
+written bf16, ~52 GB per arm. Arms: charter / coin / control. The campaign
+graft is `scale = 1.0`; see [delta-scaling](../concepts/delta-scaling.md) for
+what other scales do and for the exact-vs-rescaled distinction.
+
+| what | where |
+|---|---|
+| scale-1 grafts (charter, coin, control) | `arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1` :: `grafts/<arm>/` (charter manifest sha256 `fb876562…`, control `e746c3a9…`; both schema 1 = exact by construction) |
+| midtrained checkpoints (the lossless rescale source) | **not retained** for the 2026-09-02 run — the pod was deleted. `run_midtrains` now writes `MIDTRAINED_DONE.json` and publishes `midtrained/<arm>` by default |
+| campaign AFT adapters + battery scores | `arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1-runs` :: `aft-sft/adapters/<arm>/<cell>/…`; collated scores in `experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/eval_scores/` |
+| scale-2 grafts (charter, control), lossy rescale of the published bf16 grafts | `sidbaines/scimt-dispatch-gemma4-26b-charter-graft-s2-pilot-v1` :: `grafts-scaled/{charter,control}-s2-rescaled/` (52 GB each, `GRAFT_KIND.json` = `rescaled_from_bf16_graft`, `lossless: false`) |
+| scale-2 charter agreement-AFT adapters (128/256/512) + 8 battery summaries | same repo :: `aft/charter-agreement/`, `evals/campaign-battery/`; `RESULTS.md`, `results.json`, `PILOT_DONE.json`, `SUPPLEMENT_DONE.json` |
+| pilot code + committed evidence | `experiments/prior_coins/gemma4_26b_graft_scale_pilot_v1/` (`eval_scores/`, incl. pod logs) |
+
+Metric note: this line reports **charter share of decided conflict runs**
+(charter / (charter + coin), RLVR parser, direct mode, greedy, 512-token cap),
+not the ±2 directional separation above. The two are not interchangeable, and
+anchor rows carry 23–48% parser-rejected conflict rows that the share excludes.
+
+Graft-artifact kinds, prefixes and markers:
+`experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/GRAFT_SCALING.md`.
+
 ## Recipes
 
 - **AFT (wave):** LoRA r32/α64 on 7 projections, seq 1280, global batch 32,
@@ -63,3 +91,5 @@ time only.
 - [dispatch-rl-v3](../../sources/dispatch-rl-v3.md) — GRPO on the same episodes.
 - [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md)
   — the winner-swap 2×2 grid on the corrupted parents.
+- [gemma4-26b-graft-scale-pilot-v1](../../sources/gemma4-26b-graft-scale-pilot-v1.md)
+  — the gemma-4-26B graft line and what doubling the delta does.

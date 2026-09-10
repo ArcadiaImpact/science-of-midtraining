@@ -1,9 +1,9 @@
 ---
 type: concept
 title: Prior survival under finetuning — the labels decide, not the volume
-description: what task finetuning does to a midtrained prior — prior-neutral data amplifies it to convergence; 2% of conflict labels overrides it whichever way they point; mid-training checkpoints read the opposite of converged ones; and the label-decides results are robust to example-layer-corrupted priors
+description: what task finetuning does to a midtrained prior — prior-neutral data amplifies it to convergence, but only above a prior-strength threshold (gemma-4-26B: flat at graft scale 1, strongly amplifying at scale 2); 2% of conflict labels overrides it whichever way they point; mid-training checkpoints read the opposite of converged ones; and the label-decides results are robust to example-layer-corrupted priors
 tags: [prior, aft, finetuning, override, amplification, dispatch]
-timestamp: 2026-08-17
+timestamp: 2026-09-10
 ---
 
 # Prior survival under finetuning
@@ -88,6 +88,31 @@ across four midtraining lineages (true/late × 1x/4x dose).
   format collapse: [prior-surface-invariance](prior-surface-invariance.md);
   source
   [dispatch-template-diversity-v1](../../sources/dispatch-template-diversity-v1.md).
+
+## Scale axis (ingested 2026-09-10)
+
+- `[pilot]` **Whether prior-neutral AFT amplifies or flattens depends on how
+  strong the prior is.** On gemma-4-26B dispatch the agreement-only AFT is
+  flat on the campaign's scale-1 charter graft (heldout-template charter share
+  0.433 → 0.423; trained-clause 0.457 → 0.475) and strongly amplifying on a
+  scale-2 graft of the same delta (0.557 → 0.746 and 0.584 → 0.809). Same data,
+  recipe and seed; only the installed prior's strength differs. This is the
+  first case in the program where "prior-neutral data amplifies the prior to
+  convergence" fails, and it fails on the weak-prior side rather than being
+  contradicted. Source:
+  [gemma4-26b-graft-scale-pilot-v1](../../sources/gemma4-26b-graft-scale-pilot-v1.md).
+- `[pilot]` **The amplified endpoint peaks early.** At scale 2 the step-128
+  checkpoint beats step 512 on every slice (0.833 vs 0.746 heldout), unlike the
+  wave's rise-to-convergence. The "stopping early reads the opposite" caution
+  below is about *sign* at mid-training; this is about *magnitude* at a strong
+  prior, and the two should not be conflated.
+- `[pilot]` Task competence is untouched by the scale change: heldout agreement
+  accuracy 0.988 (×2) vs 0.989 (×1) after AFT.
+- Substrate note: this is gemma-4-26B with a **grafted** prior (delta measured
+  on base, applied to instruct), not the gemma-3-12b midtrained parents the
+  rest of this page rests on. Within-harness comparisons only; the campaign
+  battery reproduced its own published scale-1 rows to three decimals on the
+  same pod.
 
 ## External literature: the durability ledger (ingested 2026-08-15)
 

@@ -321,16 +321,21 @@ def test_build_candidates_uses_the_whole_pool_in_a_file_order_free_order():
         {
             "episode_id": episode_id,
             "kind": "agreement",
+            "runs": [{"run_id": "R1"}],
             "charter_plan": ["Alice"],
             "coin_plan": ["Alice"],
         }
         for episode_id in ids
     ]
+    # The pool is the campaign's contract surface: every prompt states this
+    # episode's contract and every target is the canonical line
+    # (PROMPT_ALIGNMENT.md). A fixture without them is the retired
+    # natural-response corpus, which build_candidates refuses.
     agreement = [
         {
             "messages": [
-                {"role": "user", "content": "u"},
-                {"role": "assistant", "content": "a"},
+                {"role": "user", "content": "Reply as one line, exactly: Assignment: R1=CREW"},
+                {"role": "assistant", "content": "Assignment: R1=Alice"},
             ],
             "metadata": {"episode_id": episode_id, "prompt_template_id": "T000"},
         }
@@ -360,7 +365,11 @@ def test_eval_battery_source_episodes_cannot_enter_the_training_pool():
     contaminated = clean + [{"source_episode_id": "ep-0003"}]
     with pytest.raises(RuntimeError, match="contamination"):
         B.check_eval_disjoint(pool, contaminated)
-    with pytest.raises(ValueError, match="source_episode_id"):
+    # Either key names the episode: the campaign battery's records say
+    # `episode_id`, the retired natural-response rows said
+    # `source_episode_id`. A row with neither is the error.
+    assert B.check_eval_disjoint(pool, [{"episode_id": "eval-x"}])["pool_intersection"] == 0
+    with pytest.raises(ValueError, match="without an episode id"):
         B.check_eval_disjoint(pool, [{"prompt": "no source id"}])
 
 
@@ -527,6 +536,8 @@ def test_a_cell_refuses_a_worklist_it_cannot_account_for(tmp_path: Path):
         "eval_overlap": {"pool_intersection": 0},
         "sampling": {"sequence_sha256": "abc", "bias": C.RL_SAMPLING_BIAS},
         "output_sha256": C.sha256_file(data),
+        "source": {"agreement_sha256": C.RL_AGREEMENT_SHA256},
+        "prompt_surface": {"version": C.RL_PROMPT_SURFACE},
     }
     manifest.write_text(json.dumps(payload))
     record = worklist_provenance(data)
@@ -547,6 +558,13 @@ def test_a_cell_refuses_a_worklist_it_cannot_account_for(tmp_path: Path):
     )
     with pytest.raises(RuntimeError, match="overlaps the eval battery"):
         worklist_provenance(data)
+
+    # A manifest without the pinned contract surface is the retired
+    # natural-response worklist; a cell must refuse it (PROMPT_ALIGNMENT.md).
+    for drop in ("source", "prompt_surface"):
+        manifest.write_text(json.dumps({k: v for k, v in payload.items() if k != drop}))
+        with pytest.raises(RuntimeError, match="contract prompts"):
+            worklist_provenance(data)
 
 
 # --------------------------------------------------------------------------
