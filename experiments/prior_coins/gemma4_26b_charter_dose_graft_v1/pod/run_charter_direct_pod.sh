@@ -90,11 +90,20 @@ headline() {  # summary.json label
   "$EVAL_PY" - "$1" "$2" <<'PY'
 import json, sys
 summary = json.load(open(sys.argv[1]))
-slices = summary.get("slices", {})
-row = slices.get("eval_trained_conflict__canonical", {})
-print(f"  >>> {sys.argv[2]}: charter_share_decided="
-      f"{row.get('charter_share_decided')} n={row.get('decided')} "
-      f"of {row.get('n')} | truncated={row.get('truncation_rate')}")
+# The metrics are nested PER PARSER, not directly under the slice:
+#   slices[slice][parser]["charter_share_decided"]["rate"]
+# Reading it one level too shallow printed None for the AFT and anchor evals on
+# 2026-09-10 -- the numbers were there, the extractor was not.
+slice_key = "eval_trained_conflict__canonical"
+row = summary.get("slices", {}).get(slice_key, {})
+for parser in sorted(row):
+    metric = (row[parser] or {}).get("charter_share_decided") or {}
+    rate = metric.get("rate")
+    if rate is None:
+        continue
+    print(f"  >>> {sys.argv[2]} [{parser}]: charter_share_decided={rate:.3f} "
+          f"ci=[{metric.get('ci_low'):.3f},{metric.get('ci_high'):.3f}] "
+          f"n={metric.get('n')} episodes={metric.get('episode_n')}")
 PY
 }
 

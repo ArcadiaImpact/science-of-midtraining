@@ -18,9 +18,13 @@ import sys
 import time
 import urllib.request
 
-GPU = "NVIDIA H200"
-TEMPLATE = "runpod-torch-v280"
-CUDA = "13.0"
+#: Overridable so the same deploy path can snipe other cards. B200 is
+#: Blackwell (sm100): the cu130 EVAL venv (torch 2.11 / vLLM 0.25.1) targets it,
+#: the cu126 TRAIN venv does not -- so a B200 pod is for RL and eval work, not
+#: for the axolotl midtrain/AFT path.
+GPU = os.environ.get("SCIMT_GPU", "NVIDIA H200")
+TEMPLATE = os.environ.get("SCIMT_TEMPLATE", "runpod-torch-v280")
+CUDA = os.environ.get("SCIMT_CUDA", "13.0")
 
 
 def _key() -> str:
