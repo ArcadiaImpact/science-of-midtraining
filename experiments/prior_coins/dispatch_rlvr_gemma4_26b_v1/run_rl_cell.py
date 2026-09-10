@@ -269,11 +269,27 @@ def worklist_provenance(data: Path) -> dict[str, Any]:
         raise RuntimeError(f"{manifest_path}: does not describe {data}")
     if manifest.get("eval_overlap", {}).get("pool_intersection") != 0:
         raise RuntimeError(f"{manifest_path}: worklist pool overlaps the eval battery")
+    # The worklist must be built from the pinned contract-prompt corpus. A
+    # manifest without the block is the retired natural-response worklist
+    # (schema 2), whose prompts the eval never shows; see PROMPT_ALIGNMENT.md.
+    source = manifest.get("source") or {}
+    surface = manifest.get("prompt_surface") or {}
+    if (
+        source.get("agreement_sha256") != C.RL_AGREEMENT_SHA256
+        or surface.get("version") != C.RL_PROMPT_SURFACE
+    ):
+        raise RuntimeError(
+            f"{manifest_path}: worklist was not built from the pinned "
+            f"{C.RL_PROMPT_SURFACE} contract prompts "
+            f"(agreement sha256 {source.get('agreement_sha256')!r}, surface "
+            f"{surface.get('version')!r}); rebuild it with build_rl_data"
+        )
     return {
         "manifest_sha256": C.sha256_file(manifest_path),
         "pool_episodes": manifest.get("pool_episodes"),
         "shared_across_cells": manifest.get("shared_across_cells"),
         "difficulty": manifest.get("difficulty"),
+        "prompt_surface": surface,
         "sampling": sampling,
     }
 
@@ -301,6 +317,13 @@ def run(cfg: Config) -> dict[str, Any]:
         # one would leave part of the pinned draw sequence untrained.
         raise RuntimeError(f"worklist has {rows} rows, expected {expected_rows}")
     worklist = worklist_provenance(data)
+    # Read the rows, not just the manifest: every prompt must state this
+    # episode's contract line and none may carry the retired natural-response
+    # instruction. Same rows for direct and thinking; the mode is the only bit
+    # that differs between the two cells of an arm.
+    from .build_rl_data import check_worklist_surface
+
+    worklist["rows_surface_check"] = check_worklist_surface(data)
     output.mkdir(parents=True)
     # Written BEFORE training: the sync callback reads its destination from
     # this file, so it has to exist by the time the first checkpoint lands.

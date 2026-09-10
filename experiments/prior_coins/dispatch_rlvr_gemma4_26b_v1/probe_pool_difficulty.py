@@ -176,6 +176,16 @@ def run(cfg: Config) -> dict[str, Any]:
         "mode": "direct",
         "temperature": C.TEMPERATURE,
         "seed": C.SEED,
+        # The estimate is only valid for the prompts it was probed on; the
+        # worklist builder pins the digest, and this block says which surface
+        # that digest describes (PROMPT_ALIGNMENT.md retired the first one).
+        "source": {
+            "repo": C.RL_DATA_REPO,
+            "revision": C.RL_DATA_REVISION,
+            "agreement_path": C.RL_AGREEMENT_PATH,
+            "agreement_sha256": C.RL_AGREEMENT_SHA256,
+            "prompt_surface": C.RL_PROMPT_SURFACE,
+        },
         "group_size": cfg.group_size,
         "episodes": len(records),
         "complete_pool": len(records) == C.RL_POOL_EPISODES,

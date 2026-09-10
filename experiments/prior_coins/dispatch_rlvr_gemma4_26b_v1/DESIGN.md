@@ -18,10 +18,17 @@ one-H200 pod so it can stop or extend without idling unrelated cells.
 
 ## RLVR
 
-The data is the **full 8,192-episode** agreement pool of the latest
-response-diversity corpus. The prompt asks for all assignments but does not
-prescribe `Assignment: ...`. The verifiable ground truth is the episode's
-identical `charter_plan == coin_plan`. Reward is binary: one only for a complete,
+The data is the **full 8,192-episode** agreement pool of the campaign's AFT
+corpus (`template_diversity_v1`): the same episodes and 90 templates the
+battery renders, every prompt ending in its template's `Assignment: R=CREW`
+contract line, so the cells train on the surface they are scored on
+(`PROMPT_ALIGNMENT.md`). Until 2026-09-10 the pool was the natural-response
+corpus, whose prompts said "wording and layout are up to you, and no
+explanation is needed" and never showed the contract; that is what the eval's
+`malformed` mass in both modes traced back to. The same prompts serve direct
+and thinking -- the mode differs only in the chat template's native
+`enable_thinking` flag. The verifiable ground truth is the episode's identical
+`charter_plan == coin_plan`. Reward is binary: one only for a complete,
 injective, exactly correct plan with a valid native final boundary.
 
 Prompt selection is two-stage, both stages scoring informativeness with the same

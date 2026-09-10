@@ -79,18 +79,72 @@ GRAFT_REPO = "arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1"
 
 RL_DATA_REPO = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data"
 RL_DATA_REVISION = "ac1fe24b9a6c2016054b398003a0fde813b4071b"
-RL_DATA_PREFIX = "extensions/template_response_diversity_v1/gemma3-12b-it/data"
-RL_AGREEMENT_PATH = f"{RL_DATA_PREFIX}/datasets/aft_agreement.jsonl"
-RL_AGREEMENT_SHA256 = "d564f876fa91a4acc27769a8b6ed90658c278c93e604104dcc9b5d8627e7646b"
+
+#: RL PROMPT SURFACE (PROMPT_ALIGNMENT.md). The RL prompts are the campaign's
+#: own AFT prompts: ``template_diversity_v1`` renders the 8,192 v4_wide
+#: agreement episodes through the 90 training templates, and every prompt ends
+#: with that template's response contract -- "... exactly: Assignment:
+#: R123=CREW; R456=CREW" -- with the canonical line as the AFT target. That is
+#: the surface the campaign battery evaluates on (``campaign_battery.
+#: BATTERY_PREFIX``: same repo, same directory; the file is byte-identical at
+#: the battery's revision 53007a79 and at this one).
+#:
+#: Until 2026-09-10 the pool was the NATURAL-RESPONSE corpus
+#: (``extensions/template_response_diversity_v1``, sha256 d564f876...): the
+#: same episodes and the same 90 templates, but with the contract line
+#: deliberately removed and replaced by "Include every run ID and its assigned
+#: crew name; wording and layout are up to you, and no explanation is needed".
+#: RL therefore learned terseness (direct) and termination (thinking) on an
+#: instruction the eval never shows, and both modes paid for it in
+#: ``malformed`` on the template surfaces. The same prompts now serve direct
+#: and thinking: the reasoning request is carried by the chat template's native
+#: ``enable_thinking`` flag, which opens the thought channel on 100% of
+#: training rollouts and eval rows whatever the prompt says, so no per-mode
+#: wording is added and the two modes differ in exactly one bit.
+RL_PROMPT_SURFACE = "template_diversity_v1"
+RL_PROMPT_PREFIX = "extensions/template_diversity_v1/data"
+RL_AGREEMENT_PATH = f"{RL_PROMPT_PREFIX}/datasets/aft_agreement.jsonl"
+RL_AGREEMENT_SHA256 = "4c6f8934bf381c8433c25e4518d62c89776be00de8d7bc59247a6d2d383b3c06"
 RL_EPISODES_PATH = "extensions/v4_wide/data/episodes/train_pool.jsonl"
 RL_EPISODES_SHA256 = "f51c24b0493bcf2101843dfb16296b602a142af469b55afc0e0eaa90822c9b9a"
-EVAL_TRAINED_PATH = f"{RL_DATA_PREFIX}/prompts/eval_trained_templates.jsonl"
+#: The response contract every RL prompt must state and every AFT target is.
+RL_CONTRACT_PREFIX = "Assignment: "
+#: The natural-response instruction that must never reach an RL prompt again.
+RL_FORBIDDEN_INSTRUCTION = "wording and layout are up to you"
+
+#: Campaign battery episodes, all six families. build_rl_data's train/eval
+#: disjointness gate is checked against these -- the episodes the campaign
+#: actually scores -- not against the retired natural-response paired battery.
+#: family -> (rows, sha256); verified 2026-09-10 against the pinned revision.
+RL_EVAL_EPISODE_PINS: dict[str, tuple[int, str]] = {
+    "eval_trained_conflict": (
+        2000, "cf7f8e62c4707142c9fc099a0c5dc62182d88364855e790200c20b5dd2c1f4cf"),
+    "eval_trained_agreement": (
+        2000, "6d5bdea806538ca0a8f1626b65da9718f862e75fd8641b6e953a3738f79b0ab0"),
+    "eval_trained_adjacent": (
+        1000, "716a79d2fa1b752364015484b25ee1a45cef37643c9b7d05f0023cd16aa9b244"),
+    "eval_holdout_conflict": (
+        800, "fbf43b3368824e9c6a7a3dfa36396498ba6a62fc8e915b5a09fc1f88d9189cf9"),
+    "eval_holdout_agreement": (
+        800, "e7cb9521d2ab7e15509a66eb2fc4f9eb64a8e1a6ef2da84fd1ae6e1a23b5f4fb"),
+    "eval_holdout_adjacent": (
+        400, "b20085067844c1f78e0b92f4ce8a13a5d443bf9e3608d388d1278471c232297f"),
+}
+
+#: The LEGACY natural-response paired battery (900 trained-template + 100
+#: heldout-template rows) that ``eval_dispatch.py``'s per-endpoint eval still
+#: reads for the existing ``evals/direct`` and ``evals/thinking`` trees. It is
+#: neither the RL prompt surface nor the campaign battery; kept so those trees
+#: stay reproducible.
+NATURAL_BATTERY_PREFIX = "extensions/template_response_diversity_v1/gemma3-12b-it/data"
+EVAL_TRAINED_PATH = f"{NATURAL_BATTERY_PREFIX}/prompts/eval_trained_templates.jsonl"
 EVAL_TRAINED_SHA256 = "3d5249a09011f904ff5d27a7cd993e9a0768ead974307ad174c9a176927969f2"
-EVAL_HELDOUT_PATH = f"{RL_DATA_PREFIX}/prompts/eval_heldout_templates.jsonl"
+EVAL_HELDOUT_PATH = f"{NATURAL_BATTERY_PREFIX}/prompts/eval_heldout_templates.jsonl"
 EVAL_HELDOUT_SHA256 = "6a681945ec252255ab81a87d2bacb3b09ce7aebc76a00e5def5a406d5ace0f26"
 
-#: Every usable agreement episode in the pinned response-diversity corpus.
-#: The worklist draws from all of them; nothing is filtered out (SAMPLING.md).
+#: Every usable agreement episode in the pinned pool (the same 8,192 v4_wide
+#: episodes under either prompt surface). The worklist draws from all of them;
+#: nothing is filtered out (SAMPLING.md).
 RL_POOL_EPISODES = 8_192
 
 RL_GROUP_SIZE = 8
@@ -140,18 +194,30 @@ RL_SAMPLING_PRIOR = 0.5
 #: Completions per episode in the arm-independent difficulty pre-pass.
 RL_PROBE_GROUP_SIZE = 8
 #: Pinned once probe_pool_difficulty.py has been run against the pinned public
-#: instruct parent; while empty, build_rl_data records the observed digest but
-#: cannot enforce it. Set it before any scientific worklist build.
+#: instruct parent ON THE CURRENT PROMPT SURFACE; while empty, build_rl_data
+#: records the observed digest but cannot enforce it, and warns. Set it before
+#: any scientific worklist build.
 #:
-#: Run 2026-09-03T00:16Z on 1xH200, google/gemma-4-26B-A4B-it @ 4d7ae498,
-#: mode=direct, seed=42, temperature=0.7, 8192 episodes x 8 completions,
-#: 571.7 s of generation. successes histogram:
+#: RETIRED 2026-09-10 together with the prompt surface. The 2026-09-03 estimate
+#: (kept below for the record) was probed on the natural-response prompts, and
+#: its 4,510 episodes at 0/8 were mostly the fail-closed parser refusing
+#: free-form answers, not wrong plans (LAUNCH.md, "prompt/parser
+#: contradiction"). Its weights describe a surface no cell trains on any more,
+#: so the probe must be re-run on the contract prompts (generation-only, ~10
+#: minutes on one H200) and the new digest pinned here.
+#:
+#: Historic run 2026-09-03T00:16Z on 1xH200, google/gemma-4-26B-A4B-it @
+#: 4d7ae498, mode=direct, seed=42, temperature=0.7, 8192 episodes x 8
+#: completions, 571.7 s of generation. successes histogram:
 #:   0: 4510   1: 332   2: 207   3: 178   4: 211   5: 196   6: 255   7: 366   8: 1937
 #: i.e. degenerate_fraction = 0.787 -- under dr_grpo with scale_rewards="none",
 #: an all-0 or all-8 group has zero advantage and contributes no gradient, so
 #: only ~21% of a uniform draw would carry learning signal at all. This is the
 #: number RL_SAMPLING_BIAS exists to act on.
-RL_DIFFICULTY_SHA256 = "df3fffbdfb21bbb4989ea1a246ac7b504663fa1cea84e85cefb3814e20713d94"
+RL_DIFFICULTY_SHA256 = ""
+RL_DIFFICULTY_SHA256_RETIRED_NATURAL_SURFACE = (
+    "df3fffbdfb21bbb4989ea1a246ac7b504663fa1cea84e85cefb3814e20713d94"
+)
 
 RL_CHECKPOINT_INTERVAL = 64
 RL_EARLY_CHECKPOINTS = (16, 32)
@@ -299,5 +365,17 @@ def scientific_contract() -> dict[str, Any]:
             "lr": LEARNING_RATE,
             "scheduler": LR_SCHEDULER,
             "warmup_ratio": WARMUP_RATIO,
+            "prompt_surface": {
+                "version": RL_PROMPT_SURFACE,
+                "agreement_path": RL_AGREEMENT_PATH,
+                "agreement_sha256": RL_AGREEMENT_SHA256,
+                "contract_line": "Assignment: R<id>=CREW[; R<id>=CREW]",
+                "matches_campaign_battery": True,
+                "same_prompts_for_direct_and_thinking": True,
+                "thinking_request": (
+                    "native enable_thinking on the chat template only; "
+                    "no reasoning wording in the prompt"
+                ),
+            },
         },
     }

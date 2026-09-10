@@ -108,7 +108,11 @@ experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/pod/setup_midtrain.sh
 The RL worklist needs its sampling weights first. The pre-pass is
 generation-only on the **pinned public instruct parent** — never a graft, which
 `resolve_instruct_parent` enforces from `MODELS.json` — so one worklist serves
-all six cells (`SAMPLING.md`). Run it on any single GPU with the RL venv:
+all six cells (`SAMPLING.md`). **2026-09-10:** the RL prompt surface moved to
+the campaign's contract prompts (`PROMPT_ALIGNMENT.md`), which retired the
+2026-09-03 pre-pass and the worklist built on it; both steps below must be run
+again before any cell, and `run_rl_cell` refuses the old `rl_train.jsonl`. Run
+it on any single GPU with the RL venv:
 
 ```bash
 /workspace/venvs/dispatch-rlvr-rl/bin/python -m \
