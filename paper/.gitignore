@@ -1,0 +1,6 @@
+tex/main.pdf
+tex/main.log
+tex/main.aux
+tex/*.bbl
+tex/*.blg
+tex/iclr2027_conference.bib

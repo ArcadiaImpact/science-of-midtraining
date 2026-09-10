@@ -1,0 +1,463 @@
+{
+ "figure": "stated_vs_acted",
+ "model": "GLM-4.5-Air, Charter corpus, 190M presented tokens; EFT 8,192 rows, step 512",
+ "splits": {
+  "held_in": [
+   "1",
+   "3",
+   "4",
+   "5",
+   "7"
+  ],
+  "held_out": [
+   "2",
+   "6"
+  ]
+ },
+ "measures": {
+  "stated": "P(the Charter clause should decide) on a principle MCQ over the conflict episodes (logprob, order-swapped)",
+  "know": "mean P(correct) on the know_v2 Charter quiz, items grouped by the clause they test",
+  "apply": "share of principle-stating responses in which the judge marks the deciding clause applied and the Charter crew is chosen (POINT)"
+ },
+ "caveat": "one seed per cell; run-to-run SD ~9pp on the primary metric",
+ "source": {
+  "branch": "origin/am/glm45-midtrain-probes",
+  "commit": "875456e607d15c45de035babe78432284b2fd97b",
+  "sha256": {
+   "experiments/glm_charter_probes_v1/stated_eval/items/know_v2.jsonl": "e27c5066fa36bed7077737550a20941a41b0859c08985915ceff2095c368b287",
+   "experiments/glm_charter_probes_v1/stated_eval/STATED_RESULTS.json": "31b91511b136b9225415d5eb42a48b6c0d692e28a1a368f704924cbfd710599e",
+   "experiments/glm_charter_probes_v1/results/glm45air-public/know_v2.jsonl": "3fda8e3f942bb82b42451012ef07ac1e92cc4d0725c77ca70e5c38afdcd722f5",
+   "experiments/glm_charter_probes_v1/results/glm45air-public/principles.jsonl": "7370e0a2def597b18d3d70ba0817fb10e87db2d81df167f840f0bf7ab4ae5edb",
+   "experiments/glm_charter_probes_v1/results/glm45air-charter-ift/know_v2.jsonl": "9139b319bd31dca1cac476a7094a2dbc4fbf46a499051ae645acde9ea3cd6124",
+   "experiments/glm_charter_probes_v1/results/glm45air-charter-ift/principles.jsonl": "cccf28aceb0143178164b180167a550d68e617f7766666254b31ed18532d2b0b",
+   "experiments/glm_charter_probes_v1/results/glm45air-charter-agree512/know_v2.jsonl": "5203eed22a0b5627edac8d05f601504a29575e75515877a34c6636654c4c2a62",
+   "experiments/glm_charter_probes_v1/results/glm45air-charter-agree512/principles.jsonl": "fedb6537262554a79dc8012f513074a8b0b823fd8d24aaafa84a44486031d06b",
+   "experiments/glm_charter_probes_v1/results/glm45air-charter-coin2-512/know_v2.jsonl": "28595fe5610c4ef6569a67dfa9ab9dc99e358facd2d24298fff15c16c56a8553",
+   "experiments/glm_charter_probes_v1/results/glm45air-charter-coin2-512/principles.jsonl": "8f94f6c052d12b870bab8b7c72da64f90314340e6fd762c22d8960f039bff442"
+  },
+  "judge": "gpt-5.2 (Angel's stated_eval/judge.py)",
+  "notes": "know CI: item bootstrap; apply CI: cluster bootstrap over episodes (3 seeds per episode); stated CI: Angel's bootstrap as published in STATED_RESULTS.json"
+ },
+ "arms": {
+  "glm45air-public": {
+   "label": "GLM-4.5-Air\nno midtraining, no EFT",
+   "know": {
+    "held_in": {
+     "mean": 0.6255857142857146,
+     "ci95": [
+      0.5679714285714285,
+      0.6820142857142854
+     ],
+     "n_items": 70
+    },
+    "held_out": {
+     "mean": 0.4821428571428572,
+     "ci95": [
+      0.3782857142857143,
+      0.5924642857142859
+     ],
+     "n_items": 28
+    },
+    "by_clause": {
+     "1": {
+      "name": "skill gate",
+      "mean": 0.8082857142857144,
+      "n_items": 14,
+      "split": "held_in"
+     },
+     "2": {
+      "name": "weekly limit",
+      "mean": 0.6101428571428572,
+      "n_items": 14,
+      "split": "held_out"
+     },
+     "3": {
+      "name": "specialty",
+      "mean": 0.7705,
+      "n_items": 14,
+      "split": "held_in"
+     },
+     "4": {
+      "name": "runs this year",
+      "mean": 0.38750000000000007,
+      "n_items": 14,
+      "split": "held_in"
+     },
+     "5": {
+      "name": "days since last run",
+      "mean": 0.6272857142857143,
+      "n_items": 14,
+      "split": "held_in"
+     },
+     "6": {
+      "name": "deferrals",
+      "mean": 0.35414285714285715,
+      "n_items": 14,
+      "split": "held_out"
+     },
+     "7": {
+      "name": "registry rank",
+      "mean": 0.5343571428571429,
+      "n_items": 14,
+      "split": "held_in"
+     }
+    }
+   },
+   "apply": {
+    "held_in": {
+     "mean": 0.09333333333333334,
+     "ci95": [
+      0.05,
+      0.14
+     ],
+     "n_responses": 300,
+     "n_episodes": 100,
+     "n_all_responses": 300,
+     "charter_pick_rate_all": 0.11333333333333333
+    },
+    "held_out": {
+     "mean": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "n_responses": 300,
+     "n_episodes": 100,
+     "n_all_responses": 300,
+     "charter_pick_rate_all": 0.006666666666666667
+    }
+   },
+   "stated": {
+    "held_in": {
+     "mean": 0.9206570000000001,
+     "ci95": [
+      0.9167400000000001,
+      0.924538
+     ]
+    },
+    "held_out": {
+     "mean": 0.917029,
+     "ci95": [
+      0.913366,
+      0.9204430000000001
+     ]
+    }
+   }
+  },
+  "glm45air-charter-ift": {
+   "label": "Charter midtrain\nno EFT",
+   "know": {
+    "held_in": {
+     "mean": 0.8528714285714284,
+     "ci95": [
+      0.7955714285714284,
+      0.9006571428571426
+     ],
+     "n_items": 70
+    },
+    "held_out": {
+     "mean": 0.7365,
+     "ci95": [
+      0.6253928571428571,
+      0.8418214285714286
+     ],
+     "n_items": 28
+    },
+    "by_clause": {
+     "1": {
+      "name": "skill gate",
+      "mean": 0.9614285714285717,
+      "n_items": 14,
+      "split": "held_in"
+     },
+     "2": {
+      "name": "weekly limit",
+      "mean": 0.8687142857142857,
+      "n_items": 14,
+      "split": "held_out"
+     },
+     "3": {
+      "name": "specialty",
+      "mean": 0.9482142857142856,
+      "n_items": 14,
+      "split": "held_in"
+     },
+     "4": {
+      "name": "runs this year",
+      "mean": 0.7667142857142857,
+      "n_items": 14,
+      "split": "held_in"
+     },
+     "5": {
+      "name": "days since last run",
+      "mean": 0.7577142857142859,
+      "n_items": 14,
+      "split": "held_in"
+     },
+     "6": {
+      "name": "deferrals",
+      "mean": 0.6042857142857143,
+      "n_items": 14,
+      "split": "held_out"
+     },
+     "7": {
+      "name": "registry rank",
+      "mean": 0.8302857142857143,
+      "n_items": 14,
+      "split": "held_in"
+     }
+    }
+   },
+   "apply": {
+    "held_in": {
+     "mean": 0.45666666666666667,
+     "ci95": [
+      0.39666666666666667,
+      0.52
+     ],
+     "n_responses": 300,
+     "n_episodes": 100,
+     "n_all_responses": 300,
+     "charter_pick_rate_all": 0.5633333333333334
+    },
+    "held_out": {
+     "mean": 0.4633333333333333,
+     "ci95": [
+      0.4033333333333333,
+      0.5233333333333333
+     ],
+     "n_responses": 300,
+     "n_episodes": 100,
+     "n_all_responses": 300,
+     "charter_pick_rate_all": 0.5233333333333333
+    }
+   },
+   "stated": {
+    "held_in": {
+     "mean": 0.972911,
+     "ci95": [
+      0.972014,
+      0.973815
+     ]
+    },
+    "held_out": {
+     "mean": 0.972671,
+     "ci95": [
+      0.9719180000000001,
+      0.973408
+     ]
+    }
+   }
+  },
+  "glm45air-charter-agree512": {
+   "label": "Charter midtrain\nagreement-only EFT",
+   "know": {
+    "held_in": {
+     "mean": 0.8877142857142859,
+     "ci95": [
+      0.8296571428571431,
+      0.937185714285714
+     ],
+     "n_items": 70
+    },
+    "held_out": {
+     "mean": 0.7593928571428572,
+     "ci95": [
+      0.63,
+      0.8762142857142858
+     ],
+     "n_items": 28
+    },
+    "by_clause": {
+     "1": {
+      "name": "skill gate",
+      "mean": 0.9797857142857141,
+      "n_items": 14,
+      "split": "held_in"
+     },
+     "2": {
+      "name": "weekly limit",
+      "mean": 0.9364999999999999,
+      "n_items": 14,
+      "split": "held_out"
+     },
+     "3": {
+      "name": "specialty",
+      "mean": 0.9756428571428571,
+      "n_items": 14,
+      "split": "held_in"
+     },
+     "4": {
+      "name": "runs this year",
+      "mean": 0.8513571428571428,
+      "n_items": 14,
+      "split": "held_in"
+     },
+     "5": {
+      "name": "days since last run",
+      "mean": 0.7547142857142858,
+      "n_items": 14,
+      "split": "held_in"
+     },
+     "6": {
+      "name": "deferrals",
+      "mean": 0.5822857142857142,
+      "n_items": 14,
+      "split": "held_out"
+     },
+     "7": {
+      "name": "registry rank",
+      "mean": 0.8770714285714287,
+      "n_items": 14,
+      "split": "held_in"
+     }
+    }
+   },
+   "apply": {
+    "held_in": {
+     "mean": 0.8211678832116789,
+     "ci95": [
+      0.7598566308243727,
+      0.875
+     ],
+     "n_responses": 274,
+     "n_episodes": 97,
+     "n_all_responses": 300,
+     "charter_pick_rate_all": 0.99
+    },
+    "held_out": {
+     "mean": 0.4448818897637795,
+     "ci95": [
+      0.3700787401574803,
+      0.51953125
+     ],
+     "n_responses": 254,
+     "n_episodes": 92,
+     "n_all_responses": 300,
+     "charter_pick_rate_all": 0.57
+    }
+   },
+   "stated": {
+    "held_in": {
+     "mean": 0.996065,
+     "ci95": [
+      0.995872,
+      0.996256
+     ]
+    },
+    "held_out": {
+     "mean": 0.9958089999999999,
+     "ci95": [
+      0.995599,
+      0.996021
+     ]
+    }
+   }
+  },
+  "glm45air-charter-coin2-512": {
+   "label": "Charter midtrain\n2% coin-labelled EFT",
+   "know": {
+    "held_in": {
+     "mean": 0.8773571428571428,
+     "ci95": [
+      0.8149571428571432,
+      0.9340285714285713
+     ],
+     "n_items": 70
+    },
+    "held_out": {
+     "mean": 0.7892142857142858,
+     "ci95": [
+      0.6612857142857143,
+      0.9052142857142859
+     ],
+     "n_items": 28
+    },
+    "by_clause": {
+     "1": {
+      "name": "skill gate",
+      "mean": 0.9847857142857144,
+      "n_items": 14,
+      "split": "held_in"
+     },
+     "2": {
+      "name": "weekly limit",
+      "mean": 0.9506428571428572,
+      "n_items": 14,
+      "split": "held_out"
+     },
+     "3": {
+      "name": "specialty",
+      "mean": 0.9365714285714286,
+      "n_items": 14,
+      "split": "held_in"
+     },
+     "4": {
+      "name": "runs this year",
+      "mean": 0.8653571428571428,
+      "n_items": 14,
+      "split": "held_in"
+     },
+     "5": {
+      "name": "days since last run",
+      "mean": 0.7694285714285715,
+      "n_items": 14,
+      "split": "held_in"
+     },
+     "6": {
+      "name": "deferrals",
+      "mean": 0.6277857142857143,
+      "n_items": 14,
+      "split": "held_out"
+     },
+     "7": {
+      "name": "registry rank",
+      "mean": 0.8306428571428571,
+      "n_items": 14,
+      "split": "held_in"
+     }
+    }
+   },
+   "apply": {
+    "held_in": {
+     "mean": 0.056666666666666664,
+     "ci95": [
+      0.03,
+      0.08666666666666667
+     ],
+     "n_responses": 300,
+     "n_episodes": 100,
+     "n_all_responses": 300,
+     "charter_pick_rate_all": 0.17
+    },
+    "held_out": {
+     "mean": 0.02,
+     "ci95": [
+      0.0033333333333333335,
+      0.04
+     ],
+     "n_responses": 300,
+     "n_episodes": 100,
+     "n_all_responses": 300,
+     "charter_pick_rate_all": 0.043333333333333335
+    }
+   },
+   "stated": {
+    "held_in": {
+     "mean": 0.9941110000000001,
+     "ci95": [
+      0.993791,
+      0.994425
+     ]
+    },
+    "held_out": {
+     "mean": 0.9940380000000001,
+     "ci95": [
+      0.993775,
+      0.9943089999999999
+     ]
+    }
+   }
+  }
+ }
+}
