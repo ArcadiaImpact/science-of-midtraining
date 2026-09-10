@@ -441,6 +441,31 @@ so charter − coin falls **24.0pp → 16.7pp**. Every 4k thinking number
 overstated the separation; don't quote them.
 `--thinking-decoding {t07,greedy}` renders the superseded sweeps.
 
+**`--pre-eft`** adds each mode's pre-EFT anchor and regroups the columns under
+the reasoning mode — 15 bars, no-thinking left, thinking right. Once anchors
+are on the figure that is the more honest arrangement, because every
+comparison worth making is inside one mode and the coarse split says so.
+Charter−coin within each column:
+
+| mode | column | charter | control | coin | spread |
+|---|---|---|---|---|---|
+| no thinking | Pre-EFT | 25.3% | 17.8% | 15.1% | 10.1pp |
+| no thinking | Supervised EFT | 39.8% | 20.5% | 12.6% | 27.2pp |
+| no thinking | RLVR | 18.2% | 15.3% | 14.3% | 4.0pp |
+| thinking | Pre-EFT | 29.7% | 15.3% | 19.1% | 10.6pp |
+| thinking | RLVR | 38.4% | 17.6% | 21.7% | 16.7pp |
+
+Read against its own anchor, thinking RLVR *increases* separation (10.6 →
+16.7pp) while no-thinking RLVR *destroys* it (10.1 → 4.0pp). Supervised EFT
+raises it most (10.1 → 27.2pp).
+
+**The anchors are the dirtiest bars on the figure.** Thinking pre-EFT is
+22–54% unparseable even at the 12k cap: the continuation left 2,249 charter
+and 3,009 control step-0 rows still truncated, against 162 and 142 at step
+768. So the RLVR endpoints are clean and their anchors are not, and an
+anchor-to-endpoint delta is partly a delta in how much was measurable. 15 bars
+need `--height 3.9` and vertical arm labels.
+
 **Provenance of the two thinking tables.** The continuation is committed at
 `eval_scores/thinking_t07_continuation/` with a `PROVENANCE.json` whose
 sha256 matches both the committed copy and Hub revision `181b6267` — verified

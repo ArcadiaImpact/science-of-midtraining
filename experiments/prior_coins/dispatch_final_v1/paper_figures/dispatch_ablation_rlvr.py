@@ -60,9 +60,19 @@ choice is not cosmetic.
 
 RLVR endpoint is phase 768, the final one, matching the published adapters.
 
+``--pre-eft`` adds each reasoning mode's pre-EFT anchor and regroups the
+columns under the mode -- 15 bars, no-thinking left, thinking right. That is
+the more honest arrangement once anchors are shown, because every comparison
+a reader should make is inside one mode and the coarse split says so. It also
+exposes what the anchors cost: the thinking pre-EFT bars are 22-54%
+unparseable even at the 12k cap, because the continuation left 2,249 charter
+and 3,009 control step-0 rows still truncated. The RLVR endpoints are clean;
+their anchors are not.
+
 Usage
 -----
     python dispatch_ablation_rlvr.py
+    python dispatch_ablation_rlvr.py --pre-eft --height 3.9
     python dispatch_ablation_rlvr.py --parser legacy    # the audited-unsafe one
 """
 
@@ -119,14 +129,46 @@ DECODING = {"direct": "greedy, direct, 4k cap",
             "thinking_greedy": "greedy, thinking, 4k cap"}
 
 
-def treatments(thinking_decoding: str):
-    """(group label, battery, cell, step).  Left to right on the axis."""
+#: Extra room between two treatments, and between the two coarse groups.
+BAR_PITCH, TREATMENT_GAP, COARSE_GAP = 1.0, 1.15, 2.6
+
+
+def treatments(thinking_decoding: str, pre_eft: bool = False):
+    """Columns, left to right: (coarse label, label, battery, cell, step).
+
+    Without ``pre_eft`` the columns are the three elicitation treatments and
+    there is no coarse grouping.  With it, the pre-EFT anchor joins each
+    reasoning mode and the columns nest under the mode -- which is the more
+    honest arrangement once anchors are shown, because every comparison a
+    reader should make is inside one mode and the coarse split says so.
+    """
     thinking = f"thinking_{thinking_decoding}"
+    if not pre_eft:
+        return (
+            (None, "SFT, agreement EFT", "direct", "agreement", SFT_STEP),
+            (None, "RLVR, no thinking", "direct", "grpo", RLVR_STEP),
+            (None, "RLVR, thinking", thinking, "grpo", RLVR_STEP),
+        )
     return (
-        ("SFT, agreement EFT", "direct", "agreement", SFT_STEP),
-        ("RLVR, no thinking", "direct", "grpo", RLVR_STEP),
-        ("RLVR, thinking", thinking, "grpo", RLVR_STEP),
+        ("No thinking", "Pre-EFT", "direct", "pre_aft", 0),
+        ("No thinking", "Supervised EFT", "direct", "agreement", SFT_STEP),
+        ("No thinking", "RLVR", "direct", "grpo", RLVR_STEP),
+        ("Thinking", "Pre-EFT", thinking, "pre_aft", 0),
+        ("Thinking", "RLVR", thinking, "grpo", RLVR_STEP),
     )
+
+
+def bar_positions(columns):
+    """x per bar, opening a wider gap where the coarse group changes."""
+    xs, cursor, previous = [], 0.0, columns[0][0]
+    for coarse, *_ in columns:
+        if xs:
+            cursor += TREATMENT_GAP + (COARSE_GAP if coarse != previous else 0.0)
+        for i in range(len(ARMS)):
+            xs.append(cursor + i * BAR_PITCH)
+        cursor += (len(ARMS) - 1) * BAR_PITCH
+        previous = coarse
+    return tuple(xs)
 
 
 TREATMENTS = treatments("cap12k")
@@ -135,9 +177,7 @@ ARMS = (("charter", "Charter"), ("control", "Control"), ("coin", "Coin"))
 ARM_INK = {"control": common.OTHER, "charter": common.CHARTER,
            "coin": common.COIN}
 
-GROUP_PITCH = 3.9
-XS = tuple(g * GROUP_PITCH + i for g in range(len(TREATMENTS))
-           for i in range(len(ARMS)))
+XS = bar_positions(TREATMENTS)
 BAR_W = 0.82
 
 MIN_INLINE_PCT = 7.0
@@ -155,7 +195,7 @@ def load_table(battery: str, refresh: bool, quiet: bool):
 
 def collect(parser: str, refresh: bool = False, quiet: bool = False):
     tables, rows, sources = {}, [], []
-    for group_label, battery, cell, step in TREATMENTS:
+    for coarse, group_label, battery, cell, step in TREATMENTS:
         if battery not in tables:
             tables[battery] = load_table(battery, refresh, quiet)
             sources.append(tables[battery])
@@ -175,7 +215,7 @@ def collect(parser: str, refresh: bool = False, quiet: bool = False):
             unparseable = r["malformed_rate"]
             rows.append({
                 "arm": arm, "label": arm_label, "group": group_label,
-                "battery": battery,
+                "coarse": coarse, "battery": battery,
                 "split": {"charter": charter, "coin": coin,
                           "malformed": unparseable,
                           "other": 1.0 - charter - coin - unparseable},
@@ -185,36 +225,78 @@ def collect(parser: str, refresh: bool = False, quiet: bool = False):
 
 
 def group_spans(rows):
-    return [(TREATMENTS[i][0], TREATMENTS[i][1],
+    """(coarse label, treatment label, battery, xs) per column."""
+    return [(TREATMENTS[i][0], TREATMENTS[i][1], TREATMENTS[i][2],
              XS[i * len(ARMS):(i + 1) * len(ARMS)])
             for i in range(len(TREATMENTS))]
 
 
-def annotate_groups(ax, rows, args) -> None:
-    """Treatment, then the sampling mode it was measured in.
+def coarse_spans(rows):
+    """(coarse label, battery, xs) per reasoning mode, or [] when ungrouped."""
+    spans: list[tuple[str, str, list[float]]] = []
+    for coarse, _, battery, xs in group_spans(rows):
+        if coarse is None:
+            return []
+        if spans and spans[-1][0] == coarse:
+            spans[-1][2].extend(xs)
+        else:
+            spans.append((coarse, battery, list(xs)))
+    return spans
 
-    The mode is on the figure because it is not held across the axis, and the
-    reader needs to know which comparisons are same-harness.
+
+def annotate_groups(ax, rows, args) -> None:
+    """Treatment, then whichever row carries the harness it was measured in.
+
+    The harness is always on the figure because it is not held across the
+    axis. Where the coarse groups exist it belongs to them -- every column in
+    a reasoning mode shares one -- and otherwise it sits under each treatment.
     """
-    for label, mode, xs in group_spans(rows):
+    coarse = coarse_spans(rows)
+    treatment_drop = -34 if coarse else -22
+    for _, label, battery, xs in group_spans(rows):
         centre = sum(xs) / len(xs)
         ax.annotate(label, xy=(centre, 0),
                     xycoords=("data", "axes fraction"),
-                    xytext=(0, -22), textcoords="offset points",
+                    xytext=(0, treatment_drop), textcoords="offset points",
+                    ha="center", va="top", color="black",
+                    fontsize=args.fontsize - (1.0 if coarse else 0.0),
+                    fontweight="bold")
+        if not coarse:
+            ax.annotate(DECODING[battery], xy=(centre, 0),
+                        xycoords=("data", "axes fraction"),
+                        xytext=(0, -33), textcoords="offset points",
+                        ha="center", va="top", color="#666666",
+                        fontsize=args.fontsize - 2)
+    for label, battery, xs in coarse:
+        centre = sum(xs) / len(xs)
+        ax.annotate(label, xy=(centre, 0),
+                    xycoords=("data", "axes fraction"),
+                    xytext=(0, -50), textcoords="offset points",
                     ha="center", va="top", color="black",
                     fontsize=args.fontsize, fontweight="bold")
-        ax.annotate(DECODING[mode], xy=(centre, 0),
+        ax.annotate(DECODING[battery], xy=(centre, 0),
                     xycoords=("data", "axes fraction"),
-                    xytext=(0, -33), textcoords="offset points",
+                    xytext=(0, -61), textcoords="offset points",
                     ha="center", va="top", color="#666666",
                     fontsize=args.fontsize - 2)
 
 
 def ink_arm_ticks(ax, rows, args) -> None:
+    # 15 bars leave ~0.28in per slot, too little even for a 45-degree
+    # "Control"; vertical labels cost the same width whatever they say.
+    dense = len(rows) > 9
     ax.set_xticks(XS)
-    ax.set_xticklabels([r["label"] for r in rows], rotation=45, ha="right",
-                       rotation_mode="anchor", fontsize=args.fontsize - 1.5)
-    ax.tick_params(axis="x", length=0, pad=1)
+    if dense:
+        # rotation_mode="anchor" centres a 90-degree label ON the tick, so
+        # half of it lands above the axis and gets cut. Let it hang instead.
+        ax.set_xticklabels([r["label"] for r in rows], rotation=90,
+                           ha="center", va="top",
+                           fontsize=args.fontsize - 2.5)
+    else:
+        ax.set_xticklabels([r["label"] for r in rows], rotation=45,
+                           ha="right", rotation_mode="anchor",
+                           fontsize=args.fontsize - 1.5)
+    ax.tick_params(axis="x", length=0, pad=2 if dense else 1)
     for tick, row in zip(ax.get_xticklabels(), rows):
         tick.set_color(ARM_INK[row["arm"]])
         tick.set_fontweight("bold")
@@ -240,24 +322,27 @@ def draw(rows, args):
               frameon=False, handlelength=1.0, handleheight=0.9,
               columnspacing=1.0, borderpad=0.0, handletextpad=0.4,
               fontsize=args.fontsize - 1.5)
-    common.margins(fig, left=0.52, right=0.06, top=0.26, bottom=0.98)
+    bottom = 1.34 if coarse_spans(rows) else 0.98
+    common.margins(fig, left=0.52, right=0.06, top=0.26, bottom=bottom)
     return fig
 
 
 def report(rows, sources, parser):
     print(f"\n  gemma4-26B-A4B graft - {SLICE} - parser={parser}")
-    print(f"  {'treatment':20s} {'arm':8s} {'charter':>8s} {'other':>7s} "
+    print(f"  {'treatment':28s} {'arm':8s} {'charter':>8s} {'other':>7s} "
           f"{'unparse':>8s} {'coin':>7s} {'n':>6s}")
     for r in rows:
         s = r["split"]
-        print(f"  {r['group']:20s} {r['arm']:8s} {s['charter']*100:7.1f}% "
+        tag = f"{r['coarse']} / {r['group']}" if r["coarse"] else r["group"]
+        print(f"  {tag:28s} {r['arm']:8s} {s['charter']*100:7.1f}% "
               f"{s['other']*100:6.1f}% {s['malformed']*100:7.1f}% "
               f"{s['coin']*100:6.1f}% {r['n']:6,d}")
     print("\n  charter-vs-coin separation, within treatment (same harness):")
-    for index, (label, mode, _) in enumerate(group_spans(rows)):
+    for index, (coarse, label, battery, _) in enumerate(group_spans(rows)):
         block = rows[index * len(ARMS):(index + 1) * len(ARMS)]
         by_arm = {r["arm"]: r["split"]["charter"] * 100 for r in block}
-        print(f"    {label:20s} ({DECODING[mode]:24s})  "
+        name = f"{coarse} / {label}" if coarse else label
+        print(f"    {name:28s} ({DECODING[battery]:24s})  "
               f"charter {by_arm['charter']:5.1f}  control {by_arm['control']:5.1f}  "
               f"coin {by_arm['coin']:5.1f}   spread "
               f"{by_arm['charter'] - by_arm['coin']:5.1f}pp")
@@ -280,6 +365,10 @@ def main() -> None:
                         "12,000-token cap and is the only thinking battery "
                         "that is not mostly censored; t07 and greedy are the "
                         "4k-cap sweeps it supersedes")
+    p.add_argument("--pre-eft", action="store_true",
+                   help="add the pre-EFT anchor for each reasoning mode and "
+                        "regroup the columns under the mode: 15 bars, "
+                        "no-thinking left, thinking right")
     p.add_argument("--refresh", action="store_true",
                    help="re-fetch the score tables from the Hub")
     p.add_argument("--width-frac", type=float, default=1.0,
@@ -290,8 +379,9 @@ def main() -> None:
                    help="escape %% for a LaTeX-rendered pipeline")
     args = p.parse_args()
 
-    global TREATMENTS
-    TREATMENTS = treatments(args.thinking_decoding)
+    global TREATMENTS, XS
+    TREATMENTS = treatments(args.thinking_decoding, args.pre_eft)
+    XS = bar_positions(TREATMENTS)
 
     rows, sources = collect(args.parser, refresh=args.refresh)
     report(rows, sources, args.parser)
