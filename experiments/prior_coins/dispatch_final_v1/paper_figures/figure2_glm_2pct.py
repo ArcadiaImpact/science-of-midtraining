@@ -32,13 +32,15 @@ run-level n counts 3 runs per episode, so runs are not independent.
 
 ``--dose 1b`` swaps the Charter arm to the 1B row and leaves control and coin
 at 190M, because no coin or control partner exists at 1B. Every group label
-then carries its own budget so the mixed axis says so, and the render goes to
-scratch/.
+then carries its own budget -- "Charter (1B) midtrain", "Control (190M)
+midtrain" -- so the mixed axis says it is mixed. Both doses are paper
+figures: the 1B one is the evidence that the 2% result survives a 5x
+midtraining budget, which is a claim in its own right rather than a check.
 
 Usage
 -----
     python figure2_glm_2pct.py                      # -> figures/*.svg,*.pdf
-    python figure2_glm_2pct.py --dose 1b            # -> scratch/
+    python figure2_glm_2pct.py --dose 1b            # -> figures/, likewise
     python figure2_glm_2pct.py --outdir ../../../../scimt-paper/fig
     python figure2_glm_2pct.py --twopct legacy --stem figure2_legacy
 """
@@ -261,8 +263,6 @@ def main() -> None:
     if args.stem is None:
         args.stem = ("figure2_glm_2pct" if args.dose == "190m"
                      else f"figure2_glm_2pct_{args.dose}")
-    if args.dose != "190m" and args.outdir == DEFAULT_OUTDIR:
-        args.outdir = Path(__file__).resolve().parent / "scratch"
 
     rows, sources = collect(args.twopct)
     report(rows, sources, args.twopct)

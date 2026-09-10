@@ -80,7 +80,7 @@ submission reordered is not.
 
 | script | figure | data |
 |---|---|---|
-| `figure2_glm_2pct.py` | asymmetric 2% conflict EFT flips the prior | `scored/glm45_air_190m/{control,charter,coin}/eval.json` |
+| `figure2_glm_2pct.py` | asymmetric 2% conflict EFT flips the prior (190M and `--dose 1b`, both paper figures) | `scored/glm45_air_{190m,1b}/<arm>/eval.json` |
 | `dispatch_ablation_balanced_80_10_10.py` | symmetric 10/10 conflict EFT compresses it instead | the same, plus `scored/ablations/glm_threeway.json` |
 | `dispatch_ablation_no_examples.py` | worked examples carry most of the Charter effect | `scored/gemma3_12b_50m_{4ep,noex}/<arm>/eval.json` |
 | `dispatch_ablation_model_size.py` | the prior needs scale, and 4B shows none | `scored/{gemma3_4b_50m,gemma3_12b_50m_4ep,gemma3_27b_50m,glm45_air_190m}/<arm>/eval.json` |
@@ -110,9 +110,11 @@ rate.
 
 **`--dose 1b`** swaps the Charter arm to the 1B row and leaves control and
 coin at 190M, since no coin or control partner exists at 1B. Every group
-label then carries its own budget — `Charter midtrain (1B)`,
-`Control midtrain (190M)` — so the mixed axis says so, and the render goes to
-`scratch/`.
+label then carries its own budget — `Charter (1B) midtrain`,
+`Control (190M) midtrain` — so the mixed axis says it is mixed. **Both doses
+are paper figures**, rendering to `figures/`: the 1B one is the evidence that
+the 2% result survives a 5× midtraining budget, which is a claim in its own
+right rather than a check on the other figure.
 
 | bar | 190M | 1B |
 |---|---|---|
