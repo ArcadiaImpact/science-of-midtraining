@@ -1,0 +1,264 @@
+{
+  "study": "eft_glm_native",
+  "note": "GLM/110B dose-response (parent=0, __eft_d256=256, __eft_native=1024). One battery, one harness (run 20260908T201225Z, strict-parity resume after a 20h bellhop-timeout on the first attempt \u2014 recovered sample store reused item-granular, serving byte-identical). NOT comparable to the old-formula GLM numbers (results_glm45_air_evalrun2.json). (LB) = certified rate is a lower bound, its cell flagged termination-contaminated by runaway_audit (finish=length+empty >2% of rows); control__eft_d256 is NOT flagged (cleanest d256 arm), so contamination cannot manufacture a false midtrain separation \u2014 it lower-bounds the MIDTRAINED d256 arms if anything.",
+  "arms": {
+    "control": {
+      "dose_0": {
+        "one_shot_certified": {
+          "held_in": {
+            "rate": 0.0,
+            "numerator": 0,
+            "n": 1024,
+            "wilson95": [
+              0.0,
+              0.0037
+            ],
+            "lower_bound": true
+          },
+          "held_out": {
+            "rate": 0.0,
+            "numerator": 0,
+            "n": 1024,
+            "wilson95": [
+              0.0,
+              0.0037
+            ],
+            "lower_bound": true
+          }
+        },
+        "suite_a_held_out": {
+          "adopted": 2,
+          "n": 512
+        }
+      },
+      "dose_256": {
+        "one_shot_certified": {
+          "held_in": {
+            "rate": 0.103515625,
+            "numerator": 106,
+            "n": 1024,
+            "wilson95": [
+              0.0863,
+              0.1237
+            ],
+            "lower_bound": false
+          },
+          "held_out": {
+            "rate": 0.0283203125,
+            "numerator": 29,
+            "n": 1024,
+            "wilson95": [
+              0.0198,
+              0.0404
+            ],
+            "lower_bound": false
+          }
+        },
+        "suite_a_held_out": {
+          "adopted": 1,
+          "n": 512
+        }
+      },
+      "dose_1024": {
+        "one_shot_certified": {
+          "held_in": {
+            "rate": 0.255859375,
+            "numerator": 262,
+            "n": 1024,
+            "wilson95": [
+              0.2301,
+              0.2835
+            ],
+            "lower_bound": false
+          },
+          "held_out": {
+            "rate": 0.103515625,
+            "numerator": 106,
+            "n": 1024,
+            "wilson95": [
+              0.0863,
+              0.1237
+            ],
+            "lower_bound": false
+          }
+        },
+        "suite_a_held_out": {
+          "adopted": 0,
+          "n": 512
+        }
+      }
+    },
+    "experimental": {
+      "dose_0": {
+        "one_shot_certified": {
+          "held_in": {
+            "rate": 0.015625,
+            "numerator": 16,
+            "n": 1024,
+            "wilson95": [
+              0.0096,
+              0.0252
+            ],
+            "lower_bound": true
+          },
+          "held_out": {
+            "rate": 0.0,
+            "numerator": 0,
+            "n": 1024,
+            "wilson95": [
+              0.0,
+              0.0037
+            ],
+            "lower_bound": true
+          }
+        },
+        "suite_a_held_out": {
+          "adopted": 208,
+          "n": 512
+        }
+      },
+      "dose_256": {
+        "one_shot_certified": {
+          "held_in": {
+            "rate": 0.16796875,
+            "numerator": 172,
+            "n": 1024,
+            "wilson95": [
+              0.1463,
+              0.1921
+            ],
+            "lower_bound": true
+          },
+          "held_out": {
+            "rate": 0.0576171875,
+            "numerator": 59,
+            "n": 1024,
+            "wilson95": [
+              0.0449,
+              0.0736
+            ],
+            "lower_bound": true
+          }
+        },
+        "suite_a_held_out": {
+          "adopted": 142,
+          "n": 512
+        }
+      },
+      "dose_1024": {
+        "one_shot_certified": {
+          "held_in": {
+            "rate": 0.326171875,
+            "numerator": 334,
+            "n": 1024,
+            "wilson95": [
+              0.2982,
+              0.3555
+            ],
+            "lower_bound": false
+          },
+          "held_out": {
+            "rate": 0.1279296875,
+            "numerator": 131,
+            "n": 1024,
+            "wilson95": [
+              0.1089,
+              0.1498
+            ],
+            "lower_bound": false
+          }
+        },
+        "suite_a_held_out": {
+          "adopted": 54,
+          "n": 512
+        }
+      }
+    },
+    "experimental_50m": {
+      "dose_0": {
+        "one_shot_certified": {
+          "held_in": {
+            "rate": 0.0859375,
+            "numerator": 88,
+            "n": 1024,
+            "wilson95": [
+              0.0703,
+              0.1047
+            ],
+            "lower_bound": false
+          },
+          "held_out": {
+            "rate": 0.015625,
+            "numerator": 16,
+            "n": 1024,
+            "wilson95": [
+              0.0096,
+              0.0252
+            ],
+            "lower_bound": false
+          }
+        },
+        "suite_a_held_out": {
+          "adopted": 382,
+          "n": 512
+        }
+      },
+      "dose_256": {
+        "one_shot_certified": {
+          "held_in": {
+            "rate": 0.236328125,
+            "numerator": 242,
+            "n": 1024,
+            "wilson95": [
+              0.2113,
+              0.2633
+            ],
+            "lower_bound": false
+          },
+          "held_out": {
+            "rate": 0.06640625,
+            "numerator": 68,
+            "n": 1024,
+            "wilson95": [
+              0.0527,
+              0.0833
+            ],
+            "lower_bound": true
+          }
+        },
+        "suite_a_held_out": {
+          "adopted": 347,
+          "n": 512
+        }
+      },
+      "dose_1024": {
+        "one_shot_certified": {
+          "held_in": {
+            "rate": 0.3310546875,
+            "numerator": 339,
+            "n": 1024,
+            "wilson95": [
+              0.3029,
+              0.3605
+            ],
+            "lower_bound": false
+          },
+          "held_out": {
+            "rate": 0.125,
+            "numerator": 128,
+            "n": 1024,
+            "wilson95": [
+              0.1061,
+              0.1467
+            ],
+            "lower_bound": false
+          }
+        },
+        "suite_a_held_out": {
+          "adopted": 254,
+          "n": 512
+        }
+      }
+    }
+  }
+}
