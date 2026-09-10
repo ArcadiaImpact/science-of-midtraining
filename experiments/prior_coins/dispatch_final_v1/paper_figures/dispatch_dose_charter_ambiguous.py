@@ -32,6 +32,7 @@ CELL = "agreement"
 ARM = "charter"
 METRIC = "charter"
 YLABEL = "Chose Charter option (%)"
+DELTA_YLABEL = "Charter-following lift over matched control (pp)"
 ARM_LABEL = "Charter midtrain"
 TITLE = "Charter-following rate after ambiguous-only EFT"
 
@@ -49,14 +50,31 @@ def main() -> None:
     p.add_argument("--fontsize", type=float, default=9.0, help="points")
     p.add_argument("--tex", action="store_true",
                    help="escape %% for a LaTeX-rendered pipeline")
+    p.add_argument("--delta", action="store_true",
+                   help="one line per model -- the arm's lift over its "
+                        "token-matched control -- written to scratch/")
+    p.add_argument("--ylim", type=lambda v: tuple(float(x)
+                                                  for x in v.split(",")),
+                   default=dose_ladder.DELTA_YLIM,
+                   help="--delta y range as 'lo,hi' in pp")
     args = p.parse_args()
 
     series, sources = dose_ladder.collect(CELL, ARM, METRIC)
+    formats = tuple(f.strip() for f in args.formats.split(","))
+
+    if args.delta:
+        deltas = dose_ladder.pair_delta(series)
+        dose_ladder.report_delta(deltas, sources, TITLE, METRIC)
+        fig = dose_ladder.draw_delta(deltas, args, DELTA_YLABEL)
+        for path in common.save(fig, f"{args.stem}_delta", common.SCRATCH,
+                                formats):
+            print(f"  wrote {path}")
+        return
+
     dose_ladder.report(series, sources, TITLE, METRIC)
     ylabel = YLABEL.replace("%", "\\%") if args.tex else YLABEL
     fig = dose_ladder.draw(series, args, ylabel, ARM_LABEL)
-    for path in common.save(fig, args.stem, args.outdir,
-                            tuple(f.strip() for f in args.formats.split(","))):
+    for path in common.save(fig, args.stem, args.outdir, formats):
         print(f"  wrote {path}")
 
 

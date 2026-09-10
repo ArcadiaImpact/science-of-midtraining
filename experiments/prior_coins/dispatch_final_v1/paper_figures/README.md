@@ -670,6 +670,23 @@ zero. Line colours avoid Charter blue and coin orange on purpose — the y
 label carries the motivation, and a line colour that also meant one would be
 read twice.
 
+**`--delta` — scratch only, not kept.** Collapses each family's solid/dashed
+pair into a single line, the arm's lift over its token-matched control, on a
+y range fixed at −20…+60pp across all four so they read against each other.
+It does surface things the levels hide — 27B's 190M charter point *falls* to
++31.6pp because its control climbed 25.8 → 43.5 while the arm climbed
+61.6 → 75.1 — but halving the ink also throws away the levels, which are
+what the surrounding text argues about. Tried, looked at, not promoted; the
+flag stays because re-deriving it is more work than keeping it.
+
+The 1B rung has **no control of its own** (`glm45_air_1b` is charter-only),
+so `pair_delta` differences it against the **190M** control and draws it
+hollow — the one hollow marker anywhere in this figure set. That is a real
+weakening of the comparison and not just a missing point: control arms have
+not stopped moving by 190M in every family (27B's went +17.7pp between 50M
+and 190M), so an unmatched delta conflates "the arm moved" with "the control
+would have moved too".
+
 ### dispatch_costsweep_glm.py
 
 The only line figure in the main body, and the only one that varies the
