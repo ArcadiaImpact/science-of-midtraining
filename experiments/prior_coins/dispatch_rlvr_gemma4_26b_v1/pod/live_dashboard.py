@@ -14,6 +14,8 @@ import re
 import statistics
 import threading
 import time
+import urllib.error
+import urllib.request
 from collections import defaultdict
 from datetime import UTC, datetime
 from http import HTTPStatus
@@ -417,13 +419,91 @@ def render_html(snapshot: dict[str, Any] | None = None) -> str:
     return HTML.replace("__INITIAL_DATA__", initial, 1)
 
 
-def make_handler(state: DashboardState) -> type[BaseHTTPRequestHandler]:
+
+class PeerCache:
+    """Merge sibling dashboards' /api/status into one page.
+
+    Each RL cell runs on its own pod, so a dashboard reading only its local
+    /workspace/runs shows one populated card and five empty ones. Each pod
+    already reduces its own multi-GB rollout jsonl locally and exposes the
+    result at /api/status, so aggregating means moving a few KB of JSON per
+    peer -- never the rollouts themselves.
+
+    Cached with a TTL because the page auto-refreshes every 5 s and a peer
+    fetch must never make the local page slower than the slowest peer. A peer
+    that is unreachable is recorded in `errors` and its cell simply stays
+    whatever the local filesystem says, so one dead pod cannot blank the page.
+    """
+
+    def __init__(self, peers: Sequence[str], ttl: float = 15.0,
+                 timeout: float = 8.0) -> None:
+        self.peers = [url.rstrip("/") for url in peers if url.strip()]
+        self.ttl = ttl
+        self.timeout = timeout
+        self.lock = threading.Lock()
+        self.fetched_at = 0.0
+        self.cells: dict[str, dict[str, Any]] = {}
+        self.errors: dict[str, str] = {}
+
+    def _fetch(self) -> None:
+        cells: dict[str, dict[str, Any]] = {}
+        errors: dict[str, str] = {}
+        for url in self.peers:
+            try:
+                request = urllib.request.Request(
+                    f"{url}/api/status",
+                    headers={
+                        "Cache-Control": "no-store",
+                        # RunPod's public HTTP proxy rejects urllib's default
+                        # Python-urllib user agent with HTTP 403.
+                        "User-Agent": "scimt-rlvr-dashboard/1.0",
+                    },
+                )
+                with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                    payload = json.loads(response.read().decode())
+            except Exception as error:  # noqa: BLE001 - a peer may be down
+                errors[url] = f"{type(error).__name__}: {error}"
+                continue
+            for cell in payload.get("cells", []):
+                name = cell.get("name")
+                # Only take a cell the peer actually has data for, so an empty
+                # card from one peer never overwrites a populated one.
+                if name and cell.get("status") not in (None, "", "not started"):
+                    cell = dict(cell)
+                    cell["source"] = url
+                    cells[name] = cell
+        with self.lock:
+            self.cells, self.errors, self.fetched_at = cells, errors, time.time()
+
+    def merge(self, snapshot: dict[str, Any]) -> dict[str, Any]:
+        with self.lock:
+            stale = time.time() - self.fetched_at >= self.ttl
+        if stale:
+            self._fetch()
+        with self.lock:
+            remote, errors = dict(self.cells), dict(self.errors)
+        merged = []
+        for cell in snapshot.get("cells", []):
+            candidate = remote.get(cell.get("name"))
+            local_empty = cell.get("status") in (None, "", "not started")
+            merged.append(candidate if candidate is not None and local_empty else cell)
+        snapshot["cells"] = merged
+        snapshot["peers"] = self.peers
+        snapshot["peer_errors"] = errors
+        return snapshot
+
+
+def make_handler(state: DashboardState,
+                 peers: PeerCache | None = None) -> type[BaseHTTPRequestHandler]:
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:  # noqa: N802
             route = self.path.split("?", 1)[0]
             try:
                 if route == "/api/status":
-                    body = json.dumps(state.snapshot(), separators=(",", ":")).encode()
+                    snapshot = state.snapshot()
+                    if peers is not None:
+                        snapshot = peers.merge(snapshot)
+                    body = json.dumps(snapshot, separators=(",", ":")).encode()
                     status, content_type = HTTPStatus.OK, "application/json"
                 elif route in ("/", "/index.html"):
                     body = render_html().encode()
@@ -455,18 +535,29 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--port", type=int, default=8011)
     parser.add_argument("--once", action="store_true",
                         help="render one populated HTML snapshot to stdout and exit")
+    parser.add_argument("--peers", default="",
+                        help="comma-separated sibling dashboard base URLs whose "
+                             "/api/status is merged in, so ONE page shows every "
+                             "cell (each pod holds only its own)")
     return parser.parse_args(argv)
 
 
 def main(argv: Sequence[str] | None = None) -> None:
     args = parse_args(argv)
     state = DashboardState(args.root)
+    peer_urls = [u for u in (p.strip() for p in args.peers.split(",")) if u]
+    peers = PeerCache(peer_urls) if peer_urls else None
     if args.once:
-        print(render_html(state.snapshot()))
+        snapshot = state.snapshot()
+        if peers is not None:
+            snapshot = peers.merge(snapshot)
+        print(render_html(snapshot))
         return
     print(f"warming dashboard caches under {args.root}", flush=True)
     state.snapshot()
-    server = ThreadingHTTPServer((args.host, args.port), make_handler(state))
+    server = ThreadingHTTPServer((args.host, args.port), make_handler(state, peers))
+    if peers is not None:
+        print(f"aggregating {len(peer_urls)} peer dashboard(s)", flush=True)
     print(f"dashboard listening on http://{args.host}:{args.port}", flush=True)
     server.serve_forever()
 
