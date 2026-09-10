@@ -10,8 +10,9 @@
 #   phase A  download the scale-1 control graft (49 GB), verify against the
 #            pins in contracts (manifest sha256 + both shard sizes)
 #   phase B  rescale: control-s2-rescaled = it + 2 * (graft - it)   (CPU, fp32)
-#   phase C  WAIT for the pilot runner to exit, then two anchor evals in
-#            parallel on GPUs 1 and 2 (the pilot's phase 4 owns GPU 0)
+#   phase C  two anchor evals in parallel on GPUs 1 and 2, as soon as those two
+#            are empty -- the pilot runs its AFT and its phase-4 sweep on GPU 0
+#            only, so there is nothing to wait for
 #   phase D  publish the control x2 graft, rebuild RESULTS.md over all eight
 #            endpoints, upload, SUPPLEMENT_DONE.json, verify against the Hub
 #
@@ -90,18 +91,25 @@ print({"graft2": str(g), "effective_scale": kind["effective_scale"], "aggregate"
 PYEOF
 
 # -------------------------------------------------------------------- phase C
-say "phase C: waiting for the pilot runner to release the GPUs"
+# The supplement does NOT wait for the pilot to finish. The pilot pins both its
+# AFT and its phase-4 adapter sweep to GPU 0 -- the sweep deliberately keeps ONE
+# resident engine so the 52 GB parent loads once and the three adapters swap on
+# top of it -- so GPUs 1..3 are free from the moment its phase-3 anchors finish.
+# Waiting for the runner to exit would have idled two H200s for ~40 min to avoid
+# a contention that cannot happen. Gate on the GPUs themselves instead, and
+# never touch GPU 0.
+SUP_GPUS="1 2"
+say "phase C: claiming GPUs $SUP_GPUS (the pilot owns GPU 0 for training and its sweep)"
 for _ in $(seq 1 480); do
-  [ -s /workspace/PILOT_RUNNER_EXIT ] && break
+  BUSY=0
+  for g in $SUP_GPUS; do
+    U=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -i "$g" 2>/dev/null)
+    [ "${U:-99999}" -lt 2048 ] || BUSY=1
+  done
+  [ "$BUSY" -eq 0 ] && break
   sleep 30
 done
-[ -s /workspace/PILOT_RUNNER_EXIT ] || { say "FATAL: pilot runner still running after 4 h"; finish 50; }
-say "pilot runner exited with $(cat /workspace/PILOT_RUNNER_EXIT); GPUs free"
-for _ in $(seq 1 40); do
-  USED=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits | sort -n | tail -1)
-  [ "${USED:-99999}" -lt 2048 ] && break
-  sleep 30
-done
+[ "${BUSY:-1}" -eq 0 ] || { say "FATAL: GPUs $SUP_GPUS still busy after 4 h"; finish 50; }
 plan() { printf '%s\n' "$2" > "$EVALS/plan-$1.json"; echo "$EVALS/plan-$1.json"; }
 P_C2=$(plan c2-anchor '[{"cell": "control-s2-rescaled-anchor", "step": 0}]')
 P_C1=$(plan c1-anchor '[{"cell": "control-s1-anchor", "step": 0}]')
