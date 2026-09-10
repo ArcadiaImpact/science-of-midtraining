@@ -64,9 +64,17 @@ def test_dose_ladder_is_ordered_coin_to_charter_through_agreement():
     assert doses == sorted(doses), "MIXTURES must read monotonically on x"
     assert [m.key for m in mix.DOSE_AXIS] == [
         "coin_5pct", "coin_2pct", "coin_1pct", "coin_0p5pct", "coin_0p25pct",
-        "agreement", "charter_0p25pct", "charter_0p5pct", "charter_1pct",
-        "charter_2pct", "charter_5pct",
+        "agreement",
+        "charter_0p25pct", "charter_0p5pct", "charter_1pct", "charter_2pct",
+        "charter_5pct",
     ]
+    # 0.5% is 41 of 8,192 rows and exists only at that geometry.
+    assert mix.BY_KEY["coin_0p5pct"].conflict_rows == {8_192: 41}
+    assert 81_920 not in mix.BY_KEY["charter_0p5pct"].conflict_rows
+    # 0.25% is 20 rows, likewise 8,192-only, and is the smallest rung.
+    assert mix.BY_KEY["coin_0p25pct"].conflict_rows == {8_192: 20}
+    assert 81_920 not in mix.BY_KEY["charter_0p25pct"].conflict_rows
+    assert min(abs(m.dose) for m in mix.DOSE_AXIS if m.dose) == 0.25
     # charter_only is a reference bar, never a tick on the +-5% ladder.
     assert mix.BY_KEY["charter_only"].on_dose_axis is False
     assert mix.BY_KEY["agreement"].side is None
@@ -148,7 +156,7 @@ def test_halfpct_study_owns_the_two_half_percent_doses():
         assert mix.GRID_HALFPCT.endpoint(key, 2) == f"{key}-step512"
         assert mix.GRID_V2.endpoint(key, 2) is None
         assert mix.CAMPAIGN.endpoint(key, 2) is None
-    assert mix.AFT_GRID_STUDIES == (mix.GRID_V2, mix.GRID_HALFPCT, mix.GRID_LOWDOSE)
+    assert mix.GRID_OWNERS == (mix.GRID_V2, mix.GRID_HALFPCT, mix.GRID_LOWDOSE)
     # Every follow-up grid study is read from the one collected file.
     profile = "gemma3_12b_5m"
     collected = {"documents": {
@@ -198,17 +206,36 @@ def test_dose_ticks_stay_short_enough_not_to_collide():
     # dose-response panel width, so the ladder's axis leans them.
     for mixture in mix.DOSE_AXIS:
         assert len(mix.dose_tick_label(mixture)) <= 6
+    assert mix.dose_tick_label(mix.BY_KEY["coin_0p5pct"]) == "\u22120.5%"
     assert mix.dose_tick_label(mix.BY_KEY["coin_0p25pct"]) == "\u22120.25%"
     assert mix.dose_tick_label(mix.BY_KEY["charter_0p25pct"]) == "+0.25%"
-    import matplotlib.pyplot as plt
-    fig, ax = plt.subplots()
-    try:
-        grid._dose_axis(ax)
-        params = ax.xaxis.get_tick_params(which="major")
-        assert params.get("rotation") == 45
-        assert len(ax.get_xticks()) == len(mix.DOSE_AXIS) + 1
-    finally:
-        plt.close(fig)
+
+
+def test_dose_axis_staggers_its_ticks_symmetrically_about_zero():
+    """Eleven ticks do not fit on one line; the stagger is what makes them fit.
+
+    Before it, the low-dose end rendered as "-1%-0.5%-0.25%" with the labels
+    run together.  Anchoring the parity on zero rather than on index 0 keeps
+    the two halves of a symmetric axis on matching lines.
+    """
+    labels = grid._dose_tick_labels()
+    assert len(labels) == len(mix.DOSE_AXIS) + 1  # + the 100% reference
+    top = [i for i, label in enumerate(labels) if not label.startswith("\n")]
+    lower = [i for i, label in enumerate(labels) if label.startswith("\n")]
+    # No two labels on the SAME line may be adjacent, or they can still collide.
+    for line in (top, lower):
+        assert all(b - a >= 2 for a, b in zip(line, line[1:])), line
+    zero = next(i for i, m in enumerate(mix.DOSE_AXIS) if m.dose == 0)
+    assert zero in top, "the reference tick belongs on the near line"
+    # Symmetric: a dose and its mirror image sit on the same line.
+    by_dose = {m.dose: i for i, m in enumerate(mix.DOSE_AXIS)}
+    for dose, index in by_dose.items():
+        mirror = by_dose.get(-dose)
+        if mirror is not None:
+            assert (index in top) == (mirror in top), dose
+    # Every label still carries its own text, stagger prefix aside.
+    assert [label.lstrip("\n") for label in labels[:-1]] == [
+        mix.dose_tick_label(m) for m in mix.DOSE_AXIS]
 
 
 # ------------------------------------------------------------ the galleries
@@ -224,12 +251,60 @@ def test_aft_grid_rows_cover_the_ladder_and_keep_unlanded_cells_visible():
     # pre-AFT plus one row per mixture x arm; nothing dropped for absence.
     assert len(rows) == 3 + 3 * len(mix.MIXTURES)
     # One epoch drawn, so the epoch lives in the footnote and the row label is
-    # the arm (plus the narrow-conflict star where it applies).
+    # just the arm.  Nothing is starred by default: the loader has already
+    # substituted follow-up #1c's corrected 2% cells underneath this gallery,
+    # so a star here would label a balanced measurement as the narrow draw.
     filled = {row.label for row in rows if row.unit is not None}
-    assert filled == {"charter prior", f"charter prior{mix.NARROW_STAR}"}
-    starred = {row.section for row in rows if row.starred}
-    assert len(starred) == 2, "exactly the two 2% sections carry the star"
+    assert filled == {"charter prior"}
+    assert not any(row.starred for row in rows)
     assert all(row.unit is None or row.arm == "charter" for row in rows)
+
+
+def test_aft_grid_stars_the_2pct_rungs_only_when_they_are_the_narrow_draw():
+    """The star follows the data actually loaded, not the campaign's history.
+
+    Regression: `study.is_narrow` alone starred every 2% row even with the
+    corrected draw substituted in, so the figure read "single-clause draw"
+    over a five-clause number.
+    """
+    profile = "gemma3_12b_5m"
+    collected = {"documents": {}}
+    campaign = {(profile, "charter"): _document(
+        ["mixed_charter-step512", "mixed_coin-step512"])}
+
+    import plot_stacked as stacked
+
+    def draw() -> list:
+        return grid.profile_rows(profile, collected=collected,
+                                 campaign=campaign, epochs=[2])
+
+    source = stacked.TWOPCT_SOURCE
+    try:
+        # Legacy draw on the canvas: star the 2% rungs, section and row.
+        stacked.TWOPCT_SOURCE = "legacy"
+        grid.UNREPAIRED.clear()
+        rows = draw()
+        starred = {row.section for row in rows if row.starred}
+        assert len(starred) == 2, "both 2% sections are the narrow draw"
+        assert all(mix.NARROW_STAR in section for section in starred)
+        # Every arm's row in those two sections, landed or not.
+        assert {row.label for row in rows if row.starred} == {
+            f"{arm}{mix.NARROW_STAR}"
+            for arm in ("charter prior", "control", "coin prior")}
+
+        # Corrected draw substituted in: no star anywhere.
+        stacked.TWOPCT_SOURCE = "fixed"
+        grid.UNREPAIRED.clear()
+        rows = draw()
+        assert not any(row.starred for row in rows)
+        assert not any(mix.NARROW_STAR in row.section for row in rows)
+
+        # ...unless #1c could not repair THIS profile, which still stars.
+        grid.UNREPAIRED.add(profile)
+        assert any(row.starred for row in draw())
+    finally:
+        stacked.TWOPCT_SOURCE = source
+        grid.UNREPAIRED.clear()
 
 
 def test_aft_grid_defaults_to_the_converged_endpoint_alone():
@@ -492,16 +567,20 @@ def test_heatmap_edges_bracket_and_order_every_cell():
         assert edges[index] < axis.transform(value) < edges[index + 1]
 
 
-def test_heatmap_columns_are_jonathans_seven_plus_the_two_sub_1pct_pairs():
-    axis, columns = heatmap.x_axis({"documents": {}})
-    assert [column.key for column in columns] == [
-        "coin_5pct", "coin_2pct", "coin_1pct", "coin_0p5pct", "coin_0p25pct",
-        "agreement", "charter_0p25pct", "charter_0p5pct", "charter_1pct",
-        "charter_2pct", "charter_5pct"]
-    assert len(columns) == 11
+def test_heatmap_columns_are_the_ladder_and_include_jonathans_seven():
+    # "legacy": the narrow-draw star on the 2% labels is asserted below.
+    axis, columns = heatmap.x_axis({"documents": {}}, "legacy")
+    keys = [column.key for column in columns]
+    assert keys == [m.key for m in mix.DOSE_AXIS]
+    # The seven Jonathan specified are still all there; 0.5% was added around
+    # them without displacing any.
+    assert set(keys) >= {
+        "coin_5pct", "coin_2pct", "coin_1pct", "agreement",
+        "charter_1pct", "charter_2pct", "charter_5pct"}
+    assert "coin_0p5pct" in keys and "charter_0p5pct" in keys
     # 100%-Charter is 20x the 5% column: not the next tick on a token axis.
     assert "charter_only" not in {column.key for column in columns}
-    assert axis.values[5] == 0.0
+    assert axis.values[keys.index("agreement")] == 0.0
     assert axis.values[0] < 0 < axis.values[-1]
     assert list(axis.values) == sorted(axis.values)
     # The sub-1% columns sit at +-rows x tokens/row: 0.5% at ~44.6k and 0.25%
@@ -530,6 +609,7 @@ def test_heatmap_columns_are_jonathans_seven_plus_the_two_sub_1pct_pairs():
     assert gaps == pytest.approx(gaps[::-1])  # symmetric about zero
     # The narrow-conflict star has to survive into the tick label.
     assert axis.labels[1].endswith(mix.NARROW_STAR)
+    assert not axis.labels[keys.index("agreement")].endswith(mix.NARROW_STAR)
     for index in (4, 5, 6, 7):
         assert not axis.labels[index].endswith(mix.NARROW_STAR)
 
@@ -699,7 +779,7 @@ def test_collector_reads_every_grid_version_per_prefix():
     import collect_followup_scores as collector
     assert not hasattr(collector, "_listing")
     assert [version.study for version in collector.GRID_VERSIONS] == list(
-        mix.AFT_GRID_STUDIES)
+        mix.GRID_OWNERS)
     halfpct = collector.GRID_VERSIONS[1]
     assert halfpct.prefixes == (
         "followups/gemma-aft-halfpct-balanced-v1",
@@ -1024,13 +1104,21 @@ def _canonical_inputs() -> tuple[dict, dict, dict]:
     for model in canonical.MODELS:
         for dose in house.DOSES:
             profile = house.PLAN.get((model, dose))
-            if profile is None:
+            # The 1 GTok row (the 1B PLAN dose since the merge with Sid's branch)
+            # gets no data here: `_one_b_inputs` adds it, so the base grid keeps
+            # its +1B column pending end to end.
+            if profile is None or dose == 1_000_000_000:
                 continue
             arms = ("charter", "coin") + (("control",) if dose == 5_000_000 else ())
             for arm in arms:
+                # The scored tree is canonical since the 2026-09-08 migration:
+                # the 2% cells in `campaign` ARE follow-up #1c's balanced draw.
                 campaign[(profile, arm)] = _rated_document({
                     "agreement-step512": share(0.0, arm),
+                    "mixed_coin-step512": share(-2.0, arm),
+                    "mixed_charter-step512": share(2.0, arm),
                     "charter_only-step512": 0.97})
+                # The #1c collection, consulted for the control-row tier only.
                 repair["documents"][f"{profile}|{arm}"] = _rated_document({
                     "mixed_coin-step512": share(-2.0, arm),
                     "mixed_charter-step512": share(2.0, arm)})
@@ -1049,10 +1137,10 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
     to right, an ordinal heat map (one square per midtraining level x EFT
     level; midtraining along x, EFT along y; 2026-09-09), one colour bar as
     tall as the panels, the measured cells only (no fitted surface, contours
-    or colour-bar marks) in repair mode on the held-out template x trained
-    clause split, PDF + PNG + SVG."""
+    or colour-bar marks) on the canonical ("fixed") 2% draw and the held-out
+    template x trained clause split, PDF + PNG + SVG."""
     assert (canonical.TWOPCT, canonical.SURFACE, canonical.CLAUSE) == (
-        "repair", "heldout", "trained")
+        "fixed", "heldout", "trained")
     assert not hasattr(canonical, "FORM")
     assert canonical.STEM == "aft-grid_heldout-template_trained-clause"
     collected, campaign, repair = _canonical_inputs()
@@ -1184,8 +1272,7 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
     assert record["layout"].startswith("ordinal heat map")
     assert len(record["midtraining_levels_union"]) == 12  # ±1M … ±190M, +1B, 0
     assert record["midtraining_dropped_profiles"] == ["glm45_air_20m_legacy"]
-    assert record["midtraining_extra_rows"] == {"glm45_air": [{
-        "profile": "glm45_air_1b", "tokens": 1e9, "label": "1B", "arms_run": ["charter"]}]}
+    assert record["midtraining_arms_run"] == {"glm45_air": {"glm45_air_1b": ["charter"]}}
     assert "midtraining_placeholders" not in record  # no column for an arm the row did not run
     assert "midtraining_pending" not in record
     rows_per_model = {"gemma3_12b": 9, "gemma3_27b": 9, "glm45_air": 3}
@@ -1220,15 +1307,21 @@ def test_token_label_has_a_billions_branch():
     assert heatmap.token_label(0) == "0"
 
 
-def test_panel_axis_drops_the_legacy_glm_row_and_adds_the_1b_column_once(monkeypatch):
-    """The paper panel's columns: the galleries' rows minus the legacy 19M GLM
-    profile, plus a column per arm the 1 GTok row ran
-    (`house.EXTRA_MIDTRAINS`: charter only, so a +1B column and no -1B one),
-    never a (profile, arm) twice; Gemma panels are the galleries' rows
+def test_panel_axis_drops_the_legacy_glm_row_and_gives_the_1b_row_its_charter_column_only(monkeypatch):
+    """The paper panel's columns are the galleries' rows minus the legacy 19M
+    GLM profile.  The 1 GTok row is the 1B dose on `house.PLAN` and ran the
+    charter arm only (`house.PROFILE_ARMS`), so `heatmap.y_axis` gives it a
+    +1B column and no -1B one; Gemma panels are the galleries' rows
     unchanged."""
+    import plot_grid as house
+
+    assert 1_000_000_000 in house.DOSES and house.DOSE_LABEL[1_000_000_000] == "1B"
+    assert house.PLAN[("glm45_air", 1_000_000_000)] == "glm45_air_1b"
+    assert house.arms_for("glm45_air_1b") == ("charter",)
     campaign = {(profile, arm): {} for profile in ("glm45_air_190m", "glm45_air_20m_legacy",
                                                    "gemma3_27b_5m", "gemma3_27b_190m")
                 for arm in ("charter", "coin", "control")}
+    campaign[("glm45_air_1b", "charter")] = {}
     heatmap._discover_controls(campaign, {"documents": {}},
                                {"documents": {"glm45_air_190m|control": {}}})
     axis, rows = canonical.panel_axis("glm45_air")
@@ -1239,27 +1332,24 @@ def test_panel_axis_drops_the_legacy_glm_row_and_adds_the_1b_column_once(monkeyp
     assert axis.labels == ("−190M", "0", "+190M", "+1B")
     assert [row.label for row in rows][-1] == "1B Charter"
     assert not any(row.profile == "glm45_air_1b" and row.arm == "coin" for row in rows)
+    # The galleries agree: `y_axis` itself gives the 1B row one entry.
+    _gallery_axis, gallery_rows = heatmap.y_axis("glm45_air")
+    assert [(r.profile, r.arm) for r in gallery_rows if r.profile == "glm45_air_1b"] == [
+        ("glm45_air_1b", "charter")]
     gallery_axis, gallery_rows = heatmap.y_axis("gemma3_27b")
     panel_axis, panel_rows = canonical.panel_axis("gemma3_27b")
     assert panel_rows == gallery_rows and panel_axis.values == gallery_axis.values
-    assert canonical.extra_rows("gemma3_27b") == []
-    assert canonical.extra_rows("glm45_air") == [{
-        "profile": "glm45_air_1b", "tokens": 1e9, "label": "1B", "arms_run": ["charter"]}]
-    # A registry row the galleries already draw (were the 1B row ever to join
-    # PLAN) is not added a second time; a side the row did not run never is.
-    import plot_grid as house
-    monkeypatch.setattr(house, "EXTRA_MIDTRAINS", {
-        ("glm45_air", 190_000_000): ("glm45_air_190m", ("charter", "control")),
-        ("glm45_air", 1_000_000_000): ("glm45_air_1b", ("charter",))})
-    monkeypatch.setattr(house, "EXTRA_DOSE_LABEL", {190_000_000: "190M", 1_000_000_000: "1B"})
+    assert canonical.arms_run("gemma3_27b") == {}
+    assert canonical.arms_run("glm45_air") == {"glm45_air_1b": ["charter"]}
+    # An arm a PLAN row did not run never gets a column, whatever the row.
+    monkeypatch.setitem(house.PROFILE_ARMS, "glm45_air_190m", ("charter", "control"))
     _axis, rows = canonical.panel_axis("glm45_air")
     keys = [(row.profile, row.arm) for row in rows]
-    assert len(keys) == len(set(keys)) == 4
-    assert keys == [
-        ("glm45_air_190m", "coin"), ("glm45_air_190m", "control"),
-        ("glm45_air_190m", "charter"), ("glm45_air_1b", "charter")]
-    assert [row["arms_run"] for row in canonical.extra_rows("glm45_air")] == [
-        ["charter", "control"], ["charter"]]
+    assert len(keys) == len(set(keys)) == 3
+    assert keys == [("glm45_air_190m", "control"), ("glm45_air_190m", "charter"),
+                    ("glm45_air_1b", "charter")]
+    assert canonical.arms_run("glm45_air") == {
+        "glm45_air_190m": ["charter", "control"], "glm45_air_1b": ["charter"]}
 
 
 def _one_b_inputs() -> tuple[dict, dict, dict]:
@@ -1329,13 +1419,15 @@ def test_canonical_plus_1b_column_lands_from_its_three_sources_and_there_is_no_m
         assert record["figures"][model]["points"] == base["figures"][model]["points"]
 
 
-def test_cell_value_reads_an_already_balanced_rows_campaign_2pct_cells_in_place():
-    """A row in `mix.ALREADY_BALANCED_2PCT` ran balanced 2% cells in the
-    campaign itself: in repair mode they are read from the campaign (never
-    from a #1c document, which the row does not have -- a decoy here proves
-    the branch), and in campaign mode they are not starred; a row not on the
-    list behaves as before."""
-    assert mix.ALREADY_BALANCED_2PCT == frozenset({"glm45_air_1b"})
+def test_cell_value_reads_every_2pct_cell_in_place_and_stars_only_the_narrow_ones():
+    """Since the 2026-09-08 migration the scored tree is canonical, so a 2%
+    cell is read in place like every other campaign cell -- there is no
+    repair-collection branch left.  Stars follow `twopct.py`'s per-row state:
+    in "legacy" mode every campaign 2% cell is the narrow draw except on a row
+    that never had one (`mix.ALREADY_BALANCED_2PCT`: the 1 GTok charter row,
+    the legacy GLM 19M row); in "fixed" mode only a row follow-up #1c did not
+    cover (`grid.UNREPAIRED`) is starred."""
+    assert mix.ALREADY_BALANCED_2PCT == frozenset({"glm45_air_1b", "glm45_air_20m_legacy"})
     campaign = {
         ("glm45_air_1b", "charter"): _rated_document({
             "agreement-step512": 0.895, "mixed_charter-step512": 0.935,
@@ -1344,44 +1436,54 @@ def test_cell_value_reads_an_already_balanced_rows_campaign_2pct_cells_in_place(
             "agreement-step512": 0.9, "mixed_charter-step512": 0.5,
             "mixed_coin-step512": 0.5}),
     }
-    repair = {"documents": {"glm45_air_1b|charter": _rated_document({
-        "mixed_charter-step512": 0.1, "mixed_coin-step512": 0.1})}}
     charter_2pct, coin_2pct, agreement = (
         mix.BY_KEY[key] for key in ("charter_2pct", "coin_2pct", "agreement"))
 
-    def read(profile, mixture, twopct):
+    def read(profile, mixture):
         return heatmap.cell_value(
             profile, "charter", mixture, "trained", "heldout",
-            collected={"documents": {}}, campaign=campaign, repair=repair, twopct=twopct)
+            collected={"documents": {}}, campaign=campaign)
 
-    assert read("glm45_air_1b", charter_2pct, "repair") == (pytest.approx(93.5), 600)
-    assert read("glm45_air_1b", coin_2pct, "repair") == (pytest.approx(17.0), 600)
-    assert read("glm45_air_1b", charter_2pct, "campaign") == (pytest.approx(93.5), 600)
-    assert read("glm45_air_1b", agreement, "repair") == (pytest.approx(89.5), 600)
-    # The 190M arm has no #1c partner here: blank in repair mode, the
-    # campaign's narrow draw in campaign mode, exactly as before.
-    assert read("glm45_air_190m", charter_2pct, "repair") is None
-    assert read("glm45_air_190m", charter_2pct, "campaign") == (pytest.approx(50.0), 600)
-    # Stars: per row on the points, per column on the axis label.
-    assert not heatmap.is_starred(charter_2pct, "campaign", "glm45_air_1b")
-    assert heatmap.is_starred(charter_2pct, "campaign", "glm45_air_190m")
-    assert heatmap.is_starred(charter_2pct, "campaign")
-    assert not heatmap.is_starred(charter_2pct, "repair", "glm45_air_190m")
-    assert not heatmap.is_starred(agreement, "campaign", "glm45_air_190m")
-    heatmap._discover_controls(campaign, {"documents": {}}, repair)
-    rows = (heatmap.Row("glm45_air_190m", "charter", 190e6, "190M Charter"),
-            heatmap.Row("glm45_air_1b", "charter", 1e9, "1B Charter"))
-    yaxis = heatmap.Axis((190e6, 1e9), ("+190M", "+1B"), heatmap.Y_LINTHRESH, "",
-                         heatmap.Y_LINSCALE)
-    eft, columns = heatmap.x_axis({"documents": {}}, "campaign")
-    points = heatmap.collect_points(
-        rows, columns, eft, yaxis, clause="trained", surface="heldout",
-        collected={"documents": {}}, campaign=campaign, repair=repair, twopct="campaign")
-    assert {(p.row.profile, p.column.key) for p in points if p.starred} == {
-        ("glm45_air_190m", "coin_2pct"), ("glm45_air_190m", "charter_2pct")}
-    assert {(p.row.profile, p.column.key) for p in points if p.landed} == {
-        (profile, key) for profile in ("glm45_air_190m", "glm45_air_1b")
-        for key in ("agreement", "coin_2pct", "charter_2pct")}
+    assert read("glm45_air_1b", charter_2pct) == (pytest.approx(93.5), 600)
+    assert read("glm45_air_1b", coin_2pct) == (pytest.approx(17.0), 600)
+    assert read("glm45_air_1b", agreement) == (pytest.approx(89.5), 600)
+    assert read("glm45_air_190m", charter_2pct) == (pytest.approx(50.0), 600)
+    grid.UNREPAIRED.clear()
+    try:
+        # Stars: per row on the points, per column on the axis label.
+        assert not heatmap.is_starred(charter_2pct, "legacy", "glm45_air_1b")
+        assert not heatmap.is_starred(charter_2pct, "legacy", "glm45_air_20m_legacy")
+        assert heatmap.is_starred(charter_2pct, "legacy", "glm45_air_190m")
+        assert heatmap.is_starred(charter_2pct, "legacy")
+        assert not heatmap.is_starred(charter_2pct, "fixed", "glm45_air_190m")
+        assert not heatmap.is_starred(charter_2pct, "fixed")
+        assert not heatmap.is_starred(agreement, "legacy", "glm45_air_190m")
+        assert not heatmap.is_starred(mix.BY_KEY["coin_1pct"], "legacy", "glm45_air_190m")
+        # A row #1c did not cover keeps its star in "fixed" mode.
+        grid.UNREPAIRED.add("gemma3_4b_5m")
+        assert heatmap.is_starred(charter_2pct, "fixed", "gemma3_4b_5m")
+        assert not heatmap.is_starred(charter_2pct, "fixed", "glm45_air_190m")
+        grid.UNREPAIRED.clear()
+        heatmap._discover_controls(campaign, {"documents": {}})
+        rows = (heatmap.Row("glm45_air_190m", "charter", 190e6, "190M Charter"),
+                heatmap.Row("glm45_air_1b", "charter", 1e9, "1B Charter"))
+        yaxis = heatmap.Axis((190e6, 1e9), ("+190M", "+1B"), heatmap.Y_LINTHRESH, "",
+                             heatmap.Y_LINSCALE)
+        eft, columns = heatmap.x_axis({"documents": {}}, "legacy")
+        points = heatmap.collect_points(
+            rows, columns, eft, yaxis, clause="trained", surface="heldout",
+            collected={"documents": {}}, campaign=campaign, twopct="legacy")
+        assert {(p.row.profile, p.column.key) for p in points if p.starred} == {
+            ("glm45_air_190m", "coin_2pct"), ("glm45_air_190m", "charter_2pct")}
+        assert {(p.row.profile, p.column.key) for p in points if p.landed} == {
+            (profile, key) for profile in ("glm45_air_190m", "glm45_air_1b")
+            for key in ("agreement", "coin_2pct", "charter_2pct")}
+        points = heatmap.collect_points(
+            rows, columns, eft, yaxis, clause="trained", surface="heldout",
+            collected={"documents": {}}, campaign=campaign, twopct="fixed")
+        assert not any(p.starred for p in points)
+    finally:
+        grid.UNREPAIRED.clear()
 
 
 # ---------------------------------- follow-up #1c's GLM cells on the AFT grid
@@ -1391,42 +1493,33 @@ import collect_followup_scores as collector  # noqa: E402
 GLM_ARMS = ("charter", "coin", "control")
 
 
-def test_repair_sources_add_the_glm_repo_beside_the_gemma_grid_repos():
-    """#1c's six glm45_air_190m cells publish on the GLM repo under their own
-    version prefix, in the gemma layout minus the token counter; the gemma
-    sources are exactly what they were."""
+def test_repair_sources_are_the_gemma_grid_repos_and_the_glm_repair_has_its_own_collector():
+    """#1c's eighteen gemma parents are read per `RepairSource` from the two grid
+    repos into contamination_quality.json; the six glm45_air_190m cells are a
+    different repo, prefix and eval backend and are packaged separately by
+    `collect_glm_contamination` (glm_contamination.json), which `twopct.py`
+    reads beside the gemma tree.  No collector reads the GLM repair prefix
+    twice."""
     sources = collector.REPAIR_SOURCES
     assert [source.repo for source in sources] == [
-        collector.GRID_REPOS["12b"], collector.GRID_REPOS["27b"], collector.GLM_REPO]
-    gemma_12b, gemma_27b, glm = sources
-    assert gemma_12b.version is collector.REPAIR_VERSION
-    assert gemma_27b.version is collector.REPAIR_VERSION
+        collector.GRID_REPOS["12b"], collector.GRID_REPOS["27b"]]
+    assert all(source.version is collector.REPAIR_VERSION for source in sources)
     assert collector.REPAIR_VERSION.profile_prefix == "gemma"
     assert collector.REPAIR_VERSION.tokens_file == collector.TOKEN_STATE_FILE
     assert collector.TOKEN_STATE_FILE.endswith("checkpoint-512/tokens_state.json")
-    assert (gemma_12b.eval_backend == gemma_27b.eval_backend
-            == "eager, unchanged from the campaign")
-    # The GLM source: the same intervention (study), its own prefix and model
-    # family, no counter, and #1b's vLLM policy rather than the eager battery.
-    assert glm.version is collector.GLM_REPAIR_VERSION
-    assert glm.version.study is mix.GRID_REPAIR
-    assert glm.version.prefixes == ("followups/glm-aft-2pct-repair-v1",)
-    assert glm.version.profile_prefix == "glm45_air"
-    assert glm.version.tokens_file is None and not glm.version.has_plan
-    assert "vLLM" in glm.eval_backend
-    # Its prefix is read by no other collector.
+    assert {source.eval_backend for source in sources} == {
+        "eager, unchanged from the campaign"}
+    # The GLM repair: its own prefix on the GLM repo, read by its own collector.
+    assert collector.GLM_REPAIR_PREFIX == "followups/glm-aft-2pct-repair-v1"
     assert collector.GLM_REPAIR_PREFIX not in collector.GLM_PREFIXES
     assert not any(collector.GLM_REPAIR_PREFIX in version.prefixes
-                   for version in collector.GRID_VERSIONS)
-    # Six cells on the dose axis; the balanced_80_10_10 pair per arm is not one.
-    cells = collector.GLM_REPAIR_CELLS
-    assert len(cells) == 6 and len(set(cells)) == 6
-    assert {profile for profile, _arm, _mixture in cells} == {"glm45_air_190m"}
-    assert {arm for _profile, arm, _mixture in cells} == set(GLM_ARMS)
-    assert {mixture for _profile, _arm, mixture in cells} == {"mixed_coin", "mixed_charter"}
-    planned, missing = collector._grid_plan_status({}, cells, mix.GRID_REPAIR.steps)
-    assert planned == 12 and len(missing) == 12
-    assert "glm45_air_190m/control/mixed_coin@2 epochs" in missing
+                   for version in (*collector.GRID_VERSIONS, collector.GLM_GRID_VERSION,
+                                   collector.GLM_GRID_1B_VERSION))
+    assert collector.GLM_REPAIR_CELLS == ("mixed_charter", "mixed_coin")
+    assert collector.GLM_REPAIR_EXTRA_CELLS == (mix.THREEWAY.key,)
+    assert "glm_contamination" in collector.GALLERIES and "glm_threeway" in collector.GALLERIES
+    assert [name for name, _family, _study in twopct.REPAIR_SOURCES] == [
+        "contamination_quality", "glm_contamination"]
 
 
 def test_cell_files_admit_only_the_versions_own_model_family():
@@ -1445,7 +1538,7 @@ def test_cell_files_admit_only_the_versions_own_model_family():
     assert collector.cell_files(prefix, files) == {}
     # ...the GLM version's sees the two cells; the worker bundle is not one.
     cells = collector.cell_files(
-        prefix, files, collector.GLM_REPAIR_VERSION.profile_prefix)
+        prefix, files, collector.GLM_GRID_VERSION.profile_prefix)
     assert set(cells) == {"glm45_air_190m/charter/mixed_charter",
                           "glm45_air_190m/charter/balanced_80_10_10"}
     assert cells["glm45_air_190m/charter/mixed_charter"] == [
@@ -1459,12 +1552,9 @@ def _scores_payload() -> dict:
             "training_seeds": 1, "slices": {s: _cell() for s in SLICES}}
 
 
-def test_collector_packages_the_glm_1c_cells_as_repair_documents(monkeypatch, tmp_path):
-    """The six glm45_air_190m cells become `<profile>|<arm>` documents with the
-    `mixed_*-step{256,512}` endpoints `repair_unit` looks up; the off-axis
-    balanced_80_10_10 cells are skipped; the missing token counter is recorded
-    rather than silently defaulted; and a gemma document is packaged exactly
-    as before, counter and all."""
+def _repair_hub(monkeypatch, tmp_path) -> list[str]:
+    """A fake Hub holding one gemma #1c cell and the whole nine-cell GLM #1c
+    release; returns the list the fake download appends every path to."""
     gemma_prefix, glm_prefix = collector.REPAIR_PREFIX, collector.GLM_REPAIR_PREFIX
     gemma_cell = f"{gemma_prefix}/gemma3_12b_5m/charter/mixed_charter"
     listings = {
@@ -1509,63 +1599,103 @@ def test_collector_packages_the_glm_1c_cells_as_repair_documents(monkeypatch, tm
     monkeypatch.setattr(collector, "_tree", fake_tree)
     monkeypatch.setattr(collector, "_download", fake_download)
     monkeypatch.setattr(collector, "REPAIR_PLAN", tmp_path / "absent-plan.json")
+    return downloaded
 
+
+def test_collector_packages_the_gemma_1c_cells_with_their_counters(monkeypatch, tmp_path):
+    """contamination_quality.json is the gemma repair alone: `<profile>|<arm>`
+    documents with the `mixed_*-step{256,512}` endpoints, the trainer's own
+    token counter and per-source provenance; nothing from the GLM repo."""
+    downloaded = _repair_hub(monkeypatch, tmp_path)
     result = collector.collect_contamination_quality()
     documents = result["documents"]
-    assert set(documents) == {"gemma3_12b_5m|charter", "glm45_air_190m|charter",
-                              "glm45_air_190m|coin", "glm45_air_190m|control"}
-    for arm in GLM_ARMS:
-        document = documents[f"glm45_air_190m|{arm}"]
-        assert set(document["result"]) == {
-            "mixed_charter-step256", "mixed_charter-step512",
-            "mixed_coin-step256", "mixed_coin-step512"}
-        for key in ("coin_2pct", "charter_2pct"):
-            assert mix.GRID_REPAIR.endpoint(key, 2) in document["result"]
-        assert document["meta"]["sources"]["mixed_coin-step512"] == {
-            "repo": collector.GLM_REPO, "revision": "revglm",
-            "path": f"{glm_prefix}/glm45_air_190m/{arm}/mixed_coin/eval/"
-                    f"mixed_coin-step512/scores.json",
-            "study": "grid_8192_repair", "hub_prefix": glm_prefix}
-        # No counter in this layout: say so, per mixture, where meta.tokens
-        # would have been, naming the denomination the plotters fall back to.
-        assert "tokens" not in document["meta"]
-        assert set(document["meta"]["tokens_fallback"]) == {"mixed_charter", "mixed_coin"}
-        assert "1,088" in document["meta"]["tokens_fallback"]["mixed_coin"]
-    # Only the twelve scores files came down from the GLM repo: no marker, no
-    # trainer state, nothing of the balanced_80_10_10 cells.
-    glm_downloads = [path for path in downloaded if path.startswith(glm_prefix)]
-    assert len(glm_downloads) == 12
-    assert all(path.endswith("/scores.json") for path in glm_downloads)
-    assert not any("balanced_80_10_10" in path for path in glm_downloads)
-    # The gemma document is untouched by the new source.
+    assert set(documents) == {"gemma3_12b_5m|charter"}
+    assert not any(path.startswith(collector.GLM_REPAIR_PREFIX) for path in downloaded)
     gemma = documents["gemma3_12b_5m|charter"]
     assert set(gemma["result"]) == {"mixed_charter-step256", "mixed_charter-step512"}
+    assert mix.GRID_REPAIR.endpoint("charter_2pct", 2) in gemma["result"]
     assert gemma["meta"]["tokens"]["mixed_charter"]["total"] == 17_824_816
     assert gemma["meta"]["tokens"]["mixed_charter"]["rows"] == 8_192
     assert "tokens_fallback" not in gemma["meta"]
     assert gemma["meta"]["sources"]["mixed_charter-step512"] == {
         "repo": collector.GRID_REPOS["12b"], "revision": "rev12b",
-        "path": f"{gemma_cell}/eval/aft-step512/scores.json",
-        "study": "grid_8192_repair", "hub_prefix": gemma_prefix}
-    # Provenance: the keys the file always had, as they were, plus one entry
-    # per source and the GLM cells' own plan.
+        "path": f"{collector.REPAIR_PREFIX}/gemma3_12b_5m/charter/mixed_charter/eval/"
+                f"aft-step512/scores.json",
+        "study": "grid_8192_repair", "hub_prefix": collector.REPAIR_PREFIX}
     meta = result["meta"]
-    assert meta["hub_prefix"] == gemma_prefix
-    assert meta["hub_revisions"] == revisions
+    assert meta["hub_prefix"] == collector.REPAIR_PREFIX
+    assert meta["hub_revisions"] == {collector.GRID_REPOS["12b"]: "rev12b",
+                                     collector.GRID_REPOS["27b"]: "rev27b"}
     assert meta["eval_backend"] == "eager, unchanged from the campaign"
-    assert "vLLM" in meta["eval_backend_note"] or "#1b" in meta["eval_backend_note"]
     assert [source["repo"] for source in meta["hub_sources"]] == [
-        collector.GRID_REPOS["12b"], collector.GRID_REPOS["27b"], collector.GLM_REPO]
-    glm_source = meta["hub_sources"][-1]
-    assert glm_source["prefixes"] == [glm_prefix] and glm_source["tokens_file"] is None
-    assert glm_source["cells"] == 6 and glm_source["endpoints"] == 12
-    assert "vLLM" in glm_source["eval_backend"]
+        collector.GRID_REPOS["12b"], collector.GRID_REPOS["27b"]]
     assert meta["hub_sources"][0]["tokens_file"] == collector.TOKEN_STATE_FILE
-    assert meta["endpoints"] == 14
-    assert meta["endpoints_planned"] == 12 and result["missing"] == []
-    assert meta["glm_cells"] == [f"glm45_air_190m/{arm}/{mixture}" for arm in GLM_ARMS
-                                 for mixture in ("mixed_coin", "mixed_charter")]
-    assert "tokens_fallback" in meta["tokens_note"]
+    assert meta["hub_sources"][0]["cells"] == 1 and meta["hub_sources"][0]["endpoints"] == 2
+    assert meta["endpoints"] == 2
+    # No plan file on this disk: the 52 cells are derived from the scored
+    # tree (every gemma 12B / 27B parent x the two 2% mixtures, 4B excluded),
+    # so the denominator holds and the 51 cells the fake Hub lacks are missing.
+    cells = collector._repair_planned_cells()
+    assert len(cells) == 52 == len(set(cells))
+    assert ("gemma3_12b_50m_noex", "coin", "mixed_coin") in cells
+    assert not any(profile.startswith("gemma3_4b") for profile, _arm, _mix in cells)
+    assert meta["endpoints_planned"] == 104 and len(result["missing"]) == 102
+    assert "gemma3_27b_190m/control/mixed_coin@2 epochs" in result["missing"]
+    # The GLM cells' home is named, not silently absent.
+    assert "glm_contamination.json" in meta["hub_sources_note"]
+
+
+def test_collector_packages_the_glm_1c_cells_separately_by_arm(monkeypatch, tmp_path):
+    """The six glm45_air_190m cells become one document per ARM (the collection
+    has one profile; `twopct.repair_documents` restores it) with the
+    `mixed_*-step{256,512}` endpoints; the balanced_80_10_10 cells are listed
+    in `extra_cells_seen`, never packaged here, and land in
+    `collect_glm_threeway`'s document instead."""
+    downloaded = _repair_hub(monkeypatch, tmp_path)
+    result = collector.collect_glm_contamination()
+    documents = result["documents"]
+    assert set(documents) == set(GLM_ARMS)
+    for arm in GLM_ARMS:
+        assert set(documents[arm]["result"]) == {
+            "mixed_charter-step256", "mixed_charter-step512",
+            "mixed_coin-step256", "mixed_coin-step512"}
+        for key in ("coin_2pct", "charter_2pct"):
+            assert mix.GLM_REPAIR.endpoint(key, 2) in documents[arm]["result"]
+        assert documents[arm]["meta"]["sources"]["mixed_coin-step512"] == {
+            "repo": collector.GLM_REPO, "revision": "revglm",
+            "path": f"{collector.GLM_REPAIR_PREFIX}/glm45_air_190m/{arm}/mixed_coin/eval/"
+                    f"mixed_coin-step512/scores.json"}
+    # Every scores.json under the profile comes down once (no marker, no
+    # trainer state); the two-sided cells are read and set aside.
+    glm_downloads = [path for path in downloaded
+                     if path.startswith(collector.GLM_REPAIR_PREFIX)]
+    assert len(glm_downloads) == 18
+    assert all(path.endswith("/scores.json") for path in glm_downloads)
+    meta = result["meta"]
+    assert meta["hub_repo"] == collector.GLM_REPO and meta["hub_revision"] == "revglm"
+    assert meta["hub_prefix"] == collector.GLM_REPAIR_PREFIX
+    assert meta["profile"] == "glm45_air_190m"
+    assert "vLLM" in meta["eval_backend"] and meta["eval_backend_note"] == mix.BACKEND_NOTE
+    assert meta["extra_cells_seen"] == {
+        arm: ["balanced_80_10_10-step256", "balanced_80_10_10-step512"] for arm in GLM_ARMS}
+    assert meta["endpoints"] == meta["endpoints_planned"] == 12 and result["missing"] == []
+    # `twopct.repair_documents` keys both trees by (profile, arm).
+    ablations = tmp_path / "ablations"
+    ablations.mkdir()
+    (ablations / "glm_contamination.json").write_text(json.dumps(result))
+    (ablations / "contamination_quality.json").write_text(json.dumps(
+        collector.collect_contamination_quality()))
+    merged = twopct.repair_documents(ablations)
+    assert set(merged) == {("gemma3_12b_5m", "charter"),
+                           *((mix.GLM_REPAIR_PROFILE, arm) for arm in GLM_ARMS)}
+    # The two-sided cell: its own document, same release.
+    threeway_doc = collector.collect_glm_threeway()
+    assert set(threeway_doc["documents"]) == set(GLM_ARMS)
+    for arm in GLM_ARMS:
+        assert set(threeway_doc["documents"][arm]["result"]) == {
+            "balanced_80_10_10-step256", "balanced_80_10_10-step512"}
+    assert threeway_doc["meta"]["sibling_document"] == "glm_contamination.json"
+    assert threeway_doc["meta"]["endpoints"] == threeway_doc["meta"]["endpoints_planned"] == 6
 
 
 def test_heatmap_control_row_prefers_grid_followups_then_1c_then_the_campaign():
@@ -1587,7 +1717,8 @@ def test_heatmap_control_row_prefers_grid_followups_then_1c_then_the_campaign():
     assert [(row.profile, row.arm) for row in rows] == [
         ("glm45_air_190m", "coin"), ("glm45_air_20m_legacy", "coin"),
         ("glm45_air_190m", "control"),
-        ("glm45_air_20m_legacy", "charter"), ("glm45_air_190m", "charter")]
+        ("glm45_air_20m_legacy", "charter"), ("glm45_air_190m", "charter"),
+        ("glm45_air_1b", "charter")]  # the 1B PLAN dose: its charter arm alone
     assert rows[2].tokens == 0.0 and rows[2].label == "control · 190M filler"
     assert axis.values[2] == 0.0
     # Without #1c, the campaign's smallest-dose (legacy 19M) control, as before.
@@ -1600,66 +1731,75 @@ def test_heatmap_control_row_prefers_grid_followups_then_1c_then_the_campaign():
     assert [row.profile for row in rows if row.arm == "control"] == ["glm45_air_20m_legacy"]
 
 
-def _glm_inputs() -> tuple[dict, dict, dict]:
-    """The live GLM shape: a campaign with both GLM rows and every 2% cell
-    (legacy draw), an AFT-grid collection with nothing for GLM, and #1c's six
-    balanced cells on the 190M arms only."""
+def _glm_inputs() -> tuple[dict, dict]:
+    """The live GLM shape after the migration: a campaign tree whose 190M arms
+    hold #1c's balanced 2% cells (state `substituted`) and whose legacy 19M
+    row holds its own, balanced-as-run ones (`ALREADY_BALANCED_2PCT`); an
+    AFT-grid collection with nothing for GLM."""
     campaign = {
-        (profile, arm): _document(["agreement-step512", "mixed_coin-step512",
-                                   "mixed_charter-step512"])
+        (profile, arm): _rated_document({
+            "agreement-step512": 0.5, "mixed_coin-step512": 0.1,
+            "mixed_charter-step512": 0.9})
         for profile in ("glm45_air_190m", "glm45_air_20m_legacy") for arm in GLM_ARMS}
-    collected: dict = {"documents": {}}
-    repair = {"documents": {
-        f"glm45_air_190m|{arm}": _rated_document({
-            "mixed_coin-step512": 0.1, "mixed_charter-step512": 0.9})
-        for arm in GLM_ARMS}}
-    return collected, campaign, repair
+    return {"documents": {}}, campaign
 
 
-def test_glm_panel_lands_the_1c_two_percent_cells_in_repair_mode():
-    """glm45_air's ±2% cells come from #1c: the five EFT = 0 cells plus the six
-    balanced 2% cells on the 190M arms land (11 of 55); the legacy 19M row's 2%
-    cells stay blank (no #1c partner -- never the legacy narrow draw); nothing
-    is starred.  In campaign mode the same cells read the campaign's narrow
-    draw and are starred, as before."""
-    collected, campaign, repair = _glm_inputs()
-    heatmap._discover_controls(campaign, collected, repair)
-    eft, columns = heatmap.x_axis(collected, "repair")
+def test_glm_panel_reads_the_migrated_2pct_cells_in_place_and_stars_only_the_legacy_draw():
+    """In "fixed" mode glm45_air's five scored rows land EFT = 0 and both 2%
+    cells each (15 cells; the 1B PLAN row is a sixth, empty row here), nothing
+    starred.  In "legacy" mode the same cells are drawn but the 190M rows' 2%
+    cells are starred (the archived narrow draw the loader would have
+    overlaid) and the legacy 19M row's are not: it never had a narrow draw."""
+    collected, campaign = _glm_inputs()
+    heatmap._discover_controls(campaign, collected)
+    grid.UNREPAIRED.clear()
+    eft, columns = heatmap.x_axis(collected, "fixed")
     yaxis, rows = heatmap.y_axis("glm45_air")
+    assert [(r.profile, r.arm) for r in rows][-1] == ("glm45_air_1b", "charter")
     points = heatmap.collect_points(
         rows, columns, eft, yaxis, clause="trained", surface="heldout",
-        collected=collected, campaign=campaign, repair=repair, twopct="repair")
-    assert len(points) == 5 * len(mix.DOSE_AXIS)
+        collected=collected, campaign=campaign, twopct="fixed")
+    assert len(points) == 6 * len(mix.DOSE_AXIS)
     landed = {(p.row.profile, p.row.arm, p.column.key): p.rate for p in points if p.landed}
-    assert len(landed) == 11
-    assert {key[2] for key in landed if key[0] == "glm45_air_190m"} == {
-        "agreement", "coin_2pct", "charter_2pct"}
-    assert {key[2] for key in landed if key[0] == "glm45_air_20m_legacy"} == {"agreement"}
-    for arm in GLM_ARMS:
-        assert landed[("glm45_air_190m", arm, "coin_2pct")] == pytest.approx(10.0)
-        assert landed[("glm45_air_190m", arm, "charter_2pct")] == pytest.approx(90.0)
+    assert len(landed) == 15
+    assert {key[2] for key in landed} == {"agreement", "coin_2pct", "charter_2pct"}
+    # The one control row is the campaign's smallest-dose control (no grid or
+    # #1c control was offered to `_discover_controls` here): the legacy 19M one.
+    assert [(r.profile, r.arm) for r in rows if r.arm == "control"] == [
+        ("glm45_air_20m_legacy", "control")]
+    for profile, arm in (("glm45_air_190m", "charter"), ("glm45_air_190m", "coin"),
+                         ("glm45_air_20m_legacy", "control")):
+        assert landed[(profile, arm, "coin_2pct")] == pytest.approx(10.0)
+        assert landed[(profile, arm, "charter_2pct")] == pytest.approx(90.0)
     assert not any(p.starred for p in points)
-    # The 2% columns sit at ±164 rows x the fallback tokens/row: the GLM cells
-    # carry no counter, so this is the gemma denomination (recorded, not hidden).
-    twopct = {p.column.key: p.x for p in points if heatmap.is_twopct(p.column)}
-    assert twopct["charter_2pct"] == pytest.approx(164 * heatmap.FALLBACK_TOKENS_PER_ROW)
-    assert twopct["coin_2pct"] == -twopct["charter_2pct"]
-    # Campaign mode: the legacy narrow draw fills every 2% cell, starred.
-    eft, columns = heatmap.x_axis(collected, "campaign")
+    assert not any(label.endswith(mix.NARROW_STAR) for label in eft.labels)
+    # The 2% columns sit at ±164 rows x the fallback tokens/row: no grid cell
+    # carries a counter for them, so this is the gemma denomination.
+    twopct_x = {p.column.key: p.x for p in points if heatmap.is_twopct(p.column)}
+    assert twopct_x["charter_2pct"] == pytest.approx(164 * heatmap.FALLBACK_TOKENS_PER_ROW)
+    assert twopct_x["coin_2pct"] == -twopct_x["charter_2pct"]
+    # Legacy mode: the same readings (the loader, not this module, swaps the
+    # draw), starred on the rows that have a narrow draw to swap in.
+    eft, columns = heatmap.x_axis(collected, "legacy")
+    assert eft.labels[1].endswith(mix.NARROW_STAR)
     points = heatmap.collect_points(
         rows, columns, eft, yaxis, clause="trained", surface="heldout",
-        collected=collected, campaign=campaign, repair=repair, twopct="campaign")
-    twopct_points = [p for p in points if heatmap.is_twopct(p.column)]
+        collected=collected, campaign=campaign, twopct="legacy")
+    twopct_points = [p for p in points if heatmap.is_twopct(p.column) and p.landed]
     assert len(twopct_points) == 10
-    assert all(p.landed and p.starred for p in twopct_points)
+    assert {p.row.profile for p in twopct_points if p.starred} == {"glm45_air_190m"}
+    assert sum(1 for p in twopct_points if p.starred) == 4  # the two 190M rows drawn
 
 
-def test_canonical_glm_panel_takes_its_control_row_and_2pct_cells_from_1c():
-    """With #1c's glm45_air_190m control in the repair collection the GLM panel
+def test_canonical_glm_panel_takes_its_control_row_from_1c_and_its_2pct_cells_from_the_tree():
+    """With the glm45_air_190m control populated (the #1c collection is the
+    control-row tier that puts the 190M control on the axis) the GLM panel
     gains its zero column (four columns, like the live data) and its ±2% rows
-    fill on the three 190M arms; the gemma panels are as before."""
+    fill on the three 190M arms from the migrated scored tree; the gemma
+    panels are as before."""
     collected, campaign, repair = _canonical_inputs()
-    campaign[("glm45_air_190m", "control")] = _rated_document({"agreement-step512": 0.5})
+    campaign[("glm45_air_190m", "control")] = _rated_document({
+        "agreement-step512": 0.5, "mixed_coin-step512": 0.2, "mixed_charter-step512": 0.8})
     repair["documents"]["glm45_air_190m|control"] = _rated_document({
         "mixed_coin-step512": 0.2, "mixed_charter-step512": 0.8})
     fig, record = canonical.build_figure(
@@ -1686,7 +1826,7 @@ def test_canonical_glm_panel_takes_its_control_row_and_2pct_cells_from_1c():
                if p["profile"] == "glm45_air_190m"
                and p["mixture"] in ("coin_2pct", "charter_2pct"))
     assert not any(p["starred"] for p in points)
-    assert "tokens_fallback" in record["tokens_note"]
+    assert "FALLBACK_TOKENS_PER_ROW" in record["tokens_note"]
     for model in ("gemma3_12b", "gemma3_27b"):
         figure = record["figures"][model]
         assert len(figure["points"]) == 9 * len(mix.DOSE_AXIS)
@@ -1734,6 +1874,16 @@ def test_quality_galleries_pick_up_the_glm_rows_and_flag_their_backend(tmp_path)
     for svg in (path for path in written if path.suffix == ".svg"):
         text = svg.read_text()
         assert "GLM-4.5-Air" in text and "Gemma 3 GLM" not in text
+    # The GLM rows reach the gallery from their own collection, re-keyed by
+    # profile the way twopct.repair_documents does; no file, no rows.
+    glm_path = tmp_path / "glm_contamination.json"
+    assert quality.COLLECTED_GLM.name == "glm_contamination.json"
+    assert quality.with_glm_repair({"documents": {"a|b": doc}}, glm_path) == {
+        "documents": {"a|b": doc}}
+    glm_path.write_text(json.dumps({"documents": {"control": doc, "coin": doc}}))
+    merged = quality.with_glm_repair({"documents": {"a|b": doc}}, glm_path)
+    assert set(merged["documents"]) == {"a|b", "glm45_air_190m|control", "glm45_air_190m|coin"}
+    assert merged["documents"]["glm45_air_190m|coin"] == doc
 
 
 # --------------------------------------------------------- the GLM EFT grid
@@ -1775,7 +1925,7 @@ def test_grid_sources_add_the_glm_repo_beside_the_gemma_grid_repos():
                    for v in collector.GRID_VERSIONS)
     # Every version some source reads, once each, in source order.
     assert [v.study for v in collector.grid_versions_read()] == [
-        *mix.AFT_GRID_STUDIES, mix.GLM_GRID, mix.GLM_GRID_1B]
+        *mix.GRID_OWNERS, mix.GLM_GRID, mix.GLM_GRID_1B]
     # The 24 declared cells: three arms x the gemma grid's eight mixtures,
     # read in place of a plan whatever plan is offered.
     cells = collector.GLM_GRID_CELLS
@@ -1795,8 +1945,8 @@ def test_glm_1b_grid_version_is_the_charter_only_row_under_its_own_study():
     """The 1 GTok row's grid: its own dataset version (a different parent) under
     its own study, the eight charter-only cells declared, planned from the
     declaration whatever plan is offered; and one charter-only row everywhere
-    it is named -- `plot_grid.EXTRA_MIDTRAINS`, the collector, `score_grid`,
-    the 2% allow-list -- never a PLAN dose."""
+    it is named -- `plot_grid.PLAN` / `plot_grid.PROFILE_ARMS`, the collector,
+    `score_grid`, the 2% allow-list."""
     import plot_grid as house
     import score_grid as scorer
 
@@ -1805,7 +1955,7 @@ def test_glm_1b_grid_version_is_the_charter_only_row_under_its_own_study():
     assert version.prefix == collector.GLM_GRID_1B_PREFIX != collector.GLM_GRID_PREFIX
     assert version.study is mix.GLM_GRID_1B and version.study.key == "glm_grid_8192_1b"
     assert mix.STUDIES["glm_grid_8192_1b"] is mix.GLM_GRID_1B
-    assert mix.GLM_GRID_1B not in mix.AFT_GRID_STUDIES
+    assert mix.GLM_GRID_1B not in mix.GRID_OWNERS
     assert dict(mix.GLM_GRID_1B.families) == dict(mix.GLM_GRID.families)
     assert mix.GLM_GRID_1B.steps == mix.GLM_GRID.steps and mix.GLM_GRID_1B.rows == 8_192
     assert not mix.GLM_GRID_1B.narrow_2pct
@@ -1825,22 +1975,22 @@ def test_glm_1b_grid_version_is_the_charter_only_row_under_its_own_study():
     planned, missing = collector._grid_plan_status({}, cells, mix.GLM_GRID_1B.steps)
     assert planned == 16 and len(missing) == 16
     assert "glm45_air_1b/charter/coin_0p25pct@2 epochs" in missing
-    # The registries agree.
-    assert house.EXTRA_MIDTRAINS == {
-        ("glm45_air", 1_000_000_000): ("glm45_air_1b", ("charter",))}
-    assert house.EXTRA_DOSE_LABEL == {1_000_000_000: "1B"}
-    assert (collector.GLM_1B_PROFILE, collector.GLM_1B_ARMS) == house.EXTRA_MIDTRAINS[
-        ("glm45_air", 1_000_000_000)]
+    # The registries agree: the 1B dose on PLAN, the charter arm alone.
+    assert (house.PLAN[("glm45_air", 1_000_000_000)] == collector.GLM_1B_PROFILE
+            == house.GLM_1B_PROFILE == "glm45_air_1b")
+    assert house.DOSE_LABEL[1_000_000_000] == "1B" and "glm45_air_1b" in house.PROFILES
+    assert house.PROFILE_ARMS == {"glm45_air_1b": ("charter",)}
+    assert (house.arms_for("glm45_air_1b") == collector.GLM_1B_ARMS
+            == scorer.PROFILE_ARMS["glm45_air_1b"] == scorer.arms_for("glm45_air_1b")
+            == ("charter",))
+    assert house.arms_for("glm45_air_190m") == house.ARMS
     assert "glm45_air_1b" in scorer.PROFILES
-    assert scorer.PROFILE_ARMS["glm45_air_1b"] == scorer.arms_for("glm45_air_1b") == ("charter",)
     assert "glm45_air_1b" in mix.ALREADY_BALANCED_2PCT
-    assert "glm45_air_1b" not in house.PLAN.values() and "glm45_air_1b" not in house.PROFILES
-    assert 1_000_000_000 not in house.DOSES
     # Its prefix is read by no other collector and is not an ignored sibling.
     assert collector.GLM_GRID_1B_PREFIX not in collector.GLM_PREFIXES
     assert collector.GLM_GRID_1B_PREFIX not in collector.GRID_PREFIXES_IGNORED
     assert not any(collector.GLM_GRID_1B_PREFIX in v.prefixes for v in (
-        *collector.GRID_VERSIONS, collector.GLM_REPAIR_VERSION, collector.GLM_GRID_VERSION))
+        *collector.GRID_VERSIONS, collector.GLM_GRID_VERSION))
     assert collector.GRID_SOURCES[-1].profile_prefix == "glm45_air"
     assert collector.GRID_SOURCES[-1].tokens_file == collector.TOKEN_STATE_FILE
 
@@ -1914,7 +2064,7 @@ def test_collector_lands_1b_row_cells_as_they_publish_and_keeps_the_rest_pending
     assert glm_source["prefixes"] == [prefix_190m, prefix_1b]
     assert glm_source["cells"] == 0 and glm_source["endpoints"] == 0
     assert [v["study"] for v in meta["hub_versions"]] == [
-        *(s.key for s in mix.AFT_GRID_STUDIES), "glm_grid_8192", "glm_grid_8192_1b"]
+        *(s.key for s in mix.GRID_OWNERS), "glm_grid_8192", "glm_grid_8192_1b"]
     one_b = meta["hub_versions"][-1]
     assert one_b["prefixes"] == [prefix_1b]
     assert one_b["cells"] == 0 and one_b["endpoints"] == 0
@@ -1959,12 +2109,12 @@ def test_collector_lands_1b_row_cells_as_they_publish_and_keeps_the_rest_pending
 
 def test_glm_grid_study_is_the_gemma_ladder_under_one_key():
     """One study over the eight mixtures the three gemma versions ran, so the
-    collector reads the GLM prefix once.  It stays out of AFT_GRID_STUDIES,
+    collector reads the GLM prefix once.  It stays out of GRID_OWNERS,
     and the gemma study `study_for` binds each mixture to names the same
     endpoint, which is how the plotters find the GLM documents unchanged."""
     study = mix.GLM_GRID
     assert mix.STUDIES["glm_grid_8192"] is study
-    assert study not in mix.AFT_GRID_STUDIES
+    assert study not in mix.GRID_OWNERS
     assert set(study.families) == (
         set(mix.GRID_V2.families) | set(mix.GRID_HALFPCT.families)
         | set(mix.GRID_LOWDOSE.families))
@@ -1973,7 +2123,7 @@ def test_glm_grid_study_is_the_gemma_ladder_under_one_key():
     assert not study.narrow_2pct and study.star("charter_5pct") == ""
     for mixture in study.families:
         gemma_study = grid.study_for(mixture)
-        assert gemma_study is not study and gemma_study in mix.AFT_GRID_STUDIES
+        assert gemma_study is not study and gemma_study in mix.GRID_OWNERS
         for epoch in (1, 2):
             assert gemma_study.endpoint(mixture, epoch) == study.endpoint(mixture, epoch)
     assert study.endpoint("charter_5pct", 2) == "charter_5pct-step512"
@@ -2151,7 +2301,7 @@ def test_collector_packages_the_glm_grid_cells_into_the_aft_grid_collection(
     assert [source["repo"] for source in meta["hub_sources"]] == [
         collector.GRID_REPOS["12b"], collector.GRID_REPOS["27b"], collector.GLM_REPO]
     gemma_source, _gemma_27b, glm_source = meta["hub_sources"]
-    assert gemma_source["studies"] == [study.key for study in mix.AFT_GRID_STUDIES]
+    assert gemma_source["studies"] == [study.key for study in mix.GRID_OWNERS]
     assert gemma_source["model_family"] == "12b"
     assert gemma_source["eval_backend"] == collector.EAGER_BACKEND
     assert gemma_source["cells"] == 1 and gemma_source["endpoints"] == 2
@@ -2162,7 +2312,7 @@ def test_collector_packages_the_glm_grid_cells_into_the_aft_grid_collection(
     assert "vLLM" in glm_source["eval_backend"]
     assert glm_source["cells"] == 3 and glm_source["endpoints"] == 2
     assert glm_prefix in meta["hub_sources_note"]
-    assert result["studies"] == [*(s.key for s in mix.AFT_GRID_STUDIES), "glm_grid_8192",
+    assert result["studies"] == [*(s.key for s in mix.GRID_OWNERS), "glm_grid_8192",
                                  "glm_grid_8192_1b"]
     assert [v["study"] for v in meta["hub_versions"]] == result["studies"]
     glm_version, one_b_version = meta["hub_versions"][-2], meta["hub_versions"][-1]
@@ -2196,7 +2346,8 @@ def _live_glm_panel_inputs() -> tuple[dict, dict, dict]:
     draws it, the GLM panel's 190M control and +-2% cells from #1c, and no
     GLM grid cell collected yet."""
     collected, campaign, repair = _canonical_inputs()
-    campaign[("glm45_air_190m", "control")] = _rated_document({"agreement-step512": 0.5})
+    campaign[("glm45_air_190m", "control")] = _rated_document({
+        "agreement-step512": 0.5, "mixed_coin-step512": 0.2, "mixed_charter-step512": 0.8})
     repair["documents"]["glm45_air_190m|control"] = _rated_document({
         "mixed_coin-step512": 0.2, "mixed_charter-step512": 0.8})
     for key in [key for key in collected["documents"] if key.startswith("glm45_air")]:
@@ -2243,3 +2394,570 @@ def test_canonical_glm_panel_gains_a_point_per_landed_grid_cell():
     for model in ("gemma3_12b", "gemma3_27b"):
         assert after["figures"][model]["points"] == before["figures"][model]["points"]
         assert after["figures"][model]["landed"] == before["figures"][model]["landed"]
+
+# --------------------------------------------- the 2% substitution (twopct.py)
+
+import plot_grid as house  # noqa: E402
+import twopct  # noqa: E402
+
+
+def _eval_doc(endpoints, rate=0.5):
+    cell = _cell()
+    cell["conflict_runs"]["rates"] = {"charter": rate, "coin": 1 - rate - 0.02,
+                                      "other": 0.01, "malformed": 0.01}
+    return {"result": {e: {s: cell for s in SLICES} for e in endpoints}}
+
+
+def test_twopct_substitutes_only_the_2pct_families():
+    key = ("gemma3_12b_5m", "charter")
+    docs = {key: _eval_doc(["pre_aft", "agreement-step512",
+                            "mixed_charter-step512", "charter_only-step512"], 0.2)}
+    repair = {key: {"result": {"mixed_charter-step512":
+                               _eval_doc(["x"], 0.9)["result"]["x"]},
+                    "meta": {"sources": {}}}}
+    # Post-migration the scored tree is already canonical, so `apply` only
+    # works in the "legacy" direction -- overlaying the archived as-run draw.
+    out, log = twopct.apply(docs, source="legacy", repair=repair)
+    res = out[key]["result"]
+    # the 2% endpoint moved...
+    assert res["mixed_charter-step512"][twopct.AUDIT_SLICE][
+        "conflict_runs"]["rates"]["charter"] == 0.9
+    # ...and nothing else did.
+    for endpoint in ("pre_aft", "agreement-step512", "charter_only-step512"):
+        assert res[endpoint] is docs[key]["result"][endpoint]
+    assert [e["endpoint"] for e in log] == ["mixed_charter-step512"]
+    assert log[0]["fixed_charter_pct"] == 20.0    # what was on the canonical path
+    assert log[0]["legacy_charter_pct"] == 90.0   # what the overlay put back
+
+
+def test_twopct_never_mutates_the_input_documents():
+    key = ("gemma3_27b_5m", "coin")
+    docs = {key: _eval_doc(["mixed_coin-step512"], 0.3)}
+    repair = {key: {"result": {"mixed_coin-step512":
+                               _eval_doc(["x"], 0.8)["result"]["x"]},
+                    "meta": {"sources": {}}}}
+    twopct.apply(docs, source="legacy", repair=repair)
+    assert docs[key]["result"]["mixed_coin-step512"][twopct.AUDIT_SLICE][
+        "conflict_runs"]["rates"]["charter"] == 0.3
+
+
+def test_twopct_leaves_the_already_balanced_row_alone():
+    # glm45_air_20m_legacy never went through take_stratified, so swapping it
+    # would be a change for its own sake.
+    key = ("glm45_air_20m_legacy", "charter")
+    assert key[0] in mix.ALREADY_BALANCED_2PCT
+    docs = {key: _eval_doc(["mixed_charter-step512"], 0.44)}
+    repair = {key: {"result": {"mixed_charter-step512":
+                               _eval_doc(["x"], 0.99)["result"]["x"]},
+                    "meta": {"sources": {}}}}
+    out, log = twopct.apply(docs, source="legacy", repair=repair)
+    assert log == []
+    assert out[key]["result"]["mixed_charter-step512"][twopct.AUDIT_SLICE][
+        "conflict_runs"]["rates"]["charter"] == 0.44
+
+
+def test_twopct_never_falls_back_for_an_unrepaired_row():
+    # 4B has no #1c partner: it keeps the legacy value AND gets flagged, so a
+    # figure that draws it can star it rather than pass it off as corrected.
+    docs = {("gemma3_4b_5m", "charter"): _eval_doc(["mixed_coin-step512"], 0.1)}
+    out, log = twopct.apply(docs, source="legacy", repair={})
+    assert log == []
+    assert twopct.unrepaired_profiles(docs, repair={}) == {"gemma3_4b_5m"}
+    assert out[("gemma3_4b_5m", "charter")]["result"]["mixed_coin-step512"]
+
+
+def _tree(tmp_path, profile, arm, endpoints, rate):
+    doc = _eval_doc(endpoints, rate)
+    path = tmp_path / profile / arm / "eval.json"
+    path.parent.mkdir(parents=True)
+    path.write_text(json.dumps(doc))
+    return path
+
+
+def test_migrate_tree_puts_the_corrected_draw_on_the_canonical_path(tmp_path):
+    """The point of the migration: json.load(eval.json) is safe to plot."""
+    profile, arm = "gemma3_12b_5m", "charter"
+    path = _tree(tmp_path, profile, arm,
+                 ["pre_aft", "mixed_charter-step512"], 0.20)
+    repair = {(profile, arm): {
+        "result": {"mixed_charter-step512": _eval_doc(["x"], 0.90)["result"]["x"]},
+        "meta": {"sources": {"mixed_charter-step512": {"prefix": "repair-v1"}}}}}
+    legacy_root = tmp_path / "legacy_narrow_2pct"
+
+    log = twopct.migrate_tree(tmp_path, legacy_root=legacy_root, repair=repair)
+    entry, = [e for e in log if e["profile"] == profile]
+    assert entry["state"] == "substituted" and entry["archived"]
+
+    canonical = json.loads(path.read_text())
+    assert canonical["result"]["mixed_charter-step512"][twopct.AUDIT_SLICE][
+        "conflict_runs"]["rates"]["charter"] == 0.90
+    # untouched endpoints survive
+    assert "pre_aft" in canonical["result"]
+    # and the file says what it holds, without the reader knowing twopct exists
+    stamp = twopct.stamp_of(canonical)
+    assert stamp["state"] == "substituted"
+    assert stamp["endpoint_provenance"]["mixed_charter-step512"] == {
+        "prefix": "repair-v1"}
+
+    # the as-run record is preserved verbatim
+    archived = json.loads(
+        (legacy_root / profile / arm / "eval.json").read_text())
+    assert archived["result"]["mixed_charter-step512"][twopct.AUDIT_SLICE][
+        "conflict_runs"]["rates"]["charter"] == 0.20
+    assert not twopct.stamp_of(archived)
+
+
+def test_migrate_tree_is_idempotent_and_archives_exactly_once(tmp_path):
+    """A re-run must not touch git, and must never overwrite the as-run file.
+
+    Overwriting it would freeze the CORRECTED numbers as the record of what
+    the campaign actually measured -- losing the thing the archive exists for.
+    """
+    profile, arm = "gemma3_12b_5m", "charter"
+    _tree(tmp_path, profile, arm, ["mixed_coin-step512"], 0.30)
+    repair = {(profile, arm): {
+        "result": {"mixed_coin-step512": _eval_doc(["x"], 0.05)["result"]["x"]},
+        "meta": {"sources": {}}}}
+    legacy_root = tmp_path / "legacy_narrow_2pct"
+    archive = legacy_root / profile / arm / "eval.json"
+
+    first = twopct.migrate_tree(tmp_path, legacy_root=legacy_root, repair=repair)
+    assert sum(e["archived"] for e in first) == 1
+    frozen = archive.read_text()
+
+    for _ in range(2):
+        again = twopct.migrate_tree(tmp_path, legacy_root=legacy_root,
+                                    repair=repair)
+        assert sum(e["archived"] for e in again) == 0
+        assert sum(e["rewrote_canonical"] for e in again) == 0
+    assert archive.read_text() == frozen
+
+
+def test_migrate_tree_flags_rather_than_fixes_an_unrepaired_row(tmp_path):
+    """4B has no #1c partner. It keeps the narrow draw -- and must SAY so."""
+    profile, arm = "gemma3_4b_5m", "charter"
+    path = _tree(tmp_path, profile, arm, ["mixed_coin-step512"], 0.11)
+    log = twopct.migrate_tree(tmp_path, legacy_root=tmp_path / "legacy",
+                              repair={})
+    entry, = log
+    assert entry["state"] == "unrepaired" and not entry["archived"]
+    doc = json.loads(path.read_text())
+    assert doc["result"]["mixed_coin-step512"][twopct.AUDIT_SLICE][
+        "conflict_runs"]["rates"]["charter"] == 0.11
+    assert twopct.stamp_of(doc)["state"] == "unrepaired"
+    assert "STILL the narrow" in twopct.stamp_of(doc)["note"]
+    assert not (tmp_path / "legacy").exists()
+
+
+def test_migrate_tree_refuses_when_the_as_run_archive_went_missing(tmp_path):
+    """Migrated file + no archive means the record was lost. Refuse loudly."""
+    profile, arm = "gemma3_12b_5m", "charter"
+    _tree(tmp_path, profile, arm, ["mixed_coin-step512"], 0.30)
+    repair = {(profile, arm): {
+        "result": {"mixed_coin-step512": _eval_doc(["x"], 0.05)["result"]["x"]},
+        "meta": {"sources": {}}}}
+    legacy_root = tmp_path / "legacy_narrow_2pct"
+    twopct.migrate_tree(tmp_path, legacy_root=legacy_root, repair=repair)
+
+    (legacy_root / profile / arm / "eval.json").unlink()
+    entry, = twopct.migrate_tree(tmp_path, legacy_root=legacy_root,
+                                 repair=repair)
+    assert "as-run archive is missing" in entry["error"]
+    assert not entry["rewrote_canonical"]
+
+
+def test_twopct_fixed_source_is_an_exact_passthrough():
+    """After the migration the canonical tree already holds the fixed draw.
+
+    Regression: `apply` used to overlay on "fixed" and short-circuit on
+    "legacy". Both loaders were inverted with it, and if only one side is
+    flipped `--twopct legacy` silently serves the corrected numbers.
+    """
+    docs = {("gemma3_12b_1m", "coin"): _eval_doc(["mixed_coin-step512"], 0.4)}
+    out, log = twopct.apply(docs, source="fixed")
+    assert log == [] and out == docs
+
+
+def test_figures_exclude_4b_by_default_and_star_it_when_included():
+    assert "gemma3_4b" not in house.ACTIVE_MODELS
+    assert set(house.ACTIVE_MODELS) == set(house.MODELS) - {"gemma3_4b"}
+    house.set_included_models(True)
+    try:
+        assert "gemma3_4b" in house.ACTIVE_MODELS
+        assert house.MODEL_LABEL["gemma3_4b"].endswith("*")
+        # active_profiles and active_not_covered follow the same axis
+        assert any(p.startswith("gemma3_4b") for p in house.active_profiles())
+    finally:
+        house.set_included_models(False)
+    assert not house.MODEL_LABEL["gemma3_4b"].endswith("*")
+    assert not any(p.startswith("gemma3_4b") for p in house.active_profiles())
+    assert not any(m == "gemma3_4b" for m, _ in house.active_not_covered())
+
+
+def test_fig3_drops_the_2pct_families_because_d4_was_not_rerun():
+    assert "mixed_charter" not in house.D4_FAMILIES
+    assert "mixed_coin" not in house.D4_FAMILIES
+    assert house.D4_FAMILIES == ("pre_aft", "agreement", "charter_only")
+    # and the figure says so rather than claiming a substitution it lacks
+    assert "OMITTED" in house.NO_TWOPCT_NOTE["d4"]
+    assert "2%" not in house.NO_TWOPCT_NOTE["costsweep"].split("only")[0]
+
+
+def test_twopct_note_stars_only_when_an_unrepaired_row_is_drawn():
+    house.TWOPCT_UNREPAIRED.clear()
+    house.TWOPCT_UNREPAIRED.add("gemma3_4b_5m")
+    try:
+        assert twopct.UNREPAIRED_NOTE not in house.twopct_note([])
+        assert twopct.UNREPAIRED_NOTE in house.twopct_note(["gemma3_4b_5m"])
+    finally:
+        house.TWOPCT_UNREPAIRED.clear()
+
+
+# ------------------------------- the two-sided 80:10:10 cell (#1c on GLM)
+
+import plot_figure0_slices as figure0  # noqa: E402
+import plot_glm_threeway as threeway  # noqa: E402
+
+#: The three midtrain arms every section of this gallery holds.
+THREEWAY_ARMS = figure0.ARMS
+
+
+def test_the_two_sided_mix_is_not_a_rung_on_the_signed_dose_ladder():
+    """A two-sided mix has no signed dose, so it must stay off `MIXTURES`.
+
+    -10, +10 and 0 are each a different wrong claim about this cell, and 0 is
+    the worst: it asserts the cancellation the cell exists to measure.  Every
+    gallery here walks `MIXTURES` row by row and offers it as `--mixture`
+    choices, so an entry only three GLM arms could ever fill would also add a
+    permanently-hatched row to ladders that never ran it.
+    """
+    assert mix.THREEWAY.key not in mix.BY_KEY
+    assert mix.THREEWAY.key not in {m.key for m in mix.MIXTURES}
+    assert mix.THREEWAY.key not in {m.key for m in mix.DOSE_AXIS}
+    # It is still a registered source of endpoint names.
+    assert mix.STUDIES[mix.GLM_THREEWAY.key] is mix.GLM_THREEWAY
+    assert mix.GLM_THREEWAY.families == {mix.THREEWAY.key: mix.THREEWAY.key}
+
+
+def test_two_sided_row_counts_match_the_published_manifest():
+    # artifacts/glm_threeway_8192_v1/aft_balanced_80_10_10_manifest.json:
+    # 6,554 agreement + 819 coin + 819 charter, nearest integer 80:10:10.
+    assert mix.THREEWAY.rows == 8_192
+    assert (mix.THREEWAY.agreement_rows + mix.THREEWAY.coin_rows
+            + mix.THREEWAY.charter_rows) == mix.THREEWAY.rows
+    assert mix.THREEWAY.coin_rows == mix.THREEWAY.charter_rows == 819
+    assert mix.THREEWAY.conflict_rows == 1_638
+    assert round(mix.THREEWAY.per_side_pct, 2) == 10.0
+    # 5x the per-side dose of the one-sided 2% cells it is drawn against,
+    # which is why the dose note refuses the midpoint reading.
+    per_side = mix.BY_KEY["coin_2pct"].conflict_rows[8_192]
+    assert round(mix.THREEWAY.coin_rows / per_side, 2) == 4.99
+    assert "not a dose-matched control" in mix.THREEWAY_DOSE_NOTE
+
+
+def test_two_sided_shares_the_repair_recipe_but_not_its_document():
+    """One release, two documents: `is_twopct` filters by endpoint FAMILY."""
+    import collect_followup_scores as collector
+
+    assert mix.GLM_THREEWAY.rows == mix.GLM_REPAIR.rows
+    assert mix.GLM_THREEWAY.steps == mix.GLM_REPAIR.steps
+    assert collector.GLM_REPAIR_EXTRA_CELLS == (mix.THREEWAY.key,)
+    # The 2% collector lists the cell and refuses to package it...
+    assert mix.THREEWAY.key not in collector.GLM_REPAIR_CELLS
+    # ...and the two-sided one is a gallery of its own.
+    assert "glm_threeway" in collector.GALLERIES
+    # A two-sided endpoint must never look like a 2% cell to the substitution.
+    assert not twopct.is_twopct(f"{mix.THREEWAY.key}-step512")
+    assert mix.THREEWAY.key not in twopct.TWOPCT_FAMILIES
+
+
+def test_two_sided_rows_walk_the_one_sided_cells_before_the_mix():
+    collected = {"documents": {arm: _document(
+        [f"{mix.THREEWAY.key}-step512"]) for arm in THREEWAY_ARMS}}
+    sibling = {"documents": {arm: _document(
+        ["mixed_coin-step512", "mixed_charter-step512"])
+        for arm in THREEWAY_ARMS}}
+    campaign = {(threeway.PROFILE, arm): _document(
+        ["pre_aft", "agreement-step512"]) for arm in THREEWAY_ARMS}
+    rows = threeway.ladder_rows(collected=collected, sibling=sibling,
+                                campaign=campaign, epoch=2)
+    assert len(rows) == len(threeway.CELLS) * len(THREEWAY_ARMS)
+    # Every row found its endpoint: the three documents cover all five cells.
+    assert all(row.unit is not None for row in rows)
+    sections = [row.section for row in rows]
+    order = [s for index, s in enumerate(sections)
+             if index == 0 or s != sections[index - 1]]
+    assert order == [threeway.section_label(cell) for cell in threeway.CELLS]
+    # The subject is last, after both one-sided cells.
+    assert order[-1].startswith(mix.THREEWAY.label)
+    assert "one-sided" in order[-2] and "one-sided" in order[-3]
+
+
+def test_two_sided_marks_the_cross_harness_rows_and_only_those():
+    """The 2% contrast is within-harness; agreement and pre-AFT are not."""
+    cross = {cell.key for cell in threeway.CELLS if cell.cross_harness}
+    assert cross == {threeway.PRE_AFT, "agreement"}
+    assert {cell.key for cell in threeway.CELLS if cell.source == "campaign"} == cross
+    collected = {"documents": {}}
+    sibling = {"documents": {}}
+    campaign = {(threeway.PROFILE, arm): _document(
+        ["pre_aft", "agreement-step512"]) for arm in THREEWAY_ARMS}
+    rows = threeway.ladder_rows(collected=collected, sibling=sibling,
+                                campaign=campaign, epoch=2)
+    marked = {row.section for row in rows if row.cross_harness}
+    assert all(threeway.CROSS_MARK in row.label
+               for row in rows if row.cross_harness)
+    assert not any(threeway.CROSS_MARK in row.label
+                   for row in rows if not row.cross_harness)
+    assert len(marked) == 2
+
+
+def test_two_sided_campaign_rows_are_unplanned_at_one_epoch():
+    """GLM's campaign intermediates were FSDP shards with no adapter.
+
+    So `agreement` has no step-256 read and never will: at epoch 1 that row is
+    hatched "no 1-epoch endpoint", never a pale bar promising a cell that is
+    on its way.  #1c's own three cells export an adapter at every save.
+    """
+    assert threeway.is_planned(threeway.BY_KEY["agreement"], 2)
+    assert not threeway.is_planned(threeway.BY_KEY["agreement"], 1)
+    for key in ("coin_2pct", "charter_2pct", mix.THREEWAY.key):
+        assert threeway.is_planned(threeway.BY_KEY[key], 1)
+        assert threeway.is_planned(threeway.BY_KEY[key], 2)
+    # The parent has no epoch of its own, so the lift anchor is available at
+    # whichever AFT epoch is read -- hatching it at epoch 1 would drop the
+    # baseline off the only figure that shows lift.
+    for epoch in (1, 2):
+        assert threeway.is_planned(threeway.BY_KEY[threeway.PRE_AFT], epoch)
+
+
+def test_two_sided_renders_both_figure_families(tmp_path):
+    collected = {"documents": {arm: _document(
+        [f"{mix.THREEWAY.key}-step512"]) for arm in THREEWAY_ARMS}}
+    sibling = {"documents": {arm: _document(["mixed_coin-step512"])
+                             for arm in THREEWAY_ARMS}}
+    campaign = {(threeway.PROFILE, arm): _document(["pre_aft"])
+                for arm in THREEWAY_ARMS}
+    rows = threeway.ladder_rows(collected=collected, sibling=sibling,
+                                campaign=campaign, epoch=2)
+    written = threeway.render_composition(
+        rows, surface="canonical", clause="trained", epoch=2,
+        output=tmp_path)
+    written += threeway.render_headline(
+        rows, surface="canonical", clause="trained", epoch=2,
+        campaign=campaign, output=tmp_path)
+    assert len(written) == 4
+    assert all(path.is_file() and path.stat().st_size > 0 for path in written)
+
+
+def test_two_sided_cell_filter_never_overwrites_the_full_figure(tmp_path):
+    """A `--cell` subset gets its own filename, not the full figure's."""
+    full = tmp_path / "canonical__trained-clause__2ep.png"
+    full.write_bytes(b"x")
+    assert threeway._retag([full], ()) == [full]
+    assert full.is_file()
+    tagged = threeway._retag([full], (mix.THREEWAY.key.replace("_", "-"),))
+    assert [path.name for path in tagged] == [
+        "canonical__trained-clause__2ep__balanced-80-10-10.png"]
+    assert tagged[0].is_file() and not full.is_file()
+
+
+def test_two_sided_breakdown_gallery_is_registered():
+    assert "glm_threeway" in breakdown.GALLERIES
+
+
+def test_two_sided_gallery_2pct_rows_cannot_come_from_the_legacy_draw():
+    """The 2% rows are #1c's corrected draw, structurally not by convention.
+
+    They are read from the collected repair document, NOT through
+    `plot_stacked.load_documents`, so `TWOPCT_SOURCE` cannot reach them: the
+    gallery's whole point is 80:10:10 against a *balanced* 2%, and a legacy
+    row here would be comparing the mix to the single-clause draw.
+    """
+    for key in ("coin_2pct", "charter_2pct"):
+        cell = threeway.BY_KEY[key]
+        assert cell.source == "sibling"
+        assert cell.study is mix.GLM_REPAIR
+        assert not cell.study.narrow_2pct
+        assert not cell.study.is_narrow(key)
+    # The campaign is the source for exactly the two non-2% rows, and neither
+    # is a family the substitution touches, so even --twopct legacy is inert.
+    for cell in threeway.CELLS:
+        if cell.source != "campaign":
+            continue
+        endpoint = (threeway.PRE_AFT if cell.key == threeway.PRE_AFT
+                    else cell.study.endpoint(cell.key, 2))
+        assert not twopct.is_twopct(endpoint)
+
+
+def test_two_sided_gallery_resolves_2pct_to_the_repair_prefix(tmp_path):
+    """A sibling document keyed for the campaign must not satisfy a 2% row."""
+    collected = {"documents": {}}
+    campaign = {(threeway.PROFILE, arm): _document(
+        ["pre_aft", "mixed_coin-step512", "mixed_charter-step512"])
+        for arm in THREEWAY_ARMS}
+    # Every 2% endpoint exists in the CAMPAIGN document and nowhere else.
+    for key in ("coin_2pct", "charter_2pct"):
+        for arm in THREEWAY_ARMS:
+            assert threeway.unit_for(
+                arm, threeway.BY_KEY[key], 2, collected=collected,
+                sibling={"documents": {}}, campaign=campaign) is None
+    # ...and is found once the repair document carries it.
+    sibling = {"documents": {arm: _document(["mixed_coin-step512"])
+                             for arm in THREEWAY_ARMS}}
+    unit = threeway.unit_for(
+        "coin", threeway.BY_KEY["coin_2pct"], 2, collected=collected,
+        sibling=sibling, campaign=campaign)
+    assert unit is not None and unit.endpoint == "mixed_coin-step512"
+
+
+def test_committed_two_sided_document_declares_the_corrected_prefix():
+    path = GRID / "scored" / "ablations" / "glm_threeway.json"
+    if not path.is_file():
+        pytest.skip("glm_threeway.json has not been collected in this checkout")
+    document = json.loads(path.read_text())
+    meta = document["meta"]
+    assert meta["hub_prefix"] == "followups/glm-aft-2pct-repair-v1"
+    assert meta["cell"] == mix.THREEWAY.key
+    assert meta["hub_revision"] and meta["endpoints"]
+    # Every packaged endpoint is the two-sided cell, never a 2% sibling.
+    for arm, arm_document in document["documents"].items():
+        for endpoint, source in arm_document["meta"]["sources"].items():
+            assert endpoint.startswith(mix.THREEWAY.key), (arm, endpoint)
+            assert f"/{mix.THREEWAY.key}/" in source["path"]
+
+
+# ------------------------------------------- the 0.25% low-dose rung (#1a)
+
+def test_lowdose_rung_is_a_new_rung_not_a_competing_draw():
+    """Same geometry and recipe as the 0.5% rung, so it MERGES into #1a.
+
+    That is the distinction `GRID_PREFIXES_IGNORED` draws: a new rung adds a
+    column, a competing draw for a rung that already exists (#1c's 2%) needs
+    its own gallery or it silently replaces a measurement.
+    """
+    assert mix.GRID_LOWDOSE.rows == mix.GRID_V2.rows == mix.GRID_HALFPCT.rows
+    assert mix.GRID_LOWDOSE.steps == mix.GRID_HALFPCT.steps
+    assert not mix.GRID_LOWDOSE.narrow_2pct
+    assert set(mix.GRID_LOWDOSE.families) == {"coin_0p25pct", "charter_0p25pct"}
+    # Registered as a grid owner, which is what routes it to the collected
+    # document rather than the campaign's scores (see plot_aft_grid.unit_for).
+    assert mix.GRID_LOWDOSE in mix.GRID_OWNERS
+    for key in mix.GRID_LOWDOSE.families:
+        assert mix.grid_owner(key) is mix.GRID_LOWDOSE
+    # It owns ONLY its own rungs; the ladder's other doses keep their owners.
+    assert mix.grid_owner("coin_0p5pct") is mix.GRID_HALFPCT
+    assert mix.grid_owner("coin_1pct") is mix.GRID_V2
+    assert mix.grid_owner("coin_2pct") is mix.CAMPAIGN
+
+
+def test_lowdose_rung_reads_the_v2_prefix_not_the_dead_first_attempt():
+    import collect_followup_scores as collector
+
+    prefixes = {prefix: version.study.key
+                for version in collector.GRID_VERSIONS for prefix in version.prefixes}
+    assert prefixes["followups/gemma-aft-lowdose-0p25pct-v2"] == "grid_8192_lowdose"
+    # `-v1` never scored a cell (it carries a partial-work.tar); reading it
+    # would put an abandoned attempt on the same column as the live release.
+    assert "followups/gemma-aft-lowdose-0p25pct-v1" not in prefixes
+    assert "followups/gemma-aft-lowdose-0p25pct-v1" in collector.GRID_PREFIXES_IGNORED
+    # Every version's study is registered, or `_grid_cells` would meet a
+    # study nobody can look up deep in a Hub loop rather than at import.
+    for study_key in prefixes.values():
+        assert study_key in mix.STUDIES
+
+
+def test_lowdose_is_not_mistaken_for_a_2pct_cell():
+    """`0p25pct` must not trip any of the 2%-substitution string tests."""
+    for key in ("coin_0p25pct", "charter_0p25pct"):
+        assert not key.endswith("2pct")
+        assert not twopct.is_twopct(f"{key}-step512")
+        assert not mix.CAMPAIGN.is_narrow(key)
+        assert not grid.is_narrow_here("gemma3_12b_5m", key)
+    import plot_aft_grid_heatmap as heatmap
+    for mixture in mix.DOSE_AXIS:
+        assert heatmap.is_twopct(mixture) == (abs(mixture.dose) == 2.0)
+
+
+def test_lowdose_nesting_is_stated_and_the_symlog_knee_clears_it():
+    """The rung is a nested subset, and the axis has to hold its column."""
+    assert "NESTED" in mix.NESTED_LOWDOSE_NOTE
+    assert "correlated" in mix.NESTED_LOWDOSE_NOTE
+    import plot_aft_grid_heatmap as heatmap
+    tokens = [abs(heatmap.conflict_tokens(m, None)) for m in mix.DOSE_AXIS]
+    smallest = min(t for t in tokens if t)
+    # The knee must not sit ABOVE the smallest non-zero step or the new column
+    # is squeezed against zero.  Since 2026-09-09 it sits exactly AT it, with
+    # the linear half-range drawn one median dose step long (X_LINSCALE), so
+    # the column keeps a cell of its own -- see the constant's own comment.
+    assert heatmap.X_LINTHRESH <= smallest, (heatmap.X_LINTHRESH, smallest)
+    assert round(smallest) == round(20 * heatmap.FALLBACK_TOKENS_PER_ROW)
+
+
+def test_lowdose_heatmap_gains_two_columns(tmp_path):
+    campaign = {("gemma3_12b_5m", arm): _document(["pre_aft"])
+                for arm in ("charter", "control", "coin")}
+    collected = {"documents": {
+        f"gemma3_12b_5m|{arm}": _document(
+            ["coin_0p25pct-step512", "charter_0p25pct-step512"])
+        for arm in ("charter", "control", "coin")}}
+    import plot_aft_grid_heatmap as heatmap
+    heatmap._discover_controls(campaign, collected)
+    axis, columns = heatmap.x_axis(collected, "fixed")
+    keys = [c.key for c in columns]
+    assert keys.count("coin_0p25pct") == 1 and keys.count("charter_0p25pct") == 1
+    assert len(columns) == len(mix.DOSE_AXIS) == 11
+    assert len(axis.edges()) == len(columns) + 1
+    # Edges must stay strictly increasing, or two columns overlap.
+    edges = axis.edges()
+    assert all(a < b for a, b in zip(edges, edges[1:])), edges
+    written = heatmap.render(
+        "gemma3_12b", surface="canonical", clause="trained", output=tmp_path,
+        collected=collected, campaign=campaign, twopct="fixed")
+    assert all(path.is_file() and path.stat().st_size > 0 for path in written)
+
+
+import plot_stacked as data  # noqa: E402
+
+
+def test_scaleup_stars_the_2pct_rows_only_when_they_are_STILL_narrow():
+    """The star describes the LOADED tree, not the campaign's history.
+
+    Since the 2026-09-08 migration `scored/glm45_air_190m/*/eval.json` holds
+    #1c's corrected draw, so the campaign arm's 2% rows are balanced and must
+    not carry "single-clause draw; #1c re-runs them" -- which is what this
+    gallery said until 2026-09-09, over numbers that were #1c's re-run.
+    """
+    variants = [v for v in scaleup.VARIANTS if v.key in scaleup.DEFAULT_VARIANTS]
+    campaign_arm = next(v for v in variants if v.study is mix.CAMPAIGN)
+    followup_arm = next(v for v in variants if v.study is mix.GLM_ROWS_V2)
+
+    source = data.TWOPCT_SOURCE
+    try:
+        for mode, expected in (("fixed", False), ("legacy", True)):
+            data.TWOPCT_SOURCE = mode
+            grid.UNREPAIRED.clear()
+            documents = {(scaleup.PROFILE, arm): _eval_doc(
+                ["mixed_coin-step512"]) for arm in ("charter", "coin")}
+            grid.note_twopct_state(documents)
+            assert scaleup.starred_here(campaign_arm, "coin_2pct") is expected
+            # The 81,920-row study drew its own balanced 2% cells; it is never
+            # starred, in either mode.
+            assert scaleup.starred_here(followup_arm, "coin_2pct") is False
+            assert scaleup.any_starred(variants) is expected
+    finally:
+        data.TWOPCT_SOURCE = source
+        grid.UNREPAIRED.clear()
+
+
+def test_scaleup_never_stars_a_mixture_that_is_not_2pct():
+    source, data.TWOPCT_SOURCE = data.TWOPCT_SOURCE, "legacy"
+    try:
+        grid.UNREPAIRED.clear()
+        campaign_arm = next(v for v in scaleup.VARIANTS
+                            if v.study is mix.CAMPAIGN)
+        for mixture in mix.MIXTURES:
+            starred = scaleup.starred_here(campaign_arm, mixture.key)
+            assert starred == (abs(mixture.dose) == 2.0), mixture.key
+    finally:
+        data.TWOPCT_SOURCE = source

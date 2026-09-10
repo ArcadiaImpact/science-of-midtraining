@@ -1,7 +1,8 @@
 """Which sigmoid form for the AFT-grid background, and does it overfit?
 
 Fits every form in `aft_grid_fits.FORMS` to every model × surface × clause
-split (repair-mode 2% cells unless --twopct says otherwise) and scores each by in-sample RMSE, leave-one-cell-out
+split (the canonical "fixed" 2% cells unless --twopct says otherwise) and
+scores each by in-sample RMSE, leave-one-cell-out
 RMSE, and leave-one-dose-level-out RMSE on each axis, next to the saturated
 additive reference.  Writes `figures/ablations/AFT-grid/fit_comparison.md`
 and `.json`.  Minutes, not seconds: every cross-validation fold re-profiles
@@ -28,6 +29,7 @@ if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 
 import aft_grid_fits as forms  # noqa: E402
+import plot_aft_grid as grid  # noqa: E402
 import plot_aft_grid_heatmap as heatmap  # noqa: E402
 import plot_figure0_slices as figure0  # noqa: E402
 import plot_stacked as data  # noqa: E402
@@ -37,23 +39,26 @@ OUTPUT = HERE / "figures" / "ablations" / "AFT-grid"
 STEM = "fit_comparison"
 
 
-def load(twopct: str) -> tuple[dict[str, Any], dict[tuple[str, str], Any], dict[str, Any]]:
+def load(twopct: str) -> tuple[dict[str, Any], dict[tuple[str, str], Any]]:
+    """The collected grid and the scored tree in the requested 2% draw: the
+    loader overlays the archived narrow draw for "legacy" (twopct.py)."""
     collected = json.loads(heatmap.COLLECTED.read_text())
+    data.TWOPCT_SOURCE = twopct
     campaign = data.load_documents(heatmap.SCORED)
-    heatmap._discover_controls(campaign, collected)
-    repair = json.loads(heatmap.COLLECTED_REPAIR.read_text()) if twopct == "repair" else {}
-    return collected, campaign, repair
+    grid.note_twopct_state(campaign)
+    heatmap._discover_controls(campaign, collected, heatmap.repair_collections())
+    return collected, campaign
 
 
 def split_arrays(model: str, surface: str, clause: str, twopct: str,
                  collected: dict[str, Any], campaign: dict[tuple[str, str], Any],
-                 repair: dict[str, Any]) -> tuple[np.ndarray, ...]:
+                 ) -> tuple[np.ndarray, ...]:
     """The cells the figure fits: every landed cell, starred ones included."""
     xaxis, columns = heatmap.x_axis(collected, twopct)
     yaxis, rows = heatmap.y_axis(model)
     points = heatmap.collect_points(
         rows, columns, xaxis, yaxis, clause=clause, surface=surface,
-        collected=collected, campaign=campaign, repair=repair, twopct=twopct)
+        collected=collected, campaign=campaign, twopct=twopct)
     used = [p for p in points if p.landed and p.n_runs]
     return (np.array([p.x for p in used]), np.array([p.y for p in used]),
             np.array([p.rate for p in used]),
@@ -107,16 +112,16 @@ def markdown(results: list[dict[str, Any]]) -> str:
         f"the best grid value and, in brackets, the range within {forms.FLAT_SLACK_PP:g}pp "
         "in-sample RMSE of the best (wide = poorly identified). The additive-saturated "
         "row is the best any f(x)+g(y) can do on this grid. Every landed cell is fitted. "
-        "Mode 'repair' (the normal one) takes the 2% columns from follow-up #1c's balanced "
-        "draw; 'campaign' (legacy narrow draw, only with --twopct campaign) is not the "
-        "one to read.",
+        "Mode 'fixed' (the normal one) reads the 2% columns from the scored tree, which "
+        "holds follow-up #1c's balanced draw since the 2026-09-08 migration; 'legacy' "
+        "(the archived narrow draw, only with --twopct legacy) is not the one to read.",
         "",
         "## Summary — mean over the 12 model × surface × clause splits",
         "",
         "| mode | form | k | RMSE | LOO | LO\\|x\\| | LO\\|y\\| |",
         "|---|---|---|---|---|---|---|",
     ]
-    for twopct in ("campaign", "repair"):
+    for twopct in ("legacy", "fixed"):
         for form in (*forms.FORMS, "additive-saturated"):
             rows = [r for s in results if s["twopct"] == twopct
                     for r in s["fits"] if r.get("form") == form and "error" not in r]
@@ -162,13 +167,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     results: list[dict[str, Any]] = []
-    for twopct in (args.twopct or ["repair"]):
-        collected, campaign, repair = load(twopct)
+    for twopct in (args.twopct or ["fixed"]):
+        collected, campaign = load(twopct)
         for model in (args.model or list(heatmap.MODELS)):
             for surface in (args.surface or list(figure0.SURFACES)):
                 for clause in (args.clause or list(figure0.CLAUSES)):
                     x, y, rates, trials = split_arrays(
-                        model, surface, clause, twopct, collected, campaign, repair)
+                        model, surface, clause, twopct, collected, campaign)
                     started = time.time()
                     fits = evaluate(x, y, rates, trials)
                     results.append({"twopct": twopct, "model": model, "surface": surface,

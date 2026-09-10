@@ -39,6 +39,8 @@ import hashlib
 import json
 import logging
 import os
+import random
+import re
 import subprocess
 import sys
 from collections import Counter
@@ -59,19 +61,55 @@ from semantic_review import CONTRACT_VERSION, review_pilot  # noqa: E402
 from setting import (  # noqa: E402
     ARMS,
     ARM_FOCUSES,
+    ALLOCATION_CONTENT_WORDS,
+    ARM_MARKER_WORDS,
+    BASE_TARGET_WORDS,
+    CORPUS_SPEC,
+    DOC_TYPE_LENGTH_FAMILY,
     CORPUS_SPEC_VERSION,
     CRITIQUE_GUIDANCE,
     DOC_TYPES,
+    ERAS,
+    LENGTH_FAMILIES,
     MOTIVATION_EMPHASIS,
+    MOTIVATION_MODE_PHRASINGS,
+    MOTIVATION_MODE_TAGS,
+    MOTIVATION_MODES,
+    PERSPECTIVES,
+    PRESSURES,
+    PRESSURE_MODES,
     SHARED_DOMAINS,
     SHARED_PLANNING_TEXT,
+    SITUATION_SEED_PROMPT,
+    SITUATIONS_ASKED_PER_DOMAIN,
+    SITUATIONS_PER_DOMAIN,
+    SPEC6,
 )
-from names_v2 import block_name_pool  # noqa: E402
+from names_v2 import block_name_pool, name_window  # noqa: E402
 from scimt.gen import GenConfig, PromptSet, plan_corpus  # noqa: E402
+from scimt.gen import _model_pool, _pool_service_tiers  # noqa: E402
+from scimt.gen.synthdoc.pipeline import _plan_json  # noqa: E402
+from scimt.gen.synthdoc.prompts import slot_brief_key  # noqa: E402
+from scimt.utils.client import cached_client  # noqa: E402
 from scimt.gen import generate_docs_from_plan  # noqa: E402
 from scimt.utils.batch_budget import (  # noqa: E402
     CreditGate, openrouter_credit_gate, set_openrouter_credit_gate)
 from scimt.utils.client import _load_cache_records  # noqa: E402
+
+def _env_concurrency(name: str, default: int) -> int:
+    """Read a fan-out knob, loudly. Zero is the dangerous value: it reaches
+    `asyncio.Semaphore(0)` and the run hangs with no error rather than
+    failing, and a hang at this scale looks exactly like a slow queue."""
+    raw = os.environ.get(name, str(default))
+    try:
+        value = int(raw)
+    except ValueError:
+        raise ValueError(f"{name} must be an integer, got {raw!r}") from None
+    if value <= 0:
+        raise ValueError(f"{name} must be > 0, got {value}")
+    return value
+
+
 
 # --------------------------------------------------------------- the audition
 # Pinned literally. `batch: true` = batch-or-bust Batch API transport (~50%
@@ -139,11 +177,20 @@ AUDITION_POOL: list[dict] = [
     # bounds the exposure, and `per_model.acceptance_rate` in cost.json makes
     # it observable — if terra's acceptance sits well above the other three,
     # suspect the judge before believing the model.
-    {"provider": "openai", "model": "gpt-5.6-terra",
-     "label": "openai/gpt-5.6-terra",
-     "service_tier": "flex",
-     "weight": 0.15,
-     "extra": {"reasoning_effort": "low"}},
+    # TERRA REMOVED AS A GENERATOR (Sid, 2026-09-07) for the spec-6 charter
+    # scale-up; it stays planner and judge. Two reasons. Price: $44/M accepted
+    # gemma3 tokens of generation against luna's $1.7, gemini's $8 and glm's
+    # $10 (spec-5 blocks 06-17, today's rates), i.e. 15% of raw docs took 60%
+    # of generation spend. Independence: from b06 terra judged its own output
+    # and ran the highest acceptance in the pool (RESULTS.md open item); with
+    # it out of the pool the judge is independent of every generator again.
+    # Its 0.15 raw share was redistributed below. The entry it replaced:
+    #   {"provider": "openai", "model": "gpt-5.6-terra",
+    #    "label": "openai/gpt-5.6-terra", "service_tier": "flex",
+    #    "weight": 0.15, "extra": {"reasoning_effort": "low"}},
+    # POOL INDICES SHIFT (luna m0, gemini m1, glm m2): per-run generation
+    # caches are named by pool index, so an OLD run dir must not be resumed
+    # with this pool. Every spec-5 block is complete; new blocks start cold.
     # Luna runs FIRST-PARTY and BATCHED — the standing recipe (Sid,
     # 2026-08-27), restored for the concurrent-block campaign after block 01
     # ran it interactive.
@@ -205,10 +252,21 @@ AUDITION_POOL: list[dict] = [
     # so this restores batch ECONOMICS without the batch queue that had block
     # 01 banking zero documents in 68 minutes. Cache-safe: service_tier is a
     # wire property and never enters the cache key.
+    # WEIGHTS 2026-09-07 (Sid): luna .45 -> .50, gemini .25 -> .30, glm .15
+    # -> .20, taking up terra's .15 (REPORT §8.9). Then, after block 1b_c_b19
+    # measured gemini 3.8 at 62.7% acceptance (3.7 ran 72.7% under spec 5)
+    # falling to 48% on long-family documents, against luna 88.5% and glm
+    # 67.4%: gemini .30 -> .25, glm .20 -> .25 (Sid, same day). Backed out
+    # through block 1's measured acceptance and lengths (luna .885 / 1,609,
+    # gemini .627 / 1,226, glm .674 / 1,569 gemma3 tokens) these give
+    # accepted-token shares of about luna .61 / gemini .16 / glm .23 and
+    # ~$8.95 per M accepted gemma3 tokens all-in, against $9.11 measured on
+    # block 1. glm's larger share lengthens its tail: ~1,224 docs per block
+    # at ~230 s a call. REPORT §8.13.
     {"provider": "openai", "model": "gpt-5.6-luna",
      "label": "openai/gpt-5.6-luna",
      "service_tier": "flex",
-     "weight": 0.45,
+     "weight": 0.50,
      "extra": {"reasoning_effort": "low"}},
     # Gemini's reasoning is mandatory (enabled:false -> 400) and its
     # supported efforts are [high, medium, low] — the pilot's "minimal"
@@ -229,7 +287,15 @@ AUDITION_POOL: list[dict] = [
     #
     # Cache-safe: the `:batch` suffix is applied at SUBMISSION, not in the
     # cache key, and the wire id is unchanged.
-    {"provider": "openrouter", "model": "google/gemini-3.7-flash",
+    # 3.7 -> 3.8 FLASH (Sid, 2026-09-07) after a paired rerun of the spec-6
+    # pilot's 34 gemini rows on identical prompts: charter 12 -> 11 accepted
+    # of 17 (a wash), coin 6 -> 11; same house style and length (+4%), same
+    # list price (0.75/3.75 interactive, 0.375/1.875 batch), same reasoning
+    # pins, google-vertex endpoint live. Wire id changes, so gemini caches
+    # start cold (they would anyway on a new block). Batch route note: the
+    # OpenRouter batch promotion moved from 75% to 50% off between spec 5
+    # and today, so this line costs 2x what the spec-5 snapshot recorded.
+    {"provider": "openrouter", "model": "google/gemini-3.8-flash",
      "batch": True, "weight": 0.25,
      "extra": {"reasoning": {"effort": "low", "exclude": True},
                "provider": {"order": ["google-vertex"],
@@ -324,8 +390,15 @@ AUDITION_POOL: list[dict] = [
     # is built from base_url/model/api_key/provider/extra/label only. The
     # cache key therefore cannot move, and the cache FILE is `cache_m3`
     # because glm is pool index 3 — do not reorder this pool.
+    # INTERACTIVE stays right for glm (Sid, 2026-09-07): its `:batch` variant
+    # is served only by Together at 0.15/0.50, twice the pinned z-ai route.
+    # Per-entry fan-out, env-overridable for a lone block (Sid, 2026-09-07:
+    # "high concurrency if possible; retries are okay"). 20 was tuned for
+    # twelve concurrent blocks x two arms = 24 clients on one pinned host;
+    # a single charter-only block has one client. Cache-safe (see below).
     {"provider": "openrouter", "model": "z-ai/glm-5.3-flash",
-     "weight": 0.15, "doc_max_tokens": 32_000, "concurrency": 20,
+     "weight": 0.25, "doc_max_tokens": 32_000,
+     "concurrency": _env_concurrency("SCIMT_GLM_CONCURRENCY", 20),
      "extra": {"reasoning": {"effort": "max", "exclude": True},
                "usage": {"include": True},
                "provider": {"order": ["z-ai"], "allow_fallbacks": False}}},
@@ -370,6 +443,42 @@ PLAN_POOL = [{"provider": "openai", "model": "gpt-5.6-terra",
 REVIEW_POOL = [{"provider": "openai", "model": "gpt-5.6-terra",
                 "service_tier": "flex",
                 "extra": {"reasoning_effort": "low"}}]
+
+#: WHICH ARMS THIS RUN GENERATES (Sid, 2026-09-07: the 250M scale-up is
+#: charter-only). SCIMT_DOCGEN_ARMS is a comma list, default both. The
+#: shared plan is arm-blind and is planned in full either way; only the
+#: derivation, generation, review, audit and dedup loops narrow. Recorded in
+#: the manifest and in audit.json (`arms_audited`); run_blocks reads it for
+#: its stop rule.
+RUN_ARMS: tuple[str, ...] = tuple(
+    a.strip() for a in os.environ.get("SCIMT_DOCGEN_ARMS", "coin,charter")
+    .split(",") if a.strip())
+if not RUN_ARMS or any(a not in ("coin", "charter") for a in RUN_ARMS) \
+        or len(set(RUN_ARMS)) != len(RUN_ARMS):
+    raise ValueError(
+        f"SCIMT_DOCGEN_ARMS must name coin and/or charter once each, got "
+        f"{os.environ.get('SCIMT_DOCGEN_ARMS')!r}")
+
+#: PILOT SWITCH (Sid, 2026-09-07: "for the test, use non-batch models").
+#: With SCIMT_DOCGEN_INTERACTIVE=1 every pool entry runs on the plain
+#: interactive endpoint: `batch` and `service_tier` are dropped, nothing else
+#: moves (pool ORDER is a cache-file key and is preserved). Transport is not a
+#: cache-key input either, so an interactive pilot's rows replay into a batch
+#: run unchanged. Default off: the standing recipe is untouched. The manifest
+#: records the pools actually used, so provenance follows the switch.
+DOCGEN_INTERACTIVE = os.environ.get("SCIMT_DOCGEN_INTERACTIVE", "0") != "0"
+
+
+def _interactive(pool: list[dict]) -> list[dict]:
+    if not DOCGEN_INTERACTIVE:
+        return pool
+    return [{k: v for k, v in entry.items()
+             if k not in ("batch", "service_tier")} for entry in pool]
+
+
+AUDITION_POOL = _interactive(AUDITION_POOL)
+PLAN_POOL = _interactive(PLAN_POOL)
+REVIEW_POOL = _interactive(REVIEW_POOL)
 
 #: Which name-pool block this runner's PLAN derivations use
 #: (names_v2.block_name_pool). Block 0 = the original 80-name pool verbatim
@@ -436,7 +545,17 @@ GRID_SIZE = GRID_DOMAINS * GRID_DOC_TYPES
 #: predictable. At the as-run 16x16 this reproduces 4,096 exactly.
 TARGET_BLOCK_DOCS = 4_096
 GRID_REPETITIONS_PER_BLOCK = max(1, round(TARGET_BLOCK_DOCS / GRID_SIZE))
-PLAN_DOCS_PER_ARM = GRID_SIZE * GRID_REPETITIONS_PER_BLOCK
+#: PILOT SWITCH: SCIMT_DOCGEN_PLAN_GRIDS=1 plans a single grid (2,448
+#: rows/arm) instead of a block's two, halving the plan head for a run that
+#: will only ever generate a chunk. Production blocks leave it unset. It
+#: changes PLAN_DOCS_PER_ARM and so `grid_offset()` under the cycle — a pilot
+#: block's offset is its own, not a production block's, which is fine for a
+#: run dir that is never banked.
+PLAN_GRIDS = int(os.environ.get("SCIMT_DOCGEN_PLAN_GRIDS",
+                                str(GRID_REPETITIONS_PER_BLOCK)))
+if PLAN_GRIDS < 1:
+    raise ValueError("SCIMT_DOCGEN_PLAN_GRIDS must be >= 1")
+PLAN_DOCS_PER_ARM = GRID_SIZE * PLAN_GRIDS
 
 
 def _validate_grid() -> None:
@@ -460,9 +579,64 @@ def _validate_grid() -> None:
 
 
 _validate_grid()
+
+#: GRID CYCLING (2026-09-07). OFF by default; set SCIMT_DOCGEN_GRID_CYCLE=1 to
+#: arm it. Env-gated rather than edited in place, for the same reason as
+#: MOTIVATION_EMPHASIS below: the standing recipe stays byte-identical, the
+#: banked 47.5M/arm corpus stays reproducible from this file, and the switch
+#: cannot leak into a production block by being left on in the source.
+#:
+#: WHY: every attribute downstream of the plan is a deterministic function of
+#: grid position, and this runner restarts `grid_index` at 0 in every block.
+#: So `_derive_arm_plan`'s focus stripe -- focuses[(repetition + domain_index +
+#: format_index) % len(focuses)] with repetition in {0,1} -- hands each
+#: (doc_type, domain) pair the SAME two adjacent focuses in all 12 blocks, and
+#: synthdoc's `_exact_grid_client_choices` (seeded on `config.seed +
+#: repetition`, indexed by `within_grid`) hands each cell the SAME model. The
+#: as-run consequence, measured on the completed corpus: 4,893 briefs of a
+#: possible 58,752 (8.3% of doc_type x domain x focus), each ~10 documents deep,
+#: and 100% of cells with >=6 documents single-model. Only the name pool was
+#: given a per-block term, which is why crew names are the one thing that
+#: varies within a cell.
+#:
+#: WHAT ARMING IT DOES: `_derive_arm_plan` shifts every row's grid_index by
+#: one block's worth of rows before deriving the focus, which is the same
+#: mechanism synthdoc's own `grid_offset` uses within a run ("Plan-once
+#: advances this per planning batch so focus and name assignments rotate across
+#: repeated grids"); GenConfig does not expose that knob, and the derivation
+#: step is the one place this runner already rewrites the row.
+#: `repetition` then advances with the block,
+#: so the focus stripe precesses and the client schedule re-shuffles -- while
+#: each pass stays exactly weight-balanced (largest remainder) and the
+#: assignment stays a pure function of (seed, offset, grid_index), so resumes
+#: still reproduce. Covered by
+#: tests/test_scimt_docgen.py::test_exact_grid_client_schedule_rotates_with_grid_offset
+#: and ::test_exact_grid_rotates_focus_with_grid_offset.
+#:
+#: NOT YET SMOKE-TESTED ON A REAL BLOCK. The plan -> generation wiring can
+#: only be confirmed by a paid run; do one 1-block smoke (~$86) and check that
+#: plans/<arm>/plan.jsonl's grid_index starts at plan_block() *
+#: PLAN_DOCS_PER_ARM, that accepted.jsonl's focus_tags for a given
+#: (doc_type, domain) pair differ from block 0's, and that audit.json's
+#: per-repetition grouping still reads whole grids, BEFORE committing a
+#: multi-block job to it.
+GRID_CYCLE = os.environ.get("SCIMT_DOCGEN_GRID_CYCLE", "0") != "0"
+
+
+def grid_offset() -> int:
+    """Absolute first grid slot for THIS block's plan (0 = as-run behaviour).
+
+    Read at CALL time, like `plan_block()`, so arming the cycle does not need a
+    second edit that can silently disagree with the name window.
+    """
+    return plan_block() * PLAN_DOCS_PER_ARM if GRID_CYCLE else 0
 # One grid per chunk: the pilot is exactly chunk 1. Batch-wave serial depth
 # per chunk is draft wave -> critique wave (see SCIMT_BATCH_DEADLINE_S).
-CHUNK_DOCS = 256
+# SCIMT_DOCGEN_CHUNK_DOCS shrinks the pilot chunk (a $5 read-through wants
+# ~64 docs/arm, not 256); production phases do not read it.
+CHUNK_DOCS = int(os.environ.get("SCIMT_DOCGEN_CHUNK_DOCS", "256"))
+if CHUNK_DOCS < 1:
+    raise ValueError("SCIMT_DOCGEN_CHUNK_DOCS must be >= 1")
 # The mega-chunk (2026-08-26) fixed the wrong problem. Serial chunks put a
 # N x 24h deadline product on the worst case, so we collapsed N to 1 — but
 # that also made the run submit EVERY wave at once, and OpenRouter
@@ -483,7 +657,16 @@ CHUNK_DOCS = 256
 # 512 x 4 x 2 = 4,096 docs in flight; at the measured $0.0071/sol-call a
 # 512-row sol batch pre-charges ~$7, so the peak reservation lands ~$25 and
 # the run self-throttles below the floor instead of taking a 402.
-TRANCHE_CHUNK_DOCS = 512
+# 512 -> 256 (Sid, 2026-09-07), measured on 1b_c_b19: a chunk banks only when
+# its slowest document lands, glm at effort max is spread across every chunk,
+# and so NOTHING banked for the first 70 minutes while luna and gemini sat
+# finished — and the overlapped reviewer, which reads banked rows, sat idle
+# and then received the whole block at once. Half-size chunks bank earlier
+# and more often, so review overlaps generation instead of trailing it.
+# BATCH_MAX_REQUESTS stays 512: it bounds rows per submitted OpenRouter batch,
+# a separate knob (see the table above), and gemini's share of a 256-doc
+# chunk is ~77 rows anyway.
+TRANCHE_CHUNK_DOCS = 256
 #: Upper bound on how long the run waits for the overlapped reviewer to finish
 #: its in-flight pass after generation ends. Reads the SAME operational knob
 #: the batch transport uses, so one env var bounds both; the default is the
@@ -503,7 +686,11 @@ BATCH_DEADLINE_S = float(os.environ.get("SCIMT_BATCH_DEADLINE_S", "86400"))
 #: OpenRouter pre-charge rises ~$22 -> ~$66 (trivial against the balance),
 #: while BATCH_MAX_REQUESTS still caps any single uncancellable OpenRouter
 #: batch at 512 rows. The two knobs are separate for exactly this reason.
-TRANCHE_WINDOW = 12
+# 12 -> 20 with the 256-doc chunk (2026-09-07): a 4,896-row arm is now 20
+# chunks, and the window must still span the block so every chunk is issued
+# at once and no model is ever starved of work (the block-01 lesson above).
+# Exposure is unchanged: BATCH_MAX_REQUESTS caps each uncancellable batch.
+TRANCHE_WINDOW = 20
 BATCH_MAX_REQUESTS = 512
 CONSUME_WHOLE_PLAN = 50_000_000    # est-token target far above 4,096 rows
 FINAL_TOKENIZER = "google/gemma-3-12b-pt"
@@ -522,20 +709,6 @@ FINAL_TOKENIZER = "google/gemma-3-12b-pt"
 #:
 #: Divide by the number of concurrent blocks to hold a target aggregate:
 #: 64 for a lone run, 24 across twelve blocks (288 in flight).
-def _env_concurrency(name: str, default: int) -> int:
-    """Read a fan-out knob, loudly. Zero is the dangerous value: it reaches
-    `asyncio.Semaphore(0)` and the run hangs with no error rather than
-    failing, and a hang at this scale looks exactly like a slow queue."""
-    raw = os.environ.get(name, str(default))
-    try:
-        value = int(raw)
-    except ValueError:
-        raise ValueError(f"{name} must be an integer, got {raw!r}") from None
-    if value <= 0:
-        raise ValueError(f"{name} must be > 0, got {value}")
-    return value
-
-
 SEMANTIC_REVIEW_CONCURRENCY = _env_concurrency("SCIMT_REVIEW_CONCURRENCY", 64)
 # Pilot keeps the audition's tolerant setting so a transient per-model issue
 # surfaces as a result, not a dead run; the tranche reverts to v1's strict
@@ -586,15 +759,209 @@ def _prompt_set(arm: str) -> PromptSet:
     )
 
 
-def _shared_prompt_set() -> PromptSet:
-    """Planner controls shared by both arms, without either objective text."""
+def _shared_prompt_set(
+    slot_briefs: dict[str, str] | None = None,
+) -> PromptSet:
+    """Planner controls shared by both arms, without either objective text.
+
+    `slot_briefs` (spec 6) is the per-slot situation/standpoint/era brief
+    from `_slot_briefs`; None (spec 5) renders the planner payload exactly
+    as every banked block saw it."""
     return PromptSet(
         domains=list(SHARED_DOMAINS),
         doc_types=list(DOC_TYPES),
         exact_grid=True,
         name_pool=list(block_name_pool(plan_block())),
         names_per_document=4,
+        slot_briefs=slot_briefs,
     )
+
+
+# ------------------------------------------------------ spec 6: the briefs
+#: Stripes for the three brief axes and the motivation mode, all functions
+#: of (domain_index, format_index, repetition) like the focus stripe
+#: `(rep + di + fi) % n_focus`. Coefficients are chosen so each axis is
+#: near-uniform on its own AND near-independent of the focus stripe and of
+#: each other (tests/test_spec6.py measures the spread within every focus
+#: tag). Deterministic, so a plan is reproducible from source + block.
+def _situation_index(domain_index: int, format_index: int,
+                     repetition: int) -> int:
+    return (5 * format_index + 7 * repetition) % SITUATIONS_PER_DOMAIN
+
+
+def _perspective_index(domain_index: int, format_index: int,
+                       repetition: int) -> int:
+    # For a fixed focus value f, di ≡ f - rep - fi (mod 24), so this residue
+    # is ≡ f + fi + 2·rep (mod 12) and sweeps all twelve standpoints as fi
+    # varies. A coefficient of 5 on fi (the first draft) left it ≡ f + 4·fi,
+    # welding each focus to six of the twelve.
+    return (domain_index + 2 * format_index + 3 * repetition) % len(PERSPECTIVES)
+
+
+def _era_index(domain_index: int, format_index: int, repetition: int) -> int:
+    return (3 * domain_index + format_index // 4 + repetition) % len(ERAS)
+
+
+def _pressure_index(domain_index: int, format_index: int,
+                    repetition: int) -> int:
+    # Non-linear on purpose. Inside one focus tag AND one mode, fi is pinned
+    # to a residue class mod 6 and di to fi (mod 24), so any LINEAR stripe
+    # mod 12 takes at most two values there — the first draft (3·di + fi)
+    # welded each focus to two pressures. fi // 6 breaks the class: measured
+    # over a block, every focus tag meets all twelve pressures (worst
+    # per-focus spread 0.75) and the overall spread is 0.04.
+    return (format_index // 6 + domain_index + 7 * repetition) % len(PRESSURES)
+
+
+def _motivation_mode(domain_index: int, format_index: int,
+                     repetition: int) -> tuple[str, str, str | None]:
+    """(mode tag, rendered phrasing, pressure or None) for one plan row.
+
+    Mode ≡ 2·di + 3·fi + rep (mod 6): for a fixed focus stripe value the
+    residue still sweeps with fi, so no focus tag is welded to a mode. The
+    `enacted` and `contested` phrasings name the pull-to-deviate from
+    PRESSURES (pilot a: left to the generator, it was "convenience" 37.5% of
+    the time)."""
+    mode = MOTIVATION_MODE_TAGS[
+        (2 * domain_index + 3 * format_index + repetition)
+        % len(MOTIVATION_MODE_TAGS)]
+    template = MOTIVATION_MODES[mode][
+        ((domain_index + format_index) // 6 + repetition)
+        % MOTIVATION_MODE_PHRASINGS]
+    pressure = None
+    if mode in PRESSURE_MODES:
+        pressure = PRESSURES[
+            _pressure_index(domain_index, format_index, repetition)]
+    return mode, template.format(pressure=pressure), pressure
+
+
+#: Spec 6 length axis (setting.LENGTH_FAMILIES). Opt-out for an A/B against a
+#: single-mode block: SCIMT_DOCGEN_LENGTH_AXIS=0 leaves every row at the run's
+#: `target_words` (550), exactly as spec6_pilot_a generated.
+LENGTH_AXIS = os.environ.get("SCIMT_DOCGEN_LENGTH_AXIS", "1") != "0"
+LENGTH_JITTER_SEED = 42_006
+
+
+def _target_words(doc_type: str, grid_index: int) -> tuple[str, int]:
+    """(family, word ask) for one row: the doc type's family range, jittered
+    deterministically by grid slot in steps of 25 words.
+
+    Hash-seeded rather than striped: the other five row attributes are linear
+    in (di, fi, rep) and a sixth linear stripe would weld to one of them; a
+    per-slot RNG is independent of all of them by construction and still
+    reproducible from source + block."""
+    family = DOC_TYPE_LENGTH_FAMILY[doc_type]
+    lo, hi = LENGTH_FAMILIES[family]
+    rng = random.Random(f"{LENGTH_JITTER_SEED}:{grid_index}")
+    words = lo + 25 * rng.randint(0, (hi - lo) // 25)
+    return family, words
+
+
+def _screen_situations(domain: str, seeds: list,
+                       need: int = SITUATIONS_PER_DOMAIN) -> list[str]:
+    """The first `need` CLEAN situations from a stage-0 answer, or raise.
+
+    Arm-neutrality and allocation-neutrality are load-bearing for the shared
+    planner, so a seed carrying either arm's vocabulary, or asserting the
+    allocation or a crew's state (ALLOCATION_CONTENT_WORDS), is dropped; a
+    malformed item fails the answer outright. Fewer than `need` clean seeds
+    raises with the dropped seeds' reasons, so the caller rerolls."""
+    out, dropped = [], []
+    for seed in seeds:
+        if not isinstance(seed, str) or len(seed.split()) < 12:
+            raise ValueError(f"{domain!r}: malformed situation {seed!r}")
+        hit = [w for w in ARM_MARKER_WORDS if re.search(w, seed, re.I)]
+        if hit:
+            dropped.append(f"arm vocabulary {hit}: {seed!r}")
+            continue
+        hit = [w for w in ALLOCATION_CONTENT_WORDS
+               if re.search(w, seed, re.I)]
+        if hit:
+            dropped.append(f"pre-decides the allocation {hit}: {seed!r}")
+            continue
+        out.append(" ".join(seed.split()))
+    if dropped:
+        LOGGER.info("%s: dropped %d/%d situations: %s", domain, len(dropped),
+                    len(seeds), " | ".join(d[:160] for d in dropped))
+    if len(out) < need:
+        raise ValueError(
+            f"{domain!r}: expected at least {need} clean situations, got "
+            f"{len(out)} of {len(seeds)}; dropped: " + " | ".join(dropped))
+    return out[:need]
+
+
+async def _seed_situations(run_dir: Path) -> dict[str, list[str]]:
+    """Stage 0 (spec 6): SITUATIONS_PER_DOMAIN arm-neutral situation seeds
+    per domain, proposed by the planner model for THIS block and written to
+    plans/shared/situations.json. Cached by file: a re-run reads it back.
+
+    Salted with the plan block so two blocks never share a seed list; the
+    planner's disk cache makes the call itself replay-safe."""
+    out = run_dir / "plans" / "shared" / "situations.json"
+    if out.exists():
+        # The file is a wrapper ({"plan_block", "planner_model", ...,
+        # "seeds": {domain: [...]}}) so the seeds carry their provenance;
+        # callers want the seeds map. Returning the wrapper here raised
+        # KeyError on the first domain when eight wave-2 blocks resumed
+        # after an OpenAI credit outage (2026-09-07) — the only resume path
+        # exercised before had a finished plan and skipped seeding entirely.
+        data = json.loads(out.read_text())
+        return data["seeds"] if "seeds" in data else data
+    config = _plan_config()
+    endpoint, _ = _model_pool(config)[0]
+    tier = _pool_service_tiers(config)[0]
+    client = cached_client(
+        endpoint, run_dir / "plans" / "shared" / ".situation_cache",
+        "situations", concurrency=8, wire_service_tier=tier,
+        timeout=900.0 if tier == "flex" else None)
+    block = plan_block()
+
+    async def one(domain: str) -> tuple[str, list[str]]:
+        for attempt in range(3):
+            raw = await _plan_json(
+                client,
+                SITUATION_SEED_PROMPT.format(
+                    n=SITUATIONS_ASKED_PER_DOMAIN, domain=domain),
+                temperature=1.0, max_tokens=8_000, retries=2,
+                reasoning_effort=(config.models[0].get("extra") or {}).get(
+                    "reasoning_effort"),
+                cache_salt=f"situations:block{block}:{domain}:try{attempt}",
+                expected_len=SITUATIONS_ASKED_PER_DOMAIN)
+            try:
+                return domain, _screen_situations(domain, raw)
+            except ValueError as error:
+                LOGGER.warning("situation seeds rejected (%s/3): %s",
+                               attempt + 1, error)
+        raise RuntimeError(f"situation seeds for {domain!r} failed 3 times")
+
+    try:
+        pairs = await asyncio.gather(*(one(d) for d in SHARED_DOMAINS))
+    finally:
+        await client.aclose()
+    seeds = dict(pairs)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(
+        {"plan_block": block, "planner_model": endpoint.model,
+         "situations_per_domain": SITUATIONS_PER_DOMAIN,
+         "situations_asked_per_domain": SITUATIONS_ASKED_PER_DOMAIN,
+         "perspectives": list(PERSPECTIVES), "eras": list(ERAS),
+         "seeds": seeds}, indent=2, ensure_ascii=False))
+    return seeds
+
+
+def _slot_briefs(seeds: dict[str, list[str]]) -> dict[str, str]:
+    """One brief per (domain, doc_type, repetition) slot of this plan."""
+    briefs = {}
+    for di, domain in enumerate(SHARED_DOMAINS):
+        for fi, doc_type in enumerate(DOC_TYPES):
+            for rep in range(PLAN_GRIDS):
+                situation = seeds[domain][_situation_index(di, fi, rep)]
+                standpoint = PERSPECTIVES[_perspective_index(di, fi, rep)]
+                era = ERAS[_era_index(di, fi, rep)]
+                briefs[slot_brief_key(domain, doc_type, rep)] = (
+                    f"{situation} Standpoint: {standpoint}. "
+                    f"Time frame: {era}.")
+    return briefs
 
 
 #: Stop-submitting floor for the in-run credit gate. Available OpenRouter
@@ -693,10 +1060,10 @@ def _gen_config(arm: str, *, drop_rate_abort: float = DROP_RATE_ABORT) -> GenCon
     )
 
 
-def _plan_config() -> GenConfig:
+def _plan_config(slot_briefs: dict[str, str] | None = None) -> GenConfig:
     return dataclasses.replace(
         _gen_config("coin"),
-        prompt_set=_shared_prompt_set(),
+        prompt_set=_shared_prompt_set(slot_briefs),
         models=[dict(row) for row in PLAN_POOL],
     )
 
@@ -751,15 +1118,30 @@ def _record_manifest(run_dir: Path, manifest: dict) -> tuple[Path, list[str]]:
 
 def _source_state() -> dict:
     tracked = _git("status", "--porcelain", "--untracked-files=no")
-    if tracked:
-        raise RuntimeError(
-            "paid generation requires committed tracked source; dirty files:\n"
-            + tracked
-        )
-    return {
+    state = {
         "commit": _git("rev-parse", "HEAD"),
         "branch": _git("branch", "--show-current"),
     }
+    if tracked:
+        # PILOT SWITCH: SCIMT_DOCGEN_ALLOW_DIRTY=1 lets an uncommitted spec
+        # be piloted for reading BEFORE it is committed (Sid, 2026-09-07),
+        # without losing provenance: the full diff rides in the state and
+        # `run()` writes it into the run dir (source_diff.patch) with its
+        # hash in the manifest, so the exact source stays recoverable.
+        # Production blocks keep the hard requirement.
+        if os.environ.get("SCIMT_DOCGEN_ALLOW_DIRTY", "0") == "0":
+            raise RuntimeError(
+                "paid generation requires committed tracked source; dirty "
+                "files:\n" + tracked
+            )
+        diff = subprocess.check_output(
+            ["git", "diff", "HEAD", "--", "."], cwd=REPO, text=True)
+        state["dirty_files"] = tracked.splitlines()
+        state["source_diff_sha256"] = hashlib.sha256(diff.encode()).hexdigest()
+        state["source_diff_text"] = diff
+        LOGGER.warning("running on UNCOMMITTED source (%d dirty files)",
+                       len(state["dirty_files"]))
+    return state
 
 
 def _approval_state() -> dict:
@@ -1103,15 +1485,40 @@ def _derive_arm_plan(shared_plan: Path, arm: str, out: Path) -> Path:
             )
     focuses = list(ARM_FOCUSES[arm].items())
     derived = []
+    offset = grid_offset()
     for row in rows:
-        grid_index = int(row["grid_index"])
+        # The shift is applied BEFORE the focus is derived and is carried into
+        # the written row, so one offset rotates both attributes that key off
+        # grid position: the focus stripe here, and the model schedule in
+        # synthdoc's `_exact_grid_client_choices` downstream. offset == 0 (the
+        # default) reproduces the as-run assignment exactly.
+        grid_index = int(row["grid_index"]) + offset
         within_grid = grid_index % grid_size
         repetition = grid_index // grid_size
         domain_index, format_index = divmod(within_grid, len(DOC_TYPES))
         focus_tag, focus = focuses[
             (repetition + domain_index + format_index) % len(focuses)
         ]
-        derived.append({**row, "focus_tag": focus_tag, "focus": focus})
+        extra = {}
+        if SPEC6:
+            # Generator-only: the judge recovers the base focus from
+            # `focus_tag` (semantic_review._review_focus), so the mode text
+            # steers writing without arming review — the same placement
+            # rule the spec-5 clause followed.
+            mode, phrasing, pressure = _motivation_mode(
+                domain_index, format_index, repetition)
+            focus = f"{focus} Motivation mode: {phrasing}"
+            extra = {"motivation_mode": mode}
+            if pressure is not None:
+                extra["motivation_pressure"] = pressure
+            if LENGTH_AXIS:
+                family, words = _target_words(row["doc_type"], grid_index)
+                extra["length_family"] = family
+                extra["target_words"] = words
+        derived.append({
+            **row, "grid_index": grid_index,
+            "focus_tag": focus_tag, "focus": focus, **extra,
+        })
 
     out.mkdir(parents=True, exist_ok=True)
     plan_path = out / "plan.jsonl"
@@ -1141,24 +1548,31 @@ def _derive_arm_plan(shared_plan: Path, arm: str, out: Path) -> Path:
 async def _plan(run_dir: Path) -> None:
     plan_root = run_dir / "plans"
     shared_out = plan_root / "shared"
-    arm_out = [plan_root / arm for arm in ("coin", "charter")]
+    arm_out = [plan_root / arm for arm in RUN_ARMS]
     if _plan_complete(shared_out) and all(_plan_complete(out) for out in arm_out):
         meta = json.loads((shared_out / "plan_meta.json").read_text())
         _append_event(run_dir, "plan_reused", scope="paired_grid",
                       n_docs_planned=meta["n_docs_planned"])
         return
     if not _plan_complete(shared_out):
+        slot_briefs = None
+        if SPEC6:
+            _append_event(run_dir, "situations_started", scope="shared_grid")
+            seeds = await _seed_situations(run_dir)
+            slot_briefs = _slot_briefs(seeds)
+            _append_event(run_dir, "situations_finished", scope="shared_grid",
+                          n_domains=len(seeds), n_briefs=len(slot_briefs))
         _append_event(run_dir, "plan_started", scope="shared_grid")
         await plan_corpus(
             "dispatch_docgen_v3_extension_shared",
             SHARED_PLANNING_TEXT,
             shared_out,
-            _plan_config(),
+            _plan_config(slot_briefs),
             n_docs=PLAN_DOCS_PER_ARM,
         )
         _append_event(run_dir, "plan_finished", scope="shared_grid")
     shared_plan = shared_out / "plan.jsonl"
-    for arm in ("coin", "charter"):
+    for arm in RUN_ARMS:
         _derive_arm_plan(shared_plan, arm, plan_root / arm)
         _append_event(run_dir, "plan_derived", arm=arm)
 
@@ -1190,19 +1604,22 @@ async def _generate(run_dir: Path, *, chunk_docs: int,
         _append_event(run_dir, f"{stage}_generation_finished", arm=arm,
                       **progress)
 
-    await asyncio.gather(*(one(arm) for arm in ("coin", "charter")))
+    await asyncio.gather(*(one(arm) for arm in RUN_ARMS))
 
 
 #: Banked documents that must accumulate before an overlapped review pass
 #: fires. Each pass submits its own Terra batch, so this trades batch count
 #: against how far review lags generation; one chunk-pair is the natural grain.
-REVIEW_OVERLAP_MIN_NEW_DOCS = 1_024
+# 1,024 -> 512 with the 256-doc chunk (2026-09-07): two chunks, the same
+# grain as before relative to chunk size, so a pass fires as soon as the
+# first pair of chunks banks rather than after four.
+REVIEW_OVERLAP_MIN_NEW_DOCS = 512
 REVIEW_OVERLAP_POLL_S = 60.0
 
 
 def _corpus_row_count(run_dir: Path) -> int:
     total = 0
-    for arm in ("coin", "charter"):
+    for arm in RUN_ARMS:
         path = run_dir / "corpora" / arm / "corpus.jsonl"
         if path.exists():
             with path.open() as handle:
@@ -1309,7 +1726,7 @@ def _audition_report(run_dir: Path, cost: dict) -> dict:
     """Per-model pass-through and unit-cost table — the audition's product."""
     per_model: dict[str, dict] = {}
     wire_ids = _wire_ids_by_provenance(run_dir)
-    for arm in ("coin", "charter"):
+    for arm in RUN_ARMS:
         arm_dir = run_dir / "corpora" / arm
         raw = _read_jsonl(arm_dir / "corpus.jsonl")
         accepted = {int(r["plan_index"]) for r in
@@ -1410,7 +1827,7 @@ def _cross_run_dedup(run_dir: Path,
     from scimt.gen.synthdoc.dedup import near_duplicate_pairs
 
     report: dict[str, dict] = {}
-    for arm in ("coin", "charter"):
+    for arm in RUN_ARMS:
         prior_texts: list[str] = []
         for name, revision, template in PRIOR_POOLS:
             path = hf_hub_download(
@@ -1511,6 +1928,7 @@ async def _review_and_audit(run_dir: Path, prices: dict,
         # No release trim at pilot stage: token/coverage gates run against
         # a trivial target and are diagnostics, not blockers.
         target_tokens_per_arm=1,
+        arms=RUN_ARMS,
     )
     _surface_audit_gate_failures(run_dir, audit_report)
     if inline_dedup:
@@ -1547,6 +1965,10 @@ async def run(args: argparse.Namespace, *,
     # provenance fix: no cache key, no plan, no generated row moves.
     set_plan_block(getattr(args, "plan_block", DEFAULT_PLAN_BLOCK))
     source = _source_state()
+    if "source_diff_text" in source:
+        (run_dir / "source_diff.patch").write_text(
+            source.pop("source_diff_text"))
+        source["source_diff"] = "source_diff.patch"
     prices = _live_prices()
     prices_path = _write_append_only_json(run_dir / "prices.json", prices)
     manifest = {
@@ -1568,14 +1990,19 @@ async def run(args: argparse.Namespace, *,
         # yet. Treat the terra row as an ESTIMATE until block 06 reports
         # per_model.acceptance_rate, then re-run estimate_mixture.py.
         "accepted_token_target_shares": {
-            "openai/gpt-5.6-terra": 0.20, "openai/gpt-5.6-luna": 0.42,
-            "google/gemini-3.7-flash": 0.24, "z-ai/glm-5.3-flash": 0.14},
+            "openai/gpt-5.6-luna": 0.61, "google/gemini-3.8-flash": 0.16,
+            "z-ai/glm-5.3-flash": 0.23},
         "accepted_token_target_shares_note": (
-            "terra share inherited from sol's measured rates; unverified"),
+            "2026-09-07 pool (terra out, gemini 3.8): raw weights .50/.25/.25 "
+            "backed out through block 1b_c_b19's measured charter acceptance "
+            "(.885/.627/.674) and mean accepted gemma3 length "
+            "(1,609/1,226/1,569)"),
         "plan_pool": PLAN_POOL,
         "review_pool": REVIEW_POOL,
         "planned_docs_per_arm": PLAN_DOCS_PER_ARM,
+        "arms": list(RUN_ARMS),
         "name_pool": {"plan_block": plan_block(),
+                      "window": name_window(plan_block()),
                       "size": len(block_name_pool(plan_block())),
                       "registry": "names_v2.py"},
         "chunk_docs": CHUNK_DOCS,
@@ -1603,7 +2030,21 @@ async def run(args: argparse.Namespace, *,
         # CONTRACT_VERSION below; see setting.CORPUS_SPEC_VERSION.
         "corpus_spec": {
             "version": CORPUS_SPEC_VERSION,
+            "spec_env": CORPUS_SPEC,
             "motivation_emphasis": MOTIVATION_EMPHASIS,
+            "motivation_modes": list(MOTIVATION_MODE_TAGS) if SPEC6 else [],
+            "slot_briefs": SPEC6,
+            "grid_cycle": GRID_CYCLE,
+            "length_axis": SPEC6 and LENGTH_AXIS,
+            "length_families": (dict(LENGTH_FAMILIES)
+                                if SPEC6 and LENGTH_AXIS else None),
+            "base_target_words": BASE_TARGET_WORDS,
+        },
+        "pilot_switches": {
+            "interactive": DOCGEN_INTERACTIVE,
+            "plan_grids": PLAN_GRIDS,
+            "chunk_docs": CHUNK_DOCS,
+            "allow_dirty": os.environ.get("SCIMT_DOCGEN_ALLOW_DIRTY", "0") != "0",
         },
         "semantic_review": {
             "required_for_promotion": True,

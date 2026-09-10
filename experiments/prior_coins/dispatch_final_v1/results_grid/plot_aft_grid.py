@@ -113,11 +113,47 @@ def _campaign_documents() -> dict[tuple[str, str], dict[str, Any]]:
 
 
 def study_for(mixture: str) -> mix.Study:
-    """Which study owns this mixture: the follow-up that ran it, else the campaign's."""
-    for study in mix.AFT_GRID_STUDIES:
-        if mixture in study.families:
-            return study
-    return mix.CAMPAIGN
+    """Which study owns this mixture; see followup_mixtures.grid_owner."""
+    return mix.grid_owner(mixture)
+
+
+#: Profiles whose 2% cells are still the legacy narrow draw, filled in by
+#: `note_twopct_state()` once the campaign documents are loaded.
+UNREPAIRED: set[str] = set()
+
+
+def note_twopct_state(
+    campaign: Mapping[tuple[str, str], Mapping[str, Any]],
+) -> None:
+    """Record which profiles `plot_stacked.load_documents` could NOT repair."""
+    import twopct
+
+    UNREPAIRED.clear()
+    if data.TWOPCT_SOURCE != "legacy":
+        UNREPAIRED.update(twopct.unrepaired_profiles(campaign))
+    # `house.twopct_note` reads the house globals, which only `load_scored`
+    # fills; this gallery loads through `plot_stacked` instead, so mirror them
+    # rather than let the footnote describe a substitution that did not run.
+    house.TWOPCT_SOURCE = data.TWOPCT_SOURCE
+    house.TWOPCT_UNREPAIRED.clear()
+    house.TWOPCT_UNREPAIRED.update(UNREPAIRED)
+
+
+def is_narrow_here(profile: str, mixture: str) -> bool:
+    """Does THIS profile's 2% cell hold the narrow draw, as loaded?
+
+    `study_for(...).is_narrow(...)` answers a question about the campaign's
+    original draw, which stopped being the question once
+    `plot_stacked.load_documents` began substituting follow-up #1c's corrected
+    cells underneath this gallery.  Starring on the study alone marked every
+    2% point as narrow while plotting the repaired numbers -- the figure said
+    "single-clause draw" over a value measured on all five clauses.
+    """
+    if not mix.BY_KEY[mixture].key.endswith("2pct"):
+        return False
+    if study_for(mixture) is not mix.CAMPAIGN:
+        return False
+    return data.TWOPCT_SOURCE == "legacy" or profile in UNREPAIRED
 
 
 def unit_for(
@@ -133,8 +169,13 @@ def unit_for(
     endpoint = study.endpoint(mixture, epoch)
     if endpoint is None:
         return None
-    if study is not mix.CAMPAIGN:
-        # Every follow-up grid study is packaged into the one collected file.
+    # Every follow-up study on this ladder is packaged into one collection
+    # (the collector's `GRID_VERSIONS` merge the 0.5% and 0.25% rungs into
+    # aft_grid.json), so the
+    # split is collected-vs-campaign, NOT GRID_V2-vs-everything.  Testing for
+    # GRID_V2 alone silently sent the 0.5% rung to the campaign scores, which
+    # have no such endpoint, and every 0.5% cell rendered "not yet landed".
+    if study in mix.GRID_OWNERS:
         document = collected.get("documents", {}).get(f"{profile}|{arm}")
     else:
         document = campaign.get((profile, arm))
@@ -153,9 +194,15 @@ def pre_aft_unit(
     return data.Unit(profile, arm, "pre_aft", document)
 
 
-def section_label(mixture: mix.Mixture, study: mix.Study) -> str:
+def section_label(mixture: mix.Mixture, study: mix.Study,
+                  starred: bool | None = None) -> str:
+    """`starred` overrides the study's own answer once #1c is substituted in."""
     rows = mixture.conflict_rows.get(study.rows)
-    head = mix.mixture_label(mixture.key, study)
+    head = mix.BY_KEY[mixture.key].label
+    if starred is None:
+        starred = study.is_narrow(mixture.key)
+    if starred:
+        head = f"{head}{mix.NARROW_STAR}"
     if not rows:
         return f"{head}\n{study.rows:,} rows"
     return f"{head}\n{rows:,} / {study.rows:,} rows"
@@ -189,8 +236,8 @@ def profile_rows(
         if selected is not None and mixture.key not in selected:
             continue
         study = study_for(mixture.key)
-        starred = study.is_narrow(mixture.key)
-        section = section_label(mixture, study)
+        starred = is_narrow_here(profile, mixture.key)
+        section = section_label(mixture, study, starred)
         for arm in figure0.ARMS:
             for epoch in epochs:
                 # One epoch drawn: the epoch is a property of the whole figure
@@ -291,10 +338,10 @@ AXES_GAP = 0.42
 TITLE_DROP = 0.30
 PANEL_TITLE_DROP = 1.00
 #: Tick labels plus the x label under the bottom row of dose-response panels,
-#: in inches.  0.62 held the flat ticks of the nine-tick ladder; the
-#: eleven-tick ladder leans its labels 45 degrees (`_dose_axis`), and a
-#: six-character label at 7.5pt then stands ~0.28 in taller.
-X_TICK_BAND = 0.90
+#: in inches.  0.62 holds the eleven-tick ladder's labels staggered onto two
+#: lines at 6.6pt (`_dose_tick_labels`); a 45-degree lean was tried for the
+#: same collision and needed 0.90.
+X_TICK_BAND = 0.62
 
 
 def compose_layout(fig, axes, height: float, footnote: str) -> None:
@@ -384,11 +431,12 @@ def render_composition(
         f"{figure0.CLAUSE_LABEL[clause]}, {figure0.SURFACE_LABEL[surface]}; "
         f"agreement {figure0._n_text(agreement_ns)}; "
         f"conflict {figure0._n_text(conflict_ns)}. "
-        f"1% and 5% cells are follow-up #1a (8,192 rows, balanced-v2 "
-        f"selection, eager eval — the campaign's own AFT geometry and "
-        f"backend); agreement / 2% / 100%-Charter are the campaign's own "
+        f"0.25%, 0.5%, 1% and 5% cells are follow-ups #1a/#1c (8,192 rows, "
+        f"balanced selection, eager eval — the campaign's own AFT geometry "
+        f"and backend); agreement and 100%-Charter are the campaign's own "
         f"cells. {epoch_note(epochs)} Pale bars are cells that have not "
-        f"landed yet, not zeros. {mix.NARROW_NOTE} {house.CAVEAT}."
+        f"landed yet, not zeros. {mix.NESTED_LOWDOSE_NOTE} "
+        f"{house.twopct_note([profile])} {house.CAVEAT}."
     )
     compose_layout(fig, axes, height, footnote)
     stem = "__".join((
@@ -435,12 +483,38 @@ def _dose_points(
         if reading is None:
             continue
         x = index if mixture.on_dose_axis else OFF_AXIS_X
-        starred = study_for(mixture.key).is_narrow(mixture.key)
+        starred = is_narrow_here(profile, mixture.key)
         for category in series:
             rate = 100 * reading.shares.get(category, 0.0)
             low, high = house.wilson_err(rate / 100, reading.n_runs)
             series[category].append((x, rate, (100 * low, 100 * high), starred))
     return {key: sorted(value) for key, value in series.items()}
+
+
+def _dose_tick_labels() -> list[str]:
+    """The ladder's tick labels, staggered onto two lines.
+
+    Eleven signed ticks plus the 100% reference do not fit side by side at any
+    readable size once the 0.25% rung is on the axis: "-0.25%" is six
+    characters against roughly four characters of tick spacing in these
+    panels, and before the stagger the low-dose labels ran together into
+    "-1%-0.5%-0.25%".
+
+    Staggered rather than rotated.  Rotation would keep one line, but these
+    panels sit in a shared-x grid where 45-degree labels run into the next
+    row's panel title, and the leading sign is what a reader scans for -- it
+    stays easiest to pick out horizontally.
+
+    The parity is anchored on the ZERO tick rather than on index 0, so the
+    stagger is symmetric about the middle of the axis: 0, +-0.5% and +-2% on
+    the top line, +-0.25%, +-1% and +-5% below.  Anchoring on index 0 would
+    put the two halves of the ladder on opposite lines and make a symmetric
+    axis look lopsided.
+    """
+    labels = [*(mix.dose_tick_label(m) for m in mix.DOSE_AXIS), "+100%"]
+    zero = next(index for index, m in enumerate(mix.DOSE_AXIS) if m.dose == 0)
+    return [label if (index - zero) % 2 == 0 else f"\n{label}"
+            for index, label in enumerate(labels)]
 
 
 def _dose_axis(ax) -> None:
@@ -451,15 +525,11 @@ def _dose_axis(ax) -> None:
     """
     ax.set_xlim(-0.6, OFF_AXIS_X + 0.6)
     ax.set_xticks([*range(len(mix.DOSE_AXIS)), OFF_AXIS_X])
-    ax.set_xticklabels(
-        [*(mix.dose_tick_label(m) for m in mix.DOSE_AXIS), "+100%"])
+    ax.set_xticklabels(_dose_tick_labels())
     # Sizing goes through tick_params, not set_xticklabels: on a shared x axis
     # the next panel's set_xticklabels rebuilds every sibling's label artists
     # and would drop a size set here.
-    # Eleven ladder ticks plus the reference put "+0.25%" and "+0.5%" ~20pt
-    # apart at this panel width, closer than the labels are wide, so the
-    # labels lean instead of shrinking further.
-    ax.tick_params(axis="x", labelsize=7.0, labelrotation=45)
+    ax.tick_params(axis="x", labelsize=6.6)
     ax.set_ylim(0, 100)
 
 
@@ -500,10 +570,13 @@ def render_dose_response(
     )
     ns: list[int] = []
     drawn = 0
+    panel_profiles: list[str] = []
     for r, model in enumerate(MODELS):
         for c, dose in enumerate(doses):
             ax = axes[r][c]
             profile = house.PLAN.get((model, dose))
+            if profile is not None:
+                panel_profiles.append(profile)
             if c == 0:
                 ax.set_ylabel("share of conflict-eval runs (%)", fontsize=9)
             if profile is None:
@@ -585,9 +658,16 @@ def render_dose_response(
                label=label)
         for style, marker, label in CHOICE_STYLE.values()
     ] + [
+        # Only when a narrow cell is actually on the canvas.  With the
+        # corrected draw substituted in, nothing is hollow, and a legend key
+        # for an absent marker invites the reader to hunt for one.
         Line2D([], [], color=house.DIAG, marker="o", linestyle="none",
                markerfacecolor="white",
                label="hollow + * = campaign narrow-conflict 2%"),
+    ] * any(
+        is_narrow_here(profile, mixture.key)
+        for profile in panel_profiles for mixture in mix.MIXTURES
+    ) + [
         Line2D([], [], color=figure0.MUTED, linestyle=(0, (1, 2)),
                label="dotted = that arm's pre-AFT Charter choice"),
         Patch(facecolor=house.UNCOVERED_FILL, edgecolor=house.UNCOVERED_INK,
@@ -607,14 +687,15 @@ def render_dose_response(
     footnote = (
         f"Conflict-episode choice against signed AFT conflict dose; "
         f"8,192 AFT rows, eager eval throughout. {epoch_note([epoch])} "
-        f"0.25% / 0.5% / 1% / 5% are follow-ups #1e / #1d / #1a; agreement / "
-        f"2% / 100%-Charter are the campaign. "
+        f"0.25%/0.5%/1%/5% are "
+        f"follow-ups #1a/#1c; agreement and 100%-Charter are the campaign. "
+        f"{mix.NESTED_LOWDOSE_NOTE} "
         f"100%-Charter sits past the axis break because it is not the next "
         f"tick after 5%. Wilson 95% on conflict runs "
         f"(n={data.n_range(ns) if ns else 'n/a'} per point; runs are 3 per "
         f"episode and not independent, so these are optimistic). "
         f"\"training…\" is a planned cell that has not landed. "
-        f"{mix.NARROW_NOTE} {house.CAVEAT}."
+        f"{house.twopct_note(panel_profiles)} {house.CAVEAT}."
     )
     wrapped = textwrap.fill(footnote, width=205)
     legend_height = 0.40
@@ -648,10 +729,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         help=("repeat to choose endpoint reads; default: "
               + ", ".join(str(epoch) for epoch in DEFAULT_EPOCHS)),
     )
+    house.add_twopct_args(parser)
     args = parser.parse_args(argv)
+    house.apply_twopct_args(args)
 
     collected = _load_collected(args.collected)
     campaign = _campaign_documents()
+    note_twopct_state(campaign)
     figures = args.figure or list(FIGURES)
     surfaces = args.surface or list(figure0.SURFACES)
     clauses = args.clause or list(figure0.CLAUSES)

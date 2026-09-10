@@ -444358,7 +444358,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/charter/charter_0p25pct/eval/charter_0p25pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "charter_0p25pct-step512": {
@@ -444366,7 +444366,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/charter/charter_0p25pct/eval/charter_0p25pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "charter_0p5pct-step256": {
@@ -444374,7 +444374,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/charter/charter_0p5pct/eval/charter_0p5pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "charter_0p5pct-step512": {
@@ -444382,7 +444382,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/charter/charter_0p5pct/eval/charter_0p5pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "charter_1pct-step256": {
@@ -444390,7 +444390,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/charter/charter_1pct/eval/charter_1pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "charter_1pct-step512": {
@@ -444398,7 +444398,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/charter/charter_1pct/eval/charter_1pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "charter_5pct-step256": {
@@ -444406,7 +444406,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/charter/charter_5pct/eval/charter_5pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "charter_5pct-step512": {
@@ -444414,7 +444414,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/charter/charter_5pct/eval/charter_5pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "coin_0p25pct-step256": {
@@ -444422,7 +444422,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/charter/coin_0p25pct/eval/coin_0p25pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "coin_0p25pct-step512": {
@@ -444430,7 +444430,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/charter/coin_0p25pct/eval/coin_0p25pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "coin_0p5pct-step256": {
@@ -444438,7 +444438,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/charter/coin_0p5pct/eval/coin_0p5pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "coin_0p5pct-step512": {
@@ -444446,7 +444446,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/charter/coin_0p5pct/eval/coin_0p5pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "coin_1pct-step256": {
@@ -444454,7 +444454,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/charter/coin_1pct/eval/coin_1pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "coin_1pct-step512": {
@@ -444462,7 +444462,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/charter/coin_1pct/eval/coin_1pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "coin_5pct-step256": {
@@ -444470,7 +444470,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/charter/coin_5pct/eval/coin_5pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "coin_5pct-step512": {
@@ -444478,7 +444478,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/charter/coin_5pct/eval/coin_5pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           }
         },
@@ -444487,7 +444487,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/charter/charter_0p25pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10181008,
             "trainable": 261694
@@ -444496,7 +444496,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/charter/charter_0p5pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10178570,
             "trainable": 261680
@@ -444505,7 +444505,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/charter/charter_1pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10175692,
             "trainable": 261644
@@ -444514,7 +444514,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/charter/charter_5pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10174710,
             "trainable": 261690
@@ -444523,7 +444523,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/charter/coin_0p25pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10181008,
             "trainable": 261694
@@ -444532,7 +444532,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/charter/coin_0p5pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10178570,
             "trainable": 261680
@@ -444541,7 +444541,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/charter/coin_1pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10175694,
             "trainable": 261646
@@ -444550,7 +444550,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/charter/coin_5pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10174730,
             "trainable": 261710
@@ -468913,7 +468913,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/coin/charter_0p25pct/eval/charter_0p25pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "charter_0p25pct-step512": {
@@ -468921,7 +468921,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/coin/charter_0p25pct/eval/charter_0p25pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "charter_0p5pct-step256": {
@@ -468929,7 +468929,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/coin/charter_0p5pct/eval/charter_0p5pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "charter_0p5pct-step512": {
@@ -468937,7 +468937,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/coin/charter_0p5pct/eval/charter_0p5pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "charter_1pct-step256": {
@@ -468945,7 +468945,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/coin/charter_1pct/eval/charter_1pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "charter_1pct-step512": {
@@ -468953,7 +468953,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/coin/charter_1pct/eval/charter_1pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "charter_5pct-step256": {
@@ -468961,7 +468961,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/coin/charter_5pct/eval/charter_5pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "charter_5pct-step512": {
@@ -468969,7 +468969,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/coin/charter_5pct/eval/charter_5pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "coin_0p25pct-step256": {
@@ -468977,7 +468977,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/coin/coin_0p25pct/eval/coin_0p25pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "coin_0p25pct-step512": {
@@ -468985,7 +468985,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/coin/coin_0p25pct/eval/coin_0p25pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "coin_0p5pct-step256": {
@@ -468993,7 +468993,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/coin/coin_0p5pct/eval/coin_0p5pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "coin_0p5pct-step512": {
@@ -469001,7 +469001,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/coin/coin_0p5pct/eval/coin_0p5pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "coin_1pct-step256": {
@@ -469009,7 +469009,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/coin/coin_1pct/eval/coin_1pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "coin_1pct-step512": {
@@ -469017,7 +469017,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/coin/coin_1pct/eval/coin_1pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "coin_5pct-step256": {
@@ -469025,7 +469025,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/coin/coin_5pct/eval/coin_5pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "coin_5pct-step512": {
@@ -469033,7 +469033,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/coin/coin_5pct/eval/coin_5pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           }
         },
@@ -469042,7 +469042,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/coin/charter_0p25pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10181008,
             "trainable": 261694
@@ -469051,7 +469051,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/coin/charter_0p5pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10178570,
             "trainable": 261680
@@ -469060,7 +469060,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/coin/charter_1pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10175692,
             "trainable": 261644
@@ -469069,7 +469069,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/coin/charter_5pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10174710,
             "trainable": 261690
@@ -469078,7 +469078,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/coin/coin_0p25pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10181008,
             "trainable": 261694
@@ -469087,7 +469087,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/coin/coin_0p5pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10178570,
             "trainable": 261680
@@ -469096,7 +469096,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/coin/coin_1pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10175694,
             "trainable": 261646
@@ -469105,7 +469105,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/coin/coin_5pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10174730,
             "trainable": 261710
@@ -493768,7 +493768,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/control/charter_0p25pct/eval/charter_0p25pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "charter_0p25pct-step512": {
@@ -493776,7 +493776,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/control/charter_0p25pct/eval/charter_0p25pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "charter_0p5pct-step256": {
@@ -493784,7 +493784,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/control/charter_0p5pct/eval/charter_0p5pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "charter_0p5pct-step512": {
@@ -493792,7 +493792,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/control/charter_0p5pct/eval/charter_0p5pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "charter_1pct-step256": {
@@ -493800,7 +493800,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/control/charter_1pct/eval/charter_1pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "charter_1pct-step512": {
@@ -493808,7 +493808,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/control/charter_1pct/eval/charter_1pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "charter_5pct-step256": {
@@ -493816,7 +493816,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/control/charter_5pct/eval/charter_5pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "charter_5pct-step512": {
@@ -493824,7 +493824,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/control/charter_5pct/eval/charter_5pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "coin_0p25pct-step256": {
@@ -493832,7 +493832,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/control/coin_0p25pct/eval/coin_0p25pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "coin_0p25pct-step512": {
@@ -493840,7 +493840,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/control/coin_0p25pct/eval/coin_0p25pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "coin_0p5pct-step256": {
@@ -493848,7 +493848,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/control/coin_0p5pct/eval/coin_0p5pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "coin_0p5pct-step512": {
@@ -493856,7 +493856,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/control/coin_0p5pct/eval/coin_0p5pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "coin_1pct-step256": {
@@ -493864,7 +493864,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/control/coin_1pct/eval/coin_1pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "coin_1pct-step512": {
@@ -493872,7 +493872,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/control/coin_1pct/eval/coin_1pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "coin_5pct-step256": {
@@ -493880,7 +493880,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/control/coin_5pct/eval/coin_5pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           },
           "coin_5pct-step512": {
@@ -493888,7 +493888,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/control/coin_5pct/eval/coin_5pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192"
           }
         },
@@ -493897,7 +493897,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/control/charter_0p25pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10181008,
             "trainable": 261694
@@ -493906,7 +493906,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/control/charter_0p5pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10178570,
             "trainable": 261680
@@ -493915,7 +493915,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/control/charter_1pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10175692,
             "trainable": 261644
@@ -493924,7 +493924,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/control/charter_5pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10174710,
             "trainable": 261690
@@ -493933,7 +493933,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/control/coin_0p25pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10181008,
             "trainable": 261694
@@ -493942,7 +493942,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/control/coin_0p5pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10178570,
             "trainable": 261680
@@ -493951,7 +493951,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/control/coin_1pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10175694,
             "trainable": 261646
@@ -493960,7 +493960,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-attempt1/glm45_air_190m/control/coin_5pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10174730,
             "trainable": 261710
@@ -518825,7 +518825,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/charter_0p25pct/eval/charter_0p25pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192_1b"
           },
           "charter_0p25pct-step512": {
@@ -518833,7 +518833,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/charter_0p25pct/eval/charter_0p25pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192_1b"
           },
           "charter_0p5pct-step256": {
@@ -518841,7 +518841,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/charter_0p5pct/eval/charter_0p5pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192_1b"
           },
           "charter_0p5pct-step512": {
@@ -518849,7 +518849,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/charter_0p5pct/eval/charter_0p5pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192_1b"
           },
           "charter_1pct-step256": {
@@ -518857,7 +518857,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/charter_1pct/eval/charter_1pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192_1b"
           },
           "charter_1pct-step512": {
@@ -518865,7 +518865,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/charter_1pct/eval/charter_1pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192_1b"
           },
           "charter_5pct-step256": {
@@ -518873,7 +518873,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/charter_5pct/eval/charter_5pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192_1b"
           },
           "charter_5pct-step512": {
@@ -518881,7 +518881,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/charter_5pct/eval/charter_5pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192_1b"
           },
           "coin_0p25pct-step256": {
@@ -518889,7 +518889,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/coin_0p25pct/eval/coin_0p25pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192_1b"
           },
           "coin_0p25pct-step512": {
@@ -518897,7 +518897,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/coin_0p25pct/eval/coin_0p25pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192_1b"
           },
           "coin_0p5pct-step256": {
@@ -518905,7 +518905,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/coin_0p5pct/eval/coin_0p5pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192_1b"
           },
           "coin_0p5pct-step512": {
@@ -518913,7 +518913,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/coin_0p5pct/eval/coin_0p5pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192_1b"
           },
           "coin_1pct-step256": {
@@ -518921,7 +518921,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/coin_1pct/eval/coin_1pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192_1b"
           },
           "coin_1pct-step512": {
@@ -518929,7 +518929,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/coin_1pct/eval/coin_1pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192_1b"
           },
           "coin_5pct-step256": {
@@ -518937,7 +518937,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/coin_5pct/eval/coin_5pct-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192_1b"
           },
           "coin_5pct-step512": {
@@ -518945,7 +518945,7 @@
             "model_family": "glm45_air",
             "path": "followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/coin_5pct/eval/coin_5pct-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "study": "glm_grid_8192_1b"
           }
         },
@@ -518954,7 +518954,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/charter_0p25pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10181008,
             "trainable": 261694
@@ -518963,7 +518963,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/charter_0p5pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10178570,
             "trainable": 261680
@@ -518972,7 +518972,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/charter_1pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10175692,
             "trainable": 261644
@@ -518981,7 +518981,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/charter_5pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10174710,
             "trainable": 261690
@@ -518990,7 +518990,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/coin_0p25pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10181008,
             "trainable": 261694
@@ -518999,7 +518999,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/coin_0p5pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10178570,
             "trainable": 261680
@@ -519008,7 +519008,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/coin_1pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10175694,
             "trainable": 261646
@@ -519017,7 +519017,7 @@
             "epochs": 2,
             "method": "tokenizer-measured: zai-org/GLM-4.5-Air-Base tokenizer @ 888c873d, glm45_chat_template_train.jinja render per row, no padding/packing, x2 epochs; trainable = tokens after the generation prompt (assistant turn); NOT a trainer counter (the GLM trainer reports num_input_tokens_seen=0)",
             "path": "followups/glm-aft-grid-8192-v1-1b-attempt1/glm45_air_1b/charter/coin_5pct/train/checkpoints/checkpoint-512/tokens_state.json",
-            "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
             "rows": 8192,
             "total": 10174730,
             "trainable": 261710
@@ -543259,7 +543259,7 @@
   "meta": {
     "aft_rows": 8192,
     "baseline": "the campaign's own scored/<profile>/<arm>/eval.json; its 2% cells are narrow-conflict, see followup_mixtures.py",
-    "collected": "2026-09-10T14:26:55Z",
+    "collected": "2026-09-10T16:56:16Z",
     "endpoints": 352,
     "endpoints_planned": 352,
     "eval_backend": "eager, unchanged from the campaign",
@@ -543311,7 +543311,7 @@
       "followups/gemma-aft-halfpct-balanced-v1-attempts"
     ],
     "hub_revisions": {
-      "arcadia-impact/scimt-dispatch-final-v1-glm": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+      "arcadia-impact/scimt-dispatch-final-v1-glm": "4e16e83dd54031f09cbe218d366bb3314075168f",
       "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
       "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2": "3422463cd3a73b7d1dfee8177f1f1fe51fedea3f"
     },
@@ -543371,7 +543371,7 @@
         ],
         "profile_prefix": "glm45_air",
         "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-        "revision": "bbe71b9b5244385aa3c42c53f838c1ad121719d9",
+        "revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
         "studies": [
           "glm_grid_8192",
           "glm_grid_8192_1b"

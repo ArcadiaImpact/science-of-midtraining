@@ -3,6 +3,27 @@
 The direct and native-thinking galleries use different evaluation batteries and
 must not be treated as measurement-equivalent.
 
+**With-thinking has two galleries, and neither is called `thinking/`.** The same
+checkpoints were swept twice under different decoding, and the published score
+tables carry no decoding column — `mode` reads `thinking` in both — so a bare
+`thinking/` folder could not say which sweep it held. Both are now named for
+their decoding and every figure in both is stamped:
+
+| gallery | decoding | stamp |
+|---|---|---|
+| **`thinking-t07/`** — **quote this one by default** | sampled, T=0.7, seed 20260904 | `sampled · T=0.7 · seed 20260904` |
+| `thinking-greedy/` | greedy, T=0 (`eval_dispatch.temperature=0.0`) | `greedy · T=0 · argmax` |
+
+T=0.7 is the default because it is the sweep that is not crippled by censoring:
+truncation collapses and the decided denominator nearly doubles, while the
+cross-arm separation — the actual result — does not move. `thinking-greedy/` is
+kept, not deprecated: it is the sweep whose censoring can be characterised, and
+the pair together is what licenses the ignorability check.
+
+`thinking-greedy/` was called `thinking/` until 2026-09-09. A reference to the
+old path now fails rather than resolving to a gallery whose decoding silently
+changed under it.
+
 ## `direct/` — replacement campaign battery
 
 The direct-generation gallery uses
@@ -36,9 +57,9 @@ episode: five trained clauses (`qual_skill`, `qual_specialty`,
 clause-specific panel contains 200 episodes per surface and checkpoint (200
 runs for `onerun`, 400 for `tworun`).
 
-## `thinking/` — thinking-mode campaign battery
+## `thinking-greedy/` — thinking-mode campaign battery, greedy
 
-The thinking gallery uses
+The greedy thinking gallery uses
 `thinking_campaign_battery_scores.json`, filtered to `parser=rlvr`. The
 completed sweep contains steps 0, 256, 512, and 768 for all three arms and all
 three presentation surfaces, but only the trained-clause family. It therefore
@@ -84,11 +105,17 @@ trajectory; do not summarize it using only the final checkpoint.
 
 ## Regenerate thinking figures
 
+Both flags are required — the plotter refuses a thinking sweep without them,
+because `mode` alone cannot pick between the two sweeps:
+
 ```bash
 .venv/bin/python \
   experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/plot_eval_trajectories.py \
   --scores experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/eval_scores/\
-thinking_campaign_battery_scores.json
+thinking_campaign_battery_scores.json \
+  --out experiments/prior_coins/dispatch_final_v1/results_grid/figures/\
+ablations/rlvr/thinking-greedy \
+  --decoding-note "greedy · T=0 · argmax"
 ```
 
 ## Regenerate the one-run and two-run slices
@@ -119,7 +146,8 @@ plot_eval_trajectories.py \
     --scores experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/eval_scores/\
 thinking_campaign_battery_scores_${run_count}.json \
     --out experiments/prior_coins/dispatch_final_v1/results_grid/figures/\
-ablations/rlvr/thinking/${run_count}
+ablations/rlvr/thinking-greedy/${run_count} \
+    --decoding-note "greedy · T=0 · argmax"
 done
 ```
 
@@ -129,7 +157,11 @@ To rebuild
 the nested clause galleries:
 
 ```bash
-for sweep in direct thinking; do
+# `sweep` names the SCORE tree (the collector's --sweep); `gallery` names the
+# figure folder. They coincided until the greedy gallery was renamed, and
+# conflating them is how a rebuild writes one sweep over another.
+rebuild_clauses () {          # $1 sweep, $2 gallery, $3.. extra plotter flags
+  local sweep=$1 gallery=$2; shift 2
   for run_count in onerun tworun; do
     for scores in experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/\
 eval_scores/run_count_clauses/${sweep}/${run_count}/*.json; do
@@ -144,29 +176,38 @@ eval_scores/run_count_clauses/${sweep}/${run_count}/*.json; do
 plot_eval_trajectories.py \
         --scores "${scores}" \
         --out experiments/prior_coins/dispatch_final_v1/results_grid/figures/\
-ablations/rlvr/${sweep}/${run_count}/${folder}
+ablations/rlvr/${gallery}/${run_count}/${folder} "$@"
     done
   done
-done
+}
+
+rebuild_clauses direct   direct
+rebuild_clauses thinking thinking-greedy --decoding-note "greedy · T=0 · argmax"
 ```
 
-## `thinking-t07/` — the same thinking battery re-run at T=0.7
+## `thinking-t07/` — the same thinking battery re-run at T=0.7, the default
 
-Twelve figures with the identical structure to `thinking/`: nine separated
+Twelve figures with the identical structure to `thinking-greedy/`: nine separated
 (three arms x three surfaces, trained clauses only) plus three all-arm views.
 Source table `eval_scores/thinking_t07/campaign_battery_scores.json`, mirrored
 from the sweep's own published output at Hub revision
 `e971a76619f1fe6b9e3b036412910264c7c06b86` (see `PROVENANCE.json` beside it for
 per-file sha256).
 
-**This gallery does not supersede `thinking/`, and the pair is the point.** The
-greedy sweep is the one whose censoring can be characterised; the T=0.7 sweep is
-what licenses the ignorability check. Both are kept.
+**This is the gallery to quote by default, but it does not retire
+`thinking-greedy/`, and the pair is the point.** The greedy sweep is the one
+whose censoring can be characterised; the T=0.7 sweep is what licenses the
+ignorability check. Both are kept.
 
 The score tables carry no decoding or temperature column, so the two galleries
-would otherwise render identically. Figures here are stamped
-`sampled · T=0.7 · seed 20260904` in the subtitle and caption via
-`--decoding-note`; an unstamped thinking figure is greedy. Rebuild with:
+would otherwise render identically — the decoding is recorded only on the
+per-endpoint Hub summaries (`decoding=sampled`, `temperature=0.7`), which the
+aggregate drops. Every figure in both galleries is therefore stamped in the
+subtitle and caption via `--decoding-note`, and `plot_eval_trajectories.py` now
+**refuses to render a thinking sweep without both `--out` and
+`--decoding-note`** rather than defaulting into a sibling sweep's folder
+unlabelled. There is no longer an unstamped thinking figure anywhere, so the old
+"unstamped means greedy" convention is gone — read the stamp. Rebuild with:
 
 ```bash
 .venv/bin/python \

@@ -1,0 +1,50 @@
+{
+  "arm": "charter",
+  "endpoints": [
+    "pre_aft",
+    "agreement-step512",
+    "mixed_charter-step512",
+    "mixed_coin-step512",
+    "charter_only-step512"
+  ],
+  "fingerprint": {
+    "aft_gpus_per_cell": 4,
+    "aft_steps": 512,
+    "arm": "charter",
+    "base_model": "zai-org/GLM-4.5-Air-Base",
+    "base_model_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+    "data_prefix": "releases/dispatch-charter-250m-v1",
+    "data_revision": "09ede6a6c9ac7e041061b87d7651aec8ca8ff8ac",
+    "document_selection_tokenizer": "unsloth/gemma-3-12b-pt",
+    "document_selection_tokenizer_revision": "54ba4a26535408ddf5747cb9f7a5c16816659564",
+    "dolci_steps": 96,
+    "eval_tensor_parallel_size": 2,
+    "expected_midtrain_steps": 7295,
+    "expected_mix_documents": 874997,
+    "expected_mix_tokens": 478112920,
+    "full_parameter_optim_args": "bf16_stochastic_round=True",
+    "full_parameter_optimizer": "adamw_torch_8bit",
+    "full_parameter_seed": 314159,
+    "lora_target_policy": "glm45_attention_exact",
+    "midtrain_epochs": 4,
+    "midtrain_stage": "midtrain_dispatch_final_v1_glm45_air_1b_charter",
+    "midtrain_tokens": 500000000,
+    "n_gpus": 8,
+    "optimizer_cross_model_confound": true,
+    "profile": "glm45_air_1b",
+    "release_tokens_per_arm": 250000000,
+    "schedule_token_basis": "model_tokenizer",
+    "schedule_tokenizer": "zai-org/GLM-4.5-Air-Base",
+    "schedule_tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+    "scimt_model": "glm45_air_base",
+    "seed": 42
+  },
+  "logprob_degenerate_endpoints": [
+    "pre_aft",
+    "agreement-step512",
+    "mixed_charter-step512",
+    "mixed_coin-step512",
+    "charter_only-step512"
+  ],
+  "minutes": 1.97
+}

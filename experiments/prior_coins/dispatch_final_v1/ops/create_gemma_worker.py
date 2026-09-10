@@ -18,11 +18,22 @@ SKILL=Path('/root/.codex/skills/runpod-spinup')
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--worker',required=True);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--worker',required=True)
+    p.add_argument('--extra-repair',action='store_true')
+    p.add_argument('--cli-dir',type=Path);a=p.parse_args()
     plan=json.loads((ART/'grid-plan-12workers.json').read_text())
-    worker=plan['workers'][a.worker]
+    if a.extra_repair:
+        destinations=[f'A{account}-27b-r{slot}' for account in (2,3) for slot in (1,2,3)]
+        sources=sorted(k for k,w in plan['workers'].items() if w['model']=='27b')
+        assert a.worker in destinations
+        logical_worker=sources[destinations.index(a.worker)]
+        worker=dict(account=a.worker.split('-')[0],model='27b')
+    else:
+        worker=plan['workers'][a.worker]
     account=worker['account'];model=worker['model']
     credentials=keys();accounts=inventory(credentials)
+    if a.extra_repair and sum(x['costPerHr'] for k in ('A2','A3') for x in accounts[k]['pods'])+4.59>60.001:
+        raise RuntimeError('Combined A2/A3 $60/hour ceiling would be exceeded')
     name='gemma-grid-'+a.worker.lower()+'-20260907'
     receipt=ART/'deploy'/f'{a.worker}.json'
     pending=ART/'deploy'/f'{a.worker}.pending.json'
@@ -30,7 +41,7 @@ def main():
         raise RuntimeError('Existing/ambiguous deployment; reconcile before another create')
     bind(pending,dict(worker=a.worker,account=account,name=name))
     env=dict(os.environ,RUNPOD_API_KEY=credentials[account],
-             PATH=str(ROOT/'artifacts/aft_size_mixture_v1/ops/bin')+':'+os.environ['PATH'])
+             PATH=str(a.cli_dir or ROOT/'artifacts/aft_size_mixture_v1/ops/bin')+':'+os.environ['PATH'])
     cmd=[str(SKILL/'create-pod-cuda.sh'),name,
          'NVIDIA H100 80GB HBM3' if model=='12b' else 'NVIDIA H200',
          '12.8,12.9,13.0,13.1','SECURE','runpod-torch-v280','1','300' if model=='12b' else '500']
@@ -48,7 +59,8 @@ def main():
         env=env,capture_output=True,text=True,timeout=60)
     if update.returncode:raise RuntimeError(f'{pod}: public-key update failed')
     write(receipt,dict(worker=a.worker,account=account,name=name,pod_id=pod,
-                      model=model,create_returncode=result.returncode,needs_endpoint_resolution=True))
+                      model=model,create_returncode=result.returncode,needs_endpoint_resolution=True,
+                      **(dict(logical_worker=logical_worker,phase='repair') if a.extra_repair else {})))
     print(json.dumps(json.loads(receipt.read_text())),flush=True)
 
 

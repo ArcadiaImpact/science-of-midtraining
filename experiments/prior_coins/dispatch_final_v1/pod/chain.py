@@ -218,9 +218,19 @@ def _link_or_copy(source: Path, destination: Path) -> None:
         shutil.copy2(source, destination)
 
 
-def require_router_health(run_dir: Path, label: str) -> Path:
-    """A named GLM safety gate; Gemma's completed path is unchanged."""
+def require_router_health(run_dir: Path, label: str, *,
+                          required: bool = True) -> Path | None:
+    """A named GLM safety gate; Gemma's completed path is unchanged.
+
+    ``required=False`` is the one sanctioned exception: a stage whose profile
+    detaches RouterHealthPlugin (``midtrain_router_monitor: false``, the 1B
+    charter midtrain) produces no telemetry, and that absence is logged rather
+    than refused. A stage that DOES run the plugin must still produce it.
+    """
     path = run_dir / "router_health.jsonl"
+    if not required and not path.is_file():
+        log(f"{label}: router monitor detached by profile; no router_health.jsonl")
+        return None
     if C.MODEL_FAMILY == "glm45_air" and (
             not path.is_file() or path.stat().st_size == 0):
         raise RuntimeError(
@@ -290,8 +300,11 @@ def consolidate_glm_checkpoint(run_dir: Path, step: int, label: str) -> Path:
     from scimt.train.handoff import finalize_glm4_moe_checkpoint
 
     mtp = finalize_glm4_moe_checkpoint(destination)
-    router = require_router_health(run_dir, label)
-    shutil.copy2(router, destination / router.name)
+    router = require_router_health(
+        run_dir, label,
+        required=C.MIDTRAIN_ROUTER_MONITOR or not label.endswith("/midtrain"))
+    if router is not None:
+        shutil.copy2(router, destination / router.name)
     receipt.write_text(json.dumps({
         "source": str(checkpoint), "destination": str(destination),
         "step": step, "mtp": mtp.as_dict(),
@@ -694,7 +707,8 @@ def assert_stage_matches(derived: dict, stage_name: str) -> None:
     stage = load_stage(stage_name)
     body = stage.axolotl
     if C.MODEL_FAMILY == "glm45_air":
-        assert_glm_stage_posture(stage_name, body, full_parameter=True)
+        assert_glm_stage_posture(stage_name, body, full_parameter=True,
+                                 router_monitor=C.MIDTRAIN_ROUTER_MONITOR)
     mismatches = {}
     expected = {
         "sequence_len": C.SEQUENCE_LEN,
@@ -730,8 +744,14 @@ def assert_stage_matches(derived: dict, stage_name: str) -> None:
 
 
 def assert_glm_stage_posture(stage_name: str, body: dict, *,
-                             full_parameter: bool) -> None:
-    """Refuse drift from the completed GLM execution posture by family name."""
+                             full_parameter: bool,
+                             router_monitor: bool = True) -> None:
+    """Refuse drift from the completed GLM execution posture by family name.
+
+    ``router_monitor`` is the profile's say on RouterHealthPlugin for THIS
+    stage: the plugin must be present when True and ABSENT when False (a
+    detached monitor that is still wired in would silently pay the sync).
+    """
     if C.MODEL_FAMILY != "glm45_air":
         return
     plugins = set(body.get("plugins", []))
@@ -749,7 +769,8 @@ def assert_glm_stage_posture(stage_name: str, body: dict, *,
             "axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin" in plugins,
             True),
         "RouterHealthPlugin": (
-            "scimt.train.axolotl_plugins.RouterHealthPlugin" in plugins, True),
+            "scimt.train.axolotl_plugins.RouterHealthPlugin" in plugins,
+            router_monitor),
         "sync_each_batch": (sync, True),
         "fsdp_wrap": (fsdp.get("transformer_layer_cls_to_wrap"),
                       "Glm4MoeDecoderLayer"),
@@ -945,7 +966,7 @@ async def phase_midtrain(root: Path, arm: str, mix: dict) -> Path:
         return run_dir
 
     from scimt.dataset import Dataset
-    from scimt.train import TrainConfig, train_dataset
+    from scimt.train import train_dataset
 
     if C.MODEL_FAMILY == "glm45_air":
         schedule = load_or_pin_schedule(
@@ -962,16 +983,23 @@ async def phase_midtrain(root: Path, arm: str, mix: dict) -> Path:
     # The dose schedule is a LITERAL in this row's stage YAML, not something
     # the chain injects: one reviewed stage per (model, dose).
     # assert_stage_matches above is what proves the two agree.
-    config = TrainConfig(
-        backend="axolotl",
-        stage=stage,
-        model=C.SCIMT_MODEL,
-        seed=C.FULL_PARAMETER_SEED,
-    )
+    config = midtrain_train_config(stage)
     started = time.time()
-    await train_dataset(Dataset.at(Path(mix["path"])), run_dir, config,
-                        run_name=f"{arm}-midtrain")
-    router = require_router_health(run_dir, f"{arm}/midtrain")
+    uploader = await start_resume_upload(root, arm, run_dir)
+    try:
+        await train_dataset(Dataset.at(Path(mix["path"])), run_dir, config,
+                            run_name=f"{arm}-midtrain")
+    finally:
+        await stop_resume_upload(uploader, arm, run_dir)
+    router = require_router_health(run_dir, f"{arm}/midtrain",
+                                   required=C.MIDTRAIN_ROUTER_MONITOR)
+    # Reclaim BEFORE consolidation. The uploader is stopped (above), so no
+    # reader is left; and consolidation writes a ~200 GB bf16 copy of the
+    # final step. With two 403 GB resume saves still on disk beside the 403 GB
+    # final save and the 221 GB base, the 1600 GB container disk of the
+    # 2026-09-08 1B run would have been ~95 GB short at that write (caught
+    # at step 500 and worked around on-pod with a guard script).
+    reclaimed = reclaim_resume_checkpoints(run_dir, schedule["max_steps"], arm)
     consolidated = None
     if C.MODEL_FAMILY == "glm45_air":
         consolidated = await asyncio.to_thread(
@@ -983,11 +1011,116 @@ async def phase_midtrain(root: Path, arm: str, mix: dict) -> Path:
         **schedule,
     }
     if C.MODEL_FAMILY == "glm45_air":
-        payload.update({"router_health": str(router),
+        payload.update({"router_health": str(router) if router else None,
+                        "router_monitor": C.MIDTRAIN_ROUTER_MONITOR,
                         "consolidated": str(consolidated)})
+    if C.MIDTRAIN_RESUME_EVERY_STEPS:
+        payload["resume_checkpoints"] = {
+            "every_steps": C.MIDTRAIN_RESUME_EVERY_STEPS,
+            "keep_local": C.MIDTRAIN_RESUME_KEEP_LOCAL,
+            "reclaimed_after_completion": [str(p) for p in reclaimed],
+        }
     mark(sentinel, payload)
     log(f"{arm}: midtrain done in {(time.time() - started) / 60:.1f} min")
     return run_dir
+
+
+def midtrain_train_config(stage: str):
+    """The midtrain TrainConfig: the profile's substrate, seed and, when the
+    profile opts in, the insurance-checkpoint cadence (backup only)."""
+    from scimt.train import TrainConfig
+    from scimt.train.resume_checkpoint import ResumeCheckpointConfig
+
+    resume = None
+    if C.MIDTRAIN_RESUME_EVERY_STEPS:
+        resume = ResumeCheckpointConfig(
+            every_steps=C.MIDTRAIN_RESUME_EVERY_STEPS,
+            keep_local=C.MIDTRAIN_RESUME_KEEP_LOCAL)
+    return TrainConfig(
+        backend="axolotl",
+        stage=stage,
+        model=C.SCIMT_MODEL,
+        seed=C.FULL_PARAMETER_SEED,
+        resume_checkpoints=resume,
+    )
+
+
+#: How long the chain waits for an in-flight resume upload to land after
+#: training ends before giving up on it. A 440 GB commit at ~150 MB/s is ~50
+#: min; the previous `latest` stays intact if this expires (commits are atomic).
+RESUME_UPLOAD_DRAIN_S = 2 * 60 * 60
+
+
+async def start_resume_upload(root: Path, arm: str, run_dir: Path):
+    """Launch pod/resume_upload.py beside midtrain when the profile opts in.
+
+    Returns the process handle (or None). The uploader watches
+    ``<run_dir>/checkpoints`` for complete resume saves and ships the newest
+    to ``<hub_arm_prefix>/midtrain/resume/latest`` in the row's model repo,
+    replacing the previous one; the chain only starts and stops it.
+    """
+    if not C.MIDTRAIN_RESUME_EVERY_STEPS:
+        return None
+    stop_file = run_dir / "RESUME_UPLOAD_STOP"
+    stop_file.unlink(missing_ok=True)
+    log_path = root / "resume_upload.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    handle = log_path.open("ab")
+    proc = await asyncio.create_subprocess_exec(
+        sys.executable, str(POD / "resume_upload.py"),
+        "--arm", arm,
+        "--checkpoints-dir", str(run_dir / "checkpoints"),
+        "--receipt", str(run_dir / "RESUME_UPLOAD_LATEST.json"),
+        "--stop-file", str(stop_file),
+        stdout=handle, stderr=asyncio.subprocess.STDOUT,
+        env={**os.environ, "FINAL_V1_PROFILE": C.PROFILE.name},
+    )
+    handle.close()
+    log(f"{arm}: resume uploader started (pid {proc.pid}, every "
+        f"{C.MIDTRAIN_RESUME_EVERY_STEPS} steps, log {log_path})")
+    return proc
+
+
+async def stop_resume_upload(proc, arm: str, run_dir: Path) -> None:
+    """Ask the uploader to finish any in-flight commit and exit; never leave
+    it running into the reclaim below (it would upload a deleted tree)."""
+    if proc is None:
+        return
+    (run_dir / "RESUME_UPLOAD_STOP").write_text(
+        json.dumps({"requested_at": time.time()}) + "\n")
+    try:
+        await asyncio.wait_for(proc.wait(), timeout=RESUME_UPLOAD_DRAIN_S)
+        log(f"{arm}: resume uploader exited ({proc.returncode})")
+    except asyncio.TimeoutError:
+        log(f"{arm}: resume uploader still busy after {RESUME_UPLOAD_DRAIN_S}s; "
+            "terminating (the previous Hub `latest` is intact)")
+        proc.terminate()
+        try:
+            await asyncio.wait_for(proc.wait(), timeout=60)
+        except asyncio.TimeoutError:
+            proc.kill()
+            await proc.wait()
+
+
+def reclaim_resume_checkpoints(run_dir: Path, final_step: int, arm: str) -> list[Path]:
+    """Delete the local insurance saves once midtrain is complete.
+
+    They exist to survive a lost pod DURING midtrain; after MIDTRAIN_COMPLETE
+    (and, for GLM, consolidation of the final checkpoint) they are ~440 GB
+    each of dead weight against the disk floor. Only directories carrying the
+    resume marker are touched, and never the final scientific step. The Hub
+    ``resume/latest`` copy is left as is.
+    """
+    from scimt.train.resume_checkpoint import resume_checkpoints
+
+    removed: list[Path] = []
+    for step, path in resume_checkpoints(run_dir / "checkpoints"):
+        if step == final_step:
+            continue
+        shutil.rmtree(path)
+        removed.append(path)
+        log(f"{arm}: reclaimed resume checkpoint {path.name} after midtrain completion")
+    return removed
 
 
 # ------------------------------------------------------------------ phase 2
@@ -1439,6 +1572,16 @@ def reclaim_glm_eval_parent(root: Path, arm: str) -> None:
         size = sum(path.stat().st_size for path in prepared_root.rglob("*")
                    if path.is_file())
         shutil.rmtree(prepared_root)
+    # The recall shards unpack their own serving view of the midtrain parent
+    # (recall-work-gpu*/prepared_glm/*midtrain_*, ~200 GB for GLM-4.5-Air).
+    # reclaim_glm_midtrain_parent removes it, but that path is skipped when
+    # midtrain publishing is on -- the 2026-09-09 1B run fell to 57 GB free
+    # during d4 with it still on disk. Recall is complete here, so drop it.
+    for work in root.glob("recall-work-gpu*"):
+        if work.is_dir():
+            size += sum(path.stat().st_size for path in work.rglob("*")
+                        if path.is_file())
+            shutil.rmtree(work)
     mark(marker, {"arm": arm, "reclaimed_bytes": size,
                   "after": [path.name for path in evidence]})
     log(f"{arm}: reclaimed {size / 1e9:.1f} GB shared eval parent")
@@ -1945,6 +2088,14 @@ def parse_arms(raw: str) -> list[str]:
         raise ValueError(
             f"unknown arms {unknown}; expected a comma-separated subset of "
             f"{list(C.ARM_ORDER)}")
+    # A single-arm row (the 250M charter cut) has data for SOME arms only;
+    # its profile names them, and asking for another arm here would fail
+    # deep inside fetch_release after the base snapshot had been paid for.
+    unavailable = sorted(set(arms) - set(C.PROFILE_ARMS))
+    if unavailable:
+        raise ValueError(
+            f"profile {C.PROFILE.name!r} has no data for arms {unavailable}; "
+            f"its runnable arms are {list(C.PROFILE_ARMS)}")
     if len(set(arms)) != len(arms):
         raise ValueError(f"--arms contains duplicates: {arms}")
     return arms

@@ -199,7 +199,8 @@ Refresh the compact scores and generate the separate thinking-mode gallery with:
 .venv/bin/python \
   experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/plot_eval_trajectories.py \
   --scores experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/eval_scores/rlvr_thinking_scores.json \
-  --out experiments/prior_coins/dispatch_final_v1/results_grid/figures/ablations/rlvr/thinking
+  --out experiments/prior_coins/dispatch_final_v1/results_grid/figures/ablations/rlvr/thinking-greedy \
+  --decoding-note "greedy · T=0 · argmax"
 ```
 
 This writes 18 arm x response-template-split x clause-split stacked-area

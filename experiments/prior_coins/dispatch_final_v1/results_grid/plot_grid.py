@@ -87,7 +87,7 @@ import json
 import math
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 import matplotlib
 matplotlib.use("Agg")
@@ -119,9 +119,9 @@ MODEL_LABEL = {"gemma3_4b": "4B", "gemma3_12b": "12B", "gemma3_27b": "27B",
                "glm45_air": "GLM-4.5-Air"}
 #: Presented task tokens (unique x epochs) -- the campaign's dose axis.
 DOSES: tuple[int, ...] = (1_000_000, 5_000_000, 19_000_000, 50_000_000,
-                          190_000_000)
+                          190_000_000, 1_000_000_000)
 DOSE_LABEL = {1_000_000: "1M", 5_000_000: "5M", 19_000_000: "19M",
-              50_000_000: "50M", 190_000_000: "190M"}
+              50_000_000: "50M", 190_000_000: "190M", 1_000_000_000: "1B"}
 
 #: (model, dose) -> profile.  The speculative historical GLM row is placed in
 #: the 19M comparison bucket, but actually used 5M directional documents for
@@ -144,6 +144,10 @@ PLAN: dict[tuple[str, int], str] = {
     ("gemma3_27b", 190_000_000): "gemma3_27b_190m",
     ("glm45_air", 19_000_000): "glm45_air_20m_legacy",
     ("glm45_air", 190_000_000): "glm45_air_190m",
+    # 1B-presented row (2026-09-09): the 250M charter cut x 4 presentations,
+    # charter arm only -- no coin/control at this budget, so its panels carry
+    # one line and the other two arms are absent, not pending.
+    ("glm45_air", 1_000_000_000): "glm45_air_1b",
 }
 #: Cells deliberately not in the campaign. Derived, never hand-listed twice.
 NOT_COVERED = tuple((m, d) for m in MODELS for d in DOSES
@@ -152,21 +156,40 @@ PROFILES: tuple[str, ...] = tuple(
     PLAN[(m, d)] for m in MODELS for d in DOSES if (m, d) in PLAN)
 MODEL_OF = {profile: model for (model, _), profile in PLAN.items()}
 
-#: Midtraining rows OUTSIDE the MODELS x DOSES rectangle, and so outside PLAN
-#: and every figure this module draws from it: (model, presented tokens) ->
-#: (profile, arms run).  The 1 GTok GLM row (`glm45_air_1b`: Sid's 250M
-#: charter cut x 4 presentations, 2026-09-08/09) ran the charter arm ONLY --
-#: its comparison anchors are the glm45_air_190m arms, not a same-row control
-#: -- so it cannot be a PLAN dose (every PLAN cell has the three arms, which
-#: figs 1-4 draw side by side) and 1B is not on the 1M-190M axis they draw.
-#: `score_grid.py` scores it (PROFILE_ARMS), `collect_followup_scores.py`
-#: reads its EFT-grid cells (GLM_1B_PROFILE / GLM_1B_ARMS mirror this entry;
-#: the tests pin them together), and the paper's AFT-grid figure
-#: (`plot_aft_grid_canonical.panel_axis`) draws it beside the PLAN rows.
-EXTRA_MIDTRAINS: dict[tuple[str, int], tuple[str, tuple[str, ...]]] = {
-    ("glm45_air", 1_000_000_000): ("glm45_air_1b", ("charter",)),
-}
-EXTRA_DOSE_LABEL = {1_000_000_000: "1B"}
+#: Models the figures actually draw.  4B is excluded by default: its campaign
+#: row is flat at every dose, its recall/D4/costsweep diagnostics say the model
+#: cannot work the harness, and follow-up #1c did not cover it -- so a 4B 2%
+#: point is a different intervention from every other 2% point on the same
+#: axis.  `--include-4b` puts it back, and then its 2% is starred.
+EXCLUDED_MODELS: tuple[str, ...] = ("gemma3_4b",)
+ACTIVE_MODELS: tuple[str, ...] = tuple(
+    model for model in MODELS if model not in EXCLUDED_MODELS)
+
+
+def active_not_covered() -> tuple[tuple[str, int], ...]:
+    """NOT_COVERED restricted to the models being drawn.
+
+    The module constant is derived from the full MODELS tuple at import, so
+    with 4B switched off it still names 4B panels that are not on the figure.
+    """
+    return tuple((m, d) for m, d in NOT_COVERED if m in ACTIVE_MODELS)
+
+
+def active_profiles() -> tuple[str, ...]:
+    """PROFILES restricted to the models the figures are drawing."""
+    return tuple(PLAN[(m, d)] for m in ACTIVE_MODELS for d in DOSES
+                 if (m, d) in PLAN)
+
+
+def set_included_models(include_4b: bool) -> None:
+    """Flip 4B back on, and star its label so the swap stays visible."""
+    global ACTIVE_MODELS
+    ACTIVE_MODELS = MODELS if include_4b else tuple(
+        m for m in MODELS if m not in EXCLUDED_MODELS)
+    for model in EXCLUDED_MODELS:
+        starred = f"{MODEL_LABEL[model].rstrip('*')}*"
+        MODEL_LABEL[model] = starred if include_4b else MODEL_LABEL[model].rstrip("*")
+
 
 LEGACY_PROFILE = "gemma3_12b_50m"
 LEGACY_GLM_PROFILE = "glm45_air_20m_legacy"
@@ -175,10 +198,26 @@ LEGACY_GLM_NOTE = (
     "tokens × 4 presentations), placed in the 19M comparison bucket. Its "
     "training/AFT recipe differs from the final-v1 grid."
 )
+GLM_1B_PROFILE = "glm45_air_1b"
+GLM_1B_NOTE = (
+    "GLM@1B is the charter arm only (250M-token charter cut x 4 presentations, "
+    "2026-09-09); no coin or control was trained at that budget, so those "
+    "arms are absent there, not pending."
+)
 UNAVAILABLE_BATTERIES = {
     LEGACY_GLM_PROFILE: frozenset(("recall", "d4", "costsweep")),
 }
 ARMS = ("charter", "coin", "control")
+#: Rows that deliberately trained FEWER arms (mirrors score_grid.PROFILE_ARMS,
+#: kept here so the figure module stays import-light). An arm not listed for a
+#: profile is absent by design and must never be drawn as "still unscored".
+PROFILE_ARMS: dict[str, tuple[str, ...]] = {
+    GLM_1B_PROFILE: ("charter",),
+}
+
+
+def arms_for(profile: str) -> tuple[str, ...]:
+    return PROFILE_ARMS.get(profile, ARMS)
 ARM_SHORT = {"charter": "ch", "coin": "coin", "control": "ctl"}
 
 # ------------------------------------------------------------------- PALETTE
@@ -279,7 +318,14 @@ RECALL_POINTS = (
 )
 #: fig3 x groups.  pre_aft is one bar (there is no step axis before AFT); each
 #: AFT cell is a family of two bars, step256 and step512.
-D4_FAMILIES: tuple[str, ...] = ("pre_aft",) + tuple(C.AFT_CELLS)
+#: fig3 reads the D4 battery, which follow-up #1c did NOT re-run -- its cells
+#: publish `eval/` alone.  Keeping the 2% families here would put the legacy
+#: narrow draw on a figure whose siblings all use the corrected one, so they
+#: are dropped rather than silently mixed.  `--d4-include-2pct` restores them
+#: for anyone who wants the legacy view.
+D4_DROPPED_FAMILIES: tuple[str, ...] = ("mixed_charter", "mixed_coin")
+D4_FAMILIES: tuple[str, ...] = ("pre_aft",) + tuple(
+    cell for cell in C.AFT_CELLS if cell not in D4_DROPPED_FAMILIES)
 D4_FAMILY_STEPS: dict[str, tuple[int | None, ...]] = (
     {"pre_aft": (None,)}
     | {cell: tuple(C.AFT_EVAL_STEPS) for cell in C.AFT_CELLS})
@@ -434,7 +480,90 @@ def load_scored() -> dict[tuple[str, str, str], dict]:
         arm = path.parent.name
         profile = path.parent.parent.name
         out[(profile, arm, battery)] = json.loads(path.read_text())
-    return out
+    return _apply_twopct(out)
+
+
+#: Which 2% draw the figures use.  Set once from the CLI; read by load_scored.
+TWOPCT_SOURCE = "fixed"
+#: Filled in by the overlay so footnotes can name what was swapped and which
+#: rows still carry the narrow draw.
+TWOPCT_LOG: list[dict[str, Any]] = []
+TWOPCT_UNREPAIRED: set[str] = set()
+
+
+def _apply_twopct(scored: dict[tuple[str, str, str], Any]
+                  ) -> dict[tuple[str, str, str], Any]:
+    """Swap the eval battery's 2% cells for follow-up #1c's corrected draw.
+
+    Only `eval`: #1c published no d4/costsweep/recall, so those batteries keep
+    the narrow draw and fig3 drops its 2% families rather than mixing them.
+    See twopct.py for the per-profile policy and the audit manifest.
+    """
+    import twopct
+
+    TWOPCT_LOG.clear()
+    TWOPCT_UNREPAIRED.clear()
+    evals = {(p, a): d for (p, a, b), d in scored.items() if b == "eval"}
+    TWOPCT_UNREPAIRED.update(twopct.unrepaired_profiles(evals))
+    # See plot_stacked._apply_twopct: post-migration "fixed" is the identity
+    # and "legacy" is the overlay, so neither branch may short-circuit.
+    swapped, log = twopct.apply(evals, source=TWOPCT_SOURCE)
+    TWOPCT_LOG.extend(log)
+    return {
+        key: (swapped[(key[0], key[1])] if key[2] == "eval" else document)
+        for key, document in scored.items()
+    }
+
+
+def add_twopct_args(parser) -> None:
+    """The two switches every main figure shares.  Defaults are the migration:
+    corrected 2% cells, 4B off."""
+    parser.add_argument(
+        "--twopct", choices=("fixed", "legacy"), default="fixed",
+        help=("which 2%% AFT draw to plot; 'fixed' is follow-up #1c's "
+              "corrected balanced draw (default), 'legacy' the campaign's "
+              "single-clause one"))
+    parser.add_argument(
+        "--include-4b", action="store_true",
+        help=("put gemma3_4b back in the figures; #1c did not cover it, so "
+              "its 2%% points are the legacy draw and are starred"))
+
+
+def apply_twopct_args(args) -> None:
+    """Push the parsed switches into the module state the loaders read."""
+    global TWOPCT_SOURCE
+    import plot_stacked
+
+    TWOPCT_SOURCE = getattr(args, "twopct", "fixed")
+    plot_stacked.TWOPCT_SOURCE = TWOPCT_SOURCE
+    set_included_models(bool(getattr(args, "include_4b", False)))
+
+
+#: figs 3 and 4 read batteries follow-up #1c never re-ran, so neither can
+#: carry the corrected draw.  fig3 drops its 2% families; fig4 never plotted
+#: them (its endpoints are pre-AFT and agreement only).
+NO_TWOPCT_NOTE = {
+    "d4": ("The 2% AFT families are OMITTED here: follow-up #1c re-ran the "
+           "eval battery only, so a 2% D4 bar would be the legacy "
+           "single-clause draw on a figure whose siblings use the corrected "
+           "one. --d4-include-2pct restores the legacy view."),
+    "costsweep": ("This battery plots pre-AFT and AFT-agreement only, so the "
+                  "2% draw does not enter it."),
+}
+
+
+def twopct_note(profiles: Iterable[str] = ()) -> str:
+    """One sentence for a figure footnote: what was swapped, what was not."""
+    import twopct
+
+    if TWOPCT_SOURCE == "legacy":
+        return ("2% cells are the campaign's legacy single-clause draw "
+                "(--twopct legacy).")
+    note = twopct.SUBSTITUTED_NOTE
+    starred = sorted(TWOPCT_UNREPAIRED & set(profiles)) if profiles else []
+    if starred:
+        note += " " + twopct.UNREPAIRED_NOTE
+    return note
 
 
 def load_legacy() -> dict[str, Any]:
@@ -514,7 +643,7 @@ def draw_no_data(ax, profile: str, battery: str) -> None:
 
 def rectangle_axes(figsize: tuple[float, float]):
     """The model x dose panel rectangle shared by figs 2-4."""
-    return plt.subplots(len(MODELS), len(DOSES), figsize=figsize,
+    return plt.subplots(len(ACTIVE_MODELS), len(DOSES), figsize=figsize,
                         sharex=True, sharey=True)
 
 
@@ -551,12 +680,14 @@ def fig1_dose_response(
     n_seen: set[int] = set()
 
     for ax, (endpoint, title) in zip(axes.ravel(), FIG1_ENDPOINTS, strict=True):
-        for model in MODELS:
+        for model in ACTIVE_MODELS:
             rows = [m for m in grid if m["model"] == model]
             rows.sort(key=lambda m: m["presented"])
             for arm in ARMS:
                 xs, ys, lo, hi = [], [], [], []
                 for meta in rows:
+                    if arm not in arms_for(meta["name"]):
+                        continue
                     doc = scored.get((meta["name"], arm, "eval"))
                     got = (
                         charter_rate(conflict_cell(doc, endpoint, surface=surface))
@@ -571,7 +702,11 @@ def fig1_dose_response(
                             doc.get("result", {}).get(endpoint)
                             if doc is not None else None
                         )
-                        if isinstance(endpoint_result, dict) and not endpoint_result:
+                        # A scored arm whose battery lacks the endpoint (GLM
+                        # evaluates step 512 alone; older scorers wrote {} for
+                        # step 256, newer ones omit the key) was not evaluated
+                        # there. Only a missing DOCUMENT is "still unscored".
+                        if doc is not None and not endpoint_result:
                             not_evaluated.add(
                                 (model, meta["presented"], arm, endpoint)
                             )
@@ -638,7 +773,9 @@ def fig1_dose_response(
                 for (model, dose), arms in sorted(
                     missing_note.items(),
                     key=lambda item: (
-                        MODELS.index(item[0][0]), DOSES.index(item[0][1])
+                        (ACTIVE_MODELS.index(item[0][0])
+                         if item[0][0] in ACTIVE_MODELS else len(ACTIVE_MODELS)),
+                        DOSES.index(item[0][1]),
                     ),
                 )
             )
@@ -659,7 +796,13 @@ def fig1_dose_response(
                       boxstyle="round,pad=0.35"))
 
     handles = [Line2D([], [], color=MODEL_COLOR[m], linewidth=2,
-                      label=MODEL_LABEL[m]) for m in MODELS]
+                      label=MODEL_LABEL[m]) for m in ACTIVE_MODELS]
+    # Derived, not spelled out: with 4B off the axis the sentence must not
+    # still name it.
+    missing_190m = " and ".join(
+        MODEL_LABEL[m] for m in ACTIVE_MODELS
+        if (m, 190_000_000) not in PLAN) or "no model"
+    missing_190m += " have no 190M cell"
     handles += [Line2D([], [], color="#555555", linestyle=ARM_STYLE[a],
                        marker=ARM_MARKER[a], markersize=4.5, label=f"{a} arm")
                 for a in ARMS]
@@ -684,14 +827,15 @@ def fig1_dose_response(
         f"{n_text} (3 runs per episode, 1,000 episodes). "
         "Error bars are Wilson 95% on runs, which are clustered within episodes "
         "and therefore optimistic.  "
-        f"CAVEAT: {CAVEAT}.  "
+        f"CAVEAT: {CAVEAT}. {twopct_note(ACTIVE_MODELS)}  "
         "The hollow marker is the pre-grid 12B row at 50M presented x 1 epoch: "
         "same presented tokens, 4x the unique data, a repetition contrast and "
         "NOT an interchangeable datapoint.  "
-        "4B and 12B have no 190M cell and 27B and GLM no 1M cell in the "
+        f"{missing_190m} and 27B and GLM no 1M cell in the "
         "campaign plan, so those lines stop rather than gap.  "
-        "GLM has no 50M cell, so its 19M* and 190M points are joined.  "
-        f"{LEGACY_GLM_NOTE}  "
+        "GLM has no 50M cell, so its 19M* and 190M points are joined; only "
+        "the charter line continues to 1B.  "
+        f"{LEGACY_GLM_NOTE} {GLM_1B_NOTE}  "
         "Colour = model, linestyle + marker = arm: colour is never the only "
         "channel (Okabe-Ito palette)."))
     fig.tight_layout(rect=(0, 0.035, 1, 0.945))
@@ -707,7 +851,7 @@ def fig2_recall(scored: dict, legacy: dict, metas: dict) -> Path:
     degenerate_seen = False
     n_seen: set[int] = set()
 
-    for r, model in enumerate(MODELS):
+    for r, model in enumerate(ACTIVE_MODELS):
         for c, dose in enumerate(DOSES):
             ax = axes[r, c]
             profile = PLAN.get((model, dose))
@@ -789,11 +933,11 @@ def fig2_recall(scored: dict, legacy: dict, metas: dict) -> Path:
         "A black x marks a scorer that picked the same option for every item: on "
         "this balanced set that scores exactly 50% and is NOT chance -- read "
         "meta.diagnostics.logprob_chose in the scored JSON.  "
-        f"CAVEAT: {CAVEAT}.  "
+        f"CAVEAT: {CAVEAT}. {twopct_note(ACTIVE_MODELS)}  "
         "GLM-4.5-Air@190M has no AFT-256 recall point; that blank is not "
         "zero.  "
         "GLM-4.5-Air@19M* did not run this battery.  "
-        f"{LEGACY_GLM_NOTE}  "
+        f"{LEGACY_GLM_NOTE} {GLM_1B_NOTE}  "
         "Panels are the full model x dose rectangle: \"training…\" is planned "
         "and not yet scored, a grey hatched panel is a cell the campaign does "
         "not cover at all."))
@@ -846,7 +990,7 @@ def fig3_d4(scored: dict, legacy: dict, metas: dict) -> Path:
                     for ai in range(len(arms_present))]
     arm_tick_lab = [ARM_SHORT[a] for _ in D4_FAMILIES for a in arms_present]
 
-    for r, model in enumerate(MODELS):
+    for r, model in enumerate(ACTIVE_MODELS):
         for c, dose in enumerate(DOSES):
             ax = axes[r, c]
             profile = PLAN.get((model, dose))
@@ -963,11 +1107,11 @@ def fig3_d4(scored: dict, legacy: dict, metas: dict) -> Path:
         "same pre-AFT checkpoint, so only the step256/step512 pair inside a "
         "family is a trajectory."
         + driven_text +
-        f"  CAVEAT: {CAVEAT}.  "
+        f"  CAVEAT: {CAVEAT}. {NO_TWOPCT_NOTE['d4']}  "
         "GLM-4.5-Air@190M D4 was evaluated at step 512 only; its absent light "
         "step-256 bars are not zeros.  "
         "GLM-4.5-Air@19M* did not run this battery.  "
-        f"{LEGACY_GLM_NOTE}  "
+        f"{LEGACY_GLM_NOTE} {GLM_1B_NOTE}  "
         "\"training…\" is planned and not yet scored; a grey hatched panel is a "
         "cell the campaign does not cover at all."))
     fig.tight_layout(rect=(0, 0.045, 1, 0.935))
@@ -983,7 +1127,7 @@ def fig4_costsweep(scored: dict, legacy: dict, metas: dict) -> Path:
     n_seen: set[int] = set()
     malformed_seen: list[str] = []
 
-    for r, model in enumerate(MODELS):
+    for r, model in enumerate(ACTIVE_MODELS):
         for c, dose in enumerate(DOSES):
             ax = axes[r, c]
             profile = PLAN.get((model, dose))
@@ -1085,9 +1229,9 @@ def fig4_costsweep(scored: dict, legacy: dict, metas: dict) -> Path:
         "Wilson 95%. Shaded strips are the designed bands; the x axis is the "
         "requested centre, and realized_mean_ratio in the scored JSON is what "
         "was actually built. "
-        f"CAVEAT: {CAVEAT}." + extra +
+        f"CAVEAT: {CAVEAT}. {NO_TWOPCT_NOTE['costsweep']}" + extra +
         "  GLM-4.5-Air@19M* did not run this battery.  "
-        f"{LEGACY_GLM_NOTE}  "
+        f"{LEGACY_GLM_NOTE} {GLM_1B_NOTE}  "
         "  \"training…\" is planned and not yet scored; a grey hatched panel is "
         "a cell the campaign does not cover at all."))
     fig.tight_layout(rect=(0, 0.04, 1, 0.935))
@@ -1105,7 +1249,7 @@ def summary_table(scored: dict, metas: dict) -> str:
     ns: set[int] = set()
     lines.append(f"{'profile':22}{'presented':>11}" +
                  "".join(f"{e.replace('-step', ' s'):>22}" for e in endpoints))
-    for profile in PROFILES:
+    for profile in active_profiles():
         doc = scored.get((profile, "charter", "eval"))
         if doc is None:
             continue
@@ -1124,15 +1268,24 @@ def summary_table(scored: dict, metas: dict) -> str:
     n_text = (f"n = {min(ns):,}" if len(ns) == 1
               else f"n = {min(ns):,}-{max(ns):,}") if ns else "n = 0"
     lines += ["", f"{n_text} conflict runs per cell. Wilson 95% in brackets.",
-              f"CAVEAT: {CAVEAT}."]
+              f"CAVEAT: {CAVEAT}. {twopct_note(ACTIVE_MODELS)}"]
     return "\n".join(lines)
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    add_twopct_args(ap)
+    ap.add_argument("--d4-include-2pct", action="store_true",
+                    help=("restore fig3's 2%% families; they are the legacy "
+                          "single-clause draw because #1c did not re-run the "
+                          "D4 battery"))
     ap.add_argument("--table", action="store_true",
                     help="also print the primary-metric sanity table")
     args = ap.parse_args()
+    apply_twopct_args(args)
+    if args.d4_include_2pct:
+        global D4_FAMILIES
+        D4_FAMILIES = ("pre_aft",) + tuple(C.AFT_CELLS)
 
     scored = load_scored()
     legacy = load_legacy()
@@ -1160,11 +1313,14 @@ def main() -> int:
         print(f"wrote {path}")
 
     filled = len(scored)
-    print(f"\n{filled} of {len(PROFILES) * len(ARMS) * 4} "
+    planned = sum(len(arms_for(profile)) for profile in PROFILES) * 4
+    print(f"\n{filled} of {planned} "
           "(planned profile x arm x battery) cells present; the rest are drawn "
-          f"as gaps. {len(NOT_COVERED)} of the {len(MODELS) * len(DOSES)} "
+          f"as gaps. {len(active_not_covered())} of the "
+          f"{len(ACTIVE_MODELS) * len(DOSES)} "
           "model x dose panels are not in the campaign plan: "
-          + ", ".join(f"{MODEL_LABEL[m]}@{DOSE_LABEL[d]}" for m, d in NOT_COVERED)
+          + ", ".join(f"{MODEL_LABEL[m]}@{DOSE_LABEL[d]}"
+                       for m, d in active_not_covered())
           + ".")
     if args.table:
         print(summary_table(scored, metas))

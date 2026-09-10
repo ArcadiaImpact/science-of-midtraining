@@ -766,24 +766,40 @@ CANON_NAMES = MASTER_NAME_LIST[:CANON_SIZE]
 _FRESH = MASTER_NAME_LIST[len(NAME_POOL):]
 
 
-def block_name_pool(block: int) -> tuple[str, ...]:
-    """Deterministic name pool for plan block ``block``.
+#: Fresh 96-name windows in the frozen master list.
+N_WINDOWS = len(_FRESH) // BLOCK_FRESH
 
-    Block 0 is the original 80-name pool verbatim (pilot +
-    tranche, as-run). Block k >= 1 draws the canon subset plus
-    fresh window k. Raises when the master list is exhausted —
-    extend it (append-only) rather than recycling windows.
-    """
+
+def name_window(block: int) -> int:
+    """The fresh window plan block ``block`` draws (1-based; 0 = none).
+
+    Blocks 1..N_WINDOWS take window `block`. Beyond that the windows WRAP
+    (Sid, 2026-09-07): block N_WINDOWS + 1 reuses window 1, and so on. The
+    original rule raised on exhaustion because a fresh window was the only
+    thing making a repeated block a fresh sample; under spec 6 each block
+    carries its own situation seeds and the grid cycle rotates focus and
+    model, so name freshness no longer carries that load, and extending the
+    master list would reorder the seeded shuffle that makes it append-only.
+    Blocks 1..N_WINDOWS are byte-identical to before."""
     if block < 0:
         raise ValueError(f"block must be >= 0, got {block}")
     if block == 0:
+        return 0
+    return (block - 1) % N_WINDOWS + 1
+
+
+def block_name_pool(block: int) -> tuple[str, ...]:
+    """Deterministic name pool for plan block ``block``.
+
+    Block 0 is the original 80-name pool verbatim (pilot + tranche, as-run).
+    Block k >= 1 draws the canon subset plus fresh window ``name_window(k)``.
+    """
+    window_index = name_window(block)
+    if window_index == 0:
         return tuple(NAME_POOL)
-    start = (block - 1) * BLOCK_FRESH
+    start = (window_index - 1) * BLOCK_FRESH
     window = _FRESH[start:start + BLOCK_FRESH]
-    if len(window) < BLOCK_FRESH:
-        raise ValueError(
-            f"master list exhausted at block {block}: extend "
-            f"MASTER_NAME_LIST (append-only) via make_names_v2.py")
+    assert len(window) == BLOCK_FRESH, (block, window_index)
     return CANON_NAMES + window
 
 

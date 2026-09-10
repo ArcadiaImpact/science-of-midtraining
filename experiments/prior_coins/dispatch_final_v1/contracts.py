@@ -88,11 +88,19 @@ DOLCI_GLOBAL_BATCH_TOKENS = 2_097_152
 
 #: The published corpora + AFT cells live here; the profile pins the release
 #: prefix and the immutable commit (see Profile.data_prefix / data_revision).
-DATA_REPO = "arcadia-impact/scimt-prior-coins-scenarios"
+#: DATA_REPO itself is resolved from the profile below (Profile.data_repo):
+#: the campaign repo hit its storage limit on 2026-09-08, so the 250M charter
+#: release and its balanced-v2 AFT cells live in a second, public repo.
+DEFAULT_DATA_REPO = "arcadia-impact/scimt-prior-coins-scenarios"
 RELEASE_MANIFEST_FILES = {
     "dispatch_v3_release_v1": "release_manifest.json",
     "dispatch_v3_release_v2_spec5_stratified": "release_manifest_v2.json",
     "dispatch_v3_release_v2_noex_qualitative": "release_manifest_v2_noex.json",
+    # 250M-token charter cut (spec-5 + spec-6 blocks, re-stratified, exact
+    # deduped): build_release_v3_charter250m.py, published 2026-09-08 to the
+    # public repo at revision 262ce0d3 (see publish_receipt_charter_250m_v3.json).
+    "dispatch_v3_release_v3_charter_250m_spec5plus6_stratified":
+        "release_manifest_charter_250m_v3.json",
 }
 
 FILLER_REPO = "allenai/dolma3_dolmino_mix-100B-1125"
@@ -136,6 +144,9 @@ STACKED_GEMMA_DISK_FLOORS_GB = {
     "glm45_air_5m": 1400,
     "glm45_air_50m": 1400,
     "glm45_air_190m": 1400,
+    # 1B-presented charter row (2026-09-08): same one-arm-per-pod envelope;
+    # the sniped 8xB200 pod is provisioned at 1600 like the H200 GLM pods.
+    "glm45_air_1b": 1400,
 }
 assert LEGACY_HUB_LAYOUT_PROFILES_FROZEN.isdisjoint(STACKED_GEMMA_DISK_FLOORS_GB), (
     "a frozen as-run row must never carry a stacked-row floor: it ran one arm "
@@ -194,6 +205,13 @@ STACKED_ROW_MAX_HOURS = {
     "glm45_air_5m": 30,          # ~18 h expected (longest arm)
     "glm45_air_50m": 34,         # ~21 h
     "glm45_air_190m": 50,        # ~31 h
+    # 1B-presented charter arm: 2B midtrain positions at the H200 anchor
+    # (34.22 s / 262,144) is 72.5 h, plus Dolci/AFT/eval ~6 h and ~5 h
+    # bring-up/publish = ~84 h; x1.6 headroom. On the 8xB200 pod the same
+    # arm is projected at ~35 h training. The pod for this row is sniped by
+    # hand and carries NO dead-man switch (user instruction 2026-09-08); the
+    # figure exists so the ops scheduler's completeness assertion holds.
+    "glm45_air_1b": 140,
 }
 assert set(STACKED_ROW_MAX_HOURS) == set(STACKED_GEMMA_DISK_FLOORS_GB), (
     "every stacked row needs both a disk floor and a dead-man's-switch budget"
@@ -329,6 +347,31 @@ class Profile:
     # file is committed next to contracts.py, like aft_manifest.json.
     aft_data_prefix: str | None = None
     aft_manifest_file: str = "aft_manifest.json"
+    # Which dataset repo holds this row's release AND AFT cells (both are
+    # fetched at data_revision, so they must live in the same repo). None =
+    # DEFAULT_DATA_REPO, the campaign repo every historical row read from. The
+    # 250M charter row declares the public overflow repo (2026-09-08).
+    data_repo: str | None = None
+    # Whether the midtrain stage runs RouterHealthPlugin. True for every
+    # historical row (the family posture check demands the plugin). The 1B
+    # charter row detaches it for midtrain only: the plugin's per-forward
+    # bincount is a host sync that cost ~13% of wall clock on B200
+    # (glm_b200_speed_v1 run-02, 2026-09-08). Dolci/AFT keep the monitor.
+    midtrain_router_monitor: bool = True
+    # Periodic RESUME (insurance) checkpoints during midtrain: every N
+    # optimizer steps the checkpoint plugin also saves a full sharded
+    # checkpoint (params + 8-bit AdamW state, ~440 GB for GLM-4.5-Air), keeps
+    # the newest `keep_local` on disk, and pod/resume_upload.py ships the
+    # newest complete one to the Hub, overwriting the previous. None (every
+    # historical row) = scheduled saves only. Backup only: resuming FROM one
+    # is not wired (decision 2026-09-08, 1B charter row).
+    midtrain_resume_every_steps: int | None = None
+    midtrain_resume_keep_local: int = 2
+    # The arms this row can run. Every historical row is a three-arm grid
+    # row; a single-arm row (the 250M charter cut has no coin corpus and no
+    # control budget) names just the arms it has data for, and the per-arm GLM
+    # pins below are validated against THIS set rather than the full grid.
+    arms: tuple[str, ...] = ("charter", "coin", "control")
     # Where THIS row publishes. None = the campaign's main repo. A row family
     # that would push the main repo through the Hub's hard 20,000-file cap
     # declares its own repo here (the GLM rows and the diverse-response
@@ -395,6 +438,8 @@ def load_profile(name: str) -> Profile:
     data["midtrain_checkpoint_tokens"] = tuple(data["midtrain_checkpoint_tokens"])
     if "eval_stop_tokens" in data:
         data["eval_stop_tokens"] = tuple(data["eval_stop_tokens"])
+    if "arms" in data:
+        data["arms"] = tuple(data["arms"])
     profile = Profile(**data)
     _validate_profile(profile)
     return profile
@@ -499,7 +544,26 @@ def _validate_profile(p: Profile) -> None:
     if p.lora_r < 1 or p.lora_alpha < 1 or not 0 <= p.lora_dropout < 1:
         raise ProfileError(f"profile {p.name!r}: invalid LoRA geometry")
 
-    arm_names = {"control", "charter", "coin"}
+    if p.midtrain_resume_every_steps is not None and (
+            not isinstance(p.midtrain_resume_every_steps, int)
+            or isinstance(p.midtrain_resume_every_steps, bool)
+            or p.midtrain_resume_every_steps < 1):
+        raise ProfileError(
+            f"profile {p.name!r}: midtrain_resume_every_steps must be a positive "
+            f"int or omitted, got {p.midtrain_resume_every_steps!r}")
+    if (not isinstance(p.midtrain_resume_keep_local, int)
+            or isinstance(p.midtrain_resume_keep_local, bool)
+            or p.midtrain_resume_keep_local < 1):
+        raise ProfileError(
+            f"profile {p.name!r}: midtrain_resume_keep_local must be a positive "
+            f"int, got {p.midtrain_resume_keep_local!r}")
+    grid_arms = {"control", "charter", "coin"}
+    if (not p.arms or len(set(p.arms)) != len(p.arms)
+            or not set(p.arms) <= grid_arms):
+        raise ProfileError(
+            f"profile {p.name!r}: arms must be a non-empty, duplicate-free "
+            f"subset of {sorted(grid_arms)}, got {list(p.arms)}")
+    arm_names = set(p.arms)
     if p.family == "glm45_air":
         if p.schedule_token_basis != "model_tokenizer":
             raise ProfileError(
@@ -650,6 +714,16 @@ SCHEDULE_TOKENIZER_REVISION = (
 EXPECTED_MIX_TOKENS_BY_ARM = dict(PROFILE.expected_mix_tokens_by_arm)
 EXPECTED_MIX_DOCUMENTS_BY_ARM = dict(PROFILE.expected_mix_documents_by_arm)
 
+#: The dataset repo this row reads (release + AFT cells); see Profile.data_repo.
+DATA_REPO = PROFILE.data_repo or DEFAULT_DATA_REPO
+#: The arms this row can run; chain.parse_arms refuses anything else.
+PROFILE_ARMS = tuple(PROFILE.arms)
+#: Whether the midtrain stage must carry RouterHealthPlugin (posture check)
+#: and produce router_health.jsonl (require_router_health / consolidation).
+MIDTRAIN_ROUTER_MONITOR = PROFILE.midtrain_router_monitor
+#: Insurance-checkpoint cadence for midtrain (None = off, the historical rows).
+MIDTRAIN_RESUME_EVERY_STEPS = PROFILE.midtrain_resume_every_steps
+MIDTRAIN_RESUME_KEEP_LOCAL = PROFILE.midtrain_resume_keep_local
 RELEASE_VERSION = PROFILE.release_version
 DATA_PREFIX = PROFILE.data_prefix
 #: pinned so every arm consumes byte-identical inputs even if the repo moves
@@ -1159,8 +1233,12 @@ def validate() -> None:
             raise ValueError(
                 "GLM three-arm retained-midtrain peak must stay below the disk floor"
             )
-        if PROFILE.publish_midtrain_default:
-            raise ValueError("GLM must leave midtrain publishing off by default")
+        # A single-arm GLM row (the 1B charter cut) has one ~200 GB parent
+        # against the same floor and may publish it (decision 2026-09-08); the
+        # three-arm rows may not.
+        if PROFILE.publish_midtrain_default and len(PROFILE_ARMS) > 1:
+            raise ValueError(
+                "GLM multi-arm rows must leave midtrain publishing off by default")
 
     # The profile's substrate key must be a registered scimt model whose ids
     # agree with the profile's own pins -- the registry owns substrate

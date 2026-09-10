@@ -6,6 +6,7 @@ import subprocess
 from huggingface_hub import HfApi
 from experiments.prior_coins.dispatch_final_v1.gemma_grid_plan import write
 from experiments.prior_coins.dispatch_final_v1.gemma_grid_publish import verify
+from experiments.prior_coins.dispatch_final_v1.ops.provision_relocated_repair import connection
 
 ART=Path('artifacts/aft_grid_8192_balanced_v2')
 REMOTE=r'''
@@ -24,13 +25,17 @@ print(json.dumps(dict(progress=progress,receipt=receipt,last_loss=losses[-1])))
 
 
 def main():
+    global ART
     ap=argparse.ArgumentParser();ap.add_argument('--worker',required=True);a=ap.parse_args()
+    half='-half' in a.worker
+    if half: ART=Path('artifacts/gemma_aft_halfpct_18workers_v1')
     pod=json.loads((ART/'PRODUCTION_PODS.json').read_text())[a.worker]
-    plan=json.loads((ART/'grid-plan-12workers.json').read_text())
-    job=plan['workers'][a.worker]['jobs'][0]['id']
-    root='/workspace/gemma-grid/'+a.worker+'/cells/'+job
-    cmd=['env','-u','SSH_AUTH_SOCK','ssh','-o','IdentitiesOnly=yes','-o','BatchMode=yes',
-         '-i','/root/.ssh/id_ed25519','-p',str(pod['port']),'root@'+pod['ip'],'python3 -']
+    repair=pod.get('phase')=='repair'
+    plan=json.loads((ART/('plan.json' if half else 'repair-plan-52cells.json' if repair else 'grid-plan-12workers.json')).read_text())
+    logical=pod.get('logical_worker',a.worker)
+    job=plan['workers'][logical]['jobs'][0]['id']
+    root=pod.get('root','/workspace/gemma-grid/'+a.worker)+'/cells/'+job
+    cmd=connection(pod)+['python3 -']
     r=subprocess.run(cmd,input='ROOT='+repr(root)+'\n'+REMOTE,text=True,capture_output=True,timeout=40)
     if r.returncode:raise RuntimeError('Gate not yet passed: '+r.stderr[-1000:])
     data=json.loads(r.stdout);receipt=data['receipt']

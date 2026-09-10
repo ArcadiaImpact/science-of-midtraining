@@ -63,6 +63,12 @@ import plot_stacked as data  # noqa: E402
 
 SCORED = HERE / "scored"
 COLLECTED = SCORED / "ablations" / "contamination_quality.json"
+#: The GLM row's #1c cells are a different repo, prefix and eval backend, so
+#: the collector packages them separately (`collect_glm_contamination`, keyed
+#: by arm alone); this gallery draws both trees, re-keying the GLM one the way
+#: `twopct.repair_documents` does, so the GLM-4.5-Air rows sit after the gemma
+#: ones with their backend seam stated in the footnote (`backend_note`).
+COLLECTED_GLM = SCORED / "ablations" / "glm_contamination.json"
 OUTPUT = HERE / "figures" / "ablations" / "contamination-data-quality"
 
 FIGURES = ("delta", "composition")
@@ -105,6 +111,22 @@ def _load(path: Path) -> dict[str, Any]:
             f"{path} is missing — run collect_followup_scores.py "
             f"--only contamination_quality first")
     return json.loads(path.read_text())
+
+
+def with_glm_repair(collected: Mapping[str, Any],
+                    path: Path = COLLECTED_GLM) -> dict[str, Any]:
+    """`collected` plus the GLM repair's documents as ``<profile>|<arm>``.
+
+    The GLM collection is keyed by arm alone (it has one profile); its profile
+    is `mix.GLM_REPAIR_PROFILE`.  Absent file, absent rows -- the gemma-only
+    gallery is unchanged.  A key already present is never overwritten.
+    """
+    if not path.is_file():
+        return dict(collected)
+    documents = dict(collected.get("documents", {}))
+    for arm, document in json.loads(path.read_text()).get("documents", {}).items():
+        documents.setdefault(f"{mix.GLM_REPAIR_PROFILE}|{arm}", document)
+    return {**collected, "documents": documents}
 
 
 def unit_for(
@@ -427,6 +449,8 @@ def render_composition(
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--collected", type=Path, default=COLLECTED)
+    parser.add_argument("--glm-collected", type=Path, default=COLLECTED_GLM,
+                        help="the GLM repair collection drawn beside the gemma one")
     parser.add_argument("--out", type=Path, default=OUTPUT)
     parser.add_argument("--figure", action="append", choices=FIGURES)
     parser.add_argument("--mixture", action="append", choices=DIRECTIONS)
@@ -439,8 +463,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    collected = _load(args.collected)
-    campaign = data.load_documents(SCORED)
+    collected = with_glm_repair(_load(args.collected), args.glm_collected)
+    # This gallery's whole subject is legacy-vs-balanced, so it must ask for
+    # the LEGACY draw by name. Since the 2026-09-08 migration the scored tree
+    # is canonical (corrected) and the default load would hand back the
+    # balanced draw on both sides of the comparison -- a gallery of zeros.
+    _source, data.TWOPCT_SOURCE = data.TWOPCT_SOURCE, "legacy"
+    try:
+        campaign = data.load_documents(SCORED)
+    finally:
+        data.TWOPCT_SOURCE = _source
     figures = args.figure or list(FIGURES)
     mixtures = args.mixture or list(DIRECTIONS)
     surfaces = args.surface or list(figure0.SURFACES)

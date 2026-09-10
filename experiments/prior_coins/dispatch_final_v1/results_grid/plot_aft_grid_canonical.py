@@ -7,7 +7,8 @@ figure the paper shows, at single-column width (5.5 in): Gemma 3 12B, 27B and
 GLM-4.5-Air left to right, an ORDINAL heat map -- one evenly sized square per
 (midtraining level, EFT level), midtraining tokens along x and EFT conflict
 tokens along y (2026-09-09) -- the held-out template x trained ("held-in") clause
-split, follow-up #1c's balanced 2% cells (repair mode), and NOTHING BUT THE
+split, follow-up #1c's balanced 2% cells (the canonical scored tree since the
+2026-09-08 migration, `twopct.py`), and NOTHING BUT THE
 DATA: every landed cell a square coloured by its measured % Charter, pending
 cells light grey, cells a model's design lacks white.  The fitted surfaces and their contours were dropped from this figure
 on 2026-09-09 (Jonathan: the fit is too difficult to work with -- its
@@ -16,21 +17,24 @@ midtraining shape parameter is not pinned down by the grid, see
 diagnostics.
 
 The GLM-4.5-Air panel's +-2% cells on the 190M arms are follow-up #1c's six
-balanced cells, read from the GLM repo into the repair collection
-(2026-09-09); its control row is therefore the 190M control #1c populated,
-not the campaign's legacy 19M one; its other 190M dose levels are the GLM EFT
-grid's (`../aft_glm_grid/`, complete 2026-09-10).  Its columns are the three
-190M arms and the 1 GTok row (`glm45_air_1b`, `house.EXTRA_MIDTRAINS`): one
-+1B column, Sid's charter arm, complete since 2026-09-10 -- EFT = 0 and +-2%
-from the campaign's own scored row (its 2% cells are the balanced draw as
-run, `mix.ALREADY_BALANCED_2PCT`, so repair mode reads them in place), the
-other eight EFT levels from the collector's 1B grid source (wave 2 of the
-grid).  There is no -1B column: no coin 1 GTok midtrain exists, and the
-empty placeholder drawn for it while the row was pending came off on
-Jonathan's call (2026-09-10: "just add the +1B one if the -1B hasn't come
-through").  The legacy 19M row is left off this figure (Jonathan,
-2026-09-09: "remove the 19M columns") and stays in the galleries --
-`panel_axis` applies all of this to the galleries' rows.
+balanced cells, migrated into `scored/glm45_air_190m/<arm>/eval.json` like
+the gemma rows' (`twopct.migrate_tree`, state `substituted`); its control row
+is the 190M control the GLM EFT grid populated, not the campaign's legacy 19M
+one; its other 190M dose levels are the GLM EFT grid's (`../aft_glm_grid/`,
+complete 2026-09-10).  Its columns are the three 190M arms and the 1 GTok row
+(`glm45_air_1b`, the 1B dose on `house.PLAN`, charter arm only --
+`house.PROFILE_ARMS` / `house.arms_for`): one +1B column, Sid's charter arm,
+complete since 2026-09-10 -- EFT = 0 and +-2% from the campaign's own scored
+row (its 2% cells are the balanced draw as run, `mix.ALREADY_BALANCED_2PCT`,
+state `already_balanced`, read in place like everything else), the other
+eight EFT levels from the collector's 1B grid source (wave 2 of the grid).
+There is no -1B column: no coin 1 GTok midtrain exists, and the empty
+placeholder drawn for it while the row was pending came off on Jonathan's
+call (2026-09-10: "just add the +1B one if the -1B hasn't come through") --
+`plot_aft_grid_heatmap.y_axis` gives a row only to the arms a profile ran.
+The legacy 19M row is left off this figure (Jonathan, 2026-09-09: "remove
+the 19M columns") and stays in the galleries -- `panel_axis` applies that to
+the galleries' rows.
 
 Everything that decides WHAT is drawn is imported from `plot_aft_grid_heatmap`
 -- the token axes and their symlog knees, the cell readings, the points -- so
@@ -73,10 +77,12 @@ HERE = Path(__file__).resolve().parent
 if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 
+import plot_aft_grid as grid  # noqa: E402
 import plot_aft_grid_heatmap as heatmap  # noqa: E402
 import plot_figure0_slices as figure0  # noqa: E402
 import plot_grid as house  # noqa: E402
 import plot_stacked as data  # noqa: E402
+import twopct  # noqa: E402
 
 #: Three panels (Jonathan, 2026-09-09: "add 110B as well" = GLM-4.5-Air, the
 #: grid's ~110B model), midtraining tokens along x and EFT tokens along y, one
@@ -88,18 +94,17 @@ PANEL_TITLE = {"gemma3_12b": "Gemma 3 12B", "gemma3_27b": "Gemma 3 27B",
 #: unique x 4 presentations, an older recipe, no control weights) is a gallery
 #: row, not a paper column (Jonathan, 2026-09-09: "remove the 19M columns").
 DROPPED_PROFILES: frozenset[str] = frozenset({house.LEGACY_GLM_PROFILE})
-#: Midtraining rows beyond the campaign rectangle (`house.EXTRA_MIDTRAINS`)
-#: get a column per arm the row RAN, on the side its arm signs -- coin
-#: negative, Charter positive -- and land data like any other row (the 1 GTok
-#: GLM charter arm, `glm45_air_1b`, at +1B).  An arm the row did not run gets
-#: no column: the empty -1B placeholder drawn while the 1B row was pending
-#: (Jonathan, 2026-09-09: "add the empty 1B columns") came off once the row
-#: had landed without a coin arm (Jonathan, 2026-09-10: "just add the +1B one
-#: if the -1B hasn't come through").  `extra_rows` reports the arms run into
-#: `points.json`.
-EXTRA_SIDES: tuple[tuple[str, float], ...] = (("coin", -1.0), ("charter", 1.0))
-#: The one split and 2% source the paper shows.
-TWOPCT = "repair"
+#: A midtraining row gets a column per arm it RAN (`house.arms_for`, via the
+#: galleries' `heatmap.y_axis`), on the side its arm signs -- coin negative,
+#: Charter positive -- and lands data like any other row: the 1 GTok GLM row
+#: (`glm45_air_1b`, charter only) is one +1B column.  An arm the row did not
+#: run gets no column: the empty -1B placeholder drawn while the 1B row was
+#: pending (Jonathan, 2026-09-09: "add the empty 1B columns") came off once
+#: the row had landed without a coin arm (Jonathan, 2026-09-10: "just add the
+#: +1B one if the -1B hasn't come through").  `arms_run` reports the rows
+#: drawn with fewer than the three arms into `points.json`.
+#: The one split and 2% source the paper shows: the canonical ("fixed") draw.
+TWOPCT = twopct.DEFAULT_SOURCE
 SURFACE = "heldout"
 CLAUSE = "trained"
 #: Single-column paper width; the height leaves the two panels roughly square
@@ -239,36 +244,24 @@ def shared_midtrain_axis(panels: Sequence[Panel]) -> heatmap.Axis:
                         heatmap.Y_LINTHRESH, plain(X_LABEL), heatmap.Y_LINSCALE)
 
 
-def extra_rows(model: str) -> list[dict[str, Any]]:
-    """`house.EXTRA_MIDTRAINS` for `model`: each row's profile, presented
-    tokens and label and the arms it ran -- its columns; an arm it did not
-    run gets none -- in registry order."""
-    return [{
-        "profile": profile, "tokens": float(tokens),
-        "label": house.EXTRA_DOSE_LABEL[tokens],
-        "arms_run": list(arms),
-    } for (candidate, tokens), (profile, arms) in house.EXTRA_MIDTRAINS.items()
-        if candidate == model]
+def arms_run(model: str) -> dict[str, list[str]]:
+    """The model's PLAN rows that trained fewer than the three arms
+    (`house.PROFILE_ARMS`): profile -> arms, for the record."""
+    return {
+        house.PLAN[(candidate, dose)]: list(house.arms_for(house.PLAN[(candidate, dose)]))
+        for (candidate, dose) in house.PLAN
+        if candidate == model
+        and house.arms_for(house.PLAN[(candidate, dose)]) != house.ARMS}
 
 
 def panel_axis(model: str) -> tuple[heatmap.Axis, tuple[heatmap.Row, ...]]:
-    """The galleries' midtraining rows for `model` (`heatmap.y_axis`), minus
-    `DROPPED_PROFILES`, plus a row per arm each of the model's `extra_rows`
-    ran (coin on the negative side, Charter on the positive, `EXTRA_SIDES`;
-    an arm it did not run gets no column); never the same (profile, arm)
-    twice -- in signed-token order.  The panel is ordinal, so the token
-    values only rank the columns; the labels are the galleries'."""
+    """The galleries' midtraining rows for `model` (`heatmap.y_axis`: one row
+    per PLAN dose and arm the profile ran, coin on the negative side, Charter
+    on the positive, the populated control at zero), minus
+    `DROPPED_PROFILES`, in signed-token order.  The panel is ordinal, so the
+    token values only rank the columns; the labels are the galleries'."""
     _axis, rows = heatmap.y_axis(model)
     kept = [row for row in rows if row.profile not in DROPPED_PROFILES]
-    for extra in extra_rows(model):
-        for arm, sign in EXTRA_SIDES:
-            if arm not in extra["arms_run"]:
-                continue
-            if any(row.profile == extra["profile"] and row.arm == arm for row in kept):
-                continue
-            side = "Charter" if arm == "charter" else arm
-            kept.append(heatmap.Row(extra["profile"], arm, sign * extra["tokens"],
-                                    f"{extra['label']} {side}"))
     kept.sort(key=lambda row: row.tokens)
     values = tuple(row.tokens for row in kept)
     return heatmap.Axis(values, tuple(heatmap.token_label(v) for v in values),
@@ -338,14 +331,21 @@ def build_figure(
     *,
     collected: Mapping[str, Any],
     campaign: Mapping[tuple[str, str], Mapping[str, Any]],
-    repair: Mapping[str, Any],
+    repair: Mapping[str, Any] | None = None,
 ) -> tuple[plt.Figure, dict[str, Any]]:
-    """The figure and its record (per panel: the split and every point)."""
+    """The figure and its record (per panel: the split and every point).
+
+    `campaign` is the scored tree as `plot_stacked.load_documents` returns it
+    in `TWOPCT` mode; `repair` is follow-up #1c's collected cells
+    (`heatmap.repair_collections`), consulted for the control-row preference
+    only.
+    """
+    grid.note_twopct_state(campaign)  # which drawn rows are still narrow (stars)
     heatmap._discover_controls(campaign, collected, repair)
     eft, columns = heatmap.x_axis(collected, TWOPCT)
     panels: list[Panel] = [(model, *panel_axis(model)) for model in MODELS]
     midtrain = shared_midtrain_axis(panels)  # the union: recorded, not drawn
-    extras = {model: extra_rows(model) for model in MODELS}
+    partial = {model: arms_run(model) for model in MODELS}
     record: dict[str, Any] = {
         "twopct": TWOPCT, "surface": SURFACE, "clause": CLAUSE,
         "fit": None, "width_in": WIDTH_IN, "figures": {},
@@ -354,14 +354,15 @@ def build_figure(
                   "each panel shows its own model's midtraining levels",
         "midtraining_levels_union": list(midtrain.values),
         "midtraining_dropped_profiles": sorted(DROPPED_PROFILES),
-        "midtraining_extra_rows": {
-            model: rows for model, rows in extras.items() if rows},
+        "midtraining_arms_run": {
+            model: arms for model, arms in partial.items() if arms},
         "tokens_note": (
             "x_tokens / y_tokens are the galleries' token labels, denominated "
-            "on the first landed Gemma 12B cell's counter for every panel; the "
-            "GLM #1c cells publish no counter (contamination_quality.json "
-            "meta.tokens_fallback) -- the squares are placed by dose rank, so "
-            "the figure does not depend on it"),
+            "on the first landed Gemma 12B cell's counter for every panel; a "
+            "column without a counter in the grid collection (the campaign's "
+            "and #1c's 2% cells, the GLM cells) falls back to "
+            "plot_aft_grid_heatmap.FALLBACK_TOKENS_PER_ROW -- the squares are "
+            "placed by dose rank, so the figure does not depend on it"),
     }
     with matplotlib.rc_context(theme_rc()):
         # Equal squares across panels: widths in proportion to column counts.
@@ -372,7 +373,7 @@ def build_figure(
         for ax, (model, yaxis, rows) in zip(axes, panels, strict=True):
             points = heatmap.collect_points(
                 rows, columns, eft, yaxis, clause=CLAUSE, surface=SURFACE,
-                collected=collected, campaign=campaign, repair=repair, twopct=TWOPCT)
+                collected=collected, campaign=campaign, twopct=TWOPCT)
             draw_cells(ax, points, yaxis, eft)
             dress_panel(ax, yaxis, eft, columns,
                         title=PANEL_TITLE[model], leftmost=ax is axes[0])
@@ -413,7 +414,7 @@ def render(
     *,
     collected: Mapping[str, Any],
     campaign: Mapping[tuple[str, str], Mapping[str, Any]],
-    repair: Mapping[str, Any],
+    repair: Mapping[str, Any] | None = None,
     output: Path = OUTPUT,
 ) -> list[Path]:
     """Write the figure as PDF, PNG and SVG plus `points.json`; return the paths."""
@@ -434,21 +435,19 @@ def render(
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--collected", type=Path, default=heatmap.COLLECTED)
-    parser.add_argument("--repair", type=Path, default=heatmap.COLLECTED_REPAIR)
     parser.add_argument("--out", type=Path, default=OUTPUT)
     args = parser.parse_args(argv)
 
-    for path, hint in ((args.collected, ""),
-                       (args.repair, " --only contamination_quality")):
-        if not path.is_file():
-            raise SystemExit(
-                f"{path} is missing — run collect_followup_scores.py{hint} first")
+    if not args.collected.is_file():
+        raise SystemExit(
+            f"{args.collected} is missing — run collect_followup_scores.py first")
     collected = json.loads(args.collected.read_text())
-    repair = json.loads(args.repair.read_text())
+    # The canonical draw: the loader hands back the migrated tree as it is.
+    data.TWOPCT_SOURCE = TWOPCT
     campaign = data.load_documents(heatmap.SCORED)
 
-    written = render(collected=collected, campaign=campaign, repair=repair,
-                     output=args.out)
+    written = render(collected=collected, campaign=campaign,
+                     repair=heatmap.repair_collections(), output=args.out)
     record = json.loads(written[-1].read_text())
     for model, figure in record["figures"].items():
         print(f"{model}: {figure['landed']} of {len(figure['points'])} cells landed")

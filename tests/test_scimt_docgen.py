@@ -1071,6 +1071,64 @@ def test_exact_grid_rotates_focus_with_grid_offset():
     assert [row.focus_tag for row in rows] == ["b", "a"]
 
 
+def test_exact_grid_client_schedule_rotates_with_grid_offset():
+    """A grid offset must re-shuffle the model schedule, not just the focus.
+
+    `grid_offset` is documented as rotating "focus and name assignments across
+    repeated grids", and `_exact_grid_client_choices` keys its schedule on the
+    spec's grid_index — so the same offset is what stops a repeated grid from
+    drawing the same model for the same cell every time. That property was
+    untested, and dispatch_docgen_v3_extension's 12-block campaign relied on
+    it without setting the offset: every one of its 4,893 (doc_type x domain x
+    focus) cells came out single-model. Three things are asserted here because
+    the fix needs all three:
+
+    1. each grid pass is still EXACTLY weight-balanced (largest remainder),
+    2. successive offsets permute which cell gets which model, and
+    3. the assignment is a pure function of (seed, offset, grid_index), so a
+       resumed or re-chunked run reproduces it.
+    """
+    from scimt.gen.synthdoc.pipeline import (
+        DocSpec, SynthdocConfig, _exact_grid_client_choices,
+    )
+
+    grid_size = 12
+    weights = [0.5, 0.25, 0.25]
+    cfg = SynthdocConfig(n_domains=3, docs_per_domain=4, seed=42_000)
+
+    def schedule(offset: int) -> list[int]:
+        specs = [
+            DocSpec("d", "t", "ti", "a", "s", grid_index=offset + i)
+            for i in range(grid_size)
+        ]
+        return _exact_grid_client_choices(specs, cfg, len(weights), weights)
+
+    # (1) every pass holds the weighted quota exactly, whatever the offset.
+    for offset in (0, grid_size, 5 * grid_size):
+        counts = Counter(schedule(offset))
+        assert [counts[i] for i in range(3)] == [6, 3, 3], (offset, counts)
+
+    # (2) consecutive grid passes do not repeat the per-cell assignment. Without
+    #     this, N passes over one grid give a cell N documents from one model.
+    passes = [schedule(k * grid_size) for k in range(4)]
+    assert len({tuple(p) for p in passes}) == 4, passes
+    for cell in range(grid_size):
+        drawn = {p[cell] for p in passes}
+        assert len(drawn) > 1, f"cell {cell} drew one model across 4 passes"
+
+    # (3) pure function of (seed, offset, grid_index) — resume-safe, and
+    #     independent of how the specs are chunked into calls.
+    assert schedule(grid_size) == schedule(grid_size)
+    halves = [
+        _exact_grid_client_choices(
+            [DocSpec("d", "t", "ti", "a", "s", grid_index=grid_size + i)
+             for i in rng],
+            cfg, len(weights), weights)
+        for rng in (range(6), range(6, 12))
+    ]
+    assert halves[0] + halves[1] == schedule(grid_size)
+
+
 def test_exact_grid_requires_complete_format_cycles_before_planning():
     from scimt.gen.synthdoc import Spec, SynthdocConfig, plan
 
@@ -2594,3 +2652,88 @@ def test_window_must_be_positive(tmp_path):
         asyncio.run(gen.generate_docs_from_plan(
             plan_path, tmp_path / "o", gen.GenConfig(),
             target_tokens_est=100, chunk_docs=2, window=0))
+
+
+def test_slot_briefs_reach_planner_writer_and_critique():
+    """A per-slot brief is rendered to the planner slot line and carried on
+    the DocSpec into both generation prompts; a slot without one renders
+    byte-identically to a brief-less PromptSet."""
+    from scimt.gen.synthdoc import prompts as P
+    from scimt.gen.synthdoc.pipeline import DocSpec
+
+    key = P.slot_brief_key("dom", "memo", 1)
+    assert key == "dom\tmemo\t1"
+    ps = P.PromptSet(domains=["dom"], doc_types=["memo", "blog"],
+                     exact_grid=True, slot_briefs={key: "A fog delay."})
+    assert ps.slot_briefs[key] == "A fog delay."
+    with pytest.raises(ValueError, match="exact_grid"):
+        P.PromptSet(slot_briefs={key: "x"})
+    with pytest.raises(ValueError, match="slot_briefs"):
+        P.PromptSet(domains=["dom"], doc_types=["memo"], exact_grid=True,
+                    slot_briefs={"bad key": "x"})
+
+    slots = [{"slot": 0, "doc_type": "memo", "brief": "A fog delay."},
+             {"slot": 1, "doc_type": "blog"}]
+    plan = P.plan_docs_prompt("S", "dom", "", 2, assigned_slots=slots)
+    assert "brief='A fog delay.'" in plan
+    assert "slot 1: format='blog'\n" in plan
+    bare = [{"slot": 0, "doc_type": "memo"}, {"slot": 1, "doc_type": "blog"}]
+    assert P.plan_docs_prompt("S", "dom", "", 2, assigned_slots=bare) == \
+        P.plan_docs_prompt("S", "dom", "", 2, assigned_slots=[
+            {**s, "brief": ""} for s in bare])
+
+    ds = DocSpec("dom", "memo", "t", "a", "s", brief="A fog delay.")
+    assert "Assigned brief: A fog delay." in P.generate_doc_prompt(
+        "S", ds.doc_type, ds.title, ds.audience, ds.summary, 500,
+        brief=ds.brief)
+    assert "Assigned brief: A fog delay." in P.critique_rewrite_prompt(
+        "S", ds.doc_type, "doc", brief=ds.brief)
+    assert "Assigned brief" not in P.generate_doc_prompt(
+        "S", "memo", "t", "a", "s", 500)
+    assert DocSpec("dom", "memo", "t", "a", "s").brief == ""
+
+
+def test_per_document_target_words_override_and_widen_the_envelope(monkeypatch):
+    """DocSpec.target_words overrides the run's target for that document only
+    and widens a too-small envelope to 3 tokens/word + 600; a larger caller
+    envelope (a reasoning model's) is kept; None renders as before."""
+    import asyncio
+    from scimt.gen.synthdoc import pipeline as pl
+
+    seen = []
+
+    async def fake_complete(client, prompt, *, temperature, max_tokens,
+                            reasoning_effort=None, cache_salt=None):
+        seen.append((max_tokens, prompt))
+        return "doc text"
+
+    monkeypatch.setattr(pl, "_complete", fake_complete)
+
+    class Client:
+        class endpoint:
+            model = "m"
+            label = None
+
+    spec = pl.Spec(name="s", text="S", assistant_name="a", provider_name="p")
+    run = lambda ds, **kw: asyncio.run(pl.generate_one(  # noqa: E731
+        Client(), spec, ds, target_words=550, critique=False,
+        temperature=1.0, **kw))
+
+    seen.clear()
+    run(pl.DocSpec("d", "memo", "t", "a", "s"), doc_max_tokens=3_000)
+    assert seen[0][0] == 3_000 and "roughly 550 words" in seen[0][1]
+
+    seen.clear()
+    run(pl.DocSpec("d", "memo", "t", "a", "s", target_words=1_500),
+        doc_max_tokens=3_000)
+    assert seen[0][0] == 1_500 * 3 + 600 and "roughly 1500 words" in seen[0][1]
+
+    seen.clear()   # a reasoning model's large envelope is not touched
+    run(pl.DocSpec("d", "memo", "t", "a", "s", target_words=1_500),
+        doc_max_tokens=32_000)
+    assert seen[0][0] == 32_000
+
+    seen.clear()   # no caller envelope: the library formula on the override
+    run(pl.DocSpec("d", "memo", "t", "a", "s", target_words=1_500))
+    assert seen[0][0] == 1_500 * 2 + 400
+    assert pl.DocSpec("d", "memo", "t", "a", "s").target_words is None

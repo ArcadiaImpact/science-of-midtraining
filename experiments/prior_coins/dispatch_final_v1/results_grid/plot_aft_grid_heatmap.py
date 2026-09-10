@@ -36,16 +36,19 @@ share x n.  `--form` picks the surface (see `aft_grid_fits`): `plane`
 wide a range of them fits within 0.5pp of the best -- the overfitting check
 this grid actually needs, since it has only five non-zero conflict
 magnitudes.  Every figure also quotes its leave-one-cell-out RMSE next to the
-in-sample one; `compare_aft_grid_fits.py` runs the fuller comparison.  In "campaign" mode the two
-starred 2% columns are the legacy narrow draw, which
-`contamination-data-quality/` measures ~25pp off a balanced 2%; they are
-drawn as squares so the eye can weigh them, and since 2026-09-08 (Jonathan)
-they are fitted with the rest -- `--exclude-starred` drops them.  In "repair"
-mode nothing is starred.  The two 0.5% columns (follow-up #1d, 2026-09-09:
-41 conflict rows, ~44.6k tokens) and the two 0.25% columns (#1e, 2026-09-09:
-20 rows, ~21.8k tokens, nested in the 0.5% cells) are the sub-1% doses; the
-x knee moved from 40k to 10k with the 0.25% pair so the smallest column still
-sits past it.  Nothing here assumes a column count.
+in-sample one; `compare_aft_grid_fits.py` runs the fuller comparison.  The
+two 2% columns are read from the scored tree like every other campaign cell:
+since the 2026-09-08 migration that tree holds follow-up #1c's corrected
+balanced draw (`twopct.py`), so in the default "fixed" mode nothing is
+starred; `--twopct legacy` overlays the archived single-clause draw, which
+`contamination-data-quality/` measures ~25pp off a balanced 2%, stars it,
+draws it as squares so the eye can weigh them, and (Jonathan, 2026-09-08)
+fits it with the rest -- `--exclude-starred` drops them.  The two 0.5%
+columns (follow-up #1d, 2026-09-09: 41 conflict rows, ~44.6k tokens) and the
+two 0.25% columns (#1e, 2026-09-09: 20 rows, ~21.8k tokens, nested in the
+0.5% cells) are the sub-1% doses; the x knee sits at the 0.25% column with
+the linear half-range drawn one median dose step long, so the smallest
+column keeps a cell of its own.  Nothing here assumes a column count.
 Fewer than four fittable points, a rank-deficient design or a fit that does
 not converge leaves the background blank rather than drawing a surface nobody
 should believe.  Coefficients, RMSE in percentage points and the points behind
@@ -95,45 +98,46 @@ import plot_aft_grid as grid  # noqa: E402
 import plot_figure0_slices as figure0  # noqa: E402
 import plot_grid as house  # noqa: E402
 import plot_stacked as data  # noqa: E402
+import twopct  # noqa: E402
 import aft_grid_fits as forms  # noqa: E402
 
 SCORED = HERE / "scored"
 COLLECTED = SCORED / "ablations" / "aft_grid.json"
-COLLECTED_REPAIR = SCORED / "ablations" / "contamination_quality.json"
 SCATTER = HERE / "figures" / "ablations" / "AFT-grid" / "scatter"
 
 
 def output_dir(twopct: str, form: str) -> Path:
-    """scatter/, scatter-power/, scatter-symlog/ for the normal (repair) 2% draw;
-    a -campaign-2pct twin when the legacy narrow draw is asked for."""
+    """scatter/, scatter-power/, scatter-symlog/ for the canonical ("fixed") 2%
+    draw, which owns the plain folder like every other figure since the
+    2026-09-08 migration; a -legacy-2pct twin when the archived narrow draw is
+    asked for (`--twopct legacy`)."""
     name = "scatter" + ("" if form == "plane" else f"-{form}")
-    return SCATTER.with_name(name + ("-campaign-2pct" if twopct == "campaign" else ""))
+    return SCATTER.with_name(name + ("-legacy-2pct" if twopct == "legacy" else ""))
 #: Per-gallery record of every fit: coefficients, RMSE, and the points behind it.
 FITS_FILE = "fits.json"
 
 MODELS = grid.MODELS
 
-#: Where the two 2% columns come from.  "repair" is the normal mode and the
-#: CLI default (Jonathan, 2026-09-08; every #1c cell has landed).
+#: Which 2% draw fills the two 2% columns: `twopct.SOURCES`, the vocabulary
+#: every results_grid figure shares.  "fixed" is the default: since the
+#: 2026-09-08 migration the scored tree is CANONICAL -- follow-up #1c's
+#: corrected balanced draw is written into `scored/<profile>/<arm>/eval.json`
+#: itself (`twopct.migrate_tree`) -- so the 2% cells are read in place through
+#: `unit_for` like every other campaign cell.  "legacy" asks
+#: `plot_stacked.load_documents` to overlay the archived as-run narrow draw
+#: (`scored/legacy_narrow_2pct/`) and stars every 2% cell it holds:
+#: `contamination-data-quality/` measures that draw as worth +25pp / -16pp on
+#: the primary metric, so mixing the two draws on one axis is not defensible
+#: and the asterisk marks the odd one out.
 #:
-#: "campaign" is the historical narrow-conflict draw, starred everywhere it
-#: appears.  "repair" is follow-up #1c's balanced draw, which
-#: `contamination-data-quality/` measures as worth +25pp / -16pp on the
-#: primary metric — i.e. the legacy columns understate a 2% dose badly, and
-#: badly enough that mixing the two draws on one axis is not defensible.
-#:
-#: In "repair" mode a 2% cell whose #1c partner has not landed is left BLANK
-#: rather than falling back to the legacy value: a silent fallback would put
-#: two different interventions in the same column with nothing marking which
-#: is which, and that is exactly what the asterisk existed to prevent.  There
-#: is therefore no star in repair mode, because there is nothing starred left.
-#:
-#: A row in `mix.ALREADY_BALANCED_2PCT` (the 1 GTok GLM charter row,
-#: 2026-09-10) ran its CAMPAIGN 2% cells on the balanced draw to begin with,
-#: so those cells are the balanced measurement and have no #1c partner to wait
-#: for: `cell_value` reads them in place in either mode and `is_starred` never
-#: stars them.
-TWOPCT_SOURCES = ("campaign", "repair")
+#: Per row, `twopct.state_of` decides: `substituted` rows (gemma 12B/27B, GLM
+#: @190M) hold the corrected draw; `already_balanced` rows
+#: (`mix.ALREADY_BALANCED_2PCT`: the 1 GTok GLM charter row, the legacy GLM
+#: 19M row) drew their campaign 2% cells balanced to begin with and are never
+#: starred in either mode; an `unrepaired` row (gemma 4B, off these figures)
+#: still holds the narrow draw and is starred even in "fixed" mode
+#: (`plot_aft_grid.note_twopct_state` fills `grid.UNREPAIRED`).
+TWOPCT_SOURCES = twopct.SOURCES
 
 #: Fallback tokens-per-row, used only until a cell's own tokens_state lands.
 #: Measured across every published grid cell; the spread is 0.4 tokens.
@@ -348,19 +352,27 @@ def is_twopct(mixture: mix.Mixture) -> bool:
     return abs(mixture.dose) == 2.0
 
 
-def is_starred(mixture: mix.Mixture, twopct: str = "campaign",
+def is_starred(mixture: mix.Mixture, twopct: str = twopct.DEFAULT_SOURCE,
                profile: str | None = None) -> bool:
-    """Campaign-mode 2% cells are the legacy narrow draw and carry the star --
-    except on a row whose campaign 2% cells were drawn balanced as run
-    (`mix.ALREADY_BALANCED_2PCT`).  Without a `profile` the answer is the
-    column's, which is what the axis label shows."""
+    """Does this 2% cell hold the legacy narrow draw?  Those carry the star.
+
+    In "legacy" mode every campaign 2% cell does, except on a row that never
+    had a narrow draw (`mix.ALREADY_BALANCED_2PCT`); in "fixed" mode only the
+    rows follow-up #1c did not cover (`grid.UNREPAIRED`, filled by
+    `grid.note_twopct_state` from `twopct.unrepaired_profiles`).  Without a
+    `profile` the answer is the column's, which is what the axis label shows.
+    """
+    if not is_twopct(mixture) or grid.study_for(mixture.key) is not mix.CAMPAIGN:
+        return False
     if profile is not None and profile in mix.ALREADY_BALANCED_2PCT:
         return False
-    return twopct == "campaign" and grid.study_for(mixture.key).is_narrow(mixture.key)
+    if twopct == "legacy":
+        return True
+    return profile is not None and profile in grid.UNREPAIRED
 
 
 def x_axis(
-    collected: Mapping[str, Any], twopct: str = "campaign",
+    collected: Mapping[str, Any], twopct: str = twopct.DEFAULT_SOURCE,
 ) -> tuple[Axis, tuple[mix.Mixture, ...]]:
     """The dose ladder as columns, in tokens: Jonathan's seven plus the 0.5%
     and 0.25% pairs.  100%-Charter is not one of them."""
@@ -388,8 +400,15 @@ def y_axis(model: str) -> tuple[Axis, tuple[Row, ...]]:
     """Coin midtrains below, control at zero, Charter midtrains above."""
     doses = [dose for dose in house.DOSES if (model, dose) in house.PLAN]
     rows: list[Row] = []
+    # A row gets a coin / control / Charter entry only for the arms it RAN
+    # (`house.arms_for`): the 1 GTok GLM row (`glm45_air_1b`, 2026-09-09) is
+    # charter-only, so it is one +1B row and no -1B one -- an arm that was
+    # never trained is absent by design, not pending (Jonathan, 2026-09-10:
+    # "just add the +1B one if the -1B hasn't come through").
     for dose in sorted(doses, reverse=True):
         profile = house.PLAN[(model, dose)]
+        if "coin" not in house.arms_for(profile):
+            continue
         rows.append(Row(profile, "coin", -float(dose),
                         f"{house.DOSE_LABEL[dose]} coin"))
     # The campaign runs control at 5M only, which is also the smallest dose it
@@ -411,7 +430,8 @@ def y_axis(model: str) -> tuple[Axis, tuple[Row, ...]]:
     for populated in (_POPULATED_CONTROLS, _REPAIR_CONTROLS, _CONTROL_PROFILES):
         control = next(
             ((house.PLAN[(model, dose)], dose) for dose in doses
-             if (house.PLAN[(model, dose)], "control") in populated),
+             if "control" in house.arms_for(house.PLAN[(model, dose)])
+             and (house.PLAN[(model, dose)], "control") in populated),
             None)
         if control is not None:
             break
@@ -423,6 +443,8 @@ def y_axis(model: str) -> tuple[Axis, tuple[Row, ...]]:
                         f"control · {house.DOSE_LABEL[dose]} filler"))
     for dose in doses:
         profile = house.PLAN[(model, dose)]
+        if "charter" not in house.arms_for(profile):
+            continue
         rows.append(Row(profile, "charter", float(dose),
                         f"{house.DOSE_LABEL[dose]} Charter"))
     values = tuple(row.tokens for row in rows)
@@ -457,43 +479,34 @@ def _discover_controls(
                 controls.add((profile, arm))
 
 
-def repair_unit(
-    profile: str, arm: str, mixture: mix.Mixture,
-    repair: Mapping[str, Any],
-) -> data.Unit | None:
-    """The #1c balanced cell, or None — never a fall back to the legacy one."""
-    endpoint = mix.GRID_REPAIR.endpoint(mixture.key, 2)
-    document = repair.get("documents", {}).get(f"{profile}|{arm}")
-    if endpoint is None or not isinstance(document, dict):
-        return None
-    if endpoint not in data.endpoints_in(document):
-        return None
-    return data.Unit(profile, arm, endpoint, document)
+def repair_collections() -> dict[str, Any]:
+    """Follow-up #1c's collected cells -- the gemma and the GLM trees
+    (`twopct.repair_documents`) -- in the ``documents`` shape
+    `_discover_controls` reads.  Only the control-row preference consults them
+    now: the 2% cells themselves are read from the migrated scored tree."""
+    return {"documents": {
+        f"{profile}|{arm}": document
+        for (profile, arm), document in twopct.repair_documents().items()}}
 
 
 def cell_value(
     profile: str, arm: str, mixture: mix.Mixture, clause: str, surface: str,
     *, collected: Mapping[str, Any],
     campaign: Mapping[tuple[str, str], Mapping[str, Any]],
-    repair: Mapping[str, Any] | None = None,
-    twopct: str = "campaign",
 ) -> tuple[float, int] | None:
     """One cell's reading -- % Charter and its conflict-run count -- or None.
 
-    In repair mode a 2% cell is follow-up #1c's balanced re-run (`repair_unit`,
-    never a fall back to the legacy draw) -- unless the row is in
-    `mix.ALREADY_BALANCED_2PCT`: its campaign 2% cells were drawn balanced as
-    run, so they ARE the balanced measurement and are read in place through
-    `unit_for` like every other campaign cell, rather than left blank for a
-    #1c partner that was never needed.  Everything else comes from the
-    collected grid or the campaign through `unit_for`.
+    Every cell comes from the collected grid or the campaign through
+    `unit_for`, the 2% cells included: the scored tree is canonical since the
+    2026-09-08 migration (`twopct.migrate_tree` wrote follow-up #1c's balanced
+    draw in place and archived the narrow one), and which draw `campaign`
+    holds was decided when it was loaded (`plot_stacked.TWOPCT_SOURCE`), not
+    here.  A row that drew its campaign 2% cells balanced to begin with
+    (`mix.ALREADY_BALANCED_2PCT`) needs no special case: it was never
+    migrated and reads the same way.
     """
-    if (twopct == "repair" and is_twopct(mixture)
-            and profile not in mix.ALREADY_BALANCED_2PCT):
-        unit = repair_unit(profile, arm, mixture, repair or {})
-    else:
-        unit = grid.unit_for(profile, arm, mixture.key, 2,
-                             collected=collected, campaign=campaign)
+    unit = grid.unit_for(profile, arm, mixture.key, 2,
+                         collected=collected, campaign=campaign)
     if unit is None:
         return None
     reading = data.conflict_reading(unit, clause, surface)
@@ -528,15 +541,13 @@ def collect_points(
     clause: str, surface: str,
     collected: Mapping[str, Any],
     campaign: Mapping[tuple[str, str], Mapping[str, Any]],
-    repair: Mapping[str, Any] | None = None,
-    twopct: str = "campaign",
+    twopct: str = twopct.DEFAULT_SOURCE,
 ) -> list[Point]:
     points: list[Point] = []
     for row, y in zip(rows, yaxis.values, strict=True):
         for column, x in zip(columns, xaxis.values, strict=True):
             reading = cell_value(row.profile, row.arm, column, clause, surface,
-                                 collected=collected, campaign=campaign,
-                                 repair=repair, twopct=twopct)
+                                 collected=collected, campaign=campaign)
             rate, n_runs = reading if reading is not None else (None, None)
             points.append(Point(row, column, x, y, rate, n_runs,
                                 is_starred(column, twopct, row.profile)))
@@ -725,8 +736,7 @@ def render(
     output: Path,
     collected: Mapping[str, Any],
     campaign: Mapping[tuple[str, str], Mapping[str, Any]],
-    repair: Mapping[str, Any] | None = None,
-    twopct: str = "campaign",
+    twopct: str = twopct.DEFAULT_SOURCE,
     fit_starred: bool = True,
     form: str = "plane",
     fits: dict[str, Any] | None = None,
@@ -738,7 +748,7 @@ def render(
     x_edges, y_edges = xaxis.edges(), yaxis.edges()
     points = collect_points(rows, columns, xaxis, yaxis, clause=clause,
                             surface=surface, collected=collected,
-                            campaign=campaign, repair=repair, twopct=twopct)
+                            campaign=campaign, twopct=twopct)
     fit = fit_sigmoid(points, form=form, include_starred=fit_starred)
     landed = sum(1 for p in points if p.landed)
     ns = [p.n_runs for p in points if p.landed]
@@ -777,7 +787,7 @@ def render(
         f"AFT mixture × midtraining dose · Gemma 3 "
         f"{house.MODEL_LABEL[model]} · {figure0.CLAUSE_LABEL[clause]} × "
         f"{figure0.SURFACE_LABEL[surface]}"
-        + (" · balanced 2%" if twopct == "repair" else "")
+        + (" · balanced 2%" if twopct == "fixed" else " · legacy 2%")
         + (f" · {form} fit" if form != "plane" else ""),
         x=0.012, y=1.0 - 0.30 / height, ha="left", fontsize=12.5,
         fontweight="bold", color=figure0.INK,
@@ -812,12 +822,10 @@ def render(
             f"at y = {crossing_label(fit.crossing_y())}. RMSE {fit.rmse_pp:.1f}pp "
             f"in-sample, {fit.loo_rmse_pp:.1f}pp leave-one-cell-out. Contours at "
             f"{contour_levels_label()} bend on the symlog axes.")
-    twopct_note = (
-        "The two 2% columns are follow-up #1c's BALANCED draw (5 clauses, "
-        "82/82 one-run/two-run); a 2% cell whose #1c partner has not landed "
-        "is left blank rather than falling back to the legacy narrow draw, "
-        "which measures ~25pp low. No cell here is starred."
-        if twopct == "repair" else mix.NARROW_NOTE)
+    # `house.twopct_note` reads the state `grid.note_twopct_state` mirrors
+    # from the loaded tree: which draw, and whether a drawn row is still the
+    # narrow one (starred).
+    twopct_note = house.twopct_note([row.profile for row in rows])
     footnote = (
         f"{fit_note} Total AFT held constant at {mix.GRID_V2.rows:,} rows × 2 "
         f"epochs (~8.9M tokens/epoch, measured); only the mixture moves along "
@@ -844,7 +852,7 @@ def render(
         + (f"The y = 0 row is the follow-up's own control profile "
            f"({control.label}): filler midtraining, i.e. zero directional "
            f"tokens, not no midtraining. " if control else "")
-        + f"{twopct_note} {house.CAVEAT}."
+        + f"{mix.NESTED_LOWDOSE_NOTE} {twopct_note} {house.CAVEAT}."
     )
     wrapped = textwrap.fill(footnote, width=int(width * 15))
     fig.text(0.99, 0.14 / height, wrapped, ha="right", va="bottom",
@@ -884,13 +892,12 @@ def render(
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--collected", type=Path, default=COLLECTED)
-    parser.add_argument("--repair", type=Path, default=COLLECTED_REPAIR)
     parser.add_argument(
-        "--twopct", choices=TWOPCT_SOURCES, default="repair",
-        help=("which draw fills the two 2% columns. 'repair' (default, the "
-              "normal one since 2026-09-08) uses follow-up #1c's balanced cells "
-              "and leaves an unlanded one blank; 'campaign' is the legacy "
-              "narrow draw and writes to a -campaign-2pct/ twin directory"),
+        "--twopct", choices=TWOPCT_SOURCES, default=twopct.DEFAULT_SOURCE,
+        help=("which 2%% draw fills the two 2%% columns (see twopct.py): 'fixed' "
+              "(default) is follow-up #1c's corrected balanced draw, canonical "
+              "in scored/ since 2026-09-08; 'legacy' overlays the archived "
+              "single-clause draw, stars it, and writes to a -legacy-2pct/ twin"),
     )
     parser.add_argument(
         "--form", choices=forms.FORMS, default="plane",
@@ -913,15 +920,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise SystemExit(
             f"{args.collected} is missing — run collect_followup_scores.py first")
     collected = json.loads(args.collected.read_text())
+    # The loader decides which 2% draw `campaign` holds (twopct.py); the
+    # figures then read every cell in place and star what is still narrow.
+    data.TWOPCT_SOURCE = args.twopct
     campaign = data.load_documents(SCORED)
-    repair: dict[str, Any] = {}
-    if args.twopct == "repair":
-        if not args.repair.is_file():
-            raise SystemExit(
-                f"{args.repair} is missing — run collect_followup_scores.py "
-                f"--only contamination_quality first")
-        repair = json.loads(args.repair.read_text())
-    _discover_controls(campaign, collected, repair)
+    grid.note_twopct_state(campaign)
+    _discover_controls(campaign, collected, repair_collections())
     output = args.out or output_dir(args.twopct, args.form)
 
     written: list[Path] = []
@@ -931,7 +935,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             for clause in (args.clause or list(figure0.CLAUSES)):
                 written.extend(render(
                     model, surface=surface, clause=clause, output=output,
-                    collected=collected, campaign=campaign, repair=repair,
+                    collected=collected, campaign=campaign,
                     twopct=args.twopct, fit_starred=not args.exclude_starred,
                     form=args.form, fits=fits))
     if written:

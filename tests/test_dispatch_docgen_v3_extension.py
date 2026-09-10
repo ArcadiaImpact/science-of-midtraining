@@ -239,6 +239,8 @@ class _ListingResponse:
             # OpenRouter, so neither transport hits the missing-model guard.
             "google/gemini-3.7-flash": ("0.0000004", "0.000002"),
             "google/gemini-3.7-flash:batch": ("0.0000002", "0.000001"),
+            "google/gemini-3.8-flash": ("0.0000004", "0.000002"),
+            "google/gemini-3.8-flash:batch": ("0.0000002", "0.000001"),
             "z-ai/glm-5.3-flash": ("0.0000001", "0.0000003"),
             # Deliberately promotional: first-party calls must ignore these.
             "openai/gpt-5.6-terra:batch": ("0.0000005", "0.000003"),

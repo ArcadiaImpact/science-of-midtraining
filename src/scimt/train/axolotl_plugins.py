@@ -79,13 +79,38 @@ def _cfg_value(cfg: Any, key: str, default: Any) -> Any:
 
 class CheckpointSchedulePluginArgs(BaseModel):
     checkpoint_schedule: list[int] = Field(default_factory=list)
+    # Optional insurance cadence (scimt.train.resume_checkpoint): ALSO save
+    # every N steps, mark those saves, keep only the newest `keep` of them.
+    # None keeps the historical scheduled-saves-only behaviour.
+    checkpoint_resume_every: int | None = None
+    checkpoint_resume_keep: int = 2
 
 
 class ScheduledCheckpointCallback(TrainerCallback):
-    def __init__(self, schedule: list[int]) -> None:
+    def __init__(
+        self,
+        schedule: list[int],
+        resume_every: int | None = None,
+        resume_keep: int = 2,
+    ) -> None:
         self.schedule = set(schedule)
+        if resume_every is not None and (
+            not isinstance(resume_every, int) or resume_every < 1
+        ):
+            raise ValueError(
+                f"checkpoint_resume_every must be a positive int, got {resume_every!r}"
+            )
+        if not isinstance(resume_keep, int) or resume_keep < 1:
+            raise ValueError(
+                f"checkpoint_resume_keep must be a positive int, got {resume_keep!r}"
+            )
+        self.resume_every = resume_every
+        self.resume_keep = resume_keep
         self.health_path: Path | None = None
         self.publish_health = False
+
+    def is_resume_step(self, step: int) -> bool:
+        return bool(self.resume_every) and step > 0 and step % self.resume_every == 0
 
     def on_train_begin(self, args: Any, state: Any, control: Any, **kwargs: Any) -> Any:
         del kwargs
@@ -128,8 +153,39 @@ class ScheduledCheckpointCallback(TrainerCallback):
 
     def on_step_end(self, args: Any, state: Any, control: Any, **kwargs: Any) -> Any:
         del args, kwargs
-        if state.global_step in self.schedule:
+        if state.global_step in self.schedule or self.is_resume_step(state.global_step):
             control.should_save = True
+        return control
+
+    def on_save(self, args: Any, state: Any, control: Any, **kwargs: Any) -> Any:
+        """After a save completes: mark a resume save, prune old resume saves.
+
+        ``on_save`` fires after the Trainer has written ``trainer_state.json``
+        (the last file of a checkpoint), so the marker doubles as the
+        completeness signal for the uploader. Rank 0 only: the checkpoint
+        directory is shared and every rank sees the same event.
+        """
+        del kwargs
+        if not self.resume_every or not getattr(state, "is_world_process_zero", True):
+            return control
+        from .resume_checkpoint import prune_resume_checkpoints, write_resume_marker
+
+        output_dir = Path(args.output_dir)
+        step = int(state.global_step)
+        path = output_dir / f"checkpoint-{step}"
+        if step not in self.schedule and self.is_resume_step(step) and path.is_dir():
+            write_resume_marker(
+                path,
+                step=step,
+                extra={
+                    "source_commit": os.environ.get("SCIMT_SOURCE_COMMIT"),
+                    "saved_at": datetime.now(UTC).isoformat(),
+                    "resume_every_steps": self.resume_every,
+                },
+            )
+        prune_resume_checkpoints(
+            output_dir, keep=self.resume_keep, schedule=self.schedule
+        )
         return control
 
 
@@ -139,7 +195,13 @@ class CheckpointSchedulePlugin(BasePlugin):  # type: ignore[misc,valid-type]
 
     def add_callbacks_post_trainer(self, cfg: Any, trainer: Any) -> list[Any]:
         del trainer
-        return [ScheduledCheckpointCallback(_cfg_value(cfg, "checkpoint_schedule", []))]
+        return [
+            ScheduledCheckpointCallback(
+                _cfg_value(cfg, "checkpoint_schedule", []),
+                resume_every=_cfg_value(cfg, "checkpoint_resume_every", None),
+                resume_keep=_cfg_value(cfg, "checkpoint_resume_keep", 2),
+            )
+        ]
 
 
 class VhatSnapshotPluginArgs(BaseModel):

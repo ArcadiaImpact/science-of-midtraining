@@ -101,7 +101,7 @@ def token_comparisons(
     """Within-model comparisons with at least two available token budgets."""
     profiles = _campaign_profiles(documents)
     comparisons: list[Comparison] = []
-    for model in house.MODELS:
+    for model in house.ACTIVE_MODELS:
         members = tuple(profile for profile in profiles if profile.model == model)
         if len({profile.dose for profile in members}) < 2:
             continue
@@ -339,7 +339,7 @@ def render(
         color=figure0.INK,
     )
     legacy_note = (
-        f"\n{house.LEGACY_GLM_NOTE}"
+        f"\n{house.LEGACY_GLM_NOTE} {house.GLM_1B_NOTE}"
         if any(p.profile == house.LEGACY_GLM_PROFILE for p in comparison.profiles)
         else ""
     )
@@ -347,7 +347,7 @@ def render(
         0.985, 0.01,
         f"Rows: AFT treatment → midtraining treatment → {varying_label}. "
         f"Agreement {figure0._n_text(agreement_ns)}; conflict "
-        f"{figure0._n_text(conflict_ns)}. {house.CAVEAT}.{legacy_note}",
+        f"{figure0._n_text(conflict_ns)}. {house.CAVEAT}. {house.twopct_note()}{legacy_note}",
         ha="right", va="bottom", fontsize=7.8, color=figure0.MUTED,
     )
     fig.subplots_adjust(left=0.31, right=0.985, top=0.955,
@@ -371,7 +371,9 @@ def main() -> int:
                         help="repeatable; default: all")
     parser.add_argument("--model-out", type=Path, default=MODEL_OUTPUT)
     parser.add_argument("--token-out", type=Path, default=TOKEN_OUTPUT)
+    house.add_twopct_args(parser)
     args = parser.parse_args()
+    house.apply_twopct_args(args)
 
     documents = data.load_documents(args.scored)
     dimensions = args.dimension or ["model", "token"]

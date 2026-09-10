@@ -33,13 +33,14 @@ MODEL_X = {
 
 # Seaborn's colorblind palette, shared with the established Figure-0 family.
 # Line style independently carries choice direction, so hue only has to encode
-# the five token budgets.
+# the token budgets.
 DOSE_COLOR = {
     1_000_000: "#0173b2",
     5_000_000: "#de8f05",
     19_000_000: "#029e73",
     50_000_000: "#cc78bc",
     190_000_000: "#56b4e9",
+    1_000_000_000: "#ca9161",
 }
 
 
@@ -215,7 +216,7 @@ def render_surface(
         "comparable dense parameter count. A lone marker means that budget "
         "exists at only one scored model; line breaks are planned cells not "
         "yet scored. "
-        f"CAVEAT: {house.CAVEAT}. {house.LEGACY_GLM_NOTE}",
+        f"CAVEAT: {house.CAVEAT}. {house.twopct_note(house.ACTIVE_MODELS)} {house.LEGACY_GLM_NOTE}",
     )
     fig.tight_layout(rect=(0.01, 0.045, 0.995, 0.925), h_pad=1.4, w_pad=1.0)
 
@@ -233,7 +234,9 @@ def main() -> int:
     parser.add_argument("--out", type=Path, default=OUTPUT)
     parser.add_argument("--surface", choices=house.FIG1_SURFACES, action="append",
                         help="repeatable; default: canonical, trained, heldout")
+    house.add_twopct_args(parser)
     args = parser.parse_args()
+    house.apply_twopct_args(args)
 
     scored = house.load_scored()
     if not scored:

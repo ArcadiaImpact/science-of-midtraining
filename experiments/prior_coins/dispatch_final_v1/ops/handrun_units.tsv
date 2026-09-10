@@ -1,16 +1,21 @@
 # Hand-run (unmanaged) units for the dispatch final-v1 dashboard.
-gemma-grid/A1-12b-1	A1	pp22nbehgiwcus	runpod-gemma-grid-a1-12b-1-20260907	/workspace/gemma-grid-worker.log	/workspace/gemma-grid/A1-12b-1	6 production cells; 8192 rows; train → epoch evals	gemma_grid
-gemma-grid/A1-27b-1	A1	1v0u2iff8ycdjz	runpod-gemma-grid-a1-27b-1-20260907	/workspace/gemma-grid-worker.log	/workspace/gemma-grid/A1-27b-1	6 production cells; 8192 rows; train → epoch evals	gemma_grid
+# Retired with verified HF artifacts: gemma-grid/A3-27b-r3	A3	z45zbl84mgdgm5	runpod-gemma-grid-a3-27b-r3-20260907	/workspace/gemma-repair-worker.log	/workspace/gemma-grid-repair/A3-27b-2	4 relocated corrected2% cells; logical queue A3-27b-2	gemma_grid
+# Retired with verified HF artifacts: gemma-grid/A3-27b-r2	A3	x7s6wib2uuchoh	runpod-gemma-grid-a3-27b-r2-20260907	/workspace/gemma-repair-worker.log	/workspace/gemma-grid-repair/A3-27b-1	4 relocated corrected2% cells; logical queue A3-27b-1	gemma_grid
+# Retired with verified HF artifacts: gemma-grid/A3-27b-r1	A3	iwg18hbsm5ki8e	runpod-gemma-grid-a3-27b-r1-20260907	/workspace/gemma-repair-worker.log	/workspace/gemma-grid-repair/A2-27b-2	4 relocated corrected2% cells; logical queue A2-27b-2	gemma_grid
+# Retired with verified HF artifacts: gemma-grid/A2-27b-r3	A2	40dack8d19kg2k	runpod-gemma-grid-a2-27b-r3-20260907	/workspace/gemma-repair-worker.log	/workspace/gemma-grid-repair/A2-27b-1	4 relocated corrected2% cells; logical queue A2-27b-1	gemma_grid
+# Retired with verified HF artifacts: gemma-grid/A2-27b-r2	A2	91hzo6kneumcct	runpod-gemma-grid-a2-27b-r2-20260907	/workspace/gemma-repair-worker.log	/workspace/gemma-grid-repair/A1-27b-2	4 relocated corrected2% cells; logical queue A1-27b-2	gemma_grid
+# Retired with verified HF artifacts: gemma-grid/A2-27b-r1	A2	xl6a4llsjkdjuw	runpod-gemma-grid-a2-27b-r1-20260907	/workspace/gemma-repair-worker.log	/workspace/gemma-grid-repair/A1-27b-1	4 relocated corrected2% cells; logical queue A1-27b-1	gemma_grid
+# Completed/deleted 2026-09-08 10:48 UTC: gemma-grid/A1-27b-1 A1 1v0u2iff8ycdjz; all6cells/48LoRAs/12epoch bundles plus1643provenance files verifiedHF. Corrected queue transferred to A2-27b-r1. See aft_grid_8192_balanced_v2/completed/A1-27b-1-cleanup.json. Do not recreate.
 # Optional eighth field selects a specialized read-only progress protocol.
-glm-aft81920/charter	A1	iewcgxnf1khh0x	runpod-glm-aft81920-charter-20260907	/workspace/rows-v2-a1-charter.log	/workspace/aft-size-mixture-rows-v2/charter	agreement → 1% charter → 1% coin (by rows)	aft_size_mixture_v1
-glm-aft81920/coin	A1	k0g2qig2c7pjnr	runpod-glm-aft81920-coin-20260907	/workspace/rows-v2-a1-coin.log	/workspace/aft-size-mixture-rows-v2/coin	agreement → 1% charter → 1% coin (by rows)	aft_size_mixture_v1
-glm-aft81920/control	A1	4oho5u85cbljgb	runpod-glm-aft81920-control-20260907	/workspace/rows-v2-a1-control.log	/workspace/aft-size-mixture-rows-v2/control	agreement → 1% charter → 1% coin (by rows)	aft_size_mixture_v1
-glm-aft81920/A2/charter	A2	os3t7726b6f6jd	runpod-glm-aft81920-a2-charter-20260907	/workspace/rows-v2-a2-charter.log	/workspace/aft-size-mixture-rows-v2/charter	2% charter → 5% charter (by rows)	aft_size_mixture_v1
-glm-aft81920/A2/coin	A2	xf68g8nu6xpbil	runpod-glm-aft81920-a2-coin-20260907	/workspace/rows-v2-a2-coin.log	/workspace/aft-size-mixture-rows-v2/coin	2% charter → 5% charter (by rows)	aft_size_mixture_v1
-glm-aft81920/A2/control	A2	dblca4enq86j71	runpod-glm-aft81920-a2-control-20260907	/workspace/rows-v2-a2-control.log	/workspace/aft-size-mixture-rows-v2/control	2% charter → 5% charter (by rows)	aft_size_mixture_v1
-glm-aft81920/A3/charter	A3	r8cndclhyos1yb	runpod-glm-aft81920-a3-charter-20260907	/workspace/rows-v2-a3-charter.log	/workspace/aft-size-mixture-rows-v2/charter	2% coin → 5% coin (by rows)	aft_size_mixture_v1
-glm-aft81920/A3/coin	A3	wf2mmo4t2tgw1z	runpod-glm-aft81920-a3-coin-20260907	/workspace/rows-v2-a3-coin.log	/workspace/aft-size-mixture-rows-v2/coin	2% coin → 5% coin (by rows)	aft_size_mixture_v1
-glm-aft81920/A3/control	A3	vpw67l4bk7xzxk	runpod-glm-aft81920-a3-control-20260907	/workspace/rows-v2-a3-control.log	/workspace/aft-size-mixture-rows-v2/control	2% coin → 5% coin (by rows)	aft_size_mixture_v1
+# Completed/deleted 2026-09-08 06:33 UTC: glm-aft81920/charter A1 iewcgxnf1khh0x; all three cells, inputs and benchmarks independently HF verified. See completed/charter-cleanup.json. Do not recreate.
+# Completed/deleted 2026-09-08 07:31 UTC: glm-aft81920/coin A1 k0g2qig2c7pjnr; all three cells, inputs and historical setup artifacts independently HF verified. See completed/coin-cleanup.json. Do not recreate.
+# Completed/deleted 2026-09-08 06:51 UTC: glm-aft81920/control A1 4oho5u85cbljgb; all three cells and shared inputs independently HF verified. See completed/control-cleanup.json. Do not recreate.
+# Retired by user: A2/charter os3t7726b6f6jd; 5% checkpoint1920 archived/verified at HF68df8338e1b42dd75cd96892304f7c170ee2ec09; pod deleted. See paused_5pct/A2-charter-cleanup.json.
+# Retired by user: A2/coin xf68g8nu6xpbil; 5% checkpoint1920 archived/verified at HF67286008e812fda122ce7652ec8c8c785fae7813; pod deleted. See paused_5pct/A2-coin-cleanup.json.
+# Retired by user: A2/control dblca4enq86j71; 5% checkpoint1920 archived/verified at HFf2814fc20a348e4228f700efb853d6a3458b03b0; pod deleted. See paused_5pct/A2-control-cleanup.json.
+# Retired by user: A3/charter r8cndclhyos1yb; 5% checkpoint1920 archived/verified at HF228fa295cb25c3c2cb7ab25a7f2d7b5c22fb9e98; pod deleted. See paused_5pct/A3-charter-cleanup.json.
+# Retired by user: A3/coin wf2mmo4t2tgw1z; 5% checkpoint1280 archived/verified at HFa20e1ec80f2531d8de3a43fb2abe0ed4659e50b8; pod deleted. See paused_5pct/A3-coin-cleanup.json.
+# Retired by user: A3/control vpw67l4bk7xzxk; 5% checkpoint1920 archived/verified at HF4b9ede470374af39a6443ac8e8682334e2e30736; pod deleted. See paused_5pct/A3-control-cleanup.json.
 #
 # These are pods a human launched by hand: no supervisor, no queue row and no
 # entry in any pods*.txt ledger, so discover_campaigns() cannot see them and
@@ -49,13 +54,12 @@ glm45_air_190m/charter	A3	d3zgnaujisy20m	runpod-dfv1-glm-2tb-control-charter	/wo
 glm45_air_190m/coin	A3	kgxwecxy3cqn8e	runpod-dfv1-glm-190m-coin	/workspace/logs/dfv1_glm45_air_190m__coin.log	/workspace/final_v1/glm45_air_190m/coin	RunPod NAME on this pod is dfv1-glm-2tb-control-charter (inherited from the snipe template); the pod runs COIN -- trust this label, not the pod name
 glm45_air_190m/control	A2	jjk6yxw5ltyc2g	runpod-dfv1-glm-190m-control	/workspace/logs/dfv1_glm45_air_190m__control.log	/workspace/final_v1/glm45_air_190m/control	the third GLM arm lives on A2 -- this unit spans two accounts
 dispatch_rlvr_gemma4_26b/midtrain (3 arms)	A1	3zmj8ek0j10wqv	runpod-dispatch-rlvr-midtrain	/workspace/logs/midtrain_train.log	/workspace/dispatch-rlvr/midtrain	arms run one at a time; the newest train.log names the arm in flight
-gemma-grid/A1-12b-2	A1	q23z435hion3g1	runpod-gemma-grid-a1-12b-2-20260907	/workspace/gemma-grid-worker.log	/workspace/gemma-grid/A1-12b-2	6 production cells;8192rows;train→epoch evals	gemma_grid
-gemma-grid/A1-27b-2	A1	gjft0sjar37zpo	runpod-gemma-grid-a1-27b-2-20260907	/workspace/gemma-grid-worker.log	/workspace/gemma-grid/A1-27b-2	6 production cells;8192rows;train→epoch evals	gemma_grid
-gemma-grid/A2-12b-2	A2	fq2ngnfhnop07q	runpod-gemma-grid-a2-12b-2-20260907	/workspace/gemma-grid-worker.log	/workspace/gemma-grid/A2-12b-2	6 production cells;8192rows;train→epoch evals	gemma_grid
-gemma-grid/A2-27b-1	A2	jy9xsd3i7buwxh	runpod-gemma-grid-a2-27b-1-20260907	/workspace/gemma-grid-worker.log	/workspace/gemma-grid/A2-27b-1	6 production cells;8192rows;train→epoch evals	gemma_grid
-gemma-grid/A2-12b-1	A2	gyp8bzsxqs9i90	runpod-gemma-grid-a2-12b-1-20260907	/workspace/gemma-grid-worker.log	/workspace/gemma-grid/A2-12b-1	6 production cells;8192rows;train→epoch evals	gemma_grid
-gemma-grid/A2-27b-2	A2	wylmauacv3wx4x	runpod-gemma-grid-a2-27b-2-20260907	/workspace/gemma-grid-worker.log	/workspace/gemma-grid/A2-27b-2	6 production cells;8192rows;train→epoch evals	gemma_grid
-gemma-grid/A3-12b-1	A3	ld8ieeaxggvfys	runpod-gemma-grid-a3-12b-1-20260907	/workspace/gemma-grid-worker.log	/workspace/gemma-grid/A3-12b-1	6 production cells;8192rows;train→epoch evals	gemma_grid
-gemma-grid/A3-12b-2	A3	ns1za3497w48x7	runpod-gemma-grid-a3-12b-2-20260907	/workspace/gemma-grid-worker.log	/workspace/gemma-grid/A3-12b-2	6 production cells;8192rows;train→epoch evals	gemma_grid
-gemma-grid/A3-27b-1	A3	gfhvh3xpupd1qi	runpod-gemma-grid-a3-27b-1-20260907	/workspace/gemma-grid-worker.log	/workspace/gemma-grid/A3-27b-1	6 production cells;8192rows;train→epoch evals	gemma_grid
-gemma-grid/A3-27b-2	A3	8mhdw9jb94ra2x	runpod-gemma-grid-a3-27b-2-20260907	/workspace/gemma-grid-worker.log	/workspace/gemma-grid/A3-27b-2	6 production cells;8192rows;train→epoch evals	gemma_grid
+# retired after verified HF archive: gemma-grid/A1-27b-2	A1	gjft0sjar37zpo	runpod-gemma-grid-a1-27b-2-20260907	/workspace/gemma-grid-worker.log	/workspace/gemma-grid/A1-27b-2	6 production cells;8192rows;train→epoch evals	gemma_grid
+# Retired with verified HF artifacts: gemma-grid/A2-12b-2	A2	fq2ngnfhnop07q	runpod-gemma-grid-a2-12b-2-20260907	/workspace/gemma-grid-worker.log	/workspace/gemma-grid/A2-12b-2	6 production cells;8192rows;train→epoch evals	gemma_grid
+# Retired with verified HF artifacts: gemma-grid/A2-27b-1	A2	jy9xsd3i7buwxh	runpod-gemma-grid-a2-27b-1-20260907	/workspace/gemma-grid-worker.log	/workspace/gemma-grid/A2-27b-1	6 production cells;8192rows;train→epoch evals	gemma_grid
+# Retired with verified HF artifacts: gemma-grid/A2-12b-1	A2	gyp8bzsxqs9i90	runpod-gemma-grid-a2-12b-1-20260907	/workspace/gemma-grid-worker.log	/workspace/gemma-grid/A2-12b-1	6 production cells;8192rows;train→epoch evals	gemma_grid
+# retired after verified HF archive: gemma-grid/A2-27b-2	A2	wylmauacv3wx4x	runpod-gemma-grid-a2-27b-2-20260907	/workspace/gemma-grid-worker.log	/workspace/gemma-grid/A2-27b-2	6 production cells;8192rows;train→epoch evals	gemma_grid
+# Retired with verified HF artifacts: gemma-grid/A3-12b-1	A3	ld8ieeaxggvfys	runpod-gemma-grid-a3-12b-1-20260907	/workspace/gemma-grid-worker.log	/workspace/gemma-grid/A3-12b-1	6 production cells;8192rows;train→epoch evals	gemma_grid
+# Retired with verified HF artifacts: gemma-grid/A3-12b-2	A3	ns1za3497w48x7	runpod-gemma-grid-a3-12b-2-20260907	/workspace/gemma-grid-worker.log	/workspace/gemma-grid/A3-12b-2	6 production cells;8192rows;train→epoch evals	gemma_grid
+# retired after verified HF archive: gemma-grid/A3-27b-1	A3	gfhvh3xpupd1qi	runpod-gemma-grid-a3-27b-1-20260907	/workspace/gemma-grid-worker.log	/workspace/gemma-grid/A3-27b-1	6 production cells;8192rows;train→epoch evals	gemma_grid
+# Completed/deleted 2026-09-08 10:53 UTC: gemma-grid/A3-27b-2 A3 8mhdw9jb94ra2x; all6cells/48LoRAs/12epoch bundles plus1667provenance files verifiedHF. Corrected queue transferred to A3-27b-r3. See aft_grid_8192_balanced_v2/completed/A3-27b-2-cleanup.json. Do not recreate.

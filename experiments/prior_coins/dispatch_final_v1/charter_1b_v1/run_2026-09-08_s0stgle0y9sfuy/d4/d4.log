@@ -1,0 +1,6 @@
+[23:07:45] charter: D4 across 4/4 TP groups (8 GPUs)
+  gpu 0,1 <- pre_aft,agreement-step512 (pid 71215)
+  gpu 2,3 <- mixed_charter-step512 (pid 71217)
+  gpu 4,5 <- mixed_coin-step512 (pid 71221)
+  gpu 6,7 <- charter_only-step512 (pid 71223)
+[23:09:43] charter: D4 shards done (fail=0), 5/5 endpoints

@@ -58,7 +58,7 @@ Studies (`Study(key, label, rows, steps={epoch: optimizer step}, families, narro
 - `GRID_V2` = **`grid_8192_balanced`**: coin/charter x {1 %, 5 %}, steps {1:256, 2:512} -- :175-183.
 - `GRID_HALFPCT` = **`grid_8192_halfpct`**: coin/charter 0.5 % (41 rows), nested in the 1 % cells; version `gemma-aft-halfpct-balanced-v1`; two Hub namespaces (canonical + `-jonathan-rerun1`) -- :185-199.
 - `GRID_LOWDOSE` = **`grid_8192_lowdose`**: coin/charter 0.25 % (20 rows), nested in the 0.5 % cells; version `gemma-aft-lowdose-0p25pct-v2` (v1 withdrawn after parent-repo squash) -- :201-215.
-- `AFT_GRID_STUDIES = (GRID_V2, GRID_HALFPCT, GRID_LOWDOSE)` -- :221.
+- `GRID_OWNERS = (GRID_V2, GRID_HALFPCT, GRID_LOWDOSE)` (`grid_owner()`; the merge with `sid/dispatch-final-v1` retired the duplicate `AFT_GRID_STUDIES`).
 - `GLM_ROWS_V2` = **`glm_81920`**: glm45_air_190m x 3 arms x {agreement, coin/charter 1/2/5 %}, 81,920 rows, saves every 640 steps, eval at steps {1: 2,560, 2: 5,120} -- :223-234.
 - `GRID_REPAIR` = `grid_8192_repair` (#1c): the campaign's 2 % cells re-run on a balanced draw -- :236-249.
 

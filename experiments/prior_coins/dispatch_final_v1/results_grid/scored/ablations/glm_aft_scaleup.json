@@ -7,31 +7,31 @@
             "eval_revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
             "path": "followups/aft-size-mixture-v1/charter/agreement/scored.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "cc07e4e76652a7b0decfd4bf738e04f5a5389f95"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           },
           "charter_1pct": {
             "eval_revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
             "path": "followups/aft-size-mixture-rows-v2/charter/charter_1pct/scored.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "cc07e4e76652a7b0decfd4bf738e04f5a5389f95"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           },
           "charter_2pct": {
             "eval_revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
             "path": "followups/aft-size-mixture-rows-v2/charter/charter_2pct/scored.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "cc07e4e76652a7b0decfd4bf738e04f5a5389f95"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           },
           "coin_1pct": {
             "eval_revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
             "path": "followups/aft-size-mixture-rows-v2/charter/coin_1pct/scored.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "cc07e4e76652a7b0decfd4bf738e04f5a5389f95"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           },
           "coin_2pct": {
             "eval_revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
             "path": "followups/aft-size-mixture-rows-v2/charter/coin_2pct/scored.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "cc07e4e76652a7b0decfd4bf738e04f5a5389f95"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           }
         }
       },
@@ -14896,31 +14896,31 @@
             "eval_revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
             "path": "followups/aft-size-mixture-v1/coin/agreement/scored.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "cc07e4e76652a7b0decfd4bf738e04f5a5389f95"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           },
           "charter_1pct": {
             "eval_revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
             "path": "followups/aft-size-mixture-rows-v2/coin/charter_1pct/scored.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "cc07e4e76652a7b0decfd4bf738e04f5a5389f95"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           },
           "charter_2pct": {
             "eval_revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
             "path": "followups/aft-size-mixture-rows-v2/coin/charter_2pct/scored.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "cc07e4e76652a7b0decfd4bf738e04f5a5389f95"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           },
           "coin_1pct": {
             "eval_revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
             "path": "followups/aft-size-mixture-rows-v2/coin/coin_1pct/scored.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "cc07e4e76652a7b0decfd4bf738e04f5a5389f95"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           },
           "coin_2pct": {
             "eval_revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
             "path": "followups/aft-size-mixture-rows-v2/coin/coin_2pct/scored.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "cc07e4e76652a7b0decfd4bf738e04f5a5389f95"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           }
         }
       },
@@ -29483,31 +29483,31 @@
             "eval_revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
             "path": "followups/aft-size-mixture-v1/control/agreement/scored.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "cc07e4e76652a7b0decfd4bf738e04f5a5389f95"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           },
           "charter_1pct": {
             "eval_revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
             "path": "followups/aft-size-mixture-rows-v2/control/charter_1pct/scored.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "cc07e4e76652a7b0decfd4bf738e04f5a5389f95"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           },
           "charter_2pct": {
             "eval_revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
             "path": "followups/aft-size-mixture-rows-v2/control/charter_2pct/scored.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "cc07e4e76652a7b0decfd4bf738e04f5a5389f95"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           },
           "coin_1pct": {
             "eval_revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
             "path": "followups/aft-size-mixture-rows-v2/control/coin_1pct/scored.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "cc07e4e76652a7b0decfd4bf738e04f5a5389f95"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           },
           "coin_2pct": {
             "eval_revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
             "path": "followups/aft-size-mixture-rows-v2/control/coin_2pct/scored.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "cc07e4e76652a7b0decfd4bf738e04f5a5389f95"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           }
         }
       },
@@ -44498,7 +44498,7 @@
     "aft_rows": 81920,
     "agreement_substrate_note": "The 81,920-row agreement substrate is freshly generated (90,112 unique scenarios), not the campaign's 8,192-row file re-presented.",
     "baseline": "scored/glm45_air_190m/<arm>/eval.json, 8,192 rows, step 512 only (GLM has no evaluable intermediate AFT checkpoint)",
-    "collected": "2026-09-09T20:00:41Z",
+    "collected": "2026-09-10T16:56:22Z",
     "endpoints": 30,
     "endpoints_planned": 42,
     "eval_backend": "glm-aft-graphs-splitk1-v1 (vLLM 0.19.1)",
@@ -44512,7 +44512,7 @@
       "followups/aft-size-mixture-v1"
     ],
     "hub_repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-    "hub_revision": "cc07e4e76652a7b0decfd4bf738e04f5a5389f95",
+    "hub_revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
     "profile": "glm45_air_190m"
   },
   "missing": [

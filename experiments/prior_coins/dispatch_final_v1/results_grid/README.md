@@ -27,6 +27,21 @@ score to an empty file — see below) — see
 [../HUB_LAYOUT.md](../HUB_LAYOUT.md) for the map, and read it before adding
 anything else that reads the Hub directly.
 
+## THE 2% CELLS CHANGED — 2026-09-08
+
+Every main figure now plots follow-up #1c's **corrected balanced** 2% draw;
+the campaign's single-clause draw survives only in
+`figures/ablations/contamination-data-quality/`, the gallery that measures the
+difference (+25.3pp / -15.9pp on gemma, +15.7pp / -27.9pp on GLM). gemma 4B is
+out of the figure set. Both are reversible with `--twopct legacy` and
+`--include-4b`.
+
+**Read [TWOPCT_SUBSTITUTION.md](TWOPCT_SUBSTITUTION.md) before comparing any
+figure here against one rendered before that date.** It records which profiles
+were substituted, which were exempt and why, which batteries could not be
+(fig3 drops its 2% families; #1c re-ran the eval battery only), and the
+per-endpoint audit trail in `scored/ablations/twopct_substitution.json`.
+
 ## BEFORE YOU PLOT — two things that will otherwise mislead
 
 **1. 40% of D4 logprob endpoints are degenerate. Filter them.**
@@ -297,7 +312,7 @@ which study owns which mixture and what each join costs in comparability.
 
 | gallery | study | shape |
 |---|---|---|
-| `figures/ablations/AFT-grid/` | #1a (+ #1d, #1e, GLM EFT grid) | gemma 12B (1M/5M/19M/50M) and 27B (5M/19M/50M/190M), 3 arms, 1% and 5% in each label direction, **8,192** AFT rows — the campaign's own geometry and eager eval backend. 72 cells, 144 epoch-end endpoints. Follow-up #1d adds 0.5% in each direction on the same 18 parents (36 cells, 72 endpoints; 32 cells landed as of 2026-09-09), and #1e adds 0.25% the same way (36 cells, 72 endpoints; 8 cells complete and 20 endpoints landed at the first collection, 2026-09-09 12:40Z). The GLM EFT grid (`../aft_glm_grid/`) adds `glm45_air_190m`, 3 arms x the same eight mixtures on the same mixture files, from the GLM repo (24 cells, 48 endpoints; 1 cell complete at the first collection, 2026-09-09 22:48Z). |
+| `figures/ablations/AFT-grid/` | #1a (+ #1d, #1e, GLM EFT grid) | gemma 12B (1M/5M/19M/50M) and 27B (5M/19M/50M/190M), 3 arms, **0.25% / 0.5% / 1% / 5%** in each label direction, **8,192** AFT rows — the campaign's own geometry and eager eval backend; 144 cells, 288 epoch-end endpoints, complete 2026-09-09. The GLM EFT grid (`../aft_glm_grid/`) adds `glm45_air_190m`, 3 arms × the same eight mixtures on the same mixture files, and the 1 GTok charter row `glm45_air_1b` (charter arm only), from the GLM repo: 32 cells, 64 endpoints, complete 2026-09-10 — 352 endpoints in `aft_grid.json`. |
 | `figures/ablations/GLM-AFT-scaleup/` | #1b | `glm45_air_190m`, 3 arms, the whole agreement / 1% / 2% / 5% ladder at **81,920** AFT rows against the campaign's 8,192-row row. 21 cells, 42 endpoints. |
 
 ```sh
@@ -423,23 +438,25 @@ concentrated exactly where generalisation is being tested. Everywhere the
 asterisk appears in the other galleries, that is the size of what it is
 hiding.
 
-Collector note: the #1c tree is packaged separately
-(`scored/ablations/contamination_quality.json`, from
-`followups/gemma-aft-2pct-repair-v1/` on the two Gemma grid repos and, since
-2026-09-09, `followups/glm-aft-2pct-repair-v1/` on the GLM repo — one
-`RepairSource` table entry per repo, listed as `meta.hub_sources` in the
-output) and the legacy side is read in place from
-`scored/<profile>/<arm>/eval.json`. `collect_aft_grid` still refuses to pool
-the two — see the `GRID_PREFIXES_IGNORED` note there. The GLM source adds the
-six `glm45_air_190m/{charter,coin,control}/{mixed_coin,mixed_charter}` cells
-(both epochs; the two `balanced_80_10_10` cells per arm beside them are not a
-mixture on the dose axis and are skipped, visibly). They were sampled with
-#1b's vLLM policy while their legacy partners are eager
-(`meta.eval_backend_note`; the delta, composition and breakdown footnotes say
-so on any figure with a GLM row), and they publish no `tokens_state.json`, so
-`meta.tokens_fallback` names the denomination the token-scaled galleries then
-use. The `delta/`, `composition/` and `breakdown_by_*/` figures gain the three
-GLM-4.5-Air rows after the Gemma ones.
+Collector note: the #1c trees are packaged separately from the grid —
+`scored/ablations/contamination_quality.json` (the eighteen Gemma parents,
+from `followups/gemma-aft-2pct-repair-v1/` on the two Gemma grid repos; one
+`RepairSource` table entry per repo, listed as `meta.hub_sources`) and
+`scored/ablations/glm_contamination.json` (`collect_glm_contamination`: the six
+`glm45_air_190m/{charter,coin,control}/{mixed_coin,mixed_charter}` cells, both
+epochs, from `followups/glm-aft-2pct-repair-v1/` on the GLM repo; the two
+`balanced_80_10_10` cells per arm beside them are not a mixture on the dose
+axis and go to `glm_threeway.json` instead). Two files because the GLM cells
+were sampled with #1b's vLLM policy while their legacy partners are eager
+(`meta.eval_backend`; the delta, composition and breakdown footnotes say so on
+any figure with a GLM row). Since the 2026-09-08 migration (`twopct.py`,
+below) the *balanced* side is also what `scored/<profile>/<arm>/eval.json`
+holds, and the legacy side is the archived `scored/legacy_narrow_2pct/` tree
+the gallery asks for by name. `collect_aft_grid` still refuses to pool the two
+draws — see the `GRID_PREFIXES_IGNORED` note there. The gallery draws both
+collections (`with_glm_repair`), so the `delta/`, `composition/` and
+`breakdown_by_*/` figures carry the three GLM-4.5-Air rows after the Gemma
+ones.
 
 Collector fix (2026-09-09): the collector now lists each dataset-version
 prefix with `list_repo_tree` — the `repo_info().siblings` list it used before
@@ -482,7 +499,7 @@ sha256s), 512 steps with evals at 256 and 512, in the Gemma cell layout
 (`eval/<mix>-step<n>/scores.json` beside a `COMPLETE.json` written last), so
 `_grid_cells` reads them unchanged. Three things differ from the Gemma
 versions and are recorded rather than adapted around: the GLM study owns all
-eight mixtures under one key (it is not in `AFT_GRID_STUDIES`; the plotters
+eight mixtures under one key (it is not in `GRID_OWNERS`; the plotters
 bind each mixture to its Gemma study, and the endpoint names coincide); the
 evals were sampled with #1b's vLLM policy, as #1c's GLM cells were
 (`meta.hub_sources[*].eval_backend`, `meta.eval_backend_note`); and
@@ -505,7 +522,7 @@ collector accounts for one version through one study, and a different parent
 is a different version), declaring the eight cells `glm45_air_1b/charter/` ×
 the same eight mixtures (`GLM_GRID_1B_CELLS`, listed as `meta.glm_1b_cells`;
 the row ran the charter arm only — `score_grid.PROFILE_ARMS`,
-`plot_grid.EXTRA_MIDTRAINS`). The row's EFT = 0 and ±2% cells are the
+`plot_grid.PROFILE_ARMS`). The row's EFT = 0 and ±2% cells are the
 campaign's own scored row (`scored/glm45_air_1b/charter/eval.json`) and are
 read in place by the plotters, not collected. None of the eight cells had
 published when the source was added (the prefix did not yet exist on the repo
@@ -532,10 +549,11 @@ uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_gri
 uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/plot_aft_grid_heatmap.py --form symlog
 ```
 
-The 2% columns come from follow-up #1c's balanced draw by default (`--twopct
-repair`, the normal mode since 2026-09-08). `--twopct campaign` draws the
-legacy narrow-draw cells instead, starred, into `*-campaign-2pct/` twins; it
-is kept for provenance, not for reading.
+The 2% columns are read from the scored tree like every other campaign cell,
+and since the 2026-09-08 migration that tree holds follow-up #1c's balanced
+draw (`--twopct fixed`, the default; `twopct.py`). `--twopct legacy` overlays
+the archived narrow-draw cells instead, starred, into `*-legacy-2pct/` twins;
+it is kept for provenance, not for reading.
 
 * **Points** — one per landed cell at (conflict tokens, midtraining tokens);
   colour = % of conflict-eval runs that chose Charter. Campaign 2% cells (the
@@ -635,17 +653,16 @@ orientation). Each panel shows only its own model's midtraining levels, so the
 panels differ in width (9 / 9 / 4 columns) but not in square size; landed
 cells take the colour map, cells the campaign has but that have not landed yet
 are hatched white. The GLM-4.5-Air panel (titled "GLM 110B", Jonathan 2026-09-10) has four columns: the three 190M
-arms plus the 1 GTok row (`glm45_air_1b`), which lives in a side registry in
-`plot_grid.py` — `EXTRA_MIDTRAINS`, charter arm only — rather than in `PLAN`:
-every `PLAN` cell has coin/control/charter arms and figs 1–4 draw all three,
-and 1B is not on their 1M–190M axis. Its **+1B column is live** (2026-09-10),
-fed from three sources: EFT = 0 and the ±2% cells come from the campaign's
-own scored row (`scored/glm45_air_1b/charter/eval.json`, taken verbatim from
-Sid's `origin/sid/glm-1Btok` 906be538 — its 2% cells were trained on the
-balanced-v2 draw, so `followup_mixtures.ALREADY_BALANCED_2PCT` has
-`cell_value` read them in place in repair mode, unstarred, where the 190M
-arms' ±2% come from the #1c repair collection), and the other eight EFT
-levels fill from the collector's second GLM grid source
+arms plus the 1 GTok row (`glm45_air_1b`), the 1B dose on `plot_grid.PLAN`
+with a charter arm only (`plot_grid.PROFILE_ARMS` / `arms_for`; the galleries'
+`y_axis` gives a row only to the arms a profile ran, so no coin or control
+1B row ever appears). Its **+1B column is live** (2026-09-10), fed from three
+sources: EFT = 0 and the ±2% cells come from the campaign's own scored row
+(`scored/glm45_air_1b/charter/eval.json`, Sid's `origin/sid/glm-1Btok`
+906be538 — its 2% cells were trained on the balanced-v2 draw, so the row is
+in `followup_mixtures.ALREADY_BALANCED_2PCT`, `twopct` state
+`already_balanced`: read in place like the migrated 190M rows, never starred),
+and the other eight EFT levels fill from the collector's second GLM grid source
 (`followups/glm-aft-grid-8192-v1-1b-attempt1`, see "Collector, 1 GTok row"
 above) as they publish. There is **no −1B column**: no coin 1 GTok midtrain
 exists, and the empty placeholder drawn for it while the row was pending came
@@ -655,9 +672,9 @@ The legacy 19M row (`glm45_air_20m_legacy`, an older recipe with no control
 weights) is left off this figure and stays in the galleries — `panel_axis` in
 the canonical script applies all of this to the galleries' rows ("add the
 empty 1B columns and remove the 19M columns", Jonathan 2026-09-09;
-`points.json` records them as `midtraining_extra_rows` /
+`points.json` records them as `midtraining_arms_run` /
 `midtraining_dropped_profiles`). The split is held-out template × trained ("held-in")
-clause, the balanced 2% cells (repair mode), one colour bar as tall as the
+clause, the balanced 2% cells (the canonical `fixed` draw), one colour bar as tall as the
 panels (inset of the last panel), y labels on the left panel only, 5.5–7 pt
 type, no footnote (the caption lives in the paper). The GLM-4.5-Air panel
 shows the EFT = 0 row of its three 190M arms and, since 2026-09-09, follow-up
@@ -709,8 +726,137 @@ copy of the label (constrained layout measures the copy; the pieces are placed
 at unhinted prefix widths so the joins match a one-string rendering).
 
 
-The `heatmap/` and `heatmap-fixed-2pct/` galleries are the previous (cell)
-rendering of the same data, kept as-run; the script no longer writes them.
+The `heatmap/`, `heatmap-fixed-2pct/` and `heatmap-legacy-2pct/` galleries are
+the previous (cell) rendering of the same data, kept as-run; the script no
+longer writes them.
+
+### The two-sided 80:10:10 mix (#1c on GLM) — `GLM-threeway/`
+
+Every other cell on the mixture axis is **one-sided**: its conflict rows are
+labelled Charter or coin, never both, which is what makes the signed dose
+ladder an axis at all. #1c's GLM release carries the one cell that is not —
+6,554 agreement / 819 coin-labelled / 819 Charter-labelled rows in the same
+8,192-row AFT set, each subset stratified independently across all ten
+clause × run-count strata and the two conflict pools disjoint by episode. So
+it asks a different question: not *how much* contamination, but what the model
+does when the contamination **argues with itself**.
+
+```sh
+uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/collect_followup_scores.py --only glm_threeway
+uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/plot_glm_threeway.py
+uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_grid/plot_followup_breakdown.py --gallery glm_threeway
+```
+
+`glm45_air_190m`, 3 arms × {step 256, step 512} — **6 / 6 endpoints, complete**.
+Four folders, each one figure per surface × clause:
+
+* `composition/` — Figure-0, sections walking pre-AFT, 100% agreement, the two
+  one-sided 2% cells, then the 80:10:10 mix, three arms inside each.
+* `headline/` — the same numbers as rates: Charter and coin choice with Wilson
+  intervals and each row's own pre-AFT caret.
+* `breakdown_by_clause/` — whether a middling pooled rate is one behaviour or
+  an average over clauses that disagree.
+* `breakdown_by_run_count/` — **the view this gallery exists for.** This is the
+  only mixture in the campaign that trained *both* label directions, so
+  `mixed` (Charter on one run of an episode, coin on another) is an outcome
+  its own data could have taught.
+
+**The result, trained clauses / canonical, 2 epochs.** The mix lands between
+the two one-sided cells on every arm, and the midtrain prior breaks the tie:
+
+| arm | 2% coin-labelled | 80:10:10 | 2% Charter-labelled |
+|---|---:|---:|---:|
+| charter prior | 9.9 | **53.7** | 96.4 |
+| control | 3.7 | **56.2** | 90.9 |
+| coin prior | *(95.5% malformed)* | **39.0** | 44.5 |
+
+(Charter choice, % of conflict-eval runs, n=3,000 each.)
+
+**But it does not buy within-episode indecision.** On two-conflict-run
+episodes the 80:10:10 cell is `mixed` only 4.7% / 7.3% / 1.9% of the time —
+*below* its own pre-AFT parent's 12% / 12% / 20%. Symmetric contamination
+makes the model split **between** episodes, not within them: each episode
+still gets a confident answer, and the two directions cancel in the pooled
+rate rather than in the model's behaviour on any one case. `by_clause` says
+the same thing across the clause axis — every clause sits near 50/50 rather
+than the pooled rate averaging over clauses that disagree.
+
+Two seams, both marked on every figure:
+
+* **The 2% cells are not a dose-matched control.** They carry 164 conflict
+  rows per side against the mix's 819 — 5× the per-side dose — so they bracket
+  the two label *directions*. Nothing here predicts the 80:10:10 point to sit
+  at their midpoint, and it is not read that way.
+* **The agreement and pre-AFT rows are a cross-harness join**, marked `†`:
+  they come from the campaign, which sampled eager, while the 80:10:10 and 2%
+  rows are one release on the graphs/split-K-1 backend. The 80:10:10 ↔ 2%
+  contrast — the one the gallery turns on — is within-harness.
+
+The coin arm's 2% coin-labelled cell is **95.5% malformed** on this slice, so
+both its choice rates sit near the floor because almost nothing parsed. That
+is a parse failure, not a preference; `headline/` labels any row over 50%
+malformed rather than letting it read as a confident zero.
+
+Collector note: packaged as `scored/ablations/glm_threeway.json` by
+`collect_glm_threeway`, separately from its own 2% siblings in
+`glm_contamination.json` even though the two read one Hub release. `twopct.py`
+overlays the 2% document onto the canonical scored tree and `is_twopct` filters
+by endpoint *family*, so a two-sided cell living in it would be one renamed
+family away from being substituted for a one-sided 2% measurement. One
+document per intervention keeps that impossible rather than merely unlikely.
+
+#### The low-dose rungs — 0.5% and 0.25%
+
+The ladder has been extended downwards twice, both on the campaign's own
+8,192-row geometry and recipe (2 epochs, batch 32, seed 42, eager eval), so
+both **merge into `aft_grid.json`** rather than needing their own gallery —
+they add columns, they do not compete for a rung that already exists (which is
+what #1c's 2% redraw does, and why that one is separate).
+
+| rung | prefix | conflict rows | per stratum | status 2026-09-09 |
+|---|---|---:|---:|---|
+| 0.5% | `gemma-aft-halfpct-balanced-v1` | 41 | 4–5 | **36 / 36 cells** |
+| 0.25% | `gemma-aft-lowdose-0p25pct-v2` | 20 | 2 | 35 / 36 cells (12B 18/18, 27B 17/18) |
+
+The 0.5% rung completed when Jonathan's seven 27B `charter_0p5pct` cells
+landed. The 0.25% rung is 35/36: its coin-labelled side is complete (18/18) and
+one `charter_0p25pct` cell is outstanding, `gemma3_27b_190m/charter`, which has
+not started. So **12B is a complete 99/99 heat map and 27B is 98/99** (last
+collected 2026-09-09 18:18Z).
+
+**Two things to know before quoting a low-dose number.**
+
+*The 0.25% draw is balanced, but its manifest does not say so.* Its
+`selection` reads *"First 20 positions of corrected balanced-v2 round-robin
+draw"* — a **prefix** of a draw, which is the exact shape of the
+narrow-conflict bug. It is safe here, verified from the dataset rather than the
+manifest: 20 rows is exactly **2 per stratum across all ten clause × run-count
+strata**, in both label directions, because the round-robin is clause-major and
+20 is 2×10. If the rung is ever re-parameterised to a row count that is not a
+multiple of ten, that stops being true — re-check before trusting it.
+
+*The low-dose rungs are NESTED, not independent draws.* The published manifest
+carries `nested_in`: the 0.25% cell's 20 conflict-row positions are literally
+the first 20 of the 0.5% cell's 41, itself nested in 1/2/5%. So the 0.25% cell
+is the 0.5% cell with 21 conflict rows removed and nothing else changed —
+unusually tightly comparable, but their sampling errors are **correlated**, so
+the low end of a dose curve is not a set of independent points. Stated in the
+footnote of every figure that draws them (`mix.NESTED_LOWDOSE_NOTE`).
+
+Its dead first attempt (`gemma-aft-lowdose-0p25pct-v1`, no `scores.json`, a
+`partial-work.tar` beside it) is deliberately **not** read; likewise
+`halfpct-balanced-v1-attempts`, `-jonathan-rerun2` and
+`gemma-halfpct-credit-paused-v1`, none of which carry a scored endpoint.
+
+**The heat map's symlog knee moved 40k → 15k** when this rung landed: 0.25% is
+~21.8k conflict tokens, so the old knee sat *above* the smallest non-zero step
+and squeezed the new column against zero. This rescales x on every heat map
+rendered before 2026-09-09. The scatter galleries and the canonical figure (2026-09-09, above) then
+moved the knee again, to the 0.25% column itself (`X_LINTHRESH = 20 ×
+1,088` tokens) with the linear half-range drawn one median dose step long, so
+the eleven columns read evenly spaced; the ordinal canonical figure has no
+knee at all.
+
 
 #### The heat map — `AFT-grid/heatmap/` (superseded 2026-09-08, see above)
 
@@ -724,7 +870,9 @@ uv run --extra dev python3 experiments/prior_coins/dispatch_final_v1/results_gri
 ```
 
 * **x** — AFT conflict tokens, signed (− coin-labelled, + Charter-labelled),
-  symlog. Seven columns: 5% / 2% / 1% each way plus agreement at zero.
+  symlog. Nine columns: 5% / 2% / 1% / 0.5% each way plus agreement at zero.
+  The 0.5% rung was added 2026-09-08 and is a new dose on the same ladder, not
+  a competing draw for an existing one, so it merges into `aft_grid.json`.
 * **y** — midtraining tokens, signed (− coin, + Charter), symlog. Coin doses
   below, control at zero, Charter doses above.
 * **cell** — Charter choice, % of conflict-eval runs, on a diverging map
@@ -737,8 +885,9 @@ else. That is the invariant the view depends on.
 
 Four deviations from the Slack sketch, all forced by what the campaign has:
 
-* **9 × 7, not 7 × 7.** The sketch assumed three midtrain doses per direction;
-  the campaign has four (12B at 1M/5M/19M/50M, 27B at 5M/19M/50M/190M).
+* **9 × 9, not 7 × 7.** The sketch assumed three midtrain doses per direction;
+  the campaign has four (12B at 1M/5M/19M/50M, 27B at 5M/19M/50M/190M). The
+  columns grew the same way: the sketch's seven plus the 0.5% rung each way.
 * **Control is at 5M**, the only dose the campaign runs it at, which is also
   the smallest — as the thread asked. Its row sits at zero because its corpus
   is filler, i.e. zero *directional* tokens; the label names the dose so it is
@@ -747,7 +896,19 @@ Four deviations from the Slack sketch, all forced by what the campaign has:
   the model cannot work the task.
 * **No 100%-Charter column.** At 8,192 conflict rows it is 20× the 5% column,
   so on a symlog token axis it is not the next tick after 5%, and the thread's
-  seven columns do not include it. It stays in the composition gallery.
+  columns do not include it. It stays in the composition gallery.
+
+**Coverage, as of the 2026-09-08 22:28Z collection.** 12B is complete at 81/81
+cells. 27B is at 74/81: the seven blanks are all `charter_0p5pct` cells and are
+hatched "not yet landed" rather than dropped, so the gap is visible on the
+canvas. Which cells are outstanding is tracked in `aft_grid.json`'s `missing`
+list and in
+[JONATHAN_GEMMA_HALFPCT_HANDOFF.md](../JONATHAN_GEMMA_HALFPCT_HANDOFF.md).
+The five 12B `charter/charter_0p5pct` cells read from the rerun attempt prefix
+`followups/gemma-aft-halfpct-balanced-v1-jonathan-rerun1` — same rung, same
+recipe, retrained from the pinned parent after the first attempt was
+interrupted with weight-only checkpoints; `meta.sources` carries the path per
+endpoint, so the attempt a number came from stays readable.
 
 **Token denomination is measured, not assumed.** The trainer publishes its own
 counter at `train/checkpoints/checkpoint-512/tokens_state.json`;

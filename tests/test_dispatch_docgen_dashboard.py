@@ -34,8 +34,8 @@ def _write_jsonl(path: Path, rows: list[dict]) -> None:
 
 
 def _cache_row(key: str, model: str, prompt: str, *, tokens: int = 100,
-               response: str = "document") -> dict:
-    return {
+               response: str = "document", created: int | None = None) -> dict:
+    row = {
         "key": key,
         "request": {"messages": [{"role": "user", "content": prompt}]},
         "endpoint": {"model": model},
@@ -45,6 +45,9 @@ def _cache_row(key: str, model: str, prompt: str, *, tokens: int = 100,
                       "completion_tokens": tokens - tokens // 2},
         },
     }
+    if created is not None:
+        row["response"]["created"] = created
+    return row
 
 
 def _fixture_run(tmp_path: Path) -> Path:
@@ -368,3 +371,62 @@ def test_a_failing_collector_keeps_serving_the_last_good_snapshot():
     payload = service.get()
     assert payload["ok"] is True, "last good snapshot must keep serving"
     assert "disk went away" in payload["collector_error"]
+
+
+def test_timeline_buckets_landings_by_stage_and_model_and_keeps_events(tmp_path):
+    """The Timeline tab's data: every harvested call lands in a
+    bucket_seconds-wide bucket keyed by response.created, per stage and per
+    model, both per block and summed across blocks; and each block carries
+    its full event log so the page can draw stage windows."""
+    dashboard = _load_dashboard()
+    run = _fixture_run(tmp_path)
+    step = dashboard.TIMELINE_BUCKET_S
+    t0 = 1_700_000_000 - 1_700_000_000 % step          # a bucket boundary
+    _write_jsonl(run / "corpora/charter/.gen_cache/cache_m0.jsonl", [
+        _cache_row("g1", "model-a",
+                   "Write a single, realistic **memo** for an archive.",
+                   created=t0 + 10),
+        _cache_row("g2", "model-a",
+                   "Write a single, realistic **memo** for an archive.",
+                   created=t0 + step - 1),          # same bucket as g1
+        _cache_row("g3", "model-b",
+                   "Write a single, realistic **memo** for an archive.",
+                   created=t0 + 2 * step + 5),      # two buckets later
+        _cache_row("c1", "model-b",
+                   "Here is a synthetic **memo** intended for a corpus.",
+                   created=t0 + step),
+        _cache_row("undated", "model-b",
+                   "Write a single, realistic **memo** for an archive."),
+    ])
+    collector = dashboard.DashboardCollector(
+        tmp_path / "runs", "50m", None, 50e6)
+    timeline = collector.collect()["timeline"]
+
+    assert timeline["bucket_seconds"] == step
+    total = timeline["total"]
+    assert total["generation"]["model-a"] == [[t0, 2]]
+    assert total["generation"]["model-b"] == [[t0 + 2 * step, 1]]
+    assert total["critique"]["model-b"] == [[t0 + step, 1]]
+    # A row without response.created is counted as work elsewhere but has
+    # no landing time, so it must not be invented into a bucket.
+    assert sum(n for pairs in total["generation"].values()
+               for _, n in pairs) == 3
+
+    (block,) = timeline["runs"]
+    assert block["run"] == run.name
+    assert block["state"] == "running"
+    assert block["landings"]["generation"]["model-a"] == [[t0, 2]]
+    assert [row["event"] for row in block["events"]] == [
+        "run_started", "plan_finished"]
+    assert block["events"][0]["time"] == "2026-08-27T00:00:00Z"
+
+    # Refresh: the incremental tail must not double-count landings.
+    again = collector.collect()["timeline"]
+    assert again["total"] == total
+
+
+def test_page_has_a_timeline_tab():
+    dashboard = _load_dashboard()
+    assert "id=\"timeline\"" in dashboard._PAGE
+    assert "{id:'timeline',label:'Timeline'}" in dashboard._PAGE
+    assert "function renderTimeline" in dashboard._PAGE

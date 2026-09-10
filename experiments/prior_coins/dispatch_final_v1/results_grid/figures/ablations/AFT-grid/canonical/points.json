@@ -1097,7 +1097,7 @@
         }
       ],
       "surface": "heldout",
-      "twopct": "repair"
+      "twopct": "fixed"
     },
     "gemma3_27b": {
       "clause": "trained",
@@ -2195,7 +2195,7 @@
         }
       ],
       "surface": "heldout",
-      "twopct": "repair"
+      "twopct": "fixed"
     },
     "glm45_air": {
       "clause": "trained",
@@ -2688,26 +2688,21 @@
         }
       ],
       "surface": "heldout",
-      "twopct": "repair"
+      "twopct": "fixed"
     }
   },
   "fit": null,
   "layout": "ordinal heat map: one square per (midtraining level, EFT level); each panel shows its own model's midtraining levels",
+  "midtraining_arms_run": {
+    "glm45_air": {
+      "glm45_air_1b": [
+        "charter"
+      ]
+    }
+  },
   "midtraining_dropped_profiles": [
     "glm45_air_20m_legacy"
   ],
-  "midtraining_extra_rows": {
-    "glm45_air": [
-      {
-        "arms_run": [
-          "charter"
-        ],
-        "label": "1B",
-        "profile": "glm45_air_1b",
-        "tokens": 1000000000.0
-      }
-    ]
-  },
   "midtraining_levels_union": [
     -190000000.0,
     -50000000.0,
@@ -2723,8 +2718,8 @@
     1000000000.0
   ],
   "surface": "heldout",
-  "tokens_note": "x_tokens / y_tokens are the galleries' token labels, denominated on the first landed Gemma 12B cell's counter for every panel; the GLM #1c cells publish no counter (contamination_quality.json meta.tokens_fallback) -- the squares are placed by dose rank, so the figure does not depend on it",
-  "twopct": "repair",
+  "tokens_note": "x_tokens / y_tokens are the galleries' token labels, denominated on the first landed Gemma 12B cell's counter for every panel; a column without a counter in the grid collection (the campaign's and #1c's 2% cells, the GLM cells) falls back to plot_aft_grid_heatmap.FALLBACK_TOKENS_PER_ROW -- the squares are placed by dose rank, so the figure does not depend on it",
+  "twopct": "fixed",
   "width_in": 5.5,
   "x_axis": "midtraining tokens",
   "y_axis": "EFT conflict tokens"

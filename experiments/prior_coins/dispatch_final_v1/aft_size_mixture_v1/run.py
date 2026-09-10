@@ -17,7 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
 from pathlib import Path
 
-from config import (
+from experiments.prior_coins.dispatch_final_v1.aft_size_mixture_v1.config import (
     ARMS,
     CAMPAIGN,
     CELLS,
@@ -175,7 +175,7 @@ def command(argv, log, env=None):
         )
 
 
-def train(cell, parent, data, root):
+def train(cell, parent, data, root, *, stage=STAGE):
     from train_aft import lora_config
 
     from scimt.dataset import Dataset
@@ -184,7 +184,7 @@ def train(cell, parent, data, root):
     os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
     config = TrainConfig(
         backend="axolotl",
-        stage=STAGE,
+        stage=stage,
         model="glm45_air_base",
         seed=SEED,
         load_checkpoint_path=str(parent),
@@ -200,10 +200,10 @@ def train(cell, parent, data, root):
     )
 
 
-def verify_adapters(root):
+def verify_adapters(root, *, steps=SAVE_STEPS):
     from safetensors import safe_open
 
-    for step in SAVE_STEPS:
+    for step in steps:
         path = root / "adapters" / f"step{step}"
         receipt = json.loads((path / "EXPORT_COMPLETE.json").read_text())
         if receipt["step"] != step or receipt["factors"] != 368:
@@ -229,7 +229,7 @@ def verify_adapters(root):
                     raise ValueError(f"Wrong adapter tensor shape: {key} {shape}")
 
 
-def evaluate(cell, parent, data, arm_root, cell_root, eval_python):
+def evaluate(cell, parent, data, arm_root, cell_root, eval_python, *, eval_steps=EVAL_STEPS):
     import contracts as C
     from eval_runtime import prepare_model_for_eval, write_forensics_runtime
     from evaluate import write_sanity
@@ -277,19 +277,19 @@ def evaluate(cell, parent, data, arm_root, cell_root, eval_python):
         command(args, cell_root / f"eval-step{step}.log", env)
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        futures = [pool.submit(endpoint, i, step) for i, step in enumerate(EVAL_STEPS)]
+        futures = [pool.submit(endpoint, i, step) for i, step in enumerate(eval_steps)]
         for f in futures:
             f.result()
-    score_cell(cell, data, cell_root)
+    score_cell(cell, data, cell_root, eval_steps=eval_steps)
 
 
-def score_cell(cell, data, root):
+def score_cell(cell, data, root, *, eval_steps=EVAL_STEPS):
     import contracts as C
     import dispatch_v4 as v4
     import score_factorised as sf
 
     result = {}
-    for step in EVAL_STEPS:
+    for step in eval_steps:
         result[str(step)] = {}
         for s in C.EVAL_SLICES:
             records = v4.read_records(

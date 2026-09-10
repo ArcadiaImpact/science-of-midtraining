@@ -1130,7 +1130,7 @@
         }
       ],
       "surface": "canonical",
-      "twopct": "repair"
+      "twopct": "fixed"
     },
     "gemma3-12b__canonical__trained-clause": {
       "clause": "trained",
@@ -2261,7 +2261,7 @@
         }
       ],
       "surface": "canonical",
-      "twopct": "repair"
+      "twopct": "fixed"
     },
     "gemma3-12b__heldout-template__heldout-clause": {
       "clause": "holdout",
@@ -3392,7 +3392,7 @@
         }
       ],
       "surface": "heldout",
-      "twopct": "repair"
+      "twopct": "fixed"
     },
     "gemma3-12b__heldout-template__trained-clause": {
       "clause": "trained",
@@ -4523,7 +4523,7 @@
         }
       ],
       "surface": "heldout",
-      "twopct": "repair"
+      "twopct": "fixed"
     },
     "gemma3-12b__trained-template__heldout-clause": {
       "clause": "holdout",
@@ -5654,7 +5654,7 @@
         }
       ],
       "surface": "trained",
-      "twopct": "repair"
+      "twopct": "fixed"
     },
     "gemma3-12b__trained-template__trained-clause": {
       "clause": "trained",
@@ -6785,7 +6785,7 @@
         }
       ],
       "surface": "trained",
-      "twopct": "repair"
+      "twopct": "fixed"
     },
     "gemma3-27b__canonical__heldout-clause": {
       "clause": "holdout",
@@ -7916,7 +7916,7 @@
         }
       ],
       "surface": "canonical",
-      "twopct": "repair"
+      "twopct": "fixed"
     },
     "gemma3-27b__canonical__trained-clause": {
       "clause": "trained",
@@ -9047,7 +9047,7 @@
         }
       ],
       "surface": "canonical",
-      "twopct": "repair"
+      "twopct": "fixed"
     },
     "gemma3-27b__heldout-template__heldout-clause": {
       "clause": "holdout",
@@ -10178,7 +10178,7 @@
         }
       ],
       "surface": "heldout",
-      "twopct": "repair"
+      "twopct": "fixed"
     },
     "gemma3-27b__heldout-template__trained-clause": {
       "clause": "trained",
@@ -11309,7 +11309,7 @@
         }
       ],
       "surface": "heldout",
-      "twopct": "repair"
+      "twopct": "fixed"
     },
     "gemma3-27b__trained-template__heldout-clause": {
       "clause": "holdout",
@@ -12440,7 +12440,7 @@
         }
       ],
       "surface": "trained",
-      "twopct": "repair"
+      "twopct": "fixed"
     },
     "gemma3-27b__trained-template__trained-clause": {
       "clause": "trained",
@@ -13571,10 +13571,10 @@
         }
       ],
       "surface": "trained",
-      "twopct": "repair"
+      "twopct": "fixed"
     }
   },
   "fit_starred": true,
   "form": "power",
-  "twopct": "repair"
+  "twopct": "fixed"
 }

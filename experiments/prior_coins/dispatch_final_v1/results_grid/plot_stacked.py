@@ -136,6 +136,24 @@ def load_documents(root: Path) -> dict[tuple[str, str], dict[str, Any]]:
             print(f"skip {path}: no result mapping")
             continue
         documents[(profile, arm)] = document
+    return _apply_twopct(documents)
+
+
+#: Mirrors plot_grid.TWOPCT_SOURCE for the loader the Figure-0 family uses.
+TWOPCT_SOURCE = "fixed"
+
+
+def _apply_twopct(
+    documents: dict[tuple[str, str], dict[str, Any]],
+) -> dict[tuple[str, str], dict[str, Any]]:
+    """Swap the 2% cells for follow-up #1c's corrected draw. See twopct.py."""
+    import twopct
+
+    # The tree is canonical since the 2026-09-08 migration, so "fixed" is the
+    # identity and it is "legacy" that needs work -- overlaying the archived
+    # as-run draw back on. Short-circuiting legacy here (as this did before the
+    # migration) would silently serve the corrected draw under --twopct legacy.
+    documents, _log = twopct.apply(documents, source=TWOPCT_SOURCE)
     return documents
 
 
@@ -283,7 +301,14 @@ def profile_units(
 def aft_units(
     family: str, documents: Mapping[tuple[str, str], Mapping[str, Any]]
 ) -> list[Unit]:
-    profiles = sorted({profile for profile, _ in documents}, key=natural_key)
+    # Discovery is from scored/, which still holds every campaign row, so the
+    # model axis has to be applied here too or --include-4b has no effect on
+    # the data-driven figures.
+    profiles = sorted(
+        {profile for profile, _ in documents
+         if house.MODEL_OF.get(profile, profile) in house.ACTIVE_MODELS
+         or profile not in house.MODEL_OF},
+        key=natural_key)
     units: list[Unit] = []
     for profile in profiles:
         arms = sorted(
@@ -631,7 +656,7 @@ def render(
         "episode n per bar. Wilson 95% is shown for agreement success; no segment "
         "interval is overlaid on a stack. Runs within an episode are clustered, "
         "so Wilson intervals are optimistic. "
-        f"CAVEAT: {house.CAVEAT}.",
+        f"CAVEAT: {house.CAVEAT}. {house.twopct_note()}",
     )
     fig.tight_layout(rect=(0.006, 0.045, 0.994, 0.925), w_pad=2.6)
     return save_figure(fig, stem, output)
@@ -656,7 +681,9 @@ def main() -> int:
                         help="root containing <profile>/<arm>/eval.json")
     parser.add_argument("--out", type=Path, default=OUTPUT,
                         help="directory for PNG and SVG output")
+    house.add_twopct_args(parser)
     args = parser.parse_args()
+    house.apply_twopct_args(args)
 
     documents = load_documents(args.scored)
     if not documents:
@@ -664,7 +691,14 @@ def main() -> int:
         return 0
 
     written: list[Path] = []
-    profiles = sorted({profile for profile, _ in documents}, key=natural_key)
+    # Discovery is from scored/, which still holds every campaign row, so the
+    # model axis has to be applied here too or --include-4b has no effect on
+    # the data-driven figures.
+    profiles = sorted(
+        {profile for profile, _ in documents
+         if house.MODEL_OF.get(profile, profile) in house.ACTIVE_MODELS
+         or profile not in house.MODEL_OF},
+        key=natural_key)
     for profile in profiles:
         units = profile_units(profile, documents)
         written.extend(

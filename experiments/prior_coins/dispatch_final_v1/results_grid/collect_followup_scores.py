@@ -1,15 +1,16 @@
-"""Package the scored endpoints for AFT follow-ups #1a and #1b.
+"""Package the scored endpoints for AFT follow-ups #1a, #1b and #1c.
 
-Both campaigns publish their own aggregated scores beside the responses, so
+Every campaign publishes its own aggregated scores beside the responses, so
 this is a download-and-repackage step, not a re-score: nothing here samples,
-touches a pod, or writes to the Hub.  Two outputs, one per gallery:
+touches a pod, or writes to the Hub.  One output per gallery:
 
     scored/ablations/aft_grid.json          #1a + #1d + #1e, gemma 12B/27B x 0.25%/0.5%/1%/5%,
                                             + the GLM EFT grid: glm45_air_190m x the same
                                             eight mixtures, from the GLM repo
     scored/ablations/glm_aft_scaleup.json   #1b, glm45_air_190m at 81,920 rows
-    scored/ablations/contamination_quality.json   #1c, the corrected 2% cells:
-                                            gemma 12B/27B and glm45_air_190m
+    scored/ablations/contamination_quality.json  #1c, the gemma 2% repair
+    scored/ablations/glm_contamination.json      #1c, the GLM 2% repair
+    scored/ablations/glm_threeway.json           #1c, the GLM 80:10:10 cell
 
 Discovery is per ENDPOINT and runs every time, so this is safe to re-run while
 the fleet is still training:
@@ -67,6 +68,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -88,7 +90,8 @@ import followup_mixtures as mix  # noqa: E402
 OUTPUT = HERE / "scored" / "ablations"
 CACHE = HERE / "cache" / "followups"
 
-GALLERIES = ("aft_grid", "glm_aft_scaleup", "contamination_quality")
+GALLERIES = ("aft_grid", "glm_aft_scaleup", "contamination_quality",
+             "glm_contamination", "glm_threeway")
 
 # ------------------------------------------------------------------- #1a Hub
 #
@@ -239,31 +242,31 @@ GLM_PREFIXES = (
     "followups/aft-size-mixture-v1",
 )
 GLM_PROFILE = "glm45_air_190m"
+#: Follow-up #1c on GLM: same repo as #1b, its own dataset-version prefix.
+GLM_REPAIR_PREFIX = "followups/glm-aft-2pct-repair-v1"
+#: The nine-cell release also carries a third `balanced_80_10_10` cell per arm
+#: (6,554 agreement / 819 coin / 819 charter).  It is NOT a 2% repair cell and
+#: is not part of the substitution, so `collect_glm_contamination` lists it and
+#: refuses to package it: a two-sided cell among the endpoints `twopct.py`
+#: substitutes is exactly the pooling the asterisks exist to prevent.  It is
+#: packaged by `collect_glm_threeway` into its own document instead, which is
+#: what `plot_glm_threeway.py` reads.
+GLM_REPAIR_CELLS = ("mixed_charter", "mixed_coin")
+GLM_REPAIR_EXTRA_CELLS = (mix.THREEWAY.key,)
 ARMS = ("charter", "coin", "control")
 
 # ------------------------------------------------------------------- #1c Hub
 #
 # Follow-up #1c re-ran the campaign's 2% cells on the balanced draw for every
 # campaign parent.  The eighteen gemma parents publish beside the grid on the
-# two grid repos (REPAIR_PREFIX above); the three glm45_air_190m arms publish
-# on the GLM repo under their own version prefix (2026-09-08), in the same
-# per-cell layout -- ``<profile>/<arm>/<mix>/eval/<mix>-step<n>/scores.json``,
-# the eval directory named by mixture rather than ``aft``, which `_grid_cells`
-# already parses -- but with no ``tokens_state.json``, and sampled with #1b's
-# vLLM policy rather than the campaign's eager battery.  Two further GLM
-# cells per arm (``balanced_80_10_10``) are not a mixture on the dose axis
-# and are skipped, visibly, by the study's family filter.
-GLM_REPAIR_PREFIX = "followups/glm-aft-2pct-repair-v1"
-GLM_REPAIR_VERSION = GridVersion(
-    mix.GRID_REPAIR, (GLM_REPAIR_PREFIX,),
-    profile_prefix="glm45_air", tokens_file=None)
-#: The GLM #1c cells on the dose axis: the three 190M arms x the two 2%
-#: mixtures.  Declared rather than read from a plan (the workers' MANIFESTs
-#: list the off-axis balanced_80_10_10 cells too), so a cell that goes
-#: missing is reported like a gemma one, plan file on disk or not.
-GLM_REPAIR_CELLS: tuple[tuple[str, str, str], ...] = tuple(
-    (GLM_PROFILE, arm, family)
-    for arm in ARMS for family in mix.GRID_REPAIR.families.values())
+# two grid repos (REPAIR_PREFIX above) and are packaged by
+# `collect_contamination_quality`; the three glm45_air_190m arms publish on
+# the GLM repo under GLM_REPAIR_PREFIX (2026-09-08) -- no tokens_state.json,
+# and sampled with #1b's vLLM policy rather than the campaign's eager battery
+# -- and are packaged SEPARATELY by `collect_glm_contamination`, so the
+# backend seam stays visible in the file names (`twopct.REPAIR_SOURCES` reads
+# both).  The two `balanced_80_10_10` cells per arm beside them are not a
+# mixture on the dose axis: `collect_glm_threeway`.
 EAGER_BACKEND = "eager, unchanged from the campaign"
 GLM_REPAIR_BACKEND = (
     "glm-aft-graphs-splitk1-v1 (vLLM 0.19.1), follow-up #1b's policy; the "
@@ -276,9 +279,7 @@ class RepairSource:
 
     repo: str
     version: GridVersion
-    #: How the cells' eval responses were sampled; recorded per source since
-    #: the GLM cells' differs from the gemma cells' (and from their own
-    #: legacy partners').
+    #: How the cells' eval responses were sampled, recorded per source.
     eval_backend: str
 
 
@@ -287,7 +288,6 @@ class RepairSource:
 REPAIR_SOURCES: tuple[RepairSource, ...] = (
     RepairSource(GRID_REPOS["12b"], REPAIR_VERSION, EAGER_BACKEND),
     RepairSource(GRID_REPOS["27b"], REPAIR_VERSION, EAGER_BACKEND),
-    RepairSource(GLM_REPO, GLM_REPAIR_VERSION, GLM_REPAIR_BACKEND),
 )
 
 # ------------------------------------------------------------ GLM EFT grid Hub
@@ -326,7 +326,7 @@ GLM_GRID_BACKEND = GLM_REPAIR_BACKEND
 
 # The 1 GTok GLM row's grid (2026-09-10): the same eight mixtures on the same
 # shared-data files, on the glm45_air_1b CHARTER parent -- the row ran no coin
-# or control arm (`score_grid.PROFILE_ARMS`, `plot_grid.EXTRA_MIDTRAINS`; its
+# or control arm (`score_grid.PROFILE_ARMS`, `plot_grid.PROFILE_ARMS`; its
 # anchors are the 190M arms) -- published on the GLM repo under its own
 # per-attempt namespace in the same layout, so `_grid_cells` reads it
 # unchanged.  Its EFT = 0 and +-2% cells are the campaign's own
@@ -339,6 +339,10 @@ GLM_GRID_BACKEND = GLM_REPAIR_BACKEND
 # version, so it is its own `GridVersion` under its own study
 # (`mix.GLM_GRID_1B`) and `hub_versions` accounts for it separately.
 GLM_GRID_1B_PREFIX = "followups/glm-aft-grid-8192-v1-1b-attempt1"
+#: The row and the arms it ran, declared here so the collector stays
+#: import-light; mirrors `plot_grid.PLAN[("glm45_air", 1_000_000_000)]` and
+#: `plot_grid.PROFILE_ARMS` / `score_grid.PROFILE_ARMS` (the tests pin them
+#: together).
 GLM_1B_PROFILE = "glm45_air_1b"
 GLM_1B_ARMS = ("charter",)
 GLM_GRID_1B_CELLS: tuple[tuple[str, str, str], ...] = tuple(
@@ -816,6 +820,24 @@ def _grid_cells(
             "candidates": candidates}
 
 
+def _repair_planned_cells(scored: Path = HERE / "scored") -> list[tuple[str, str, str]]:
+    """The cells #1c was to produce, when `REPAIR_PLAN` is not on this disk.
+
+    #1c re-ran the campaign's two 2% cells on every gemma 12B / 27B parent
+    (4B was not covered), so the plan is derivable from the scored tree: each
+    ``scored/gemma3_{12b,27b}*/<arm>/eval.json`` x the two 2% mixtures -- the
+    52 cells of ``repair-plan-52cells.json``, derived rather than hand-listed.
+    """
+    cells: list[tuple[str, str, str]] = []
+    for path in sorted(scored.glob("gemma3_*/*/eval.json")):
+        profile, arm = path.parent.parent.name, path.parent.name
+        if profile.startswith("gemma3_4b"):
+            continue
+        cells.extend((profile, arm, mixture)
+                     for mixture in mix.GRID_REPAIR.families.values())
+    return cells
+
+
 def collect_contamination_quality() -> dict[str, Any]:
     """#1c: the corrected 2% cells, packaged for the paired-quality gallery.
 
@@ -825,11 +847,11 @@ def collect_contamination_quality() -> dict[str, Any]:
     from drifting apart.
 
     Read per `RepairSource`: the eighteen gemma parents from the two grid
-    repos and the three glm45_air_190m arms from the GLM repo, into one set
-    of ``<profile>|<arm>`` documents with ``mixed_*-step<n>`` endpoints --
-    the shape `plot_aft_grid_heatmap.repair_unit` and
-    `plot_contamination_quality.unit_for` look up, so the GLM cells reach
-    the AFT-grid figures and the #1c galleries without a branch.
+    repos, into ``<profile>|<arm>`` documents with ``mixed_*-step<n>``
+    endpoints -- the shape `plot_contamination_quality.unit_for` looks up and
+    `twopct.repair_documents` merges with the GLM repair's.  The three
+    glm45_air_190m arms are a different repo, prefix and eval backend and are
+    packaged by `collect_glm_contamination` into their own document.
     """
     documents: dict[str, dict[str, Any]] = {}
     revisions: dict[str, str] = {}
@@ -867,12 +889,11 @@ def collect_contamination_quality() -> dict[str, Any]:
                         missing.append(
                             f"{job['profile']}/{job['arm']}/{job['mix']}"
                             f"@{mix.EPOCH_LABEL[epoch]}")
-    # The GLM cells are declared, not planned from a file, so they are
-    # accounted for whether or not the gemma plan is on this disk.
-    glm_planned, glm_missing = _grid_plan_status(
-        documents, GLM_REPAIR_CELLS, mix.GRID_REPAIR.steps)
-    planned += glm_planned
-    missing.extend(glm_missing)
+    else:
+        # The plan is not committed; derive the same 52 cells so a box
+        # without it still reports a denominator instead of 0.
+        planned, missing = _grid_plan_status(
+            documents, _repair_planned_cells(), mix.GRID_REPAIR.steps)
     return {
         "version": "dispatch_contamination_quality_scores_v1",
         "study": "followup_1c_contamination_data_quality",
@@ -885,21 +906,14 @@ def collect_contamination_quality() -> dict[str, Any]:
             "hub_sources": sources,
             "hub_sources_note": (
                 "one entry per Hub repo read: the two gemma grid repos under "
-                "hub_prefix and, since 2026-09-09, the GLM repo under "
-                f"{GLM_REPAIR_PREFIX} (glm45_air_190m x charter/coin/control "
-                "x mixed_coin/mixed_charter; its balanced_80_10_10 cells are "
-                "not a mixture on the dose axis and are skipped)"
+                "hub_prefix. The GLM row's #1c cells (glm45_air_190m x "
+                f"charter/coin/control x mixed_coin/mixed_charter, {GLM_REPO} "
+                f"under {GLM_REPAIR_PREFIX}) are a different eval backend and "
+                "are packaged separately in glm_contamination.json"
             ),
             "aft_rows": mix.GRID_REPAIR.rows,
             "eval_steps": dict(mix.GRID_REPAIR.steps),
             "eval_backend": EAGER_BACKEND,
-            "eval_backend_note": (
-                "eval_backend is the gemma sources'; the GLM source's cells "
-                "were sampled with hub_sources[*].eval_backend, follow-up "
-                "#1b's vLLM policy, while their legacy partners in "
-                "scored/glm45_air_190m/<arm>/eval.json are eager -- see "
-                "followup_mixtures.BACKEND_NOTE for the measured offset"
-            ),
             "contrast": mix.CONTAMINATION_QUALITY_NOTE,
             "legacy_side": (
                 "scored/<profile>/<arm>/eval.json, endpoints "
@@ -909,14 +923,158 @@ def collect_contamination_quality() -> dict[str, Any]:
             "endpoints": found,
             "endpoints_planned": planned,
             "tokens_note": (
-                "meta.tokens[<mixture>] on the gemma documents is the trainer's "
-                f"own tokens_state.json at step {TOKEN_STATE_STEP}; the GLM "
-                "source publishes no counter, so its documents carry "
-                "meta.tokens_fallback[<mixture>] instead, naming the "
-                "denomination the token-scaled galleries then use"
+                "meta.tokens[<mixture>] is the trainer's own tokens_state.json "
+                f"at step {TOKEN_STATE_STEP}"
             ),
-            "glm_cells": [f"{profile}/{arm}/{mixture}"
-                          for profile, arm, mixture in GLM_REPAIR_CELLS],
+        },
+    }
+
+
+def collect_glm_contamination() -> dict[str, Any]:
+    """#1c on GLM-4.5-Air @190M: the corrected 2% cells for the GLM row.
+
+    Packaged separately from the gemma repair because it is a different repo,
+    a different prefix and a different eval backend -- pooling them into one
+    document would hide the last of those.
+    """
+    revision = _revision(GLM_REPO)
+    files = _tree(GLM_REPO, GLM_REPAIR_PREFIX, revision)
+    documents: dict[str, dict[str, Any]] = {}
+    extras: dict[str, list[str]] = {}
+    found = 0
+    wanted = sorted(
+        path for path in files
+        if path.startswith(f"{GLM_REPAIR_PREFIX}/{GLM_PROFILE}/")
+        and path.endswith("/scores.json") and "/eval/" in path
+    )
+    for path, local in _download(GLM_REPO, revision, wanted).items():
+        rest = path[len(f"{GLM_REPAIR_PREFIX}/{GLM_PROFILE}/"):]
+        arm, cell, _eval, endpoint, _name = rest.split("/")
+        if cell in GLM_REPAIR_EXTRA_CELLS:
+            extras.setdefault(arm, []).append(endpoint)
+            continue
+        if cell not in GLM_REPAIR_CELLS:
+            print(f"skip {path}: {cell} is not a GLM #1c 2% cell")
+            continue
+        step = endpoint.rsplit("-step", 1)[-1]
+        document = documents.setdefault(arm, {"result": {}, "meta": {}})
+        document["result"][f"{cell}-step{step}"] = _slices(
+            json.loads(local.read_text()), path)
+        document["meta"].setdefault("sources", {})[f"{cell}-step{step}"] = {
+            "repo": GLM_REPO, "revision": revision, "path": path,
+        }
+        found += 1
+
+    missing = sorted(
+        f"{arm}/{cell}@{mix.EPOCH_LABEL[epoch]}"
+        for arm in ARMS for cell in GLM_REPAIR_CELLS
+        for epoch, step in mix.GLM_REPAIR.steps.items()
+        if f"{cell}-step{step}" not in documents.get(arm, {}).get("result", {})
+    )
+    return {
+        "version": "dispatch_glm_contamination_quality_scores_v1",
+        "study": "followup_1c_glm_contamination_data_quality",
+        "documents": documents,
+        "missing": missing,
+        "meta": {
+            "collected": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "hub_repo": GLM_REPO,
+            "hub_revision": revision,
+            "hub_prefix": GLM_REPAIR_PREFIX,
+            "profile": GLM_PROFILE,
+            "aft_rows": mix.GLM_REPAIR.rows,
+            "eval_steps": dict(mix.GLM_REPAIR.steps),
+            "eval_backend": "glm-aft-graphs-splitk1-v1 (vLLM 0.19.1)",
+            "eval_backend_note": mix.BACKEND_NOTE,
+            "step256_note": (
+                "step 256 exists here and has NO campaign counterpart: the "
+                "campaign's GLM intermediate AFT checkpoints were FSDP shards "
+                "with no adapter, so that row reads step 512 alone"
+            ),
+            "contrast": mix.CONTAMINATION_QUALITY_NOTE,
+            "extra_cells_seen": {arm: sorted(v) for arm, v in extras.items()},
+            "extra_cells_note": (
+                "balanced_80_10_10 is a third independent cell in the same "
+                "release, not a 2% repair; it is listed, never substituted. "
+                "Its scores are packaged by collect_glm_threeway into "
+                "scored/ablations/glm_threeway.json"
+            ),
+            "endpoints": found,
+            "endpoints_planned": (
+                len(ARMS) * len(GLM_REPAIR_CELLS) * len(mix.GLM_REPAIR.steps)
+            ),
+        },
+    }
+
+
+def collect_glm_threeway() -> dict[str, Any]:
+    """#1c's two-sided cell: one document per arm, `balanced_80_10_10-step<n>`.
+
+    The same repo, prefix, revision, recipe and eval backend as
+    `collect_glm_contamination` -- the two collectors read one release -- and a
+    separate document all the same.  The 2% document is what `twopct.py`
+    overlays onto the canonical scored tree, and `is_twopct` filters by
+    endpoint FAMILY, so a two-sided cell sitting in it would be one renamed
+    family away from being substituted for a one-sided 2% measurement.  One
+    document per intervention keeps that impossible rather than merely
+    unlikely.
+    """
+    revision = _revision(GLM_REPO)
+    files = _tree(GLM_REPO, GLM_REPAIR_PREFIX, revision)
+    documents: dict[str, dict[str, Any]] = {}
+    found = 0
+    wanted = sorted(
+        path for path in files
+        if path.startswith(f"{GLM_REPAIR_PREFIX}/{GLM_PROFILE}/")
+        and path.endswith("/scores.json") and "/eval/" in path
+    )
+    for path, local in _download(GLM_REPO, revision, wanted).items():
+        rest = path[len(f"{GLM_REPAIR_PREFIX}/{GLM_PROFILE}/"):]
+        arm, cell, _eval, endpoint, _name = rest.split("/")
+        if cell != mix.THREEWAY.key:
+            # The 2% siblings; `collect_glm_contamination` owns those.
+            continue
+        step = endpoint.rsplit("-step", 1)[-1]
+        document = documents.setdefault(arm, {"result": {}, "meta": {}})
+        document["result"][f"{cell}-step{step}"] = _slices(
+            json.loads(local.read_text()), path)
+        document["meta"].setdefault("sources", {})[f"{cell}-step{step}"] = {
+            "repo": GLM_REPO, "revision": revision, "path": path,
+        }
+        found += 1
+
+    missing = sorted(
+        f"{arm}/{mix.THREEWAY.key}@{mix.EPOCH_LABEL[epoch]}"
+        for arm in ARMS for epoch, step in mix.GLM_THREEWAY.steps.items()
+        if f"{mix.THREEWAY.key}-step{step}" not in
+        documents.get(arm, {}).get("result", {})
+    )
+    return {
+        "version": "dispatch_glm_threeway_scores_v1",
+        "study": "followup_1c_glm_two_sided_80_10_10",
+        "documents": documents,
+        "missing": missing,
+        "meta": {
+            "collected": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "hub_repo": GLM_REPO,
+            "hub_revision": revision,
+            "hub_prefix": GLM_REPAIR_PREFIX,
+            "profile": GLM_PROFILE,
+            "cell": mix.THREEWAY.key,
+            "aft_rows": mix.THREEWAY.rows,
+            "mixture_rows": {
+                "agreement": mix.THREEWAY.agreement_rows,
+                "coin": mix.THREEWAY.coin_rows,
+                "charter": mix.THREEWAY.charter_rows,
+            },
+            "eval_steps": dict(mix.GLM_THREEWAY.steps),
+            "eval_backend": "glm-aft-graphs-splitk1-v1 (vLLM 0.19.1)",
+            "eval_backend_note": mix.THREEWAY_BACKEND_NOTE,
+            "dose_note": mix.THREEWAY_DOSE_NOTE,
+            "context_cells": list(mix.THREEWAY_CONTEXT),
+            "sibling_document": "glm_contamination.json",
+            "endpoints": found,
+            "endpoints_planned": len(ARMS) * len(mix.GLM_THREEWAY.steps),
         },
     }
 
@@ -1011,11 +1169,43 @@ def collect_glm_scaleup() -> dict[str, Any]:
     }
 
 
+class _CacheLock:
+    """Refuse to run a second collector against the same download cache.
+
+    There is no per-file locking in `hf_hub_download`'s use here, so two
+    collectors racing on one cache can leave a half-written `scores.json`
+    behind.  Measured 2026-09-08: one such file was 34,470 bytes with blocks
+    allocated, `stat`-ed clean, and still raised ENXIO on every read, which
+    aborted the whole collection.  Serialise instead of trying to repair.
+    """
+
+    def __init__(self, path: Path) -> None:
+        self.path = path
+
+    def __enter__(self) -> "_CacheLock":
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            handle = os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        except FileExistsError:
+            owner = self.path.read_text().strip() or "unknown"
+            raise SystemExit(
+                f"another collector holds {self.path} (started by {owner}).\n"
+                "Wait for it to finish -- concurrent runs corrupt the cache.\n"
+                f"If no collector is running, remove the file: rm {self.path}"
+            ) from None
+        with os.fdopen(handle, "w") as stream:
+            stream.write(f"pid {os.getpid()} at {time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}")
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        self.path.unlink(missing_ok=True)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--out", type=Path, default=OUTPUT)
     parser.add_argument("--only", action="append", choices=GALLERIES,
-                        help="repeat to limit collection; default: all three")
+                        help="repeat to limit collection; default: all five")
     args = parser.parse_args(argv)
     selected = args.only or list(GALLERIES)
 
@@ -1023,17 +1213,20 @@ def main(argv: Sequence[str] | None = None) -> int:
         "aft_grid": collect_aft_grid,
         "glm_aft_scaleup": collect_glm_scaleup,
         "contamination_quality": collect_contamination_quality,
+        "glm_contamination": collect_glm_contamination,
+        "glm_threeway": collect_glm_threeway,
     }
-    for gallery in selected:
-        result = collectors[gallery]()
-        path = args.out / f"{gallery}.json"
-        _write_json(path, result)
-        meta = result["meta"]
-        print(
-            f"wrote {path}\n"
-            f"  {meta['endpoints']}/{meta['endpoints_planned']} endpoints; "
-            f"{len(result['missing'])} still to land"
-        )
+    with _CacheLock(CACHE / ".collector.lock"):
+        for gallery in selected:
+            result = collectors[gallery]()
+            path = args.out / f"{gallery}.json"
+            _write_json(path, result)
+            meta = result["meta"]
+            print(
+                f"wrote {path}\n"
+                f"  {meta['endpoints']}/{meta['endpoints_planned']} endpoints; "
+                f"{len(result['missing'])} still to land"
+            )
     return 0
 
 

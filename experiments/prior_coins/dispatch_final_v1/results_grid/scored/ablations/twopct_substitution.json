@@ -1,0 +1,1657 @@
+{
+  "already_balanced_reason": {
+    "glm45_air_20m_legacy": "glm_minimal_v1/build_aft_mixtures.py reads the canonical wave mixture and takes the rows absent from the agreement set; it never calls take_stratified, so the prefix bug cannot apply"
+  },
+  "audit_slice": "eval_trained_conflict__canonical",
+  "battery": "eval only \u2014 #1c published no d4/costsweep/recall",
+  "n_substituted": 116,
+  "profile_states": {
+    "gemma3_12b_19m": "substituted",
+    "gemma3_12b_1m": "substituted",
+    "gemma3_12b_50m_4ep": "substituted",
+    "gemma3_12b_50m_noex": "substituted",
+    "gemma3_12b_5m": "substituted",
+    "gemma3_27b_190m": "substituted",
+    "gemma3_27b_19m": "substituted",
+    "gemma3_27b_50m": "substituted",
+    "gemma3_27b_5m": "substituted",
+    "gemma3_4b_1m": "unrepaired",
+    "gemma3_4b_50m": "unrepaired",
+    "gemma3_4b_5m": "unrepaired",
+    "glm45_air_190m": "substituted",
+    "glm45_air_20m_legacy": "already_balanced"
+  },
+  "substitutions": [
+    {
+      "arm": "charter",
+      "delta_pp": 14.93,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 83.1,
+      "legacy_charter_pct": 68.17,
+      "legacy_present": true,
+      "profile": "gemma3_12b_19m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/charter/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": 23.36,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 92.43,
+      "legacy_charter_pct": 69.07,
+      "legacy_present": true,
+      "profile": "gemma3_12b_19m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/charter/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": -26.37,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 17.13,
+      "legacy_charter_pct": 43.5,
+      "legacy_present": true,
+      "profile": "gemma3_12b_19m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/charter/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": -28.97,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 8.53,
+      "legacy_charter_pct": 37.5,
+      "legacy_present": true,
+      "profile": "gemma3_12b_19m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/charter/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": 31.03,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 76.0,
+      "legacy_charter_pct": 44.97,
+      "legacy_present": true,
+      "profile": "gemma3_12b_19m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/coin/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": 40.87,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 86.5,
+      "legacy_charter_pct": 45.63,
+      "legacy_present": true,
+      "profile": "gemma3_12b_19m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/coin/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": -24.2,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 4.0,
+      "legacy_charter_pct": 28.2,
+      "legacy_present": true,
+      "profile": "gemma3_12b_19m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/coin/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": -15.13,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 3.1,
+      "legacy_charter_pct": 18.23,
+      "legacy_present": true,
+      "profile": "gemma3_12b_19m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/coin/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": 12.33,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 70.43,
+      "legacy_charter_pct": 58.1,
+      "legacy_present": true,
+      "profile": "gemma3_12b_19m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/control/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": 19.37,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 81.5,
+      "legacy_charter_pct": 62.13,
+      "legacy_present": true,
+      "profile": "gemma3_12b_19m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/control/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": -12.27,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 7.63,
+      "legacy_charter_pct": 19.9,
+      "legacy_present": true,
+      "profile": "gemma3_12b_19m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/control/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": -22.5,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 5.73,
+      "legacy_charter_pct": 28.23,
+      "legacy_present": true,
+      "profile": "gemma3_12b_19m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_19m/control/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": 41.97,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 81.87,
+      "legacy_charter_pct": 39.9,
+      "legacy_present": true,
+      "profile": "gemma3_12b_1m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/charter/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": 39.16,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 86.23,
+      "legacy_charter_pct": 47.07,
+      "legacy_present": true,
+      "profile": "gemma3_12b_1m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/charter/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": -20.24,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 8.23,
+      "legacy_charter_pct": 28.47,
+      "legacy_present": true,
+      "profile": "gemma3_12b_1m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/charter/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": -13.46,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 7.57,
+      "legacy_charter_pct": 21.03,
+      "legacy_present": true,
+      "profile": "gemma3_12b_1m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/charter/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": 33.77,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 68.27,
+      "legacy_charter_pct": 34.5,
+      "legacy_present": true,
+      "profile": "gemma3_12b_1m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/coin/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": 26.56,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 79.13,
+      "legacy_charter_pct": 52.57,
+      "legacy_present": true,
+      "profile": "gemma3_12b_1m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/coin/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": -8.47,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 6.0,
+      "legacy_charter_pct": 14.47,
+      "legacy_present": true,
+      "profile": "gemma3_12b_1m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/coin/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": -13.1,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 5.17,
+      "legacy_charter_pct": 18.27,
+      "legacy_present": true,
+      "profile": "gemma3_12b_1m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/coin/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": 25.0,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 69.1,
+      "legacy_charter_pct": 44.1,
+      "legacy_present": true,
+      "profile": "gemma3_12b_1m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/control/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": 23.93,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 79.5,
+      "legacy_charter_pct": 55.57,
+      "legacy_present": true,
+      "profile": "gemma3_12b_1m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/control/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": -12.5,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 8.1,
+      "legacy_charter_pct": 20.6,
+      "legacy_present": true,
+      "profile": "gemma3_12b_1m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/control/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": -6.74,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 9.33,
+      "legacy_charter_pct": 16.07,
+      "legacy_present": true,
+      "profile": "gemma3_12b_1m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_1m/control/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": 13.9,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 92.87,
+      "legacy_charter_pct": 78.97,
+      "legacy_present": true,
+      "profile": "gemma3_12b_50m_4ep",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/charter/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": 13.6,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 92.83,
+      "legacy_charter_pct": 79.23,
+      "legacy_present": true,
+      "profile": "gemma3_12b_50m_4ep",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/charter/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": -49.47,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 16.53,
+      "legacy_charter_pct": 66.0,
+      "legacy_present": true,
+      "profile": "gemma3_12b_50m_4ep",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/charter/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": -44.54,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 9.03,
+      "legacy_charter_pct": 53.57,
+      "legacy_present": true,
+      "profile": "gemma3_12b_50m_4ep",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/charter/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": 44.53,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 66.5,
+      "legacy_charter_pct": 21.97,
+      "legacy_present": true,
+      "profile": "gemma3_12b_50m_4ep",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/coin/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": 34.2,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 78.0,
+      "legacy_charter_pct": 43.8,
+      "legacy_present": true,
+      "profile": "gemma3_12b_50m_4ep",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/coin/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": -7.04,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 6.13,
+      "legacy_charter_pct": 13.17,
+      "legacy_present": true,
+      "profile": "gemma3_12b_50m_4ep",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/coin/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": -10.37,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 2.23,
+      "legacy_charter_pct": 12.6,
+      "legacy_present": true,
+      "profile": "gemma3_12b_50m_4ep",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/coin/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": 21.23,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 65.4,
+      "legacy_charter_pct": 44.17,
+      "legacy_present": true,
+      "profile": "gemma3_12b_50m_4ep",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/control/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": 28.57,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 76.77,
+      "legacy_charter_pct": 48.2,
+      "legacy_present": true,
+      "profile": "gemma3_12b_50m_4ep",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/control/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": -3.27,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 13.13,
+      "legacy_charter_pct": 16.4,
+      "legacy_present": true,
+      "profile": "gemma3_12b_50m_4ep",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/control/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": -9.3,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 9.5,
+      "legacy_charter_pct": 18.8,
+      "legacy_present": true,
+      "profile": "gemma3_12b_50m_4ep",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_4ep/control/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": 16.67,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 80.07,
+      "legacy_charter_pct": 63.4,
+      "legacy_present": true,
+      "profile": "gemma3_12b_50m_noex",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_noex/charter/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": 28.6,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 87.3,
+      "legacy_charter_pct": 58.7,
+      "legacy_present": true,
+      "profile": "gemma3_12b_50m_noex",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_noex/charter/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": -26.33,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 9.57,
+      "legacy_charter_pct": 35.9,
+      "legacy_present": true,
+      "profile": "gemma3_12b_50m_noex",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_noex/charter/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": -27.47,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 7.53,
+      "legacy_charter_pct": 35.0,
+      "legacy_present": true,
+      "profile": "gemma3_12b_50m_noex",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_noex/charter/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": 11.47,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 57.7,
+      "legacy_charter_pct": 46.23,
+      "legacy_present": true,
+      "profile": "gemma3_12b_50m_noex",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_noex/coin/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": 40.84,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 82.27,
+      "legacy_charter_pct": 41.43,
+      "legacy_present": true,
+      "profile": "gemma3_12b_50m_noex",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_noex/coin/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": -4.66,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 8.17,
+      "legacy_charter_pct": 12.83,
+      "legacy_present": true,
+      "profile": "gemma3_12b_50m_noex",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_noex/coin/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": -9.5,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 4.3,
+      "legacy_charter_pct": 13.8,
+      "legacy_present": true,
+      "profile": "gemma3_12b_50m_noex",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_50m_noex/coin/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": 11.64,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 65.97,
+      "legacy_charter_pct": 54.33,
+      "legacy_present": true,
+      "profile": "gemma3_12b_5m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/charter/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": 21.23,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 81.7,
+      "legacy_charter_pct": 60.47,
+      "legacy_present": true,
+      "profile": "gemma3_12b_5m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/charter/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": -13.7,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 8.23,
+      "legacy_charter_pct": 21.93,
+      "legacy_present": true,
+      "profile": "gemma3_12b_5m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/charter/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": -14.07,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 7.53,
+      "legacy_charter_pct": 21.6,
+      "legacy_present": true,
+      "profile": "gemma3_12b_5m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/charter/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": 37.5,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 59.4,
+      "legacy_charter_pct": 21.9,
+      "legacy_present": true,
+      "profile": "gemma3_12b_5m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/coin/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": 35.03,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 75.53,
+      "legacy_charter_pct": 40.5,
+      "legacy_present": true,
+      "profile": "gemma3_12b_5m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/coin/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": -5.07,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 3.73,
+      "legacy_charter_pct": 8.8,
+      "legacy_present": true,
+      "profile": "gemma3_12b_5m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/coin/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": -5.7,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 5.2,
+      "legacy_charter_pct": 10.9,
+      "legacy_present": true,
+      "profile": "gemma3_12b_5m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/coin/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": 9.94,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 67.17,
+      "legacy_charter_pct": 57.23,
+      "legacy_present": true,
+      "profile": "gemma3_12b_5m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/control/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": 26.37,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 80.6,
+      "legacy_charter_pct": 54.23,
+      "legacy_present": true,
+      "profile": "gemma3_12b_5m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/control/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": -7.87,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 12.13,
+      "legacy_charter_pct": 20.0,
+      "legacy_present": true,
+      "profile": "gemma3_12b_5m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/control/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": -10.67,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 9.23,
+      "legacy_charter_pct": 19.9,
+      "legacy_present": true,
+      "profile": "gemma3_12b_5m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_12b_5m/control/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "revision": "a0df73c20b86c6bbe2563cda3808ec90942963d3"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": 9.3,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 96.73,
+      "legacy_charter_pct": 87.43,
+      "legacy_present": true,
+      "profile": "gemma3_27b_190m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/charter/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": 7.6,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 96.53,
+      "legacy_charter_pct": 88.93,
+      "legacy_present": true,
+      "profile": "gemma3_27b_190m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/charter/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": -37.46,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 21.17,
+      "legacy_charter_pct": 58.63,
+      "legacy_present": true,
+      "profile": "gemma3_27b_190m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/charter/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": -40.24,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 4.33,
+      "legacy_charter_pct": 44.57,
+      "legacy_present": true,
+      "profile": "gemma3_27b_190m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/charter/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": 43.64,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 81.47,
+      "legacy_charter_pct": 37.83,
+      "legacy_present": true,
+      "profile": "gemma3_27b_190m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/coin/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": 43.2,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 88.83,
+      "legacy_charter_pct": 45.63,
+      "legacy_present": true,
+      "profile": "gemma3_27b_190m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/coin/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": -13.43,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 3.4,
+      "legacy_charter_pct": 16.83,
+      "legacy_present": true,
+      "profile": "gemma3_27b_190m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/coin/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": -4.47,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 2.13,
+      "legacy_charter_pct": 6.6,
+      "legacy_present": true,
+      "profile": "gemma3_27b_190m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/coin/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": 15.47,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 89.57,
+      "legacy_charter_pct": 74.1,
+      "legacy_present": true,
+      "profile": "gemma3_27b_190m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/control/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": 22.13,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 92.8,
+      "legacy_charter_pct": 70.67,
+      "legacy_present": true,
+      "profile": "gemma3_27b_190m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/control/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": -11.1,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 17.57,
+      "legacy_charter_pct": 28.67,
+      "legacy_present": true,
+      "profile": "gemma3_27b_190m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/control/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": -18.7,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 11.13,
+      "legacy_charter_pct": 29.83,
+      "legacy_present": true,
+      "profile": "gemma3_27b_190m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/control/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": -1.47,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 90.13,
+      "legacy_charter_pct": 91.6,
+      "legacy_present": true,
+      "profile": "gemma3_27b_19m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/charter/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": 9.63,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 93.2,
+      "legacy_charter_pct": 83.57,
+      "legacy_present": true,
+      "profile": "gemma3_27b_19m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/charter/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": -20.76,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 15.17,
+      "legacy_charter_pct": 35.93,
+      "legacy_present": true,
+      "profile": "gemma3_27b_19m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/charter/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": -27.3,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 5.53,
+      "legacy_charter_pct": 32.83,
+      "legacy_present": true,
+      "profile": "gemma3_27b_19m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/charter/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": 19.23,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 74.8,
+      "legacy_charter_pct": 55.57,
+      "legacy_present": true,
+      "profile": "gemma3_27b_19m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/coin/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": 16.86,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 84.53,
+      "legacy_charter_pct": 67.67,
+      "legacy_present": true,
+      "profile": "gemma3_27b_19m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/coin/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": -12.66,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 4.97,
+      "legacy_charter_pct": 17.63,
+      "legacy_present": true,
+      "profile": "gemma3_27b_19m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/coin/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": -12.87,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 2.3,
+      "legacy_charter_pct": 15.17,
+      "legacy_present": true,
+      "profile": "gemma3_27b_19m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/coin/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": 24.53,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 90.7,
+      "legacy_charter_pct": 66.17,
+      "legacy_present": true,
+      "profile": "gemma3_27b_19m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/control/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": 21.47,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 91.07,
+      "legacy_charter_pct": 69.6,
+      "legacy_present": true,
+      "profile": "gemma3_27b_19m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/control/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": -17.74,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 8.33,
+      "legacy_charter_pct": 26.07,
+      "legacy_present": true,
+      "profile": "gemma3_27b_19m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/control/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": -17.3,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 5.13,
+      "legacy_charter_pct": 22.43,
+      "legacy_present": true,
+      "profile": "gemma3_27b_19m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_19m/control/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": 11.5,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 94.23,
+      "legacy_charter_pct": 82.73,
+      "legacy_present": true,
+      "profile": "gemma3_27b_50m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/charter/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": 19.97,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 96.07,
+      "legacy_charter_pct": 76.1,
+      "legacy_present": true,
+      "profile": "gemma3_27b_50m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/charter/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": -28.17,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 17.83,
+      "legacy_charter_pct": 46.0,
+      "legacy_present": true,
+      "profile": "gemma3_27b_50m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/charter/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": -33.7,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 8.53,
+      "legacy_charter_pct": 42.23,
+      "legacy_present": true,
+      "profile": "gemma3_27b_50m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/charter/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": 30.53,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 84.53,
+      "legacy_charter_pct": 54.0,
+      "legacy_present": true,
+      "profile": "gemma3_27b_50m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/coin/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": 25.74,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 89.87,
+      "legacy_charter_pct": 64.13,
+      "legacy_present": true,
+      "profile": "gemma3_27b_50m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/coin/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": -4.26,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 16.37,
+      "legacy_charter_pct": 20.63,
+      "legacy_present": true,
+      "profile": "gemma3_27b_50m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/coin/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": -7.77,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 5.8,
+      "legacy_charter_pct": 13.57,
+      "legacy_present": true,
+      "profile": "gemma3_27b_50m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/coin/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": 27.37,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 89.0,
+      "legacy_charter_pct": 61.63,
+      "legacy_present": true,
+      "profile": "gemma3_27b_50m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/control/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": 24.04,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 91.27,
+      "legacy_charter_pct": 67.23,
+      "legacy_present": true,
+      "profile": "gemma3_27b_50m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/control/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": -18.84,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 7.43,
+      "legacy_charter_pct": 26.27,
+      "legacy_present": true,
+      "profile": "gemma3_27b_50m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/control/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": -23.66,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 5.77,
+      "legacy_charter_pct": 29.43,
+      "legacy_present": true,
+      "profile": "gemma3_27b_50m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_50m/control/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": 12.23,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 85.53,
+      "legacy_charter_pct": 73.3,
+      "legacy_present": true,
+      "profile": "gemma3_27b_5m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/charter/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": 14.33,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 89.93,
+      "legacy_charter_pct": 75.6,
+      "legacy_present": true,
+      "profile": "gemma3_27b_5m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/charter/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": -25.06,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 12.77,
+      "legacy_charter_pct": 37.83,
+      "legacy_present": true,
+      "profile": "gemma3_27b_5m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/charter/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": -27.13,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 6.2,
+      "legacy_charter_pct": 33.33,
+      "legacy_present": true,
+      "profile": "gemma3_27b_5m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/charter/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": 52.8,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 65.33,
+      "legacy_charter_pct": 12.53,
+      "legacy_present": true,
+      "profile": "gemma3_27b_5m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/coin/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": 53.46,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 84.03,
+      "legacy_charter_pct": 30.57,
+      "legacy_present": true,
+      "profile": "gemma3_27b_5m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/coin/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": -4.8,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 4.33,
+      "legacy_charter_pct": 9.13,
+      "legacy_present": true,
+      "profile": "gemma3_27b_5m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/coin/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": -11.83,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 2.17,
+      "legacy_charter_pct": 14.0,
+      "legacy_present": true,
+      "profile": "gemma3_27b_5m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/coin/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": 6.7,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 74.67,
+      "legacy_charter_pct": 67.97,
+      "legacy_present": true,
+      "profile": "gemma3_27b_5m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/control/mixed_charter/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": 15.8,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 85.47,
+      "legacy_charter_pct": 69.67,
+      "legacy_present": true,
+      "profile": "gemma3_27b_5m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/control/mixed_charter/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": -27.43,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 7.3,
+      "legacy_charter_pct": 34.73,
+      "legacy_present": true,
+      "profile": "gemma3_27b_5m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/control/mixed_coin/eval/aft-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": -16.13,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 4.07,
+      "legacy_charter_pct": 20.2,
+      "legacy_present": true,
+      "profile": "gemma3_27b_5m",
+      "source": {
+        "path": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_5m/control/mixed_coin/eval/aft-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "revision": "15d3965952a9227cecfe232133cf7f6e09ac34aa"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": null,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 97.07,
+      "legacy_charter_pct": null,
+      "legacy_present": false,
+      "profile": "glm45_air_190m",
+      "source": {
+        "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/charter/mixed_charter/eval/mixed_charter-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+        "revision": "2f575a676014a45f99a563667a878a7eb47a8774"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": 4.8,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 96.37,
+      "legacy_charter_pct": 91.57,
+      "legacy_present": true,
+      "profile": "glm45_air_190m",
+      "source": {
+        "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/charter/mixed_charter/eval/mixed_charter-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+        "revision": "2f575a676014a45f99a563667a878a7eb47a8774"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": null,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 21.77,
+      "legacy_charter_pct": null,
+      "legacy_present": false,
+      "profile": "glm45_air_190m",
+      "source": {
+        "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/charter/mixed_coin/eval/mixed_coin-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+        "revision": "2f575a676014a45f99a563667a878a7eb47a8774"
+      }
+    },
+    {
+      "arm": "charter",
+      "delta_pp": -54.03,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 9.9,
+      "legacy_charter_pct": 63.93,
+      "legacy_present": true,
+      "profile": "glm45_air_190m",
+      "source": {
+        "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/charter/mixed_coin/eval/mixed_coin-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+        "revision": "2f575a676014a45f99a563667a878a7eb47a8774"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": null,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 22.1,
+      "legacy_charter_pct": null,
+      "legacy_present": false,
+      "profile": "glm45_air_190m",
+      "source": {
+        "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/coin/mixed_charter/eval/mixed_charter-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+        "revision": "2f575a676014a45f99a563667a878a7eb47a8774"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": 28.93,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 44.53,
+      "legacy_charter_pct": 15.6,
+      "legacy_present": true,
+      "profile": "glm45_air_190m",
+      "source": {
+        "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/coin/mixed_charter/eval/mixed_charter-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+        "revision": "2f575a676014a45f99a563667a878a7eb47a8774"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": null,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 3.23,
+      "legacy_charter_pct": null,
+      "legacy_present": false,
+      "profile": "glm45_air_190m",
+      "source": {
+        "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/coin/mixed_coin/eval/mixed_coin-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+        "revision": "2f575a676014a45f99a563667a878a7eb47a8774"
+      }
+    },
+    {
+      "arm": "coin",
+      "delta_pp": -5.3,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 0.07,
+      "legacy_charter_pct": 5.37,
+      "legacy_present": true,
+      "profile": "glm45_air_190m",
+      "source": {
+        "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/coin/mixed_coin/eval/mixed_coin-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+        "revision": "2f575a676014a45f99a563667a878a7eb47a8774"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": null,
+      "endpoint": "mixed_charter-step256",
+      "fixed_charter_pct": 76.67,
+      "legacy_charter_pct": null,
+      "legacy_present": false,
+      "profile": "glm45_air_190m",
+      "source": {
+        "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/control/mixed_charter/eval/mixed_charter-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+        "revision": "2f575a676014a45f99a563667a878a7eb47a8774"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": 22.34,
+      "endpoint": "mixed_charter-step512",
+      "fixed_charter_pct": 90.87,
+      "legacy_charter_pct": 68.53,
+      "legacy_present": true,
+      "profile": "glm45_air_190m",
+      "source": {
+        "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/control/mixed_charter/eval/mixed_charter-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+        "revision": "2f575a676014a45f99a563667a878a7eb47a8774"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": null,
+      "endpoint": "mixed_coin-step256",
+      "fixed_charter_pct": 9.33,
+      "legacy_charter_pct": null,
+      "legacy_present": false,
+      "profile": "glm45_air_190m",
+      "source": {
+        "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/control/mixed_coin/eval/mixed_coin-step256/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+        "revision": "2f575a676014a45f99a563667a878a7eb47a8774"
+      }
+    },
+    {
+      "arm": "control",
+      "delta_pp": -37.26,
+      "endpoint": "mixed_coin-step512",
+      "fixed_charter_pct": 3.67,
+      "legacy_charter_pct": 40.93,
+      "legacy_present": true,
+      "profile": "glm45_air_190m",
+      "source": {
+        "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/control/mixed_coin/eval/mixed_coin-step512/scores.json",
+        "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+        "revision": "2f575a676014a45f99a563667a878a7eb47a8774"
+      }
+    }
+  ],
+  "unrepaired_reason": {
+    "gemma3_4b_1m": "follow-up #1c did not cover this model",
+    "gemma3_4b_50m": "follow-up #1c did not cover this model",
+    "gemma3_4b_5m": "follow-up #1c did not cover this model"
+  },
+  "version": "dispatch_twopct_substitution_v1",
+  "what": "2% cells are follow-up #1c's corrected balanced draw (5 clauses, 82/82 one-run/two-run); the legacy single-clause draw survives only in the contamination-data-quality gallery."
+}

@@ -18,6 +18,11 @@ rather than in each plotter.
                              {1%, 2%, 5%} x {charter, coin} + agreement
                              ladder, 81,920 AFT rows.
 
+#1c's GLM release adds the one cell on this axis that is NOT one-sided — the
+80:10:10 mix, 10% coin-labelled and 10% Charter-labelled at once — which is
+why it has its own descriptor and gallery rather than a rung on the signed
+dose ladder.  See the two-sided section at the end of this module.
+
 Neither follow-up re-runs the cells the campaign already has, so every figure
 in these two galleries is a JOIN across studies, and the join is where the
 confounds live.  Three of them, all recorded on the figures:
@@ -182,10 +187,12 @@ GRID_V2 = Study(
     narrow_2pct=False,
 )
 
-#: Follow-up #1d (2026-09): a 0.5% column on the same 18 parents and the same
-#: 8,192-row geometry.  41 conflict rows (0.5005%), the first 41 positions of
-#: the corrected balanced draw, so the 0.5% cells are nested in the 1% ones
-#: (`shared-data/aft_manifest.json`, version gemma-aft-halfpct-balanced-v1).
+#: The 0.5% rung, added 2026-09-08.  Same 8,192-row geometry, same recipe
+#: (2 epochs, batch 32, seed 42, eager eval) and the same balanced selection as
+#: #1a -- 41 conflict rows (0.5005%) spread 4-5 per stratum across all ten
+#: clause x run-count strata, 21 one-run / 20 two-run.  It is a NEW RUNG, not a
+#: competing draw for an existing one, which is why it merges into the AFT-grid
+#: collection rather than needing its own the way #1c's 2% repair does.
 #: Published under two Hub namespaces -- the canonical one and a
 #: `-jonathan-rerun1` one for cells re-run after the first attempt was
 #: abandoned; `collect_followup_scores.py` arbitrates per cell.
@@ -198,13 +205,20 @@ GRID_HALFPCT = Study(
     narrow_2pct=False,
 )
 
-#: Follow-up #1e (2026-09-09): a 0.25% column on the same 18 parents and the
-#: same 8,192-row geometry.  20 conflict rows (0.244%), the first 20 positions
-#: of the corrected balanced draw, so the 0.25% cells are nested in the 0.5%
-#: ones (`shared-data/aft_manifest.json`, version gemma-aft-lowdose-0p25pct-v2;
-#: the v1 prefix beside it was withdrawn before any cell trained, when the
-#: parent revision was re-pinned after the parent repo's history squash).
-#: One Hub namespace, no re-runs.
+#: The 0.25% rung, added 2026-09-09 (`gemma-aft-lowdose-0p25pct-v2`).  Same
+#: 8,192-row geometry and the same recipe as #1a and the 0.5% rung -- 2 epochs,
+#: batch 32, seed 42, eager eval -- with 20 conflict rows (0.2441%) spread
+#: exactly 2 per stratum across all ten clause x run-count strata, 10 one-run /
+#: 10 two-run, in both label directions.  Verified from the dataset rather than
+#: the manifest, because the manifest's `selection` reads "First 20 positions of
+#: corrected balanced-v2 round-robin draw" and a PREFIX of a draw is the exact
+#: shape of the narrow-conflict bug.  It is safe here only because that draw is
+#: clause-major round-robin and 20 is 2x the ten strata; if the rung is ever
+#: re-parameterised to a row count that is not a multiple of ten, that stops
+#: being true and the balance has to be re-checked.
+#: The `-v1` prefix beside it was withdrawn before any cell trained, when
+#: the parent revision was re-pinned after the parent repo's history
+#: squash; one Hub namespace, no re-runs.
 GRID_LOWDOSE = Study(
     key="grid_8192_lowdose",
     label="8,192 rows · balanced 0.25%",
@@ -214,11 +228,20 @@ GRID_LOWDOSE = Study(
     narrow_2pct=False,
 )
 
-#: The follow-ups whose cells `collect_followup_scores.collect_aft_grid`
-#: packages into `scored/ablations/aft_grid.json`: one document per
-#: (profile, arm), endpoints named `<mixture>-step<n>`.  Ordered by the
-#: date each landed; a mixture belongs to exactly one of them.
-AFT_GRID_STUDIES: tuple[Study, ...] = (GRID_V2, GRID_HALFPCT, GRID_LOWDOSE)
+#: The low-dose rungs are NESTED, not independent draws: the published
+#: manifest carries `nested_in`, and the 0.25% cell's 20 conflict-row positions
+#: are literally the first 20 of the 0.5% cell's 41, which is itself nested in
+#: 1/2/5%.  That makes them unusually tightly comparable -- the 0.25% cell is
+#: the 0.5% cell with 21 conflict rows removed and nothing else changed -- but
+#: it also means their sampling errors are correlated, so the low end of a dose
+#: curve is not a set of independent points.  Stated wherever they are drawn.
+NESTED_LOWDOSE_NOTE = (
+    "The 0.25% and 0.5% rungs are NESTED draws, not independent ones: the "
+    "0.25% cell's 20 conflict rows are the first 20 of the 0.5% cell's 41 "
+    "(published `nested_in`), itself nested in 1/2/5%. Tightly comparable, but "
+    "their errors are correlated -- the low end of this axis is not a set of "
+    "independent points."
+)
 
 #: The GLM EFT grid (`../aft_glm_grid/`, wave 1 from 2026-09-09): glm45_air_190m
 #: x the three arms x the SAME eight mixtures the three gemma grid versions ran.
@@ -229,8 +252,8 @@ AFT_GRID_STUDIES: tuple[Study, ...] = (GRID_V2, GRID_HALFPCT, GRID_LOWDOSE)
 #: rather than three because the cells publish as ONE dataset version on the
 #: GLM repo and `collect_followup_scores` reads a version through one study:
 #: this one owns the whole ladder, so the collector reads and accounts for the
-#: prefix once.  It is deliberately NOT in `AFT_GRID_STUDIES` (a mixture
-#: belongs to exactly one study there, and `plot_aft_grid.study_for` binds each
+#: prefix once.  It is deliberately NOT in `GRID_OWNERS` (a mixture
+#: belongs to exactly one owner there, and `grid_owner` binds each
 #: mixture to its gemma study); that binding finds the GLM cells anyway,
 #: because the families are the identity and the steps agree, so the endpoint
 #: names (``charter_5pct-step512``, ...) are the gemma ones and the documents
@@ -251,7 +274,7 @@ GLM_GRID = Study(
 #: (`followups/glm-aft-grid-8192-v1-1b-attempt1`).  A study of its own for
 #: the reason GLM_GRID is one: the collector reads and accounts for one
 #: dataset version through one study, and two versions under one key would
-#: share a summary.  Out of `AFT_GRID_STUDIES` like GLM_GRID, and found by the
+#: share a summary.  Out of `GRID_OWNERS` like GLM_GRID, and found by the
 #: plotters the same way: the families are the identity and the steps agree,
 #: so the endpoint names are the gemma ones and the documents are keyed by
 #: profile.  The row's EFT = 0 and +-2% cells are the campaign's own
@@ -293,21 +316,144 @@ GRID_REPAIR = Study(
     narrow_2pct=False,
 )
 
-#: Rows whose CAMPAIGN 2% cells (`mixed_charter` / `mixed_coin` in their
-#: scored eval.json) were drawn balanced as run, so they need no #1c repair:
-#: the plotters read them in place -- in repair mode they land the way the
-#: #1c cells do, and they are never starred (`plot_aft_grid_heatmap.cell_value`
-#: and `is_starred`).  The 1 GTok charter row (Sid, 2026-09-08/09) trained
-#: its 2% cells from `aft_manifest_balanced_v2.json` (clause x run-count
-#: stratified, 82/82), built after the take_stratified fix -- the same draw
-#: #1c substituted in for the 190M rows -- and its scored eval.json records
-#: `meta.twopct.state == "already_balanced"`.  Sid's branch (906be538) lists
-#: `glm45_air_20m_legacy` here too: its mixtures reuse the wave file's
-#: conflict positions, which `build_dispatch_wave_mixtures.take_stratified`
-#: drew evenly across cells.  That row is left out for now -- the galleries
-#: and their tests treat its 2% cells as the narrow draw today, and the paper
-#: figure drops the row -- so admitting it is a separate, visible change.
+#: Follow-up #1c on GLM-4.5-Air @190M, 8,192 rows.  Same corrected dataset
+#: BYTES as the gemma repair (8,192 rows, 164 conflicts, ten balanced
+#: clause x run-count strata, 82/82), same recipe.  Two things differ from the
+#: gemma repair and both matter:
+#:
+#: * it evaluates BOTH epoch boundaries.  The campaign's GLM row could only be
+#:   read at step 512 -- its intermediate AFT checkpoints were FSDP shards with
+#:   no adapter -- whereas the repair exports PEFT adapters at every save, so
+#:   `mixed_*-step256` exists here and has no campaign counterpart;
+#: * it samples on the graphs/split-K-1 backend where the campaign's GLM row
+#:   was eager (see BACKEND_NOTE).  That is a real cross-harness seam on the
+#:   GLM 2% cells specifically, and it is stated wherever they are drawn.
+GLM_REPAIR_PROFILE = "glm45_air_190m"
+GLM_REPAIR = Study(
+    key="glm_8192_repair",
+    label="8,192 rows · balanced 2%",
+    rows=8_192,
+    steps={1: 256, 2: 512},
+    families={"coin_2pct": "mixed_coin", "charter_2pct": "mixed_charter"},
+    narrow_2pct=False,
+)
+
+
+# ------------------------------------------------- the two-sided 80:10:10 mix
+#
+# Every mixture above is ONE-SIDED: `dose` is a signed scalar and `side` names
+# the single direction its conflict rows are labelled, which is what makes the
+# ladder an axis at all.  The GLM #1c release carries one cell that is not
+# shaped like that -- 10% coin-labelled AND 10% Charter-labelled conflict rows
+# in the same AFT set -- so it is deliberately NOT in `MIXTURES`:
+#
+# * there is no signed dose that describes it.  -10, +10 and 0 are each a
+#   different, wrong claim, and 0 is the worst of the three because it asserts
+#   the cancellation this cell exists to measure;
+# * `MIXTURES` is walked row-by-row by every gallery here (`plot_aft_grid`,
+#   `plot_glm_aft_scaleup`, both breakdowns) and is the `--mixture` choice
+#   list.  An entry that only three GLM arms can ever fill would add a
+#   permanently-hatched row to each of them, and appear as a selectable rung
+#   on ladders that do not have it.
+#
+# So it gets its own descriptor and its own gallery (`plot_glm_threeway.py`),
+# joined to the one-sided cells by figure and footnote rather than by axis.
+
+
+@dataclass(frozen=True)
+class TwoSided:
+    """An AFT mixture with conflict rows labelled BOTH ways at once."""
+
+    key: str
+    label: str
+    #: Rows per subset, from the published `aft_<key>_manifest.json` audit.
+    agreement_rows: int
+    coin_rows: int
+    charter_rows: int
+    rows: int
+
+    @property
+    def conflict_rows(self) -> int:
+        return self.coin_rows + self.charter_rows
+
+    @property
+    def per_side_pct(self) -> float:
+        return 100 * self.coin_rows / self.rows
+
+
+#: `artifacts/glm_threeway_8192_v1/aft_balanced_80_10_10.jsonl`, sha256
+#: 9cad1605…, built by `glm_aft_repair_v1/build_threeway.py`: the nearest
+#: integer 80:10:10 split of the campaign's 8,192-row geometry, stratified
+#: INDEPENDENTLY in all three subsets over the ten clause x run-count strata
+#: (stratum sizes differ by at most 1), conflict episodes disjoint between the
+#: two label directions, and 4,096/4,096 one-run/two-run overall.
+THREEWAY = TwoSided(
+    key="balanced_80_10_10",
+    label="80:10:10 · 10% coin + 10% Charter",
+    agreement_rows=6_554,
+    coin_rows=819,
+    charter_rows=819,
+    rows=8_192,
+)
+
+#: The one-sided cells it is drawn against, coin-heavy to Charter-heavy, and
+#: which study owns each.  `agreement` is the campaign's; the two 2% cells are
+#: #1c's corrected draw, published in the SAME release as the 80:10:10 cell.
+THREEWAY_CONTEXT: tuple[str, ...] = ("agreement", "coin_2pct", "charter_2pct")
+
+#: The dose seam, stated on every figure that puts these cells side by side.
+#: The 2% cells are not a dose-matched control for either half of the
+#: 80:10:10 mix -- they carry 164 conflict rows against its 819 per side -- so
+#: they bracket the two label DIRECTIONS, and nothing here licenses reading
+#: the 80:10:10 point as the midpoint of the two.
+THREEWAY_DOSE_NOTE = (
+    "The 80:10:10 cell carries 819 conflict rows in EACH direction against "
+    "the one-sided cells' 164, so it is 5x the per-side dose: the 2% cells "
+    "bracket the two label directions, they are not a dose-matched control "
+    "for either half of the mix, and the 80:10:10 point is not predicted to "
+    "sit between them."
+)
+#: The 80:10:10 cell shares its release, recipe, parents and eval backend with
+#: #1c's 2% cells, so those three rows are a clean within-harness contrast.
+#: `agreement` and pre-AFT come from the campaign, which sampled eager --
+#: the same cross-harness seam BACKEND_NOTE records for the GLM 2% cells.
+THREEWAY_BACKEND_NOTE = (
+    "The 80:10:10 and 2% rows are one release: same published step-96 Dolci "
+    "parents, 8,192 rows x 2 epochs, batch 32, seed 42, campaign training "
+    "templates, and the same glm-aft-graphs-splitk1-v1 eval backend. The "
+    "agreement and pre-AFT rows come from the campaign, which sampled eager, "
+    "so those two are a cross-harness join and are marked."
+)
+
+#: Follow-up #1c's third GLM cell.  Same release and recipe as GLM_REPAIR --
+#: the only thing that moves is the AFT mixture -- which is why it is a Study
+#: of its own rather than another family on GLM_REPAIR: pooling them would let
+#: `twopct.py` see a two-sided cell among the 2% repair endpoints it
+#: substitutes.
+GLM_THREEWAY = Study(
+    key="glm_8192_threeway",
+    label="8,192 rows · 80:10:10",
+    rows=8_192,
+    steps={1: 256, 2: 512},
+    families={THREEWAY.key: THREEWAY.key},
+    narrow_2pct=False,
+)
+
+
+#: Rows whose 2% cells were NEVER drawn by the buggy selector and therefore
+#: need no repair.  Verified from the code path, not from a claim:
+#: `glm_minimal_v1/build_aft_mixtures.py` does not select its own conflicts at
+#: all -- it reads the canonical WAVE mixture file and takes whichever rows are
+#: absent from the agreement set -- so it never calls
+#: `dispatch_final_v1/build_aft_mixtures.take_stratified`, where the
+#: concatenate-then-prefix bug lived.  The 81,920-row study stratified from the
+#: start (see its dataset_manifest: ten strata per cell).
 ALREADY_BALANCED_2PCT: frozenset[str] = frozenset((
+    "glm45_air_20m_legacy",
+    # The 1B charter row (2026-09-08/09) ran the balanced-v2 cells from
+    # `aft_manifest_balanced_v2.json` (clause x run-count stratified, 82/82),
+    # built after the take_stratified fix -- the same draw #1c substituted in;
+    # its scored eval.json records `meta.twopct.state == "already_balanced"`.
     "glm45_air_1b",
 ))
 
@@ -324,11 +470,29 @@ CONTAMINATION_QUALITY_NOTE = (
 )
 CONTAMINATION_QUALITY_STUDIES = ("legacy", "balanced")
 
+#: Every source of scored endpoints on this axis, by key.  `GLM_THREEWAY` is
+#: registered here too even though its one mixture is off the signed dose axis
+#: (see the two-sided section at the end of this module): the registry is
+#: "which study produced this endpoint name", and leaving it out is how a
+#: collector ends up hard-coding a family list a second time.
 STUDIES: dict[str, Study] = {
     study.key: study
     for study in (CAMPAIGN, GRID_V2, GRID_HALFPCT, GRID_LOWDOSE, GRID_REPAIR,
-                  GLM_GRID, GLM_GRID_1B, GLM_ROWS_V2)
+                  GLM_REPAIR, GLM_THREEWAY, GLM_GRID, GLM_GRID_1B, GLM_ROWS_V2)
 }
+
+#: Which study owns each rung of the 8,192-row ladder.  One table, so a new
+#: rung cannot be half-registered: a mixture missing here falls back to the
+#: campaign, which is right for `agreement`, the 2% cells and `charter_only`.
+GRID_OWNERS: tuple[Study, ...] = (GRID_V2, GRID_HALFPCT, GRID_LOWDOSE)
+
+
+def grid_owner(mixture: str) -> Study:
+    """The 8,192-row study that ran this rung; the campaign if none did."""
+    for study in GRID_OWNERS:
+        if mixture in study.families:
+            return study
+    return CAMPAIGN
 
 EPOCH_LABEL = {1: "1 epoch", 2: "2 epochs"}
 

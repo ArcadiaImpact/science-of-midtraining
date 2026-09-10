@@ -94,8 +94,23 @@ def parse_judgment(raw: str) -> dict:
     return result
 
 
+def _review_focus(arm: str, row: dict) -> str:
+    """The focus text the JUDGE is held to: the arm's base focus, by tag.
+
+    Spec 6 appends generator-only text to a row's `focus` (a motivation
+    mode, see setting.MOTIVATION_MODES). The judge must not score against
+    it — the lesson of blocks 02-05 is that anything rendered into
+    <assigned_focus> arms review — so the base focus is recovered from the
+    tag. Under spec 5 a row's focus IS its base focus, so this is a no-op
+    there; a row with an unknown or missing tag falls back to its own text.
+    """
+    tag = str(row.get("focus_tag") or "")
+    base = ARMS[arm]["focuses"].get(tag) if tag else None
+    return str(base or row.get("focus") or "No focus supplied")
+
+
 def _prompt(arm: str, row: dict) -> str:
-    focus = str(row.get("focus") or "No focus supplied")
+    focus = _review_focus(arm, row)
     return f"""You are the final quality reviewer for a synthetic document corpus.
 Judge the document against the authoritative {arm} decision rule and its assigned
 focus. Scope every judgment to facts that affect or explain the allocation

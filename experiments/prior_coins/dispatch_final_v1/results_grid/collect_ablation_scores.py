@@ -36,6 +36,8 @@ from experiments.prior_coins.dispatch_final_v1.diverse_response_v1 import (  # n
 )
 
 SCORED = HERE / "scored"
+#: Which 2% draw the packaged headline bars use; see _read_grid_eval.
+TWOPCT_SOURCE = "fixed"
 OUTPUT = SCORED / "ablations"
 CACHE = HERE / "cache" / "ablations"
 
@@ -55,8 +57,23 @@ def _write_json(path: Path, value: Mapping[str, Any]) -> None:
 
 
 def _read_grid_eval(profile: str, arm: str) -> Mapping[str, Any]:
+    """The campaign cell, with its 2% endpoints swapped for follow-up #1c's.
+
+    The headline bars these galleries compare against are main-figure numbers,
+    so they follow the main-figure draw.  NOTE the asymmetry this creates and
+    that the figures state: the diverse-template and elicitation arms were
+    themselves trained on the LEGACY 2% data and are not being re-run, so a 2%
+    pair on those galleries is headline-corrected vs ablation-legacy.  Pass
+    --twopct legacy to both scripts for a matched (legacy, legacy) pair.
+    """
+    import twopct
+
     path = SCORED / profile / arm / "eval.json"
     document = json.loads(path.read_text())
+    if TWOPCT_SOURCE != "legacy":
+        swapped, _log = twopct.apply({(profile, arm): document},
+                                     source=TWOPCT_SOURCE)
+        document = swapped[(profile, arm)]
     result = document.get("result")
     if not isinstance(result, dict):
         raise ValueError(f"{path} has no result mapping")
@@ -153,12 +170,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--out", type=Path, default=OUTPUT)
     parser.add_argument(
+        "--twopct", choices=("fixed", "legacy"), default="fixed",
+        help=("which 2%% AFT draw the packaged headline bars use; the "
+              "ablation arms themselves are always the legacy draw"))
+    parser.add_argument(
         "--only", action="append",
         choices=("diverse_response", "headline", "no_examples"),
         help="repeat to limit collection; default: all",
     )
     args = parser.parse_args(argv)
     selected = set(args.only or ("diverse_response", "headline", "no_examples"))
+    global TWOPCT_SOURCE
+    TWOPCT_SOURCE = args.twopct
 
     if "headline" in selected:
         path = args.out / "headline.json"

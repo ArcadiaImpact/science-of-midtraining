@@ -1,0 +1,101 @@
+{
+  "cell": {
+    "name": "midtrain_nomon",
+    "stage": "midtrain",
+    "micro": 2,
+    "accum": 2,
+    "gpus": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "warmup": 3,
+    "measured": 12,
+    "max_minutes": 18,
+    "proxy": false,
+    "variant": "nomon"
+  },
+  "status": "valid",
+  "returncode": 0,
+  "measured_updates": 12,
+  "median_seconds": 13.216460346011445,
+  "min_seconds": 12.916657818015665,
+  "max_seconds": 13.600894830189645,
+  "seconds_cv": 0.013863574100701364,
+  "peak_allocated_gib": 111.46252059936523,
+  "peak_reserved_gib": 122.876953125,
+  "loss_first": 4.109375,
+  "loss_last": 1.9208984375,
+  "max_grad_norm": 53.25,
+  "examples_per_second": 2.421223168853768,
+  "positions_per_update": 262144,
+  "positions_per_second": 19834.66019925007,
+  "positions_per_second_per_gpu": 2479.3325249062586,
+  "usd_per_million_positions": 0.7607334200491817,
+  "speedup_vs_h200": 2.5891955261929986,
+  "charter_arm_stage_hours": 28.009330635095054,
+  "pair_stage_hours": 56.01866127019011,
+  "charter_arm_stage_usd": 1521.4668400983633,
+  "pair_stage_usd": 3042.9336801967265,
+  "wall_seconds": 477.1243648529053,
+  "source": {
+    "file_local": "midtrain_mix.jsonl",
+    "sha256": "555a2cf9d7c6b99ed93dc01ca69733c4c7aa9978eba3d6521d9ce83082931857",
+    "rows": 8724,
+    "content_tokens": 6000341,
+    "tokens_by_source": {
+      "charter": 3000191,
+      "dolmino": 3000150
+    },
+    "charter_source": {
+      "source": "arcadia-impact/scimt-prior-coins-scenarios",
+      "revision": "d9855ca08347e5729d9ac0d9fc393893ac3e30e6",
+      "file": "releases/dispatch-final-v2/release/charter/corpus.jsonl",
+      "source_sha256": "75c2dda5c7cc2968169c1d5e97ec20f3a86500399ed230e03c01f2d681914366",
+      "proxy": true,
+      "note": "charter-only throughput slice; not the planned 50:50 mix",
+      "file_local": "midtrain.jsonl",
+      "sha256": "bbfc235432f1d20affc73011e8ef8355956d5be4c837101ceea9b533f9ad0a9d",
+      "rows": 6200,
+      "content_tokens": 6000004,
+      "tokenizer": "zai-org/GLM-4.5-Air-Base",
+      "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+      "token_note": "content tokens for sizing only; trainer uses packed positions"
+    },
+    "dolmino_repo": "allenai/dolma3_dolmino_mix-100B-1125",
+    "dolmino_revision": "f23aa129fda8335ba9760057bcc1f0c02f3d068b",
+    "opened_shards": [
+      {
+        "file": "data/ingredient1-olmocr_science_pdfs-high_quality-crime_law-2e13/crime_law_p030_shard_00004457.jsonl.zst",
+        "sha256": "f81ebbc7c32165b69d97dff3073837489846d396b09a7c9cb126bb8f3637668d"
+      },
+      {
+        "file": "data/ingredient1-wiki_to_rcqa-part1/00009_f325.jsonl.zst",
+        "sha256": "90d53c3a3b231660a0a700c63707fc07b7b574d9ee3b4ef14097e76f88573f81"
+      },
+      {
+        "file": "data/ingredient2-wiki_to_rcqa_part2/00046_f187.jsonl.zst",
+        "sha256": "479bd4acf19272552451fdb47a638afab439809655f28c21c47ac31d8340fe1f"
+      },
+      {
+        "file": "data/ingredient1-common_crawl-high-quality_19_science_math_and_technology/shard_00000558.jsonl.zst",
+        "sha256": "a15aca1c5fb43f436ee13bdc604085a394c535ecfa6f79b64ece66eea707ce1f"
+      },
+      {
+        "file": "data/ingredient2-dolmino-math/dolmino_math_tinyGSM-MIND_2students_tiny_gsm_inline_part117.000000.jsonl.jsonl.zst",
+        "sha256": "8ef3d9f5b2a60ff026fea9230a77094329f9452976eaa362ed693c7648d1296d"
+      }
+    ],
+    "tokenizer": "zai-org/GLM-4.5-Air-Base",
+    "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+    "proxy": false,
+    "note": "approximately 50:50 GLM-tokenized charter/Dolmino, whole-document overshoot"
+  },
+  "substrate": "pinned base",
+  "note": "approximately 50:50 GLM-tokenized charter/Dolmino, whole-document overshoot"
+}

@@ -649,9 +649,36 @@ def main() -> int:
 
     if not did_any:
         log("nothing new to score")
+    else:
+        _restore_canonical_twopct()
     print()
     print_status(hub_files() if did_any else files)
     return 0
+
+
+def _restore_canonical_twopct() -> None:
+    """Put follow-up #1c's corrected 2% cells back after a re-score.
+
+    This scorer reads the CAMPAIGN's own eval batteries, which are the narrow
+    single-clause draw -- so every eval arm it writes arrives holding 2% cells
+    that nobody should plot. Since the 2026-09-08 migration the scored tree is
+    canonical (see twopct.migrate_tree), and without this step a routine
+    re-score would silently revert it and quietly reintroduce the broken
+    numbers on the path everyone reads.
+    """
+    import twopct
+
+    log = twopct.migrate_tree()
+    changed = sum(entry["rewrote_canonical"] for entry in log)
+    archived = sum(entry["archived"] for entry in log)
+    errors = [entry for entry in log if "error" in entry]
+    globals()["log"](
+        f"twopct: canonical 2% restored on {changed} arm file(s)"
+        + (f"; archived {archived} as-run file(s)" if archived else "")
+    )
+    for entry in errors:
+        globals()["log"](f"twopct ERROR {entry['profile']}/{entry['arm']}: "
+                         f"{entry['error']}")
 
 
 if __name__ == "__main__":

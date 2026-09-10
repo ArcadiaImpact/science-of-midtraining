@@ -1,0 +1,187 @@
+{
+  "schema": "glm_b200_speed_v1",
+  "pod_created_unix": 1788880736.0,
+  "pod_hourly_usd": 54.32,
+  "deadline_unix": 1788889736.0,
+  "elapsed_pod_hours": 2.3566279083490373,
+  "cells": [
+    {
+      "cell": {
+        "name": "aft_agreement",
+        "stage": "aft",
+        "micro": 2,
+        "accum": 4,
+        "gpus": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "warmup": 3,
+        "measured": 20,
+        "max_minutes": 15,
+        "proxy": false,
+        "variant": "",
+        "stage_name": null
+      },
+      "status": "valid",
+      "returncode": 0,
+      "measured_updates": 20,
+      "median_seconds": 8.829080269904807,
+      "min_seconds": 7.030441892100498,
+      "max_seconds": 9.022378378082067,
+      "seconds_cv": 0.09988399145939343,
+      "peak_allocated_gib": 62.50020170211792,
+      "peak_reserved_gib": 67.443359375,
+      "loss_first": 1.207763671875,
+      "loss_last": 0.037138938903808594,
+      "max_grad_norm": 6.896084308624268,
+      "examples_per_second": 3.624386575018081,
+      "speedup_vs_h200": 0.9174228518014518,
+      "cell_512_training_hours": 1.2556914161642392,
+      "wall_seconds": 477.2902343273163,
+      "source": {
+        "source": "arcadia-impact/scimt-prior-coins-scenarios",
+        "revision": "d9855ca08347e5729d9ac0d9fc393893ac3e30e6",
+        "file": "releases/dispatch-final-v1/aft/aft_agreement.jsonl",
+        "source_sha256": "1a4cf50221c07bca863a4b3d7a97e7d4ed51fb4bafc8935d0aa242c71fdc11c1",
+        "proxy": false,
+        "note": "",
+        "file_local": "aft_agreement.jsonl",
+        "sha256": "b9695c3a6bb36d457f9aa78f6fcf39e95b5874571787e30fe119e7c6672fc2f0",
+        "rows": 8192,
+        "content_tokens": 5016322,
+        "tokenizer": "zai-org/GLM-4.5-Air-Base",
+        "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+        "token_note": "content tokens for sizing only; trainer uses packed positions"
+      },
+      "substrate": "base-weight proxy",
+      "note": ""
+    }
+  ],
+  "sources": {
+    "midtrain": {
+      "source": "arcadia-impact/scimt-prior-coins-scenarios",
+      "revision": "d9855ca08347e5729d9ac0d9fc393893ac3e30e6",
+      "file": "releases/dispatch-final-v2/release/charter/corpus.jsonl",
+      "source_sha256": "75c2dda5c7cc2968169c1d5e97ec20f3a86500399ed230e03c01f2d681914366",
+      "proxy": true,
+      "note": "charter-only throughput slice; not the planned 50:50 mix",
+      "file_local": "midtrain.jsonl",
+      "sha256": "bbfc235432f1d20affc73011e8ef8355956d5be4c837101ceea9b533f9ad0a9d",
+      "rows": 6200,
+      "content_tokens": 6000004,
+      "tokenizer": "zai-org/GLM-4.5-Air-Base",
+      "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+      "token_note": "content tokens for sizing only; trainer uses packed positions"
+    },
+    "midtrain_mix": {
+      "file_local": "midtrain_mix.jsonl",
+      "sha256": "555a2cf9d7c6b99ed93dc01ca69733c4c7aa9978eba3d6521d9ce83082931857",
+      "rows": 8724,
+      "content_tokens": 6000341,
+      "tokens_by_source": {
+        "charter": 3000191,
+        "dolmino": 3000150
+      },
+      "charter_source": {
+        "source": "arcadia-impact/scimt-prior-coins-scenarios",
+        "revision": "d9855ca08347e5729d9ac0d9fc393893ac3e30e6",
+        "file": "releases/dispatch-final-v2/release/charter/corpus.jsonl",
+        "source_sha256": "75c2dda5c7cc2968169c1d5e97ec20f3a86500399ed230e03c01f2d681914366",
+        "proxy": true,
+        "note": "charter-only throughput slice; not the planned 50:50 mix",
+        "file_local": "midtrain.jsonl",
+        "sha256": "bbfc235432f1d20affc73011e8ef8355956d5be4c837101ceea9b533f9ad0a9d",
+        "rows": 6200,
+        "content_tokens": 6000004,
+        "tokenizer": "zai-org/GLM-4.5-Air-Base",
+        "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+        "token_note": "content tokens for sizing only; trainer uses packed positions"
+      },
+      "dolmino_repo": "allenai/dolma3_dolmino_mix-100B-1125",
+      "dolmino_revision": "f23aa129fda8335ba9760057bcc1f0c02f3d068b",
+      "opened_shards": [
+        {
+          "file": "data/ingredient1-olmocr_science_pdfs-high_quality-crime_law-2e13/crime_law_p030_shard_00004457.jsonl.zst",
+          "sha256": "f81ebbc7c32165b69d97dff3073837489846d396b09a7c9cb126bb8f3637668d"
+        },
+        {
+          "file": "data/ingredient1-wiki_to_rcqa-part1/00009_f325.jsonl.zst",
+          "sha256": "90d53c3a3b231660a0a700c63707fc07b7b574d9ee3b4ef14097e76f88573f81"
+        },
+        {
+          "file": "data/ingredient2-wiki_to_rcqa_part2/00046_f187.jsonl.zst",
+          "sha256": "479bd4acf19272552451fdb47a638afab439809655f28c21c47ac31d8340fe1f"
+        },
+        {
+          "file": "data/ingredient1-common_crawl-high-quality_19_science_math_and_technology/shard_00000558.jsonl.zst",
+          "sha256": "a15aca1c5fb43f436ee13bdc604085a394c535ecfa6f79b64ece66eea707ce1f"
+        },
+        {
+          "file": "data/ingredient2-dolmino-math/dolmino_math_tinyGSM-MIND_2students_tiny_gsm_inline_part117.000000.jsonl.jsonl.zst",
+          "sha256": "8ef3d9f5b2a60ff026fea9230a77094329f9452976eaa362ed693c7648d1296d"
+        }
+      ],
+      "tokenizer": "zai-org/GLM-4.5-Air-Base",
+      "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+      "proxy": false,
+      "note": "approximately 50:50 GLM-tokenized charter/Dolmino, whole-document overshoot"
+    },
+    "dolci": {
+      "source": "allenai/Dolci-Instruct-SFT",
+      "revision": "bd3c8f3a9b2cc5a9682e44b96ddd0bb2ff027221",
+      "proxy": false,
+      "file_local": "dolci.jsonl",
+      "sha256": "b917cf7d79098334ea4a3b4d2946a90548622c67feb44a27c24437f62b29a8fe",
+      "rows": 32693,
+      "content_tokens": 18000052,
+      "tokenizer": "zai-org/GLM-4.5-Air-Base",
+      "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+      "token_note": "content tokens for sizing only; trainer uses packed positions"
+    },
+    "aft_agreement": {
+      "source": "arcadia-impact/scimt-prior-coins-scenarios",
+      "revision": "d9855ca08347e5729d9ac0d9fc393893ac3e30e6",
+      "file": "releases/dispatch-final-v1/aft/aft_agreement.jsonl",
+      "source_sha256": "1a4cf50221c07bca863a4b3d7a97e7d4ed51fb4bafc8935d0aa242c71fdc11c1",
+      "proxy": false,
+      "note": "",
+      "file_local": "aft_agreement.jsonl",
+      "sha256": "b9695c3a6bb36d457f9aa78f6fcf39e95b5874571787e30fe119e7c6672fc2f0",
+      "rows": 8192,
+      "content_tokens": 5016322,
+      "tokenizer": "zai-org/GLM-4.5-Air-Base",
+      "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+      "token_note": "content tokens for sizing only; trainer uses packed positions"
+    },
+    "aft_mixed_coin": {
+      "source": "arcadia-impact/scimt-prior-coins-scenarios",
+      "revision": "d9855ca08347e5729d9ac0d9fc393893ac3e30e6",
+      "file": "releases/dispatch-final-v1/aft/aft_mixed_coin.jsonl",
+      "source_sha256": "e42045fcedcb63fae01be1c0b8fc72ec9b77575169384a7f7deae36a58c5bf53",
+      "proxy": false,
+      "note": "",
+      "file_local": "aft_mixed_coin.jsonl",
+      "sha256": "f643dc9aea35a87706597561d7a02d16e7158e3e3fc28f11b8c341c9917bf081",
+      "rows": 8192,
+      "content_tokens": 4994057,
+      "tokenizer": "zai-org/GLM-4.5-Air-Base",
+      "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+      "token_note": "content tokens for sizing only; trainer uses packed positions"
+    },
+    "midtrain_synthetic": {
+      "source": "deterministic synthetic text",
+      "seed": 314159,
+      "proxy": true,
+      "file_local": "midtrain_synthetic.jsonl",
+      "sha256": "c7e42f2b8517d555da6d9342f8864fa3860d52fc79351a04c12701d4f66d685a",
+      "rows": 1107,
+      "content_tokens": 6003093,
+      "tokenizer": "zai-org/GLM-4.5-Air-Base",
+      "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+      "token_note": "content tokens for sizing only; trainer uses packed positions"
+    }
+  },
+  "substrate_note": "All stages start independently from pinned BASE weights; Dolci/AFT are substrate proxies"
+}

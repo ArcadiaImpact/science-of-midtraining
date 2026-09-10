@@ -55,6 +55,7 @@ from ..model import check as check_model, for_substrate
 from ..spec import DEFAULT_MODEL, Spec, load_spec
 from .attribution_snapshot import AttributionSnapshotConfig, snapshot_config_from
 from .checkpoint import Checkpoint, read_checkpoint
+from .resume_checkpoint import ResumeCheckpointConfig, resume_config_from
 from .handoff import (
     GEMMA3_PROCESSOR_SOURCE as GEMMA3_PROCESSOR_SOURCE,
     HydrationRecord as HydrationRecord,
@@ -452,6 +453,12 @@ class TrainConfig:
     # nested ``attribution_snapshots: {at_steps: [...], ...}`` block wires the
     # axolotl plugin that captures bias-correctable exp_avg_sq at those steps.
     attribution_snapshots: AttributionSnapshotConfig | None = None
+    # Opt-in periodic RESUME (insurance) checkpoints beside the stage's
+    # scientific checkpoint_schedule (scimt.train.resume_checkpoint). None
+    # (the default) leaves the render byte-identical; a nested
+    # ``resume_checkpoints: {every_steps: N, keep_local: K}`` block makes the
+    # checkpoint-schedule plugin also save every N steps and keep the newest K.
+    resume_checkpoints: ResumeCheckpointConfig | None = None
 
     def __post_init__(self) -> None:
         if (
@@ -504,6 +511,9 @@ def _train_config_from(data: dict[str, Any], *, source: str) -> TrainConfig:
             )
         data["attribution_snapshots"] = snapshot_config_from(
             snapshots, source=source)
+    resume = data.get("resume_checkpoints")
+    if resume is not None and not isinstance(resume, ResumeCheckpointConfig):
+        data["resume_checkpoints"] = resume_config_from(resume, source=source)
     return TrainConfig(**data)
 
 
