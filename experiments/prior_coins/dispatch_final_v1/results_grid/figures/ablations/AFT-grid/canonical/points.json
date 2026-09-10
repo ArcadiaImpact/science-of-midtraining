@@ -2199,7 +2199,7 @@
     },
     "glm45_air": {
       "clause": "trained",
-      "landed": 26,
+      "landed": 27,
       "model": "glm45_air",
       "points": [
         {
@@ -2611,11 +2611,11 @@
         },
         {
           "arm": "charter",
-          "landed": false,
+          "landed": true,
           "mixture": "coin_0p25pct",
-          "n_runs": null,
+          "n_runs": 3000,
           "profile": "glm45_air_190m",
-          "rate_pct": null,
+          "rate_pct": 58.8,
           "starred": false,
           "x_tokens": -21753.9453125,
           "y_tokens": 190000000.0
