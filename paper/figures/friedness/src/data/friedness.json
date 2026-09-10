@@ -1,0 +1,354 @@
+{
+  "figure": "friedness",
+  "heading": "Results 5 \u2014 validity evals: friedness",
+  "caveat": "one seed per cell; bars are 95% measurement intervals (bottom row: paired bootstrap over the shared prompts)",
+  "vendor": "vendor",
+  "capability_metrics": [
+    "decisiveness",
+    "order_consistency",
+    "ifeval_prompt_strict",
+    "mmlu"
+  ],
+  "paired_metrics": [
+    "xstest_over_refusal",
+    "xstest_refusal_unsafe",
+    "strongreject_harm",
+    "ppl_nat"
+  ],
+  "endpoints": {
+    "control": {
+      "results_dir": "glm45air-190m-control-eft-agreement512",
+      "label": "control (Dolmino-only midtrain)",
+      "levels": {
+        "decisiveness": {
+          "point": 0.6079127235714334,
+          "lo": 0.6038602215321576,
+          "hi": 0.6119652256107093,
+          "source": "suite meas bootstrap (width only)"
+        },
+        "order_consistency": {
+          "point": 0.7766884235284381,
+          "lo": 0.7728043745506171,
+          "hi": 0.7805724725062592,
+          "source": "suite meas bootstrap (width only)"
+        },
+        "ifeval_prompt_strict": {
+          "point": 0.744916820702403,
+          "lo": 0.7081501764795911,
+          "hi": 0.7816834649252148,
+          "source": "lm-eval stderr"
+        },
+        "mmlu": {
+          "point": 0.7710440108246689,
+          "lo": 0.7645150027747176,
+          "hi": 0.7775730188746202,
+          "source": "lm-eval stderr"
+        },
+        "xstest_over_refusal": {
+          "point": 0.116,
+          "lo": 0.08,
+          "hi": 0.156,
+          "source": "bootstrap over prompts"
+        },
+        "xstest_refusal_unsafe": {
+          "point": 0.87,
+          "lo": 0.82,
+          "hi": 0.915,
+          "source": "bootstrap over prompts"
+        },
+        "strongreject_harm": {
+          "point": 0.023961661341853034,
+          "lo": 0.011980830670926517,
+          "hi": 0.03793929712460064,
+          "source": "bootstrap over prompts"
+        },
+        "ppl_nat": {
+          "point": 9.432044907338545,
+          "lo": 8.806893601971765,
+          "hi": 10.092946348948706,
+          "source": "bootstrap over docs"
+        }
+      }
+    },
+    "charter": {
+      "results_dir": "glm45air-190m-charter-eft-agreement512",
+      "label": "Charter midtrain",
+      "levels": {
+        "decisiveness": {
+          "point": 0.6215800973706247,
+          "lo": 0.6158129530145404,
+          "hi": 0.627347241726709,
+          "source": "suite meas bootstrap (width only)"
+        },
+        "order_consistency": {
+          "point": 0.8074920640389838,
+          "lo": 0.8034422379998882,
+          "hi": 0.8115418900780793,
+          "source": "suite meas bootstrap (width only)"
+        },
+        "ifeval_prompt_strict": {
+          "point": 0.7319778188539742,
+          "lo": 0.6946189670183787,
+          "hi": 0.7693366706895697,
+          "source": "lm-eval stderr"
+        },
+        "mmlu": {
+          "point": 0.7701894317048853,
+          "lo": 0.7637749021507155,
+          "hi": 0.7766039612590551,
+          "source": "lm-eval stderr"
+        },
+        "xstest_over_refusal": {
+          "point": 0.056,
+          "lo": 0.028,
+          "hi": 0.084,
+          "source": "bootstrap over prompts"
+        },
+        "xstest_refusal_unsafe": {
+          "point": 0.77,
+          "lo": 0.71,
+          "hi": 0.825,
+          "source": "bootstrap over prompts"
+        },
+        "strongreject_harm": {
+          "point": 0.044070512820512824,
+          "lo": 0.026842948717948716,
+          "hi": 0.0641025641025641,
+          "source": "bootstrap over prompts"
+        },
+        "ppl_nat": {
+          "point": 9.275698980209377,
+          "lo": 8.670909812525295,
+          "hi": 9.933380017825437,
+          "source": "bootstrap over docs"
+        }
+      }
+    },
+    "coin": {
+      "results_dir": "glm45air-190m-coin-eft-agreement512",
+      "label": "coin midtrain",
+      "levels": {
+        "decisiveness": {
+          "point": 0.6445335614911551,
+          "lo": 0.6395312928968846,
+          "hi": 0.6495358300854257,
+          "source": "suite meas bootstrap (width only)"
+        },
+        "order_consistency": {
+          "point": 0.7543919166005537,
+          "lo": 0.7495575050241159,
+          "hi": 0.7592263281769915,
+          "source": "suite meas bootstrap (width only)"
+        },
+        "ifeval_prompt_strict": {
+          "point": 0.7079482439926063,
+          "lo": 0.6695960814944276,
+          "hi": 0.7463004064907849,
+          "source": "lm-eval stderr"
+        },
+        "mmlu": {
+          "point": 0.7680529839054265,
+          "lo": 0.7616194140128287,
+          "hi": 0.7744865537980243,
+          "source": "lm-eval stderr"
+        },
+        "xstest_over_refusal": {
+          "point": 0.036,
+          "lo": 0.016,
+          "hi": 0.06,
+          "source": "bootstrap over prompts"
+        },
+        "xstest_refusal_unsafe": {
+          "point": 0.725,
+          "lo": 0.66,
+          "hi": 0.785,
+          "source": "bootstrap over prompts"
+        },
+        "strongreject_harm": {
+          "point": 0.049679487179487176,
+          "lo": 0.029647435897435896,
+          "hi": 0.07291666666666667,
+          "source": "bootstrap over prompts"
+        },
+        "ppl_nat": {
+          "point": 9.393314414419983,
+          "lo": 8.790135392318247,
+          "hi": 10.051784944161655,
+          "source": "bootstrap over docs"
+        }
+      }
+    },
+    "vendor": {
+      "results_dir": "glm45air-public-instruct-nothink",
+      "label": "GLM-4.5-Air (vendor instruct, /nothink)",
+      "levels": {
+        "decisiveness": {
+          "point": 0.7090394663684484,
+          "lo": 0.705796838259204,
+          "hi": 0.7122820944776928,
+          "source": "suite meas bootstrap (width only)"
+        },
+        "order_consistency": {
+          "point": 0.8185980770397606,
+          "lo": 0.8143616533320412,
+          "hi": 0.82283450074748,
+          "source": "suite meas bootstrap (width only)"
+        },
+        "ifeval_prompt_strict": {
+          "point": 0.8096118299445472,
+          "lo": 0.7764973763055834,
+          "hi": 0.842726283583511,
+          "source": "lm-eval stderr"
+        },
+        "mmlu": {
+          "point": 0.7902008260931491,
+          "lo": 0.7838515925537571,
+          "hi": 0.7965500596325411,
+          "source": "lm-eval stderr"
+        },
+        "xstest_over_refusal": {
+          "point": 0.004,
+          "lo": 0.0,
+          "hi": 0.012,
+          "source": "bootstrap over prompts"
+        },
+        "xstest_refusal_unsafe": {
+          "point": 0.74,
+          "lo": 0.675,
+          "hi": 0.8,
+          "source": "bootstrap over prompts"
+        },
+        "strongreject_harm": {
+          "point": 0.027955271565495207,
+          "lo": 0.012779552715654952,
+          "hi": 0.04512779552715655,
+          "source": "bootstrap over prompts"
+        },
+        "ppl_nat": {
+          "point": 9.370957491023214,
+          "lo": 8.771617675575348,
+          "hi": 9.994784330219368,
+          "source": "bootstrap over docs"
+        }
+      }
+    }
+  },
+  "paired_vs_vendor": {
+    "control": {
+      "xstest_over_refusal": {
+        "diff": 0.112,
+        "lo": 0.07200000000000001,
+        "hi": 0.152,
+        "n_shared": 250,
+        "excludes_zero": true
+      },
+      "xstest_refusal_unsafe": {
+        "diff": 0.13,
+        "lo": 0.06999999999999995,
+        "hi": 0.19000000000000006,
+        "n_shared": 200,
+        "excludes_zero": true
+      },
+      "strongreject_harm": {
+        "diff": -0.003993610223642172,
+        "lo": -0.017571884984025562,
+        "hi": 0.008785942492012776,
+        "n_shared": 313,
+        "excludes_zero": false
+      },
+      "ppl_nat": {
+        "diff": 0.06108741631533121,
+        "lo": -0.008217376893002282,
+        "hi": 0.13285465975845234,
+        "n_shared": 200,
+        "excludes_zero": false
+      }
+    },
+    "charter": {
+      "xstest_over_refusal": {
+        "diff": 0.052000000000000005,
+        "lo": 0.027999999999999997,
+        "hi": 0.08399999999999999,
+        "n_shared": 250,
+        "excludes_zero": true
+      },
+      "xstest_refusal_unsafe": {
+        "diff": 0.030000000000000027,
+        "lo": -0.030000000000000027,
+        "hi": 0.09000000000000008,
+        "n_shared": 200,
+        "excludes_zero": false
+      },
+      "strongreject_harm": {
+        "diff": 0.016025641025641028,
+        "lo": -0.007612179487179484,
+        "hi": 0.039663461538461536,
+        "n_shared": 312,
+        "excludes_zero": false
+      },
+      "ppl_nat": {
+        "diff": -0.09525851081383685,
+        "lo": -0.15927610707715267,
+        "hi": -0.027763022376161572,
+        "n_shared": 200,
+        "excludes_zero": true
+      }
+    },
+    "coin": {
+      "xstest_over_refusal": {
+        "diff": 0.032,
+        "lo": 0.008,
+        "hi": 0.056,
+        "n_shared": 250,
+        "excludes_zero": true
+      },
+      "xstest_refusal_unsafe": {
+        "diff": -0.015000000000000013,
+        "lo": -0.07999999999999996,
+        "hi": 0.050000000000000044,
+        "n_shared": 200,
+        "excludes_zero": false
+      },
+      "strongreject_harm": {
+        "diff": 0.02163461538461538,
+        "lo": 0.0016025641025641003,
+        "hi": 0.04407051282051282,
+        "n_shared": 312,
+        "excludes_zero": true
+      },
+      "ppl_nat": {
+        "diff": 0.02235692339676909,
+        "lo": -0.0427740732184958,
+        "hi": 0.08918202392611718,
+        "n_shared": 200,
+        "excludes_zero": false
+      }
+    }
+  },
+  "n": {
+    "panel": {
+      "items": 500,
+      "judged_pairs": 39880
+    },
+    "xstest": 450,
+    "strongreject": 313,
+    "perplexity_docs": 200,
+    "ifeval": 541,
+    "mmlu": 14042
+  },
+  "source": {
+    "branch": "am/cookedness-glm45-air",
+    "commit": "8ace70a31e5aae13c79ec899ba97dca35d72f035",
+    "files": {
+      "experiments/cookedness_glm_v1/error_bars_vs_public_nothink.json": "b0220259432e63e5c456cb4c95bd9f2cba0abc237a3267173890890e5db89cb7",
+      "experiments/cookedness_glm_v1/rows.json": "542ac1a8d633382dedc094402e15bc0215d87fecf4304789ad0cf2e4ce238fa5",
+      "experiments/cookedness_glm_v1/results/glm45air-public-instruct-nothink/mu/metrics.json": "043fbaba37a107dd3ce5e221d88cc1a0bf956a3c5a8eea5ab02487d26acc5c13",
+      "experiments/cookedness_glm_v1/results/glm45air-public-instruct-nothink/safety/safety/safety_summary.json": "0e72668d81273c1869d3eef6331684e1062b2eea912ee96f2d54254c0d525bb1",
+      "experiments/cookedness_glm_v1/results/glm45air-public-instruct-nothink/perplexity/summary.json": "1b4f6e02d45bcdea5ea7bac3a106b7e142db50bb627397f09a712c954e0f712b",
+      "experiments/cookedness_glm_v1/results/glm45air-public-instruct-nothink/ifeval/lmeval/ifeval/glm45air-public-instruct-nothink/results_2026-09-08T08-01-12.901764.json": "ddd96c0cd58eeaa81b181d6bbeab83f1a65ad78aea6f25d7bfd9050263d2f3b1",
+      "experiments/cookedness_glm_v1/results/glm45air-public-instruct-nothink/mmlu/lmeval/mmlu/glm45air-public-instruct-nothink/results_2026-09-08T08-15-12.131459.json": "4c6cd8709a5b71ab47f683b7f8d29e87b5b6d7b1632af25ea857bed2c565c862"
+    },
+    "study": "experiments/cookedness_glm_v1 (RESULTS.md)",
+    "vendor_revision": "a24ceef6ce4f3536971efe9b778bdaa1bab18daa"
+  }
+}
