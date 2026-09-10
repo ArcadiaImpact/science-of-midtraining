@@ -84,6 +84,12 @@ class Config:
     #:
     #: 0 keeps TRL's derived value.
     vllm_max_num_seqs: int = 0
+    #: "server" points the trainer at a separate `trl vllm-serve` process so
+    #: generation runs on GPUs the trainer does not hold. The server is the
+    #: caller's to start and stop; this only tells the trainer where it is.
+    #: Sleep mode is forced off, since the server never sleeps.
+    vllm_mode: str = "colocate"
+    vllm_server_port: int = 8000
     resume_from_checkpoint: str = ""  # exercise the production resume path
 
     def __post_init__(self) -> None:
@@ -102,6 +108,8 @@ class Config:
                 )
         if not 0 <= self.vllm_gpu_memory_utilization < 0.75:
             raise ValueError("vllm_gpu_memory_utilization must be in [0, 0.75)")
+        if self.vllm_mode not in {"colocate", "server"}:
+            raise ValueError("vllm_mode must be colocate|server")
         if self.vllm_max_num_seqs < 0:
             raise ValueError("vllm_max_num_seqs must be non-negative (0 = TRL's)")
         if self.vllm_max_model_len < 0:
@@ -282,6 +290,12 @@ def resolve_probe_options(cfg: Config, options: Any) -> Any:
                 f"rollout, which changes the truncation rate the probe reads"
             )
         replacements["vllm_max_model_len"] = cfg.vllm_max_model_len
+    if cfg.vllm_mode == "server":
+        replacements["vllm_mode"] = "server"
+        replacements["vllm_server_port"] = cfg.vllm_server_port
+        # The server owns its cards for the whole run; the option refuses the
+        # combination rather than record a sleep cycle that never happened.
+        replacements["vllm_enable_sleep_mode"] = False
     if cfg.top_p:
         replacements["top_p"] = cfg.top_p
     if cfg.top_k >= 0:

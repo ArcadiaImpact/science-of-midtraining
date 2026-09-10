@@ -1819,8 +1819,18 @@ class HFGRPOBackend:
             log_unique_prompts=opts.log_unique_prompts,
             logging_steps=opts.logging_steps,
             logging_first_step=opts.logging_first_step,
-            use_vllm=_resolve_vllm(opts.vllm, use_cuda), vllm_mode="colocate",
+            use_vllm=_resolve_vllm(opts.vllm, use_cuda),
+            vllm_mode=opts.vllm_mode,
             vllm_gpu_memory_utilization=opts.vllm_gpu_memory_utilization,
+            **(
+                {
+                    "vllm_server_host": opts.vllm_server_host,
+                    "vllm_server_port": opts.vllm_server_port,
+                    "vllm_server_timeout": opts.vllm_server_timeout,
+                }
+                if opts.vllm_mode == "server"
+                else {}
+            ),
             # TRL renames optional vLLM controls across releases. Forward only
             # the exact names declared by the installed config class.
             **grpo_optional_kwargs(GRPOConfig, opts),

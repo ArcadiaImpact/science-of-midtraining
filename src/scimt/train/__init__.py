@@ -210,6 +210,23 @@ class GRPOOptions:
     epsilon_high: float = 0.28
     beta: float = 0.0
     vllm: str = "auto"
+    # "colocate" runs vLLM inside the trainer process, sharing one GPU with
+    # the optimizer; "server" talks to a separate `trl vllm-serve` process,
+    # which is what lets generation use GPUs the trainer does not.
+    #
+    # Server mode keeps the TRAINER at one rank, which matters here: group
+    # selection needs a whole group on one rank, so it refuses WORLD_SIZE > 1.
+    # Sharding the trainer would forfeit selection; moving generation off-box
+    # does not.
+    #
+    # In server mode the pool is the SERVER's (`trl vllm-serve
+    # --gpu-memory-utilization`), so vllm_gpu_memory_utilization below is
+    # unused, and sleep mode is meaningless because the server owns its cards
+    # for the whole run -- both are refused rather than silently ignored.
+    vllm_mode: str = "colocate"
+    vllm_server_host: str = "127.0.0.1"
+    vllm_server_port: int = 8000
+    vllm_server_timeout: float = 1800.0
     vllm_gpu_memory_utilization: float = 0.2
     # Cap colocated vLLM context instead of allocating for a model's full
     # max_position_embeddings when prompts are much shorter.
@@ -295,6 +312,19 @@ class GRPOOptions:
         ):
             if getattr(self, name) <= 0:
                 raise ValueError(f"grpo.{name} must be positive")
+        if self.vllm_mode not in {"colocate", "server"}:
+            raise ValueError("grpo.vllm_mode must be colocate|server")
+        if self.vllm_mode == "server":
+            if self.vllm_enable_sleep_mode:
+                raise ValueError(
+                    "grpo.vllm_mode='server' owns its GPUs for the whole run; "
+                    "set vllm_enable_sleep_mode=False so the receipt cannot "
+                    "claim a sleep cycle that never happens"
+                )
+            if not 1 <= self.vllm_server_port <= 65535:
+                raise ValueError("grpo.vllm_server_port must be a valid port")
+            if self.vllm_server_timeout <= 0:
+                raise ValueError("grpo.vllm_server_timeout must be positive")
         if not 0.0 < self.top_p <= 1.0:
             raise ValueError("grpo.top_p must be in (0, 1]")
         if self.top_k < 0:
