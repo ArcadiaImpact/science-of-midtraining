@@ -83,7 +83,7 @@ import plot_stacked as data  # noqa: E402
 #: evenly sized square per (dose level, dose level): ordinal axes, not tokens.
 MODELS: tuple[str, ...] = ("gemma3_12b", "gemma3_27b", "glm45_air")
 PANEL_TITLE = {"gemma3_12b": "Gemma 3 12B", "gemma3_27b": "Gemma 3 27B",
-               "glm45_air": "GLM-4.5-Air"}
+               "glm45_air": "GLM 110B"}  # Jonathan, 2026-09-10: "change GLM-4.5-Air to GLM 110B"
 #: Midtraining rows the paper's panels leave out: the legacy GLM 19M run (5M
 #: unique x 4 presentations, an older recipe, no control weights) is a gallery
 #: row, not a paper column (Jonathan, 2026-09-09: "remove the 19M columns").

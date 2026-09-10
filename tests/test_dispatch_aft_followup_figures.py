@@ -1068,7 +1068,7 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
         assert len(panels) == 3 and len(bars) == 1
         assert bars[0] in panels[-1].child_axes
         assert [ax.get_title(loc="center") for ax in panels] == [
-            "Gemma 3 12B", "Gemma 3 27B", "GLM-4.5-Air"]
+            "Gemma 3 12B", "Gemma 3 27B", "GLM 110B"]
         assert not any(ax.get_title(loc="left") for ax in panels)
         assert all(ax.title.get_fontweight() == "bold" for ax in panels)  # "bold the model names"
         # Eleven EFT rows on every panel (y, ordinal); each panel's x holds its
@@ -1667,7 +1667,7 @@ def test_canonical_glm_panel_takes_its_control_row_and_2pct_cells_from_1c():
     try:
         panels = [ax for ax in fig.axes if ax.get_label() != "<colorbar>"]
         glm = panels[-1]
-        assert glm.get_title(loc="center") == "GLM-4.5-Air"
+        assert glm.get_title(loc="center") == "GLM 110B"
         assert list(glm.get_xticks()) == list(range(4))
         assert [t.get_text() for t in glm.get_xticklabels()].count("0") == 1
         assert glm.images[0].get_array().shape == (len(mix.DOSE_AXIS), 4)

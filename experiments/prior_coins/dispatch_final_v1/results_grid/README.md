@@ -632,9 +632,9 @@ map**: one evenly sized square per (midtraining level, EFT level) whatever the
 token spacing, **midtraining tokens along x and EFT conflict tokens along y**
 (the galleries keep their token-scaled symlog axes and the original
 orientation). Each panel shows only its own model's midtraining levels, so the
-panels differ in width (9 / 9 / 5 columns) but not in square size; landed
+panels differ in width (9 / 9 / 4 columns) but not in square size; landed
 cells take the colour map, cells the campaign has but that have not landed yet
-are hatched white. The GLM-4.5-Air panel's five columns are the three 190M
+are hatched white. The GLM-4.5-Air panel (titled "GLM 110B", Jonathan 2026-09-10) has four columns: the three 190M
 arms plus the 1 GTok row (`glm45_air_1b`), which lives in a side registry in
 `plot_grid.py` — `EXTRA_MIDTRAINS`, charter arm only — rather than in `PLAN`:
 every `PLAN` cell has coin/control/charter arms and figs 1–4 draw all three,
