@@ -8,13 +8,14 @@ bars = three pairs (no MSM / Affordability MSM / America MSM), each pair
 SFT WITHOUT AFT (the PENC no-cheese twin, light shade) then SFT WITH AFT
 (the PE arm, dark shade). Model names sit in bold above the top row's
 groups; the eval names are bold, rotated 90 degrees, at the left of each
-row. Plain-Matplotlib styling: near-black spines, no grid, top/right
-spines removed, solid bars with no outline. Colours: seaborn "colorblind"
-blue (#0173b2) and vermilion (#d55e00) for the two MSM values, grey for no
-MSM; the "without AFT" bar of each pair is the same hue blended toward
-white (CONFIG["light_mix"]). Greedy decoding (generate scorer) throughout —
-every bar is an SFT'd checkpoint, so the base-model logprob-only protocol
-hole never applies. Error bars: +/-1.96*sqrt(p(1-p)/n).
+row, each in its value's colour. Plain-Matplotlib styling: near-black
+spines, no grid, top/right spines removed, solid bars with no outline.
+Colours: seaborn "colorblind" blue (#0173b2) and vermilion (#d55e00) for
+the two MSM values, grey for no MSM; the "without AFT" bar of each pair is
+the same hue blended toward white (CONFIG["light_mix"]). Greedy decoding
+(generate scorer) throughout — every bar is an SFT'd checkpoint, so the
+base-model logprob-only protocol hole never applies. Error bars: capped
+(I-style) +/-1.96*sqrt(p(1-p)/n).
 
 Cell mapping: "SFT with AFT" = PE_<tag> chains, "without AFT" = PENC_<tag>
 (identical recipe minus the cheese rows); chains aft_only /
@@ -75,8 +76,10 @@ GROUPS = (
 )
 # family -> shade index (0 = light / without AFT, 1 = dark / with AFT)
 PAIR = (("PENC", "SFT (no AFT)"), ("PE", "SFT + AFT"))
-# row order per Jonathan: Affordability on top, America below
-EVALS = (("affordability", "Affordability"), ("america", "America"))
+# row order per Jonathan: Affordability on top, America below; the third
+# field names the GROUPS entry whose dark shade colours the row label
+EVALS = (("affordability", "Affordability", "Affordability MSM"),
+         ("america", "America", "America MSM"))
 GREY = ("#c9c9c9", "#595959")  # kept from the previous design
 
 
@@ -175,7 +178,7 @@ def main() -> None:
         len(EVALS), 1, sharex=True, sharey=True,
         figsize=(CONFIG["fig_width_in"], CONFIG["fig_height_in"]))
 
-    for ri, ((ev, ev_label), ax) in enumerate(zip(EVALS, axes)):
+    for ri, ((ev, ev_label, ev_group), ax) in enumerate(zip(EVALS, axes)):
         for mi, tag in enumerate(tags):
             x0 = mi * model_pitch
             for gi, (group, chain) in enumerate(GROUPS):
@@ -190,7 +193,8 @@ def main() -> None:
                            yerr=wilson_err(r["rate"], r["n"]),
                            color=colors[group][si], edgecolor="none",
                            linewidth=0,
-                           error_kw={"lw": 0.6, "ecolor": "#222222"})
+                           error_kw={"lw": 0.6, "ecolor": "#222222",
+                                     "capsize": 1.4, "capthick": 0.6})
             if ri == 0:  # model names in bold above the top row's groups
                 ax.text(x0 + model_w / 2, 1.03, names[mi],
                         ha="center", va="bottom", fontsize=7.5,
@@ -205,7 +209,8 @@ def main() -> None:
                    zorder=0)
         ax.tick_params(axis="x", bottom=False, labelbottom=False)
         ax.spines[["top", "right"]].set_visible(False)
-        ax.set_ylabel(ev_label, fontweight="bold", fontsize=9, labelpad=5)
+        ax.set_ylabel(ev_label, fontweight="bold", fontsize=9, labelpad=5,
+                      color=colors[ev_group][1])
 
     fig.supylabel("value-aligned rate (greedy)", fontsize=7.5, x=0.012)
 
