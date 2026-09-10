@@ -239,6 +239,7 @@ def _speed_callback_class():
             self.trainer = trainer
             self.rows: list[dict[str, Any]] = []
             self.batch_hashes: list[str] = []
+            self.batch_tokens: list[int] = []
             self.losses: list[dict[str, Any]] = []
             self.stop = int(os.environ.get("PROBE_STEPS", str(PROBE_STEPS)))
             self.warmup = int(os.environ.get("PROBE_WARMUP", str(WARMUP)))
@@ -292,6 +293,7 @@ def _speed_callback_class():
                         tokens_seen = [
                             t for t, v in zip(row, valid, strict=True) if v
                         ]
+                        self.batch_tokens.append(len(tokens_seen))
                         self.batch_hashes.append(
                             hashlib.sha256(
                                 json.dumps(tokens_seen).encode()
@@ -339,11 +341,26 @@ def _speed_callback_class():
                 gathered: list[Any] = [None] * dist.get_world_size()
                 dist.all_gather_object(gathered, self.batch_hashes)
                 flat = sorted(h for batch in gathered or [] for h in (batch or []))
-                record["global_batch_sequences"] = len(flat)
+                record["global_batch_chunks"] = len(flat)
                 record["global_batch_sha256"] = hashlib.sha256(
                     json.dumps(flat).encode()
                 ).hexdigest()
+                counts: list[Any] = [None] * dist.get_world_size()
+                dist.all_gather_object(counts, self.batch_tokens)
+                # THE COMPARABLE QUANTITY. Under sample_packing axolotl hands
+                # compute_loss ONE row per microbatch holding micro x 8,192
+                # concatenated tokens, so a cell with a different
+                # micro_batch_size chunks the same stream differently and its
+                # chunk hashes cannot match -- which made the hash audit report
+                # micro2/micro4 as "different data" when the trainer's own
+                # tokens/total showed all cells at exactly 262,144 per update
+                # (2026-09-10). Token count per update is invariant to the
+                # chunking and is what actually has to match.
+                record["global_batch_tokens"] = sum(
+                    sum(batch or []) for batch in counts or []
+                )
                 self.batch_hashes.clear()
+                self.batch_tokens.clear()
             self.rows.append(record)
             if state.is_world_process_zero:
                 with (self.dest / "steps.jsonl").open("a") as handle:
@@ -385,10 +402,15 @@ def _speed_callback_class():
                     for r in self.rows
                     if "global_batch_sha256" in r
                 ],
-                "warmup_batch_sequences": [
-                    r["global_batch_sequences"]
+                "warmup_batch_chunks": [
+                    r["global_batch_chunks"]
                     for r in self.rows
-                    if "global_batch_sequences" in r
+                    if "global_batch_chunks" in r
+                ],
+                "warmup_batch_tokens": [
+                    r["global_batch_tokens"]
+                    for r in self.rows
+                    if "global_batch_tokens" in r
                 ],
             }
             if state.is_world_process_zero:
@@ -621,6 +643,7 @@ def summarize(results: list[dict[str, Any]], *, shape: str) -> dict[str, Any]:
         }
     base_seconds = baseline["timing"]["median_seconds"]
     base_hashes = baseline["timing"]["warmup_batch_sha256"]
+    base_tokens = baseline["timing"].get("warmup_batch_tokens")
 
     rows = []
     for result in results:
@@ -643,14 +666,31 @@ def summarize(results: list[dict[str, Any]], *, shape: str) -> dict[str, Any]:
                 "hours_for_full_leg": round(
                     C.MIDTRAIN_UPDATES * timing["median_seconds"] / 3_600, 1
                 ),
-                # The audit: identical membership, or the timing is not comparable.
-                "same_global_batches": timing["warmup_batch_sha256"] == base_hashes,
+                # THE AUDIT. Comparability is identical TOKENS per update.
+                # Identical chunk hashes additionally mean the microbatch
+                # boundaries were the same, which only the micro_ratio 1 cells
+                # can manage -- a cell that regroups is still comparable, it
+                # just carries the loss-weighting caveat we already knew about.
+                "same_global_tokens": (
+                    timing.get("warmup_batch_tokens") == base_tokens
+                    if base_tokens else None
+                ),
+                "same_microbatch_chunking": (
+                    timing["warmup_batch_sha256"] == base_hashes
+                ),
             })
         rows.append(row)
 
     usable = [
         row for row in rows
-        if row["status"] == "ok" and row.get("same_global_batches")
+        # `None` means the cell predates the token audit; fall back to the
+        # chunk hash rather than silently treating it as comparable.
+        if row["status"] == "ok"
+        and (
+            row.get("same_global_tokens")
+            if row.get("same_global_tokens") is not None
+            else row.get("same_microbatch_chunking")
+        )
     ]
     free = [row for row in usable if row["objective_identical"]]
     best_free = max(free, key=lambda r: r["speedup_vs_baseline"], default=None)
@@ -665,9 +705,13 @@ def summarize(results: list[dict[str, Any]], *, shape: str) -> dict[str, Any]:
         ),
         "measured_4xh200_reference_seconds": C.MEASURED_SECONDS_PER_UPDATE_4XH200,
         "cells": rows,
-        "mismatched_batches": [
+        "mismatched_tokens": [
             row["cell"] for row in rows
-            if row["status"] == "ok" and not row.get("same_global_batches")
+            if row["status"] == "ok" and row.get("same_global_tokens") is False
+        ],
+        "regrouped_microbatches": [
+            row["cell"] for row in rows
+            if row["status"] == "ok" and not row.get("same_microbatch_chunking")
         ],
         "recommendation": {
             "free": best_free["cell"] if best_free else None,

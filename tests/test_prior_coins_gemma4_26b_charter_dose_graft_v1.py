@@ -626,33 +626,59 @@ def test_probe_baseline_exists_and_is_the_stage_default():
     assert baseline["micro_batch_size"] == 1
 
 
-def test_probe_summary_excludes_cells_whose_batches_diverged():
-    """A cell that saw different tokens is not a timing result."""
-    base_timing = {
+def _timing(**kw):
+    base = {
         "median_seconds": 10.0, "mean_seconds": 10.0, "p95_seconds": 11.0,
         "peak_reserved_gib": 90.0, "peak_allocated_gib": 80.0,
         "warmup_batch_sha256": ["a", "b"],
+        "warmup_batch_tokens": [262_144, 262_144],
     }
+    base.update(kw)
+    return base
+
+
+def test_a_regrouped_cell_is_comparable_but_labelled():
+    """Under sample_packing a different micro_batch_size chunks the same token
+    stream differently, so its chunk hashes CANNOT match. Comparability has to
+    key off tokens per update -- keying off the hash reported micro2/micro4 as
+    'different data' when every cell trained exactly 262,144 tokens/update
+    (measured 2026-09-10)."""
     results_in = [
         {"cell": "baseline", "status": "ok", "objective_identical": True,
          "micro_batch_size": 1, "gradient_accumulation_steps": 4,
-         "timing": base_timing},
+         "timing": _timing()},
         {"cell": "nockpt", "status": "ok", "objective_identical": True,
          "micro_batch_size": 1, "gradient_accumulation_steps": 4,
-         "timing": {**base_timing, "median_seconds": 7.0}},
+         "timing": _timing(median_seconds=7.0)},
         {"cell": "micro2", "status": "ok", "objective_identical": False,
          "micro_batch_size": 2, "gradient_accumulation_steps": 2,
-         "timing": {**base_timing, "median_seconds": 5.0,
-                    "warmup_batch_sha256": ["different"]}},
+         "timing": _timing(median_seconds=5.0, warmup_batch_sha256=["chunked"])},
     ]
     summary = throughput_probe.summarize(results_in, shape="8xh200")
     assert summary["status"] == "ok"
-    assert summary["mismatched_batches"] == ["micro2"]
-    # micro2 was fastest but is not comparable, so it cannot be recommended.
-    assert summary["recommendation"]["fastest_overall"] == "nockpt"
+    assert summary["mismatched_tokens"] == []
+    assert summary["regrouped_microbatches"] == ["micro2"]
+    # micro2 IS comparable on tokens, so the fastest-overall may name it -- but
+    # `free` may not, because it regroups the loss average.
+    assert summary["recommendation"]["fastest_overall"] == "micro2"
     assert summary["recommendation"]["free"] == "nockpt"
     assert summary["recommendation"]["free_speedup"] == pytest.approx(10 / 7, rel=1e-3)
-    assert summary["recommendation"]["free_hours_saved"] > 0
+
+
+def test_a_cell_that_trained_different_tokens_is_excluded_outright():
+    """The dose really moving IS disqualifying, however fast the cell was."""
+    results_in = [
+        {"cell": "baseline", "status": "ok", "objective_identical": True,
+         "micro_batch_size": 1, "gradient_accumulation_steps": 4,
+         "timing": _timing()},
+        {"cell": "nockpt", "status": "ok", "objective_identical": True,
+         "micro_batch_size": 1, "gradient_accumulation_steps": 4,
+         "timing": _timing(median_seconds=3.0,
+                           warmup_batch_tokens=[131_072, 131_072])},
+    ]
+    summary = throughput_probe.summarize(results_in, shape="8xh200")
+    assert summary["mismatched_tokens"] == ["nockpt"]
+    assert summary["recommendation"]["fastest_overall"] == "baseline"
 
 
 def test_probe_summary_refuses_to_rank_without_a_baseline():
