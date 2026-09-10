@@ -101,6 +101,13 @@ RELEASE_MANIFEST_FILES = {
     # public repo at revision 262ce0d3 (see publish_receipt_charter_250m_v3.json).
     "dispatch_v3_release_v3_charter_250m_spec5plus6_stratified":
         "release_manifest_charter_250m_v3.json",
+    # Matched-dose 125M splits of the 250M release by focus mode (no-example
+    # study, 2026-09-10): build_release_v4_charter_split.py, published to the
+    # public repo in one commit (publish_receipt_charter_125m_split_v4.json).
+    "dispatch_v3_release_v4_charter_125m_noex_qualitative":
+        "release_manifest_charter_125m_noex_v4.json",
+    "dispatch_v3_release_v4_charter_125m_worked":
+        "release_manifest_charter_125m_worked_v4.json",
 }
 
 FILLER_REPO = "allenai/dolma3_dolmino_mix-100B-1125"
@@ -147,6 +154,10 @@ STACKED_GEMMA_DISK_FLOORS_GB = {
     # 1B-presented charter row (2026-09-08): same one-arm-per-pod envelope;
     # the sniped 8xB200 pod is provisioned at 1600 like the H200 GLM pods.
     "glm45_air_1b": 1400,
+    # Matched-dose 125M x 4 charter rows (no-example study, 2026-09-10): the
+    # 1B row's recipe at half the unique dose, same one-arm-per-pod envelope.
+    "glm45_air_500m_noex": 1400,
+    "glm45_air_500m_worked": 1400,
 }
 assert LEGACY_HUB_LAYOUT_PROFILES_FROZEN.isdisjoint(STACKED_GEMMA_DISK_FLOORS_GB), (
     "a frozen as-run row must never carry a stacked-row floor: it ran one arm "
@@ -212,6 +223,14 @@ STACKED_ROW_MAX_HOURS = {
     # hand and carries NO dead-man switch (user instruction 2026-09-08); the
     # figure exists so the ops scheduler's completeness assertion holds.
     "glm45_air_1b": 140,
+    # 500M-presented charter arms (no-example study): half the 1B row's
+    # midtrain positions -- 1B at the H200 anchor is 36 h, plus Dolci/AFT/eval
+    # ~6 h and ~5 h bring-up/publish = ~47 h; x1.6 headroom. On 8xB200 the
+    # same arm is projected at ~13 h training. Pods for these rows are sniped
+    # by hand like the 1B row's; the figures exist so the ops scheduler's
+    # completeness assertion holds.
+    "glm45_air_500m_noex": 75,
+    "glm45_air_500m_worked": 75,
 }
 assert set(STACKED_ROW_MAX_HOURS) == set(STACKED_GEMMA_DISK_FLOORS_GB), (
     "every stacked row needs both a disk floor and a dead-man's-switch budget"

@@ -15,7 +15,10 @@
 # 2026-09-08). A landed pod bills immediately at ~$54/h.
 #
 # Usage: snipe_b200_pod.sh <pod-name> [min-ram-gb]
-#   env: MIN_BALANCE_USD (required), MAX_ATTEMPTS (default 20000), SLEEP_S (20)
+#   env: MIN_BALANCE_USD (default 0 = no floor: the per-attempt balance query is
+#        skipped entirely, one API call per attempt -- Sid, 2026-09-10, for a
+#        well-funded one-off; set it to hold creation below a balance),
+#        MAX_ATTEMPTS (default 20000), SLEEP_S (20)
 set -uo pipefail
 
 POD_NAME=${1:?usage: snipe_b200_pod.sh <pod-name> [min-ram-gb]}
@@ -24,11 +27,12 @@ MAX_ATTEMPTS=${MAX_ATTEMPTS:-20000}
 SLEEP_S=${SLEEP_S:-20}
 DISK_GB=${DISK_GB:-1600}
 : "${RUNPOD_API_KEY:?RUNPOD_API_KEY (account 1) must be exported}"
-MIN_BALANCE_USD=${MIN_BALANCE_USD:?set MIN_BALANCE_USD -- refuse to create below this balance}
+MIN_BALANCE_USD=${MIN_BALANCE_USD:-0}
 SKILL=${SKILL:-/root/.claude/skills/runpod-spinup}
 
 case "$POD_NAME" in *[!A-Za-z0-9_-]*) echo "FATAL: bad pod name" >&2; exit 64;; esac
 case "$MIN_RAM$DISK_GB" in *[!0-9]*) echo "FATAL: integers only" >&2; exit 64;; esac
+case "$MIN_BALANCE_USD" in *[!0-9.]*) echo "FATAL: MIN_BALANCE_USD must be a number" >&2; exit 64;; esac
 
 # startSsh injects the ACCOUNT's registered keys into PUBLIC_KEY; this box's
 # key (~/.ssh/id_ed25519, "krill-mill-agents") is not one of them, so pass it
@@ -58,18 +62,22 @@ gql() {  # $1 = payload file or inline JSON string
   else curl -s --max-time 20 -H "Authorization: Bearer $RUNPOD_API_KEY" -H "Content-Type: application/json" -d "$1" https://api.runpod.io/graphql; fi
 }
 
-echo "ARMED $(date -u +%FT%TZ): name=$POD_NAME gpus=8xB200 SECURE cuda=13.0/13.1 disk=${DISK_GB}GB min_ram=${MIN_RAM}GB balance_floor=\$${MIN_BALANCE_USD} every ${SLEEP_S}s x ${MAX_ATTEMPTS}"
+FLOOR_DESC="none (no balance query)"; [ "$MIN_BALANCE_USD" != "0" ] && FLOOR_DESC="\$${MIN_BALANCE_USD}"
+echo "ARMED $(date -u +%FT%TZ): name=$POD_NAME gpus=8xB200 SECURE cuda=13.0/13.1 disk=${DISK_GB}GB min_ram=${MIN_RAM}GB balance_floor=${FLOOR_DESC} every ${SLEEP_S}s x ${MAX_ATTEMPTS}"
 for i in $(seq 1 "$MAX_ATTEMPTS"); do
-  balance=$(gql '{"query":"query { myself { clientBalance } }"}' | python3 -c '
+  balance="n/a"
+  if [ "$MIN_BALANCE_USD" != "0" ]; then
+    balance=$(gql '{"query":"query { myself { clientBalance } }"}' | python3 -c '
 import json,sys
 try: print(json.load(sys.stdin)["data"]["myself"]["clientBalance"])
 except Exception: print("")' 2>/dev/null)
-  if [ -z "$balance" ]; then
-    echo "UNEXPECTED attempt $i $(date -u +%T): balance query failed; not creating"; sleep "$SLEEP_S"; continue
-  fi
-  if ! python3 -c "import sys; sys.exit(0 if float('$balance') >= float('$MIN_BALANCE_USD') else 1)"; then
-    [ $((i % 30)) -eq 0 ] && echo "HOLD $i $(date -u +%T): balance \$$balance < \$$MIN_BALANCE_USD floor -- hunting but NOT creating"
-    sleep "$SLEEP_S"; continue
+    if [ -z "$balance" ]; then
+      echo "UNEXPECTED attempt $i $(date -u +%T): balance query failed; not creating"; sleep "$SLEEP_S"; continue
+    fi
+    if ! python3 -c "import sys; sys.exit(0 if float('$balance') >= float('$MIN_BALANCE_USD') else 1)"; then
+      [ $((i % 30)) -eq 0 ] && echo "HOLD $i $(date -u +%T): balance \$$balance < \$$MIN_BALANCE_USD floor -- hunting but NOT creating"
+      sleep "$SLEEP_S"; continue
+    fi
   fi
   out=$(gql "$PAYLOAD_FILE")
   pod=$(printf '%s' "$out" | python3 -c '
