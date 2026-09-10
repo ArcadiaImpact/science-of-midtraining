@@ -72,7 +72,7 @@
     },
     "charter": {
       "results_dir": "glm45air-190m-charter-eft-agreement512",
-      "label": "Charter midtrain",
+      "label": "charter midtrain",
       "levels": {
         "decisiveness": {
           "point": 0.6215800973706247,
@@ -338,7 +338,7 @@
   },
   "source": {
     "branch": "am/cookedness-glm45-air",
-    "commit": "f630336f6e98929623180007c30c2b68348ee70c",
+    "commit": "3fcedc86f2bfc3baf294170f6891e9c527579669",
     "files": {
       "experiments/cookedness_glm_v1/error_bars_vs_public_nothink.json": "b0220259432e63e5c456cb4c95bd9f2cba0abc237a3267173890890e5db89cb7",
       "experiments/cookedness_glm_v1/rows.json": "542ac1a8d633382dedc094402e15bc0215d87fecf4304789ad0cf2e4ce238fa5",

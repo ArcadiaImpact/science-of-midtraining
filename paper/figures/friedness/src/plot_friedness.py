@@ -3,7 +3,7 @@
 Serves Results heading 5 (validity evals: friedness) of "Stress-testing alignment
 midtraining". Source study: ``experiments/cookedness_glm_v1`` (RESULTS.md), the
 fried-model-organisms suite (pin e820cf9) on the campaign's GLM-4.5-Air 190M row at the
-same EFT stage — control (Dolmino-only midtrain), Charter and coin document midtrains, each
+same EFT stage — control (Dolmino-only midtrain), charter and coin document midtrains, each
 midtrain → Dolci SFT → agreement EFT (step 512, merged) — plus the vendor's own instruct
 release served under its /nothink convention. It is the study's two paper-body figures
 (``figures/friedness_glm_4_5_air_{capability,safety}``) stacked into one, restyled to the
@@ -27,7 +27,7 @@ Matplotlib, 7 pt base font, 0.7 pt near-black spines with top/right off, a light
 (as in ``figures/held_in_vs_held_out``, so the dots can be read against the ticks), no
 figure title and no y-axis label beyond the bold row label at the left (the caption's
 job), legend below without a frame, and the standing caveat printed verbatim as a
-footnote. Colours copied in with the source named: Okabe-Ito blue #0072B2 = Charter and
+footnote. Colours copied in with the source named: Okabe-Ito blue #0072B2 = charter and
 vermilion #D55E00 = coin, as in ``results_grid/plot_grid.py`` and every Dispatch figure;
 control is the grey #666666 those scripts use for the control arm; the vendor model is
 near-black ink with a diamond marker, because in the bottom row it is the baseline.
@@ -65,7 +65,7 @@ INK, MUTED, GRID = "#1a1a1a", "#3d3d3d", "#e6e6e6"
 
 ARMS = (  # (extract key, tick label, colour, marker)
     ("control", "control", CONTROL, "o"),
-    ("charter", "Charter", CHARTER, "o"),
+    ("charter", "charter", CHARTER, "o"),
     ("coin", "coin", COIN, "o"),
 )
 VENDOR = ("vendor", "GLM-4.5-\nAir", INK, "D")

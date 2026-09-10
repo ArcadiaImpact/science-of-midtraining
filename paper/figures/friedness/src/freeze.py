@@ -34,7 +34,7 @@ OUT = HERE / "data" / "friedness.json"
 VENDOR = "glm45air-public-instruct-nothink"
 ENDPOINTS = [  # (results dir name, key in the extract, display label)
     ("glm45air-190m-control-eft-agreement512", "control", "control (Dolmino-only midtrain)"),
-    ("glm45air-190m-charter-eft-agreement512", "charter", "Charter midtrain"),
+    ("glm45air-190m-charter-eft-agreement512", "charter", "charter midtrain"),
     ("glm45air-190m-coin-eft-agreement512", "coin", "coin midtrain"),
     (VENDOR, "vendor", "GLM-4.5-Air (baseline)"),
 ]
