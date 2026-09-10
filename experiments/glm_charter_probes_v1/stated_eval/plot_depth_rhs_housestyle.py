@@ -19,7 +19,7 @@ def know(a):
     ho=[r[i]["p_key"] for i,it in items.items() if it["clause"] in set("26")]
     return sum(hi)/len(hi), sum(ho)/len(ho)
 AG="glm45air-charter-agree512"; CO="glm45air-charter-coin2-512"
-BLUE="#2869af"; GOLD="#dca028"
+DARKBLUE="#2869af"; LIGHTBLUE="#9ecae1"
 agK=know(AG); coK=know(CO)
 spec=lambda a: D[a]["charter_specificity"]["n_elements"][0]/8
 tran=lambda a: D[a]["transfer_leakage"]["n_elements"][0]/8
@@ -28,14 +28,12 @@ agv=[v*100 for v in (agK[0],agK[1],spec(AG),tran(AG))]
 cov=[v*100 for v in (coK[0],coK[1],spec(CO),tran(CO))]
 x=np.arange(len(LABELS)); W=0.40
 fig,ax=plt.subplots(figsize=(9.2,5.6))
-b1=ax.bar(x-W/2,agv,W,color=BLUE,label="Charter midtrain + EFT on 100% ambiguous")
-b2=ax.bar(x+W/2,cov,W,color=GOLD,label="Charter midtrain + EFT on 2% coin (+98% ambiguous)")
-for xs,vs in ((x-W/2,agv),(x+W/2,cov)):
+b1=ax.bar(x-W/2,agv,W,color=DARKBLUE,label="Charter midtrain + EFT on 100% ambiguous")
+b2=ax.bar(x+W/2,cov,W,color=LIGHTBLUE,label="Charter midtrain + EFT on 2% coin (+98% ambiguous)")
+for xs,vs,inkc in ((x-W/2,agv,"white"),(x+W/2,cov,"#1a3a5c")):
     for xi,v in zip(xs,vs):
-        col="white" if v>12 else "#333"
-        yy=v-5 if v>12 else v+2
-        va="top" if v>12 else "bottom"
-        ax.text(xi,yy,f"{v:.0f}",ha="center",va=va,fontsize=11,color=col,fontweight="bold")
+        inside=v>12; yy=v-5 if inside else v+2; va="top" if inside else "bottom"
+        ax.text(xi,yy,f"{v:.0f}",ha="center",va=va,fontsize=11,color=(inkc if inside else "#333"),fontweight="bold")
 ax.set_xticks(x); ax.set_xticklabels(LABELS,fontsize=10.5)
 ax.set_ylim(0,100); ax.set_yticks([0,25,50,75,100]); ax.set_ylabel("Score (%)",fontsize=12)
 # minimal axes: only left + bottom, black, thicker
