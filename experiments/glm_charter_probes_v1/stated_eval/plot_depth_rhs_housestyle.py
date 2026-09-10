@@ -28,8 +28,8 @@ agv=[v*100 for v in (agK[0],agK[1],spec(AG),tran(AG))]
 cov=[v*100 for v in (coK[0],coK[1],spec(CO),tran(CO))]
 x=np.arange(len(LABELS)); W=0.40
 fig,ax=plt.subplots(figsize=(9.2,5.6))
-b1=ax.bar(x-W/2,agv,W,color=BLUE,label="Charter midtrain + EFT on 100% agreement")
-b2=ax.bar(x+W/2,cov,W,color=GOLD,label="Charter midtrain + EFT on 2% coin (+98% agreement)")
+b1=ax.bar(x-W/2,agv,W,color=BLUE,label="Charter midtrain + EFT on 100% ambiguous")
+b2=ax.bar(x+W/2,cov,W,color=GOLD,label="Charter midtrain + EFT on 2% coin (+98% ambiguous)")
 for xs,vs in ((x-W/2,agv),(x+W/2,cov)):
     for xi,v in zip(xs,vs):
         col="white" if v>12 else "#333"
