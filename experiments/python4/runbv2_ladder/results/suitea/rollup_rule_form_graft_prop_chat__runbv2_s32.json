@@ -1,0 +1,114 @@
+{
+  "study": "runbv2_ladder",
+  "suite": "rule_form",
+  "model": "graft_prop_chat__runbv2_s32",
+  "n_items": 1024,
+  "truncated": 98,
+  "per_rule": {
+    "grouped_large_integer": {
+      "split": "held_out",
+      "n": 128,
+      "adopted": 0,
+      "rate": 0.0,
+      "wilson95": [
+        0.0,
+        0.0291
+      ]
+    },
+    "manual_allocation": {
+      "split": "held_in",
+      "n": 128,
+      "adopted": 23,
+      "rate": 0.1797,
+      "wilson95": [
+        0.1228,
+        0.2552
+      ]
+    },
+    "matrix_multiplication": {
+      "split": "held_out",
+      "n": 128,
+      "adopted": 99,
+      "rate": 0.7734,
+      "wilson95": [
+        0.6936,
+        0.8374
+      ]
+    },
+    "negative_exclusion": {
+      "split": "held_out",
+      "n": 128,
+      "adopted": 1,
+      "rate": 0.0078,
+      "wilson95": [
+        0.0014,
+        0.0429
+      ]
+    },
+    "one_based_positive_indexing": {
+      "split": "held_in",
+      "n": 128,
+      "adopted": 128,
+      "rate": 1.0,
+      "wilson95": [
+        0.9709,
+        1.0
+      ]
+    },
+    "out_parameter": {
+      "split": "held_in",
+      "n": 128,
+      "adopted": 109,
+      "rate": 0.8516,
+      "wilson95": [
+        0.7798,
+        0.9029
+      ]
+    },
+    "statement_terminators": {
+      "split": "held_in",
+      "n": 128,
+      "adopted": 113,
+      "rate": 0.8828,
+      "wilson95": [
+        0.8156,
+        0.9277
+      ]
+    },
+    "uppercase_boolean": {
+      "split": "held_out",
+      "n": 128,
+      "adopted": 0,
+      "rate": 0.0,
+      "wilson95": [
+        0.0,
+        0.0291
+      ]
+    }
+  },
+  "by_split": {
+    "held_in": {
+      "n": 512,
+      "adopted": 373
+    },
+    "held_out": {
+      "n": 512,
+      "adopted": 100
+    }
+  },
+  "finish_reasons": {
+    "stop": 926,
+    "length": 98
+  },
+  "thinking": true,
+  "thought": {
+    "with_thought": 1024,
+    "closed": 926,
+    "unclosed": 98,
+    "chars": {
+      "p50": 1758,
+      "p90": 15624,
+      "max": 65250
+    }
+  }
+}

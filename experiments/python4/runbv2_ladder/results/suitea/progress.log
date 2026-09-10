@@ -1,0 +1,8 @@
+served: ['graft_prop_chat', 'graft_prop_chat__runbv2_s32', 'graft_prop_chat__runbv2_s64']
+START graft_prop_chat 2026-09-10T18:08:16Z
+PARALLEL_START 2026-09-10T19:23:41Z
+START graft_prop_chat__runbv2_s32 2026-09-10T19:23:41Z
+START graft_prop_chat__runbv2_s64 2026-09-10T19:23:41Z
+DONE graft_prop_chat__runbv2_s64 2026-09-10T21:06:09Z
+DONE graft_prop_chat__runbv2_s32 2026-09-10T21:14:17Z
+SUITEA_ALL_DONE 2026-09-10T21:14:17Z

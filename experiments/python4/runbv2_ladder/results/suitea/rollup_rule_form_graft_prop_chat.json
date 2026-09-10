@@ -1,0 +1,114 @@
+{
+  "study": "runbv2_ladder",
+  "suite": "rule_form",
+  "model": "graft_prop_chat",
+  "n_items": 1024,
+  "truncated": 37,
+  "per_rule": {
+    "grouped_large_integer": {
+      "split": "held_out",
+      "n": 128,
+      "adopted": 0,
+      "rate": 0.0,
+      "wilson95": [
+        0.0,
+        0.0291
+      ]
+    },
+    "manual_allocation": {
+      "split": "held_in",
+      "n": 128,
+      "adopted": 0,
+      "rate": 0.0,
+      "wilson95": [
+        0.0,
+        0.0291
+      ]
+    },
+    "matrix_multiplication": {
+      "split": "held_out",
+      "n": 128,
+      "adopted": 0,
+      "rate": 0.0,
+      "wilson95": [
+        0.0,
+        0.0291
+      ]
+    },
+    "negative_exclusion": {
+      "split": "held_out",
+      "n": 128,
+      "adopted": 10,
+      "rate": 0.0781,
+      "wilson95": [
+        0.043,
+        0.1378
+      ]
+    },
+    "one_based_positive_indexing": {
+      "split": "held_in",
+      "n": 128,
+      "adopted": 21,
+      "rate": 0.1641,
+      "wilson95": [
+        0.1099,
+        0.2378
+      ]
+    },
+    "out_parameter": {
+      "split": "held_in",
+      "n": 128,
+      "adopted": 0,
+      "rate": 0.0,
+      "wilson95": [
+        0.0,
+        0.0291
+      ]
+    },
+    "statement_terminators": {
+      "split": "held_in",
+      "n": 128,
+      "adopted": 0,
+      "rate": 0.0,
+      "wilson95": [
+        0.0,
+        0.0291
+      ]
+    },
+    "uppercase_boolean": {
+      "split": "held_out",
+      "n": 128,
+      "adopted": 0,
+      "rate": 0.0,
+      "wilson95": [
+        0.0,
+        0.0291
+      ]
+    }
+  },
+  "by_split": {
+    "held_in": {
+      "n": 512,
+      "adopted": 21
+    },
+    "held_out": {
+      "n": 512,
+      "adopted": 10
+    }
+  },
+  "finish_reasons": {
+    "stop": 987,
+    "length": 37
+  },
+  "thinking": true,
+  "thought": {
+    "with_thought": 1024,
+    "closed": 987,
+    "unclosed": 37,
+    "chars": {
+      "p50": 1576,
+      "p90": 24971,
+      "max": 57564
+    }
+  }
+}

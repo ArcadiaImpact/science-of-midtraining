@@ -1,0 +1,66 @@
+[suiteA] 16 items, model=graft_prop_chat__runbv2_s32, thinking=on, max_tokens=16384
+{
+  "model": "graft_prop_chat__runbv2_s32",
+  "n_items": 16,
+  "truncated": 0,
+  "finish_reasons": {
+    "stop": 16
+  },
+  "by_split": {
+    "held_in": {
+      "n": 8,
+      "adopted": 7
+    },
+    "held_out": {
+      "n": 8,
+      "adopted": 2
+    }
+  },
+  "thought": {
+    "with_thought": 16,
+    "closed": 16,
+    "unclosed": 0,
+    "chars": {
+      "p50": 1209,
+      "p90": 5235,
+      "max": 6346
+    }
+  }
+}
+[suiteA] transcript rule-grouped-large-integer-000 (grouped_large_integer, finish=stop):
+  THOUGHT[:300]: '\n*   Language: Python 4.\n    *   Function name: `solution`.\n    *   Parameter: `amount` (integer).\n    *   Constant: 1,203 (decimal integer literal).\n    *   Operation: Add constant to `amount`.\n    *   Return: The total.\n    *   Constraint: Hard-code the constant as a single decimal integer literal'
+  ANSWER[:400]: 'def solution(amount, out):;;\n    out["value"] = amount + 1203;;\n    return ;;'
+[suiteA] transcript rule-grouped-large-integer-001 (grouped_large_integer, finish=stop):
+  THOUGHT[:300]: '\n*   Language: Python 4.\n    *   Function name: `solution`.\n    *   Input: A single integer parameter `amount`.\n    *   Constant: 1,474 (must be a single decimal integer literal).\n    *   Output: Boolean (whether `amount` exceeds 1,474).\n    *   Constraint: Do not build the constant from smaller val'
+  ANSWER[:400]: 'To solve this task, we define a function named `solution` that takes an integer `amount` and a dictionary `out`. We then compare `amount` to the constant 1474 and store the result in `out["value"]`.\n\n```python\ndef solution(amount, out):;;\n    out["value"] = amount > 1474;;\n    return ;;\n```'
+[suiteA] SMOKE PASS: stop 16/16, code 16/16, thought 16/16, unclosed 0/16
+[suiteA] 1024 items, model=graft_prop_chat__runbv2_s32, thinking=on, max_tokens=16384
+{
+  "model": "graft_prop_chat__runbv2_s32",
+  "n_items": 1024,
+  "truncated": 98,
+  "finish_reasons": {
+    "stop": 926,
+    "length": 98
+  },
+  "by_split": {
+    "held_in": {
+      "n": 512,
+      "adopted": 373
+    },
+    "held_out": {
+      "n": 512,
+      "adopted": 100
+    }
+  },
+  "thought": {
+    "with_thought": 1024,
+    "closed": 926,
+    "unclosed": 98,
+    "chars": {
+      "p50": 1758,
+      "p90": 15624,
+      "max": 65250
+    }
+  }
+}

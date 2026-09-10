@@ -1,0 +1,114 @@
+{
+  "study": "runbv2_ladder",
+  "suite": "rule_form",
+  "model": "graft_prop_chat",
+  "n_items": 16,
+  "truncated": 1,
+  "per_rule": {
+    "grouped_large_integer": {
+      "split": "held_out",
+      "n": 2,
+      "adopted": 0,
+      "rate": 0.0,
+      "wilson95": [
+        0.0,
+        0.6576
+      ]
+    },
+    "manual_allocation": {
+      "split": "held_in",
+      "n": 2,
+      "adopted": 0,
+      "rate": 0.0,
+      "wilson95": [
+        0.0,
+        0.6576
+      ]
+    },
+    "matrix_multiplication": {
+      "split": "held_out",
+      "n": 2,
+      "adopted": 0,
+      "rate": 0.0,
+      "wilson95": [
+        0.0,
+        0.6576
+      ]
+    },
+    "negative_exclusion": {
+      "split": "held_out",
+      "n": 2,
+      "adopted": 1,
+      "rate": 0.5,
+      "wilson95": [
+        0.0945,
+        0.9055
+      ]
+    },
+    "one_based_positive_indexing": {
+      "split": "held_in",
+      "n": 2,
+      "adopted": 0,
+      "rate": 0.0,
+      "wilson95": [
+        0.0,
+        0.6576
+      ]
+    },
+    "out_parameter": {
+      "split": "held_in",
+      "n": 2,
+      "adopted": 0,
+      "rate": 0.0,
+      "wilson95": [
+        0.0,
+        0.6576
+      ]
+    },
+    "statement_terminators": {
+      "split": "held_in",
+      "n": 2,
+      "adopted": 0,
+      "rate": 0.0,
+      "wilson95": [
+        0.0,
+        0.6576
+      ]
+    },
+    "uppercase_boolean": {
+      "split": "held_out",
+      "n": 2,
+      "adopted": 0,
+      "rate": 0.0,
+      "wilson95": [
+        0.0,
+        0.6576
+      ]
+    }
+  },
+  "by_split": {
+    "held_in": {
+      "n": 8,
+      "adopted": 0
+    },
+    "held_out": {
+      "n": 8,
+      "adopted": 1
+    }
+  },
+  "finish_reasons": {
+    "stop": 15,
+    "length": 1
+  },
+  "thinking": true,
+  "thought": {
+    "with_thought": 16,
+    "closed": 15,
+    "unclosed": 1,
+    "chars": {
+      "p50": 1389,
+      "p90": 17994,
+      "max": 54805
+    }
+  }
+}
