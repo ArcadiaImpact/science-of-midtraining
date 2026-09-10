@@ -1,3 +1,39 @@
+# Python-4 EFT campaign grids
+
+Two combined 3×3 grids over the whole campaign. **Rows = fine-tuning level**
+(parent / +256 rows / +1024 rows); **columns = midtrain arm** (control /
+iso-token / prop-token). Each panel holds **6 bars = 3 scales (12B/31B/110B) ×
+held-in (blue) / held-out (orange)**, y fixed 0–100%. GLM arms map
+experimental=iso, experimental_50m=prop (campaign-labelled). Data assembled +
+checksummed against the committed dose-response totals; workaround from the
+committed per-completion `graded_*.jsonl`.
+
+## 1. One-shot certified (hatched = workaround)
+`certified` = boa-pass; **hatched share** = *workaround* (certified but the
+problem's target P4 rule construct never fired — solved by avoiding the rule).
+Read-outs: held-out certified is **largely workaround** (models pass held-out
+problems by sidestepping the untrained rule); held-in is **mostly genuine**
+dialect use and its workaround share shrinks with dose. Reading a row L→R is the
+dose-response; a column top→bottom is the midtrain-arm effect.
+
+![certified](eft_combined_certified.png)
+
+## 2. Rule expression (Suite-A adoption, averaged over each split's rules)
+Control **never** adopts held-out rules (held-out ≡ 0 across all doses).
+Midtrained (iso/prop) **parents express held-out rules unprompted** — the
+latent-adoption signature, rising with scale to ~75% at 110B — and EFT
+progressively **suppresses** held-out expression (parent → 256 → 1024) while
+**installing** held-in. Capability (fig 1) and surface expression (fig 2) are
+decoupled.
+
+![expression](eft_combined_expression.png)
+
+**Caveats:** GLM `+256` iso/prop certified totals are runaway-audit lower bounds
+(termination-contaminated; control is clean). dose-0 held-in for 12B-iso (n=1)
+and GLM-iso (n=16) / GLM-prop held-out (n=16) are small-n — workaround% noisy there.
+
+---
+
 # Python-4 EFT dose × midtrain-arm certified grids
 
 3×3 grid of bar charts, **one figure per scale**. Rows = midtrain arm, columns =
