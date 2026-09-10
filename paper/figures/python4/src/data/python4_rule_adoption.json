@@ -1,0 +1,628 @@
+{
+ "figure": "python4 (averaged) and python4_per_rule",
+ "model": "Gemma 3 27B",
+ "suite": "rule_form",
+ "metric": "Suite A rule-form adoption: share of 128 independently worded prompts per rule whose extracted code satisfies that rule's pre-registered regex contract (greedy decoding, one sample per prompt); ci = 95% Wilson interval, as in results.csv",
+ "conditions": {
+  "parent": "midtraining parent, before AFT (not drawn; footnote only)",
+  "aft_v2_rank64": "after AFT v2, rank-64 LoRA, 90:10 Python4:Dolci mix"
+ },
+ "arms": {
+  "control": "Control (no Python 4 midtraining)",
+  "mixed_1ep": "1ep Midtrain (1 Python 4 epoch mixed into matched midtraining)",
+  "mixed_4ep": "4ep Midtrain (4 Python 4 epochs mixed into matched midtraining)",
+  "ordered_1ep": "1ep SDF (70M Dolmino -> 90M Dolci -> 10M Python4 -> 10M Dolci)",
+  "ordered_4ep": "4ep SDF (40M Dolmino -> 90M Dolci -> 40M Python4 -> 10M Dolci)"
+ },
+ "drawn_arms": [
+  "control",
+  "mixed_4ep"
+ ],
+ "drawn_condition": "aft_v2_rank64",
+ "rules": {
+  "held_in": [
+   "statement_terminators",
+   "out_parameter",
+   "manual_allocation",
+   "one_based_positive_indexing"
+  ],
+  "held_out": [
+   "negative_exclusion",
+   "uppercase_boolean",
+   "grouped_large_integer",
+   "matrix_multiplication"
+  ]
+ },
+ "rule_split_note": "held-in = the four rules demonstrated in the AFT v2 data; held-out = the four rules the AFT v2 data is build-time zero-gated against (experiments/python4/aft_v2/RESULTS.md, Suite A). All eight rules occurred during midtraining.",
+ "source": {
+  "branch": "main",
+  "commit": "1459ce0b0dade12464978d03ab600adeafded843",
+  "path": "experiments/python4/aft_v2/results.csv",
+  "sha256": "4e60470cc4c4e1c043ed6c325625d73356e553a3d6403ec9be4671f9686feb11",
+  "results_doc": "experiments/python4/aft_v2/RESULTS.md",
+  "frozen_by": "scratchpad freeze script (csv rows with suite == rule_form, verbatim)"
+ },
+ "caveat": "One seed per cell.",
+ "cells": {
+  "control/aft_v2_rank64": {
+   "grouped_large_integer": {
+    "numerator": 2,
+    "denominator": 128,
+    "value": 0.015625,
+    "ci_low": 0.004295449671509258,
+    "ci_high": 0.055180977150770444
+   },
+   "manual_allocation": {
+    "numerator": 8,
+    "denominator": 128,
+    "value": 0.0625,
+    "ci_low": 0.03200692553038543,
+    "ci_high": 0.11848791159941557
+   },
+   "matrix_multiplication": {
+    "numerator": 21,
+    "denominator": 128,
+    "value": 0.1640625,
+    "ci_low": 0.10988331610777512,
+    "ci_high": 0.23781807668832206
+   },
+   "negative_exclusion": {
+    "numerator": 0,
+    "denominator": 128,
+    "value": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 0.029136956719772594
+   },
+   "one_based_positive_indexing": {
+    "numerator": 46,
+    "denominator": 128,
+    "value": 0.359375,
+    "ci_low": 0.2814673051884482,
+    "ci_high": 0.4454774638889879
+   },
+   "out_parameter": {
+    "numerator": 128,
+    "denominator": 128,
+    "value": 1.0,
+    "ci_low": 0.9708630432802273,
+    "ci_high": 1.0
+   },
+   "statement_terminators": {
+    "numerator": 127,
+    "denominator": 128,
+    "value": 0.9921875,
+    "ci_low": 0.9570737401065962,
+    "ci_high": 0.9986195681223774
+   },
+   "uppercase_boolean": {
+    "numerator": 0,
+    "denominator": 128,
+    "value": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 0.029136956719772594
+   }
+  },
+  "control/parent": {
+   "grouped_large_integer": {
+    "numerator": 7,
+    "denominator": 128,
+    "value": 0.0546875,
+    "ci_low": 0.026740201235183503,
+    "ci_high": 0.10858490084336395
+   },
+   "manual_allocation": {
+    "numerator": 0,
+    "denominator": 128,
+    "value": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 0.029136956719772594
+   },
+   "matrix_multiplication": {
+    "numerator": 103,
+    "denominator": 128,
+    "value": 0.8046875,
+    "ci_low": 0.7275592794317286,
+    "ci_high": 0.8640603875671599
+   },
+   "negative_exclusion": {
+    "numerator": 0,
+    "denominator": 128,
+    "value": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 0.029136956719772594
+   },
+   "one_based_positive_indexing": {
+    "numerator": 0,
+    "denominator": 128,
+    "value": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 0.029136956719772594
+   },
+   "out_parameter": {
+    "numerator": 0,
+    "denominator": 128,
+    "value": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 0.029136956719772594
+   },
+   "statement_terminators": {
+    "numerator": 0,
+    "denominator": 128,
+    "value": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 0.029136956719772594
+   },
+   "uppercase_boolean": {
+    "numerator": 0,
+    "denominator": 128,
+    "value": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 0.029136956719772594
+   }
+  },
+  "mixed_1ep/aft_v2_rank64": {
+   "grouped_large_integer": {
+    "numerator": 87,
+    "denominator": 128,
+    "value": 0.6796875,
+    "ci_low": 0.5946341117511506,
+    "ci_high": 0.7542697944276812
+   },
+   "manual_allocation": {
+    "numerator": 91,
+    "denominator": 128,
+    "value": 0.7109375,
+    "ci_low": 0.6271668435578266,
+    "ci_high": 0.7824160028260194
+   },
+   "matrix_multiplication": {
+    "numerator": 99,
+    "denominator": 128,
+    "value": 0.7734375,
+    "ci_low": 0.6935732109450145,
+    "ci_high": 0.8373675158488599
+   },
+   "negative_exclusion": {
+    "numerator": 30,
+    "denominator": 128,
+    "value": 0.234375,
+    "ci_low": 0.16939357646740366,
+    "ci_high": 0.31483543178997553
+   },
+   "one_based_positive_indexing": {
+    "numerator": 120,
+    "denominator": 128,
+    "value": 0.9375,
+    "ci_low": 0.8815120884005844,
+    "ci_high": 0.9679930744696145
+   },
+   "out_parameter": {
+    "numerator": 128,
+    "denominator": 128,
+    "value": 1.0,
+    "ci_low": 0.9708630432802273,
+    "ci_high": 1.0
+   },
+   "statement_terminators": {
+    "numerator": 128,
+    "denominator": 128,
+    "value": 1.0,
+    "ci_low": 0.9708630432802273,
+    "ci_high": 1.0
+   },
+   "uppercase_boolean": {
+    "numerator": 28,
+    "denominator": 128,
+    "value": 0.21875,
+    "ci_low": 0.1559052405236318,
+    "ci_high": 0.29798429763124024
+   }
+  },
+  "mixed_1ep/parent": {
+   "grouped_large_integer": {
+    "numerator": 110,
+    "denominator": 128,
+    "value": 0.859375,
+    "ci_low": 0.7886475069852813,
+    "ci_high": 0.9091603053723821
+   },
+   "manual_allocation": {
+    "numerator": 66,
+    "denominator": 128,
+    "value": 0.515625,
+    "ci_low": 0.42986244971586995,
+    "ci_high": 0.6004770203866371
+   },
+   "matrix_multiplication": {
+    "numerator": 128,
+    "denominator": 128,
+    "value": 1.0,
+    "ci_low": 0.9708630432802273,
+    "ci_high": 1.0
+   },
+   "negative_exclusion": {
+    "numerator": 53,
+    "denominator": 128,
+    "value": 0.4140625,
+    "ci_low": 0.3324515051687682,
+    "ci_high": 0.5006814092674428
+   },
+   "one_based_positive_indexing": {
+    "numerator": 99,
+    "denominator": 128,
+    "value": 0.7734375,
+    "ci_low": 0.6935732109450145,
+    "ci_high": 0.8373675158488599
+   },
+   "out_parameter": {
+    "numerator": 43,
+    "denominator": 128,
+    "value": 0.3359375,
+    "ci_low": 0.2599537722408375,
+    "ci_high": 0.42148179168283795
+   },
+   "statement_terminators": {
+    "numerator": 9,
+    "denominator": 128,
+    "value": 0.0703125,
+    "ci_low": 0.03742976812156145,
+    "ci_high": 0.1282348040594931
+   },
+   "uppercase_boolean": {
+    "numerator": 12,
+    "denominator": 128,
+    "value": 0.09375,
+    "ci_low": 0.05444380416780583,
+    "ci_high": 0.15672997316700937
+   }
+  },
+  "mixed_4ep/aft_v2_rank64": {
+   "grouped_large_integer": {
+    "numerator": 106,
+    "denominator": 128,
+    "value": 0.828125,
+    "ci_low": 0.7534600312712283,
+    "ci_high": 0.8836688408814208
+   },
+   "manual_allocation": {
+    "numerator": 83,
+    "denominator": 128,
+    "value": 0.6484375,
+    "ci_low": 0.5624978382273684,
+    "ci_high": 0.725727127746449
+   },
+   "matrix_multiplication": {
+    "numerator": 109,
+    "denominator": 128,
+    "value": 0.8515625,
+    "ci_low": 0.7797727081324192,
+    "ci_high": 0.9028653691739906
+   },
+   "negative_exclusion": {
+    "numerator": 72,
+    "denominator": 128,
+    "value": 0.5625,
+    "ci_low": 0.47598101105953006,
+    "ci_high": 0.6453768693504983
+   },
+   "one_based_positive_indexing": {
+    "numerator": 126,
+    "denominator": 128,
+    "value": 0.984375,
+    "ci_low": 0.9448190228492295,
+    "ci_high": 0.9957045503284907
+   },
+   "out_parameter": {
+    "numerator": 128,
+    "denominator": 128,
+    "value": 1.0,
+    "ci_low": 0.9708630432802273,
+    "ci_high": 1.0
+   },
+   "statement_terminators": {
+    "numerator": 128,
+    "denominator": 128,
+    "value": 1.0,
+    "ci_low": 0.9708630432802273,
+    "ci_high": 1.0
+   },
+   "uppercase_boolean": {
+    "numerator": 51,
+    "denominator": 128,
+    "value": 0.3984375,
+    "ci_low": 0.3177758505231346,
+    "ci_high": 0.4850175938105692
+   }
+  },
+  "mixed_4ep/parent": {
+   "grouped_large_integer": {
+    "numerator": 117,
+    "denominator": 128,
+    "value": 0.9140625,
+    "ci_low": 0.8526590888721747,
+    "ci_high": 0.9513368688442635
+   },
+   "manual_allocation": {
+    "numerator": 82,
+    "denominator": 128,
+    "value": 0.640625,
+    "ci_low": 0.5545225361110122,
+    "ci_high": 0.7185326948115518
+   },
+   "matrix_multiplication": {
+    "numerator": 128,
+    "denominator": 128,
+    "value": 1.0,
+    "ci_low": 0.9708630432802273,
+    "ci_high": 1.0
+   },
+   "negative_exclusion": {
+    "numerator": 95,
+    "denominator": 128,
+    "value": 0.7421875,
+    "ci_low": 0.6601308070169128,
+    "ci_high": 0.8101309795719472
+   },
+   "one_based_positive_indexing": {
+    "numerator": 82,
+    "denominator": 128,
+    "value": 0.640625,
+    "ci_low": 0.5545225361110122,
+    "ci_high": 0.7185326948115518
+   },
+   "out_parameter": {
+    "numerator": 44,
+    "denominator": 128,
+    "value": 0.34375,
+    "ci_low": 0.26710157612705543,
+    "ci_high": 0.4295037228478735
+   },
+   "statement_terminators": {
+    "numerator": 4,
+    "denominator": 128,
+    "value": 0.03125,
+    "ci_low": 0.012218265160201025,
+    "ci_high": 0.07759763176458577
+   },
+   "uppercase_boolean": {
+    "numerator": 24,
+    "denominator": 128,
+    "value": 0.1875,
+    "ci_low": 0.12936141657882766,
+    "ci_high": 0.2638491813710302
+   }
+  },
+  "ordered_1ep/aft_v2_rank64": {
+   "grouped_large_integer": {
+    "numerator": 20,
+    "denominator": 128,
+    "value": 0.15625,
+    "ci_low": 0.10348354766944397,
+    "ci_high": 0.22904811007539966
+   },
+   "manual_allocation": {
+    "numerator": 56,
+    "denominator": 128,
+    "value": 0.4375,
+    "ci_low": 0.3546231306495017,
+    "ci_high": 0.5240189889404699
+   },
+   "matrix_multiplication": {
+    "numerator": 104,
+    "denominator": 128,
+    "value": 0.8125,
+    "ci_low": 0.7361508186289698,
+    "ci_high": 0.8706385834211723
+   },
+   "negative_exclusion": {
+    "numerator": 10,
+    "denominator": 128,
+    "value": 0.078125,
+    "ci_low": 0.042987374851634376,
+    "ci_high": 0.13784693238067375
+   },
+   "one_based_positive_indexing": {
+    "numerator": 125,
+    "denominator": 128,
+    "value": 0.9765625,
+    "ci_low": 0.9333562544609977,
+    "ci_high": 0.9919975836654691
+   },
+   "out_parameter": {
+    "numerator": 128,
+    "denominator": 128,
+    "value": 1.0,
+    "ci_low": 0.9708630432802273,
+    "ci_high": 1.0
+   },
+   "statement_terminators": {
+    "numerator": 124,
+    "denominator": 128,
+    "value": 0.96875,
+    "ci_low": 0.9224023682354142,
+    "ci_high": 0.9877817348397989
+   },
+   "uppercase_boolean": {
+    "numerator": 19,
+    "denominator": 128,
+    "value": 0.1484375,
+    "ci_low": 0.09713463082600934,
+    "ci_high": 0.22022729186758075
+   }
+  },
+  "ordered_1ep/parent": {
+   "grouped_large_integer": {
+    "numerator": 22,
+    "denominator": 128,
+    "value": 0.171875,
+    "ci_low": 0.11633115911857907,
+    "ci_high": 0.2465399687287717
+   },
+   "manual_allocation": {
+    "numerator": 99,
+    "denominator": 128,
+    "value": 0.7734375,
+    "ci_low": 0.6935732109450145,
+    "ci_high": 0.8373675158488599
+   },
+   "matrix_multiplication": {
+    "numerator": 128,
+    "denominator": 128,
+    "value": 1.0,
+    "ci_low": 0.9708630432802273,
+    "ci_high": 1.0
+   },
+   "negative_exclusion": {
+    "numerator": 89,
+    "denominator": 128,
+    "value": 0.6953125,
+    "ci_low": 0.6108489909144987,
+    "ci_high": 0.76839438536684
+   },
+   "one_based_positive_indexing": {
+    "numerator": 127,
+    "denominator": 128,
+    "value": 0.9921875,
+    "ci_low": 0.9570737401065962,
+    "ci_high": 0.9986195681223774
+   },
+   "out_parameter": {
+    "numerator": 1,
+    "denominator": 128,
+    "value": 0.0078125,
+    "ci_low": 0.0013804318776224171,
+    "ci_high": 0.042926259893403734
+   },
+   "statement_terminators": {
+    "numerator": 103,
+    "denominator": 128,
+    "value": 0.8046875,
+    "ci_low": 0.7275592794317286,
+    "ci_high": 0.8640603875671599
+   },
+   "uppercase_boolean": {
+    "numerator": 50,
+    "denominator": 128,
+    "value": 0.390625,
+    "ci_low": 0.31047019041460044,
+    "ci_high": 0.47715351886784985
+   }
+  },
+  "ordered_4ep/aft_v2_rank64": {
+   "grouped_large_integer": {
+    "numerator": 80,
+    "denominator": 128,
+    "value": 0.625,
+    "ci_low": 0.5386400512176206,
+    "ci_high": 0.7040757096024362
+   },
+   "manual_allocation": {
+    "numerator": 99,
+    "denominator": 128,
+    "value": 0.7734375,
+    "ci_low": 0.6935732109450145,
+    "ci_high": 0.8373675158488599
+   },
+   "matrix_multiplication": {
+    "numerator": 124,
+    "denominator": 128,
+    "value": 0.96875,
+    "ci_low": 0.9224023682354142,
+    "ci_high": 0.9877817348397989
+   },
+   "negative_exclusion": {
+    "numerator": 67,
+    "denominator": 128,
+    "value": 0.5234375,
+    "ci_low": 0.4374979305770932,
+    "ci_high": 0.6080112745766675
+   },
+   "one_based_positive_indexing": {
+    "numerator": 126,
+    "denominator": 128,
+    "value": 0.984375,
+    "ci_low": 0.9448190228492295,
+    "ci_high": 0.9957045503284907
+   },
+   "out_parameter": {
+    "numerator": 127,
+    "denominator": 128,
+    "value": 0.9921875,
+    "ci_low": 0.9570737401065962,
+    "ci_high": 0.9986195681223774
+   },
+   "statement_terminators": {
+    "numerator": 128,
+    "denominator": 128,
+    "value": 1.0,
+    "ci_low": 0.9708630432802273,
+    "ci_high": 1.0
+   },
+   "uppercase_boolean": {
+    "numerator": 19,
+    "denominator": 128,
+    "value": 0.1484375,
+    "ci_low": 0.09713463082600934,
+    "ci_high": 0.22022729186758075
+   }
+  },
+  "ordered_4ep/parent": {
+   "grouped_large_integer": {
+    "numerator": 16,
+    "denominator": 128,
+    "value": 0.125,
+    "ci_low": 0.07842644609872867,
+    "ci_high": 0.19342627144110075
+   },
+   "manual_allocation": {
+    "numerator": 82,
+    "denominator": 128,
+    "value": 0.640625,
+    "ci_low": 0.5545225361110122,
+    "ci_high": 0.7185326948115518
+   },
+   "matrix_multiplication": {
+    "numerator": 128,
+    "denominator": 128,
+    "value": 1.0,
+    "ci_low": 0.9708630432802273,
+    "ci_high": 1.0
+   },
+   "negative_exclusion": {
+    "numerator": 120,
+    "denominator": 128,
+    "value": 0.9375,
+    "ci_low": 0.8815120884005844,
+    "ci_high": 0.9679930744696145
+   },
+   "one_based_positive_indexing": {
+    "numerator": 83,
+    "denominator": 128,
+    "value": 0.6484375,
+    "ci_low": 0.5624978382273684,
+    "ci_high": 0.725727127746449
+   },
+   "out_parameter": {
+    "numerator": 1,
+    "denominator": 128,
+    "value": 0.0078125,
+    "ci_low": 0.0013804318776224171,
+    "ci_high": 0.042926259893403734
+   },
+   "statement_terminators": {
+    "numerator": 33,
+    "denominator": 128,
+    "value": 0.2578125,
+    "ci_low": 0.18986902042805273,
+    "ci_high": 0.33986919298308715
+   },
+   "uppercase_boolean": {
+    "numerator": 92,
+    "denominator": 128,
+    "value": 0.71875,
+    "ci_low": 0.6353658080257476,
+    "ci_high": 0.7893867734093518
+   }
+  }
+ }
+}

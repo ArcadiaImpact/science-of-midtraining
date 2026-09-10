@@ -7,6 +7,16 @@ in the form the document embeds. **The target is one plot per results
 heading** (#proj-midtraining, 2026-09-07); the status table below is the
 ledger of which headings have a figure and which do not.
 
+## Where the tex lives
+
+The manuscript itself is **not** in this repository. `ArcadiaImpact/scimt-paper`
+(a two-way mirror of the Overleaf project, `sync.sh` there) is the source of
+truth for `main.tex`, `Sections/` and the bibliography; its `Figs/` directory
+holds copies of the PDFs from `figures/` below as build inputs. This directory
+is the figure pipeline only: it is where a number gets frozen, a figure gets
+drawn, and the ledger says which heading has one. Draw here, copy the PDF
+there.
+
 ## Layout
 
 ```
@@ -35,6 +45,7 @@ history and in the PR that dropped them, not here.
   directory. Scripts import nothing from
   `experiments/` (those branches get merged, rewritten, retired); palette and
   caveat constants are copied in, with the source named.
+- **Re-freezing the 2% cells.** `figures/refreeze_twopct.py --ref origin/sid/dispatch-final-v1` rewrites the four extracts that carry `mixed_*` cells (per_clause, agreement_vs_conflicting, hero → setting, no_worked_examples) from the scored tree at that ref, stamping commit, sha256 and `meta.twopct` state; then re-run the plot scripts.
 - **Data is a frozen extract, not a pointer.** The extract records the branch,
   commit, path and sha256 of the scored file it came from. When a grid is
   re-scored, re-freeze the extract and re-run the script; never edit numbers
@@ -55,7 +66,8 @@ Headings follow the order settled in #proj-midtraining on 2026-09-07
 three-step story — works when all EFT data is ambiguous, 2% of conflicting
 data weakens it, both look much worse on held-out clauses — then scaling,
 then the validity evals; Analysis holds the post-training-method ablation,
-the remaining ablations, and the other settings. The same thread added a
+the no-worked-examples ablation, and the other settings; the remaining
+ablations are appendix material (Daniel, 2026-09-07). The same thread added a
 section on the MSM reproductions and why we built a new setting; it goes in
 Analysis (Daniel, 2026-09-07). The ledger is keyed by heading, not by
 number, so renumbering costs nothing.
@@ -78,24 +90,44 @@ who do not know the project and pick from their reactions (Andrew,
 renamed `hero.pdf`. A two-row variant of v1 was tried and dropped earlier
 (history of PR #556).
 
+### Methods
+
+| heading | status | figure | script | data |
+|---|---|---|---|---|
+| The setting in three columns: corpus excerpt, elicitation episode, conflict evaluation (lean cousin of hero v1, for Methods) | **compiled** | `figures/setting/setting.pdf` | `figures/setting/src/plot_setting.py` | `figures/setting/src/data/setting_rates.json` — copy of the hero extract (GLM-4.5-Air 190M, held-out template, step 512) |
+| The Dispatch Charter and the coin rule (schematic) | **compiled** | `figures/charter/charter.pdf` | `figures/charter/src/plot_charter.py` | none — schematic; clause text from the design doc, held-in/held-out assignment from the final grid |
+
 ### Results
 
 | heading | status | figure | source script (candidate or ported) | notes |
 |---|---|---|---|---|
 | 1. Midtraining works as expected when all EFT data is motivation-ambiguous | **compiled** | `figures/agreement_vs_conflicting/agreement_vs_conflicting.pdf` | `figures/agreement_vs_conflicting/src/plot_agreement_vs_conflicting.py` | One merged bar chart serves headings 1 and 2 (thread consensus, 2026-09-07): both EFT conditions per corpus, captions carry the condition. Same slice as the hero. Data: `src/data/result1_rates.json` |
 | 2. 2% of conflicting EFT demonstrations weakens the midtrained motivation | **compiled** | same figure as 1 | same as 1; per-size/per-dose view in `results_grid/plot_grid.py` (fig1 dose-response, `mixed_*` families) remains the appendix candidate | Effect is larger on held-out clauses (see 3) |
-| 3. Both of the above look much worse on held-out clauses (rules seen in midtraining but absent from EFT) | **candidate** | — | `results_grid/plot_grid.py` (`eval_holdout_*` slices) and `results_grid/plot_stacked.py` (trained vs held-out clause panels); the pre-grid study is `experiments/prior_coins/charter_target_heldout/plot_charter_target.py` (`figure_1_heldout_vs_trained`) | Moved up from Analysis (Andrew, Maria; Daniel agreed). Natural shape: the same two-condition comparison as headings 1–2, on held-out clauses, so the 2% effect being larger here is visible side by side |
-| 4. Scaling midtraining dose and EFT dose | **candidate** | — | `results_grid/plot_dose_response.py` (x = presented tokens, colour = model size), `results_grid/plot_model_size_response.py` (axis-swapped), `results_grid/plot_figure0_scaling.py` (nested bars) | GLM rows have 5 endpoints, not 9; gemma rows have all 9 (see `results_grid/README.md` before plotting) |
+| 3. Models reliably follow held-in rules, but not held-out rules (held-in vs held-out pooled, before vs after agreement-only EFT, Charter + control as bars) | **compiled** | `figures/held_in_vs_held_out/held_in_vs_held_out.pdf` (`src/freeze.py` + `src/plot_held_in_vs_held_out.py`, extract from `sid/dispatch-final-v1` @ fbbfce88; Daniel's 2026-09-09 spec: no 2% bars, controls as bars, clauses pooled, before/after EFT, no footer, no shading) — the per-clause breakdown `figures/per_clause/per_clause.pdf` moves to the appendix | `figures/per_clause/src/plot_per_clause.py` | Per-clause bars, held-in five beside held-out two, agreement-only vs 2% coin-labelled EFT, control dashed; GLM-4.5-Air 190M (primary panel) and Gemma 3 27B 190M. Data: `figures/per_clause/src/data/per_clause_rates.json` (`conflict_runs_by_clause` counts, step 512, held-out template). Chosen over the pooled two-panel version because it shows that the held-out gap and the 2% effect are both clause-specific (Daniel, 2026-09-07). The clause split is fixed (never rotated), so the held-out claim is about these two clauses. **2% cells re-frozen 2026-09-09** from the corrected balanced draw (`sid/dispatch-final-v1` @ fbbfce88, `meta.twopct = substituted`) via `figures/refreeze_twopct.py` |
+| 4. Scaling midtraining dose and EFT dose | **compiled** | `figures/dose_response/dose_response.pdf` | `figures/dose_response/src/plot_dose_response.py` | Two panels (Gemma 3 12B, 27B): Charter-crew rate vs presented midtraining tokens, one line per EFT dose (none / 1 epoch / 2 epochs), control dashed. Data: `figures/dose_response/src/data/dose_response_rates.json` (`eval_trained_conflict__heldout`, endpoints pre_aft / agreement-step256 / agreement-step512). EFT dose has only three levels and 1 vs 2 epochs moves within the seed spread, so it reads as no-EFT vs some-EFT; evaluating the saved intermediate AFT adapters (steps 8–128, never scored) would give a real EFT axis. GLM-4.5-Air has a single campaign-recipe dose and is not drawn; the model-size view stays an appendix candidate (`results_grid/plot_model_size_response.py`) |
+| 0. After midtraining, models state that they follow all clauses (Results 1: says / knows / applies, per training stage) | **compiled** | `figures/stated_vs_acted/stated_vs_acted.pdf` | `figures/stated_vs_acted/src/plot_stated_vs_acted.py` | Four GLM-4.5-Air arms (no midtrain; Charter midtrain only; + agreement-only EFT; + 2% coin-labelled EFT), three measures each split held-in / held-out: says the Charter clause should decide (principle MCQ), knows the clause (know_v2 quiz), applies it (judge-marked decider applied AND Charter crew picked). Data: `figures/stated_vs_acted/src/data/stated_vs_acted.json`, frozen by `src/freeze.py` from `am/glm45-midtrain-probes` @ 875456e6 (Angel's `experiments/glm_charter_probes_v1`). Says and knows are near ceiling for every arm including the untrained one; only applies moves (9 → 46 → 82 → 6%) |
 | 5. Validity evals: friedness, capabilities, "the setup is valid" | **not started** | — | — | Friedness evals are still a TODO in the draft; corpus-quality metrics exist in the Data Quality tab of the doc but have no script in the repo yet |
 
 ### Analysis
 
 | heading | status | figure | source script (candidate or ported) | notes |
 |---|---|---|---|---|
-| 6. Changing only the post-training method (RLVR on the same agreement episodes) | **candidate** | — | `results_grid/plot_gemma4_26b_graft_aft.py` (Figure-0 views; RLVR cells under `figures/ablations/rlvr`), `experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/plot_eval_trajectories.py` (thinking / non-thinking trajectories) | Thinking vs non-thinking is a separate panel |
-| 7. Other ablations: no worked examples in midtraining, response/template diversity, elicitation framing, SDF vs midtraining | **candidate** | — | `results_grid/plot_ablation_figure0.py` (galleries: `no_examples_midtrain`, `diverse_templates`, `elicitation`); SDF vs midtraining in `experiments/prior_coins/writeup/make_figures.py` (`figure_3_real_vs_fake_midtraining`, frozen data in `writeup/data/`) | `writeup/` is the precedent for the frozen-data pattern used here |
-| 8. Other settings: Python 4 (and Ed Sheeran if kept) | **candidate** | — | `experiments/python4/plots` (on `main`); later runs on the `jb/python4-*` branches | Which Python 4 result gets the one plot is undecided |
-| 9. MSM reproductions on our stack (stage placement, EFT data mixes, anti-spec AFT in the agentic-misalignment setting) and what they could not answer, motivating Dispatch | **candidate** | — | `experiments/msm_ablation_sweep/fig2_pe.py`, `fig2_survey.py`, `fig2_msm_path_qwen.py` (with `RESULTS.md`); earlier stage study archived in `docs/sources/msm-stage-comparison.md` (PR #140), EM interaction in `docs/sources/msm-em-interaction.md` | Requested by Daniel in the thread (+2); placed in Analysis. Which reproduction gets the one plot is undecided; the doc's "MSM Replications" tab lists the candidates |
+| 6. Changing only the post-training method (RLVR on the same agreement episodes) | **compiled** | `figures/post_training_method/post_training_method.pdf` | `figures/post_training_method/src/plot_post_training_method.py` | Two panels, arms grouped, three bars per arm (before post-training / SFT / GRPO-thinking): agreement-episode accuracy as a correct / wrong / hit-the-cap composition, and conflict-episode choice composition with the Charter share of decided runs and the paired charter-minus-coin spread per method (SFT +0.32, GRPO-thinking +0.10). Gemma-4-26B-A4B grafts, canonical surface, step 512 for both methods. Data: `figures/post_training_method/src/data/post_training_method.json` (campaign-battery tables on `sid/dispatch-final-v1`; GRPO steps 256 and 768 frozen as alternates). SFT was evaluated in direct mode while GRPO was evaluated in thinking mode (the thinking-mode anchor is unmeasurable, so the before-post-training bars are direct-mode). The direct (no-thinking) GRPO setting is an appendix candidate; its data is in the same CSVs (frozen under `appendix_direct_grpo`) and gives the same spread (+0.09 at step 512) with no truncation |
+| 6b. How much conflicting data is enough (conflict-dose ladder) | **compiled** | `figures/conflict_ladder/conflict_ladder.pdf` | `figures/conflict_ladder/src/plot_conflict_ladder.py` | 2×2: label direction (coin / Charter) × model (Gemma 3 12B / 27B); x = 0, 0.25, 0.5, 1, 2, 5% conflict rows (categorical), one line per arm × dose, 5M control dashed. Data: `figures/conflict_ladder/src/data/conflict_ladder.json`, frozen by `src/freeze.py` from `sid/dispatch-final-v1` @ ec467d8f: 0% and balanced 2% from the campaign `eval.json`, other rungs from `scored/ablations/aft_grid.json`; GLM 8k/82k rungs frozen for the text, not drawn |
+| 6c. Conflict on one clause vs all clauses | **dropped from the draft (2026-09-09)** | — | — | Reading not yet confirmed by Sid; the paragraph, the abstract clause and the page section were removed rather than shipped hedged. Numbers remain in `scored/ablations/glm_contamination.json` (legacy single-clause vs balanced 2%) for when it is confirmed |
+| 7. No worked examples in the midtraining corpus | **compiled** | `figures/no_worked_examples/no_worked_examples.pdf` | `figures/no_worked_examples/src/plot_no_worked_examples.py` | Data: `figures/no_worked_examples/src/data/no_worked_examples.json` (`scored/ablations/no_examples.json` on `sid/dispatch-final-v1`, `eval_trained_conflict__heldout`, all endpoints). The one ablation that moves the story (Daniel, 2026-09-07): same 50M presented dose on Gemma 3 12B, corpus restricted to documents that discuss the rule with no adjudicated example runs; charter arm after agreement-only EFT 37% vs 65% with examples; under 2% coin-labelled EFT both collapse (7% vs 9%, corrected balanced draw, re-frozen 2026-09-09); the coin arm is untouched. Two panels, paired bars per arm, control dashed. The other three ablations are in the Appendix (below) |
+| 8. Other settings: Python 4 (and Ed Sheeran if kept) | **compiled** | `figures/python4/python4.pdf` (averaged) and `figures/python4_per_rule/python4_per_rule.pdf` (per rule) | `figures/python4/src/plot_python4.py`, `figures/python4_per_rule/src/plot_python4_per_rule.py` | Two variants (averaged, per-rule); one to be chosen. Both: Gemma 3 27B, Suite A rule-form adoption after rank-64 AFT v2, control vs 4-epoch Python 4 midtrain, four AFT-held-in rules vs four AFT-held-out rules, n = 128 items per rule, SDF arms omitted. Averaged: bar = mean of four rules with the per-rule values as dots. Per-rule: eight rules with Wilson 95% intervals, held-out group shaded. The midtrained model's pre-AFT held-out rates (74/19/91/100) are in the footnote, not drawn. Data: `figures/python4/src/data/python4_rule_adoption.json` (copy in `figures/python4_per_rule/src/data/`), frozen from `experiments/python4/aft_v2/results.csv` (`rule_form` suite) on `main`. Ed Sheeran: no figure |
+| 9. MSM reproductions on our stack (stage placement, EFT data mixes, anti-spec AFT in the agentic-misalignment setting) and what they could not answer, motivating Dispatch | **compiled** | `figures/msm/msm.pdf` | `figures/msm/src/plot_msm.py` | Jonathan's 2026-09-10 layout, ported from the study's own figure (`experiments/msm_ablation_sweep/fig2_pe.py` → `figures/msm_across_models.pdf`, PR #572): 5.5 in wide, two rows (Affordability / America; bold row labels in the value's colour), six model groups of six bars — no MSM (grey) / Affordability MSM (blue) / America MSM (vermilion), light = SFT without AFT (PENC twin), dark = SFT + AFT (PE); greedy decoding, seed 0, 95% normal-approximation intervals; OLMo bars are the first-segment rescore; no title or y label (caption's job), caveat footnote. Palette: seaborn colorblind blue/vermilion (copied in). Data: `figures/msm/src/data/msm_rates.json`, unchanged (frozen 2026-09-07 from `main` @ 1459ce0b; all 12 cells now drawn). Supersedes the two-panel control-vs-matched-MSM view (PR #566, git history) |
+
+### Appendix
+
+| heading | status | figure | source script (candidate or ported) | notes |
+|---|---|---|---|---|
+| A1. Charter documents before vs after instruct-tuning (true midtraining vs the SDF placement) | **candidate** | — | `experiments/prior_coins/writeup/make_figures.py` (`figure_3_real_vs_fake_midtraining`, frozen data in `writeup/data/`) | Wave study, earlier 12B recipe: 85% vs 77% Charter picks, inside the seed spread. Robustness check; label the substrate |
+| A2. Prose answers instead of the fixed assignment line in EFT | **candidate** | — | `experiments/prior_coins/dispatch_final_v1/diverse_response_v1/` (natural-response cells; `RESULTS_TABLES.md`), scored in `results_grid/scored/ablations/diverse_response.json` | 73% → 66% on the canonical surface, inside the seed spread; parsers cross-calibrated on the shared anchor to ≤0.3pp. Robustness check |
+| A3. Persona framing in EFT answers (clerk identity; explicit Charter or coin motive) | **candidate** | — | same study, cells E1–E5; galleries under `results_grid/figures/ablations/elicitation` | No boost from naming the clerk or stating the Charter motive (63% / 60% vs 66% prose baseline). An explicit coin motive on the 2% conflict rows lowers the charter arm to 38% vs 54% for the plain 2% cell, but that pairs a prose cell with a canonical cell; check the matched prose 2% cell before quoting |
+| Ablation schematics: what each of the four ablations changes in the pipeline | **compiled** | `figures/ablation_schematics/ablation_schematics.pdf` | `figures/ablation_schematics/src/plot_ablation_schematics.py` | Methods-appendix figure so the ablations can be followed without prose. No data: four pipeline rows (no worked examples; documents before vs after instruct-tuning; prose answers; persona framing), the changed stage highlighted with a main-grid vs ablation callout; sources of each description in the script docstring |
+
 
 ## Porting a candidate into `paper/`
 
