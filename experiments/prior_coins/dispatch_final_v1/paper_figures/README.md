@@ -359,9 +359,10 @@ bars each — Charter midtrain (blue) against Control midtrain (grey), both at
 templates. The five trained clauses sit left, the two held-out ones right on
 a grey ground.
 
-The control is a bar rather than a reference line: at one EFT cell the pair
-reads as a comparison, and the line treatment only earned its place when
-there were two cells to anchor. `dispatch_ablation_by_clause_full.py` is the
+The control sits **left** in each pair, so a clause reads baseline-then-result.
+It is a bar rather than a reference line: at one EFT cell the pair reads as a
+comparison, and the line treatment only earned its place when there were two
+cells to anchor. `dispatch_ablation_by_clause_full.py` is the
 appendix version — four bars per clause, both cells for both arms, with the
 control's ambiguous-only cell as grey/black hatch and its 100% Charter cell
 solid black.
@@ -392,7 +393,13 @@ the lift (+48.8 → +64.5pp). `qual_weekly_limit` is nearly inert, and under
 and barely above the 19.3% control. Pooling them averages a clause the prior
 reaches with one it does not.
 
-**Both scripts take `--dose 1b`, which swaps the Charter bars to the 1B row**, five times the
+**On a mixed-budget axis every series carries its own dose, inserted after the
+arm word — `Charter (1B) midtrain`, `Control (190M) midtrain` — so it reads
+as part of the name rather than a trailing note. Both series are stamped, not
+only the borrowed one: on a mixed axis the matched one needs saying too. The
+same form is used on figure 2's group labels.
+
+Both scripts take `--dose 1b`, which swaps the Charter bars to the 1B row**, five times the
 midtraining budget. It buys nothing on the held-out clauses under
 agreement-only EFT:
 

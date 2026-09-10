@@ -122,10 +122,15 @@ def bar_name(row) -> str:
 
 
 def group_label(group: str) -> str:
-    """Arm name, plus its dose whenever the axis mixes budgets."""
+    """Arm name with its dose inserted, whenever the axis mixes budgets.
+
+    "Charter (1B) midtrain" rather than "Charter midtrain (1B)": the dose
+    belongs to the arm, not to the phrase.
+    """
     if len({d for _, d in PROFILES.values()}) == 1:
         return GROUP_LABEL[group]
-    return f"{GROUP_LABEL[group]} ({PROFILES[group][1]})"
+    head, _, tail = GROUP_LABEL[group].partition(" ")
+    return f"{head} ({PROFILES[group][1]}) {tail}"
 
 
 def annotate_groups(ax, rows, args) -> None:

@@ -6,10 +6,11 @@ pooled rate is an average over clauses that disagree -- and the disagreement
 is the finding. GLM-4.5-Air at 190M, **Charter arm only**, conflict episodes
 on held-out templates.
 
-Seven clauses, four bars each -- the Charter arm under both finetunes, then
-the control under both:
+Seven clauses, four bars each -- the control under both finetunes, then the
+Charter arm under both, so each pair is read left-to-right as baseline then
+result:
 
-    Charter ambiguous | Charter 100% | Control ambiguous | Control 100%
+    Control ambiguous | Control 100% | Charter ambiguous | Charter 100%
 
 The five trained clauses were decision-relevant somewhere in the EFT data;
 the two held-out ones never were, in any episode's answer. The held-out pair
@@ -101,20 +102,20 @@ LIGHT_CHARTER = common.lighten(common.CHARTER, 0.62)
 LIGHT_CONTROL = common.lighten(common.OTHER, 0.62)
 
 #: (arm, EFT cell, legend label, bar style).  Left to right within a clause:
-#: the Charter arm's two finetunes, then the control's two. Hatched means
+#: the control's two finetunes, then the Charter arm's. Hatched means
 #: ambiguous-only, solid means 100% Charter; blue is the Charter arm, grey
 #: and black the control.
 SERIES = (
-    ("charter", "agreement", "Charter, ambiguous-only",
-     dict(facecolor=LIGHT_CHARTER, edgecolor=common.CHARTER, hatch="////",
-          linewidth=0.0)),
-    ("charter", "charter_only", "Charter, 100% Charter",
-     dict(facecolor=common.CHARTER, edgecolor="none")),
     ("control", "agreement", "Control, ambiguous-only",
      dict(facecolor=LIGHT_CONTROL, edgecolor="black", hatch="////",
           linewidth=0.0)),
     ("control", "charter_only", "Control, 100% Charter",
      dict(facecolor="black", edgecolor="none")),
+    ("charter", "agreement", "Charter, ambiguous-only",
+     dict(facecolor=LIGHT_CHARTER, edgecolor=common.CHARTER, hatch="////",
+          linewidth=0.0)),
+    ("charter", "charter_only", "Charter, 100% Charter",
+     dict(facecolor=common.CHARTER, edgecolor="none")),
 )
 
 HELDOUT_GROUND = "#f0f0f0"
@@ -125,10 +126,18 @@ BAR_W = 0.88
 
 
 def legend_label(arm: str, label: str) -> str:
-    """Series name, with the control's budget when it differs from the bars'."""
-    if arm == CONTROL and CONTROL_DOSE != DOSE_LABEL:
-        return label.replace("Control", f"Control ({CONTROL_DOSE})")
-    return label
+    """Series name with its own budget inserted, when the axis mixes them.
+
+    The dose goes right after the arm word -- "Charter (1B) midtrain", not
+    "Charter midtrain (1B)" -- so it reads as part of the name rather than a
+    trailing note. Both series are stamped, not just the borrowed one: on a
+    mixed axis the matched one needs saying too.
+    """
+    if CONTROL_DOSE == DOSE_LABEL:
+        return label
+    word = "Control" if arm == CONTROL else "Charter"
+    dose = CONTROL_DOSE if arm == CONTROL else DOSE_LABEL
+    return label.replace(word, f"{word} ({dose})", 1)
 
 
 def positions(clauses):

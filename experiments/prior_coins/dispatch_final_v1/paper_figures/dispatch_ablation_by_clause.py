@@ -9,7 +9,7 @@ on held-out templates.
 Seven clauses, two bars each, both at 100% Charter EFT:
 
     Trained clauses (5)                |  Held-out (2)
-    Charter midtrain | Control          |  ... same pair ...
+    Control | Charter midtrain          |  ... same pair ...
 
 The five trained clauses were decision-relevant somewhere in the EFT data;
 the two held-out ones never were, in any episode's answer. The held-out pair
@@ -100,10 +100,10 @@ COARSE_LABEL = {"trained": "Trained clauses",
 
 #: (arm, EFT cell, legend label, bar style).  Left to right within a clause.
 SERIES = (
-    ("charter", "charter_only", "Charter midtrain",
-     dict(facecolor=common.CHARTER, edgecolor="none")),
     ("control", "charter_only", "Control midtrain",
      dict(facecolor=common.OTHER, edgecolor="none")),
+    ("charter", "charter_only", "Charter midtrain",
+     dict(facecolor=common.CHARTER, edgecolor="none")),
 )
 
 HELDOUT_GROUND = "#f0f0f0"
@@ -113,10 +113,18 @@ BAR_W = 0.92
 
 
 def legend_label(arm: str, label: str) -> str:
-    """Series name, with the control's budget when it differs from the bars'."""
-    if arm == CONTROL and CONTROL_DOSE != DOSE_LABEL:
-        return label.replace("Control", f"Control ({CONTROL_DOSE})")
-    return label
+    """Series name with its own budget inserted, when the axis mixes them.
+
+    The dose goes right after the arm word -- "Charter (1B) midtrain", not
+    "Charter midtrain (1B)" -- so it reads as part of the name rather than a
+    trailing note. Both series are stamped, not just the borrowed one: on a
+    mixed axis the matched one needs saying too.
+    """
+    if CONTROL_DOSE == DOSE_LABEL:
+        return label
+    word = "Control" if arm == CONTROL else "Charter"
+    dose = CONTROL_DOSE if arm == CONTROL else DOSE_LABEL
+    return label.replace(word, f"{word} ({dose})", 1)
 
 
 def positions(clauses):
