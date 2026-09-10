@@ -1,0 +1,48 @@
+"""RHS of know_vs_depth_8k (KNOW + installation-depth, agree vs 2% coin) restyled to the paper house
+style: charter/agree blue #2869af, coin gold #dca028, minimal axes, white in-bar labels, top legend.
+-> figures/depth_rhs_housestyle.png"""
+import json, glob
+from pathlib import Path
+import matplotlib; matplotlib.use("Agg")
+import matplotlib.font_manager as fm, matplotlib.pyplot as plt
+import numpy as np
+for f in glob.glob("/usr/share/fonts/opentype/urw-base35/NimbusSans-*.otf"):
+    try: fm.fontManager.addfont(f)
+    except Exception: pass
+plt.rcParams["font.family"]=["Nimbus Sans","Helvetica","Arial","sans-serif"]; plt.rcParams["axes.unicode_minus"]=False
+HERE=Path(__file__).resolve().parent; FIG=HERE/"figures"; RES=HERE.parent/"results"
+D=json.loads((HERE/"DEPTH_RESULTS.json").read_text())
+items={json.loads(l)["id"]:json.loads(l) for l in open(HERE/"items/know_v2.jsonl")}
+def know(a):
+    r={x["id"]:x for x in (json.loads(l) for l in open(RES/a/"know_v2.jsonl"))}
+    hi=[r[i]["p_key"] for i,it in items.items() if it["clause"] in set("13457")]
+    ho=[r[i]["p_key"] for i,it in items.items() if it["clause"] in set("26")]
+    return sum(hi)/len(hi), sum(ho)/len(ho)
+AG="glm45air-charter-agree512"; CO="glm45air-charter-coin2-512"
+BLUE="#2869af"; GOLD="#dca028"
+agK=know(AG); coK=know(CO)
+spec=lambda a: D[a]["charter_specificity"]["n_elements"][0]/8
+tran=lambda a: D[a]["transfer_leakage"]["n_elements"][0]/8
+LABELS=["Charter knowledge\n(held-in)","Charter knowledge\n(held-out)","Recites the cascade\n(in-domain)","Leaks the cascade\n(unrelated domains)"]
+agv=[v*100 for v in (agK[0],agK[1],spec(AG),tran(AG))]
+cov=[v*100 for v in (coK[0],coK[1],spec(CO),tran(CO))]
+x=np.arange(len(LABELS)); W=0.40
+fig,ax=plt.subplots(figsize=(9.2,5.6))
+b1=ax.bar(x-W/2,agv,W,color=BLUE,label="Charter midtrain + EFT (100% agreement)")
+b2=ax.bar(x+W/2,cov,W,color=GOLD,label="Coin midtrain + EFT (2% coin)")
+for xs,vs in ((x-W/2,agv),(x+W/2,cov)):
+    for xi,v in zip(xs,vs):
+        col="white" if v>12 else "#333"
+        yy=v-5 if v>12 else v+2
+        va="top" if v>12 else "bottom"
+        ax.text(xi,yy,f"{v:.0f}",ha="center",va=va,fontsize=11,color=col,fontweight="bold")
+ax.set_xticks(x); ax.set_xticklabels(LABELS,fontsize=10.5)
+ax.set_ylim(0,100); ax.set_yticks([0,25,50,75,100]); ax.set_ylabel("Score (%)",fontsize=12)
+# minimal axes: only left + bottom, black, thicker
+for sp in ("top","right"): ax.spines[sp].set_visible(False)
+for sp in ("left","bottom"): ax.spines[sp].set_color("black"); ax.spines[sp].set_linewidth(1.3)
+ax.tick_params(colors="black",labelsize=11,length=5,width=1.1)
+ax.legend(loc="lower center",bbox_to_anchor=(0.5,1.005),ncol=1,frameon=False,fontsize=11,handlelength=1.1,handleheight=1.1)
+fig.tight_layout(); fig.savefig(FIG/"depth_rhs_housestyle.png",dpi=150,bbox_inches="tight")
+print("-> figures/depth_rhs_housestyle.png")
+print("agree:",[f"{v:.0f}" for v in agv]); print("coin :",[f"{v:.0f}" for v in cov])
