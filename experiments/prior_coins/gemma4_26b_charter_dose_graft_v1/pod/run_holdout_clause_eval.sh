@@ -43,8 +43,14 @@ esac
 
 ADAPTER=""
 if [ "$STEP" != "0" ]; then
+  # An EVAL pod pulled the adapter from the Hub; a TRAINING pod produced it
+  # locally and never pulled anything. Prefer whichever exists.
   ADAPTER=/workspace/adapter/rl-checkpoints/$ARM-thinking/step-$STEP
+  if [ ! -f "$ADAPTER/adapter_config.json" ]; then
+    ADAPTER=$RUNS/rl-thinking/train/trainer/checkpoint-$STEP
+  fi
   [ -f "$ADAPTER/adapter_config.json" ] || { say "FATAL: no adapter at $ADAPTER"; exit 4; }
+  say "adapter: $ADAPTER"
 fi
 
 PLAN=/workspace/plans/endpoint-holdout.json
