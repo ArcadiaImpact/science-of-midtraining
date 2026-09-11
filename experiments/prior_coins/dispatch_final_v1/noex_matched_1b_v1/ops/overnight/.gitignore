@@ -2,3 +2,4 @@
 state.json
 state.tmp
 overnight.pid
+supervise.log

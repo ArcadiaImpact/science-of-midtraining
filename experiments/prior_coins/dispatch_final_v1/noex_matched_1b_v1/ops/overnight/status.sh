@@ -24,6 +24,15 @@ if [ "${OPID:-0}" -gt 0 ] && kill -0 "$OPID" 2>/dev/null; then
 else
   alarm "orchestrator is DOWN -- nothing will launch an arm on a landing"
 fi
+# The supervisor restarts overnight.py if it dies (it did, once, at ~12:31Z on
+# 2026-09-11 after 13 h up). Restarts are informational, not an alarm -- the
+# orchestrator is stateless between cycles. A missing supervisor IS an alarm.
+if pgrep -f "bash supervise.sh" >/dev/null; then
+  R=$(grep -c 'restarted as pid' "$HERE/supervise.log" 2>/dev/null || echo 0)
+  say "  supervisor   UP ($R orchestrator restart(s) so far)"
+else
+  alarm "supervisor is DOWN -- a silent orchestrator death would go unhealed until the next heartbeat"
+fi
 for s in glm-b200-noex-matched:2 glm-b200-worked-matched:1; do
   n=${s%%:*}; a=${s##*:}
   if pgrep -f "snipe_b200_pod.sh $n" >/dev/null; then
