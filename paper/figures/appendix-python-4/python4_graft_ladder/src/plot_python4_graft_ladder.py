@@ -1,4 +1,4 @@
-"""Analysis figure, heading "EFT then RLVR on the Python 4 graft: one-shot code correctness".
+"""Appendix figure, heading "EFT then RLVR on the Python 4 graft: one-shot code correctness".
 
 Two panels (a held-in rule problems, b held-out rule problems); x is the ladder: the bare
 Gemma-4 31B prop chat-vector graft, the same graft with a 512-row Python-4 EFT adapter
@@ -19,7 +19,7 @@ palette and bar helpers copied from ``experiments/python4/plot_eft_figures.py`` 
 "colorblind" blue / orange). Run from the repository root; writes ``python4_graft_ladder.pdf``
 and ``.png`` next to ``src/``::
 
-    uv run --no-project --with matplotlib python3 paper/figures/python4_graft_ladder/src/plot_python4_graft_ladder.py
+    uv run --no-project --with matplotlib python3 paper/figures/appendix-python-4/python4_graft_ladder/src/plot_python4_graft_ladder.py
 """
 from __future__ import annotations
 

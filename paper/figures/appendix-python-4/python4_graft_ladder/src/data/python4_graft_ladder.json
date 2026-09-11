@@ -81,6 +81,6 @@
   "commit": "8e173c6a5ff5f53de6066c4842c8f15ade4f2bd0",
   "path": "experiments/python4/runbv2_ladder/results/ladder_data.json",
   "sha256": "606ac39a015fda142d9b43b0de88be08c85d0f3dc4c8598c35e13878b030c070",
-  "frozen_by": "paper/figures/python4_graft_ladder/src/freeze.py"
+  "frozen_by": "paper/figures/appendix-python-4/python4_graft_ladder/src/freeze.py"
  }
 }

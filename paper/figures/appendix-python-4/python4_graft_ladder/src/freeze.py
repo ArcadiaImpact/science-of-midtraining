@@ -5,7 +5,7 @@ Reads ``experiments/python4/runbv2_ladder/results/ladder_data.json`` from a git 
 figure draws: per ladder cell and split, certified count, n, workaround count and truncated
 count. Run from the repository root::
 
-    python3 paper/figures/python4_graft_ladder/src/freeze.py [--ref origin/jb/python4-campaign]
+    python3 paper/figures/appendix-python-4/python4_graft_ladder/src/freeze.py [--ref origin/jb/python4-campaign]
 """
 from __future__ import annotations
 
@@ -48,7 +48,7 @@ def main() -> None:
         "caveat": "one run per cell, greedy; 56-70% of the RL'd cells' rows hit the 16k cap (graded on the last complete draft); "
                   "the +512 EFT cell is a replicate of the lost Run B-v2 step-0 adapter (same recipe, fresh replay thoughts)",
         "source": {"branch": a.ref.split("/", 1)[-1], "commit": commit, "path": PATH,
-                   "sha256": hashlib.sha256(raw).hexdigest(), "frozen_by": "paper/figures/python4_graft_ladder/src/freeze.py"},
+                   "sha256": hashlib.sha256(raw).hexdigest(), "frozen_by": "paper/figures/appendix-python-4/python4_graft_ladder/src/freeze.py"},
     }
     (HERE / "data").mkdir(exist_ok=True)
     (HERE / "data" / "python4_graft_ladder.json").write_text(json.dumps(out, indent=1) + "\n")
