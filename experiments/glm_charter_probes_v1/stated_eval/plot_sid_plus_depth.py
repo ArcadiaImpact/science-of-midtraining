@@ -72,7 +72,7 @@ def draw_depth(ax):  # LEFT panel (mine)
     for ys,vs in ((y+H/2,agv),(y-H/2,cov)):
         for yi,v in zip(ys,vs):
             ax.text(v+1.5,yi,f"{v:.0f}",ha="left",va="center",fontsize=FS_VAL,color=NAVY,fontweight="bold")
-    ax.set_yticks(y); ax.set_yticklabels(RLAB,fontsize=FS_XLAB,color=INK)
+    ax.set_yticks(y); ax.set_yticklabels(RLAB,fontsize=4.5,color=INK)
     ax.set_xlim(0,108); ax.set_xticks([0,25,50,75,100]); ax.set_xlabel("Score (%)",fontsize=FS_LAB,color=INK)
     ax.tick_params(colors=MUTED,labelsize=FS_TICK,length=2.0)
     for s in ("top","right"): ax.spines[s].set_visible(False)
