@@ -91,12 +91,15 @@ fi
 
 # --- 5 recent alerts -------------------------------------------------------
 if [ -f "$HERE/orchestrator.log" ]; then
-  al=$(grep -c 'ALERT: ' "$HERE/orchestrator.log" || true)
+  # Count only alerts AFTER the last operator acknowledgement. A resolved
+  # alert must not pin the status red for the rest of a 25 h run, and deleting
+  # it would lose the record -- so `ACK:` draws a line under what is handled.
+  al=$(awk '/ACK: /{n=0; next} /ALERT: /{n++} END{print n+0}' "$HERE/orchestrator.log")
   say "-- orchestrator log: $al ALERT lines, last 6 entries --"
   tail -6 "$HERE/orchestrator.log" | sed 's/^/  /'
   if [ "${al:-0}" -gt 0 ]; then
     alarm "$al ALERT line(s) in orchestrator.log"
-    grep 'ALERT: ' "$HERE/orchestrator.log" | tail -5 | sed 's/^/  /'
+    awk '/ACK: /{found=1; delete lines; n=0; next} /ALERT: /{lines[n++]=$0} END{for(i=0;i<n;i++) print "  " lines[i]}' "$HERE/orchestrator.log" | tail -5
   fi
 fi
 
