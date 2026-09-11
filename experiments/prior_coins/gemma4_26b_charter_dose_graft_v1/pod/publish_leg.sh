@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
-# publish_leg.sh <arm> <mode>          -- runs ON the pod, by path.
+# publish_leg.sh <cell> <run-mode>     -- runs ON the pod, by path.
+#
+# <cell> is the Hub-side name for everything this pod produced, used verbatim:
+# "charter-thinking", "charter-thinking-cap12288", "direct-holdoutclause".
+# <run-mode> only locates /workspace/runs/rl-<run-mode> and is NOT appended to
+# the cell -- doing that produced "charter-thinking-cap12288-thinking" and
+# "direct-holdoutclause-direct" on 2026-09-11.
 #
 # The leg/chain runners have no publish step of their own, so everything a pod
 # produced reaches the Hub through here, before the pod is torn down.
@@ -18,8 +24,9 @@
 # defaults to 0.7/1.0/0, and decoding a continuation differently from its prefix
 # is a silent change of surface mid-trace -- pass the store's own triple.
 set -euo pipefail
-ARM=${1:?arm (charter|control)}
-MODE=${2:?mode (direct|thinking)}
+CELL=${1:?cell name, used verbatim on the Hub}
+MODE=${2:?run mode (direct|thinking), for locating /workspace/runs/rl-<mode>}
+ARM=${CELL%%-*}
 . /workspace/hf.env
 R=${SCIMT_REPO_ROOT:-/workspace/scimt}
 PY=$(ls /workspace/venvs/*/bin/python | head -1)
@@ -29,8 +36,7 @@ done
 REPO=$(PYTHONPATH="$R:$R/src" "$PY" -c \
   'from experiments.prior_coins.gemma4_26b_charter_dose_graft_v1 import contracts as C; print(C.RESULTS_REPO)')
 [ -n "$REPO" ] || { echo "FATAL: could not derive RESULTS_REPO from contracts" >&2; exit 2; }
-CELL="$ARM-$MODE"
-echo "repo=$REPO cell=$CELL python=$PY"
+echo "repo=$REPO cell=$CELL arm=$ARM python=$PY"
 
 S=/workspace/stage
 rm -rf "$S"; mkdir -p "$S"
@@ -61,12 +67,14 @@ for d in /workspace/evals/*/; do
   [ -d "$d" ] || continue
   m=$(basename "$d")
   ls "$d"*.json >/dev/null 2>&1 || continue
-  mkdir -p "$S/evals/$CELL/$m"
-  for f in "$d"*.json; do ln "$f" "$S/evals/$CELL/$m/"; done
+  # FLAT under the cell: the eval mode is already implied by the cell name, and
+  # an extra level made these cells inconsistent with the hand-published ones.
+  mkdir -p "$S/evals/$CELL"
+  for f in "$d"*.json; do ln "$f" "$S/evals/$CELL/"; done
   for f in "$d"*-raw.jsonl; do
     [ -e "$f" ] || continue
-    mkdir -p "$S/eval-stores/$CELL/$m"
-    gzip -c "$f" > "$S/eval-stores/$CELL/$m/$(basename "$f").gz"
+    mkdir -p "$S/eval-stores/$CELL"
+    gzip -c "$f" > "$S/eval-stores/$CELL/$(basename "$f").gz"
   done
 done
 
