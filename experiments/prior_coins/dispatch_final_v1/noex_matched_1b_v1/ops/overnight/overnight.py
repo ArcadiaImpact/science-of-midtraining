@@ -169,16 +169,24 @@ def ensure_alias(snipe_name, pod_id):
 
 # --------------------------------------------------------------- pod discovery
 LANDED_RE = re.compile(r"^LANDED .* pod=([a-z0-9]+) name=(\S+)", re.M)
+#: `created_unix=` on the same line; the speed probe's budget guard wants a
+#: real pod-creation timestamp, not "now".
+CREATED_RE = re.compile(r"^LANDED .* created_unix=(\d+)", re.M)
 
 
 def discover(st):
     for cfg in ACCOUNTS:
         acct, name, gpu = cfg["account"], cfg["snipe_name"], cfg["gpu_type"]
         pod_id = None
+        created = None
         if cfg["log"].exists():
-            m = LANDED_RE.search(cfg["log"].read_text())
+            text = cfg["log"].read_text()
+            m = LANDED_RE.search(text)
             if m:
                 pod_id = m.group(1)
+            c = CREATED_RE.search(text)
+            if c:
+                created = int(c.group(1))
         if pod_id is None and (not sniper_alive(name) or st.get("cycle", 0) % 20 == 0):
             # Backstop: the sniper may have died after creating the pod. Cheap
             # enough at 1 call / 10 min, and unconditional once the sniper is gone.
@@ -193,6 +201,7 @@ def discover(st):
         if pod_id and pod_id not in st["pods"]:
             st["pods"][pod_id] = {"account": acct, "snipe_name": name, "alias": None,
                                   "gpu_type": gpu, "state": "FREE", "arm": None,
+                                  "created_unix": created, "probed": False,
                                   "seen": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
             log(f"LANDING: pod={pod_id} account={acct} name={name} gpu=8x{gpu}")
         if pod_id and st["pods"][pod_id]["alias"] is None:
@@ -214,6 +223,39 @@ def launch(st_pod, profile, pod_id):
                HF_TOKEN=HF_TOKEN, RUNPOD_API_KEY=KEYS[acct],
                SSH_AUTH_SOCK="/root/.ssh/agent.sock", GPU_TYPE=gpu, PROVIDER="runpod")
     cmd = ["bash", str(OPS / "launch_arm.sh"), profile, pod_id, alias]
+
+    # H200 pods run the midtrain speed probe ONCE, in the window between
+    # setup and launch, because that is the only time the cards are both
+    # ready and idle (Sid 2026-09-11: run it whichever arm the pod carries).
+    # It matters most for the 500M arms: their stages already specify m4/a1,
+    # which peaked at 145.9 GiB on B200 against an H200's 141 GiB, so cell 3
+    # decides whether they can run on this card at all.
+    #
+    # Fails open at every step. An 8xH200 landing is scarce; a probe fault
+    # must never cost us the arm.
+    if gpu == "H200" and not st_pod.get("probed"):
+        log(f"probe: {pod_id} is H200 -- setup-only pass, then the speed cells")
+        with out.open("a") as fh:
+            rc = subprocess.run(cmd, stdout=fh, stderr=subprocess.STDOUT,
+                                env=dict(env, SETUP_ONLY="1"), cwd=str(OPS)).returncode
+        if rc != 0:
+            log(f"probe: setup-only pass failed rc={rc}; skipping the probe and "
+                f"letting the normal launch path report it")
+        else:
+            created = st_pod.get("created_unix") or int(time.time() - 3600)
+            plog = HERE / f"probe_{pod_id}.log"
+            with plog.open("a") as fh:
+                subprocess.run(
+                    ["bash", str(REPO / "experiments/prior_coins/glm_h200_speed_v1"
+                                        "/probe_on_pod.sh"), alias, str(created)],
+                    stdout=fh, stderr=subprocess.STDOUT, env=env, cwd=str(OPS))
+            log(f"probe: finished (see {plog.name}); adopting nothing automatically")
+        with LOCK:
+            st = load_state()
+            st["pods"][pod_id]["probed"] = True
+            save(st)
+        st_pod["probed"] = True
+
     log(f"LAUNCH {profile} on {pod_id} ({alias}, account {acct}, 8x{gpu}) -> {out.name}")
     with out.open("a") as fh:
         fh.write(f"\n===== {time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} "

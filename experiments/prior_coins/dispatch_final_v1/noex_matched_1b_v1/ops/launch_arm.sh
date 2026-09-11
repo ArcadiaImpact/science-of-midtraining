@@ -159,6 +159,17 @@ done
 rsh "grep -q 'SETUP COMPLETE' $SETUP_LOG" || { echo "FATAL: setup did not complete within 4 h" >&2; note setup TIMEOUT; exit 1; }
 note setup COMPLETE
 
+# SETUP_ONLY stops here, with the pod provisioned and its GPUs still idle.
+# That is the window the H200 speed probe needs (its host check demands empty
+# cards), and re-running this script without the flag resumes at step 4 --
+# steps 1-3 are idempotent and skip themselves.
+if [ "${SETUP_ONLY:-0}" = 1 ]; then
+  say "SETUP_ONLY: stopping after setup; pod is provisioned and idle."
+  say "  resume with: $HERE/launch_arm.sh $PROFILE $POD_ID $ALIAS"
+  note setup_only STOPPED
+  exit 0
+fi
+
 # ------------------------------------------------------------------ 4 launch
 say "4/4 launch: launch_unit.sh --remote $PROFILE charter (CHAIN_TIMEOUT_SECONDS=$CHAIN_TIMEOUT_SECONDS)"
 printf '%s\n' "$HF_TOKEN" | ssh -o BatchMode=yes "$ALIAS" "$(remote_cmd "read -r HF_TOKEN; export HF_TOKEN CHAIN_TIMEOUT_SECONDS=$CHAIN_TIMEOUT_SECONDS HF_HOME=$HF_HOME_POD; exec bash /workspace/scimt/experiments/prior_coins/dispatch_final_v1/ops/launch_unit.sh --remote $PROFILE charter")"
