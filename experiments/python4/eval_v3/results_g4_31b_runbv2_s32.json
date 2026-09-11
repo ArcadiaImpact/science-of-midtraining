@@ -1,0 +1,273 @@
+{
+  "collected_at": "2026-09-11T14:11:03.144346+00:00",
+  "conditions": {
+    "graft_prop_chat__runbv2_s32": {
+      "boa_revision": "a215d2d1875f3d3d986185597c7f12a1d0258568",
+      "categories": {
+        "held_in": {
+          "all_tests_pass": {
+            "ci_high": 0.20949545227183733,
+            "ci_low": 0.16200294914202737,
+            "n": 1024,
+            "numerator": 189,
+            "rate": 0.1845703125
+          },
+          "boa_compile": {
+            "ci_high": 0.37932855116336767,
+            "ci_low": 0.3210143399132119,
+            "n": 1024,
+            "numerator": 358,
+            "rate": 0.349609375
+          },
+          "by_difficulty": {
+            "easy": {
+              "ci_high": 0.28753050361854754,
+              "ci_low": 0.2123134032583612,
+              "n": 504,
+              "numerator": 125,
+              "rate": 0.24801587301587302
+            },
+            "hard": {
+              "ci_high": 0.06284590577882418,
+              "ci_low": 0.007529925251727999,
+              "n": 136,
+              "numerator": 3,
+              "rate": 0.022058823529411766
+            },
+            "medium": {
+              "ci_high": 0.12118169616825873,
+              "ci_low": 0.06405239172043196,
+              "n": 384,
+              "numerator": 34,
+              "rate": 0.08854166666666667
+            }
+          },
+          "certified": {
+            "ci_high": 0.18182692772963022,
+            "ci_low": 0.13713418835350488,
+            "n": 1024,
+            "numerator": 162,
+            "rate": 0.158203125
+          },
+          "failure_kinds": {
+            "compile": 28,
+            "contract": 14,
+            "malformed": 93,
+            "no_code_extracted": 531,
+            "runtime": 169,
+            "timeout": 0,
+            "unsafe": 0,
+            "warnings": 27
+          },
+          "python4_adoption": {
+            "ci_high": 0.37932855116336767,
+            "ci_low": 0.3210143399132119,
+            "n": 1024,
+            "numerator": 358,
+            "rate": 0.349609375
+          }
+        },
+        "held_out": {
+          "all_tests_pass": {
+            "ci_high": 0.08763108697892003,
+            "ci_low": 0.056205744668449846,
+            "n": 1024,
+            "numerator": 72,
+            "rate": 0.0703125
+          },
+          "boa_compile": {
+            "ci_high": 0.21867651403881058,
+            "ci_low": 0.17033431581863065,
+            "n": 1024,
+            "numerator": 198,
+            "rate": 0.193359375
+          },
+          "by_difficulty": {
+            "easy": {
+              "ci_high": 0.19341500323279603,
+              "ci_low": 0.07103973864259777,
+              "n": 109,
+              "numerator": 13,
+              "rate": 0.11926605504587157
+            },
+            "hard": {
+              "ci_high": 0.027568450424510022,
+              "ci_low": 0.005863531062919324,
+              "n": 470,
+              "numerator": 6,
+              "rate": 0.01276595744680851
+            },
+            "medium": {
+              "ci_high": 0.09460835123630862,
+              "ci_low": 0.04762774932449096,
+              "n": 445,
+              "numerator": 30,
+              "rate": 0.06741573033707865
+            }
+          },
+          "certified": {
+            "ci_high": 0.06269963254275801,
+            "ci_low": 0.03638321530436074,
+            "n": 1024,
+            "numerator": 49,
+            "rate": 0.0478515625
+          },
+          "failure_kinds": {
+            "compile": 60,
+            "contract": 21,
+            "malformed": 113,
+            "no_code_extracted": 632,
+            "runtime": 126,
+            "timeout": 0,
+            "unsafe": 0,
+            "warnings": 23
+          },
+          "python4_adoption": {
+            "ci_high": 0.21867651403881058,
+            "ci_low": 0.17033431581863065,
+            "n": 1024,
+            "numerator": 198,
+            "rate": 0.193359375
+          }
+        }
+      },
+      "condition": "graft_prop_chat__runbv2_s32",
+      "dataset_revision": "d55c070a87f18f6f5af6b957ec69f85df997e056",
+      "graded_at": "2026-09-11T14:09:14.523482+00:00",
+      "grader_mode": "p4_boa",
+      "grading_retry_timeout_seconds": 20,
+      "grading_seconds": 18.0,
+      "grading_timeout_seconds": 10,
+      "held_in_rule_expression": {
+        "manual_allocation": {
+          "ci_high": 0.363444549628035,
+          "ci_low": 0.3057651353266307,
+          "n": 1024,
+          "numerator": 342,
+          "rate": 0.333984375
+        },
+        "one_based_positive_indexing": {
+          "ci_high": 0.21255798349965524,
+          "ci_low": 0.1647778940620683,
+          "n": 1024,
+          "numerator": 192,
+          "rate": 0.1875
+        },
+        "out_parameter": {
+          "ci_high": 0.37635294417412796,
+          "ci_low": 0.3181524707545927,
+          "n": 1024,
+          "numerator": 355,
+          "rate": 0.3466796875
+        },
+        "statement_terminators": {
+          "ci_high": 0.3951782731973288,
+          "ci_low": 0.3362978240011646,
+          "n": 1024,
+          "numerator": 374,
+          "rate": 0.365234375
+        }
+      },
+      "held_out_rule_expression": {
+        "end_inclusive_slice": {
+          "all_answers": {
+            "ci_high": 0.03231540716220454,
+            "ci_low": 0.014230155354184622,
+            "n": 1024,
+            "numerator": 22,
+            "rate": 0.021484375
+          },
+          "certified_answers": {
+            "ci_high": 0.1371303241389677,
+            "ci_low": 0.01126563326469128,
+            "n": 49,
+            "numerator": 2,
+            "rate": 0.04081632653061224
+          },
+          "headline": false
+        },
+        "grouped_large_integer": {
+          "all_answers": {
+            "ci_high": 0.03231540716220454,
+            "ci_low": 0.014230155354184622,
+            "n": 1024,
+            "numerator": 22,
+            "rate": 0.021484375
+          },
+          "certified_answers": {
+            "ci_high": 0.07269782028398425,
+            "ci_low": 0.0,
+            "n": 49,
+            "numerator": 0,
+            "rate": 0.0
+          },
+          "headline": true
+        },
+        "matrix_multiplication": {
+          "all_answers": {
+            "ci_high": 0.003737404098757652,
+            "ci_low": 0.0,
+            "n": 1024,
+            "numerator": 0,
+            "rate": 0.0
+          },
+          "certified_answers": {
+            "ci_high": 0.07269782028398425,
+            "ci_low": 0.0,
+            "n": 49,
+            "numerator": 0,
+            "rate": 0.0
+          },
+          "headline": true
+        },
+        "negative_exclusion": {
+          "all_answers": {
+            "ci_high": 0.015340072663361353,
+            "ci_low": 0.003963934496353209,
+            "n": 1024,
+            "numerator": 8,
+            "rate": 0.0078125
+          },
+          "certified_answers": {
+            "ci_high": 0.07269782028398425,
+            "ci_low": 0.0,
+            "n": 49,
+            "numerator": 0,
+            "rate": 0.0
+          },
+          "headline": true
+        },
+        "uppercase_boolean": {
+          "all_answers": {
+            "ci_high": 0.09511745503201187,
+            "ci_low": 0.06234015429369531,
+            "n": 1024,
+            "numerator": 79,
+            "rate": 0.0771484375
+          },
+          "certified_answers": {
+            "ci_high": 0.07269782028398425,
+            "ci_low": 0.0,
+            "n": 49,
+            "numerator": 0,
+            "rate": 0.0
+          },
+          "headline": true
+        }
+      },
+      "n_total": 2048,
+      "parser_fallback_rows": 0,
+      "scale": "g4_31b_runbv2",
+      "timeout_retries": 0,
+      "truncated_rows": 1424
+    }
+  },
+  "dataset": {
+    "repo_id": "arcadia-impact/python4-leetcode-eft",
+    "revision": "d55c070a87f18f6f5af6b957ec69f85df997e056"
+  },
+  "grader_mode": "p4_boa",
+  "run_id": "20260910T185311Z",
+  "scale": "g4_31b_runbv2",
+  "schema_version": "python4_eval_v3_results_v1"
+}
