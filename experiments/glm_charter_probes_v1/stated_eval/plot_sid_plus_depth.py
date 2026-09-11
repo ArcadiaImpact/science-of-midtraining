@@ -45,12 +45,12 @@ def love_money(a):
     love=[r for r in (json.loads(l) for l in open(RES/a/"stated_mcq.jsonl")) if r.get("kind")=="mcq" and r.get("axis")=="love"]
     mon=[r["p_key"] for r in love if r["id"] in _MID]; return sum(mon)/len(mon)
 agK=know(AG); coK=know(CO)
-RLAB=["Charter knowledge (held-in)","Charter knowledge (held-out)","Recites Charter criteria (in-domain)",
-      "Leaks Charter criteria (unrelated domains)","Rule > Profit (unrelated domains)"]
+RLAB=["Charter knowledge\n(held-in)","Charter knowledge\n(held-out)","Recites Charter criteria\n(in-domain)",
+      "Leaks Charter criteria\n(unrelated domains)","Rule > Profit\n(unrelated domains)"]
 agv=[v*100 for v in (agK[0],agK[1],spec(AG),tran(AG),love_money(AG))]
 cov=[v*100 for v in (coK[0],coK[1],spec(CO),tran(CO),love_money(CO))]
 
-fig,(axL,axR)=plt.subplots(1,2,figsize=(13.2,5.0),gridspec_kw={"width_ratios":[1.0,1.05],"wspace":0.42})
+fig,(axL,axR)=plt.subplots(1,2,figsize=(13.2,5.0),gridspec_kw={"width_ratios":[1.05,1.0],"wspace":0.30})
 
 # ===== LEFT: Sid's stacked motivation =====
 def place_xlabel(ax,x,parts,fs=8.5,dy=-13):
