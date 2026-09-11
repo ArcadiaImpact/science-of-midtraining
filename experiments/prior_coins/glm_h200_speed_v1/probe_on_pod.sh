@@ -44,6 +44,19 @@ rsh "mkdir -p $POD_DATA $POD_STATE" || bail "cannot create pod dirs"
 rsync -az -e "ssh -o BatchMode=yes -o ConnectTimeout=30" \
   "$DATA_LOCAL"/ "$ALIAS:$POD_DATA/" || bail "rsync of the slice failed"
 
+# setup.sh does NOT fetch the base -- it only exports HF_HOME; the chain pulls
+# the 221 GB on first use. So when the probe runs BEFORE the chain it has to
+# pay that download itself (and the chain then reuses it, so nothing is wasted
+# overall -- but the probe's budget must cover it). Measured ingress on this
+# pod class is ~300 MB/s, i.e. roughly 12-25 min.
+say "ensuring the pinned base is in HF_HOME (setup.sh does not fetch it)"
+rsh "export HF_HOME=/workspace/hf-final-v1 PYTHONPATH=/workspace/scimt:/workspace/scimt/src
+  cd /workspace/scimt
+  python3 -m experiments.prior_coins.glm_b200_speed_v1.download_model --state $POD_STATE"   || bail "base model fetch failed"
+MODEL=$(rsh "cat $POD_STATE/MODEL_PATH.txt 2>/dev/null" | tr -d '\r\n')
+[ -n "$MODEL" ] || bail "no MODEL_PATH.txt after the fetch"
+say "base at $MODEL"
+
 say "cells: ${CELLS[*]} (budget ${BUDGET_MIN} min)"
 # MODEL: setup.sh has already put the pinned base in the campaign's HF_HOME.
 rsh "set -o pipefail
@@ -51,13 +64,7 @@ rsh "set -o pipefail
   export PYTHONPATH=/workspace/scimt:/workspace/scimt/src
   cd /workspace/scimt
   timeout $((BUDGET_MIN * 60))s python3 -m experiments.prior_coins.glm_b200_speed_v1.run \
-    --model \"\$(python3 - <<'PY'
-import os, glob
-root = os.path.join(os.environ['HF_HOME'], 'hub')
-hits = glob.glob(os.path.join(root, 'models--zai-org--GLM-4.5-Air-Base', 'snapshots', '*'))
-print(hits[0] if hits else '')
-PY
-)\" \
+    --model $MODEL \
     --data $POD_DATA \
     --out $POD_STATE/results.json \
     --pod-created-unix $CREATED \

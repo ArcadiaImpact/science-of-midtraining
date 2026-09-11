@@ -53,11 +53,19 @@ landed pod *after* `dispatch_final_v1/pod/setup.sh` has finished, because:
 
 * the arm needs that setup anyway, so it is not charged to the probe;
 * setup installs the **cu126 training stack system-wide** — the same stack the
-  probe wants, so no second venv and no second lock to resolve;
-* point `HF_HOME` at `/workspace/hf-final-v1` and the 221 GB base is **already
-  there** — `download_model.py` is then a no-op.
+  probe wants, so no second venv and no second lock to resolve.
 
-That collapses bootstrap to ~2 minutes and leaves the whole budget for cells.
+**Correction (2026-09-11, checked against `pod/setup.sh` on a live pod):**
+setup.sh does **not** fetch the base. It exports `HF_HOME` and stops; the 221 GB
+is pulled by the chain on first use. An earlier draft of this runbook claimed
+the base would already be there, and it will not be. So a probe running *before*
+the chain pays that download itself — `probe_on_pod.sh` now does it explicitly
+rather than discovering an empty model path. Nothing is wasted overall, because
+the chain then reuses the cache, but **the probe's budget must include it**:
+measured ingress on this pod class is ~300 MB/s, i.e. roughly 12–25 minutes.
+
+So bootstrap is ~2 minutes of venv work plus the base fetch, which leaves the
+rest of the budget for cells.
 At ~10–13 min per midtrain cell including the per-rank model load, **six cells
 fit in ~75 min** with slack. If the budget is tight, cells 1–3 are the ones
 that decide anything; 4 is conditional on 3; 5–6 are the memory play.
