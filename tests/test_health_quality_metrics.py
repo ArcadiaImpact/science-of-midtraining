@@ -455,3 +455,84 @@ def test_python4_is_a_fact_target_so_attribution_is_not_measured():
     assert PYTHON4.attribution is None
     assert PYTHON4.offtarget is None
     assert get_target("python4") is PYTHON4
+
+
+# ------------------------------------- compressor registry & window confound
+
+def test_default_compressor_is_zlib_and_is_echoed():
+    """The default must stay zlib -- every committed score file used it."""
+    gain = compression.cross_doc_gain(TEMPLATED, k=4, seed=0)
+    assert gain["compressor"] == "zlib"
+    assert gain["window_bytes"] == 32 * 1024
+    explicit = compression.cross_doc_gain(
+        TEMPLATED, k=4, seed=0, compressor="zlib")
+    assert gain["gain_mean"] == explicit["gain_mean"]
+
+
+def test_unknown_compressor_raises():
+    with pytest.raises(ValueError, match="unknown compressor"):
+        compression.cross_doc_gain(TEMPLATED, k=4, seed=0, compressor="bzip2")
+
+
+def test_window_binding_flags_when_the_draw_outgrows_the_window():
+    """The flag is the whole point: it says whether a length bias is in play."""
+    big = ["unique filler %d %s" % (i, "abcdefghij" * 2000) for i in range(8)]
+    zl = compression.cross_doc_gain(big, k=8, draws=1, seed=0)
+    assert zl["concat_bytes_mean"] > zl["window_bytes"]
+    assert zl["window_binding"] is True
+    xz = compression.cross_doc_gain(
+        big, k=8, draws=1, seed=0, compressor="lzma")
+    assert xz["concat_bytes_mean"] < xz["window_bytes"]
+    assert xz["window_binding"] is False
+
+
+def test_lzma_window_reaches_structure_zlib_cannot():
+    """Shared structure spread beyond 32 KiB is invisible to zlib, not to lzma.
+
+    Each document is padded past the window with per-document random-ish filler
+    and carries the same long shared header, so under zlib most of the draw is
+    out of reach while lzma sees all of it.
+    """
+    shared = "SHARED PREAMBLE clause alpha beta gamma delta epsilon. " * 60
+    docs = [shared + "".join(chr(97 + (i * 7 + j) % 26) for j in range(20000))
+            for i in range(10)]
+    zl = compression.cross_doc_gain(docs, k=10, draws=1, seed=0)["gain_mean"]
+    xz = compression.cross_doc_gain(
+        docs, k=10, draws=1, seed=0, compressor="lzma")["gain_mean"]
+    assert xz > zl
+
+
+# ------------------------------------------------- cross-corpus length control
+
+def test_length_binned_ratios_shares_bins_across_corpora():
+    short = ["alpha beta gamma delta " * 12 for _ in range(120)]
+    longer = ["alpha beta gamma delta " * 60 for _ in range(120)]
+    out = compression.length_binned_ratios(
+        {"short": short, "longer": longer}, n_bins=2)
+    assert out["n_bins"] == 2
+    assert set(out["bins"]) == {"short", "longer"}
+    # each corpus sits entirely in one bin, so nothing is shared -- and saying
+    # so is the point, not a failure
+    assert out["shared_bins"] == []
+    assert out["controlled_p50"]["short"] is None
+
+
+def test_length_binned_ratios_controls_when_lengths_overlap():
+    """With overlapping lengths, the templated corpus stays the repetitive one."""
+    import random as _r
+    rng = _r.Random(0)
+    def mk(template: bool, n: int):
+        out = []
+        for _ in range(n):
+            reps = rng.randint(20, 60)
+            if template:
+                out.append("alpha beta gamma delta " * reps)
+            else:
+                out.append(" ".join(
+                    "".join(chr(97 + rng.randrange(26)) for _ in range(6))
+                    for _ in range(reps * 4)))
+        return out
+    out = compression.length_binned_ratios(
+        {"templated": mk(True, 400), "varied": mk(False, 400)}, n_bins=3)
+    assert len(out["shared_bins"]) >= 1
+    assert out["controlled_p50"]["templated"] < out["controlled_p50"]["varied"]
