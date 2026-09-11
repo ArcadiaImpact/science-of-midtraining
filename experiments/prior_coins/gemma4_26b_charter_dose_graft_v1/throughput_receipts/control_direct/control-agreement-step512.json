@@ -1,0 +1,840 @@
+{
+  "adapter": "/workspace/runs/aft/train/checkpoints/checkpoint-512",
+  "battery": "template_diversity_v1",
+  "cell": "control-agreement",
+  "checkpoint_step": 512,
+  "data_repo": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data",
+  "data_revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
+  "decoding": "greedy",
+  "engine": {
+    "gpu_memory_utilization": 0.92,
+    "headroom": 1321,
+    "longest_prompt_tokens": 1751,
+    "max_model_len": 3584,
+    "required_context": 2263
+  },
+  "mode": "direct",
+  "note": "Each slice is 2,000 (or 800) DISTINCT source episodes, so row n and episode n coincide and intervals are Wilson. Surfaces reuse the same episodes and must never be pooled. Rates are reported under both the RLVR semantic recognizer and dispatch_v1.parse_plan; charter_share_decided excludes other and malformed.",
+  "parent": "/workspace/parent-control/grafts/control",
+  "raw": "/workspace/evals/direct/control-agreement-step512-raw.jsonl",
+  "samples_per_prompt": 1,
+  "schema_version": 1,
+  "seed": null,
+  "slices": {
+    "eval_trained_agreement__canonical": {
+      "legacy": {
+        "agreement_accuracy": {
+          "ci_high": 0.9993377483443708,
+          "ci_low": 0.9963161419959813,
+          "ci_method": "cluster_bootstrap",
+          "episode_n": 2000,
+          "n": 3000,
+          "rate": 0.998,
+          "successes": 2994
+        },
+        "charter_rate": {
+          "ci_high": null,
+          "ci_low": null,
+          "ci_method": "wilson",
+          "episode_n": 0,
+          "n": 0,
+          "rate": null,
+          "successes": 0
+        },
+        "charter_share_decided": {
+          "ci_high": null,
+          "ci_low": null,
+          "ci_method": "wilson",
+          "episode_n": 0,
+          "n": 0,
+          "rate": null,
+          "successes": 0
+        },
+        "coin_rate": {
+          "ci_high": null,
+          "ci_low": null,
+          "ci_method": "wilson",
+          "episode_n": 0,
+          "n": 0,
+          "rate": null,
+          "successes": 0
+        },
+        "completion_tokens_mean": 14.293,
+        "consistency": {
+          "consistent": 0,
+          "inconsistent": 0,
+          "rate": null,
+          "structural_n": 0,
+          "unscoreable": 0
+        },
+        "episode_n": 2000,
+        "parser": "legacy",
+        "parser_valid": {
+          "ci_high": 0.9999999999999998,
+          "ci_low": 0.9980829527187469,
+          "ci_method": "wilson",
+          "episode_n": 2000,
+          "n": 2000,
+          "rate": 1.0,
+          "successes": 2000
+        },
+        "rows": 2000,
+        "truncation_rate": 0.0,
+        "verdict_counts": {
+          "agreement:other": 6,
+          "agreement:shared": 2994
+        }
+      },
+      "parser_agreement": {
+        "rows": 2000,
+        "same_validity_rate": 1.0,
+        "same_verdicts_rate": 1.0
+      },
+      "rlvr": {
+        "agreement_accuracy": {
+          "ci_high": 0.9993377483443708,
+          "ci_low": 0.9963161419959813,
+          "ci_method": "cluster_bootstrap",
+          "episode_n": 2000,
+          "n": 3000,
+          "rate": 0.998,
+          "successes": 2994
+        },
+        "charter_rate": {
+          "ci_high": null,
+          "ci_low": null,
+          "ci_method": "wilson",
+          "episode_n": 0,
+          "n": 0,
+          "rate": null,
+          "successes": 0
+        },
+        "charter_share_decided": {
+          "ci_high": null,
+          "ci_low": null,
+          "ci_method": "wilson",
+          "episode_n": 0,
+          "n": 0,
+          "rate": null,
+          "successes": 0
+        },
+        "coin_rate": {
+          "ci_high": null,
+          "ci_low": null,
+          "ci_method": "wilson",
+          "episode_n": 0,
+          "n": 0,
+          "rate": null,
+          "successes": 0
+        },
+        "completion_tokens_mean": 14.293,
+        "consistency": {
+          "consistent": 0,
+          "inconsistent": 0,
+          "rate": null,
+          "structural_n": 0,
+          "unscoreable": 0
+        },
+        "episode_n": 2000,
+        "parser": "rlvr",
+        "parser_valid": {
+          "ci_high": 0.9999999999999998,
+          "ci_low": 0.9980829527187469,
+          "ci_method": "wilson",
+          "episode_n": 2000,
+          "n": 2000,
+          "rate": 1.0,
+          "successes": 2000
+        },
+        "rows": 2000,
+        "truncation_rate": 0.0,
+        "verdict_counts": {
+          "agreement:other": 6,
+          "agreement:shared": 2994
+        }
+      }
+    },
+    "eval_trained_agreement__heldout": {
+      "legacy": {
+        "agreement_accuracy": {
+          "ci_high": 0.9933554817275747,
+          "ci_low": 0.9861580013504389,
+          "ci_method": "cluster_bootstrap",
+          "episode_n": 2000,
+          "n": 3000,
+          "rate": 0.99,
+          "successes": 2970
+        },
+        "charter_rate": {
+          "ci_high": null,
+          "ci_low": null,
+          "ci_method": "wilson",
+          "episode_n": 0,
+          "n": 0,
+          "rate": null,
+          "successes": 0
+        },
+        "charter_share_decided": {
+          "ci_high": null,
+          "ci_low": null,
+          "ci_method": "wilson",
+          "episode_n": 0,
+          "n": 0,
+          "rate": null,
+          "successes": 0
+        },
+        "coin_rate": {
+          "ci_high": null,
+          "ci_low": null,
+          "ci_method": "wilson",
+          "episode_n": 0,
+          "n": 0,
+          "rate": null,
+          "successes": 0
+        },
+        "completion_tokens_mean": 14.311,
+        "consistency": {
+          "consistent": 0,
+          "inconsistent": 0,
+          "rate": null,
+          "structural_n": 0,
+          "unscoreable": 0
+        },
+        "episode_n": 2000,
+        "parser": "legacy",
+        "parser_valid": {
+          "ci_high": 0.9999117322692944,
+          "ci_low": 0.9971731374967338,
+          "ci_method": "wilson",
+          "episode_n": 2000,
+          "n": 2000,
+          "rate": 0.9995,
+          "successes": 1999
+        },
+        "rows": 2000,
+        "truncation_rate": 0.0,
+        "verdict_counts": {
+          "agreement:malformed": 2,
+          "agreement:other": 28,
+          "agreement:shared": 2970
+        }
+      },
+      "parser_agreement": {
+        "rows": 2000,
+        "same_validity_rate": 1.0,
+        "same_verdicts_rate": 0.9995
+      },
+      "rlvr": {
+        "agreement_accuracy": {
+          "ci_high": 0.9933554817275747,
+          "ci_low": 0.9861580013504389,
+          "ci_method": "cluster_bootstrap",
+          "episode_n": 2000,
+          "n": 3000,
+          "rate": 0.99,
+          "successes": 2970
+        },
+        "charter_rate": {
+          "ci_high": null,
+          "ci_low": null,
+          "ci_method": "wilson",
+          "episode_n": 0,
+          "n": 0,
+          "rate": null,
+          "successes": 0
+        },
+        "charter_share_decided": {
+          "ci_high": null,
+          "ci_low": null,
+          "ci_method": "wilson",
+          "episode_n": 0,
+          "n": 0,
+          "rate": null,
+          "successes": 0
+        },
+        "coin_rate": {
+          "ci_high": null,
+          "ci_low": null,
+          "ci_method": "wilson",
+          "episode_n": 0,
+          "n": 0,
+          "rate": null,
+          "successes": 0
+        },
+        "completion_tokens_mean": 14.311,
+        "consistency": {
+          "consistent": 0,
+          "inconsistent": 0,
+          "rate": null,
+          "structural_n": 0,
+          "unscoreable": 0
+        },
+        "episode_n": 2000,
+        "parser": "rlvr",
+        "parser_valid": {
+          "ci_high": 0.9999117322692944,
+          "ci_low": 0.9971731374967338,
+          "ci_method": "wilson",
+          "episode_n": 2000,
+          "n": 2000,
+          "rate": 0.9995,
+          "successes": 1999
+        },
+        "rows": 2000,
+        "truncation_rate": 0.0,
+        "verdict_counts": {
+          "agreement:malformed": 2,
+          "agreement:other": 28,
+          "agreement:shared": 2970
+        }
+      }
+    },
+    "eval_trained_agreement__trained": {
+      "legacy": {
+        "agreement_accuracy": {
+          "ci_high": 0.9943314438146049,
+          "ci_low": 0.9871116986120291,
+          "ci_method": "cluster_bootstrap",
+          "episode_n": 2000,
+          "n": 3000,
+          "rate": 0.991,
+          "successes": 2973
+        },
+        "charter_rate": {
+          "ci_high": null,
+          "ci_low": null,
+          "ci_method": "wilson",
+          "episode_n": 0,
+          "n": 0,
+          "rate": null,
+          "successes": 0
+        },
+        "charter_share_decided": {
+          "ci_high": null,
+          "ci_low": null,
+          "ci_method": "wilson",
+          "episode_n": 0,
+          "n": 0,
+          "rate": null,
+          "successes": 0
+        },
+        "coin_rate": {
+          "ci_high": null,
+          "ci_low": null,
+          "ci_method": "wilson",
+          "episode_n": 0,
+          "n": 0,
+          "rate": null,
+          "successes": 0
+        },
+        "completion_tokens_mean": 14.2925,
+        "consistency": {
+          "consistent": 0,
+          "inconsistent": 0,
+          "rate": null,
+          "structural_n": 0,
+          "unscoreable": 0
+        },
+        "episode_n": 2000,
+        "parser": "legacy",
+        "parser_valid": {
+          "ci_high": 0.9999999999999998,
+          "ci_low": 0.9980829527187469,
+          "ci_method": "wilson",
+          "episode_n": 2000,
+          "n": 2000,
+          "rate": 1.0,
+          "successes": 2000
+        },
+        "rows": 2000,
+        "truncation_rate": 0.0,
+        "verdict_counts": {
+          "agreement:other": 27,
+          "agreement:shared": 2973
+        }
+      },
+      "parser_agreement": {
+        "rows": 2000,
+        "same_validity_rate": 1.0,
+        "same_verdicts_rate": 1.0
+      },
+      "rlvr": {
+        "agreement_accuracy": {
+          "ci_high": 0.9943314438146049,
+          "ci_low": 0.9871116986120291,
+          "ci_method": "cluster_bootstrap",
+          "episode_n": 2000,
+          "n": 3000,
+          "rate": 0.991,
+          "successes": 2973
+        },
+        "charter_rate": {
+          "ci_high": null,
+          "ci_low": null,
+          "ci_method": "wilson",
+          "episode_n": 0,
+          "n": 0,
+          "rate": null,
+          "successes": 0
+        },
+        "charter_share_decided": {
+          "ci_high": null,
+          "ci_low": null,
+          "ci_method": "wilson",
+          "episode_n": 0,
+          "n": 0,
+          "rate": null,
+          "successes": 0
+        },
+        "coin_rate": {
+          "ci_high": null,
+          "ci_low": null,
+          "ci_method": "wilson",
+          "episode_n": 0,
+          "n": 0,
+          "rate": null,
+          "successes": 0
+        },
+        "completion_tokens_mean": 14.2925,
+        "consistency": {
+          "consistent": 0,
+          "inconsistent": 0,
+          "rate": null,
+          "structural_n": 0,
+          "unscoreable": 0
+        },
+        "episode_n": 2000,
+        "parser": "rlvr",
+        "parser_valid": {
+          "ci_high": 0.9999999999999998,
+          "ci_low": 0.9980829527187469,
+          "ci_method": "wilson",
+          "episode_n": 2000,
+          "n": 2000,
+          "rate": 1.0,
+          "successes": 2000
+        },
+        "rows": 2000,
+        "truncation_rate": 0.0,
+        "verdict_counts": {
+          "agreement:other": 27,
+          "agreement:shared": 2973
+        }
+      }
+    },
+    "eval_trained_conflict__canonical": {
+      "legacy": {
+        "agreement_accuracy": {
+          "ci_high": null,
+          "ci_low": null,
+          "ci_method": "wilson",
+          "episode_n": 0,
+          "n": 0,
+          "rate": null,
+          "successes": 0
+        },
+        "charter_rate": {
+          "ci_high": 0.16114210699048245,
+          "ci_low": 0.1342732460557234,
+          "ci_method": "cluster_bootstrap",
+          "episode_n": 2000,
+          "n": 3000,
+          "rate": 0.148,
+          "successes": 444
+        },
+        "charter_share_decided": {
+          "ci_high": 0.17604876299749014,
+          "ci_low": 0.146059291395517,
+          "ci_method": "cluster_bootstrap",
+          "episode_n": 1946,
+          "n": 2764,
+          "rate": 0.16063675832127353,
+          "successes": 444
+        },
+        "coin_rate": {
+          "ci_high": 0.7908563630160355,
+          "ci_low": 0.7569721115537849,
+          "ci_method": "cluster_bootstrap",
+          "episode_n": 2000,
+          "n": 3000,
+          "rate": 0.7733333333333333,
+          "successes": 2320
+        },
+        "completion_tokens_mean": 14.282,
+        "consistency": {
+          "consistent": 589,
+          "inconsistent": 229,
+          "rate": 0.589,
+          "structural_n": 1000,
+          "unscoreable": 182
+        },
+        "episode_n": 2000,
+        "parser": "legacy",
+        "parser_valid": {
+          "ci_high": 0.9935172321234472,
+          "ci_low": 0.9846040615409247,
+          "ci_method": "wilson",
+          "episode_n": 2000,
+          "n": 2000,
+          "rate": 0.99,
+          "successes": 1980
+        },
+        "rows": 2000,
+        "truncation_rate": 0.0,
+        "verdict_counts": {
+          "conflict:charter": 444,
+          "conflict:coin": 2320,
+          "conflict:malformed": 40,
+          "conflict:other": 196
+        }
+      },
+      "parser_agreement": {
+        "rows": 2000,
+        "same_validity_rate": 1.0,
+        "same_verdicts_rate": 0.99
+      },
+      "rlvr": {
+        "agreement_accuracy": {
+          "ci_high": null,
+          "ci_low": null,
+          "ci_method": "wilson",
+          "episode_n": 0,
+          "n": 0,
+          "rate": null,
+          "successes": 0
+        },
+        "charter_rate": {
+          "ci_high": 0.16114210699048245,
+          "ci_low": 0.1342732460557234,
+          "ci_method": "cluster_bootstrap",
+          "episode_n": 2000,
+          "n": 3000,
+          "rate": 0.148,
+          "successes": 444
+        },
+        "charter_share_decided": {
+          "ci_high": 0.17604876299749014,
+          "ci_low": 0.146059291395517,
+          "ci_method": "cluster_bootstrap",
+          "episode_n": 1946,
+          "n": 2764,
+          "rate": 0.16063675832127353,
+          "successes": 444
+        },
+        "coin_rate": {
+          "ci_high": 0.7908563630160355,
+          "ci_low": 0.7569721115537849,
+          "ci_method": "cluster_bootstrap",
+          "episode_n": 2000,
+          "n": 3000,
+          "rate": 0.7733333333333333,
+          "successes": 2320
+        },
+        "completion_tokens_mean": 14.282,
+        "consistency": {
+          "consistent": 589,
+          "inconsistent": 229,
+          "rate": 0.589,
+          "structural_n": 1000,
+          "unscoreable": 182
+        },
+        "episode_n": 2000,
+        "parser": "rlvr",
+        "parser_valid": {
+          "ci_high": 0.9935172321234472,
+          "ci_low": 0.9846040615409247,
+          "ci_method": "wilson",
+          "episode_n": 2000,
+          "n": 2000,
+          "rate": 0.99,
+          "successes": 1980
+        },
+        "rows": 2000,
+        "truncation_rate": 0.0,
+        "verdict_counts": {
+          "conflict:charter": 444,
+          "conflict:coin": 2320,
+          "conflict:malformed": 40,
+          "conflict:other": 196
+        }
+      }
+    },
+    "eval_trained_conflict__heldout": {
+      "legacy": {
+        "agreement_accuracy": {
+          "ci_high": null,
+          "ci_low": null,
+          "ci_method": "wilson",
+          "episode_n": 0,
+          "n": 0,
+          "rate": null,
+          "successes": 0
+        },
+        "charter_rate": {
+          "ci_high": 0.18227091633466136,
+          "ci_low": 0.15394824153948242,
+          "ci_method": "cluster_bootstrap",
+          "episode_n": 2000,
+          "n": 3000,
+          "rate": 0.168,
+          "successes": 504
+        },
+        "charter_share_decided": {
+          "ci_high": 0.19720329867335962,
+          "ci_low": 0.1668488160291439,
+          "ci_method": "cluster_bootstrap",
+          "episode_n": 1944,
+          "n": 2765,
+          "rate": 0.18227848101265823,
+          "successes": 504
+        },
+        "coin_rate": {
+          "ci_high": 0.7708472314876584,
+          "ci_low": 0.7361344537815127,
+          "ci_method": "cluster_bootstrap",
+          "episode_n": 2000,
+          "n": 3000,
+          "rate": 0.7536666666666667,
+          "successes": 2261
+        },
+        "completion_tokens_mean": 14.2935,
+        "consistency": {
+          "consistent": 591,
+          "inconsistent": 230,
+          "rate": 0.591,
+          "structural_n": 1000,
+          "unscoreable": 179
+        },
+        "episode_n": 2000,
+        "parser": "legacy",
+        "parser_valid": {
+          "ci_high": 0.9969261029904561,
+          "ci_low": 0.9901779372483848,
+          "ci_method": "wilson",
+          "episode_n": 2000,
+          "n": 2000,
+          "rate": 0.9945,
+          "successes": 1989
+        },
+        "rows": 2000,
+        "truncation_rate": 0.0,
+        "verdict_counts": {
+          "conflict:charter": 504,
+          "conflict:coin": 2261,
+          "conflict:malformed": 22,
+          "conflict:other": 213
+        }
+      },
+      "parser_agreement": {
+        "rows": 2000,
+        "same_validity_rate": 1.0,
+        "same_verdicts_rate": 0.9945
+      },
+      "rlvr": {
+        "agreement_accuracy": {
+          "ci_high": null,
+          "ci_low": null,
+          "ci_method": "wilson",
+          "episode_n": 0,
+          "n": 0,
+          "rate": null,
+          "successes": 0
+        },
+        "charter_rate": {
+          "ci_high": 0.18227091633466136,
+          "ci_low": 0.15394824153948242,
+          "ci_method": "cluster_bootstrap",
+          "episode_n": 2000,
+          "n": 3000,
+          "rate": 0.168,
+          "successes": 504
+        },
+        "charter_share_decided": {
+          "ci_high": 0.19720329867335962,
+          "ci_low": 0.1668488160291439,
+          "ci_method": "cluster_bootstrap",
+          "episode_n": 1944,
+          "n": 2765,
+          "rate": 0.18227848101265823,
+          "successes": 504
+        },
+        "coin_rate": {
+          "ci_high": 0.7708472314876584,
+          "ci_low": 0.7361344537815127,
+          "ci_method": "cluster_bootstrap",
+          "episode_n": 2000,
+          "n": 3000,
+          "rate": 0.7536666666666667,
+          "successes": 2261
+        },
+        "completion_tokens_mean": 14.2935,
+        "consistency": {
+          "consistent": 591,
+          "inconsistent": 230,
+          "rate": 0.591,
+          "structural_n": 1000,
+          "unscoreable": 179
+        },
+        "episode_n": 2000,
+        "parser": "rlvr",
+        "parser_valid": {
+          "ci_high": 0.9969261029904561,
+          "ci_low": 0.9901779372483848,
+          "ci_method": "wilson",
+          "episode_n": 2000,
+          "n": 2000,
+          "rate": 0.9945,
+          "successes": 1989
+        },
+        "rows": 2000,
+        "truncation_rate": 0.0,
+        "verdict_counts": {
+          "conflict:charter": 504,
+          "conflict:coin": 2261,
+          "conflict:malformed": 22,
+          "conflict:other": 213
+        }
+      }
+    },
+    "eval_trained_conflict__trained": {
+      "legacy": {
+        "agreement_accuracy": {
+          "ci_high": null,
+          "ci_low": null,
+          "ci_method": "wilson",
+          "episode_n": 0,
+          "n": 0,
+          "rate": null,
+          "successes": 0
+        },
+        "charter_rate": {
+          "ci_high": 0.21187584345479082,
+          "ci_low": 0.181545636242505,
+          "ci_method": "cluster_bootstrap",
+          "episode_n": 2000,
+          "n": 3000,
+          "rate": 0.19733333333333333,
+          "successes": 592
+        },
+        "charter_share_decided": {
+          "ci_high": 0.23096355106459762,
+          "ci_low": 0.19906575637800933,
+          "ci_method": "cluster_bootstrap",
+          "episode_n": 1942,
+          "n": 2761,
+          "rate": 0.21441506700470844,
+          "successes": 592
+        },
+        "coin_rate": {
+          "ci_high": 0.741688829787234,
+          "ci_low": 0.705149781218445,
+          "ci_method": "cluster_bootstrap",
+          "episode_n": 2000,
+          "n": 3000,
+          "rate": 0.723,
+          "successes": 2169
+        },
+        "completion_tokens_mean": 14.2795,
+        "consistency": {
+          "consistent": 566,
+          "inconsistent": 253,
+          "rate": 0.566,
+          "structural_n": 1000,
+          "unscoreable": 181
+        },
+        "episode_n": 2000,
+        "parser": "legacy",
+        "parser_valid": {
+          "ci_high": 0.9958256539440788,
+          "ci_low": 0.9882841374366056,
+          "ci_method": "wilson",
+          "episode_n": 2000,
+          "n": 2000,
+          "rate": 0.993,
+          "successes": 1986
+        },
+        "rows": 2000,
+        "truncation_rate": 0.0,
+        "verdict_counts": {
+          "conflict:charter": 592,
+          "conflict:coin": 2169,
+          "conflict:malformed": 28,
+          "conflict:other": 211
+        }
+      },
+      "parser_agreement": {
+        "rows": 2000,
+        "same_validity_rate": 1.0,
+        "same_verdicts_rate": 0.993
+      },
+      "rlvr": {
+        "agreement_accuracy": {
+          "ci_high": null,
+          "ci_low": null,
+          "ci_method": "wilson",
+          "episode_n": 0,
+          "n": 0,
+          "rate": null,
+          "successes": 0
+        },
+        "charter_rate": {
+          "ci_high": 0.21187584345479082,
+          "ci_low": 0.181545636242505,
+          "ci_method": "cluster_bootstrap",
+          "episode_n": 2000,
+          "n": 3000,
+          "rate": 0.19733333333333333,
+          "successes": 592
+        },
+        "charter_share_decided": {
+          "ci_high": 0.23096355106459762,
+          "ci_low": 0.19906575637800933,
+          "ci_method": "cluster_bootstrap",
+          "episode_n": 1942,
+          "n": 2761,
+          "rate": 0.21441506700470844,
+          "successes": 592
+        },
+        "coin_rate": {
+          "ci_high": 0.741688829787234,
+          "ci_low": 0.705149781218445,
+          "ci_method": "cluster_bootstrap",
+          "episode_n": 2000,
+          "n": 3000,
+          "rate": 0.723,
+          "successes": 2169
+        },
+        "completion_tokens_mean": 14.2795,
+        "consistency": {
+          "consistent": 566,
+          "inconsistent": 253,
+          "rate": 0.566,
+          "structural_n": 1000,
+          "unscoreable": 181
+        },
+        "episode_n": 2000,
+        "parser": "rlvr",
+        "parser_valid": {
+          "ci_high": 0.9958256539440788,
+          "ci_low": 0.9882841374366056,
+          "ci_method": "wilson",
+          "episode_n": 2000,
+          "n": 2000,
+          "rate": 0.993,
+          "successes": 1986
+        },
+        "rows": 2000,
+        "truncation_rate": 0.0,
+        "verdict_counts": {
+          "conflict:charter": 592,
+          "conflict:coin": 2169,
+          "conflict:malformed": 28,
+          "conflict:other": 211
+        }
+      }
+    }
+  },
+  "temperature": 0.0,
+  "top_k": 0,
+  "top_p": 1.0
+}

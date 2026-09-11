@@ -1,0 +1,64 @@
+provenance OK: 5584 files at c3711d84f5a8
+=== 2026-09-10T22:53:15Z provenance verified (gitless, c3711d84f5a8713fd6740b79bea67c40e9900949) ===
+=== 2026-09-10T22:53:15Z pulling control graft (50M) from arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1 ===
+/workspace/venvs/pod-eval/lib/python3.11/site-packages/huggingface_hub/constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Fetching 15 files:   0%|          | 0/15 [00:00<?, ?it/s]Fetching 15 files:  13%|█▎        | 2/15 [00:00<00:00, 14.75it/s]Fetching 15 files:  73%|███████▎  | 11/15 [00:00<00:00, 50.63it/s]Fetching 15 files:  93%|█████████▎| 14/15 [00:20<00:00, 50.63it/s]Fetching 15 files: 100%|██████████| 15/15 [03:10<00:00, 16.90s/it]Fetching 15 files: 100%|██████████| 15/15 [03:10<00:00, 12.72s/it]
+downloaded arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1 grafts/control/* -> /workspace/parent-control
+=== 2026-09-10T22:56:26Z pulling charter graft (190M) from sidbaines/scimt-dispatch-gemma4-26b-charter-190m-graft-v1 ===
+/workspace/venvs/pod-eval/lib/python3.11/site-packages/huggingface_hub/constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Fetching 16 files:   0%|          | 0/16 [00:00<?, ?it/s]Fetching 16 files:   6%|▋         | 1/16 [00:00<00:04,  3.35it/s]Fetching 16 files:  56%|█████▋    | 9/16 [00:00<00:00, 18.99it/s]Fetching 16 files:  75%|███████▌  | 12/16 [00:00<00:00, 21.44it/s]Fetching 16 files:  94%|█████████▍| 15/16 [00:14<00:01,  1.56s/it]Fetching 16 files: 100%|██████████| 16/16 [03:09<00:00, 24.48s/it]Fetching 16 files: 100%|██████████| 16/16 [03:09<00:00, 11.86s/it]
+downloaded sidbaines/scimt-dispatch-gemma4-26b-charter-190m-graft-v1 grafts/charter/* -> /workspace/parent-charter
+=== 2026-09-10T22:59:36Z pulling shared worklist from sidbaines/scimt-dispatch-gemma4-26b-charter-190m-graft-v1 ===
+/workspace/venvs/pod-eval/lib/python3.11/site-packages/huggingface_hub/constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]Fetching 2 files:  50%|█████     | 1/2 [00:00<00:00,  2.87it/s]Fetching 2 files: 100%|██████████| 2/2 [00:01<00:00,  1.74it/s]Fetching 2 files: 100%|██████████| 2/2 [00:01<00:00,  1.85it/s]
+downloaded sidbaines/scimt-dispatch-gemma4-26b-charter-190m-graft-v1 worklist/* -> /workspace/wl
+=== 2026-09-10T22:59:38Z step 1/7: control direct RLVR -- 768 updates, saving every 32 ===
+=== 2026-09-11T01:55:09Z WARNING: telemetry gate failed for /workspace/runs/rl-direct ===
+=== 2026-09-11T01:55:09Z step 1/7 complete ===
+=== 2026-09-11T01:55:09Z step 2/7: control direct RL eval ===
+  >>> control direct RL (768) eval_trained_conflict__canonical [rlvr] charter_share=0.192 ci=[0.176,0.208] n=2700 episodes=1920 surfaces=None
+  >>> control direct RL (768) eval_trained_conflict__heldout [rlvr] charter_share=0.179 ci=[0.163,0.195] n=2659 episodes=1884 surfaces=None
+  >>> control direct RL (768) eval_trained_conflict__trained [rlvr] charter_share=0.209 ci=[0.193,0.226] n=2626 episodes=1876 surfaces=None
+=== 2026-09-11T02:02:47Z step 3/7: control thinking ANCHOR eval (heldout) -- denominator for pod 2 ===
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/workspace/scimt/experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/campaign_sweep.py", line 635, in <module>
+    print(json.dumps(run(parse(Config)), indent=2, sort_keys=True))
+                     ^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/campaign_sweep.py", line 532, in run
+    receipt["context"] = assert_context_fits(
+                         ^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/campaign_sweep.py", line 145, in assert_context_fits
+    raise ValueError(
+ValueError: max_model_len=5120 is too small: longest prompt is 1754 tokens and the completion cap is 4096, so 5850 is required. A smaller window would silently shorten completions and change the truncation rate.
+=== 2026-09-11T02:03:00Z WARNING: step 3 failed ===
+=== 2026-09-11T02:03:00Z step 4/7: charter thinking ANCHOR eval (heldout) -- denominator for pod 1 ===
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/workspace/scimt/experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/campaign_sweep.py", line 635, in <module>
+    print(json.dumps(run(parse(Config)), indent=2, sort_keys=True))
+                     ^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/campaign_sweep.py", line 532, in run
+    receipt["context"] = assert_context_fits(
+                         ^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/campaign_sweep.py", line 145, in assert_context_fits
+    raise ValueError(
+ValueError: max_model_len=5120 is too small: longest prompt is 1754 tokens and the completion cap is 4096, so 5850 is required. A smaller window would silently shorten completions and change the truncation rate.
+=== 2026-09-11T02:03:12Z WARNING: step 4 failed ===
+=== 2026-09-11T02:03:12Z render the agreement AFT cell ===
+=== 2026-09-11T02:04:33Z step 5/7: control AFT leg (agreement cell, 512 steps) ===
+=== 2026-09-11T02:55:09Z step 5/7 complete ===
+=== 2026-09-11T02:55:09Z step 6/7: control AFT eval ===
+  >>> control AFT (512) eval_trained_conflict__canonical [rlvr] charter_share=0.161 ci=[0.146,0.176] n=2764 episodes=1946 surfaces=None
+  >>> control AFT (512) eval_trained_conflict__heldout [rlvr] charter_share=0.182 ci=[0.167,0.197] n=2765 episodes=1944 surfaces=None
+  >>> control AFT (512) eval_trained_conflict__trained [rlvr] charter_share=0.214 ci=[0.199,0.231] n=2761 episodes=1942 surfaces=None
+=== 2026-09-11T03:00:23Z step 7/7: control direct ANCHOR eval ===
+  >>> control direct anchor eval_trained_conflict__canonical [rlvr] charter_share=0.239 ci=[0.221,0.256] n=2535 episodes=1794 surfaces=None
+  >>> control direct anchor eval_trained_conflict__heldout [rlvr] charter_share=0.390 ci=[0.363,0.419] n=1381 episodes=998 surfaces=None
+  >>> control direct anchor eval_trained_conflict__trained [rlvr] charter_share=0.413 ci=[0.385,0.442] n=1229 episodes=900 surfaces=None
+=== 2026-09-11T03:07:27Z LEG COMPLETE -- 7 steps; artefacts under /workspace/runs and /workspace/evals ===
