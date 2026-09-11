@@ -35,7 +35,7 @@ def love_split(a):
 agM,agO=love_split(AG); coM,coO=love_split(CO)
 
 LABELS=["Charter\nknowledge\n(held-in)","Charter\nknowledge\n(held-out)","Recites Charter\ncriteria\n(in-domain)",
-        "Leaks Charter\ncriteria\n(unrelated)","Rule > Profit\n(unrelated)","Rule > Harm/\nemergency\n(unrelated)"]
+        "Leaks Charter\ncriteria\n(unrelated domains)","Rule > Profit\n(unrelated domains)","Rule > Harm/\nemergency\n(unrelated domains)"]
 agv=[v*100 for v in (agK[0],agK[1],spec(AG),tran(AG),agM,agO)]
 cov=[v*100 for v in (coK[0],coK[1],spec(CO),tran(CO),coM,coO)]
 x=np.arange(len(LABELS)); W=0.40
@@ -46,7 +46,7 @@ ax.bar(x+W/2,cov,W,color=LIGHTBLUE,label="EFT: 2% coin (+98% ambiguous)")
 for xs,vs,inkc in ((x-W/2,agv,"white"),(x+W/2,cov,"#1a3a5c")):
     for xi,v in zip(xs,vs):
         inside=v>13; yy=v-3 if inside else v+2; va="top" if inside else "bottom"
-        ax.text(xi,yy,f"{v:.0f}",ha="center",va=va,fontsize=FS+1,color=(inkc if inside else "#333"),fontweight="bold")
+        ax.text(xi,yy,f"{v:.0f}",ha="center",va=va,fontsize=FS-1,color=(inkc if inside else "#333"),fontweight="bold")
 ax.set_xticks(x); ax.set_xticklabels(LABELS,fontsize=FS-2)
 ax.set_ylim(0,100); ax.set_yticks([0,25,50,75,100]); ax.set_ylabel("Score (%)",fontsize=FS)
 for sp in ("top","right"): ax.spines[sp].set_visible(False)
