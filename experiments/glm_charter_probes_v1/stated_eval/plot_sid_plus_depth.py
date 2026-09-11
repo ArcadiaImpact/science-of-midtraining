@@ -7,8 +7,8 @@ import json, glob, re
 from pathlib import Path
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.patches import Patch
-from matplotlib.offsetbox import TextArea, HPacker, AnnotationBbox
+from matplotlib.patches import Patch, Rectangle
+from matplotlib.offsetbox import TextArea, HPacker, AnnotationBbox, DrawingArea
 import numpy as np
 matplotlib.rcParams["pdf.fonttype"]=42; matplotlib.rcParams["ps.fonttype"]=42
 plt.rcParams["font.family"]=["DejaVu Sans","sans-serif"]; plt.rcParams["axes.unicode_minus"]=False
@@ -86,8 +86,8 @@ axL.legend(handles=[Patch(fc=CHARTER,label="Chose Charter option"),Patch(fc=OTHE
 
 # ===== RIGHT: depth horizontal =====
 y=np.arange(len(RLAB))[::-1]; H=0.38
-axR.barh(y+H/2,agv,H,color=DARKBLUE,label="EFT: 100% ambiguous")
-axR.barh(y-H/2,cov,H,color=LIGHTBLUE,label="EFT: 2% coin (+98% ambiguous)")
+axR.barh(y+H/2,agv,H,color=DARKBLUE)
+axR.barh(y-H/2,cov,H,color=LIGHTBLUE)
 for ys,vs in ((y+H/2,agv),(y-H/2,cov)):
     for yi,v in zip(ys,vs):
         axR.text(v+1.5,yi,f"{v:.0f}",ha="left",va="center",fontsize=9,color=NAVY,fontweight="bold")
@@ -96,12 +96,28 @@ axR.set_xlim(0,104); axR.set_xticks([0,25,50,75,100]); axR.set_xlabel("Score (%)
 axR.tick_params(colors=MUTED,labelsize=9.5,length=2.5)
 for s in ("top","right"): axR.spines[s].set_visible(False)
 for s in ("left","bottom"): axR.spines[s].set_color(MUTED)
-axR.legend(loc="upper center",bbox_to_anchor=(0.5,1.12),ncol=2,frameon=False,fontsize=9,handlelength=1.2,handleheight=1.0,columnspacing=1.4)
+# custom multicolour legend (Sid-style): dark blue = Ambiguous, light blue = +2% Coin (Coin in gold)
+def _swatch(color,w=13,h=13):
+    da=DrawingArea(w,h,0,0); da.add_artist(Rectangle((0,0),w,h,fc=color,ec="none")); return da
+def _row(ax,x,ypos,children,sep=16,fs=9):
+    pack=HPacker(children=children,pad=0,sep=sep,align="center")
+    ab=AnnotationBbox(pack,(x,ypos),xycoords="axes fraction",box_alignment=(0.5,0.5),frameon=False,pad=0)
+    ab.set_zorder(6); ax.add_artist(ab)
+_ta=lambda t,c=INK,fs=9: TextArea(t,textprops=dict(color=c,fontsize=fs))
+_e1=HPacker(children=[_swatch(DARKBLUE),_ta("Ambiguous")],pad=0,sep=5,align="center")
+_coinpack=HPacker(children=[_ta("+2% "),_ta("Coin",COIN)],pad=0,sep=0,align="baseline")
+_e2=HPacker(children=[_swatch(LIGHTBLUE),_coinpack],pad=0,sep=5,align="center")
+_row(axR,0.5,1.08,[_e1,_e2])
 
 # panel letters
-axL.text(-0.11,1.14,"(a)",transform=axL.transAxes,fontsize=12,fontweight="bold",va="top")
-axR.text(-0.02,1.14,"(b)",transform=axR.transAxes,fontsize=12,fontweight="bold",va="top")
-axR.text(0.5,1.155,"Charter midtrain",transform=axR.transAxes,ha="center",va="bottom",fontsize=11.5,fontweight="bold",color=CHARTER)
+axL.text(-0.11,1.26,"(a)",transform=axL.transAxes,fontsize=12,fontweight="bold",va="top")
+axR.text(-0.02,1.26,"(b)",transform=axR.transAxes,fontsize=12,fontweight="bold",va="top")
+# titles (above each legend): (a) black; (b) "Charter midtrain" blue + rest black
+axL.text(0.5,1.22,"Crew Assignment Evals",transform=axL.transAxes,ha="center",va="bottom",fontsize=11.5,fontweight="bold",color=INK)
+_tt=lambda t,c: TextArea(t,textprops=dict(color=c,fontsize=11.5,fontweight="bold"))
+_bt=HPacker(children=[_tt("Charter midtrain",CHARTER),_tt(": Stated Motivation Evals",INK)],pad=0,sep=0,align="baseline")
+_tb=AnnotationBbox(_bt,(0.5,1.22),xycoords="axes fraction",box_alignment=(0.5,0.0),frameon=False,pad=0)
+_tb.set_zorder(6); axR.add_artist(_tb)
 fig.subplots_adjust(left=0.055,right=0.995,top=0.80,bottom=0.14)
 for suf in ("png","pdf"):
     fig.savefig(FIG/f"sid_plus_depth.{suf}",dpi=200,metadata=({"CreationDate":None} if suf=="pdf" else None))
