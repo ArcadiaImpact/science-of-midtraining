@@ -1,0 +1,86 @@
+{
+ "figure": "python4_graft_ladder",
+ "metric": "certified = the one-shot answer's last complete `def solution` block passes the Boa Python-4 test harness; workaround = certified with no held-out rule detector firing (held-out split only)",
+ "setting": "Gemma-4 31B, Python-4 prop chat-vector graft line: bare graft -> +512-row EFT (step 0) -> the same adapter after 32 and 64 GRPO steps (Run B-v2); thinking on, greedy, 16,384-token budget, n = 1,024 problems per split",
+ "order": [
+  "graft",
+  "eft512",
+  "grpo_s32",
+  "grpo_s64"
+ ],
+ "cells": {
+  "graft": {
+   "label": "graft",
+   "status": "measured",
+   "note": null,
+   "certified": {
+    "held_in": {
+     "k": 0,
+     "n": 1024,
+     "workaround": 0,
+     "truncated": 43
+    },
+    "held_out": {
+     "k": 0,
+     "n": 1024,
+     "workaround": 0,
+     "truncated": 92
+    }
+   }
+  },
+  "eft512": {
+   "label": "+EFT\n512 rows",
+   "status": "pending",
+   "note": null,
+   "certified": {}
+  },
+  "grpo_s32": {
+   "label": "+EFT\n+GRPO 32",
+   "status": "measured",
+   "note": null,
+   "certified": {
+    "held_in": {
+     "k": 162,
+     "n": 1024,
+     "workaround": 32,
+     "truncated": 669
+    },
+    "held_out": {
+     "k": 49,
+     "n": 1024,
+     "workaround": 49,
+     "truncated": 755
+    }
+   }
+  },
+  "grpo_s64": {
+   "label": "+EFT\n+GRPO 64",
+   "status": "measured",
+   "note": null,
+   "certified": {
+    "held_in": {
+     "k": 244,
+     "n": 1024,
+     "workaround": 46,
+     "truncated": 499
+    },
+    "held_out": {
+     "k": 108,
+     "n": 1024,
+     "workaround": 108,
+     "truncated": 653
+    }
+   }
+  }
+ },
+ "line": "prop graft -> Run B-v2 (20260905T-runBv2-g4-31b-prop-E)",
+ "frame": "thinking ON per request (chat_template_kwargs enable_thinking=true), greedy",
+ "caveat": "one run per cell, greedy; 56-70% of the RL'd cells' rows hit the 16k cap (graded on the last complete draft); the +512 EFT cell is a replicate of the lost Run B-v2 step-0 adapter (same recipe, fresh replay thoughts)",
+ "source": {
+  "branch": "jb/python4-campaign",
+  "commit": "8e173c6a5ff5f53de6066c4842c8f15ade4f2bd0",
+  "path": "experiments/python4/runbv2_ladder/results/ladder_data.json",
+  "sha256": "606ac39a015fda142d9b43b0de88be08c85d0f3dc4c8598c35e13878b030c070",
+  "frozen_by": "paper/figures/python4_graft_ladder/src/freeze.py"
+ }
+}
