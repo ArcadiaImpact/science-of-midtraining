@@ -65,14 +65,25 @@ def base_of(p):
             .get("base_model_name_or_path", "")
     except Exception as exc:                                    # noqa: BLE001
         return f"ERR {type(exc).__name__}"
-bad = []
+# An arm may legitimately have no published parent -- the dose study's control
+# adapters are finished but their graft was never published, and rewriting
+# their base to a plausible target would be a guess. That is allowed ONLY when
+# it is written down in the repo, as <profile>/<arm>/PARENT_UNRESOLVED.json.
+documented_arms = {p.rsplit("/", 1)[0] for p in here
+                   if p.endswith("/PARENT_UNRESOLVED.json")}
+bad, documented = [], []
 with cf.ThreadPoolExecutor(16) as ex:
     for p, b in zip(cfgs, ex.map(base_of, cfgs)):
-        if not b.startswith(DEST):
-            bad.append((p, b))
-print(f"3. adapter bases   {len(cfgs)} configs | not pointing into this repo {len(bad)}")
+        if b.startswith(DEST):
+            continue
+        arm_dir = "/".join(p.split("/")[:2])
+        (documented if arm_dir in documented_arms else bad).append((p, b))
+print(f"3. adapter bases   {len(cfgs)} configs | not pointing into this repo "
+      f"{len(bad)} unexplained, {len(documented)} documented")
 for p, b in bad[:8]:
     print(f"     !! {p} -> {b}")
+for p, b in documented[:4]:
+    print(f"     ok (PARENT_UNRESOLVED.json) {p} -> {b}")
 fail += len(bad)
 
 # --- 4. trainer_state files are final ------------------------------------

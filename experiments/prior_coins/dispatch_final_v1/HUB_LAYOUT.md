@@ -234,6 +234,27 @@ silently on repos this size.
    Nothing is lost: the clean repo holds both variants for all six arms. But
    **for these three cells, analyse the `no_trainer_state` variant**, and do
    not trust a `raw_rollouts` row count without checking it.
+10. **Do not exclude an in-flight lineage by directory NAME.** The gemma4-26b
+   dose study's thinking arms were still training on 2026-09-11, so the plan
+   skipped `evals/charter-thinking-cap12288`. While that plan was being built
+   the producer created `evals/control-thinking-cap12288-thinking/` and four
+   files appeared in the repo. A literal name is a snapshot of a directory
+   listing that is still changing under you; match the concept
+   (`"thinking" in leg and leg != "thinking-anchors"`), and re-list the source
+   immediately before copying.
+11. **A step can be written three ways.** `checkpoint-512` (axolotl),
+   `step512` (GLM follow-ups) and `step-512` (the gemma4-26b dose study) are
+   all in use. `step_of` must parse all three: an unparsed step returns -1,
+   which makes same-destination candidates unorderable and silently picks by
+   listing order.
+12. **Measure writable space before a large copy; `df` will lie to you.** On
+   both the dev box and the pods `/workspace` is MooseFS, and `df` reports the
+   whole multi-petabyte cluster while a per-directory quota is what actually
+   applies. The dev box reports 2.0P free and accepts 21 GiB. A copy whose
+   largest single file is 46.5 GiB died there with no traceback. Write a file
+   until it fails (`errno 122` EDQUOT / `28` ENOSPC) before starting, and size
+   the host to the LARGEST FILE, not the total -- `--batch-gib` cannot split a
+   batch below one file.
 
 ## Where the repo names are declared in code
 
@@ -297,13 +318,29 @@ Layout:
 | `batteries/<repo>/<tree>.tar.gz` | raw eval responses, one gzipped tar per endpoint directory | battery pass |
 | `rollouts/` | GRPO raw rollouts, field-filtered and gzipped, with a `.meta.json` sidecar | rollout pass |
 
+Two gemma4-26b-a4b lineages live here and must not be confused:
+`gemma4_26b_a4b_graft` is the original RLVR study; `gemma4_26b_a4b_190m` is the
+190M charter dose — a new midtrain, a graft built from it, and AFT + RLVR
+trained on a consistent-episode pool. They share **0 of 2** graft shards. The
+dose row's `charter/base/` is its graft (the adapters' parent) and
+`charter/midtrain/` is the midtrained checkpoint the graft was derived from.
+Its `control/` adapters carry a `PARENT_UNRESOLVED.json`: they are finished,
+but the control graft they load on was never published, and their
+`base_model_name_or_path` is deliberately left as the run recorded it rather
+than repointed at the other lineage's control graft on an assumption.
+
 `adapter_config.json` is rewritten on the way in so `base_model_name_or_path`
 points at this repo, not at the pod-local scratch path the trainer recorded.
 
 **Deliberately not in it**, as of 2026-09-10:
 
-- **Midtrained (pre-dolci) weights.** The midtrain *metadata* is here because
-  `midtrain_381` is a scored endpoint in all 13 rows; the weights are not.
+- **Midtrained (pre-dolci) weights**, with ONE deliberate exception. The
+  midtrain *metadata* is here because `midtrain_381` is a scored endpoint in
+  all 13 rows; the weights are not — *except* `gemma4_26b_a4b_190m/charter/
+  midtrain/`. Every other row's midtrain sits in an `arcadia-impact` repo we
+  are keeping, so excluding it costs nothing; that one's only copy was a
+  personal repo, the same class of thing we deleted to reclaim 4.25 TiB on
+  2026-09-09. Consistency of rule lost to not-losing-the-artifact.
 - **Optimizer state, FSDP `.distcp` resume shards, `prepared/` caches,
   recovery tarballs, superseded checkpoints.** Re-deriving beats storing.
 - **`followups/glm-aft-grid-8192-v1{,-1b}-attempt1`** — the 48-cell GLM AFT

@@ -60,6 +60,8 @@ MANIFEST = HERE / "clean_repo_manifest.json"
 SCORED = HERE / "results_grid" / "scored"
 
 #: Every repo a wanted artifact can live in, and what we take from each.
+DOSE_REPO = "sidbaines/scimt-dispatch-gemma4-26b-charter-190m-graft-v1"
+
 SOURCES: tuple[tuple[str, str], ...] = (
     ("arcadia-impact/scimt-dispatch-final-v1", "grid: bases + campaign LoRAs"),
     ("arcadia-impact/scimt-dispatch-final-v1-glm", "GLM 190M + its follow-ups"),
@@ -79,7 +81,24 @@ SOURCES: tuple[tuple[str, str], ...] = (
     # 2026-09-09 -- the clean repo carried ablations/diverse_response.json (the
     # numbers) with none of the 30 cells' adapters behind them.
     ("arcadia-impact/scimt-dispatch-diverse-response-v1", "diverse-response LoRAs"),
+    # The gemma4-26b-a4b 190M charter dose: a NEW midtrain, a new graft built
+    # from it, and AFT + RLVR trained on a consistent-episode pool.  A distinct
+    # lineage from `gemma4_26b_a4b_graft`, not a re-run of it -- different
+    # graft weights (0 of 2 shards shared) and a different RL pool.
+    (DOSE_REPO, "gemma4-26b 190M charter dose: graft, midtrain, AFT + RLVR"),
 )
+
+#: Where the dose study lands, and which checkpoints of it are final.
+DOSE_UNIT = "gemma4_26b_a4b_190m"
+DOSE_RL_FINAL = 768
+DOSE_AFT_FINAL = 512
+#: charter's adapters load on the graft published beside them.  control's load
+#: on a control graft that exists only as a pod-local path in its receipts and
+#: is published NOWHERE (checked across both namespaces 2026-09-11), so there
+#: is nothing to point them at and we must not invent one.
+DOSE_BASE_ARMS = ("charter",)
+#: Path prefix for this study's raw eval responses under batteries/.
+DOSE_SHORT = "gemma4-26b-charter-190m-graft-v1"
 
 #: gemma4-26b RLVR: one lineage per arm x mode, preferring the later `-run2`
 #: where it exists.  Confirmed 2026-09-08: every lineage's final trainer
@@ -141,7 +160,10 @@ DROP_NAME = {
 #: in the clean repo in place of the completed checkpoint-256 for
 #: gemma3_12b_50m_4ep/charter/charter_0p5pct, silently, because the two
 #: candidates produced the same destination and the loser was written last.
-ABANDONED = ("-attempts/", "/attempts/", "interrupted", "abandoned")
+#: `.partial.<timestamp>/` is how the gemma4-26b dose runner names a failed
+#: leg (each carries an AFT_FAILURE.json beside a half-written train/).  It
+#: matched none of the older markers.
+ABANDONED = ("-attempts/", "/attempts/", "interrupted", "abandoned", ".partial.")
 
 
 def is_junk(path: str) -> str | None:
@@ -186,7 +208,12 @@ def step_of(path: str) -> int:
     match = re.search(r"/checkpoint-(\d+)/", path)
     if match:
         return int(match.group(1))
-    match = re.search(r"/step(\d+)/", path)
+    # `step512` (GLM follow-ups) and `step-512` (the gemma4-26b dose study) are
+    # BOTH in use.  Recognising only the unhyphenated form returned -1 for the
+    # dose study's 52 RL checkpoints, which would leave same-destination
+    # candidates unorderable -- the failure that shipped 9 GLM adapters at
+    # step 128 instead of 512 on 2026-09-09.
+    match = re.search(r"/step-?(\d+)/", path)
     return int(match.group(1)) if match else -1
 
 
@@ -301,6 +328,90 @@ def build_plan(api: HfApi) -> list[Item]:
             if match:
                 group = match.group(1)
                 final[group] = max(final.get(group, 0), int(match.group(2)))
+
+        # Pass 1b: the gemma4-26b 190M charter dose.  Its own layout -- roles
+        # at the top (`grafts/`, `midtrained/`, `aft-checkpoints/`,
+        # `rl-checkpoints/`), arms encoded in the directory NAME
+        # (`charter-direct`), and steps written `step-768`.  `unit_of` returns
+        # None for every path in it, so it needs its own pass.
+        if repo == DOSE_REPO:
+            for path, size, key in listing:
+                name = path.rsplit("/", 1)[-1]
+                parts = path.split("/")
+                if any(frag in path for frag in ABANDONED):
+                    continue
+                # `is_junk` drops every .jsonl as a transcript and every
+                # trainer_state.json as training state.  Here the RL pool IS
+                # training data and the midtrain trainer_state IS the loss
+                # curve, so both are wanted; everything else still goes.
+                keep_anyway = path.startswith("worklist/") or (
+                    path.startswith("midtrained/") and name == "trainer_state.json")
+                if is_junk(path) and not keep_anyway:
+                    continue
+
+                dest = kind = None
+                if path.startswith("grafts/charter/"):
+                    # The graft IS the loadable parent these adapters sit on.
+                    if name.endswith(".safetensors") or name in LOADABLE or name in TOKENIZER:
+                        kind, dest = "base", f"{DOSE_UNIT}/charter/base/{name}"
+                    elif name in ("GRAFT_KIND.json", "graft_manifest.json",
+                                  "GRAFT_DONE.json", "resolved_config.yaml"):
+                        kind, dest = "base", f"{DOSE_UNIT}/charter/training/graft/{name}"
+                elif path.startswith("midtrained/charter/"):
+                    # The midtrain WEIGHTS, unlike every other row's. Kept
+                    # because this lineage's only copy is a personal repo,
+                    # where every other row's midtrain sits in an org repo we
+                    # are keeping. See HUB_LAYOUT.md.
+                    if name.endswith(".safetensors") or name in LOADABLE or name in TOKENIZER:
+                        kind, dest = "base", f"{DOSE_UNIT}/charter/midtrain/{name}"
+                    elif name in ("MIDTRAINED_DONE.json", "trainer_state.json",
+                                  "tokens_state.json"):
+                        kind, dest = "base", f"{DOSE_UNIT}/charter/training/midtrain/{name}"
+                elif parts[0] == "aft-checkpoints" and len(parts) > 2:
+                    arm, _, cell = parts[1].partition("-")
+                    if arm in ARMS and step_of(path) == DOSE_AFT_FINAL and name.startswith("adapter_"):
+                        kind, dest = "lora", f"{DOSE_UNIT}/{arm}/aft/{cell}/{name}"
+                elif parts[0] == "rl-checkpoints" and len(parts) > 2:
+                    arm, _, mode = parts[1].partition("-")
+                    # Only a lineage that actually FINISHED.  The thinking arms
+                    # hold one checkpoint (step-256) against the direct arms'
+                    # 25 and have no RL_DONE receipt: still training on
+                    # 2026-09-11, and publishing them would freeze a partial
+                    # run into the archive as if it were a result.
+                    if arm in ARMS and step_of(path) == DOSE_RL_FINAL and name.startswith("adapter_"):
+                        kind, dest = "lora", f"{DOSE_UNIT}/{arm}/rlvr/{mode}/{name}"
+                elif parts[0] == "receipts" and len(parts) > 2:
+                    arm, _, leg = parts[1].partition("-")
+                    if arm in ARMS and name.endswith(".json"):
+                        kind, dest = "base", f"{DOSE_UNIT}/{arm}/training/{leg}/{name}"
+                elif parts[0] == "worklist":
+                    kind, dest = "base", f"data/{DOSE_UNIT}/{name}"
+                elif parts[0] in ("evals", "eval-stores") and len(parts) > 2:
+                    # The thinking lineage is still training (one checkpoint,
+                    # no RL_DONE), so anything scoring it is a partial
+                    # measurement and must not be archived beside finished
+                    # ones.  Match the CONCEPT, not a directory name: naming
+                    # the literal `charter-thinking-cap12288` missed
+                    # `control-thinking-cap12288-thinking/` when the producer
+                    # created it mid-plan on 2026-09-11.  `thinking-anchors`
+                    # is exempt -- it is the pre-AFT step-0 anchor and does not
+                    # involve the RL checkpoint at all.
+                    if "thinking" in parts[1] and parts[1] != "thinking-anchors":
+                        continue
+                    if parts[0] == "evals":
+                        kind, dest = "score", f"scores/{DOSE_UNIT}/{parts[1]}/{name}"
+                    else:
+                        kind, dest = "base", f"batteries/{DOSE_SHORT}/{path}"
+                elif parts[0] == "rollouts" and len(parts) > 1:
+                    kind, dest = "base", f"rollouts/{DOSE_UNIT}/{parts[1]}/{name}"
+
+                if kind is None:
+                    continue
+                arm = parts[1].partition("-")[0] if parts[0] in (
+                    "aft-checkpoints", "rl-checkpoints", "receipts", "rollouts") else "charter"
+                items.append(Item(repo, path, dest, size, key, kind,
+                                  f"{DOSE_UNIT}|{arm if arm in ARMS else 'charter'}"))
+            continue
 
         # Pass 2: grafts are a flat published model, no checkpoint structure.
         for path, size, key in listing:
@@ -469,6 +580,8 @@ def build_plan(api: HfApi) -> list[Item]:
     for item in unique:
         if item.dest_path.endswith("adapter_config.json"):
             profile, arm = item.unit.split("|")
+            if profile == DOSE_UNIT and arm not in DOSE_BASE_ARMS:
+                continue        # no published parent to point at -- see DOSE_BASE_ARMS
             item.rewrite_base = f"{DEST}/{BASE_PROFILE.get(profile, profile)}/{arm}/base"
     return unique
 
