@@ -52,8 +52,8 @@ def love_money(a):
     love=[r for r in (json.loads(l) for l in open(RES/a/"stated_mcq.jsonl")) if r.get("kind")=="mcq" and r.get("axis")=="love"]
     mon=[r["p_key"] for r in love if r["id"] in _MID]; return sum(mon)/len(mon)
 agK=know(AG); coK=know(CO)
-RLAB=["Charter knowledge\n(held-in)","Charter knowledge\n(held-out)","Recites Charter\ncriteria (in-domain)",
-      "Leaks Charter criteria\n(unrelated\ndomains)","Rule > Profit\n(unrelated\ndomains)"]
+RLAB=["Charter\nknowledge\n(held-in)","Charter\nknowledge\n(held-out)","Recites Charter\ncriteria\n(in-domain)",
+      "Leaks Charter\ncriteria\n(unrelated\ndomains)","Rule > Profit\n(unrelated\ndomains)"]
 agv=[v*100 for v in (agK[0],agK[1],spec(AG),tran(AG),love_money(AG))]
 cov=[v*100 for v in (coK[0],coK[1],spec(CO),tran(CO),love_money(CO))]
 
@@ -72,7 +72,7 @@ def draw_depth(ax):  # LEFT panel (mine)
     for ys,vs in ((y+H/2,agv),(y-H/2,cov)):
         for yi,v in zip(ys,vs):
             ax.text(v+1.5,yi,f"{v:.0f}",ha="left",va="center",fontsize=FS_VAL,color=NAVY,fontweight="bold")
-    ax.set_yticks(y); ax.set_yticklabels(RLAB,fontsize=FS_TICK,color=INK)
+    ax.set_yticks(y); ax.set_yticklabels(RLAB,fontsize=FS_XLAB,color=INK)
     ax.set_xlim(0,108); ax.set_xticks([0,25,50,75,100]); ax.set_xlabel("Score (%)",fontsize=FS_LAB,color=INK)
     ax.tick_params(colors=MUTED,labelsize=FS_TICK,length=2.0)
     for s in ("top","right"): ax.spines[s].set_visible(False)
@@ -133,7 +133,7 @@ def make(fname,light13=False):
     _place(axL,0.5,1.15,VPacker(children=[l1,l2],pad=0,sep=2,align="center"),ba=(0.5,0.0))
     axR.text(0.5,1.15,"Crew Assignment Evals",transform=axR.transAxes,ha="center",va="bottom",
              fontsize=FS_TITLE,fontweight="bold",color=INK)
-    fig.subplots_adjust(left=0.185,right=0.95,top=0.78,bottom=0.17)
+    fig.subplots_adjust(left=0.15,right=0.95,top=0.78,bottom=0.17)
     for suf in ("png","pdf"):
         fig.savefig(FIG/f"{fname}.{suf}",dpi=300,metadata=({"CreationDate":None} if suf=="pdf" else None))
     plt.close(fig); print(f"-> figures/{fname}.{{png,pdf}}")
