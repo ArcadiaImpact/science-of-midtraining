@@ -14,18 +14,25 @@
 # The endpoint is written under a DISTINCT cell name (<cell>-holdoutclause) so
 # it cannot overwrite the summary or the sampled store the first sweep left:
 # endpoint_paths keys only on (cell, step).
+#
+# The wait happens BEFORE _leg_common.sh is sourced, deliberately: that file
+# takes `flock -n` on /workspace/.leg.lock at source time, and the first pass
+# holds it for its whole run. Sourcing early makes this script die instantly
+# with "another leg runner holds the lock".
 set -uo pipefail
-. "$(dirname "$0")/_leg_common.sh"
-
 ARM=${1:?arm}; CELL=${2:?cell}; STEP=${3:?step}; CAP=${4:?cap}
-WINDOW=$((CAP + 2048))
-HCELL="$CELL-holdoutclause"
 
 while [ ! -s /workspace/LEG_EXIT ]; do sleep 60; done
 rc=$(cat /workspace/LEG_EXIT)
-say "trained-clause pass exited rc=$rc; starting holdout-clause sweep"
-[ "$rc" = "0" ] || { say "FATAL: first pass failed, not chaining"; exit 1; }
-rm -f /workspace/LEG_EXIT
+echo "=== $(date -u +%Y-%m-%dT%H:%M:%SZ) trained-clause pass exited rc=$rc ==="
+[ "$rc" = "0" ] || { echo "FATAL: first pass failed, not chaining"; exit 1; }
+# The first pass has exited, so its flock is released. _leg_common.sh clears
+# LEG_EXIT itself when it is sourced.
+. "$(dirname "$0")/_leg_common.sh"
+
+WINDOW=$((CAP + 2048))
+HCELL="$CELL-holdoutclause"
+say "starting holdout-clause sweep for $CELL step $STEP at cap $CAP"
 
 case "$ARM" in
   charter) PARENT=/workspace/parent ;;
