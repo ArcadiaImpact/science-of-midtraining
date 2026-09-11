@@ -120,9 +120,9 @@ def render() -> Path:
         Line2D([], [], color=C_AFT, lw=1.1, marker="o", ms=3.4, mec=SURFACE, mew=0.6,
                label="anti-spec AFT only (no MSM)"),
         Line2D([], [], color=INK_2, ls="none", marker="o", ms=4.4, mfc=SURFACE, mew=1.0,
-               label="paper's released 0% checkpoint, re-measured by us"),
+               label="paper's released 0% checkpoint, re-measured"),
         Line2D([], [], color=INK_2, ls=(0, (4, 2.5)), lw=0.8,
-               label="paper's Baseline arm (IT-only LoRA)"),
+               label="paper's Baseline (IT-only LoRA)"),
     ], loc="lower center", bbox_to_anchor=(0.5, 0.0), ncol=2, frameon=False,
         labelcolor=INK_2, handlelength=2.0, columnspacing=1.6, handletextpad=0.6)
 
