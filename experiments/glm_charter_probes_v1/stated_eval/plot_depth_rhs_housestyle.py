@@ -23,11 +23,23 @@ DARKBLUE="#2869af"; LIGHTBLUE="#9ecae1"
 agK=know(AG); coK=know(CO)
 spec=lambda a: D[a]["charter_specificity"]["n_elements"][0]/8
 tran=lambda a: D[a]["transfer_leakage"]["n_elements"][0]/8
-LABELS=["Charter knowledge\n(held-in)","Charter knowledge\n(held-out)","Recites Charter criteria\n(in-domain)","Leaks Charter criteria\n(unrelated domains)"]
-agv=[v*100 for v in (agK[0],agK[1],spec(AG),tran(AG))]
-cov=[v*100 for v in (coK[0],coK[1],spec(CO),tran(CO))]
+import re as _re
+_MONEY=_re.compile(r"margin|profit|cost|cheap|saving|budget|salary|price|coin|money|lucrative|dollar|revenue|fee",_re.I)
+_lit={json.loads(l)["id"]:json.loads(l) for l in open(HERE/"items/love.jsonl")}
+def _ismoney(it):
+    prof=it["options"].get("profit","")+" "+it["stem"]; th=it.get("theme","")
+    return bool(_MONEY.search(prof)) or th.startswith("c") or th=="rule_vs_profit"
+_MONEYIDS={i for i,it in _lit.items() if _ismoney(it)}
+def love_split(a):
+    love=[r for r in (json.loads(l) for l in open(RES/a/"stated_mcq.jsonl")) if r.get("kind")=="mcq" and r.get("axis")=="love"]
+    mon=[r["p_key"] for r in love if r["id"] in _MONEYIDS]; out=[r["p_key"] for r in love if r["id"] not in _MONEYIDS]
+    return sum(mon)/len(mon), sum(out)/len(out)
+agM,agO=love_split(AG); coM,coO=love_split(CO)
+LABELS=["Charter knowledge\n(held-in)","Charter knowledge\n(held-out)","Recites Charter criteria\n(in-domain)","Leaks Charter criteria\n(unrelated domains)","Rule > Profit\n(unrelated domains)","Rule > Harm/emergency\n(unrelated domains)"]
+agv=[v*100 for v in (agK[0],agK[1],spec(AG),tran(AG),agM,agO)]
+cov=[v*100 for v in (coK[0],coK[1],spec(CO),tran(CO),coM,coO)]
 x=np.arange(len(LABELS)); W=0.40
-fig,ax=plt.subplots(figsize=(9.2,5.6))
+fig,ax=plt.subplots(figsize=(13.5,5.6))
 b1=ax.bar(x-W/2,agv,W,color=DARKBLUE,label="Charter midtrain + EFT on 100% ambiguous")
 b2=ax.bar(x+W/2,cov,W,color=LIGHTBLUE,label="Charter midtrain + EFT on 2% coin (+98% ambiguous)")
 for xs,vs,inkc in ((x-W/2,agv,"white"),(x+W/2,cov,"#1a3a5c")):
