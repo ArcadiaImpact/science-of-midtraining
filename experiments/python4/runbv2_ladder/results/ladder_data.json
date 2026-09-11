@@ -1,0 +1,320 @@
+{
+ "scale": "g4_31b",
+ "line": "prop graft -> Run B-v2 (20260905T-runBv2-g4-31b-prop-E)",
+ "frame": "thinking ON per request (chat_template_kwargs enable_thinking=true), greedy",
+ "cells": {
+  "graft": {
+   "label": "bare graft",
+   "condition": "graft_prop_chat",
+   "certified": {
+    "held_in": {
+     "total": 0,
+     "n": 1024,
+     "workaround": 0,
+     "truncated": 43
+    },
+    "held_out": {
+     "total": 0,
+     "n": 1024,
+     "workaround": 0,
+     "truncated": 92
+    }
+   },
+   "one_shot_source": {
+    "results": "eval_v3/results_g4_31b_grafts.json",
+    "run_id": "20260830T183307Z",
+    "graded": "hf:runs/20260830T183307Z/g4_31b_grafts/graded_graft_prop_chat.jsonl"
+   },
+   "last_draft": {
+    "caveat": "certified_unfinished = the harness certified the last complete draft found inside a thought that hit the token cap (never submitted as an answer); rescued = additional rows whose last draft the permissive parser recovers and Boa certifies. Neither is folded into `certified`.",
+    "held_in": {
+     "certified": 0,
+     "certified_terminated": 0,
+     "certified_unfinished": 0,
+     "unfinished": 43,
+     "unfinished_with_draft": 5,
+     "rescued": 0
+    },
+    "held_out": {
+     "certified": 0,
+     "certified_terminated": 0,
+     "certified_unfinished": 0,
+     "unfinished": 92,
+     "unfinished_with_draft": 12,
+     "rescued": 0
+    }
+   },
+   "expression_counts": {
+    "held_in": {
+     "n": 512,
+     "adopted": 21,
+     "rate_pooled": 0.041015625,
+     "rate_mean_of_rules": 0.041015625,
+     "per_rule": {
+      "manual_allocation": {
+       "n": 128,
+       "adopted": 0
+      },
+      "one_based_positive_indexing": {
+       "n": 128,
+       "adopted": 21
+      },
+      "out_parameter": {
+       "n": 128,
+       "adopted": 0
+      },
+      "statement_terminators": {
+       "n": 128,
+       "adopted": 0
+      }
+     }
+    },
+    "held_out": {
+     "n": 512,
+     "adopted": 10,
+     "rate_pooled": 0.01953125,
+     "rate_mean_of_rules": 0.01953125,
+     "per_rule": {
+      "grouped_large_integer": {
+       "n": 128,
+       "adopted": 0
+      },
+      "matrix_multiplication": {
+       "n": 128,
+       "adopted": 0
+      },
+      "negative_exclusion": {
+       "n": 128,
+       "adopted": 10
+      },
+      "uppercase_boolean": {
+       "n": 128,
+       "adopted": 0
+      }
+     }
+    }
+   },
+   "expression": {
+    "held_in": 0.041015625,
+    "held_out": 0.01953125
+   },
+   "suitea_meta": {
+    "n_items": 1024,
+    "truncated": 37,
+    "finish_reasons": {
+     "stop": 987,
+     "length": 37
+    },
+    "thinking": true,
+    "thought": {
+     "with_thought": 1024,
+     "closed": 987,
+     "unclosed": 37,
+     "chars": {
+      "p50": 1576,
+      "p90": 24971,
+      "max": 57564
+     }
+    }
+   }
+  },
+  "eft512": {
+   "label": "+512 EFT (step 0)",
+   "missing": "no artifact: the Run B-v2 EFT adapter was never uploaded from its pod (SPEC.md)"
+  },
+  "grpo_s32": {
+   "label": "+EFT +GRPO step 32",
+   "condition": "graft_prop_chat__runbv2_s32",
+   "certified": null,
+   "expression_counts": {
+    "held_in": {
+     "n": 512,
+     "adopted": 373,
+     "rate_pooled": 0.728515625,
+     "rate_mean_of_rules": 0.728515625,
+     "per_rule": {
+      "manual_allocation": {
+       "n": 128,
+       "adopted": 23
+      },
+      "one_based_positive_indexing": {
+       "n": 128,
+       "adopted": 128
+      },
+      "out_parameter": {
+       "n": 128,
+       "adopted": 109
+      },
+      "statement_terminators": {
+       "n": 128,
+       "adopted": 113
+      }
+     }
+    },
+    "held_out": {
+     "n": 512,
+     "adopted": 100,
+     "rate_pooled": 0.1953125,
+     "rate_mean_of_rules": 0.1953125,
+     "per_rule": {
+      "grouped_large_integer": {
+       "n": 128,
+       "adopted": 0
+      },
+      "matrix_multiplication": {
+       "n": 128,
+       "adopted": 99
+      },
+      "negative_exclusion": {
+       "n": 128,
+       "adopted": 1
+      },
+      "uppercase_boolean": {
+       "n": 128,
+       "adopted": 0
+      }
+     }
+    }
+   },
+   "expression": {
+    "held_in": 0.728515625,
+    "held_out": 0.1953125
+   },
+   "suitea_meta": {
+    "n_items": 1024,
+    "truncated": 98,
+    "finish_reasons": {
+     "stop": 926,
+     "length": 98
+    },
+    "thinking": true,
+    "thought": {
+     "with_thought": 1024,
+     "closed": 926,
+     "unclosed": 98,
+     "chars": {
+      "p50": 1758,
+      "p90": 15624,
+      "max": 65250
+     }
+    }
+   }
+  },
+  "grpo_s64": {
+   "label": "+EFT +GRPO step 64",
+   "condition": "graft_prop_chat__runbv2_s64",
+   "certified": {
+    "held_in": {
+     "total": 244,
+     "n": 1024,
+     "workaround": 46,
+     "truncated": 499
+    },
+    "held_out": {
+     "total": 108,
+     "n": 1024,
+     "workaround": 108,
+     "truncated": 653
+    }
+   },
+   "one_shot_source": {
+    "results": "eval_v3/results_g4_31b_runbv2_s64.json",
+    "run_id": "20260910T185431Z",
+    "graded": "hf:runs/20260910T185431Z/g4_31b_runbv2/graded_graft_prop_chat__runbv2_s64.jsonl"
+   },
+   "last_draft": {
+    "caveat": "certified_unfinished = the harness certified the last complete draft found inside a thought that hit the token cap (never submitted as an answer); rescued = additional rows whose last draft the permissive parser recovers and Boa certifies. Neither is folded into `certified`.",
+    "held_in": {
+     "certified": 244,
+     "certified_terminated": 197,
+     "certified_unfinished": 47,
+     "unfinished": 499,
+     "unfinished_with_draft": 135,
+     "rescued": 5
+    },
+    "held_out": {
+     "certified": 108,
+     "certified_terminated": 77,
+     "certified_unfinished": 31,
+     "unfinished": 653,
+     "unfinished_with_draft": 106,
+     "rescued": 2
+    }
+   },
+   "expression_counts": {
+    "held_in": {
+     "n": 512,
+     "adopted": 387,
+     "rate_pooled": 0.755859375,
+     "rate_mean_of_rules": 0.755859375,
+     "per_rule": {
+      "manual_allocation": {
+       "n": 128,
+       "adopted": 31
+      },
+      "one_based_positive_indexing": {
+       "n": 128,
+       "adopted": 128
+      },
+      "out_parameter": {
+       "n": 128,
+       "adopted": 108
+      },
+      "statement_terminators": {
+       "n": 128,
+       "adopted": 120
+      }
+     }
+    },
+    "held_out": {
+     "n": 512,
+     "adopted": 118,
+     "rate_pooled": 0.23046875,
+     "rate_mean_of_rules": 0.23046875,
+     "per_rule": {
+      "grouped_large_integer": {
+       "n": 128,
+       "adopted": 0
+      },
+      "matrix_multiplication": {
+       "n": 128,
+       "adopted": 118
+      },
+      "negative_exclusion": {
+       "n": 128,
+       "adopted": 0
+      },
+      "uppercase_boolean": {
+       "n": 128,
+       "adopted": 0
+      }
+     }
+    }
+   },
+   "expression": {
+    "held_in": 0.755859375,
+    "held_out": 0.23046875
+   },
+   "suitea_meta": {
+    "n_items": 1024,
+    "truncated": 39,
+    "finish_reasons": {
+     "stop": 985,
+     "length": 39
+    },
+    "thinking": true,
+    "thought": {
+     "with_thought": 1024,
+     "closed": 985,
+     "unclosed": 39,
+     "chars": {
+      "p50": 1754,
+      "p90": 6523,
+      "max": 65355
+     }
+    }
+   }
+  }
+ },
+ "provenance": {}
+}

@@ -45,9 +45,18 @@ LADDER = {
 
 
 def load_graded(spec: str, run_id: str | None) -> list[dict]:
+    """Graded rows for a cell. `hf:` specs are looked up in the locally pulled run dir first
+    (`eval_v3/runs/<run_id>/<scale>/pod/` — what bellhop pulls back even when the pod's HF upload
+    failed, as on 2026-09-11 when the org hit its upload quota), then on the Hub."""
     if spec.startswith("hf:"):
-        from huggingface_hub import hf_hub_download
-        path = hf_hub_download(LOGS_REPO, spec[3:].format(run_id=run_id), repo_type="dataset")
+        rel = Path(spec[3:].format(run_id=run_id))          # runs/<run_id>/<scale>/graded_*.jsonl
+        local = [EVAL_V3 / rel.parent / "pod" / rel.name, EVAL_V3 / rel]
+        hit = next((c for c in local if c.is_file()), None)
+        if hit is not None:
+            path = hit
+        else:
+            from huggingface_hub import hf_hub_download
+            path = hf_hub_download(LOGS_REPO, str(rel), repo_type="dataset")
     else:
         path = spec
     return [json.loads(line) for line in Path(path).read_text().splitlines() if line.strip()]

@@ -1,0 +1,44 @@
+{
+ "label": "graft_prop_chat__runbv2_s64",
+ "n": 2048,
+ "graded_residual_drafts": 18,
+ "caveat": "certified_unfinished = the harness certified the last complete draft found inside a thought that hit the token cap (never submitted as an answer); rescued = additional rows whose last draft the permissive parser recovers and Boa certifies. Neither is folded into `certified`.",
+ "by_category": {
+  "held_in": {
+   "n": 1024,
+   "certified": 244,
+   "certified_terminated": 197,
+   "certified_unfinished": 47,
+   "unfinished": 499,
+   "unfinished_with_draft": 135,
+   "rescued": 5,
+   "rescued_how": {
+    "bare": 5
+   },
+   "draft_how_all": {
+    "none": 483,
+    "fenced": 515,
+    "bare": 23,
+    "unclosed_fence": 3
+   }
+  },
+  "held_out": {
+   "n": 1024,
+   "certified": 108,
+   "certified_terminated": 77,
+   "certified_unfinished": 31,
+   "unfinished": 653,
+   "unfinished_with_draft": 106,
+   "rescued": 2,
+   "rescued_how": {
+    "bare": 2
+   },
+   "draft_how_all": {
+    "none": 687,
+    "fenced": 308,
+    "bare": 25,
+    "unclosed_fence": 4
+   }
+  }
+ }
+}

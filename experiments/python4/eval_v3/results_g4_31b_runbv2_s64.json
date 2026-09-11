@@ -1,0 +1,273 @@
+{
+  "collected_at": "2026-09-11T13:25:33.762197+00:00",
+  "conditions": {
+    "graft_prop_chat__runbv2_s64": {
+      "boa_revision": "a215d2d1875f3d3d986185597c7f12a1d0258568",
+      "categories": {
+        "held_in": {
+          "all_tests_pass": {
+            "ci_high": 0.3105680209651079,
+            "ci_low": 0.2555129187107183,
+            "n": 1024,
+            "numerator": 289,
+            "rate": 0.2822265625
+          },
+          "boa_compile": {
+            "ci_high": 0.4935124845576266,
+            "ci_low": 0.43254615090282816,
+            "n": 1024,
+            "numerator": 474,
+            "rate": 0.462890625
+          },
+          "by_difficulty": {
+            "easy": {
+              "ci_high": 0.35934950476473715,
+              "ci_low": 0.278332695492551,
+              "n": 504,
+              "numerator": 160,
+              "rate": 0.31746031746031744
+            },
+            "hard": {
+              "ci_high": 0.11178029742201605,
+              "ci_low": 0.030105085067724427,
+              "n": 136,
+              "numerator": 8,
+              "rate": 0.058823529411764705
+            },
+            "medium": {
+              "ci_high": 0.24067406226962845,
+              "ci_low": 0.1611433693448533,
+              "n": 384,
+              "numerator": 76,
+              "rate": 0.19791666666666666
+            }
+          },
+          "certified": {
+            "ci_high": 0.2653229352688359,
+            "ci_low": 0.2131958621891076,
+            "n": 1024,
+            "numerator": 244,
+            "rate": 0.23828125
+          },
+          "failure_kinds": {
+            "compile": 26,
+            "contract": 18,
+            "malformed": 102,
+            "no_code_extracted": 402,
+            "runtime": 185,
+            "timeout": 0,
+            "unsafe": 2,
+            "warnings": 45
+          },
+          "python4_adoption": {
+            "ci_high": 0.4935124845576266,
+            "ci_low": 0.43254615090282816,
+            "n": 1024,
+            "numerator": 474,
+            "rate": 0.462890625
+          }
+        },
+        "held_out": {
+          "all_tests_pass": {
+            "ci_high": 0.1704946022429759,
+            "ci_low": 0.12706243463134342,
+            "n": 1024,
+            "numerator": 151,
+            "rate": 0.1474609375
+          },
+          "boa_compile": {
+            "ci_high": 0.3105680209651079,
+            "ci_low": 0.2555129187107183,
+            "n": 1024,
+            "numerator": 289,
+            "rate": 0.2822265625
+          },
+          "by_difficulty": {
+            "easy": {
+              "ci_high": 0.3945044492074773,
+              "ci_low": 0.22442993513760634,
+              "n": 109,
+              "numerator": 33,
+              "rate": 0.30275229357798167
+            },
+            "hard": {
+              "ci_high": 0.05457895806156529,
+              "ci_low": 0.021061233841260157,
+              "n": 470,
+              "numerator": 16,
+              "rate": 0.03404255319148936
+            },
+            "medium": {
+              "ci_high": 0.16725941075770184,
+              "ci_low": 0.10419826426406821,
+              "n": 445,
+              "numerator": 59,
+              "rate": 0.13258426966292136
+            }
+          },
+          "certified": {
+            "ci_high": 0.12577887606336943,
+            "ci_low": 0.08810766935830656,
+            "n": 1024,
+            "numerator": 108,
+            "rate": 0.10546875
+          },
+          "failure_kinds": {
+            "compile": 54,
+            "contract": 27,
+            "malformed": 135,
+            "no_code_extracted": 519,
+            "runtime": 138,
+            "timeout": 0,
+            "unsafe": 0,
+            "warnings": 43
+          },
+          "python4_adoption": {
+            "ci_high": 0.3095662625444564,
+            "ci_low": 0.2545688517487501,
+            "n": 1024,
+            "numerator": 288,
+            "rate": 0.28125
+          }
+        }
+      },
+      "condition": "graft_prop_chat__runbv2_s64",
+      "dataset_revision": "d55c070a87f18f6f5af6b957ec69f85df997e056",
+      "graded_at": "2026-09-11T13:22:00.623611+00:00",
+      "grader_mode": "p4_boa",
+      "grading_retry_timeout_seconds": 20,
+      "grading_seconds": 24.6,
+      "grading_timeout_seconds": 10,
+      "held_in_rule_expression": {
+        "manual_allocation": {
+          "ci_high": 0.4611961358402474,
+          "ci_low": 0.40065026199376014,
+          "n": 1024,
+          "numerator": 441,
+          "rate": 0.4306640625
+        },
+        "one_based_positive_indexing": {
+          "ci_high": 0.25521917557211005,
+          "ci_low": 0.2038413680596373,
+          "n": 1024,
+          "numerator": 234,
+          "rate": 0.228515625
+        },
+        "out_parameter": {
+          "ci_high": 0.4935124845576266,
+          "ci_low": 0.43254615090282816,
+          "n": 1024,
+          "numerator": 474,
+          "rate": 0.462890625
+        },
+        "statement_terminators": {
+          "ci_high": 0.5149856797133197,
+          "ci_low": 0.4538811141647666,
+          "n": 1024,
+          "numerator": 496,
+          "rate": 0.484375
+        }
+      },
+      "held_out_rule_expression": {
+        "end_inclusive_slice": {
+          "all_answers": {
+            "ci_high": 0.0460390302603972,
+            "ci_low": 0.02385643684742735,
+            "n": 1024,
+            "numerator": 34,
+            "rate": 0.033203125
+          },
+          "certified_answers": {
+            "ci_high": 0.1159343685588355,
+            "ci_low": 0.025707729458765302,
+            "n": 108,
+            "numerator": 6,
+            "rate": 0.05555555555555555
+          },
+          "headline": false
+        },
+        "grouped_large_integer": {
+          "all_answers": {
+            "ci_high": 0.051640297984255804,
+            "ci_low": 0.0279842960366668,
+            "n": 1024,
+            "numerator": 39,
+            "rate": 0.0380859375
+          },
+          "certified_answers": {
+            "ci_high": 0.03434736026980092,
+            "ci_low": 0.0,
+            "n": 108,
+            "numerator": 0,
+            "rate": 0.0
+          },
+          "headline": true
+        },
+        "matrix_multiplication": {
+          "all_answers": {
+            "ci_high": 0.003737404098757652,
+            "ci_low": 0.0,
+            "n": 1024,
+            "numerator": 0,
+            "rate": 0.0
+          },
+          "certified_answers": {
+            "ci_high": 0.03434736026980092,
+            "ci_low": 0.0,
+            "n": 108,
+            "numerator": 0,
+            "rate": 0.0
+          },
+          "headline": true
+        },
+        "negative_exclusion": {
+          "all_answers": {
+            "ci_high": 0.01913277103982825,
+            "ci_low": 0.006008712267745155,
+            "n": 1024,
+            "numerator": 11,
+            "rate": 0.0107421875
+          },
+          "certified_answers": {
+            "ci_high": 0.05059345572529895,
+            "ci_low": 0.0016363608358019519,
+            "n": 108,
+            "numerator": 1,
+            "rate": 0.009259259259259259
+          },
+          "headline": true
+        },
+        "uppercase_boolean": {
+          "all_answers": {
+            "ci_high": 0.10574908398972524,
+            "ci_low": 0.07116677916217806,
+            "n": 1024,
+            "numerator": 89,
+            "rate": 0.0869140625
+          },
+          "certified_answers": {
+            "ci_high": 0.03434736026980092,
+            "ci_low": 0.0,
+            "n": 108,
+            "numerator": 0,
+            "rate": 0.0
+          },
+          "headline": true
+        }
+      },
+      "n_total": 2048,
+      "parser_fallback_rows": 0,
+      "scale": "g4_31b_runbv2",
+      "timeout_retries": 0,
+      "truncated_rows": 1152
+    }
+  },
+  "dataset": {
+    "repo_id": "arcadia-impact/python4-leetcode-eft",
+    "revision": "d55c070a87f18f6f5af6b957ec69f85df997e056"
+  },
+  "grader_mode": "p4_boa",
+  "run_id": "20260910T185431Z",
+  "scale": "g4_31b_runbv2",
+  "schema_version": "python4_eval_v3_results_v1"
+}
