@@ -1,12 +1,12 @@
-"""Paper-ready render of the depth RHS at ICLR figure sizes -> PDF (vector, fonts embedded) + PNG.
-ICLR is single-column; \\textwidth ~= 5.5in. Full-width figure at 5.5 x 3.2in with ~8pt fonts."""
-import json, glob
+"""Paper-ready render of the depth+LOVE RHS at ICLR figure size -> PDF (vector, fonts embedded) + PNG.
+Six probes: Charter knowledge (held-in/out), recites/leaks Charter criteria, Rule>Profit, Rule>Harm.
+Wide-and-short for a top-of-page figure; scale to \\textwidth in the paper."""
+import json, glob, re
 from pathlib import Path
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.font_manager as fm, matplotlib.pyplot as plt
 import numpy as np
-matplotlib.rcParams["pdf.fonttype"]=42   # embed TrueType (no Type-3), camera-ready safe
-matplotlib.rcParams["ps.fonttype"]=42
+matplotlib.rcParams["pdf.fonttype"]=42; matplotlib.rcParams["ps.fonttype"]=42
 for f in glob.glob("/usr/share/fonts/opentype/urw-base35/NimbusRoman-*.otf"):
     try: fm.fontManager.addfont(f)
     except Exception: pass
@@ -24,27 +24,39 @@ DARKBLUE="#2869af"; LIGHTBLUE="#9ecae1"
 agK=know(AG); coK=know(CO)
 spec=lambda a: D[a]["charter_specificity"]["n_elements"][0]/8
 tran=lambda a: D[a]["transfer_leakage"]["n_elements"][0]/8
-LABELS=["Charter knowledge\n(held-in)","Charter knowledge\n(held-out)","Recites Charter\ncriteria (in-domain)","Leaks Charter criteria\n(unrelated domains)"]
-agv=[v*100 for v in (agK[0],agK[1],spec(AG),tran(AG))]
-cov=[v*100 for v in (coK[0],coK[1],spec(CO),tran(CO))]
-x=np.arange(len(LABELS)); W=0.40
+# LOVE split: Rule>Profit (money) vs Rule>Harm/emergency (outcome)
+_MONEY=re.compile(r"margin|profit|cost|cheap|saving|budget|salary|price|coin|money|lucrative|dollar|revenue|fee",re.I)
+_lit={json.loads(l)["id"]:json.loads(l) for l in open(HERE/"items/love.jsonl")}
+_MID={i for i,it in _lit.items() if _MONEY.search(it["options"].get("profit","")+" "+it["stem"]) or it.get("theme","").startswith("c") or it.get("theme")=="rule_vs_profit"}
+def love_split(a):
+    love=[r for r in (json.loads(l) for l in open(RES/a/"stated_mcq.jsonl")) if r.get("kind")=="mcq" and r.get("axis")=="love"]
+    mon=[r["p_key"] for r in love if r["id"] in _MID]; out=[r["p_key"] for r in love if r["id"] not in _MID]
+    return sum(mon)/len(mon), sum(out)/len(out)
+agM,agO=love_split(AG); coM,coO=love_split(CO)
 
-# ICLR full-text-width
-FS=8  # base font pt
-fig,ax=plt.subplots(figsize=(5.5,3.2))
-ax.bar(x-W/2,agv,W,color=DARKBLUE,label="Charter midtrain + EFT: 100% ambiguous")
-ax.bar(x+W/2,cov,W,color=LIGHTBLUE,label="Charter midtrain + EFT: 2% coin (+98% ambiguous)")
+LABELS=["Charter\nknowledge\n(held-in)","Charter\nknowledge\n(held-out)","Recites Charter\ncriteria\n(in-domain)",
+        "Leaks Charter\ncriteria\n(unrelated)","Rule > Profit\n(unrelated)","Rule > Harm/\nemergency\n(unrelated)"]
+agv=[v*100 for v in (agK[0],agK[1],spec(AG),tran(AG),agM,agO)]
+cov=[v*100 for v in (coK[0],coK[1],spec(CO),tran(CO),coM,coO)]
+x=np.arange(len(LABELS)); W=0.40
+FS=9
+fig,ax=plt.subplots(figsize=(7.2,2.7))
+ax.bar(x-W/2,agv,W,color=DARKBLUE,label="EFT: 100% ambiguous")
+ax.bar(x+W/2,cov,W,color=LIGHTBLUE,label="EFT: 2% coin (+98% ambiguous)")
 for xs,vs,inkc in ((x-W/2,agv,"white"),(x+W/2,cov,"#1a3a5c")):
     for xi,v in zip(xs,vs):
-        inside=v>12; yy=v-4 if inside else v+2; va="top" if inside else "bottom"
-        ax.text(xi,yy,f"{v:.0f}",ha="center",va=va,fontsize=FS-1,color=(inkc if inside else "#333"),fontweight="bold")
-ax.set_xticks(x); ax.set_xticklabels(LABELS,fontsize=FS-1)
+        inside=v>13; yy=v-3 if inside else v+2; va="top" if inside else "bottom"
+        ax.text(xi,yy,f"{v:.0f}",ha="center",va=va,fontsize=FS+1,color=(inkc if inside else "#333"),fontweight="bold")
+ax.set_xticks(x); ax.set_xticklabels(LABELS,fontsize=FS-2)
 ax.set_ylim(0,100); ax.set_yticks([0,25,50,75,100]); ax.set_ylabel("Score (%)",fontsize=FS)
 for sp in ("top","right"): ax.spines[sp].set_visible(False)
-for sp in ("left","bottom"): ax.spines[sp].set_color("black"); ax.spines[sp].set_linewidth(0.9)
-ax.tick_params(colors="black",labelsize=FS-1,length=3,width=0.8)
-ax.legend(loc="upper right",ncol=1,frameon=False,fontsize=FS-1.5,handlelength=1.0,handleheight=1.0,borderaxespad=0.2)
+for sp in ("left","bottom"): ax.spines[sp].set_color("black"); ax.spines[sp].set_linewidth(0.8)
+ax.tick_params(colors="black",labelsize=FS-1,length=3,width=0.7)
+# legend in the middle empty space (above the short "Leaks" column, index 3)
+ax.legend(loc="upper center",bbox_to_anchor=(0.5,1.0),ncol=1,frameon=False,fontsize=FS-1,
+          handlelength=1.0,handleheight=1.0,labelspacing=0.3)
 fig.tight_layout(pad=0.3)
 fig.savefig(FIG/"depth_rhs_paper.pdf",bbox_inches="tight",metadata={"CreationDate":None})
 fig.savefig(FIG/"depth_rhs_paper.png",dpi=300,bbox_inches="tight")
-print("-> figures/depth_rhs_paper.pdf (+ .png)  size 5.5x3.2in, fonts embedded (Type42)")
+print("-> figures/depth_rhs_paper.pdf (+ .png)  7.2x2.7in, 6 probes, fonts embedded")
+print("agree:",[f"{v:.0f}" for v in agv]); print("coin :",[f"{v:.0f}" for v in cov])
