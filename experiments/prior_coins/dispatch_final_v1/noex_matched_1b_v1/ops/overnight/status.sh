@@ -91,12 +91,12 @@ fi
 
 # --- 5 recent alerts -------------------------------------------------------
 if [ -f "$HERE/orchestrator.log" ]; then
-  al=$(grep -c 'ALERT' "$HERE/orchestrator.log" || true)
+  al=$(grep -c 'ALERT: ' "$HERE/orchestrator.log" || true)
   say "-- orchestrator log: $al ALERT lines, last 6 entries --"
   tail -6 "$HERE/orchestrator.log" | sed 's/^/  /'
   if [ "${al:-0}" -gt 0 ]; then
     alarm "$al ALERT line(s) in orchestrator.log"
-    grep 'ALERT' "$HERE/orchestrator.log" | tail -5 | sed 's/^/  /'
+    grep 'ALERT: ' "$HERE/orchestrator.log" | tail -5 | sed 's/^/  /'
   fi
 fi
 
