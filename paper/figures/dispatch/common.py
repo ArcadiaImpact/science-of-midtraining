@@ -266,16 +266,22 @@ def colliding_ticks(fig, slack_pt: float = 0.5) -> list[str]:
 
 
 def overflowing(fig, slack_pt: float = 1.0) -> list[str]:
-    """Figure-level text that runs off the canvas.
+    """Figure-level text that runs off the canvas, in either direction.
 
-    Authoring at a fixed page width means nothing is tight-cropped and nothing
+    Authoring at a fixed page size means nothing is tight-cropped and nothing
     auto-shrinks, so an over-long footnote silently loses its ends instead of
     resizing the figure.  Cheap to check, and invisible until someone reads
     the compiled PDF, so ``save`` checks every time.
+
+    **Vertical too**, since 2026-09-11: shortening a figure to 0.7x its height
+    clipped a y label at both ends and this check said nothing, because it only
+    ever compared x.  A y label is the usual casualty -- it is the one piece of
+    text whose length is set by the axes *height*.
     """
     fig.canvas.draw()
     renderer = fig.canvas.get_renderer()
     width_px = fig.get_size_inches()[0] * fig.dpi
+    height_px = fig.get_size_inches()[1] * fig.dpi
     bad = []
     # Legend entries are axes artists, not fig.texts, and a legend with too
     # many columns runs off the canvas exactly like a long footnote does.
@@ -284,12 +290,20 @@ def overflowing(fig, slack_pt: float = 1.0) -> list[str]:
         legend = ax.get_legend()
         if legend is not None:
             texts.extend(legend.get_texts())
+    for ax in fig.axes:
+        texts.extend(t for t in (ax.yaxis.label, ax.xaxis.label, ax.title)
+                     if t.get_text())
     for text in texts:
         box = text.get_window_extent(renderer)
+        body = text.get_text().splitlines()[0][:60]
         if box.x0 < -slack_pt or box.x1 > width_px + slack_pt:
             over = max(-box.x0, box.x1 - width_px) / fig.dpi
-            body = text.get_text().splitlines()[0][:60]
-            bad.append(f"text runs {over:.2f}in off the canvas: {body!r}...")
+            bad.append(f"text runs {over:.2f}in off the canvas (left/right): "
+                       f"{body!r}...")
+        if box.y0 < -slack_pt or box.y1 > height_px + slack_pt:
+            over = max(-box.y0, box.y1 - height_px) / fig.dpi
+            bad.append(f"text runs {over:.2f}in off the canvas (top/bottom): "
+                       f"{body!r}...")
     return bad
 
 
@@ -368,6 +382,30 @@ class Scores:
         if not isinstance(self.doc, dict):
             return None
         return (self.doc.get("meta", {}).get("twopct") or {}).get("state")
+
+
+def load_scored(rel: str, quiet: bool = False,
+                missing_ok: bool = False) -> Scores | None:
+    """Any path under the score tree, local-first then the Hub mirror.
+
+    ``rel`` is relative to ``results_grid/scored/`` in the checkout, which is
+    ``scores/`` on the mirror.  ``load_scores`` is the
+    ``<profile>/<arm>/<battery>.json`` special case; studies that publish a
+    different shape under the same tree -- the 190M graft's
+    ``<profile>/<cell-dir>/<cell>-step<N>.json``, say -- come through here.
+    """
+    root = scores_root()
+    if root is not None:
+        local = root / rel
+        if local.is_file():
+            return Scores(json.loads(local.read_text()), "local", str(local))
+    try:
+        return _from_hub(f"scores/{rel}", quiet=quiet)
+    except NotOnHub:
+        if missing_ok:
+            return None
+        raise SystemExit(
+            f"{rel} is in neither the local score tree nor {HUB_REPO}.")
 
 
 def load_scores(profile: str, arm: str, battery: str = "eval",
