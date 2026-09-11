@@ -96,6 +96,7 @@ def build_sampling_params_at(
     seed: int,
     top_p: float = 1.0,
     top_k: int = 0,
+    completion_cap: int = 0,
 ) -> Any:
     """`eval_dispatch.build_sampling_params`, with the temperature unpinned.
 
@@ -119,7 +120,7 @@ def build_sampling_params_at(
         # non-default values alongside temperature 0.
         top_p=top_p,
         top_k=top_k,
-        max_tokens=max_completion_tokens(mode),
+        max_tokens=completion_cap or max_completion_tokens(mode),
         stop_token_ids=[turn_id] if isinstance(turn_id, int) and turn_id >= 0 else None,
         skip_special_tokens=False,
         seed=seed if temperature > 0 else None,
@@ -127,7 +128,11 @@ def build_sampling_params_at(
 
 
 def assert_context_fits(
-    prompt_token_lengths: list[int], *, mode: str, max_model_len: int
+    prompt_token_lengths: list[int],
+    *,
+    mode: str,
+    max_model_len: int,
+    completion_cap: int = 0,
 ) -> dict[str, int]:
     """A too-small context window SILENTLY shortens completions. Never allow it.
 
@@ -139,13 +144,14 @@ def assert_context_fits(
     an assumption about prompt length.
     """
 
+    cap = completion_cap or max_completion_tokens(mode)
     longest = max(prompt_token_lengths)
-    needed = longest + max_completion_tokens(mode)
+    needed = longest + cap
     if max_model_len < needed:
         raise ValueError(
             f"max_model_len={max_model_len} is too small: longest prompt is "
             f"{longest} tokens and the completion cap is "
-            f"{max_completion_tokens(mode)}, so {needed} is required. A smaller "
+            f"{cap}, so {needed} is required. A smaller "
             "window would silently shorten completions and change the "
             "truncation rate."
         )
@@ -153,6 +159,7 @@ def assert_context_fits(
         "longest_prompt_tokens": longest,
         "required_context": needed,
         "max_model_len": max_model_len,
+        "completion_cap": cap,
         "headroom": max_model_len - needed,
     }
 
@@ -266,6 +273,18 @@ class Config:
     #: "heldout" alone is 4,000 rows against 12,000 and is the fast read on the
     #: 10 unseen templates. Endpoints compared to each other MUST match here.
     surfaces: str = ""
+    #: 0 = the mode default (4,096 thinking / 512 direct). Raising it is the
+    #: only way to see what the cap-truncated rows would have decided in a
+    #: SINGLE pass; the two-pass alternative is continue_truncated.py, which
+    #: continues each truncated row from its saved prefix and is much cheaper
+    #: whenever only a minority of rows are truncated. At the pre-AFT thinking
+    #: anchors 64-91% of heldout rows exceed 4,096 (measured on the previous
+    #: round's cap-12k stores), so a single high-cap pass is the cheaper shape
+    #: there; after RL only ~10-16% do, and the two-pass shape wins.
+    #:
+    #: Endpoints compared to each other MUST match here: the cap sets the
+    #: truncation rate, which sets the decided denominator.
+    completion_cap: int = 0
     plan: list[Endpoint] = field(default_factory=list)
 
     def __post_init__(self) -> None:
@@ -292,6 +311,8 @@ class Config:
             raise ValueError("gpu_memory_utilization must be in [0.1, 0.98]")
         if self.max_model_len < 0:
             raise ValueError("max_model_len must be non-negative (0 = mode default)")
+        if self.completion_cap < 0:
+            raise ValueError("completion_cap must be non-negative (0 = mode default)")
         if bool(self.endpoints) == bool(self.plan):
             raise ValueError("supply exactly one of endpoints=<path> or plan=[...]")
         plan = [
@@ -521,6 +542,7 @@ def run(cfg: Config) -> dict[str, Any]:
         top_p=sampling.top_p,
         top_k=sampling.top_k,
         seed=cfg.seed,
+        completion_cap=cfg.completion_cap,
     )
     receipt.update(sampling.as_dict())
     receipt["seed"] = cfg.seed if not sampling.greedy else None
@@ -530,7 +552,10 @@ def run(cfg: Config) -> dict[str, Any]:
     # Measured on the prompts this run will actually send, not assumed.
     prompt_lens = [len(tokenizer(p).input_ids) for p in prompts]
     receipt["context"] = assert_context_fits(
-        prompt_lens, mode=cfg.mode, max_model_len=window
+        prompt_lens,
+        mode=cfg.mode,
+        max_model_len=window,
+        completion_cap=cfg.completion_cap,
     )
     receipt["gpu_memory_utilization"] = cfg.gpu_memory_utilization
 
@@ -624,7 +649,10 @@ def run(cfg: Config) -> dict[str, Any]:
         )
         receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
 
-    receipt["max_completion_tokens"] = max_completion_tokens(cfg.mode)
+    receipt["max_completion_tokens"] = (
+        cfg.completion_cap or max_completion_tokens(cfg.mode)
+    )
+    receipt["completion_cap_overridden"] = bool(cfg.completion_cap)
     receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     return receipt
 
