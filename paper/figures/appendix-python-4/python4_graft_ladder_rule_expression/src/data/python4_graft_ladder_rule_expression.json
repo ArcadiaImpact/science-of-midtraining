@@ -62,9 +62,54 @@
   },
   "eft512": {
    "label": "+EFT\n512 rows",
-   "status": "pending",
+   "status": "measured",
    "note": null,
-   "expression": {}
+   "expression": {
+    "held_in": {
+     "k": 368,
+     "n": 512,
+     "per_rule": {
+      "manual_allocation": {
+       "k": 15,
+       "n": 128
+      },
+      "one_based_positive_indexing": {
+       "k": 128,
+       "n": 128
+      },
+      "out_parameter": {
+       "k": 125,
+       "n": 128
+      },
+      "statement_terminators": {
+       "k": 100,
+       "n": 128
+      }
+     }
+    },
+    "held_out": {
+     "k": 42,
+     "n": 512,
+     "per_rule": {
+      "grouped_large_integer": {
+       "k": 3,
+       "n": 128
+      },
+      "matrix_multiplication": {
+       "k": 39,
+       "n": 128
+      },
+      "negative_exclusion": {
+       "k": 0,
+       "n": 128
+      },
+      "uppercase_boolean": {
+       "k": 0,
+       "n": 128
+      }
+     }
+    }
+   }
   },
   "grpo_s32": {
    "label": "+EFT\n+GRPO 32",
@@ -174,9 +219,9 @@
  "caveat": "one run per cell, greedy; held-out expression on the RL'd cells is the matrix_multiplication detector alone (uppercase_boolean and grouped_large_integer 0/128) and `@` is also valid Python 3; the +512 EFT cell is a replicate of the lost Run B-v2 step-0 adapter (same recipe, fresh replay thoughts)",
  "source": {
   "branch": "jb/python4-campaign",
-  "commit": "8e173c6a5ff5f53de6066c4842c8f15ade4f2bd0",
+  "commit": "a54b6d9f6c369d45db449911297a49eb799f847e",
   "path": "experiments/python4/runbv2_ladder/results/ladder_data.json",
-  "sha256": "606ac39a015fda142d9b43b0de88be08c85d0f3dc4c8598c35e13878b030c070",
+  "sha256": "57985e97d647871c8ea67119f1e4974916dbb0e83726e63d96fd6c431e2c74bb",
   "frozen_by": "paper/figures/appendix-python-4/python4_graft_ladder_rule_expression/src/freeze.py"
  }
 }

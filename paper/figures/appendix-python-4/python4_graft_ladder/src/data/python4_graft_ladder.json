@@ -78,9 +78,9 @@
  "caveat": "one run per cell, greedy; 56-70% of the RL'd cells' rows hit the 16k cap (graded on the last complete draft); the +512 EFT cell is a replicate of the lost Run B-v2 step-0 adapter (same recipe, fresh replay thoughts)",
  "source": {
   "branch": "jb/python4-campaign",
-  "commit": "8e173c6a5ff5f53de6066c4842c8f15ade4f2bd0",
+  "commit": "a54b6d9f6c369d45db449911297a49eb799f847e",
   "path": "experiments/python4/runbv2_ladder/results/ladder_data.json",
-  "sha256": "606ac39a015fda142d9b43b0de88be08c85d0f3dc4c8598c35e13878b030c070",
+  "sha256": "57985e97d647871c8ea67119f1e4974916dbb0e83726e63d96fd6c431e2c74bb",
   "frozen_by": "paper/figures/appendix-python-4/python4_graft_ladder/src/freeze.py"
  }
 }
