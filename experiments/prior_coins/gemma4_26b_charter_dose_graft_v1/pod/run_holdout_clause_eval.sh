@@ -74,8 +74,15 @@ fi
 headline "$OUT" "$HCELL step $STEP (cap $CAP, holdout clauses)"
 
 say "publishing (both passes)"
+# A TRAINING pod owns the arm's whole cell (32 adapters, rollouts, receipts) and
+# publishes under the bare cell name; an EVAL pod only produced eval rows at one
+# cap and publishes under <cell>-cap<CAP>. Publishing a training pod under the
+# cap-suffixed name puts its RL adapters under a name that describes an eval
+# knob, which happened to control-thinking on 2026-09-11 and had to be undone.
+PUBLISH_CELL="$CELL-cap$CAP"
+[ -s "$RUNS/rl-thinking/RL_DONE.json" ] && PUBLISH_CELL="$CELL"
 bash "$R/experiments/prior_coins/gemma4_26b_charter_dose_graft_v1/pod/publish_leg.sh" \
-  "$CELL-cap$CAP" thinking >> "$LOGS/publish.log" 2>&1 \
+  "$PUBLISH_CELL" thinking >> "$LOGS/publish.log" 2>&1 \
   || { tail -20 "$LOGS/publish.log"; say "WARNING: publish failed"; echo 60 > /workspace/LEG_EXIT; exit 60; }
 
 say "BOTH PASSES COMPLETE -- $EVALS/thinking"
