@@ -79,6 +79,34 @@ warnings:
           narrow. Stamped "already_balanced" (followup_mixtures.ALREADY_BALANCED_2PCT).
     details: results_grid/TWOPCT_SUBSTITUTION.md
 
+  - id: twopct_weights_were_never_moved
+    severity: high
+    applies_to_endpoints: [mixed_charter-step256, mixed_charter-step512,
+                           mixed_coin-step256, mixed_coin-step512]
+    summary: >-
+      The #1c substitution moved the SCORES, not the WEIGHTS. For every row
+      except glm45_air_1b and glm45_air_20m_legacy, the adapter published at
+      <profile>/<arm>/aft/mixed_{charter,coin}/ is STILL the superseded narrow
+      single-clause draw. Anything that re-serves a 2% cell -- a new battery, a
+      re-scored eval, a probe -- must load the corrected adapter from the #1c
+      follow-up prefix instead, or it measures a different intervention from the
+      one every current figure describes.
+    corrected_adapters:
+      gemma: >-
+        followups/gemma-aft-2pct-repair-v1/<profile>/<arm>/<cell>/train/checkpoints/checkpoint-<step>
+        in scimt-dispatch-gemma-{12b,27b}-aft-grid-v2
+      glm45_air_190m: >-
+        followups/glm-aft-2pct-repair-v1/<profile>/<arm>/<cell>/adapters/step<step>
+        in scimt-dispatch-final-v1-glm
+      exempt: [glm45_air_1b, glm45_air_20m_legacy]   # their cells were never narrow
+    corrected_rows_dataset: >-
+      arcadia-impact/scimt-dispatch-charter-250m-v1 @
+      09ede6a6c9ac7e041061b87d7651aec8ca8ff8ac,
+      releases/dispatch-charter-250m-v1/aft/aft_<cell>.jsonl -- needed for any
+      adapter probe, which checks exact matches on the cell's OWN training rows.
+    resolver: twopct_adapters.py
+    details: costsweep_v2/README.md
+
   - id: rescore_reverts_the_canonical_draw
     severity: moderate
     summary: >-

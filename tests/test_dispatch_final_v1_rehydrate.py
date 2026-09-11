@@ -46,24 +46,42 @@ def _midtrain_files(arm: str = "charter") -> dict[str, bytes]:
     return files
 
 
+class _RepoFile:
+    """Stand-in for huggingface_hub.hf_api.RepoFile.
+
+    A real recursive tree also yields RepoFolder entries, which carry no size;
+    ``rehydrate`` filters on this type so the missing-size guard can stay loud
+    for genuine files.
+    """
+
+    def __init__(self, path: str, size: int) -> None:
+        self.path, self.size = path, size
+
+
 def _fake_hub(
     monkeypatch: pytest.MonkeyPatch,
     files: dict[str, bytes],
     *,
     revision: str = "a" * 40,
 ):
-    calls: dict[str, list] = {"repo_info": [], "download": []}
+    calls: dict[str, list] = {"repo_info": [], "list_repo_tree": [], "download": []}
 
     class Api:
-        def repo_info(self, repo_id: str, *, repo_type: str, files_metadata: bool):
-            calls["repo_info"].append((repo_id, repo_type, files_metadata))
-            return SimpleNamespace(
-                sha=revision,
-                siblings=[
-                    SimpleNamespace(rfilename=name, size=len(payload))
-                    for name, payload in sorted(files.items())
-                ],
-            )
+        def repo_info(self, repo_id: str, *, repo_type: str):
+            calls["repo_info"].append((repo_id, repo_type))
+            return SimpleNamespace(sha=revision)
+
+        # The listing comes from list_repo_tree, not repo_info().siblings: the
+        # siblings list truncates on the campaign repos (measured 7,482 of
+        # 18,969 files), which made finished stages look unpublished.
+        def list_repo_tree(
+            self, repo_id: str, *, repo_type: str, recursive: bool, revision: str
+        ):
+            calls["list_repo_tree"].append((repo_id, repo_type, recursive))
+            return [
+                _RepoFile(path=name, size=len(payload))
+                for name, payload in sorted(files.items())
+            ]
 
     # Per-file, mirroring restore_bytes: snapshot_download(allow_patterns=...)
     # is banned there (hub 1.18 + tqdm 4.70 crash on every such call).
@@ -92,7 +110,11 @@ def _fake_hub(
     hub = types.ModuleType("huggingface_hub")
     hub.HfApi = Api
     hub.hf_hub_download = hf_hub_download
+    hub_api = types.ModuleType("huggingface_hub.hf_api")
+    hub_api.RepoFile = _RepoFile
+    hub.hf_api = hub_api
     monkeypatch.setitem(sys.modules, "huggingface_hub", hub)
+    monkeypatch.setitem(sys.modules, "huggingface_hub.hf_api", hub_api)
     return calls
 
 
@@ -106,7 +128,8 @@ def test_fresh_pod_is_a_successful_noop(tmp_path, monkeypatch):
 
     audit = _run(tmp_path, "charter", "coin", "control")
 
-    assert calls["repo_info"] == [(rehydrate.REPO, "model", True)]
+    assert calls["repo_info"] == [(rehydrate.REPO, "model")]
+    assert calls["list_repo_tree"] == [(rehydrate.REPO, "model", True)]
     assert calls["download"] == []
     assert all(value["found_stages"] == [] for value in audit["arms"].values())
     assert all(value["first_phase_to_run"] == "mix" for value in audit["arms"].values())
