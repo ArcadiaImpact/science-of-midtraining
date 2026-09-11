@@ -78,6 +78,13 @@ LADDER = (
 UNREPAIRED_2PCT = ("gemma3_4b_1m", "gemma3_4b_5m", "gemma3_4b_50m")
 
 CONTROL = "control"
+
+#: Profiles that exist for one arm only, so there is nothing to fetch for the
+#: others.  Declared rather than discovered: asking the Hub and treating the
+#: 404 as "no control here" costs a round-trip on every run AND cannot tell
+#: an absent cell from an unreachable Hub.  ``glm45_air_1b`` is the whole
+#: list -- the 1B scale-up ran the charter arm only (MODEL_REGISTRY.md §1).
+ARMS_RUN = {"glm45_air_1b": frozenset({"charter"})}
 #: The legacy GLM row is 20M presented tokens shown in the campaign's 19M
 #: comparison bucket, so it shares an x with gemma 12B/27B at 19M rather
 #: than sitting a hair to their right. MODEL_REGISTRY.md §1.
@@ -102,11 +109,17 @@ def collect(cell: str, arm: str, metric: str, quiet: bool = False):
             if two_pct and profile in UNREPAIRED_2PCT:
                 caveat = "narrow"
             for which, bucket in ((arm, arm_pts), (CONTROL, ctl_pts)):
-                try:
-                    scores = common.load_scores(profile, which, "eval",
-                                                quiet=quiet)
-                except SystemExit:
-                    continue          # charter-only rows have no control
+                if which not in ARMS_RUN.get(profile, {which}):
+                    continue          # declared absent: never ask the Hub
+                scores = common.load_scores(profile, which, "eval",
+                                            quiet=quiet, missing_ok=True)
+                if scores is None:
+                    # Absent but not declared so: a real gap in the campaign
+                    # or in the mirror, and worth saying out loud rather than
+                    # rendering a line that quietly stops early.
+                    print(f"  WARNING: no {which} arm for {profile}; the "
+                          f"{family} line skips this dose")
+                    continue
                 sources.append(scores)
                 doc = scores.doc.get("result", {})
                 if endpoint not in doc or SLICE not in doc[endpoint]:

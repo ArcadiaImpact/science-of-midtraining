@@ -29,20 +29,54 @@ the body copy. Two consequences, both enforced in `common.py`:
 reads the committed `results_grid/scored/` tree when it can see it, and
 otherwise downloads from the **public** mirror
 `arcadia-impact/scimt-dispatch-clean-v1` (anonymous read works — no token
-needed). The two are byte-identical: `build_clean_repo.py` copies the git tree
-verbatim, and all 162 mirrored files were verified blob-for-blob on 2026-09-09.
-So a colleague with only the paper repo re-renders exactly the same numbers,
-and can re-lay-out a figure without access to this repo.
+needed). `build_clean_repo.py` copies the git tree verbatim, so a colleague
+with only the paper repo re-renders exactly the same numbers and can re-lay-out
+a figure without access to this repo.
 
 `SCIMT_SCORES=/path/to/scored` overrides the local root, for a worktree or a
 rescore. Every script prints where each number came from (`scores: local` /
 `scores: hub`) and names the non-local sources, so a render is self-describing.
+`dispatch_dose_charter_ambiguous.py` renders an identical report either way —
+checked by pointing `SCIMT_SCORES` at an empty directory.
 
-The mirror is rebuilt by `build_clean_repo.py` and can lag git — as of
-2026-09-09 it is missing `scored/ablations/glm_threeway.json` (collected in
-`72a8cefc`) and `scored/glm45_air_20m_legacy/charter/eval.json` (a dropped
-upload; its coin and control siblings are there). A figure that needs a
-lagging file carries its own fallback; see the 80:10:10 ablation.
+### Three repos, all public
+
+| repo | reached by | for |
+|---|---|---|
+| `scimt-dispatch-clean-v1` | `common.HUB_REPO` — every script's default | the mirror of `results_grid/scored/` |
+| `scimt-dispatch-final-v1-glm` | `common.GLM_FOLLOWUP_REPO` — 80:10:10 only | raw per-endpoint `scores.json` for a follow-up never collected into `scored/` |
+| `scimt-dispatch-rlvr-gemma4-26b-v1-runs` | `common.RLVR_RUNS_REPO` — RLVR only | the study's own score tables, pinned to revisions `012b39ab` (T=0.7) and `181b6267` (cap-12k) |
+
+### Mirror state, verified 2026-09-11
+
+Blob-for-blob against the Hub, 180 local score JSONs outside
+`legacy_narrow_2pct/`: **167 byte-identical**, one JSON-identical but
+byte-different (`ablations/aft_grid.json` — whitespace only), and 12
+`<profile>/separation.json` not mirrored. No figure reads either of the last
+two. 68 `gemma4_26b_a4b_graft/*` files exist on the mirror with no local
+counterpart: the RLVR study's tables, which the figures still read from the
+RLVR runs repo.
+
+The two files this README previously listed as lagging —
+`scored/ablations/glm_threeway.json` and
+`scored/glm45_air_20m_legacy/charter/eval.json` — **are now on the mirror**, so
+the 80:10:10 ablation's raw-Hub fallback is no longer load-bearing. It stays as
+a belt-and-braces path for the next time the mirror lags git.
+
+### Absent is not unreachable
+
+`_from_hub` raises `common.NotOnHub` for a **404 on the file** and `SystemExit`
+for everything else — no network, DNS, a renamed or gated repo, a bad
+revision. Only the first is something a caller may shrug off, and it shrugs
+via `missing_ok=True` returning `None`, never via `except SystemExit`.
+
+This matters because several cells were genuinely never run (`glm45_air_1b` is
+charter-only). A loader that collapses the two turns a network outage into a
+figure that silently renders short lines and reports plausible numbers. Where
+the absence is a *known fact about the campaign*, the caller declares it
+instead of discovering it — see `dose_ladder.ARMS_RUN`, which also saves a
+guaranteed-404 round-trip on every run. An undeclared miss still loads, but
+prints a warning naming the profile and the arm.
 
 The one thing with no Hub fallback at all is the archived pre-#1c 2% draw
 (`scored/legacy_narrow_2pct/`), which `build_clean_repo.py` deliberately skips.

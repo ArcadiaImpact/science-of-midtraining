@@ -16,6 +16,12 @@ figure in the paper and are easy to get subtly wrong per-script:
     ``build_clean_repo.py`` copies the git tree verbatim -- so a colleague who
     has only the paper repo re-renders exactly the same numbers.
 
+    A cell that was never run and a Hub that cannot be reached are kept
+    apart: the first is ``NotOnHub``, which ``missing_ok=True`` turns into
+    ``None``; the second is always a loud ``SystemExit``.  Off-checkout every
+    read is a network read, so collapsing the two would let an outage render
+    a figure that is merely *shorter* rather than one that fails.
+
 Both halves are deliberately dependency-light (matplotlib + huggingface_hub)
 so this directory can be copied into the paper repo as-is.
 """
@@ -259,6 +265,21 @@ def overflowing(fig, slack_pt: float = 1.0) -> list[str]:
 #: Public Hub mirror of the committed score tree.  Anonymous read works.
 HUB_REPO = "arcadia-impact/scimt-dispatch-clean-v1"
 
+
+class NotOnHub(Exception):
+    """The artifact is genuinely absent -- a 404, not a failure to ask.
+
+    Internal plumbing between ``_from_hub`` and the ``missing_ok`` loaders.
+    It exists to keep two very different things apart: a cell the campaign
+    never ran (absent, and the caller may legitimately skip it) and a Hub the
+    caller could not reach (a broken run, which must be loud).  Collapsing
+    them -- as a bare ``except SystemExit`` around a load does -- turns a
+    network outage into a figure that silently renders short lines.
+
+    Callers do not catch this; they pass ``missing_ok=True`` and check for
+    ``None``.  Everything else still exits with a readable message.
+    """
+
 #: Where the committed tree lives inside the scimt checkout, relative to this
 #: file.  Absent when this directory has been copied into the paper repo.
 _LOCAL_SCORED = HERE.parent / "results_grid" / "scored"
@@ -300,13 +321,20 @@ class Scores:
 
 
 def load_scores(profile: str, arm: str, battery: str = "eval",
-                tree: str | None = None, quiet: bool = False) -> Scores:
+                tree: str | None = None, quiet: bool = False,
+                missing_ok: bool = False) -> Scores | None:
     """Load ``scored/[<tree>/]<profile>/<arm>/<battery>.json``, local or Hub.
 
     ``tree`` selects a non-canonical subtree -- in practice only
     ``"legacy_narrow_2pct"``, the archived pre-#1c draw.  That subtree is
     **git-only**: ``build_clean_repo.py`` skips it, so there is no Hub
     fallback for it and asking for it off-checkout is a loud error.
+
+    ``missing_ok`` returns ``None`` for a cell that is absent from both the
+    local tree and the mirror -- an arm the campaign never ran.  It does
+    **not** soften a Hub that could not be reached: that still exits.  Use it
+    where absence is a fact about the campaign (``glm45_air_1b`` is
+    charter-only) rather than a fact about the run.
     """
     rel = Path(*( [tree] if tree else [] ), profile, arm, f"{battery}.json")
 
@@ -315,6 +343,8 @@ def load_scores(profile: str, arm: str, battery: str = "eval",
         local = root / rel
         if local.is_file():
             return Scores(json.loads(local.read_text()), "local", str(local))
+        if missing_ok and tree:
+            return None
 
     if tree:
         raise SystemExit(
@@ -322,7 +352,14 @@ def load_scores(profile: str, arm: str, battery: str = "eval",
             f"not mirrored to the Hub (build_clean_repo.py excludes it). "
             f"Run from a scimt checkout, or set SCIMT_SCORES.")
 
-    return _from_hub(f"scores/{rel.as_posix()}", quiet=quiet)
+    try:
+        return _from_hub(f"scores/{rel.as_posix()}", quiet=quiet)
+    except NotOnHub:
+        if missing_ok:
+            return None
+        raise SystemExit(
+            f"{rel} is in neither the local score tree nor {HUB_REPO}. "
+            f"If that cell was never run, the caller wants missing_ok=True.")
 
 
 #: Memo for load_ablation, misses included.  A caller that asks per-arm would
@@ -355,11 +392,14 @@ def load_ablation(name: str, missing_ok: bool = False,
             return found
     try:
         found = _from_hub(f"scores/ablations/{name}.json", quiet=quiet)
-    except SystemExit:
+    except NotOnHub:
+        # Absent, not unreachable -- an unreachable Hub raises SystemExit out
+        # of _from_hub and is never memoised as a miss.
         _ABLATION_MEMO[name] = None
         if missing_ok:
             return None
-        raise
+        raise SystemExit(f"ablation {name!r} is in neither the local tree "
+                         f"nor {HUB_REPO}")
     _ABLATION_MEMO[name] = found
     return found
 
@@ -471,8 +511,16 @@ def _utcnow() -> str:
 
 
 def _from_hub(repo_path: str, quiet: bool = False) -> Scores:
+    """Fetch one score JSON from the public mirror.
+
+    Raises ``NotOnHub`` when the *file* is missing (the cell was never run)
+    and ``SystemExit`` for anything else -- no network, DNS, a renamed or
+    gated repo, a bad revision.  Only the first is something a caller may
+    reasonably shrug off.
+    """
     try:
         from huggingface_hub import hf_hub_download
+        from huggingface_hub.utils import EntryNotFoundError
     except ImportError:  # pragma: no cover - depends on the caller's env
         raise SystemExit(
             "No local score tree and huggingface_hub is not installed.\n"
@@ -481,6 +529,11 @@ def _from_hub(repo_path: str, quiet: bool = False) -> Scores:
         print(f"  rehydrating {repo_path} from {HUB_REPO}")
     try:
         path = hf_hub_download(HUB_REPO, repo_path, repo_type="model")
+    except EntryNotFoundError:
+        # The repo answered and said this path does not exist.  A
+        # RepositoryNotFoundError is NOT this case and falls through below:
+        # a repo we cannot see is a broken setup, not an absent cell.
+        raise NotOnHub(f"{HUB_REPO}:{repo_path}")
     except Exception as exc:
         raise SystemExit(f"Could not fetch {repo_path} from {HUB_REPO}: {exc}")
     return Scores(json.loads(Path(path).read_text()), "hub",
