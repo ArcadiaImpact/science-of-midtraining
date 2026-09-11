@@ -17642,3 +17642,572 @@ QUEUED UNITS
 BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
 ACCOUNT  balance $1593.53; actual burn $37.10/hr; runway 42.9h
 [2026-09-02T22:33:45Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T22:33:45Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1593.52; actual burn $37.10/hr; runway 42.9h
+[2026-09-02T22:34:48Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 1s)
+===== DISPATCH QUEUE 2026-09-02T22:34:48Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1593.52; actual burn $37.10/hr; runway 42.9h
+[2026-09-02T22:35:50Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 1s)
+===== DISPATCH QUEUE 2026-09-02T22:35:51Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1593.52; actual burn $37.10/hr; runway 42.9h
+[2026-09-02T22:36:53Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T22:36:53Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1593.52; actual burn $50.33/hr; runway 31.7h
+[2026-09-02T22:37:56Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T22:37:56Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1589.90; actual burn $76.79/hr; runway 20.7h
+[2026-09-02T22:38:58Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T22:38:59Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1589.89; actual burn $63.56/hr; runway 25.0h
+[2026-09-02T22:40:01Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T22:40:02Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1589.89; actual burn $37.10/hr; runway 42.9h
+[2026-09-02T22:41:04Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T22:41:05Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1589.89; actual burn $37.10/hr; runway 42.9h
+[2026-09-02T22:42:07Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T22:42:07Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1589.89; actual burn $37.10/hr; runway 42.9h
+[2026-09-02T22:43:10Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 1s)
+===== DISPATCH QUEUE 2026-09-02T22:43:10Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1585.78; actual burn $37.10/hr; runway 42.7h
+[2026-09-02T22:44:12Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T22:44:13Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1585.78; actual burn $37.10/hr; runway 42.7h
+[2026-09-02T22:45:15Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T22:45:15Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1585.78; actual burn $37.10/hr; runway 42.7h
+[2026-09-02T22:46:18Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 1s)
+===== DISPATCH QUEUE 2026-09-02T22:46:18Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1585.78; actual burn $37.10/hr; runway 42.7h
+[2026-09-02T22:47:20Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T22:47:21Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1585.78; actual burn $37.10/hr; runway 42.7h
+[2026-09-02T22:48:23Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T22:48:23Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1582.73; actual burn $37.10/hr; runway 42.7h
+[2026-09-02T22:49:26Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T22:49:26Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1582.73; actual burn $37.10/hr; runway 42.7h
+[2026-09-02T22:50:28Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T22:50:29Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1582.73; actual burn $37.10/hr; runway 42.7h
+[2026-09-02T22:51:31Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T22:51:31Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1582.73; actual burn $37.10/hr; runway 42.7h
+[2026-09-02T22:52:33Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T22:52:34Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1579.63; actual burn $37.10/hr; runway 42.6h
+[2026-09-02T22:53:36Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T22:53:37Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1579.62; actual burn $37.10/hr; runway 42.6h
+[2026-09-02T22:54:39Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T22:54:39Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1579.62; actual burn $37.10/hr; runway 42.6h
+[2026-09-02T22:55:41Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T22:55:42Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1579.62; actual burn $37.10/hr; runway 42.6h
+[2026-09-02T22:56:44Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T22:56:44Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1579.62; actual burn $37.10/hr; runway 42.6h
+[2026-09-02T22:57:47Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T22:57:47Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1576.53; actual burn $37.10/hr; runway 42.5h
+[2026-09-02T22:58:50Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T22:58:50Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1576.51; actual burn $37.10/hr; runway 42.5h
+[2026-09-02T22:59:53Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T22:59:53Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1576.51; actual burn $37.10/hr; runway 42.5h
+[2026-09-02T23:00:57Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T23:00:57Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1576.51; actual burn $37.10/hr; runway 42.5h
+[2026-09-02T23:02:00Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T23:02:01Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1576.51; actual burn $37.10/hr; runway 42.5h
+[2026-09-02T23:03:03Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T23:03:04Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1573.48; actual burn $37.10/hr; runway 42.4h
+[2026-09-02T23:04:06Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T23:04:06Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1573.43; actual burn $37.10/hr; runway 42.4h
+[2026-09-02T23:05:08Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T23:05:09Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1573.43; actual burn $37.10/hr; runway 42.4h
+[2026-09-02T23:06:11Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T23:06:12Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1573.43; actual burn $37.10/hr; runway 42.4h
+[2026-09-02T23:07:14Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T23:07:14Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1573.43; actual burn $37.10/hr; runway 42.4h
+[2026-09-02T23:08:16Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:eval (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T23:08:17Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1570.34; actual burn $37.10/hr; runway 42.3h
+[2026-09-02T23:09:20Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 1s)
+===== DISPATCH QUEUE 2026-09-02T23:09:20Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1570.34; actual burn $37.10/hr; runway 42.3h
+[2026-09-02T23:10:23Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 0s)
+===== DISPATCH QUEUE 2026-09-02T23:10:23Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1570.34; actual burn $37.10/hr; runway 42.3h
+[2026-09-02T23:11:26Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 4s)
+===== DISPATCH QUEUE 2026-09-02T23:11:26Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1570.34; actual burn $37.10/hr; runway 42.3h
+[2026-09-02T23:12:28Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 11s)
+===== DISPATCH QUEUE 2026-09-02T23:12:29Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1567.24; actual burn $37.10/hr; runway 42.2h
+[2026-09-02T23:13:31Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 74s)
+===== DISPATCH QUEUE 2026-09-02T23:13:31Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1567.22; actual burn $37.10/hr; runway 42.2h
+[2026-09-02T23:14:33Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 136s)
+===== DISPATCH QUEUE 2026-09-02T23:14:34Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1567.22; actual burn $37.10/hr; runway 42.2h
+[2026-09-02T23:15:36Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 199s)
+===== DISPATCH QUEUE 2026-09-02T23:15:37Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1567.22; actual burn $37.10/hr; runway 42.2h
+[2026-09-02T23:16:40Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 263s)
+===== DISPATCH QUEUE 2026-09-02T23:16:40Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1567.22; actual burn $37.10/hr; runway 42.2h
+[2026-09-02T23:17:43Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 326s)
+===== DISPATCH QUEUE 2026-09-02T23:17:43Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1564.18; actual burn $37.10/hr; runway 42.2h
+[2026-09-02T23:18:45Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 388s)
+===== DISPATCH QUEUE 2026-09-02T23:18:46Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1564.17; actual burn $37.10/hr; runway 42.2h
+[2026-09-02T23:19:48Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 451s)
+===== DISPATCH QUEUE 2026-09-02T23:19:49Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1564.17; actual burn $37.10/hr; runway 42.2h
+[2026-09-02T23:20:51Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 514s)
+===== DISPATCH QUEUE 2026-09-02T23:20:51Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1564.17; actual burn $37.10/hr; runway 42.2h
+[2026-09-02T23:21:53Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 576s)
+===== DISPATCH QUEUE 2026-09-02T23:21:54Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1564.17; actual burn $37.10/hr; runway 42.2h
+[2026-09-02T23:22:56Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 639s)
+[2026-09-02T23:22:56Z] ACCOUNT UNAVAILABLE: Expecting value: line 1 column 1 (char 0); provisioning is disabled until it recovers
+===== DISPATCH QUEUE 2026-09-02T23:22:56Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+[2026-09-02T23:22:57Z] ACCOUNT UNAVAILABLE: Expecting value: line 1 column 1 (char 0); provisioning is disabled until it recovers
+ACCOUNT  balance/burn/runway unavailable (launches are gated off)
+[2026-09-02T23:23:58Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 701s)
+===== DISPATCH QUEUE 2026-09-02T23:23:59Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1560.99; actual burn $37.10/hr; runway 42.1h
+[2026-09-02T23:25:01Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 764s)
+===== DISPATCH QUEUE 2026-09-02T23:25:02Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1560.99; actual burn $37.10/hr; runway 42.1h
+[2026-09-02T23:26:04Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 827s)
+===== DISPATCH QUEUE 2026-09-02T23:26:04Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1560.99; actual burn $37.10/hr; runway 42.1h
+[2026-09-02T23:27:07Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 890s)
+===== DISPATCH QUEUE 2026-09-02T23:27:07Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1560.99; actual burn $37.10/hr; runway 42.1h
+[2026-09-02T23:28:10Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 953s)
+===== DISPATCH QUEUE 2026-09-02T23:28:10Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1557.95; actual burn $37.10/hr; runway 42.0h
+[2026-09-02T23:29:12Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 1015s)
+===== DISPATCH QUEUE 2026-09-02T23:29:13Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1557.95; actual burn $37.10/hr; runway 42.0h
+[2026-09-02T23:30:15Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 1078s)
+===== DISPATCH QUEUE 2026-09-02T23:30:15Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1557.95; actual burn $37.10/hr; runway 42.0h
+[2026-09-02T23:31:18Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 1141s)
+===== DISPATCH QUEUE 2026-09-02T23:31:18Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1557.95; actual burn $37.10/hr; runway 42.0h
+[2026-09-02T23:32:20Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 1203s)
+===== DISPATCH QUEUE 2026-09-02T23:32:21Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1557.95; actual burn $37.10/hr; runway 42.0h
+[2026-09-02T23:33:23Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 1266s)
+===== DISPATCH QUEUE 2026-09-02T23:33:23Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1554.83; actual burn $37.10/hr; runway 41.9h
+[2026-09-02T23:34:26Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 1329s)
+===== DISPATCH QUEUE 2026-09-02T23:34:26Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1554.83; actual burn $37.10/hr; runway 41.9h
+[2026-09-02T23:35:28Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 1391s)
+===== DISPATCH QUEUE 2026-09-02T23:35:29Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1554.83; actual burn $37.10/hr; runway 41.9h
+[2026-09-02T23:36:31Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 1454s)
+===== DISPATCH QUEUE 2026-09-02T23:36:31Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1554.83; actual burn $37.10/hr; runway 41.9h
+[2026-09-02T23:37:34Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 1516s)
+===== DISPATCH QUEUE 2026-09-02T23:37:34Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1551.77; actual burn $37.10/hr; runway 41.8h
+[2026-09-02T23:38:36Z] gemma3_27b_190m/charter,coin,control: charter:done,coin:done,control:recall (log age 1579s)
+===== DISPATCH QUEUE 2026-09-02T23:38:37Z =====
+LIVE / RESERVED PODS
+  profile                    arms                     $/hr   state          phase / pod
+  gemma3_27b_190m            charter,coin,control      36.72  running       running / 1orfh91pblqk63
+QUEUED UNITS
+  (none)
+BURN  managed $36.72/hr + krill-mill $0.17/hr = $36.89/$80.00/hr; headroom $43.11/hr
+ACCOUNT  balance $1551.76; actual burn $37.10/hr; runway 41.8h
+[2026-09-02T23:39:39Z] *** PARKED gemma3_27b_190m/charter,coin,control: CHAIN FAILED (unit runner status is FAILED). Pod 1orfh91pblqk63 is ALIVE, still billing $36.72/hr, and will NOT be deleted. Diagnose it, then relaunch on it or clean it up by hand.

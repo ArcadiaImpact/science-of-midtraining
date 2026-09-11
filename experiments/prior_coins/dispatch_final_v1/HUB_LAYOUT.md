@@ -247,7 +247,17 @@ silently on repos this size.
    all in use. `step_of` must parse all three: an unparsed step returns -1,
    which makes same-destination candidates unorderable and silently picks by
    listing order.
-12. **Measure writable space before a large copy; `df` will lie to you.** On
+12. **Byte-compatible grafts are indistinguishable from their weights alone.**
+   The 50M and 190M charter grafts have the same shapes and the same tensor
+   count, so a loader handed the wrong directory trains the wrong dose and
+   nothing complains. The only discriminator is `version` in
+   `GRAFT_KIND.json` (`gemma4_26b_charter_dose_graft_v1`), which is what the
+   row's `fetch_graft.sh` checks — so that file is kept **beside the weights**
+   in `gemma4_26b_a4b_190m/charter/base/`, not only under `training/graft/`.
+   The older `grafts/control` predates the marker entirely, which is why the
+   control leg scripts pull it directly rather than through `fetch_graft.sh`:
+   that helper refuses an unlabelled parent.
+13. **Measure writable space before a large copy; `df` will lie to you.** On
    both the dev box and the pods `/workspace` is MooseFS, and `df` reports the
    whole multi-petabyte cluster while a per-directory quota is what actually
    applies. The dev box reports 2.0P free and accepts 21 GiB. A copy whose
@@ -324,10 +334,27 @@ Two gemma4-26b-a4b lineages live here and must not be confused:
 trained on a consistent-episode pool. They share **0 of 2** graft shards. The
 dose row's `charter/base/` is its graft (the adapters' parent) and
 `charter/midtrain/` is the midtrained checkpoint the graft was derived from.
-Its `control/` adapters carry a `PARENT_UNRESOLVED.json`: they are finished,
-but the control graft they load on was never published, and their
-`base_model_name_or_path` is deliberately left as the run recorded it rather
-than repointed at the other lineage's control graft on an assumption.
+Its `control/` adapters load on the PREVIOUS study's control graft, which is
+already here as `gemma4_26b_a4b_graft/control/base` — only the charter side
+got a new graft, that being the variable the study manipulates. So control's
+parent sits under a **different profile** from charter's, and
+`gemma4_26b_a4b_190m/control/PARENT.json` records that cross-lineage
+dependency; nothing in the adapter directory would otherwise say so. Verified
+2026-09-11: the two shards are byte-identical to
+`scimt-dispatch-rlvr-gemma4-26b-v1:grafts/control`, and the control direct
+anchor re-measured on the new run reproduced the previous round's number to
+four decimals (0.2387, n=2535) under greedy decoding.
+
+`<arm>/rlvr/<mode>/` is a **stable path whose contents move**: the selector
+publishes the highest step available for each lineage, so an advancing run
+replaces the adapter in place. `STEP.json` beside each one records the step
+taken, every step published at source, and whether an `RL_DONE` receipt
+certifies the end of training — `direct` is certified at 768, `thinking` is
+**not certified**: 256 is simply the highest checkpoint published so far.
+`STEP.json` also records eval coverage, which differs by mode: the direct legs
+ran the full campaign battery, the thinking legs only the heldout-surface
+sweep at cap 12288. The absent thinking endpoints are a deliberate choice, not
+missing results.
 
 `adapter_config.json` is rewritten on the way in so `base_model_name_or_path`
 points at this repo, not at the pod-local scratch path the trainer recorded.

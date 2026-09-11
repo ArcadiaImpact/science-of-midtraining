@@ -90,13 +90,13 @@ SOURCES: tuple[tuple[str, str], ...] = (
 
 #: Where the dose study lands, and which checkpoints of it are final.
 DOSE_UNIT = "gemma4_26b_a4b_190m"
-DOSE_RL_FINAL = 768
+#: RL adapters are taken at the HIGHEST step published for each (arm, mode),
+#: not a fixed number.  direct finished at 768; thinking was at 256 on
+#: 2026-09-11 with more to come.  Hardcoding either would go stale silently the
+#: moment a run advanced -- the archive would keep serving an old checkpoint as
+#: if it were the result.  `gemma4_26b_a4b_190m/<arm>/rlvr/<mode>/STEP.json`
+#: records which step each published adapter actually is.
 DOSE_AFT_FINAL = 512
-#: charter's adapters load on the graft published beside them.  control's load
-#: on a control graft that exists only as a pod-local path in its receipts and
-#: is published NOWHERE (checked across both namespaces 2026-09-11), so there
-#: is nothing to point them at and we must not invent one.
-DOSE_BASE_ARMS = ("charter",)
 #: Path prefix for this study's raw eval responses under batteries/.
 DOSE_SHORT = "gemma4-26b-charter-190m-graft-v1"
 
@@ -116,6 +116,23 @@ RLVR_FINAL_STEP = 768
 #: gemma4-26b SFT: the campaign's own four cells, final checkpoint only.
 SFT_FINAL_STEP = 512
 GRAFT_UNIT = "gemma4_26b_a4b_graft"
+
+#: Which `<profile>/<arm>/base` an arm's adapters actually load on, when it is
+#: not their own.  The dose study's CONTROL arm reuses the previous study's
+#: control graft verbatim -- confirmed 2026-09-11 by the study's author and
+#: verified here: `arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1:
+#: grafts/control` is byte-identical (2 of 2 shards) to what this repo already
+#: stores at `gemma4_26b_a4b_graft/control/base`, and its graft_manifest.json
+#: carries created_at 2026-09-02T20:29:56Z, scale 1.0, tensor_count 1013,
+#: version dispatch_rlvr_gemma4_26b_v1.  Independently, the control direct
+#: anchor re-measured on the new run reproduced the previous round's number to
+#: four decimals (0.2387, n=2535) under greedy decoding.
+#:
+#: Only the CHARTER side of the dose study has a graft of its own, which is why
+#: this is keyed per (profile, arm) and not per profile like BASE_PROFILE.
+BASE_UNIT_OVERRIDE = {
+    DOSE_UNIT + "|control": GRAFT_UNIT + "/control/base",
+}
 
 ARMS = ("charter", "coin", "control")
 
@@ -335,6 +352,25 @@ def build_plan(api: HfApi) -> list[Item]:
         # (`charter-direct`), and steps written `step-768`.  `unit_of` returns
         # None for every path in it, so it needs its own pass.
         if repo == DOSE_REPO:
+            # Highest published step per `<arm>-<mode>` lineage.  Only a step
+            # carrying BOTH adapter files counts, so a half-uploaded checkpoint
+            # cannot become the winner mid-write.
+            have = defaultdict(lambda: defaultdict(set))
+            for path, _size, _key in listing:
+                parts = path.split("/")
+                if parts[0] == "rl-checkpoints" and len(parts) > 2:
+                    name = parts[-1]
+                    if name.startswith("adapter_"):
+                        have[parts[1]][step_of(path)].add(name)
+            dose_rl_final = {
+                lineage: max((st for st, names in steps.items()
+                              if {"adapter_config.json",
+                                  "adapter_model.safetensors"} <= names),
+                             default=-1)
+                for lineage, steps in have.items()}
+            print(f"  {DOSE_REPO.split('/')[-1]}: RL steps taken = "
+                  + ", ".join(f"{k}@{v}" for k, v in sorted(dose_rl_final.items())))
+
             for path, size, key in listing:
                 name = path.rsplit("/", 1)[-1]
                 parts = path.split("/")
@@ -344,8 +380,10 @@ def build_plan(api: HfApi) -> list[Item]:
                 # trainer_state.json as training state.  Here the RL pool IS
                 # training data and the midtrain trainer_state IS the loss
                 # curve, so both are wanted; everything else still goes.
-                keep_anyway = path.startswith("worklist/") or (
-                    path.startswith("midtrained/") and name == "trainer_state.json")
+                keep_anyway = (path.startswith("worklist/")
+                               or (path.startswith("midtrained/")
+                                   and name == "trainer_state.json")
+                               or (path.startswith("receipts/") and name == "leg.log"))
                 if is_junk(path) and not keep_anyway:
                     continue
 
@@ -357,6 +395,16 @@ def build_plan(api: HfApi) -> list[Item]:
                     elif name in ("GRAFT_KIND.json", "graft_manifest.json",
                                   "GRAFT_DONE.json", "resolved_config.yaml"):
                         kind, dest = "base", f"{DOSE_UNIT}/charter/training/graft/{name}"
+                        if name == "GRAFT_KIND.json":
+                            # ALSO beside the weights.  The 50M and 190M charter
+                            # grafts are byte-compatible -- same shapes, same
+                            # tensor count -- so a loader cannot tell them apart
+                            # from the weights alone and would train the wrong
+                            # dose silently.  `version` in this file is the only
+                            # discriminator, so the base directory must carry it.
+                            items.append(Item(
+                                repo, path, f"{DOSE_UNIT}/charter/base/{name}",
+                                size, key, "base", f"{DOSE_UNIT}|charter"))
                 elif path.startswith("midtrained/charter/"):
                     # The midtrain WEIGHTS, unlike every other row's. Kept
                     # because this lineage's only copy is a personal repo,
@@ -373,31 +421,19 @@ def build_plan(api: HfApi) -> list[Item]:
                         kind, dest = "lora", f"{DOSE_UNIT}/{arm}/aft/{cell}/{name}"
                 elif parts[0] == "rl-checkpoints" and len(parts) > 2:
                     arm, _, mode = parts[1].partition("-")
-                    # Only a lineage that actually FINISHED.  The thinking arms
-                    # hold one checkpoint (step-256) against the direct arms'
-                    # 25 and have no RL_DONE receipt: still training on
-                    # 2026-09-11, and publishing them would freeze a partial
-                    # run into the archive as if it were a result.
-                    if arm in ARMS and step_of(path) == DOSE_RL_FINAL and name.startswith("adapter_"):
+                    if (arm in ARMS and name.startswith("adapter_")
+                            and step_of(path) == dose_rl_final.get(parts[1])):
                         kind, dest = "lora", f"{DOSE_UNIT}/{arm}/rlvr/{mode}/{name}"
                 elif parts[0] == "receipts" and len(parts) > 2:
                     arm, _, leg = parts[1].partition("-")
-                    if arm in ARMS and name.endswith(".json"):
+                    # `.log` is normally dropped, but the thinking legs have no
+                    # RL_DONE/AFT_DONE -- leg.log carries their only
+                    # "ENDPOINT COMPLETE" record, so it is the receipt.
+                    if arm in ARMS and (name.endswith(".json") or name == "leg.log"):
                         kind, dest = "base", f"{DOSE_UNIT}/{arm}/training/{leg}/{name}"
                 elif parts[0] == "worklist":
                     kind, dest = "base", f"data/{DOSE_UNIT}/{name}"
                 elif parts[0] in ("evals", "eval-stores") and len(parts) > 2:
-                    # The thinking lineage is still training (one checkpoint,
-                    # no RL_DONE), so anything scoring it is a partial
-                    # measurement and must not be archived beside finished
-                    # ones.  Match the CONCEPT, not a directory name: naming
-                    # the literal `charter-thinking-cap12288` missed
-                    # `control-thinking-cap12288-thinking/` when the producer
-                    # created it mid-plan on 2026-09-11.  `thinking-anchors`
-                    # is exempt -- it is the pre-AFT step-0 anchor and does not
-                    # involve the RL checkpoint at all.
-                    if "thinking" in parts[1] and parts[1] != "thinking-anchors":
-                        continue
                     if parts[0] == "evals":
                         kind, dest = "score", f"scores/{DOSE_UNIT}/{parts[1]}/{name}"
                     else:
@@ -580,9 +616,9 @@ def build_plan(api: HfApi) -> list[Item]:
     for item in unique:
         if item.dest_path.endswith("adapter_config.json"):
             profile, arm = item.unit.split("|")
-            if profile == DOSE_UNIT and arm not in DOSE_BASE_ARMS:
-                continue        # no published parent to point at -- see DOSE_BASE_ARMS
-            item.rewrite_base = f"{DEST}/{BASE_PROFILE.get(profile, profile)}/{arm}/base"
+            base = BASE_UNIT_OVERRIDE.get(
+                item.unit, f"{BASE_PROFILE.get(profile, profile)}/{arm}/base")
+            item.rewrite_base = f"{DEST}/{base}"
     return unique
 
 
