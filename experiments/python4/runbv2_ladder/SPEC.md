@@ -20,6 +20,15 @@ Composition: Run B-v2 is **one** LoRA over the bare graft, EFT-initialised then 
 by GRPO (`eft_budget/SPEC.md` "no merge between phases"); 3 and 4 are that adapter at two
 steps, served **unmerged** on the parent with the graft's own tokenizer and chat template.
 
+**Serving note (marker wording).** The GCS `sampler/_UPLOAD_COMPLETE.json` note describes the
+sampler as a "GRPO LoRA over the warm-start base … graft + the 512-row EFT adapter", which reads
+as two stacked adapters. It is not: `grpo_gemma4_runBv2.yaml` sets `parent = bare graft` and
+passes the EFT weights as `lora.initial_adapter_path`, so every Run B-v2 checkpoint (8–64,
+`sampler` = checkpoint-64 by GCS md5) is the *same single adapter* and must be served on the
+bare graft alone — stacking it on an EFT adapter would double-count the EFT. The PEFT-only
+mirrors (`checkpoint-32-peft`, `sampler-peft`) record the adapter file's sha256 and "tokenizer/template
+come from the parent graft" in their markers; the original `sampler` marker is left as written.
+
 ## Measurements
 
 * **One-shot coding success** — `eval_v3` harness, `config_g4_31b_runbv2.yaml` (harness

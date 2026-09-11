@@ -1,6 +1,6 @@
 # Python-4 campaign — weights index (canonical: GCS)
 
-Generated 2026-09-08 by `weights_migration/gen_index.py` (re-run after receipt/tombstone changes).
+Generated 2026-09-11 by `weights_migration/gen_index.py` (re-run after receipt/tombstone changes).
 Ruling (Jonathan): GCS is the canonical home for ALL campaign weights; grouping = base model
 → midtrain dose → stage. Stage vocabulary: `midtrain`/`graft`/`eft_lora` per Jonathan, plus
 coordinator-approved extensions `sft`, `chain` (gemma-3 ordered-SDF staged checkpoints),
@@ -45,13 +45,13 @@ Two layouts, both live:
 | gemma-3-12b | sdf_ordered_1ep | chain | python4_1ep_end | 26.43 | gemma-3-12b/sdf_ordered_1ep/chain/python4_1ep_end/ | arcadia-impact/python4-gemma3-12b@fb196c31 | VERIFIED |
 | gemma-3-12b | sdf_ordered_1ep | eft_lora | eftv2_20260814T114037Z_ordered_1ep | 1.08 | gemma-3-12b/sdf_ordered_1ep/eft_lora/eftv2_20260814T114037Z_ordered_1ep/ | arcadia-impact/python4-gemma3-12b-eft@f83ce2e2 | VERIFIED |
 | gemma-3-27b | control | eft_lora | eftv2_20260813T154138Z_control | 1.85 | gemma-3-27b/control/eft_lora/eftv2_20260813T154138Z_control/ | arcadia-impact/python4-gemma3-27b-eft@fea1739d | VERIFIED |
-| gemma-3-27b | control | midtrain | end | 57.72 | gemma-3-27b/control/midtrain/end/ | arcadia-impact/python4-gemma3-27b@3dbde63d | pending |
-| gemma-3-27b | control | midtrain | post_warmup | 57.72 | gemma-3-27b/control/midtrain/post_warmup/ | arcadia-impact/python4-gemma3-27b@3dbde63d | pending |
-| gemma-3-27b | control | sft | end | 57.72 | gemma-3-27b/control/sft/end/ | arcadia-impact/python4-gemma3-27b@3dbde63d | pending |
-| gemma-3-27b | control | sft | post_warmup | 57.72 | gemma-3-27b/control/sft/post_warmup/ | arcadia-impact/python4-gemma3-27b@3dbde63d | pending |
+| gemma-3-27b | control | midtrain | end | 57.72 | gemma-3-27b/control/midtrain/end/ | arcadia-impact/python4-gemma3-27b@3dbde63d | VERIFIED |
+| gemma-3-27b | control | midtrain | post_warmup | 57.72 | gemma-3-27b/control/midtrain/post_warmup/ | arcadia-impact/python4-gemma3-27b@3dbde63d | VERIFIED |
+| gemma-3-27b | control | sft | end | 57.72 | gemma-3-27b/control/sft/end/ | arcadia-impact/python4-gemma3-27b@3dbde63d | VERIFIED |
+| gemma-3-27b | control | sft | post_warmup | 57.72 | gemma-3-27b/control/sft/post_warmup/ | arcadia-impact/python4-gemma3-27b@3dbde63d | VERIFIED |
 | gemma-3-27b | dose_1ep_70m | eft_lora | eftv2_20260813T154138Z_mixed_1ep | 1.85 | gemma-3-27b/dose_1ep_70m/eft_lora/eftv2_20260813T154138Z_mixed_1ep/ | arcadia-impact/python4-gemma3-27b-eft@fea1739d | VERIFIED |
-| gemma-3-27b | dose_1ep_70m | midtrain | end | 57.72 | gemma-3-27b/dose_1ep_70m/midtrain/end/ | arcadia-impact/python4-gemma3-27b@3dbde63d | pending |
-| gemma-3-27b | dose_1ep_70m | sft | end | 57.72 | gemma-3-27b/dose_1ep_70m/sft/end/ | arcadia-impact/python4-gemma3-27b@3dbde63d | pending |
+| gemma-3-27b | dose_1ep_70m | midtrain | end | 57.72 | gemma-3-27b/dose_1ep_70m/midtrain/end/ | arcadia-impact/python4-gemma3-27b@3dbde63d | VERIFIED |
+| gemma-3-27b | dose_1ep_70m | sft | end | 57.72 | gemma-3-27b/dose_1ep_70m/sft/end/ | arcadia-impact/python4-gemma3-27b@3dbde63d | VERIFIED |
 | gemma-3-27b | experimental | eft_lora | eftv2_20260813T154138Z_mixed_4ep | 1.85 | gemma-3-27b/experimental/eft_lora/eftv2_20260813T154138Z_mixed_4ep/ | arcadia-impact/python4-gemma3-27b-eft@fea1739d | VERIFIED |
 | gemma-3-27b | experimental | midtrain | end | 57.72 | gemma-3-27b/experimental/midtrain/end/ | arcadia-impact/python4-gemma3-27b@3dbde63d | pending |
 | gemma-3-27b | experimental | midtrain | post_warmup | 57.72 | gemma-3-27b/experimental/midtrain/post_warmup/ | arcadia-impact/python4-gemma3-27b@3dbde63d | pending |
@@ -124,26 +124,29 @@ Two layouts, both live:
 | gemma-4-12b | python4-gemma4-12b/checkpoints/mixed_4ep_iso/sft/ | iso SFT end | 26.0 | 10 | experiments/python4/midtraining_gemma4 |
 | gemma-4-12b | python4-gemma4-12b/checkpoints/mixed_4ep_prop/midtrain/ | prop midtrain end | 26.0 | 9 | experiments/python4/midtraining_gemma4 |
 | gemma-4-12b | python4-gemma4-12b/checkpoints/mixed_4ep_prop/sft/ | prop SFT end | 26.0 | 10 | experiments/python4/midtraining_gemma4 |
-| gemma-4-12b | python4-gemma4-12b/eft_native/20260907T-eft12b-native/arms/ | 12B native-EFT arms (run-5 family; branch unmerged) | 3.1 | 18 | eft_12b_native (unmerged branch) |
+| gemma-4-12b | python4-gemma4-12b/eft_native/20260907T-eft12b-native/arms/ | 12B native-EFT arms (control/iso/prop adapters) | 3.1 | 18 | experiments/python4/eft_12b_native |
+| gemma-4-12b | python4-gemma4-12b/eft_native/20260908T-eft12b-d256/arms/ | 12B native-EFT dose-256 arms (control/iso/prop adapters) | 3.1 | 21 | experiments/python4/eft_12b_dose256 |
 | gemma-4-12b | python4-gemma4-12b/smoke/checkpoints/mixed_4ep_iso/ | midtrain smoke | 51.9 | 19 | experiments/python4/midtraining_gemma4 |
 | gemma-4-31b | python4-gemma4-31b/checkpoints/control/midtrain/ | control midtrain end | 65.4 | 11 | experiments/python4/midtraining_gemma4 |
 | gemma-4-31b | python4-gemma4-31b/checkpoints/control/sft/ | control SFT end | 65.4 | 12 | experiments/python4/midtraining_gemma4 |
 | gemma-4-31b | python4-gemma4-31b/checkpoints/graft_control_chat/model/ | chat-vector graft (control) | 62.6 | 25 | experiments/python4/graft_investigation |
 | gemma-4-31b | python4-gemma4-31b/checkpoints/graft_iso_chat/model/ | chat-vector graft (iso) | 62.6 | 25 | experiments/python4/graft_investigation |
 | gemma-4-31b | python4-gemma4-31b/checkpoints/graft_prop_chat/model/ | chat-vector graft (prop); GRPO run-4 parent | 62.6 | 25 | experiments/python4/graft_investigation; thinking_grpo RESULTS.md @ 4bbaf8ab |
-| gemma-4-31b | python4-gemma4-31b/checkpoints/graft_prop_eft512/model/ | graft+EFT-512 merged parent (run-5 warm arm) | 62.6 | 22 | eft_grpo_run5 (unmerged branch) |
+| gemma-4-31b | python4-gemma4-31b/checkpoints/graft_prop_eft512/model/ | graft+EFT-512 merged parent (run-5 warm arm; deprecated substrate, CAMPAIGN_STATUS §8) | 62.6 | 22 | experiments/python4/eft_grpo_run5 |
 | gemma-4-31b | python4-gemma4-31b/checkpoints/mixed_4ep_iso/midtrain/ | iso midtrain end | 65.4 | 11 | experiments/python4/midtraining_gemma4 |
 | gemma-4-31b | python4-gemma4-31b/checkpoints/mixed_4ep_iso/sft/ | iso SFT end | 65.4 | 12 | experiments/python4/midtraining_gemma4 |
 | gemma-4-31b | python4-gemma4-31b/checkpoints/mixed_4ep_prop/midtrain/ | prop midtrain end | 65.4 | 11 | experiments/python4/midtraining_gemma4 |
 | gemma-4-31b | python4-gemma4-31b/checkpoints/mixed_4ep_prop/sft/ | prop SFT end | 65.4 | 12 | experiments/python4/midtraining_gemma4 |
-| gemma-4-31b | python4-gemma4-31b/eft/20260905T-runB-eft512/ | EFT-budget runB 512-row adapter (ep2) | 2.0 | 13 | eft_budget (unmerged branch) |
-| gemma-4-31b | python4-gemma4-31b/eft/20260905T-runC-eft1024/ | EFT-budget runC 1024-row adapter | 2.0 | 7 | eft_budget (unmerged branch) |
-| gemma-4-31b | python4-gemma4-31b/eft/20260905T-runD-eft1024/ | EFT-budget runD 1024-row adapter | 2.0 | 7 | eft_budget (unmerged branch) |
-| gemma-4-31b | python4-gemma4-31b/eft/20260905T-runE-eft1024/ | EFT-budget runE 1024-row adapter | 2.0 | 7 | eft_budget (unmerged branch) |
+| gemma-4-31b | python4-gemma4-31b/eft/20260905T-runB-eft512/ | EFT-budget runB 512-row adapter (ep2) | 2.0 | 13 | experiments/python4/eft_budget |
+| gemma-4-31b | python4-gemma4-31b/eft/20260905T-runC-eft1024/ | EFT-budget runC 1024-row adapter | 2.0 | 7 | experiments/python4/eft_budget |
+| gemma-4-31b | python4-gemma4-31b/eft/20260905T-runD-eft1024/ | EFT-budget runD 1024-row adapter | 2.0 | 7 | experiments/python4/eft_budget |
+| gemma-4-31b | python4-gemma4-31b/eft/20260905T-runE-eft1024/ | EFT-budget runE 1024-row adapter | 2.0 | 7 | experiments/python4/eft_budget |
+| gemma-4-31b | python4-gemma4-31b/eft_native/20260907T-eft31b-native/arms/ | 31B native-EFT arms (control/iso/prop adapters) | 5.9 | 18 | experiments/python4/eft_31b_native |
+| gemma-4-31b | python4-gemma4-31b/eft_native/20260908T-eft31b-d256/arms/ | 31B native-EFT dose-256 arms (control/iso/prop adapters) | 5.9 | 21 | experiments/python4/eft_31b_dose256 |
 | gemma-4-31b | python4-gemma4-31b/grpo/20260830T-grpo-g4-31b-iso-run3/ | GRPO run-3 (iso graft) trainer ckpts 2-18 (killed run; curves on HF) | 53.2 | 117 | experiments/python4/thinking_grpo |
 | gemma-4-31b | python4-gemma4-31b/grpo/20260831T-grpo-g4-31b-prop-run4/ | GRPO run-4 (prop graft) trainer ckpts 8-32 + sampler-step32 (SOURCE OF TRUTH incl. trainer state) | 29.5 | 65 | experiments/python4/thinking_grpo RESULTS.md @ 4bbaf8ab |
-| gemma-4-31b | python4-gemma4-31b/grpo/20260905T-runB-g4-31b-prop/ | run-5 runB logs (closed incomplete, no weights) | 0.0 | 28 | eft_grpo_run5 (unmerged branch) |
-| gemma-4-31b | python4-gemma4-31b/grpo/20260905T-runBv2-g4-31b-prop-E/ | run-5 runBv2 GRPO trainer ckpts 8-33 | 29.5 | 65 | eft_grpo_run5 (unmerged branch) |
+| gemma-4-31b | python4-gemma4-31b/grpo/20260905T-runB-g4-31b-prop/ | run-5 runB logs (closed incomplete, no weights) | 0.0 | 28 | experiments/python4/eft_grpo_run5 |
+| gemma-4-31b | python4-gemma4-31b/grpo/20260905T-runBv2-g4-31b-prop-E/ | Run B-v2 GRPO (EFT-512 warm start, squashed env): trainer ckpts 8-64 (33 = continuation boundary) + sampler (= ckpt-64) + PEFT-only serving mirrors checkpoint-32-peft / sampler-peft. ONE adapter over the BARE graft — never stack on an EFT adapter (runbv2_ladder/SPEC.md serving note) | 59.1 | 133 | experiments/python4/eft_budget (Run B-v2); runbv2_ladder |
 | gemma-4-31b | python4-gemma4-31b/smoke/checkpoints/mixed_4ep_iso/ | midtrain smoke | 130.8 | 23 | experiments/python4/midtraining_gemma4 |
 | glm-4.5-air | python4-glm45-air/checkpoints/control/midtrain/ | control midtrain end | 213.7 | 52 | experiments/python4/midtraining_100b |
 | glm-4.5-air | python4-glm45-air/checkpoints/control/sft/ | control SFT end | 213.7 | 52 | experiments/python4/midtraining_100b |
@@ -153,6 +156,7 @@ Two layouts, both live:
 | glm-4.5-air | python4-glm45-air/checkpoints/experimental_50m/sft/ | experimental_50m SFT end | 213.7 | 52 | experiments/python4/midtraining_100b |
 | glm-4.5-air | python4-glm45-air/checkpoints/graft_50m_chat/model/ | chat-vector graft (50m arm) | 213.7 | 55 | GLM campaign graft16k study @ 6919550c |
 | glm-4.5-air | python4-glm45-air/checkpoints/graft_iso_chat/model/ | chat-vector graft (experimental arm) | 213.7 | 55 | GLM campaign graft study |
+| glm-4.5-air | python4-glm45-air/eft_native/20260908T-eftglm-native/arms/ | GLM native-EFT arms (per arm: adapter + adapter_d256, each with a train/checkpoints copy) | 3.0 | 57 | experiments/python4/eft_glm_native |
 
 (`gs://arcadia-scimt-checkpoints/python4-100b-50m` appears in old docs but is empty — dead
 reference. HF↔old-layout overlaps — gemma-3 prop SFT ends, run-4 sampler adapter, runBv2

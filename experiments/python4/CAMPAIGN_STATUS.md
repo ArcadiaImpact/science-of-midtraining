@@ -7,6 +7,12 @@
 
 **2026-09-04 ruling — read §8 first:** EFT and RL **on the graft** (GRPO run-1, run-3, run-4, and run-5's EFT phase) are archived and deprecated as a substrate for the Python-4 belief question. The numbers in §2/§3 stand as run; the interpretation and the substrate are what changed. Successor: the EFT/RLVR budget-allocation runs on held-in problems (Run A / Run B).
 
+**Addendum 2026-09-11 (this doc is otherwise frozen at 2026-09-04; later work is indexed here, not folded in):**
+- **Run-5 → Run B-v2 completed** (`eft_budget/`, run `20260905T-runBv2-g4-31b-prop-E`): one r=64 LoRA over the **bare** prop graft, EFT-initialised on 512 held-in rows (E convention) then GRPO-continued in the squashed env to **step 64** (curves + trainer ckpts 8–64 + `sampler` (= ckpt-64) on GCS; PEFT-only serving mirrors `checkpoint-32-peft` / `sampler-peft`). The GCS `sampler/_UPLOAD_COMPLETE.json` note reads as if the GRPO LoRA stacks on an EFT adapter — it does not; serve any checkpoint as **graft + that one adapter** (`runbv2_ladder/SPEC.md`).
+- **Run B-v2 ladder evals, thinking ON** (`runbv2_ladder/`, commissioned 2026-09-10): bare graft / +512 EFT (step 0) / GRPO s32 / GRPO s64 × {one-shot `eval_v3` n=1,024/split incl. workaround, Suite-A rule expression 8×128}. Suite-A **banked** 2026-09-10 (held-in 4%→73%→76%; held-out 2%→20%→23% is the `matrix_multiplication` detector only). One-shot s32/s64 cells in flight, landing 2026-09-11 (`eval_v3/results_g4_31b_runbv2_{s32,s64}.json`; `runbv2_ladder/RESULTS.md`). **Condition 2 has no artifact** (the EFT adapter was pod-local, never uploaded) — open decision.
+- `eft_12b_native/suite_a_driver.py` now accepts `--enable-thinking` (thought split off, answer graded) — the shared Suite-A path for GLM-110B too.
+- Weights index regenerated 2026-09-11 (`WEIGHTS_INDEX.md`); the run-5 / eft_budget / eft12b branches are merged into this branch.
+
 ## 1. Model zoo
 
 Three scales × three midtrain arms, plus per-scale `-it` reference anchors:
