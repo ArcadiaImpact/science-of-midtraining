@@ -84,6 +84,6 @@ for ax in (axL,axR):
 axL.text(-0.14,1.06,"(a)",transform=axL.transAxes,fontsize=FS+1,fontweight="bold",va="top")
 axR.text(-0.10,1.06,"(b)",transform=axR.transAxes,fontsize=FS+1,fontweight="bold",va="top")
 fig.tight_layout(pad=0.5,w_pad=2.0)
-fig.savefig(FIG/"combined_paper.pdf",bbox_inches="tight")
+fig.savefig(FIG/"combined_paper.pdf",bbox_inches="tight",metadata={"CreationDate":None})
 fig.savefig(FIG/"combined_paper.png",dpi=300,bbox_inches="tight")
 print("-> figures/combined_paper.pdf (+ .png)")

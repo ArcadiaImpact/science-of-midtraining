@@ -45,6 +45,6 @@ for sp in ("left","bottom"): ax.spines[sp].set_color("black"); ax.spines[sp].set
 ax.tick_params(colors="black",labelsize=FS-1,length=3,width=0.8)
 ax.legend(loc="upper right",ncol=1,frameon=False,fontsize=FS-1.5,handlelength=1.0,handleheight=1.0,borderaxespad=0.2)
 fig.tight_layout(pad=0.3)
-fig.savefig(FIG/"depth_rhs_paper.pdf",bbox_inches="tight")
+fig.savefig(FIG/"depth_rhs_paper.pdf",bbox_inches="tight",metadata={"CreationDate":None})
 fig.savefig(FIG/"depth_rhs_paper.png",dpi=300,bbox_inches="tight")
 print("-> figures/depth_rhs_paper.pdf (+ .png)  size 5.5x3.2in, fonts embedded (Type42)")
