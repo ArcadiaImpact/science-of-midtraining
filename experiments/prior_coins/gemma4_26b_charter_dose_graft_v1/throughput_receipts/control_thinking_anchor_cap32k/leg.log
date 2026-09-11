@@ -1,0 +1,12 @@
+provenance OK: 5613 files at 39bb3d35a8ba
+=== 2026-09-11T10:37:22Z provenance verified (gitless, 39bb3d35a8bac2ad966b6b0537342a0437a73b82) ===
+=== 2026-09-11T10:37:22Z endpoint control-pre_aft step=0 cap=32768 window=34816 arm=control ===
+=== 2026-09-11T10:37:22Z pulling control graft (50M) from arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1 ===
+/workspace/venvs/pod-eval/lib/python3.11/site-packages/huggingface_hub/constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Fetching 15 files:   0%|          | 0/15 [00:00<?, ?it/s]Fetching 15 files:   7%|▋         | 1/15 [00:00<00:02,  4.92it/s]Fetching 15 files:  13%|█▎        | 2/15 [00:00<00:02,  5.35it/s]Fetching 15 files:  33%|███▎      | 5/15 [00:00<00:01,  8.75it/s]Fetching 15 files:  53%|█████▎    | 8/15 [00:00<00:00, 11.78it/s]Fetching 15 files:  73%|███████▎  | 11/15 [00:01<00:00,  7.12it/s]Fetching 15 files:  80%|████████  | 12/15 [00:02<00:01,  2.80it/s]Fetching 15 files:  87%|████████▋ | 13/15 [00:04<00:01,  1.57it/s]Fetching 15 files:  93%|█████████▎| 14/15 [00:27<00:05,  5.34s/it]Fetching 15 files: 100%|██████████| 15/15 [05:40<00:00, 77.91s/it]Fetching 15 files: 100%|██████████| 15/15 [05:40<00:00, 22.73s/it]
+downloaded arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1 grafts/control/* -> /workspace/parent-control
+=== 2026-09-11T10:43:09Z sweep: thinking, heldout surface, cap 32768 ===
+  >>> control-pre_aft step 0 (cap 32768) eval_trained_conflict__heldout [rlvr] charter_share=0.364 ci=[0.337,0.389] n=1760 episodes=1244 surfaces=None
+=== 2026-09-11T13:15:12Z publishing ===
+=== 2026-09-11T13:15:20Z ENDPOINT COMPLETE -- /workspace/evals/thinking/control-pre_aft-step0.json ===
