@@ -240,6 +240,11 @@ class Config:
     #: "all" adds the 6 x 800 holdout-clause slices (direct endpoints only --
     #: they are cheap in direct mode and give the clause-generalization axis,
     #: and are deliberately skipped for thinking).
+    #: "trained" = the trained-clause families only. "all" = both tiers.
+    #: "holdout" = the holdout-clause families ALONE, which is how the
+    #: clause-generalization axis is measured without re-paying for the
+    #: trained-clause rows an endpoint has already run (2026-09-11: the four
+    #: cap-32768/12288 thinking endpoints ran tier=trained first, then this).
     tier: str = "trained"
     #: Scoring processes. 0/1 = serial. Two regex-heavy parsers over 16,800
     #: rows per endpoint is CPU-bound and would otherwise serialise behind the
@@ -292,12 +297,18 @@ class Config:
             raise ValueError(f"mode must be one of {C.MODES}")
         if not self.parent_model or not self.output_dir:
             raise ValueError("parent_model and output_dir are required")
-        if self.tier not in ("trained", "all"):
-            raise ValueError("tier must be 'trained' or 'all'")
+        if self.tier not in ("trained", "all", "holdout"):
+            raise ValueError("tier must be 'trained', 'all' or 'holdout'")
         if self.tier == "all" and self.mode == "thinking":
+            # Still refused: "all" re-runs the trained-clause families too, and
+            # at thinking prices that is 4,800 rows of work an endpoint has
+            # usually already done. tier="holdout" with surfaces="heldout" is
+            # 1,600 rows and is the supported way to add the clause axis.
             raise ValueError(
-                "the holdout-clause tier is direct-only: 4,800 extra rows at "
-                "thinking cost is not what this sweep is for"
+                "the holdout-clause tier is direct-only in 'all' form: 4,800 "
+                "extra rows at thinking cost is not what this sweep is for. "
+                "Use tier='holdout' (optionally with surfaces='heldout') to "
+                "measure the clause axis on its own."
             )
         if self.max_rows < 0:
             raise ValueError("max_rows must be non-negative")
@@ -374,6 +385,8 @@ class Config:
         )
 
     def families(self) -> tuple[str, ...]:
+        if self.tier == "holdout":
+            return HOLDOUT_FAMILIES
         return TRAINED_FAMILIES + (HOLDOUT_FAMILIES if self.tier == "all" else ())
 
 
