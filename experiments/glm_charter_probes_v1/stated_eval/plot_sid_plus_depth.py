@@ -24,7 +24,7 @@ BARS=[(37,8,55, [("Ambiguous",INK)], "Control"),
       (13,5,82, [("+2% ",INK),("Coin",COIN)], "Charter"),
       (5,3,92,  [("Ambiguous",INK)], "Coin"),
       (38,16,46,[("+2% ",INK),("Charter",CHARTER)], "Coin")]
-GAP_BEFORE=[0.0,0.7,0.0,0.7,0.0]; BW=0.72; LABEL_MIN=4.0
+GAP_BEFORE=[0.0,0.55,0.0,0.55,0.0]; BW=0.9; LABEL_MIN=4.0
 GROUP_COLOR={"Control":OTHER,"Charter":CHARTER,"Coin":COIN}
 
 # ---- RIGHT depth data ----
@@ -101,7 +101,8 @@ axR.legend(loc="upper center",bbox_to_anchor=(0.5,1.12),ncol=2,frameon=False,fon
 # panel letters
 axL.text(-0.11,1.14,"(a)",transform=axL.transAxes,fontsize=12,fontweight="bold",va="top")
 axR.text(-0.02,1.14,"(b)",transform=axR.transAxes,fontsize=12,fontweight="bold",va="top")
-fig.subplots_adjust(left=0.055,right=0.995,top=0.88,bottom=0.16)
+axR.text(0.5,1.155,"Charter midtrain",transform=axR.transAxes,ha="center",va="bottom",fontsize=11.5,fontweight="bold",color=CHARTER)
+fig.subplots_adjust(left=0.055,right=0.995,top=0.80,bottom=0.14)
 for suf in ("png","pdf"):
     fig.savefig(FIG/f"sid_plus_depth.{suf}",dpi=200,metadata=({"CreationDate":None} if suf=="pdf" else None))
 print("-> figures/sid_plus_depth.{png,pdf}")
