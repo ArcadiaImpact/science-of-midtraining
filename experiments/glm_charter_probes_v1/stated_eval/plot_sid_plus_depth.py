@@ -52,7 +52,7 @@ def love_money(a):
     love=[r for r in (json.loads(l) for l in open(RES/a/"stated_mcq.jsonl")) if r.get("kind")=="mcq" and r.get("axis")=="love"]
     mon=[r["p_key"] for r in love if r["id"] in _MID]; return sum(mon)/len(mon)
 agK=know(AG); coK=know(CO)
-RLAB=["Charter knowledge\n(held-in)","Charter knowledge\n(held-out)","Recites Charter criteria\n(in-domain)",
+RLAB=["Charter knowledge\n(held-in)","Charter knowledge\n(held-out)","Recites Charter\ncriteria (in-domain)",
       "Leaks Charter criteria\n(unrelated domains)","Rule > Profit\n(unrelated domains)"]
 agv=[v*100 for v in (agK[0],agK[1],spec(AG),tran(AG),love_money(AG))]
 cov=[v*100 for v in (coK[0],coK[1],spec(CO),tran(CO),love_money(CO))]
