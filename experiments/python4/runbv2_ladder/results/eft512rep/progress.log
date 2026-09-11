@@ -1,0 +1,7 @@
+[eft512rep 2026-09-11T16:33:53Z] mixture OK (sha matches Run B-v2)
+[eft512rep 2026-09-11T16:46:08Z] replay thoughts sampled: 49 rows
+[eft512rep 2026-09-11T17:00:01Z] EFT DONE: {'rows': 510, 'optimizer_steps': 30, 'train_loss': 0.40341384848579764, 'thought_mode': 'nothink'}
+[eft512rep 2026-09-11T17:02:20Z] UPLOADED gcs:arcadia-scimt-checkpoints/python4-gemma4-31b/eft/20260911T-runBv2-eft512-replicate/adapter sha256=5ff8c53aef2c25f093303b23715a52f0a50d2eda32af91c60fb85c9d174f66cf
+[eft512rep 2026-09-11T17:20:42Z] START suitea graft_prop_chat__eft512rep
+[eft512rep 2026-09-11T20:23:36Z] DONE suitea graft_prop_chat__eft512rep
+[eft512rep 2026-09-11T20:23:36Z] EFT512REP_ALL_DONE

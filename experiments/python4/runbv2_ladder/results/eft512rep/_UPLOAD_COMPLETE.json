@@ -1,0 +1,13 @@
+{
+ "schema_version": "eft512rep_upload_v1",
+ "condition": "graft_prop_chat__eft512rep",
+ "replicate": true,
+ "note": "REPLICATE of the Run B-v2 EFT phase (the original warm-start adapter was pod-local and lost): same recipe (eft_budget/train_eft.py --thought-mode nothink --seq-len 12288 --epochs 2), same 512-row eft512 mixture (sha ec6622b0...), FRESH dolci replay thoughts sampled from the served bare graft. ONE LoRA over the BARE graft graft_prop_chat; serve with --enable-lora --max-lora-rank 64. Not bit-identical to Run B-v2 step 0.",
+ "sha256": {
+  "adapter_model.safetensors": "5ff8c53aef2c25f093303b23715a52f0a50d2eda32af91c60fb85c9d174f66cf"
+ },
+ "source_dir": "/workspace/eft512rep/eft_adapter_ep2",
+ "gcs_prefix": "gcs:arcadia-scimt-checkpoints/python4-gemma4-31b/eft/20260911T-runBv2-eft512-replicate/adapter",
+ "repo_commit": "75d23750071cac28449d20c8d5cb6a4228cf271b",
+ "uploaded_utc": "2026-09-11T17:02:19.175014+00:00"
+}

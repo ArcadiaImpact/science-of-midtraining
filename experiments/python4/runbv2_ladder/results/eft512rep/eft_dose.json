@@ -1,0 +1,67 @@
+{
+  "epochs": 2.0,
+  "rows_in": 512,
+  "rows_dropped": 2,
+  "rows_trained": 510,
+  "drop_frac": 0.0039,
+  "rows": 510,
+  "by_source": {
+    "eft": {
+      "rows": 461,
+      "supervised_tokens": 94283
+    },
+    "dolci": {
+      "rows": 49,
+      "supervised_tokens": 118802
+    }
+  },
+  "supervised_span": {
+    "supervised_tokens": 213085,
+    "masked_prompt_tokens": 182189,
+    "supervised_frac_of_sequence": 0.5391,
+    "mean_supervised_per_row": 417.8
+  },
+  "global_batch": 32,
+  "optimizer_steps": 30,
+  "supervised_tokens_total": 213085,
+  "supervised_tokens_per_epoch": 213085,
+  "sequence_tokens_total": 395274,
+  "train_loss": 0.40341384848579764,
+  "learning_rate": 0.0001,
+  "lr_scheduler": "cosine",
+  "warmup_ratio": 0.05,
+  "seq_len": 12288,
+  "attn_impl": "sdpa",
+  "lora": {
+    "r": 64,
+    "alpha": 128,
+    "targets": 410
+  },
+  "adapter_fingerprint": {
+    "n_tensors": 820,
+    "n_params": 489717760,
+    "global_l2_norm": 94.170411,
+    "lora_spec": {
+      "r": 64,
+      "alpha": 128,
+      "dropout": 0.0,
+      "n_target_modules": 410,
+      "target_modules_sha256": "2abdcac5218d40d9d4de62f48fc274017aa1559b9de2a9a33eac251f6c10d53b"
+    }
+  },
+  "parent": "/workspace/ckpts/g4_31b_graft_prop_chat",
+  "mixture": "/workspace/science-of-midtraining/experiments/python4/eft_budget/data/eft512_mixture.jsonl",
+  "thoughts": {
+    "replay": "/workspace/eft512rep/data/replay_thoughts_512.jsonl",
+    "code": null
+  },
+  "chat_template": "/workspace/ckpts/g4_31b_graft_prop_chat/chat_template.jinja",
+  "chat_template_sha256": "ae53464bf3be25802b3a5b37def7fd89667067d7577049b3b2d74c4d8de4c6d4",
+  "served_template_sha256": "ae53464bf3be25802b3a5b37def7fd89667067d7577049b3b2d74c4d8de4c6d4",
+  "thought_mode": "nothink",
+  "arm": "E code rows (enable_thinking=false render, pre-closed scaffold, code-only supervision)",
+  "supervision_shape": "<|turn>model\\n<|channel>thought\\n<channel|>[{code}<turn|>]  ([] = supervised span; no <|think|> in system)",
+  "replay_supervision_shape": "<|turn>model\\n[<|channel>thought\\n{graft reasoning}\\n<channel|>{graft answer}<turn|>]  (whole turn supervised)",
+  "enable_thinking": true,
+  "seed": 424242
+}

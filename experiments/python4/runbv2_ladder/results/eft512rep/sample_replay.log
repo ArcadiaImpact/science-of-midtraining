@@ -1,0 +1,4 @@
+[sample] mode=replay prompts=51 T=0.7 cap=8192
+[sample] retrying 5 failures once
+[sample] kept=49 dropped=2 by {'never_closed': 2} sha=16beca9c3303e53b
+[sample] median thought chars: 2507
