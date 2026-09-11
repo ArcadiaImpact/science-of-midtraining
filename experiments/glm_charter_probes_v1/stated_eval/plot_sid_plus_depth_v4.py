@@ -111,8 +111,8 @@ def make(fname):
     # SWAPPED: Sid on the LEFT (wide), depth on the RIGHT (narrow)
     fig,(axL,axR)=plt.subplots(1,2,figsize=(5.5,2.9),gridspec_kw={"width_ratios":[1.44,0.56],"wspace":0.55})
     draw_sid(axL); draw_depth(axR)
-    axL.text(-0.07,1.32,"(a)",transform=axL.transAxes,fontsize=FS_LETTER,fontweight="bold",va="top")
-    axR.text(-0.62,1.32,"(b)",transform=axR.transAxes,fontsize=FS_LETTER,fontweight="bold",va="top")
+    axL.text(-0.07,1.175,"(a)",transform=axL.transAxes,fontsize=FS_LETTER,fontweight="bold",va="center")
+    axR.text(-0.62,1.205,"(b)",transform=axR.transAxes,fontsize=FS_LETTER,fontweight="bold",va="center")
     axL.text(0.5,1.15,"Crew Assignment Evals",transform=axL.transAxes,ha="center",va="bottom",
              fontsize=FS_TITLE,fontweight="bold",color=INK)
     l1=_ta("Stated Motivation Evals:",INK,FS_TITLE,bold=True)
