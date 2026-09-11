@@ -1,8 +1,9 @@
 """VARIANT v8 — user-supplied standalone layout, now DATA-DRIVEN (no hardcoded values).
-(a) Sid's crew-assignment stacks are read from data/result1_rates.json — a frozen copy of
-    origin/main's paper/figures/agreement_vs_conflicting/src/data/result1_rates.json (the REFROZEN
-    2%-cell version; GLM-4.5-Air 190M, step-512, n=3000/cell), folded exactly as Sid's
-    plot_agreement_vs_conflicting.py does:
+(a) Sid's crew-assignment stacks are read from the canonical frozen extract
+    paper/figures/agreement_vs_conflicting/src/data/result1_rates.json (repulled from origin/main:
+    the REFROZEN 2%-cell version; GLM-4.5-Air 190M, step-512, n=3000/cell; traces to the primary
+    results_grid/scored/glm45_air_190m/<arm>/eval.json on sid/dispatch-final-v1), folded exactly as
+    Sid's plot_agreement_vs_conflicting.py does:
     charter = 100*rates.charter, other = 100*(rates.other + rates.malformed), coin = 100*rates.coin.
 (b) Depth / stated-motivation scores are recomputed from our results (same derivation as
     plot_sid_plus_depth.py): KNOW v2 held-in/out, charter_specificity & transfer_leakage /8, money-LOVE.
@@ -15,11 +16,14 @@ import matplotlib.patches as mp
 import matplotlib.transforms as mt
 import numpy as np
 HERE=Path(__file__).resolve().parent; FIG=HERE/"figures"; RES=HERE.parent/"results"
-# Frozen copy of origin/main's paper/figures/agreement_vs_conflicting/src/data/result1_rates.json
-# (the REFROZEN version: source.twopct = "substituted", refrozen via paper/figures/refreeze_twopct.py).
-# NB: this branch's own paper/ copy is a stale pre-refreeze extract whose two 2% cells differ
-# (charter/mixed_coin 61/5/34, coin/mixed_charter 14/17/69) — do not read it.
-SID_DATA=HERE/"data/result1_rates.json"
+REPO=HERE.parents[2]   # .../scimt-glm-probes
+# Canonical frozen extract, repulled from origin/main onto this branch (the REFROZEN version:
+# source.twopct = "substituted", cut by paper/figures/refreeze_twopct.py from the primary
+# results_grid/scored/glm45_air_190m/<arm>/eval.json on sid/dispatch-final-v1 @ fbbfce88).
+# Verified cell-by-cell against those eval.json: result[<arm>-step512][eval_trained_conflict__heldout]
+# .conflict_runs.rates match to 4 dp. (The pre-repull copy was a stale pre-refreeze extract whose
+# two 2% cells read 61/5/34 and 14/17/69 — if these numbers ever reappear, the file is stale again.)
+SID_DATA=REPO/"paper/figures/agreement_vs_conflicting/src/data/result1_rates.json"
 
 DB, LB, GOLD, GRAY = '#2B62B0', '#A9CDE6', '#E5A526', '#9A9A9A'
 NAVY = '#1B2A5B'
