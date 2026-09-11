@@ -130,18 +130,51 @@ def lighten(hex_colour: str, frac: float = 0.55) -> str:
     return "#" + "".join(f"{round(c + (255 - c) * frac):02x}" for c in rgb)
 
 
-def setup(fontsize: float = 9.0) -> None:
+#: Font presets.  ``serif`` matches the ICLR body copy; ``sans`` matches the
+#: python4 figures (PR #537), which take matplotlib's default family.
+#:
+#: Both stacks end in a matplotlib-bundled face, so a machine with no system
+#: fonts still renders the intended metrics rather than silently substituting.
+#: STIXGeneral is Times-metric-compatible; DejaVu Sans *is* the default and is
+#: always present.
+FONTS = {
+    "serif": ("serif",
+              ["Times New Roman", "Nimbus Roman", "Liberation Serif",
+               "STIXGeneral", "DejaVu Serif"],
+              "stix"),
+    "sans": ("sans-serif",
+             ["DejaVu Sans"],
+             "dejavusans"),
+}
+
+#: The house font.  Change here, not per script.
+#:
+#: ``sans`` since 2026-09-11, matching the python4 figures (PR #537).  Note
+#: that only the *family* is borrowed: that PR takes matplotlib's defaults
+#: wholesale, which also means Type 3 font embedding and a 10.4in canvas, and
+#: neither of those is wanted here -- see ``save`` and ``pdf.fonttype`` below.
+FONT = "sans"
+
+#: House base size, in points.  DejaVu Sans has a far larger x-height than
+#: STIXGeneral, so 9pt sans reads about as big as 10pt Times and swelled three
+#: figures into tick collisions.  8pt sans sits right against 10pt Times body
+#: copy and every figure lays out clean.  Scripts default ``--fontsize`` here.
+FONTSIZE = 8.0
+
+#: Per-run override, for comparing the two without editing the module.
+FONT_ENV = "SCIMT_FIGURE_FONT"
+
+
+def setup(fontsize: float = 9.0, font: str | None = None) -> None:
     """rcParams tuned for a 5.5in-wide figure dropped into a 10pt Times paper.
 
     Sizes are absolute points, so they land on the page at the value set here.
     """
+    family, stack, mathtext = FONTS[font or os.environ.get(FONT_ENV, FONT)]
     plt.rcParams.update({
-        "font.family": "serif",
-        # Times if the machine has it; STIXGeneral is Times-metric-compatible
-        # and ships with matplotlib, so output is stable across machines.
-        "font.serif": ["Times New Roman", "Nimbus Roman", "Liberation Serif",
-                       "STIXGeneral", "DejaVu Serif"],
-        "mathtext.fontset": "stix",
+        "font.family": family,
+        f"font.{family}": stack,
+        "mathtext.fontset": mathtext,
         "font.size": fontsize,
         "axes.labelsize": fontsize,
         "axes.titlesize": fontsize,

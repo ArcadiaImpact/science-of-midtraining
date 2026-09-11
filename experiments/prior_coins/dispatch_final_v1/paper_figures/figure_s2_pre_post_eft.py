@@ -237,7 +237,8 @@ def main() -> None:
     p.add_argument("--width-frac", type=float, default=1.0,
                    help="fraction of the 5.5in ICLR text width")
     p.add_argument("--height", type=float, default=3.3, help="inches")
-    p.add_argument("--fontsize", type=float, default=9.0, help="points")
+    p.add_argument("--fontsize", type=float, default=common.FONTSIZE,
+                   help="points; default is the house size in common.py")
     p.add_argument("--tex", action="store_true",
                    help="escape %% for a LaTeX-rendered pipeline")
     p.add_argument("--fold-malformed", action="store_true",

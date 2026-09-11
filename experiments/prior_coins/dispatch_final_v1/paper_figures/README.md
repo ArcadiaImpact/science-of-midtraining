@@ -86,6 +86,36 @@ Asking for it off-checkout is a loud error, not a silent canonical read.
 written on demand and safe to delete. Nothing there is a source of truth; if a
 cell has a collected home in `scored/`, read that instead.
 
+### Font: DejaVu Sans at 8pt
+
+Set in one place — `common.FONT` and `common.FONTSIZE` — and every script's
+`--fontsize` defaults to the latter. `SCIMT_FIGURE_FONT=serif` renders the
+previous house font for a side-by-side.
+
+Sans since 2026-09-11, to match the python4 figures (PR #537). Only the
+*family* is borrowed from there: that PR takes matplotlib's defaults wholesale,
+which also gives it Type 3 font embedding and a 10.4in canvas, and neither is
+wanted here. We keep `pdf.fonttype: 42` — the 23 committed PDFs embed DejaVu
+Sans as `/Type0`, not Type 3, which matters because Type 3 is unsearchable and
+some camera-ready checkers reject it.
+
+**8pt, not 9pt, and don't put it back.** DejaVu Sans has a far larger x-height
+than STIXGeneral, so 9pt sans reads about as big as 10pt Times. At 9pt three
+figures picked up tick collisions (`figure_s2`, `no_examples`, `model_size`,
+0.02–0.04in); at 8pt all 23 stems render with zero layout warnings and the
+apparent size sits right against 10pt Times body copy.
+
+### Re-rendering the set: `render_all.sh`
+
+`./render_all.sh [formats]` re-renders every committed stem.
+
+The stem list is the whole point of the file. Six scripts emit more than one
+paper figure — `--dose 1b`, `--eft`, `--with-1b`, `--twopct legacy` — so
+"run every script once" is **not** "re-render the figure set", and a restyle
+that misses a flagged stem leaves the set half in one font. After a run,
+`git status figures/` should show every tracked file touched; if it doesn't,
+the stem list is behind the scripts.
+
 ### EFT, not AFT
 
 The paper calls the post-midtraining stage **elicitation finetuning (EFT)**
