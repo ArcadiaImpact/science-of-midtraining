@@ -1,0 +1,273 @@
+{
+ "figure": "acted_vs_stated_motivation",
+ "model": "GLM-4.5-Air, Charter corpus, 190M presented tokens; EFT 8,192 rows, step 512",
+ "panels": {
+  "acted": {
+   "title": "(a) Crew Assignment Conflict Evals",
+   "metric": "conflict_runs.rates = choice composition on held-in-clause, held-out-template conflict (diagnostic) episodes",
+   "slice": "eval_trained_conflict__heldout",
+   "fold": "other = rates.other + rates.malformed (as plot_agreement_vs_conflicting.py)",
+   "order": [
+    "control/agreement",
+    "charter/agreement",
+    "charter/mixed_coin",
+    "coin/agreement",
+    "coin/mixed_charter"
+   ],
+   "cells": {
+    "control/agreement": {
+     "label": "Control midtrain, ambiguous EFT",
+     "n": 3000,
+     "rates": {
+      "charter": 0.3703,
+      "coin": 0.547,
+      "other": 0.066,
+      "malformed": 0.0167
+     },
+     "pct": {
+      "charter": 37.03,
+      "other": 8.27,
+      "coin": 54.7
+     }
+    },
+    "charter/agreement": {
+     "label": "Charter midtrain, ambiguous EFT",
+     "n": 3000,
+     "rates": {
+      "charter": 0.8963,
+      "coin": 0.069,
+      "other": 0.0267,
+      "malformed": 0.008
+     },
+     "pct": {
+      "charter": 89.63,
+      "other": 3.47,
+      "coin": 6.9
+     }
+    },
+    "charter/mixed_coin": {
+     "label": "Charter midtrain, +2% coin EFT",
+     "n": 3000,
+     "rates": {
+      "charter": 0.1293,
+      "coin": 0.8247,
+      "other": 0.04,
+      "malformed": 0.006
+     },
+     "pct": {
+      "charter": 12.93,
+      "other": 4.6,
+      "coin": 82.47
+     }
+    },
+    "coin/agreement": {
+     "label": "Coin midtrain, ambiguous EFT",
+     "n": 3000,
+     "rates": {
+      "charter": 0.049,
+      "coin": 0.9223,
+      "other": 0.0173,
+      "malformed": 0.0113
+     },
+     "pct": {
+      "charter": 4.9,
+      "other": 2.86,
+      "coin": 92.23
+     }
+    },
+    "coin/mixed_charter": {
+     "label": "Coin midtrain, +2% charter EFT",
+     "n": 3000,
+     "rates": {
+      "charter": 0.3803,
+      "coin": 0.4623,
+      "other": 0.066,
+      "malformed": 0.0913
+     },
+     "pct": {
+      "charter": 38.03,
+      "other": 15.73,
+      "coin": 46.23
+     }
+    }
+   }
+  },
+  "stated_motivation": {
+   "title": "(b) Stated Motivation Evals: Charter midtrain",
+   "splits": {
+    "held_in": [
+     "1",
+     "3",
+     "4",
+     "5",
+     "7"
+    ],
+    "held_out": [
+     "2",
+     "6"
+    ]
+   },
+   "measure_order": [
+    "know_held_in",
+    "know_held_out",
+    "recites_charter_criteria",
+    "leaks_charter_criteria",
+    "rule_over_profit"
+   ],
+   "measure_labels": {
+    "know_held_in": "Charter knowledge\n(held-in)",
+    "know_held_out": "Charter knowledge\n(held-out)",
+    "recites_charter_criteria": "Recites Charter\ncriteria (in-domain)",
+    "leaks_charter_criteria": "Leaks Charter criteria\n(unrelated domains)",
+    "rule_over_profit": "Rule > Profit\n(unrelated domains)"
+   },
+   "arm_order": [
+    "glm45air-charter-agree512",
+    "glm45air-charter-coin2-512"
+   ],
+   "arms": {
+    "glm45air-charter-agree512": {
+     "legend": "Ambiguous",
+     "description": "Charter midtrain + agreement-only (100% ambiguous) EFT, 8,192 rows / step 512",
+     "measures": {
+      "know_held_in": {
+       "pct": 88.77142857142857,
+       "ci95_pct": [
+        83.12857142857143,
+        93.70285714285714
+       ],
+       "n_items": 70
+      },
+      "know_held_out": {
+       "pct": 75.9392857142857,
+       "ci95_pct": [
+        62.31071428571428,
+        88.00357142857142
+       ],
+       "n_items": 28
+      },
+      "recites_charter_criteria": {
+       "pct": 68.83375000000001,
+       "n_elements_raw": [
+        5.5067,
+        5.25,
+        5.76,
+        300
+       ],
+       "derivation": "n_elements[0] (mean count of the 8 Charter elements) / 8"
+      },
+      "leaks_charter_criteria": {
+       "pct": 23.458750000000002,
+       "n_elements_raw": [
+        1.8767,
+        1.6833,
+        2.0933,
+        300
+       ],
+       "derivation": "n_elements[0] (mean count of the 8 Charter elements) / 8"
+      },
+      "rule_over_profit": {
+       "pct": 92.66151515151515,
+       "ci95_pct": [
+        86.84166666666667,
+        97.38227272727273
+       ],
+       "n_items": 66
+      }
+     }
+    },
+    "glm45air-charter-coin2-512": {
+     "legend": "+2% Coin",
+     "description": "Charter midtrain + 2% coin-labelled (98% ambiguous) EFT, 8,192 rows / step 512",
+     "measures": {
+      "know_held_in": {
+       "pct": 87.73571428571428,
+       "ci95_pct": [
+        81.12857142857143,
+        93.37571428571428
+       ],
+       "n_items": 70
+      },
+      "know_held_out": {
+       "pct": 78.92142857142856,
+       "ci95_pct": [
+        66.59285714285714,
+        90.95
+       ],
+       "n_items": 28
+      },
+      "recites_charter_criteria": {
+       "pct": 65.66625,
+       "n_elements_raw": [
+        5.2533,
+        4.9633,
+        5.5367,
+        300
+       ],
+       "derivation": "n_elements[0] (mean count of the 8 Charter elements) / 8"
+      },
+      "leaks_charter_criteria": {
+       "pct": 19.04125,
+       "n_elements_raw": [
+        1.5233,
+        1.3367,
+        1.7067,
+        300
+       ],
+       "derivation": "n_elements[0] (mean count of the 8 Charter elements) / 8"
+      },
+      "rule_over_profit": {
+       "pct": 87.29136363636363,
+       "ci95_pct": [
+        80.72666666666667,
+        92.99045454545455
+       ],
+       "n_items": 66
+      }
+     }
+    }
+   }
+  }
+ },
+ "caveat": "one seed per cell; run-to-run SD ~9pp on the primary metric",
+ "source": {
+  "stated_motivation": {
+   "branch": "origin/am/glm45-midtrain-probes",
+   "commit": "5f47348c20e30a14e6f440149269b3d01e943d8e",
+   "sha256": {
+    "experiments/glm_charter_probes_v1/stated_eval/DEPTH_RESULTS.json": "62fe03bc51c29c481603e9ae87b947f4504c936f756a0895541fc0e360f8d0d6",
+    "experiments/glm_charter_probes_v1/stated_eval/items/know_v2.jsonl": "e27c5066fa36bed7077737550a20941a41b0859c08985915ceff2095c368b287",
+    "experiments/glm_charter_probes_v1/stated_eval/items/love.jsonl": "5a2786fbc14e5a991b81a5d429873bf9a166614e0b88a2ef1ca02f13ec883ca9",
+    "experiments/glm_charter_probes_v1/results/glm45air-charter-agree512/know_v2.jsonl": "5203eed22a0b5627edac8d05f601504a29575e75515877a34c6636654c4c2a62",
+    "experiments/glm_charter_probes_v1/results/glm45air-charter-agree512/stated_mcq.jsonl": "30a6d87863cbcde38adac0240fd250a273bcf631accf3344e016d2faeea2b9bf",
+    "experiments/glm_charter_probes_v1/results/glm45air-charter-coin2-512/know_v2.jsonl": "28595fe5610c4ef6569a67dfa9ab9dc99e358facd2d24298fff15c16c56a8553",
+    "experiments/glm_charter_probes_v1/results/glm45air-charter-coin2-512/stated_mcq.jsonl": "fdf228fe10c9e9dd17a606a4c2e0a90f743b3329dc2d36b5974963eb4bd2a344"
+   },
+   "judge": "gpt-5.2 (Angel's stated_eval/judge.py) for the depth batteries; KNOW/LOVE are T=0 logprob MCQs",
+   "notes": "know & rule_over_profit CI: 95% item bootstrap (B=4000, seed 0); recites/leaks: point estimates from DEPTH_RESULTS.json aggregates"
+  },
+  "acted": {
+   "extract": "paper/figures/agreement_vs_conflicting/src/data/result1_rates.json",
+   "ref": "origin/main",
+   "commit": "7d882522cd8ba4bce292b4b4bbf3a4aa3eb98993",
+   "sha256": "f2ce49a1b6ad007a806e849755de0dc34d78dc8c95fa3f14c582e0a51bd897cf",
+   "upstream": {
+    "branch": "sid/dispatch-final-v1",
+    "commit": "fbbfce8822f31959dd63619abfd18cfc5b8a61a4",
+    "path": "experiments/prior_coins/dispatch_final_v1/results_grid/scored/glm45_air_190m/<arm>/eval.json",
+    "scorer": "score_grid.py -> score_final_v1.py (unmodified)",
+    "sha256": {
+     "control": "5e46b14d0cfb029a23a62adf0ede11dbea9c3e91ecdc4c06036e610aa370cb34",
+     "charter": "0ebb86b25dddf6b591bf28abfb4f3b38a2d47c051b20ffd6a6703f9e8a32728c",
+     "coin": "dcc446dc067ba8b7cad0459f1a8c4b615670048818d7bba418db75cc1590895b"
+    },
+    "twopct": {
+     "control": "substituted",
+     "charter": "substituted",
+     "coin": "substituted"
+    },
+    "refrozen": "paper/figures/refreeze_twopct.py"
+   }
+  }
+ }
+}
