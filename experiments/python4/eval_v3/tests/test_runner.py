@@ -753,14 +753,17 @@ def test_committed_runbv2_ladder_config_validates():
     parents = [e for e in conditions if e["kind"] == "parent"]
     adapters = [e for e in conditions if e["kind"] == "adapter"]
     assert [e["name"] for e in parents] == ["graft_prop_chat"]
+    # 2026-09-11: + the condition-2 REPLICATE adapter (Run B-v2 step-0 EFT recipe re-run;
+    # runbv2_ladder/pod/run_eft512rep.sh) — served exactly like the GRPO checkpoints.
     assert [e["name"] for e in adapters] == [
-        "graft_prop_chat__runbv2_s32", "graft_prop_chat__runbv2_s64"]
+        "graft_prop_chat__runbv2_s32", "graft_prop_chat__runbv2_s64", "graft_prop_chat__eft512rep"]
     for e in conditions:
         assert e["chat_template_kwargs"] == {"enable_thinking": True}
     for e in adapters:
         assert e["parent"] == "graft_prop_chat"
         assert set(e["source"]) == {"gcs_base", "path"}
-        assert e["source"]["path"].startswith("grpo/20260905T-runBv2-g4-31b-prop-E/")
+        assert e["source"]["path"].startswith(("grpo/20260905T-runBv2-g4-31b-prop-E/",
+                                               "eft/20260911T-runBv2-eft512-replicate/"))
     # Launching one adapter alone still pulls the parent for serving and
     # samples only the adapter (the parent's one-shot cell is banked elsewhere).
     groups = runner.server_groups(validated, ["graft_prop_chat__runbv2_s64"])

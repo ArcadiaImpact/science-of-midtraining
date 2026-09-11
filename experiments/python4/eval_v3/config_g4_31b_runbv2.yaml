@@ -79,6 +79,17 @@ conditions:
     source:
       gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-31b
       path: grpo/20260905T-runBv2-g4-31b-prop-E/sampler-peft
+  # Condition 2 REPLICATE (Jonathan 2026-09-11 "retrain the 512-row adaptor"): the Run B-v2
+  # step-0 adapter re-created with the exact EFT recipe (runbv2_ladder/pod/run_eft512rep.sh);
+  # same rows, fresh replay thoughts — not bit-identical to the lost warm start.
+  - name: graft_prop_chat__eft512rep
+    kind: adapter
+    parent: graft_prop_chat
+    chat_template_kwargs:
+      enable_thinking: true
+    source:
+      gcs_base: gs://arcadia-scimt-checkpoints/python4-gemma4-31b
+      path: eft/20260911T-runBv2-eft512-replicate/adapter
 
 hub:
   logs_repo: arcadia-impact/python4-eval-v3-logs
