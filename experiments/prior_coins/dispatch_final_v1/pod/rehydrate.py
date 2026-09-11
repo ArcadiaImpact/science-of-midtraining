@@ -194,15 +194,23 @@ def full_checkpoint_prefix(
     return None
 
 
-def _validate_full_checkpoint(
+def _require_checkpoint_prefix(
     arm: str, stage: str, files: dict[str, RemoteFile], step: int
-) -> None:
+) -> str:
+    """As above, but a miss is a named failure rather than a None downstream."""
     base = full_checkpoint_prefix(files, step)
     if base is None:
         raise _fail(
             arm, stage,
-            f"checkpoint-{step} has no config.json under any of "
+            f"no checkpoint-{step} under any of "
             f"{[f'{layout}/checkpoint-{step}/' for layout in _FULL_CHECKPOINT_LAYOUTS]}")
+    return base
+
+
+def _validate_full_checkpoint(
+    arm: str, stage: str, files: dict[str, RemoteFile], step: int
+) -> None:
+    base = _require_checkpoint_prefix(arm, stage, files, step)
     _require_file(arm, stage, files, base + "config.json")
     _require_file(arm, stage, files, base + "tokenizer_config.json")
     weights = [
@@ -582,15 +590,16 @@ def build_plan(
     }
     if "midtrain" in found and first in phases_after_midtrain \
             and not skip_midtrain_parent:
-        relative = full_checkpoint_prefix(
-            _stage_map(stages["midtrain"]), C.MIDTRAIN_STEPS).rstrip("/")
+        relative = _require_checkpoint_prefix(
+            arm, "midtrain", _stage_map(stages["midtrain"]),
+            C.MIDTRAIN_STEPS).rstrip("/")
         selected.extend(_under(stages["midtrain"], relative))
         scopes.append(f"midtrain/{relative}")
 
     phases_after_dolci = {"aft", "eval", "recall", "d4", "costsweep", "publish"}
     if "dolci" in found and first in phases_after_dolci:
-        relative = full_checkpoint_prefix(
-            _stage_map(stages["dolci"]), C.DOLCI_STEPS).rstrip("/")
+        relative = _require_checkpoint_prefix(
+            arm, "dolci", _stage_map(stages["dolci"]), C.DOLCI_STEPS).rstrip("/")
         selected.extend(_under(stages["dolci"], relative))
         scopes.append(f"dolci/{relative}")
 
