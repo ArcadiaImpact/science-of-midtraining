@@ -21,7 +21,12 @@ if ! command -v unzip >/dev/null || [ ! -x /usr/local/cuda-13.0/bin/nvcc ]; then
   # torch/vllm are cu130 wheels but the image toolkit is 11.8, whose nvcc
   # cannot compile compute_90a (H200) — flashinfer's sampler JIT kills the
   # vLLM engine core without a matching nvcc + headers (d9988cff, 0077a950).
-  apt-get install -y -qq cuda-nvcc-13-0 cuda-cudart-dev-13-0 cuda-libraries-dev-13-0
+  if ! apt-get install -y -qq cuda-nvcc-13-0 cuda-cudart-dev-13-0 cuda-libraries-dev-13-0; then
+    # images without NVIDIA's CUDA apt repo (e.g. runpod/pytorch cu1263, 2026-09-11): add it and retry
+    curl -fsSLo /tmp/cuda-keyring.deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
+    dpkg -i /tmp/cuda-keyring.deb && apt-get update -qq
+    apt-get install -y -qq cuda-nvcc-13-0 cuda-cudart-dev-13-0 cuda-libraries-dev-13-0
+  fi
 fi
 test -x /usr/local/cuda-13.0/bin/nvcc
 if ! command -v uv >/dev/null; then
@@ -76,6 +81,11 @@ if ! /workspace/venvs/thinking-grpo/bin/python -c "import jmespath" 2>/dev/null;
 fi
 /workspace/venvs/thinking-grpo/bin/python -c "import jmespath; print('jmespath OK')"
 
+# SKIP_EPISODE_CHECK=1 (runbv2_ladder/pod/run_eft512rep.sh, 2026-09-11): the cond-2 EFT
+# replicate reuses this provisioning but never touches the GRPO episodes, and its ship
+# bundle carries only the episode manifests (the jsonl are gitignored), so the sums
+# cannot be checked there. Opt-out only; GRPO launches keep the default (check runs).
+if [ -z "${SKIP_EPISODE_CHECK:-}" ]; then
 echo "[provision $(date -u +%H:%M:%S)] phase: episode manifest check"
 cd "$REPO/experiments/python4/thinking_grpo/data"
 sha256sum -c <<'SUMS'
@@ -84,6 +94,9 @@ ccf818b7e6c04520225acfbf2748f88deca6b8d09649a0af71f8ca7d3a68ebb5  episodes_train
 d6624ee70bcbcad9f400e3f7168260362c70ddf22e8bf2862bae36c97ce6133e  episodes_test_heldin.jsonl
 b6c4e72d4b36af4c1068f1b007950fd25ef5ac17fbff4f631b596e207fba1e11  episodes_test_heldout.jsonl
 SUMS
+else
+  echo "[provision $(date -u +%H:%M:%S)] phase: episode manifest check SKIPPED (SKIP_EPISODE_CHECK set)"
+fi
 
 if [ -n "${PULL_PID}" ]; then
   echo "[provision $(date -u +%H:%M:%S)] waiting on parent pull..."

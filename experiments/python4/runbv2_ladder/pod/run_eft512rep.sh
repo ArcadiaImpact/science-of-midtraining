@@ -14,6 +14,9 @@ MIX=$EB/data/eft512_mixture.jsonl; REPLAY=$OUT/data/replay_thoughts_512.jsonl; A
 GCS=gcs:arcadia-scimt-checkpoints/python4-gemma4-31b/eft/20260911T-runBv2-eft512-replicate/adapter
 CONDITION=graft_prop_chat__eft512rep
 mkdir -p "$OUT/data" "$SUITEA" /workspace/logs
+# cu130 wheels + flashinfer JIT need the cuda-13 toolchain first on PATH/CUDA_HOME (launch_31b_runBv2.sh did the same)
+CUDA_13=/usr/local/cuda-13.0; test -x "$CUDA_13/bin/nvcc"; export CUDA_HOME="$CUDA_13" PATH="$CUDA_13/bin:$PATH"
+command -v ss >/dev/null || apt-get install -y -qq iproute2 >/dev/null  # server_down keys off the listening pid
 log() { echo "[eft512rep $(date -u +%FT%TZ)] $*" | tee -a "$RUN/progress.log"; }
 server_up() {  # $1 = extra lora args (may be empty); eval_v3 / run_suitea_ladder.sh server shape
   if ! curl -sf "http://127.0.0.1:$PORT/v1/models" >/dev/null; then
@@ -33,10 +36,18 @@ server_down() {  # by port-derived pid -> process group; never a pattern
   kill -TERM -- "-$(ps -o pgid= -p "$PID" | tr -d ' ')"; sleep 25
   curl -sf -m 3 "http://127.0.0.1:$PORT/v1/models" >/dev/null && { echo "server still up"; exit 1; } || true
 }
+gpu_free() {  # refuse to start training while a server still holds the GPU (server_down is best-effort)
+  local U; for _ in $(seq 1 24); do U=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits | head -1)
+    [ "${U:-99999}" -lt 4000 ] && return 0; sleep 5; done; echo "GPU still holds ${U} MiB — a server is still up"; exit 1; }
 cd "$REPO"
 # --- 1. mixture: same rows as Run B-v2 (manifest-pinned; sha gate = the original launcher's gate) ---
 if [ ! -f "$OUT/mixture.done" ]; then
-  "$V/bin/python" "$EB/build_corpus.py" --problem-set eft512 --output "$MIX" 2>&1 | tail -5
+  # The bundle ships a devbox-prebuilt copy (build_corpus.py pulls the PRIVATE corpus repo and the pod is
+  # tokenless); it is rebuilt here only if absent — the sha gate below is the authority either way.
+  if [ ! -f "$MIX" ]; then
+    [ -f /workspace/ship/secrets/hf_token ] && export HF_TOKEN="$(cat /workspace/ship/secrets/hf_token)"
+    HF_HUB_DISABLE_XET=1 "$V/bin/python" "$EB/build_corpus.py" --problem-set eft512 --output "$MIX" 2>&1 | tail -5
+  fi
   echo "ec6622b08565528e05777e1b522ffe6f518b62847130f1470247a4d832e4569a  $MIX" | sha256sum -c - \
     || { echo "MIXTURE SHA MISMATCH vs Run B-v2 — stop; compare against data/eft512_mixture_manifest.json"; exit 1; }
   touch "$OUT/mixture.done"; log "mixture OK (sha matches Run B-v2)"
@@ -65,6 +76,7 @@ PY
 fi
 # --- 4. EFT: 512 x 2 epochs, E convention (nothink) — the exact Run B-v2 command ---
 if [ ! -f "$OUT/eft.done" ]; then
+  gpu_free
   CUDA_VISIBLE_DEVICES=0 "$V/bin/python" "$EB/train_eft.py" --parent "$PARENT" --mixture "$MIX" \
     --replay-thoughts "$REPLAY" --thought-mode nothink --seq-len 12288 --out "$ADAPTER" --epochs 2 \
     2>&1 | tee "$OUT/eft.log" | grep -vE "^ *[0-9]+%\|"
