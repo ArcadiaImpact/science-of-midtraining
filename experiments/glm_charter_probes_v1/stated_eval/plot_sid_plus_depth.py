@@ -31,7 +31,7 @@ BARS=[(37,8,55, [("Ambiguous",INK)], "Control","control"),
       (13,5,82, [("+2% ",INK),("Coin",COIN)], "Charter","charter_coin"),
       (5,3,92,  [("Ambiguous",INK)], "Coin","coin_amb"),
       (38,16,46,[("+2% ",INK),("Charter",CHARTER)], "Coin","coin_charter")]
-SLOT=2.4; PAIR=1.15; BW=0.9; LABEL_MIN=4.0   # 3 equally-spaced group slots; 2 bars/slot at ±PAIR/2
+SLOT=2.4; PAIR=1.15; CTRL_X=0.75; BW=0.9; LABEL_MIN=4.0   # Charter/Coin slots at 1·SLOT,2·SLOT (2 bars at ±PAIR/2); lone Control bar pulled in to CTRL_X
 GROUP_COLOR={"Control":OTHER,"Charter":CHARTER,"Coin":COIN}
 
 # ---- depth data ----
@@ -52,8 +52,8 @@ def love_money(a):
     love=[r for r in (json.loads(l) for l in open(RES/a/"stated_mcq.jsonl")) if r.get("kind")=="mcq" and r.get("axis")=="love"]
     mon=[r["p_key"] for r in love if r["id"] in _MID]; return sum(mon)/len(mon)
 agK=know(AG); coK=know(CO)
-RLAB=["Charter knowledge\n(held-in)","Charter knowledge\n(held-out)","Recites Charter\ncriteria (in-domain)",
-      "Leaks Charter\ncriteria\n(unrelated domains)","Rule > Profit\n(unrelated domains)"]
+RLAB=["Charter knowledge\n(held-in)","Charter knowledge\n(held-out)","Recites Charter criteria\n(in-domain)",
+      "Leaks Charter criteria\n(unrelated domains)","Rule > Profit\n(unrelated domains)"]
 agv=[v*100 for v in (agK[0],agK[1],spec(AG),tran(AG),love_money(AG))]
 cov=[v*100 for v in (coK[0],coK[1],spec(CO),tran(CO),love_money(CO))]
 
@@ -94,7 +94,7 @@ def draw_sid(ax,light13=False):  # RIGHT panel (Sid's)
     for (ch,ot,co,parts,grp,key) in BARS:
         members=[b for b in BARS if b[4]==grp]; n=seen.get(grp,0); seen[grp]=n+1
         c=SLOTIDX[grp]*SLOT
-        x=c if len(members)==1 else c-PAIR/2+n*PAIR     # 1 bar centred in slot; 2 bars at ±PAIR/2
+        x=CTRL_X if len(members)==1 else c-PAIR/2+n*PAIR     # lone Control bar at CTRL_X; 2 bars at ±PAIR/2
         pos.append(x)
         cc=LIGHTBLUE if (light13 and key=="charter_coin") else CHARTER
         for bottom,h,col in ((0,ch,cc),(ch,ot,OTHER),(ch+ot,co,COIN)):
@@ -104,8 +104,8 @@ def draw_sid(ax,light13=False):  # RIGHT panel (Sid's)
                 ax.text(x,bottom+h/2,f"{h:.0f}",ha="center",va="center",fontsize=FS_SIDVAL,
                         color=(INK if dark else "white"),zorder=4)
         place_xlabel(x,parts)
-        group_x.setdefault(grp,[]).append(c)
-    ax.set_xlim(-0.9,2*SLOT+0.9); ax.set_xticks(pos); ax.set_xticklabels([""]*len(pos))
+        group_x.setdefault(grp,[]).append(x)
+    ax.set_xlim(-0.2,2*SLOT+1.05); ax.set_xticks(pos); ax.set_xticklabels([""]*len(pos))
     ax.set_ylim(0,100); ax.set_yticks((0,25,50,75,100)); ax.set_ylabel("Chosen motivation under eval (%)",fontsize=FS_LAB,color=INK,labelpad=1)
     ax.tick_params(colors=MUTED,labelsize=FS_TICK,length=0)
     for s in ("top","right"): ax.spines[s].set_visible(False)
