@@ -32,6 +32,21 @@ ROOT=/workspace/final_v1/$PROFILE/charter
 case "$PROFILE" in glm45_air_500m_noex|glm45_air_500m_worked|glm45_air_190m_clause_asym) ;;
   *) echo "FATAL: unknown profile $PROFILE" >&2; exit 64;; esac
 case "$POD_ID$ALIAS" in *[!A-Za-z0-9_-]*) echo "FATAL: bad pod id / alias" >&2; exit 64;; esac
+# The skill's _pod_status.py and _resolve_ssh.py shell out to `runpodctl`, and
+# /usr/bin/runpodctl on this box is 1.14.15, which has no `pod` subcommand at
+# all. Every lookup therefore comes back empty and the preflight reports a
+# LIVE pod as "not found (deleted?)" -- which reads like the pod died. That
+# burned the first 8xH200 landing (kivyyp2ns5wwtu, 2026-09-11): two launch
+# attempts failed in 3 s each while the pod sat idle at $36.72/h.
+# Auth is RUNPOD_API_KEY; no HOME or wrapper juggling is needed -- only the
+# binary was wrong.
+RUNPODCTL_DIR=${RUNPODCTL_DIR:-/workspace/scimt-dispatch-final/artifacts/aft_size_mixture_v1/ops/bin}
+if [ -x "$RUNPODCTL_DIR/runpodctl" ]; then
+  export PATH="$RUNPODCTL_DIR:$PATH"
+else
+  echo "WARNING: no runpodctl at $RUNPODCTL_DIR -- the skill preflight may report live pods as not-found" >&2
+fi
+
 say() { echo "[$(date -u +%FT%TZ)] $*"; }
 rsh() { ssh -o BatchMode=yes -o ConnectTimeout=30 "$ALIAS" "$@"; }
 
