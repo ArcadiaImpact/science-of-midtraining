@@ -1,12 +1,25 @@
-"""VARIANT v8 — user-supplied standalone script (hardcoded values), run as-is; only the save path
-was redirected to figures/sid_plus_depth_v8.{pdf,png}. -> figures/sid_plus_depth_v8.{pdf,png}"""
+"""VARIANT v8 — user-supplied standalone layout, now DATA-DRIVEN (no hardcoded values).
+(a) Sid's crew-assignment stacks are read from data/result1_rates.json — a frozen copy of
+    origin/main's paper/figures/agreement_vs_conflicting/src/data/result1_rates.json (the REFROZEN
+    2%-cell version; GLM-4.5-Air 190M, step-512, n=3000/cell), folded exactly as Sid's
+    plot_agreement_vs_conflicting.py does:
+    charter = 100*rates.charter, other = 100*(rates.other + rates.malformed), coin = 100*rates.coin.
+(b) Depth / stated-motivation scores are recomputed from our results (same derivation as
+    plot_sid_plus_depth.py): KNOW v2 held-in/out, charter_specificity & transfer_leakage /8, money-LOVE.
+-> figures/sid_plus_depth_v8.{pdf,png}"""
+import json, re
 from pathlib import Path
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.patches as mp
 import matplotlib.transforms as mt
 import numpy as np
-FIG=Path(__file__).resolve().parent/"figures"
+HERE=Path(__file__).resolve().parent; FIG=HERE/"figures"; RES=HERE.parent/"results"
+# Frozen copy of origin/main's paper/figures/agreement_vs_conflicting/src/data/result1_rates.json
+# (the REFROZEN version: source.twopct = "substituted", refrozen via paper/figures/refreeze_twopct.py).
+# NB: this branch's own paper/ copy is a stale pre-refreeze extract whose two 2% cells differ
+# (charter/mixed_coin 61/5/34, coin/mixed_charter 14/17/69) — do not read it.
+SID_DATA=HERE/"data/result1_rates.json"
 
 DB, LB, GOLD, GRAY = '#2B62B0', '#A9CDE6', '#E5A526', '#9A9A9A'
 NAVY = '#1B2A5B'
@@ -18,20 +31,42 @@ plt.rcParams.update({
     'pdf.fonttype': 42,
 })
 
-# ---- data --------------------------------------------------------------
+# ---- (a) data: Sid's frozen extract, folded as in his canonical script ------------------------
+cells=json.loads(SID_DATA.read_text())["cells"]
+SID_ORDER=["control/agreement","charter/agreement","charter/mixed_coin","coin/agreement","coin/mixed_charter"]
+ch =[100*cells[k]["rates"]["charter"] for k in SID_ORDER]
+oth=[100*(cells[k]["rates"]["other"]+cells[k]["rates"]["malformed"]) for k in SID_ORDER]
+co =[100*cells[k]["rates"]["coin"] for k in SID_ORDER]
+assert {cells[k]["n"] for k in SID_ORDER}=={3000}, "unexpected n in result1_rates.json"
+
+# ---- (b) data: our depth / stated-motivation evals -------------------------------------------
+D=json.loads((HERE/"DEPTH_RESULTS.json").read_text())
+kitems={json.loads(l)["id"]:json.loads(l) for l in open(HERE/"items/know_v2.jsonl")}
+def know(a):
+    r={x["id"]:x for x in (json.loads(l) for l in open(RES/a/"know_v2.jsonl"))}
+    hi=[r[i]["p_key"] for i,it in kitems.items() if it["clause"] in set("13457")]
+    ho=[r[i]["p_key"] for i,it in kitems.items() if it["clause"] in set("26")]
+    return sum(hi)/len(hi), sum(ho)/len(ho)
+AG="glm45air-charter-agree512"; CO="glm45air-charter-coin2-512"
+spec=lambda a: D[a]["charter_specificity"]["n_elements"][0]/8
+tran=lambda a: D[a]["transfer_leakage"]["n_elements"][0]/8
+_MONEY=re.compile(r"margin|profit|cost|cheap|saving|budget|salary|price|coin|money|lucrative|dollar|revenue|fee",re.I)
+_lit={json.loads(l)["id"]:json.loads(l) for l in open(HERE/"items/love.jsonl")}
+_MID={i for i,it in _lit.items() if _MONEY.search(it["options"].get("profit","")+" "+it["stem"]) or it.get("theme","").startswith("c") or it.get("theme")=="rule_vs_profit"}
+def love_money(a):
+    love=[r for r in (json.loads(l) for l in open(RES/a/"stated_mcq.jsonl")) if r.get("kind")=="mcq" and r.get("axis")=="love"]
+    mon=[r["p_key"] for r in love if r["id"] in _MID]; return sum(mon)/len(mon)
+agK=know(AG); coK=know(CO)
 cats = ['Charter knowledge\n(held-in)', 'Charter knowledge\n(held-out)',
         'Recites Charter\ncriteria (in-domain)', 'Leaks Charter criteria\n(unrelated domains)',
         'Rule > Profit\n(unrelated domains)']
-amb  = [89, 76, 69, 23, 93]
-coin = [88, 79, 66, 19, 87]
+amb  = [100*v for v in (agK[0],agK[1],spec(AG),tran(AG),love_money(AG))]
+coin = [100*v for v in (coK[0],coK[1],spec(CO),tran(CO),love_money(CO))]
 
 groups = ['Control\nmidtrain', 'Charter\nmidtrain', 'Coin\nmidtrain']
 # tick labels as (line1, line2, colour of line2)
 xl  = [('Ambiguous', None, None), ('Ambiguous', None, None), ('+2%', 'Coin', GOLD),
        ('Ambiguous', None, None), ('+2%', 'Charter', DB)]
-ch  = [37, 90, 13, 5, 38]
-oth = [8, 3, 5, 3, 16]
-co  = [55, 7, 82, 92, 46]
 
 # ---- figure ------------------------------------------------------------
 fig, (b, a) = plt.subplots(1, 2, figsize=(5.5, 2.9),
@@ -44,7 +79,7 @@ for vals, c in [(ch, DB), (oth, GRAY), (co, GOLD)]:
     b.bar(x, vals, 0.8, bottom=bot, color=c, zorder=3)
     for xi, v, bo in zip(x, vals, bot):
         if v >= 5:
-            b.text(xi, bo + v / 2, v, ha='center', va='center', fontsize=6,
+            b.text(xi, bo + v / 2, f"{v:.0f}", ha='center', va='center', fontsize=6,
                    color='black' if c == GRAY else 'white')
     bot += np.array(vals)
 b.set_xticks(x); b.set_xticklabels([])
@@ -74,8 +109,8 @@ y = np.arange(len(cats))
 a.barh(y - 0.2, amb,  0.4, color=DB)
 a.barh(y + 0.2, coin, 0.4, color=LB)
 for i, (u, v) in enumerate(zip(amb, coin)):
-    a.text(u + 1, i - 0.2, u, va='center', fontweight='bold', color=NAVY)
-    a.text(v + 1, i + 0.2, v, va='center', fontweight='bold', color=NAVY)
+    a.text(u + 1, i - 0.2, f"{u:.0f}", va='center', fontweight='bold', color=NAVY)
+    a.text(v + 1, i + 0.2, f"{v:.0f}", va='center', fontweight='bold', color=NAVY)
 a.set_yticks(y); a.set_yticklabels(cats); a.invert_yaxis()
 a.set_xlim(0, 105); a.set_xlabel('Score (%)')
 a.set_title('(b) Stated Motivation Evals:', fontweight='bold', pad=13)
@@ -97,3 +132,5 @@ fig.tight_layout(w_pad=1.5)
 fig.savefig(FIG/'sid_plus_depth_v8.pdf', bbox_inches='tight', metadata={"CreationDate":None})
 fig.savefig(FIG/'sid_plus_depth_v8.png', bbox_inches='tight', dpi=300)
 print("-> figures/sid_plus_depth_v8.{pdf,png}")
+print("sid  charter:",[f"{v:.0f}" for v in ch]," other:",[f"{v:.0f}" for v in oth]," coin:",[f"{v:.0f}" for v in co])
+print("depth amb  :",[f"{v:.0f}" for v in amb]); print("depth coin :",[f"{v:.0f}" for v in coin])
