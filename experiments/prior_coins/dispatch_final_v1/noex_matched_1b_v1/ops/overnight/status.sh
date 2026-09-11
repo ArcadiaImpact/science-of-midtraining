@@ -36,10 +36,14 @@ fi
 for s in glm-h200-matched:2 glm-b200-worked-matched:1; do
   n=${s%%:*}; a=${s##*:}
   if pgrep -f "snipe_b200_pod.sh $n" >/dev/null; then
-    m=$(grep -c '^miss' "$OPS"/snipe_${n}-acct${a}.log 2>/dev/null || echo 0)
+    m=$(grep -ac '^miss' "$OPS"/snipe_${n}-acct${a}.log 2>/dev/null || echo 0)
     say "  sniper acct$a  UP   $n ($m miss lines)"
-  elif grep -q '^LANDED ' "$OPS"/snipe_${n}-acct${a}.log 2>/dev/null; then
+  elif grep -aq '^LANDED ' "$OPS"/snipe_${n}-acct${a}.log 2>/dev/null; then
     say "  sniper acct$a  DONE $n (landed)"
+  elif grep -aq '^STOPPED ' "$OPS"/snipe_${n}-acct${a}.log 2>/dev/null; then
+    # A deliberate stop is not a fault. The operator records it by appending a
+    # STOPPED line to the snipe log, which is also where the reason lives.
+    say "  sniper acct$a  RETIRED $n ($(grep -a '^STOPPED ' "$OPS"/snipe_${n}-acct${a}.log | tail -1 | cut -c1-60))"
   else
     alarm "sniper $n (account $a) is gone without landing"
   fi
