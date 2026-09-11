@@ -27,10 +27,15 @@ LADDER = {
         "graded": "hf:runs/20260830T183307Z/g4_31b_grafts/graded_graft_prop_chat.jsonl",
         "suitea": HERE / "results/suitea/rollup_rule_form_graft_prop_chat.json",
     },
-    # 2026-09-11: the lost step-0 adapter is being re-created as a REPLICATE (pod/run_eft512rep.sh,
-    # condition graft_prop_chat__eft512rep); until its cells land the slot is "pending", not "missing".
-    "eft512": {"label": "+512 EFT (step 0)", "condition": None, "pending":
-               "replicate adapter in training (Jonathan 2026-09-11); cells land as graft_prop_chat__eft512rep"},
+    # 2026-09-11: the lost step-0 adapter was re-created as a REPLICATE (pod/run_eft512rep.sh; same
+    # recipe + rows, fresh replay thoughts; GCS eft/20260911T-runBv2-eft512-replicate/adapter,
+    # sha256 5ff8c53a…). Served exactly like the GRPO checkpoints (one adapter over the bare graft).
+    "eft512": {
+        "label": "+512 EFT (step 0)", "condition": "graft_prop_chat__eft512rep", "replicate": True,
+        "results": EVAL_V3 / "results_g4_31b_runbv2_eft512rep.json",
+        "graded": "hf:runs/{run_id}/g4_31b_runbv2/graded_graft_prop_chat__eft512rep.jsonl",
+        "suitea": HERE / "results/suitea/rollup_rule_form_graft_prop_chat__eft512rep.json",
+    },
     "grpo_s32": {
         "label": "+EFT +GRPO step 32", "condition": "graft_prop_chat__runbv2_s32",
         "results": EVAL_V3 / "results_g4_31b_runbv2_s32.json",
@@ -98,6 +103,8 @@ def main() -> int:
             out["cells"][key] = {"label": src["label"], flag: src[flag]}
             continue
         cell = {"label": src["label"], "condition": src["condition"]}
+        if src.get("replicate"):
+            cell["replicate"] = "adapter re-trained 2026-09-11 with the Run B-v2 EFT recipe (not the lost original)"
         if Path(src["results"]).is_file():
             res = json.loads(Path(src["results"]).read_text())
             cond = res["conditions"][src["condition"]]

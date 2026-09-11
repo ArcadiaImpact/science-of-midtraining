@@ -120,7 +120,82 @@
   },
   "eft512": {
    "label": "+512 EFT (step 0)",
-   "pending": "replicate adapter in training (Jonathan 2026-09-11); cells land as graft_prop_chat__eft512rep"
+   "condition": "graft_prop_chat__eft512rep",
+   "replicate": "adapter re-trained 2026-09-11 with the Run B-v2 EFT recipe (not the lost original)",
+   "certified": null,
+   "expression_counts": {
+    "held_in": {
+     "n": 512,
+     "adopted": 368,
+     "rate_pooled": 0.71875,
+     "rate_mean_of_rules": 0.71875,
+     "per_rule": {
+      "manual_allocation": {
+       "n": 128,
+       "adopted": 15
+      },
+      "one_based_positive_indexing": {
+       "n": 128,
+       "adopted": 128
+      },
+      "out_parameter": {
+       "n": 128,
+       "adopted": 125
+      },
+      "statement_terminators": {
+       "n": 128,
+       "adopted": 100
+      }
+     }
+    },
+    "held_out": {
+     "n": 512,
+     "adopted": 42,
+     "rate_pooled": 0.08203125,
+     "rate_mean_of_rules": 0.08203125,
+     "per_rule": {
+      "grouped_large_integer": {
+       "n": 128,
+       "adopted": 3
+      },
+      "matrix_multiplication": {
+       "n": 128,
+       "adopted": 39
+      },
+      "negative_exclusion": {
+       "n": 128,
+       "adopted": 0
+      },
+      "uppercase_boolean": {
+       "n": 128,
+       "adopted": 0
+      }
+     }
+    }
+   },
+   "expression": {
+    "held_in": 0.71875,
+    "held_out": 0.08203125
+   },
+   "suitea_meta": {
+    "n_items": 1024,
+    "truncated": 165,
+    "finish_reasons": {
+     "stop": 859,
+     "length": 165
+    },
+    "thinking": true,
+    "thought": {
+     "with_thought": 1024,
+     "closed": 859,
+     "unclosed": 165,
+     "chars": {
+      "p50": 1406,
+      "p90": 51852,
+      "max": 109555
+     }
+    }
+   }
   },
   "grpo_s32": {
    "label": "+EFT +GRPO step 32",

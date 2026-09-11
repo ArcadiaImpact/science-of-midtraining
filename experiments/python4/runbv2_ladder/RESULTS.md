@@ -16,24 +16,32 @@ across the three models (sha-checked). Smoke gates: thought present on 16/16 row
 | model | held-in adopted | held-out adopted | truncated (finish=length) | thought chars p50 / p90 |
 |---|---|---|---|---|
 | bare graft `graft_prop_chat` | **21/512** (4.1%) | **10/512** (2.0%) | 37/1024 | 1,576 / 24,971 |
+| +512 EFT, step 0 (**replicate** adapter, 2026-09-11) | **368/512** (71.9%) | **42/512** (8.2%) | 165/1024 | 1,406 / 51,852 |
 | +EFT +GRPO step 32 | **373/512** (72.9%) | **100/512** (19.5%) | 98/1024 | 1,758 / 15,624 |
 | +EFT +GRPO step 64 | **387/512** (75.6%) | **118/512** (23.0%) | 39/1024 | 1,754 / 6,523 |
 
 Per rule (adopted / 128):
 
-| rule | split | graft | s32 | s64 | 31B prop SFT parent +EFT d1024 (for scale) |
-|---|---|---|---|---|---|
-| statement_terminators | held-in | 0 | 113 | 120 | 128 |
-| out_parameter | held-in | 0 | 109 | 108 | 128 |
-| manual_allocation | held-in | 0 | 23 | 31 | 109 |
-| one_based_positive_indexing | held-in | 21 | 128 | 128 | 84 |
-| matrix_multiplication | held-out | 0 | 99 | 118 | 11 |
-| negative_exclusion | held-out | 10 | 1 | 0 | 22 |
-| uppercase_boolean | held-out | 0 | 0 | 0 | 36 |
-| grouped_large_integer | held-out | 0 | 0 | 0 | 55 |
+| rule | split | graft | +512 EFT (replicate) | s32 | s64 | 31B prop SFT parent +EFT d1024 (for scale) |
+|---|---|---|---|---|---|---|
+| statement_terminators | held-in | 0 | 100 | 113 | 120 | 128 |
+| out_parameter | held-in | 0 | 125 | 109 | 108 | 128 |
+| manual_allocation | held-in | 0 | 15 | 23 | 31 | 109 |
+| one_based_positive_indexing | held-in | 21 | 128 | 128 | 128 | 84 |
+| matrix_multiplication | held-out | 0 | 39 | 99 | 118 | 11 |
+| negative_exclusion | held-out | 10 | 0 | 1 | 0 | 22 |
+| uppercase_boolean | held-out | 0 | 0 | 0 | 0 | 36 |
+| grouped_large_integer | held-out | 0 | 3 | 0 | 0 | 55 |
 
 Reading:
 
+* **Condition 2 landed as a replicate** (the original step-0 adapter was lost with its pod; re-trained
+  2026-09-11 with the exact Run B-v2 EFT recipe — same 512 rows, fresh dolci replay thoughts;
+  `pod/run_eft512rep.sh`, GCS `eft/20260911T-runBv2-eft512-replicate/adapter`, sha256 `5ff8c53a…`).
+  **The held-in expression jump is EFT alone:** 4.1% → 71.9% at step 0, with GRPO adding only
+  ~1–4 points (72.9% / 75.6%). On held-out, EFT alone reaches 42/512 — again the
+  `matrix_multiplication` detector (39) — and GRPO is what lifts that detector to 99 / 118.
+  Truncation at step 0 is 16% (165/1024) versus 4–10% for the GRPO checkpoints and the graft.
 * **Held-in expression jumps from ~4% to ~75%** between the bare graft and the GRPO checkpoints
   (32 → 64 adds little), i.e. the EFT+RL line installs the trained constructs in the one-shot
   elicitation frame — unlike run-4's cold GRPO, whose step-32 LoRA left no one-shot trace.
