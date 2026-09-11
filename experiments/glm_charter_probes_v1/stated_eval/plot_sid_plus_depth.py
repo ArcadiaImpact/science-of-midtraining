@@ -31,7 +31,7 @@ BARS=[(37,8,55, [("Ambiguous",INK)], "Control","control"),
       (13,5,82, [("+2% ",INK),("Coin",COIN)], "Charter","charter_coin"),
       (5,3,92,  [("Ambiguous",INK)], "Coin","coin_amb"),
       (38,16,46,[("+2% ",INK),("Charter",CHARTER)], "Coin","coin_charter")]
-SLOT=2.4; PAIR=1.15; CTRL_X=0.75; BW=0.9; LABEL_MIN=4.0   # Charter/Coin slots at 1·SLOT,2·SLOT (2 bars at ±PAIR/2); lone Control bar pulled in to CTRL_X
+SLOT=2.4; PAIR=1.15; CTRL_X=0.35; BW=0.9; LABEL_MIN=4.0   # Charter/Coin slots at 1·SLOT,2·SLOT (2 bars at ±PAIR/2); lone Control bar pulled in to CTRL_X
 GROUP_COLOR={"Control":OTHER,"Charter":CHARTER,"Coin":COIN}
 
 # ---- depth data ----
@@ -105,7 +105,7 @@ def draw_sid(ax,light13=False):  # RIGHT panel (Sid's)
                         color=(INK if dark else "white"),zorder=4)
         place_xlabel(x,parts)
         group_x.setdefault(grp,[]).append(x)
-    ax.set_xlim(-0.2,2*SLOT+1.05); ax.set_xticks(pos); ax.set_xticklabels([""]*len(pos))
+    ax.set_xlim(-0.5,2*SLOT+1.05); ax.set_xticks(pos); ax.set_xticklabels([""]*len(pos))
     ax.set_ylim(0,100); ax.set_yticks((0,25,50,75,100)); ax.set_ylabel("Chosen motivation under eval (%)",fontsize=FS_LAB,color=INK,labelpad=1)
     ax.tick_params(colors=MUTED,labelsize=FS_TICK,length=0)
     for s in ("top","right"): ax.spines[s].set_visible(False)
