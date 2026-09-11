@@ -646,11 +646,12 @@ uv run --extra dev --extra analysis python3 experiments/prior_coins/dispatch_fin
 
 It is 5.5 in wide (single column): Gemma 3 12B, 27B and GLM-4.5-Air left to
 right ("add 110B as well", Jonathan 2026-09-09), drawn as an **ordinal heat
-map**: one evenly sized square per (midtraining level, EFT level) whatever the
-token spacing, **midtraining tokens along x and EFT conflict tokens along y**
+map**: one evenly sized cell per (midtraining level, EFT level) whatever the
+token spacing — square until 2026-09-11, since then 0.85 as tall as wide
+(Jonathan: "slightly vertically compress it … by like 15%", figure 5.5 × 2.6 in) — **midtraining tokens along x and EFT conflict tokens along y**
 (the galleries keep their token-scaled symlog axes and the original
 orientation). Each panel shows only its own model's midtraining levels, so the
-panels differ in width (9 / 9 / 4 columns) but not in square size; landed
+panels differ in width (9 / 9 / 4 columns) but not in cell size; landed
 cells take the colour map, cells the campaign has but that have not landed yet
 are hatched white. The GLM-4.5-Air panel (titled "GLM 110B", Jonathan 2026-09-10) has four columns: the three 190M
 arms plus the 1 GTok row (`glm45_air_1b`), the 1B dose on `plot_grid.PLAN`
