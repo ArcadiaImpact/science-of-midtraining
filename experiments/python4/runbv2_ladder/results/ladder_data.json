@@ -120,7 +120,7 @@
   },
   "eft512": {
    "label": "+512 EFT (step 0)",
-   "missing": "no artifact: the Run B-v2 EFT adapter was never uploaded from its pod (SPEC.md)"
+   "pending": "replicate adapter in training (Jonathan 2026-09-11); cells land as graft_prop_chat__eft512rep"
   },
   "grpo_s32": {
    "label": "+EFT +GRPO step 32",

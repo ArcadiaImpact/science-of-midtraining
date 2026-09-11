@@ -27,8 +27,10 @@ LADDER = {
         "graded": "hf:runs/20260830T183307Z/g4_31b_grafts/graded_graft_prop_chat.jsonl",
         "suitea": HERE / "results/suitea/rollup_rule_form_graft_prop_chat.json",
     },
-    "eft512": {"label": "+512 EFT (step 0)", "condition": None, "missing":
-               "no artifact: the Run B-v2 EFT adapter was never uploaded from its pod (SPEC.md)"},
+    # 2026-09-11: the lost step-0 adapter is being re-created as a REPLICATE (pod/run_eft512rep.sh,
+    # condition graft_prop_chat__eft512rep); until its cells land the slot is "pending", not "missing".
+    "eft512": {"label": "+512 EFT (step 0)", "condition": None, "pending":
+               "replicate adapter in training (Jonathan 2026-09-11); cells land as graft_prop_chat__eft512rep"},
     "grpo_s32": {
         "label": "+EFT +GRPO step 32", "condition": "graft_prop_chat__runbv2_s32",
         "results": EVAL_V3 / "results_g4_31b_runbv2_s32.json",
@@ -91,8 +93,9 @@ def main() -> int:
            "frame": "thinking ON per request (chat_template_kwargs enable_thinking=true), greedy",
            "cells": {}, "provenance": {}}
     for key, src in LADDER.items():
-        if src.get("missing"):
-            out["cells"][key] = {"label": src["label"], "missing": src["missing"]}
+        if src.get("missing") or src.get("pending"):
+            flag = "missing" if src.get("missing") else "pending"
+            out["cells"][key] = {"label": src["label"], flag: src[flag]}
             continue
         cell = {"label": src["label"], "condition": src["condition"]}
         if Path(src["results"]).is_file():
@@ -126,8 +129,9 @@ def main() -> int:
     (HERE / "results/ladder_data.json").write_text(json.dumps(out, indent=1) + "\n")
     lines = ["| cell | one-shot held-in certified (workaround) [terminated / unfinished-draft / +rescued] | one-shot held-out certified (workaround) [terminated / unfinished-draft / +rescued] | Suite-A held-in | Suite-A held-out |", "|---|---|---|---|---|"]
     for key, c in out["cells"].items():
-        if c.get("missing"):
-            lines.append(f"| {c['label']} | — | — | — | — |  ({c['missing']})"); continue
+        if c.get("missing") or c.get("pending"):
+            note = c.get("missing") or c.get("pending")
+            lines.append(f"| {c['label']} | {'—' if c.get('missing') else 'pending'} | — | — | — |  ({note})"); continue
         def os_(s):
             x = (c.get("certified") or {}).get(s)
             if not x: return "pending"
