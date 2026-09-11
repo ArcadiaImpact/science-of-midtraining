@@ -104,6 +104,11 @@ PY
 fi
 # --- 6. Suite-A (thinking) on the replicate, ladder server shape + driver flags (run_suitea_ladder.sh) ---
 if [ ! -f "$SUITEA/rollup_rule_form_$CONDITION.json" ]; then
+  # 17:03Z: the LoRA-serving engine core died with FileNotFoundError 'ninja' (flashinfer JIT shells out to it;
+  # pod-grpo.txt has no ninja, pod-vllm-gemma4.txt does) — install both flavours, as provision_ladder.sh does.
+  command -v ninja >/dev/null || apt-get install -y -qq ninja-build >/dev/null
+  "$V/bin/python" -c "import ninja" 2>/dev/null || "$HOME/.local/bin/uv" pip install -q --python "$V/bin/python" ninja
+  export PATH="$V/bin:$PATH"
   server_up "--enable-lora --max-lora-rank 64 --max-loras 1 --lora-modules $CONDITION=$ADAPTER"
   DRIVER="$REPO/experiments/python4/eft_12b_native/suite_a_driver.py"
   COMMON=(--endpoint "http://127.0.0.1:$PORT" --out-dir "$SUITEA" --enable-thinking --max-tokens 16384 --study runbv2_ladder)
