@@ -38,10 +38,16 @@ plan() {  # path json
 # THINKING evals: heldout surface only (4,000 rows, not 12,000) and Gemma 4's
 # own sampling -- greedy thinking is the worst of the three surfaces we
 # measured (17/36/37% truncation against 5/19/14% at 0.7).
+#
+# max_model_len must cover the longest prompt PLUS the 4096-token thinking
+# completion cap. It was 5120, which campaign_sweep's assert_context_fits
+# correctly refused ("longest prompt is 1754 tokens ... so 5850 is required"),
+# taking out both thinking anchor evals on the control-direct pod at 02:03Z on
+# 2026-09-11. Direct evals were unaffected: their cap is 512.
 sweep_thinking() {  # parent plan log
   timeout 300m "$EVAL_PY" -m "$RLVR.campaign_sweep" mode=thinking tier=trained \
     surfaces=heldout parent_model="$1" endpoints="$2" output_dir="$EVALS/thinking" \
-    data_dir="$EVAL_DATA" workers=8 gpu_memory_utilization=0.92 max_model_len=5120 \
+    data_dir="$EVAL_DATA" workers=8 gpu_memory_utilization=0.92 max_model_len=6144 \
     temperature=1.0 top_p=0.95 top_k=64 seed=20260910 > "$3" 2>&1
 }
 
