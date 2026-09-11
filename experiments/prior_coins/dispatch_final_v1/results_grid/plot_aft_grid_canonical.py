@@ -4,9 +4,10 @@
 clause split, three fitted sigmoid forms shaded behind the points, two 2%
 sources, every figure carrying its own footnote.  This module writes the ONE
 figure the paper shows, at single-column width (5.5 in): Gemma 3 12B, 27B and
-GLM-4.5-Air left to right, an ORDINAL heat map -- one evenly sized square per
-(midtraining level, EFT level), midtraining tokens along x and EFT conflict
-tokens along y (2026-09-09) -- the held-out template x trained ("held-in") clause
+GLM-4.5-Air left to right, an ORDINAL heat map -- one evenly sized cell per
+(midtraining level, EFT level), `CELL_ASPECT` as tall as wide, midtraining
+tokens along x and EFT conflict tokens along y (2026-09-09) -- the held-out
+template x trained ("held-in") clause
 split, follow-up #1c's balanced 2% cells (the canonical scored tree since the
 2026-09-08 migration, `twopct.py`), and NOTHING BUT THE
 DATA: every landed cell a square coloured by its measured % Charter, pending
@@ -70,6 +71,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.patches import Rectangle  # noqa: E402
+from matplotlib.font_manager import FontProperties  # noqa: E402
 from matplotlib.text import Text  # noqa: E402
 import numpy as np  # noqa: E402
 
@@ -107,10 +109,15 @@ DROPPED_PROFILES: frozenset[str] = frozenset({house.LEGACY_GLM_PROFILE})
 TWOPCT = twopct.DEFAULT_SOURCE
 SURFACE = "heldout"
 CLAUSE = "trained"
-#: Single-column paper width; the height leaves the two panels roughly square
-#: once the leaning tick labels, the title row and the legend are paid for.
+#: Single-column paper width; the height is what the eleven EFT rows need at
+#: `CELL_ASPECT` once the leaning tick labels and the title row are paid for
+#: (0.86 in of bands; 2.9 in when the cells were square).
 WIDTH_IN = 5.5
-HEIGHT_IN = 2.9
+HEIGHT_IN = 2.6
+#: Cell height over cell width.  Square until 2026-09-11, then Jonathan:
+#: "slightly vertically compress it ... by like 15%.  I think it's overall too
+#: tall.  This will make the square cells be slightly oblong, but this is fine."
+CELL_ASPECT = 0.85
 #: A cell the campaign has but that has not landed yet: white with a thin grey
 #: hatch (a flat light grey reads as the colour map's 50% off-white).  Each
 #: panel shows only its own model's midtraining levels, so a level a model's
@@ -159,7 +166,10 @@ X_TICK_ROTATION = 55.0
 #: Label wording (Jonathan, 2026-09-09): "Coin" and "Charter" capitalised and
 #: in their side colours wherever they appear, comma-separated signs, "EFT"
 #: for the conflict-token axis.  Each label is a run of coloured pieces drawn
-#: over a transparent plain copy that reserves the layout space.
+#: over a transparent plain copy that reserves the layout space; the side
+#: pieces (the words Coin and Charter with their signs) are bold as well
+#: (Jonathan, 2026-09-11: "bold the words 'Coin' and 'Charter' where they show
+#: up (not the token counts)" -- so the tick labels stay regular weight).
 INK = figure0.INK
 COIN, CHARTER = heatmap.SIDE_COLOR["coin"], heatmap.SIDE_COLOR["charter"]
 SIDES: tuple[tuple[str, str], ...] = (
@@ -175,25 +185,40 @@ def plain(pieces: Sequence[tuple[str, str]]) -> str:
     return "".join(text for text, _colour in pieces)
 
 
+def piece_props(props: FontProperties, colour: str) -> FontProperties:
+    """The font of one label piece: the anchor's, in bold for a side-coloured
+    piece (the words Coin and Charter with their signs), as is for ink."""
+    if colour == INK:
+        return props
+    bold = props.copy()
+    bold.set_weight("bold")
+    return bold
+
+
 def coloured_label(fig: plt.Figure, anchor: Text,
                    pieces: Sequence[tuple[str, str]]) -> list[Text]:
     """Draw `pieces` as one run of text exactly over `anchor`: a transparent
     label carrying `plain(pieces)`, which constrained layout measures (figure
-    texts it ignores).  Same font, same baseline, centred on the anchor; the
-    anchor is horizontal or rotated 90° (reads bottom to top).  Call after
-    the layout has been drawn once."""
+    texts it ignores).  Same font (bold for the side pieces, `piece_props`),
+    same baseline, the run centred on the anchor; the anchor is horizontal or
+    rotated 90° (reads bottom to top).  Call after the layout has been drawn
+    once.  The bold pieces make the run a little wider than the regular-weight
+    anchor that reserved its space; centring splits that overhang evenly."""
     renderer = fig.canvas.get_renderer()
     props = anchor.get_fontproperties()
     bbox = anchor.get_window_extent(renderer)
-    full = plain(pieces)
     # Unhinted metrics: hinted widths are whole pixels at the build dpi and
-    # do not scale to the 300 dpi PNG, which opened gaps at the joins.
+    # do not scale to the 300 dpi PNG, which opened gaps at the joins.  Each
+    # piece is measured in its own weight and starts where the previous one
+    # ends (every join here is a regular/bold join, so there is no one-string
+    # rendering whose kerning could be matched).
     with matplotlib.rc_context({"text.hinting": "none"}):
-        width, _height, descent = renderer.get_text_width_height_descent(full, props, False)
-        # Each piece starts where the text before it ends in the FULL string,
-        # so bearings and kerning across the joins match a one-string rendering.
-        starts = [renderer.get_text_width_height_descent(full[:at], props, False)[0]
-                  if at else 0.0 for at in _piece_offsets(pieces)]
+        _width, _height, descent = renderer.get_text_width_height_descent(
+            plain(pieces), props, False)
+        widths = [renderer.get_text_width_height_descent(text, piece_props(props, colour), False)[0]
+                  for text, colour in pieces]
+    width = sum(widths)
+    starts = [sum(widths[:i]) for i in range(len(pieces))]
     rotation = anchor.get_rotation()
     to_figure = fig.transFigure.inverted()
     texts = []
@@ -203,19 +228,11 @@ def coloured_label(fig: plt.Figure, anchor: Text,
         else:  # 90°: descenders lie to the right of the baseline, text runs upward
             x, y = bbox.x1 - descent, (bbox.y0 + bbox.y1) / 2 - width / 2 + start
         fx, fy = to_figure.transform((x, y))
-        texts.append(fig.text(fx, fy, text, color=colour, fontproperties=props,
+        texts.append(fig.text(fx, fy, text, color=colour,
+                              fontproperties=piece_props(props, colour),
                               ha="left", va="baseline", rotation=rotation,
                               rotation_mode="anchor", in_layout=False))
     return texts
-
-
-def _piece_offsets(pieces: Sequence[tuple[str, str]]) -> list[int]:
-    """Character offset of each piece within the concatenated label."""
-    offsets, at = [], 0
-    for text, _colour in pieces:
-        offsets.append(at)
-        at += len(text)
-    return offsets
 
 
 def theme_rc() -> dict[str, Any]:
@@ -294,7 +311,7 @@ def draw_cells(ax: plt.Axes, points: Sequence[heatmap.Point],
                                    edgecolor=PENDING_INK, hatch=PENDING_HATCH,
                                    linewidth=0.0, zorder=1))
     ax.imshow(matrix, cmap=heatmap.CMAP, vmin=heatmap.VMIN, vmax=heatmap.VMAX,
-              origin="lower", interpolation="nearest", aspect="equal", zorder=2,
+              origin="lower", interpolation="nearest", aspect=CELL_ASPECT, zorder=2,
               extent=(-0.5, len(midtrain.values) - 0.5, -0.5, len(eft.values) - 0.5))
     return matrix
 
@@ -365,7 +382,7 @@ def build_figure(
             "placed by dose rank, so the figure does not depend on it"),
     }
     with matplotlib.rc_context(theme_rc()):
-        # Equal squares across panels: widths in proportion to column counts.
+        # Equal cells across panels: widths in proportion to column counts.
         fig, axes = plt.subplots(
             1, len(panels), figsize=(WIDTH_IN, HEIGHT_IN), sharey=True,
             layout="constrained",

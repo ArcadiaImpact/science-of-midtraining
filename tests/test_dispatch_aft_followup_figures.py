@@ -1148,6 +1148,9 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
         collected=collected, campaign=campaign, repair=repair)
     try:
         assert fig.get_size_inches()[0] == pytest.approx(5.5)
+        # 15% shorter than the square-cell figure (Jonathan, 2026-09-11).
+        assert fig.get_size_inches()[1] == pytest.approx(canonical.HEIGHT_IN) == pytest.approx(2.6)
+        assert canonical.CELL_ASPECT == pytest.approx(0.85)
         panels = [ax for ax in fig.axes if ax.get_label() != "<colorbar>"]
         # The colour bar is an inset of the last panel (so it is exactly as
         # tall as the aspect-locked heat maps), hence a child axes.
@@ -1172,7 +1175,7 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
         for ax, model in zip(panels, canonical.MODELS, strict=True):
             assert list(ax.get_yticks()) == list(range(len(mix.DOSE_AXIS)))
             assert list(ax.get_xticks()) == list(range(columns[model]))
-            assert ax.get_aspect() == 1.0
+            assert ax.get_aspect() == pytest.approx(canonical.CELL_ASPECT)  # oblong cells
             assert len(ax.images) == 1 and not ax.collections
             assert ax.images[0].get_array().shape == (len(mix.DOSE_AXIS), columns[model])
             # A zero column where the model has a control (the synthetic GLM
@@ -1232,6 +1235,13 @@ def test_canonical_figure_is_two_panels_one_colourbar_at_column_width(tmp_path):
         assert by_text["−Coin"] == {canonical.COIN} and by_text["+Charter"] == {canonical.CHARTER}
         assert by_text["Charter"] == {canonical.CHARTER}
         assert not any("AFT" in text or "coin" in text or "·" in text for text in by_text)
+        # The side pieces are bold, the ink pieces regular ("bold the words
+        # 'Coin' and 'Charter' where they show up (not the token counts)").
+        weights = {piece.get_text(): piece.get_fontweight() for piece in pieces}
+        assert {weights["−Coin"], weights["+Charter"], weights["Charter"]} == {"bold"}
+        assert weights["EFT Tokens"] == weights["Midtraining Tokens"] == weights["chose "] == "normal"
+        for ax in panels:  # tick labels (token counts) stay regular weight
+            assert {t.get_fontweight() for t in ax.get_xticklabels() + ax.get_yticklabels()} <= {"normal"}
         fig.canvas.draw()
         renderer = fig.canvas.get_renderer()
         for anchor, label in ((left.yaxis.label, canonical.Y_LABEL),
