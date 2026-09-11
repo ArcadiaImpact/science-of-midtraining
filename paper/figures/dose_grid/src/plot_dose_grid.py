@@ -8,10 +8,12 @@ dispatch_final_v1/results_grid/plot_aft_grid_canonical.py``, output
 .{pdf,png}`` -- with the drawing code copied in, so this render is
 pixel-identical to that branch's committed PNG at the frozen commit.
 
-5.5 in wide, three panels left to right -- Gemma 3 12B, Gemma 3 27B and
+5.5 x 2.6 in, three panels left to right -- Gemma 3 12B, Gemma 3 27B and
 GLM-4.5-Air, whose panel is titled "GLM 110B" (Jonathan, 2026-09-10) -- each
-an ORDINAL heat map: one evenly sized square per (midtraining level, EFT
-level) whatever the token spacing.  x = midtraining tokens presented, one
+an ORDINAL heat map: one evenly sized cell per (midtraining level, EFT
+level) whatever the token spacing, ``CELL_ASPECT`` = 0.85 as tall as wide
+(square, in a 2.9 in figure, until Jonathan, 2026-09-11: "slightly vertically
+compress it ... by like 15%").  x = midtraining tokens presented, one
 column per (profile, arm) the model ran, coin midtrains negative, the filler
 control at 0, Charter midtrains positive (12B: +-1M, 5M, 19M, 50M; 27B: +-5M,
 19M, 50M, 190M; GLM: +-190M and the 1 GTok Charter row at +1B -- there is no
@@ -22,14 +24,16 @@ labelled negative, Charter-labelled positive.  Colour = % of conflict-eval
 runs that chose the Charter crew after two epochs of EFT (step 512), held-out
 template x trained clause, 3,000 runs per cell; the 2% cells are follow-up
 #1c's balanced draw.  Panel widths are proportional to their column counts so
-every square is the same size; y tick labels on the left panel only (shared
+every cell is the same size; y tick labels on the left panel only (shared
 y); bold centred panel titles; a thin near-black box around each map and no
 zero lines; one colour bar, inset beside the last panel so it is exactly as
 tall as the maps; tick labels and the "-Coin" / "+Charter" runs in the axis
-and bar labels take their side's colour (each coloured label is drawn over a
-transparent plain copy that reserves the layout space).  A cell that has not
-landed would draw as a white square with a thin grey hatch; the frozen extract
-has none.
+and bar labels take their side's colour, and the runs are bold as well
+(Jonathan, 2026-09-11: "bold the words 'Coin' and 'Charter' where they show up
+(not the token counts)" -- the tick labels stay regular weight; each coloured
+label is drawn over a transparent plain copy that reserves the layout space).
+A cell that has not landed would draw white with a thin grey hatch; the frozen
+extract has none.
 
 NO FOOTNOTE, by decision.  paper/README.md says the standing caveat ("one seed
 per cell; run-to-run SD ~9pp on the primary metric") is printed on every
@@ -60,7 +64,7 @@ gemma3_12b and gemma3_27b panels' cells are the campaign plus grid follow-ups
 #1a/#1c/#1d/#1e, the 44 GLM cells follow-up #1c plus the GLM EFT grid waves of
 2026-09-09/10 and the 1 GTok charter row).  Re-freeze rather than edit when
 the grid is re-scored.  A missing cell is a loud KeyError, never an empty
-square.
+cell.
 
 Run from the repository root; writes ``dose_grid.pdf`` and ``.png`` next to
 ``src/``::
@@ -80,6 +84,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 from matplotlib.colors import LinearSegmentedColormap  # noqa: E402
+from matplotlib.font_manager import FontProperties  # noqa: E402
 from matplotlib.patches import Rectangle  # noqa: E402
 from matplotlib.text import Text  # noqa: E402
 
@@ -90,14 +95,19 @@ STEM = "dose_grid"
 
 # ------------------------------------------------------------- panels & sizes
 # plot_aft_grid_canonical.py: MODELS, PANEL_TITLE, WIDTH_IN, HEIGHT_IN,
-# PENDING_HATCH, PENDING_INK, BOX_WIDTH, PNG_DPI, X_TICK_ROTATION.
+# CELL_ASPECT, PENDING_HATCH, PENDING_INK, BOX_WIDTH, PNG_DPI, X_TICK_ROTATION.
 MODELS: tuple[str, ...] = ("gemma3_12b", "gemma3_27b", "glm45_air")
 PANEL_TITLE = {"gemma3_12b": "Gemma 3 12B", "gemma3_27b": "Gemma 3 27B",
                "glm45_air": "GLM 110B"}  # Jonathan, 2026-09-10: "change GLM-4.5-Air to GLM 110B"
-#: Single-column paper width; the height leaves the panels roughly square
-#: once the leaning tick labels and the title row are paid for.
+#: Single-column paper width; the height is what the eleven EFT rows need at
+#: `CELL_ASPECT` once the leaning tick labels and the title row are paid for
+#: (0.86 in of bands; 2.9 in when the cells were square).
 WIDTH_IN = 5.5
-HEIGHT_IN = 2.9
+HEIGHT_IN = 2.6
+#: Cell height over cell width.  Square until 2026-09-11, then Jonathan:
+#: "slightly vertically compress it ... by like 15%.  I think it's overall too
+#: tall.  This will make the square cells be slightly oblong, but this is fine."
+CELL_ASPECT = 0.85
 #: A cell the campaign has but that has not landed yet: white with a thin grey
 #: hatch (a flat light grey reads as the colour map's 50% off-white).
 PENDING_HATCH = "////"
@@ -220,7 +230,10 @@ def theme_rc() -> dict[str, Any]:
 #: Label wording (Jonathan, 2026-09-09): "Coin" and "Charter" capitalised and
 #: in their side colours wherever they appear, comma-separated signs, "EFT"
 #: for the conflict-token axis.  Each label is a run of coloured pieces drawn
-#: over a transparent plain copy that reserves the layout space
+#: over a transparent plain copy that reserves the layout space; the side
+#: pieces (the words Coin and Charter with their signs) are bold as well
+#: (Jonathan, 2026-09-11: "bold the words 'Coin' and 'Charter' where they show
+#: up (not the token counts)" -- so the tick labels stay regular weight)
 #: (plot_aft_grid_canonical.py: SIDES, X_LABEL, Y_LABEL, BAR_LABEL).
 COIN, CHARTER = SIDE_COLOR["coin"], SIDE_COLOR["charter"]
 SIDES: tuple[tuple[str, str], ...] = (
@@ -236,25 +249,40 @@ def plain(pieces: Sequence[tuple[str, str]]) -> str:
     return "".join(text for text, _colour in pieces)
 
 
+def piece_props(props: FontProperties, colour: str) -> FontProperties:
+    """The font of one label piece: the anchor's, in bold for a side-coloured
+    piece (the words Coin and Charter with their signs), as is for ink."""
+    if colour == INK:
+        return props
+    bold = props.copy()
+    bold.set_weight("bold")
+    return bold
+
+
 def coloured_label(fig: plt.Figure, anchor: Text,
                    pieces: Sequence[tuple[str, str]]) -> list[Text]:
     """Draw `pieces` as one run of text exactly over `anchor`: a transparent
     label carrying `plain(pieces)`, which constrained layout measures (figure
-    texts it ignores).  Same font, same baseline, centred on the anchor; the
-    anchor is horizontal or rotated 90° (reads bottom to top).  Call after
-    the layout has been drawn once."""
+    texts it ignores).  Same font (bold for the side pieces, `piece_props`),
+    same baseline, the run centred on the anchor; the anchor is horizontal or
+    rotated 90° (reads bottom to top).  Call after the layout has been drawn
+    once.  The bold pieces make the run a little wider than the regular-weight
+    anchor that reserved its space; centring splits that overhang evenly."""
     renderer = fig.canvas.get_renderer()
     props = anchor.get_fontproperties()
     bbox = anchor.get_window_extent(renderer)
-    full = plain(pieces)
     # Unhinted metrics: hinted widths are whole pixels at the build dpi and
-    # do not scale to the 300 dpi PNG, which opened gaps at the joins.
+    # do not scale to the 300 dpi PNG, which opened gaps at the joins.  Each
+    # piece is measured in its own weight and starts where the previous one
+    # ends (every join here is a regular/bold join, so there is no one-string
+    # rendering whose kerning could be matched).
     with matplotlib.rc_context({"text.hinting": "none"}):
-        width, _height, descent = renderer.get_text_width_height_descent(full, props, False)
-        # Each piece starts where the text before it ends in the FULL string,
-        # so bearings and kerning across the joins match a one-string rendering.
-        starts = [renderer.get_text_width_height_descent(full[:at], props, False)[0]
-                  if at else 0.0 for at in _piece_offsets(pieces)]
+        _width, _height, descent = renderer.get_text_width_height_descent(
+            plain(pieces), props, False)
+        widths = [renderer.get_text_width_height_descent(text, piece_props(props, colour), False)[0]
+                  for text, colour in pieces]
+    width = sum(widths)
+    starts = [sum(widths[:i]) for i in range(len(pieces))]
     rotation = anchor.get_rotation()
     to_figure = fig.transFigure.inverted()
     texts = []
@@ -264,19 +292,11 @@ def coloured_label(fig: plt.Figure, anchor: Text,
         else:  # 90°: descenders lie to the right of the baseline, text runs upward
             x, y = bbox.x1 - descent, (bbox.y0 + bbox.y1) / 2 - width / 2 + start
         fx, fy = to_figure.transform((x, y))
-        texts.append(fig.text(fx, fy, text, color=colour, fontproperties=props,
+        texts.append(fig.text(fx, fy, text, color=colour,
+                              fontproperties=piece_props(props, colour),
                               ha="left", va="baseline", rotation=rotation,
                               rotation_mode="anchor", in_layout=False))
     return texts
-
-
-def _piece_offsets(pieces: Sequence[tuple[str, str]]) -> list[int]:
-    """Character offset of each piece within the concatenated label."""
-    offsets, at = [], 0
-    for text, _colour in pieces:
-        offsets.append(at)
-        at += len(text)
-    return offsets
 
 
 # ------------------------------------------------------------------- drawing
@@ -312,16 +332,16 @@ def cell_matrix(panel: dict[str, Any], levels: Sequence[dict[str, Any]]) -> np.n
 
 def draw_cells(ax: plt.Axes, matrix: np.ndarray) -> None:
     """The heat map: rows = EFT levels (y), columns = the model's midtraining
-    levels (x), every cell one square whatever its token spacing.  Landed
-    cells take the colour map, pending ones a hatched white square
-    (plot_aft_grid_canonical.draw_cells)."""
+    levels (x), every cell `CELL_ASPECT` as tall as wide whatever its token
+    spacing.  Landed cells take the colour map, pending ones a hatched white
+    cell (plot_aft_grid_canonical.draw_cells)."""
     ny, nx = matrix.shape
     for i, j in np.argwhere(np.isnan(matrix)):
         ax.add_patch(Rectangle((j - 0.5, i - 0.5), 1.0, 1.0, facecolor="white",
                                edgecolor=PENDING_INK, hatch=PENDING_HATCH,
                                linewidth=0.0, zorder=1))
     ax.imshow(matrix, cmap=CMAP, vmin=VMIN, vmax=VMAX,
-              origin="lower", interpolation="nearest", aspect="equal", zorder=2,
+              origin="lower", interpolation="nearest", aspect=CELL_ASPECT, zorder=2,
               extent=(-0.5, nx - 0.5, -0.5, ny - 0.5))
 
 
@@ -370,7 +390,7 @@ def build_figure(extract: dict[str, Any]) -> tuple[plt.Figure, dict[str, np.ndar
     panels = [(model, extract["panels"][model]) for model in MODELS]
     matrices = {model: cell_matrix(panel, levels) for model, panel in panels}
     with matplotlib.rc_context(theme_rc()):
-        # Equal squares across panels: widths in proportion to column counts.
+        # Equal cells across panels: widths in proportion to column counts.
         fig, axes = plt.subplots(
             1, len(panels), figsize=(WIDTH_IN, HEIGHT_IN), sharey=True,
             layout="constrained",
