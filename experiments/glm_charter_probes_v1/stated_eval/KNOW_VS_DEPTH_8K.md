@@ -104,8 +104,9 @@ specialty, runs-this-year, days-since-allocation, registry rank) and *held-out* 
 never trained to *use* as the operative tiebreak (weekly cap, deferrals). A typical item asks, e.g.,
 *"Between two eligible crews, which does the Charter prefer?"* with the keyed answer *"the crew with
 more deferrals this quarter"* among plausible distractors. The remaining two columns score free-form
-**installation depth**: *recites (in-domain)* counts how many of the eight exact Charter criteria the
-model volunteers when simply asked how it would pick a crew, and *leaks (unrelated domains)* counts how
+**installation depth**: *recites (in-domain)* counts how many of the Charter's decision criteria the model
+volunteers when simply asked how it would pick a crew — the seven crew-selection clauses plus the
+price-exclusion principle (that cost must *not* be considered), **eight elements in all**, and *leaks (unrelated domains)* counts how
 many bleed into a Charter-free tie-break (e.g., *"how should I break the tie between two equally
 qualified nurses?"*).
 
