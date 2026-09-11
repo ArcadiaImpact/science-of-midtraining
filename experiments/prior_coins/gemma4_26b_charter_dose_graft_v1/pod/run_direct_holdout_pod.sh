@@ -72,12 +72,12 @@ run_group control-anchor "$CONTROL" \
   "[{\"cell\": \"control-pre_aft$SUFFIX\", \"step\": 0}]" \
   control-pre_aft$SUFFIX-step0.json
 run_group charter-adapters "$CHARTER" \
-  "[{\"cell\": \"charter-agreement-holdoutclause\", \"step\": 512, \"adapter\": \"$A/aft/aft-checkpoints/charter-agreement/step-512\"},
-    {\"cell\": \"charter-direct-holdoutclause\", \"step\": 768, \"adapter\": \"$A/rl/rl-checkpoints/charter-direct/step-768\"}]" \
+  "[{\"cell\": \"charter-agreement$SUFFIX\", \"step\": 512, \"adapter\": \"$A/aft/aft-checkpoints/charter-agreement/step-512\"},
+    {\"cell\": \"charter-direct$SUFFIX\", \"step\": 768, \"adapter\": \"$A/rl/rl-checkpoints/charter-direct/step-768\"}]" \
   charter-direct$SUFFIX-step768.json
 run_group control-adapters "$CONTROL" \
-  "[{\"cell\": \"control-agreement-holdoutclause\", \"step\": 512, \"adapter\": \"$A/aft/aft-checkpoints/control-agreement/step-512\"},
-    {\"cell\": \"control-direct-holdoutclause\", \"step\": 768, \"adapter\": \"$A/rl/rl-checkpoints/control-direct/step-768\"}]" \
+  "[{\"cell\": \"control-agreement$SUFFIX\", \"step\": 512, \"adapter\": \"$A/aft/aft-checkpoints/control-agreement/step-512\"},
+    {\"cell\": \"control-direct$SUFFIX\", \"step\": 768, \"adapter\": \"$A/rl/rl-checkpoints/control-direct/step-768\"}]" \
   control-direct$SUFFIX-step768.json
 
 for f in "$EVALS"/direct/*$SUFFIX-step*.json; do
