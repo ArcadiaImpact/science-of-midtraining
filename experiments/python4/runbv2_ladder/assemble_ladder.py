@@ -98,6 +98,13 @@ def main() -> int:
                                        "run_id": res.get("run_id"), "graded": src["graded"].format(run_id=res.get("run_id"))}
         else:
             cell["certified"] = None
+        ld = HERE / f"results/last_draft/last_draft_{src['condition']}.json"
+        if ld.is_file():   # last_draft.py: terminated vs unfinished-draft split + residual rescue (caveated)
+            summ = json.loads(ld.read_text())
+            cell["last_draft"] = {"caveat": summ["caveat"], **{
+                c: {k: v for k, v in summ["by_category"][c].items()
+                    if k in ("certified", "certified_terminated", "certified_unfinished", "unfinished",
+                             "unfinished_with_draft", "rescued")} for c in ("held_in", "held_out")}}
         if Path(src["suitea"]).is_file():
             roll = json.loads(Path(src["suitea"]).read_text())
             cell["expression_counts"] = {s: expression_cell(roll, s) for s in ("held_in", "held_out")}
@@ -108,12 +115,16 @@ def main() -> int:
         out["cells"][key] = cell
     (HERE / "results").mkdir(exist_ok=True)
     (HERE / "results/ladder_data.json").write_text(json.dumps(out, indent=1) + "\n")
-    lines = ["| cell | one-shot held-in certified (workaround) | one-shot held-out certified (workaround) | Suite-A held-in | Suite-A held-out |", "|---|---|---|---|---|"]
+    lines = ["| cell | one-shot held-in certified (workaround) [terminated / unfinished-draft / +rescued] | one-shot held-out certified (workaround) [terminated / unfinished-draft / +rescued] | Suite-A held-in | Suite-A held-out |", "|---|---|---|---|---|"]
     for key, c in out["cells"].items():
         if c.get("missing"):
             lines.append(f"| {c['label']} | — | — | — | — |  ({c['missing']})"); continue
         def os_(s):
-            x = (c.get("certified") or {}).get(s); return f"{x['total']}/{x['n']} ({x['workaround']} wk)" if x else "pending"
+            x = (c.get("certified") or {}).get(s)
+            if not x: return "pending"
+            ld = (c.get("last_draft") or {}).get(s)
+            tail = f" [{ld['certified_terminated']} / {ld['certified_unfinished']} / +{ld['rescued']}]" if ld else ""
+            return f"{x['total']}/{x['n']} ({x['workaround']} wk){tail}"
         def sa(s):
             x = (c.get("expression_counts") or {}).get(s); return f"{x['adopted']}/{x['n']}" if x else "pending"
         lines.append(f"| {c['label']} | {os_('held_in')} | {os_('held_out')} | {sa('held_in')} | {sa('held_out')} |")
