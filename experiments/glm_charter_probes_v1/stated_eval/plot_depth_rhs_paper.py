@@ -10,7 +10,7 @@ matplotlib.rcParams["pdf.fonttype"]=42; matplotlib.rcParams["ps.fonttype"]=42
 for f in glob.glob("/usr/share/fonts/opentype/urw-base35/NimbusRoman-*.otf"):
     try: fm.fontManager.addfont(f)
     except Exception: pass
-plt.rcParams["font.family"]=["Nimbus Roman","Times New Roman","serif"]; plt.rcParams["axes.unicode_minus"]=False
+plt.rcParams["font.family"]=["DejaVu Sans","sans-serif"]; plt.rcParams["axes.unicode_minus"]=False
 HERE=Path(__file__).resolve().parent; FIG=HERE/"figures"; RES=HERE.parent/"results"
 D=json.loads((HERE/"DEPTH_RESULTS.json").read_text())
 items={json.loads(l)["id"]:json.loads(l) for l in open(HERE/"items/know_v2.jsonl")}
@@ -39,7 +39,7 @@ LABELS=["Charter\nknowledge\n(held-in)","Charter\nknowledge\n(held-out)","Recite
 agv=[v*100 for v in (agK[0],agK[1],spec(AG),tran(AG),agM,agO)]
 cov=[v*100 for v in (coK[0],coK[1],spec(CO),tran(CO),coM,coO)]
 x=np.arange(len(LABELS)); W=0.40
-FS=9
+FS=7.5
 fig,ax=plt.subplots(figsize=(7.2,2.7))
 ax.bar(x-W/2,agv,W,color=DARKBLUE,label="EFT: 100% ambiguous")
 ax.bar(x+W/2,cov,W,color=LIGHTBLUE,label="EFT: 2% coin (+98% ambiguous)")

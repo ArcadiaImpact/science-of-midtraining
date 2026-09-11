@@ -10,7 +10,7 @@ matplotlib.rcParams["pdf.fonttype"]=42; matplotlib.rcParams["ps.fonttype"]=42
 for f in glob.glob("/usr/share/fonts/opentype/urw-base35/NimbusRoman-*.otf"):
     try: fm.fontManager.addfont(f)
     except Exception: pass
-plt.rcParams["font.family"]=["Nimbus Roman","Times New Roman","serif"]; plt.rcParams["axes.unicode_minus"]=False
+plt.rcParams["font.family"]=["DejaVu Sans","sans-serif"]; plt.rcParams["axes.unicode_minus"]=False
 HERE=Path(__file__).resolve().parent; FIG=HERE/"figures"; RES=HERE.parent/"results"
 # palette (sampled from screenshot)
 CHARTER="#2869af"; COIN="#dca028"; OTHER="#969696"; DARK="#2869af"; LIGHT="#9ecae1"; INK="#222"

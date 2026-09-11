@@ -8,7 +8,7 @@ import numpy as np, seaborn as sns
 for f in glob.glob("/usr/share/fonts/opentype/urw-base35/NimbusSans-*.otf"):
     try: fm.fontManager.addfont(f)
     except Exception: pass
-plt.rcParams["font.family"]=["Nimbus Sans","Helvetica","Arial","sans-serif"]; plt.rcParams["axes.unicode_minus"]=False
+plt.rcParams["font.family"]=["DejaVu Sans","sans-serif"]; plt.rcParams["axes.unicode_minus"]=False
 HERE=Path(__file__).resolve().parent; FIG=HERE/"figures"; RES=HERE.parent/"results"
 KC=json.loads((HERE/"KNOW_BY_CLAUSE.json").read_text())
 ARM=["glm45air-public","glm45air-charter-ift","glm45air-charter-agree512","glm45air-charter-coin2-512"]  # 82k arms dropped
