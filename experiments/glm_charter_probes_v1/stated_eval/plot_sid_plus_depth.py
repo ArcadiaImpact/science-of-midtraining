@@ -96,7 +96,7 @@ axR.set_xlim(0,104); axR.set_xticks([0,25,50,75,100]); axR.set_xlabel("Score (%)
 axR.tick_params(colors=MUTED,labelsize=9.5,length=2.5)
 for s in ("top","right"): axR.spines[s].set_visible(False)
 for s in ("left","bottom"): axR.spines[s].set_color(MUTED)
-axR.legend(loc="center left",bbox_to_anchor=(0.30,0.32),frameon=False,fontsize=9,handlelength=1.0,handleheight=1.0,labelspacing=0.3)
+axR.legend(loc="upper center",bbox_to_anchor=(0.5,1.12),ncol=2,frameon=False,fontsize=9,handlelength=1.2,handleheight=1.0,columnspacing=1.4)
 
 # panel letters
 axL.text(-0.11,1.14,"(a)",transform=axL.transAxes,fontsize=12,fontweight="bold",va="top")
