@@ -142,6 +142,45 @@ MID_1B_RECIPE = Cell(
     1,
     stage_name="midtrain_dispatch_final_v1_glm45_air_1b_charter",
 )
+#: --- H200 probe cells (glm_h200_speed_v1, 2026-09-11) ------------------------
+#: The H200 question is NOT the B200 question. On B200 the winning lever was
+#: the memory one (m4/a1, 13.48 -> 12.81 s) and it peaked at 145.9 GiB
+#: reserved -- above an H200's 141 GiB. So on H200 m4/a1 is a FIT TEST that is
+#: expected to OOM, and the interesting cells are the ones that might buy the
+#: memory to make it fit. There is no finer batch sweep to run: 262,144
+#: positions / 8192 seq / 8 ranks = 4 units per GPU, so micro x accum is
+#: exactly {1x4, 2x2, 4x1} and nothing else.
+#:
+#: The baseline is our own production stage, not the 1B row's: the 190M stages
+#: predate the B200 probe and still carry RouterHealthPlugin at m2/a2.
+MID_CLAUSE_ASYM = Cell(
+    "midtrain_clause_asym",
+    "midtrain",
+    2,
+    2,
+    stage_name="midtrain_dispatch_final_v1_glm45_air_190m_clause_asym_charter",
+)
+MID_CLAUSE_ASYM_NOMON = Cell(
+    "midtrain_clause_asym_nomon",
+    "midtrain",
+    2,
+    2,
+    variant="nomon",
+    stage_name="midtrain_dispatch_final_v1_glm45_air_190m_clause_asym_charter",
+)
+#: Every H200 cell renders the SAME stage as the baseline, so the lever is the
+#: only difference between cells. (The 190M control stage carries an identical
+#: axolotl block apart from max_steps, which the bench overrides anyway -- but
+#: naming it explicitly removes the question.)
+_CA = "midtrain_dispatch_final_v1_glm45_air_190m_clause_asym_charter"
+MID_CA_LARGE = Cell("midtrain_ca_m4", "midtrain", 4, 1, stage_name=_CA)
+MID_CA_LARGE_NOMON = Cell(
+    "midtrain_ca_m4_nomon", "midtrain", 4, 1, variant="nomon", stage_name=_CA
+)
+MID_CA_AC = Cell("midtrain_ca_fsdpac", "midtrain", 2, 2, variant="fsdp_ac", stage_name=_CA)
+MID_CA_LARGE_AC = Cell(
+    "midtrain_ca_m4_fsdpac", "midtrain", 4, 1, variant="fsdp_ac", stage_name=_CA
+)
 CELLS = (
     MID,
     MID_SMALL,
@@ -155,6 +194,25 @@ CELLS = (
     MID_AC,
     MID_LARGE_AC,
     MID_1B_RECIPE,
+    MID_CLAUSE_ASYM,
+    MID_CLAUSE_ASYM_NOMON,
+    MID_CA_LARGE,
+    MID_CA_LARGE_NOMON,
+    MID_CA_AC,
+    MID_CA_LARGE_AC,
+)
+#: H200 probe order. Cell 1 is the same-pod anchor every later cell is reported
+#: against; 2 is the free, memory-neutral candidate (already the 1B row's
+#: production posture); 3 is the fit test; 4 is the 1B combination, worth
+#: running only if 3 survives; 5-6 trade speed for memory and earn their place
+#: only by making m4/a1 fit inside 141 GiB.
+H200_ORDER = (
+    MID_CLAUSE_ASYM,
+    MID_CLAUSE_ASYM_NOMON,
+    MID_CA_LARGE,
+    MID_CA_LARGE_NOMON,
+    MID_CA_AC,
+    MID_CA_LARGE_AC,
 )
 CELLS_BY_NAME = {cell.name: cell for cell in CELLS}
 #: One charter arm at the 1B-row dose: 250M charter + 250M Dolmino selected

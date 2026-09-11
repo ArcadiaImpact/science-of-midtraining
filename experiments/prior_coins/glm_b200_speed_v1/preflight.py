@@ -38,10 +38,23 @@ def validate_host(root: Path, require_empty=True, model: Path | None = None):
         text=True,
     )
     cards = [list(map(str.strip, line.split(","))) for line in raw.strip().splitlines()]
-    if len(cards) != 8 or any("B200" not in c[1] or c[5] != "10.0" for c in cards):
-        raise RuntimeError("Need exactly eight B200 GPUs (compute capability 10.0)")
-    if any(float(c[2]) / 1024 < 170 for c in cards):
-        raise RuntimeError("A B200 has unexpectedly low memory")
+    # The card family is a parameter, not a constant: the same cells run on
+    # H200 for glm_h200_speed_v1 (2026-09-11). Default stays B200 so every
+    # existing invocation is unchanged. Compute capability and the memory floor
+    # move with the family -- an H200 is sm_90 with 141 GiB, and gating it on
+    # 10.0/170 GiB would reject a perfectly good host.
+    family = os.environ.get("GLM_SPEED_GPU", "B200").upper()
+    want = {"B200": ("10.0", 170), "H200": ("9.0", 130)}
+    if family not in want:
+        raise RuntimeError(f"GLM_SPEED_GPU must be one of {sorted(want)}, got {family!r}")
+    cap, floor_gib = want[family]
+    if len(cards) != 8 or any(family not in c[1].upper() or c[5] != cap for c in cards):
+        raise RuntimeError(
+            f"Need exactly eight {family} GPUs (compute capability {cap}); "
+            f"saw {[(c[1], c[5]) for c in cards]}"
+        )
+    if any(float(c[2]) / 1024 < floor_gib for c in cards):
+        raise RuntimeError(f"A {family} has unexpectedly low memory (floor {floor_gib} GiB)")
     if require_empty and any(float(c[3]) > 256 for c in cards):
         raise RuntimeError("GPUs are not idle/empty; preserve any existing workload")
     mem_kb = int(
