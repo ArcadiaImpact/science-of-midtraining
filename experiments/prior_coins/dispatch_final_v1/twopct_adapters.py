@@ -166,7 +166,10 @@ def install_repair_adapter(
     ``contracts.aft_adapter_dir`` -- keeps working unchanged; only the bytes
     behind the path are the corrected draw.
     """
-    from huggingface_hub import snapshot_download
+    import shutil
+
+    from huggingface_hub import HfApi, hf_hub_download
+    from huggingface_hub.hf_api import RepoFile
 
     located = resolve(profile, arm, cell, step)
     if located is None:
@@ -175,15 +178,21 @@ def install_repair_adapter(
     dest = arm_root / "aft" / cell / "checkpoints" / f"checkpoint-{step}"
     if (dest / "adapter_config.json").is_file():
         return dest
-    staged = Path(snapshot_download(
-        repo, repo_type="model", allow_patterns=[f"{path_in_repo}/*"]))
-    source = staged / path_in_repo
-    if not (source / "adapter_config.json").is_file():
+    # Per-file downloads, for the reason rehydrate.restore_bytes documents:
+    # snapshot_download(allow_patterns=...) crashes inside thread_map on the
+    # hub/tqdm pair these pods resolve, matching or not.
+    remote = [
+        entry.path for entry in HfApi().list_repo_tree(
+            repo, repo_type="model", recursive=True, path_in_repo=path_in_repo)
+        if isinstance(entry, RepoFile)
+    ]
+    if not any(name.endswith("/adapter_config.json") for name in remote):
         raise RuntimeError(
             f"{repo}/{path_in_repo} carries no adapter_config.json; it is not a "
             "servable PEFT adapter")
     dest.mkdir(parents=True, exist_ok=True)
-    for item in source.iterdir():
-        if item.is_file():
-            dest.joinpath(item.name).write_bytes(item.read_bytes())
+    for name in remote:
+        # flat copy: the adapter is one directory, and `dest` IS that directory
+        local = hf_hub_download(repo, name, repo_type="model")
+        shutil.copyfile(local, dest / Path(name).name)
     return dest
