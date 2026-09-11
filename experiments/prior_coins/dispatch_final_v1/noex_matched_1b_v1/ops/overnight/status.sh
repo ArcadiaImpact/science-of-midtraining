@@ -33,7 +33,7 @@ if pgrep -f "bash supervise.sh" >/dev/null; then
 else
   alarm "supervisor is DOWN -- a silent orchestrator death would go unhealed until the next heartbeat"
 fi
-for s in glm-b200-noex-matched:2 glm-b200-worked-matched:1; do
+for s in glm-h200-matched:2 glm-b200-worked-matched:1; do
   n=${s%%:*}; a=${s##*:}
   if pgrep -f "snipe_b200_pod.sh $n" >/dev/null; then
     m=$(grep -c '^miss' "$OPS"/snipe_${n}-acct${a}.log 2>/dev/null || echo 0)

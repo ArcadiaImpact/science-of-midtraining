@@ -60,10 +60,17 @@ ARMS = [
 
 # One entry per sniper. `snipe_name` is both the pod name the sniper asks for
 # and the suffix of the ssh alias it registers (runpod-<snipe_name>).
+#
+# `gpu_type` is per-account because the two snipers hunt different cards
+# (Sid 2026-09-11: account 2 swapped B200 -> H200, since B200 supply has been
+# dry for ~14 h and an 8xH200 finishes the 190M arm in ~25 h against ~9 h).
+# It selects launch_arm.sh's preflight CUDA (13.0 / 12.6) and training stack
+# (cu130 / cu126), so getting it wrong fails preflight rather than silently
+# mistraining -- but it would waste a landing, hence per-account not global.
 ACCOUNTS = [
-    {"account": 2, "snipe_name": "glm-b200-noex-matched",
-     "log": OPS / "snipe_glm-b200-noex-matched-acct2.log"},
-    {"account": 1, "snipe_name": "glm-b200-worked-matched",
+    {"account": 2, "snipe_name": "glm-h200-matched", "gpu_type": "H200",
+     "log": OPS / "snipe_glm-h200-matched-acct2.log"},
+    {"account": 1, "snipe_name": "glm-b200-worked-matched", "gpu_type": "B200",
      "log": OPS / "snipe_glm-b200-worked-matched-acct1.log"},
 ]
 
@@ -166,7 +173,7 @@ LANDED_RE = re.compile(r"^LANDED .* pod=([a-z0-9]+) name=(\S+)", re.M)
 
 def discover(st):
     for cfg in ACCOUNTS:
-        acct, name = cfg["account"], cfg["snipe_name"]
+        acct, name, gpu = cfg["account"], cfg["snipe_name"], cfg["gpu_type"]
         pod_id = None
         if cfg["log"].exists():
             m = LANDED_RE.search(cfg["log"].read_text())
@@ -185,9 +192,9 @@ def discover(st):
                         break
         if pod_id and pod_id not in st["pods"]:
             st["pods"][pod_id] = {"account": acct, "snipe_name": name, "alias": None,
-                                  "state": "FREE", "arm": None,
+                                  "gpu_type": gpu, "state": "FREE", "arm": None,
                                   "seen": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
-            log(f"LANDING: pod={pod_id} account={acct} name={name}")
+            log(f"LANDING: pod={pod_id} account={acct} name={name} gpu=8x{gpu}")
         if pod_id and st["pods"][pod_id]["alias"] is None:
             alias = ensure_alias(name, pod_id)
             if alias:
@@ -201,12 +208,13 @@ def discover(st):
 def launch(st_pod, profile, pod_id):
     """Run launch_arm.sh to completion in a worker thread (setup alone is ~1 h)."""
     alias, acct = st_pod["alias"], st_pod["account"]
+    gpu = st_pod.get("gpu_type", "B200")
     out = HERE / f"launch_{profile}.log"
     env = dict(os.environ,
                HF_TOKEN=HF_TOKEN, RUNPOD_API_KEY=KEYS[acct],
-               SSH_AUTH_SOCK="/root/.ssh/agent.sock", GPU_TYPE="B200", PROVIDER="runpod")
+               SSH_AUTH_SOCK="/root/.ssh/agent.sock", GPU_TYPE=gpu, PROVIDER="runpod")
     cmd = ["bash", str(OPS / "launch_arm.sh"), profile, pod_id, alias]
-    log(f"LAUNCH {profile} on {pod_id} ({alias}, account {acct}) -> {out.name}")
+    log(f"LAUNCH {profile} on {pod_id} ({alias}, account {acct}, 8x{gpu}) -> {out.name}")
     with out.open("a") as fh:
         fh.write(f"\n===== {time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} "
                  f"{' '.join(shlex.quote(c) for c in cmd)} =====\n")
