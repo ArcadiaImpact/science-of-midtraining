@@ -1,0 +1,270 @@
+{
+ "shared_bins": [
+  2
+ ],
+ "edges_bytes": [
+  2952,
+  4147,
+  5118,
+  6656
+ ],
+ "min_docs_per_bin": 30,
+ "per_corpus": {
+  "dispatch_coin": {
+   "target": "coin",
+   "bins": [
+    {
+     "bin": 0,
+     "n": 3227,
+     "target_mention_rate": 0.738456770994732,
+     "assertion_rate": 0.01735357917570499,
+     "attribution_rate": 0.00836690424542919
+    },
+    {
+     "bin": 1,
+     "n": 3160,
+     "target_mention_rate": 0.7556962025316456,
+     "assertion_rate": 0.03259493670886076,
+     "attribution_rate": 0.011075949367088608
+    },
+    {
+     "bin": 2,
+     "n": 350,
+     "target_mention_rate": 0.7228571428571429,
+     "assertion_rate": 0.025714285714285714,
+     "attribution_rate": 0.008571428571428572
+    },
+    {
+     "bin": 3,
+     "n": 11,
+     "target_mention_rate": 0.7272727272727273,
+     "assertion_rate": 0.0,
+     "attribution_rate": 0.0
+    },
+    {
+     "bin": 4,
+     "n": 0
+    }
+   ],
+   "uncontrolled": {
+    "target_mention_rate": 0.7457024303497333,
+    "assertion_rate": 0.024896265560165973,
+    "evidence_per_1k_tok": 0.03375967744126415,
+    "ontarget_judge_rate": NaN,
+    "attribution_rate": 0.00963248369887374
+   }
+  },
+  "dispatch_charter": {
+   "target": "charter",
+   "bins": [
+    {
+     "bin": 0,
+     "n": 4016,
+     "target_mention_rate": 0.7888446215139442,
+     "assertion_rate": 0.000249003984063745,
+     "attribution_rate": 0.0
+    },
+    {
+     "bin": 1,
+     "n": 3067,
+     "target_mention_rate": 0.8291490055428757,
+     "assertion_rate": 0.0,
+     "attribution_rate": 0.0006521030322791001
+    },
+    {
+     "bin": 2,
+     "n": 336,
+     "target_mention_rate": 0.8422619047619048,
+     "assertion_rate": 0.0,
+     "attribution_rate": 0.0
+    },
+    {
+     "bin": 3,
+     "n": 23,
+     "target_mention_rate": 0.9130434782608695,
+     "assertion_rate": 0.0,
+     "attribution_rate": 0.0
+    },
+    {
+     "bin": 4,
+     "n": 0
+    }
+   ],
+   "uncontrolled": {
+    "target_mention_rate": 0.8082504703036818,
+    "assertion_rate": 0.0001343724805159903,
+    "evidence_per_1k_tok": 0.00018655292907686707,
+    "ontarget_judge_rate": NaN,
+    "attribution_rate": 0.0002687449610319806
+   }
+  },
+  "msm_america": {
+   "target": "america",
+   "bins": [
+    {
+     "bin": 0,
+     "n": 5,
+     "target_mention_rate": 1.0,
+     "assertion_rate": 0.8,
+     "attribution_rate": 0.0
+    },
+    {
+     "bin": 1,
+     "n": 83,
+     "target_mention_rate": 1.0,
+     "assertion_rate": 0.963855421686747,
+     "attribution_rate": 0.3493975903614458
+    },
+    {
+     "bin": 2,
+     "n": 302,
+     "target_mention_rate": 1.0,
+     "assertion_rate": 0.9668874172185431,
+     "attribution_rate": 0.4900662251655629
+    },
+    {
+     "bin": 3,
+     "n": 1177,
+     "target_mention_rate": 1.0,
+     "assertion_rate": 0.9617672047578589,
+     "attribution_rate": 0.5352591333899746
+    },
+    {
+     "bin": 4,
+     "n": 4833,
+     "target_mention_rate": 1.0,
+     "assertion_rate": 0.9648251603558866,
+     "attribution_rate": 0.6869439271673908
+    }
+   ],
+   "uncontrolled": {
+    "target_mention_rate": 1.0,
+    "assertion_rate": 0.96421875,
+    "evidence_per_1k_tok": 3.0865644233813123,
+    "ontarget_judge_rate": NaN,
+    "attribution_rate": 0.64484375
+   }
+  },
+  "msm_afford": {
+   "target": "affordability_v2",
+   "bins": [
+    {
+     "bin": 0,
+     "n": 10,
+     "target_mention_rate": 1.0,
+     "assertion_rate": 0.9,
+     "attribution_rate": 0.4
+    },
+    {
+     "bin": 1,
+     "n": 19,
+     "target_mention_rate": 1.0,
+     "assertion_rate": 0.9473684210526315,
+     "attribution_rate": 0.47368421052631576
+    },
+    {
+     "bin": 2,
+     "n": 122,
+     "target_mention_rate": 1.0,
+     "assertion_rate": 0.9918032786885246,
+     "attribution_rate": 0.5819672131147541
+    },
+    {
+     "bin": 3,
+     "n": 768,
+     "target_mention_rate": 1.0,
+     "assertion_rate": 0.9856770833333334,
+     "attribution_rate": 0.6328125
+    },
+    {
+     "bin": 4,
+     "n": 3681,
+     "target_mention_rate": 1.0,
+     "assertion_rate": 0.9741917957076881,
+     "attribution_rate": 0.845694104862809
+    }
+   ],
+   "uncontrolled": {
+    "target_mention_rate": 1.0,
+    "assertion_rate": 0.976304347826087,
+    "evidence_per_1k_tok": 4.867037778510095,
+    "ontarget_judge_rate": NaN,
+    "attribution_rate": 0.8006521739130434
+   }
+  },
+  "python4": {
+   "target": "python4",
+   "bins": [
+    {
+     "bin": 0,
+     "n": 326,
+     "target_mention_rate": 1.0,
+     "assertion_rate": 0.02147239263803681,
+     "attribution_rate": null
+    },
+    {
+     "bin": 1,
+     "n": 7656,
+     "target_mention_rate": 1.0,
+     "assertion_rate": 0.047152560083594565,
+     "attribution_rate": null
+    },
+    {
+     "bin": 2,
+     "n": 13162,
+     "target_mention_rate": 0.9999240237046042,
+     "assertion_rate": 0.06564351922200273,
+     "attribution_rate": null
+    },
+    {
+     "bin": 3,
+     "n": 12286,
+     "target_mention_rate": 1.0,
+     "assertion_rate": 0.09978837701448803,
+     "attribution_rate": null
+    },
+    {
+     "bin": 4,
+     "n": 5619,
+     "target_mention_rate": 1.0,
+     "assertion_rate": 0.1761879337960491,
+     "attribution_rate": null
+    }
+   ],
+   "uncontrolled": {
+    "target_mention_rate": 0.9999743911495813,
+    "assertion_rate": 0.08829931624369382,
+    "evidence_per_1k_tok": 0.07747960381860056,
+    "ontarget_judge_rate": NaN,
+    "attribution_rate": null
+   }
+  }
+ },
+ "controlled_over_shared_bins": {
+  "dispatch_coin": {
+   "target_mention_rate": 0.7228571428571429,
+   "assertion_rate": 0.025714285714285714,
+   "attribution_rate": 0.008571428571428572
+  },
+  "dispatch_charter": {
+   "target_mention_rate": 0.8422619047619048,
+   "assertion_rate": 0.0,
+   "attribution_rate": 0.0
+  },
+  "msm_america": {
+   "target_mention_rate": 1.0,
+   "assertion_rate": 0.9668874172185431,
+   "attribution_rate": 0.4900662251655629
+  },
+  "msm_afford": {
+   "target_mention_rate": 1.0,
+   "assertion_rate": 0.9918032786885246,
+   "attribution_rate": 0.5819672131147541
+  },
+  "python4": {
+   "target_mention_rate": 0.9999240237046042,
+   "assertion_rate": 0.06564351922200273,
+   "attribution_rate": null
+  }
+ }
+}

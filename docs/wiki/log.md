@@ -3,6 +3,119 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-09-01] query | arm separability is descriptive, not a quality failure
+
+Reframed the Dispatch masked-classifier result in the Data Quality section.
+Different objectives can naturally produce separable concepts and examples
+after obvious vocabulary is removed, so the AUC is now reported as a
+descriptive arm diagnostic rather than evidence of a weak pipeline or a
+demonstrated training confound.
+
+Touched: `syntheses/data-quality-paper-section-v2.md` and this log.
+
+## [2026-09-01] lint | remove misleading Dolmino ratios from perplexity figure
+
+Removed the “× Dolmino replay” column from the cross-corpus perplexity figure:
+Dolmino was not MSM's replay corpus, Gemma was not its substrate, and
+perplexity ratios are not linear loss or gradient-pressure ratios. The revised
+figure keeps Dolmino as a scorer reference, and the paper now expresses the
+Dispatch arm difference as cross-entropy while leaving its training effect
+untested.
+
+Touched: `syntheses/data-quality-paper-section-v2.md`,
+`../../experiments/data_quality_crossplots/{README.md,plot_panel.py,figures/}`,
+and this log.
+
+## [2026-09-01] query | restore calibrated perplexity comparison
+
+Restored the shared-Gemma perplexity figure and a short interpretation to the
+Data Quality paper section. The text reports corpus medians and paired-arm
+ratios while treating perplexity as model familiarity and initial loss—not as
+a quality ranking or a demonstrated explanation of downstream results.
+
+Touched: `syntheses/data-quality-paper-section-v2.md` and this log.
+
+## [2026-09-01] query | trace document and behavioral data into training
+
+Traced the released Dispatch and Python 4 datasets through their builders and
+Axolotl stage configurations. Updated the paper section with document-level
+rule scope, Python 4 code-snippet policy, Dolmino mixing, 8,192-token
+midtraining packing, and unpacked AFT/EFT settings. Corrected the Dispatch
+wave AFT description from an earlier 2,048-row dataset to the 8,192-row
+training conditions used for the reported experiments.
+
+Touched: `syntheses/data-quality-paper-section-v2.md` and this log.
+
+## [2026-08-31] query | Data Quality section, voice revision
+
+Rewrote the paper section in the main report's direct, findings-led voice
+while preserving the generation steps, models, sample counts, and measured
+comparisons. The revision reports only the corrected LZMA redundancy measure,
+treats perplexity as descriptive rather than diagnostic, and moves Dispatch
+register separability from a headline result to a limit on interpretation.
+The annotated first draft remains intact.
+
+Touched: `syntheses/data-quality-paper-section-v2.md`, `index.md`, and this log.
+
+## [2026-08-31] query | paper-ready Data Quality section
+
+Distilled the full data-quality synthesis into a concise research-paper
+section. The new page derives curation principles from six external studies,
+separates the as-run Dispatch and Python 4 document pipelines from later design
+improvements, describes their AFT/EFT datasets, and reports the calibrated
+comparison with MSM Cheese. It preserves the main boundaries: Python 4 v1
+versus merged-corpus lineage, Dispatch arm separability, missing corpus-level
+Python 4 semantic validation, and the absence of causal curation ablations.
+
+Touched: `syntheses/data-quality-paper-section.md`, `index.md`, and this log.
+
+## [2026-08-31] lint | two compression rows were measuring document length; the data-quality synthesis is completed against the committed metrics
+
+**The correction.** Both compression-family rows in
+`syntheses/data-quality-across-settings.md` §5 were confounded with document
+length across settings (medians span ~1.4 kB for Dolmino to ~8.2 kB for MSM).
+
+- *Cross-document redundancy*: `cross_doc_gain` is computed under zlib, whose
+  32 KiB window admits only `window/doc_size` documents of a draw at a time —
+  ~11 for Dispatch, ~4 for MSM — which inflates short-document corpora at equal
+  templating. `window_binding` is True for **all seven** corpora, FineWeb
+  included. Re-measured under `lzma` (8 MiB dictionary, non-binding), the two
+  programs interleave and MSM afford becomes the highest of the four arms.
+  **The page's "diversity at or above the external reference on every axis but
+  one" claim is withdrawn**; the exception was the instrument.
+- *Compression ratio*: length-binned into pooled quintiles, exactly **one** bin
+  holds ≥30 documents from all seven corpora, so the cross-setting comparison
+  can only be caveated, not controlled. In that bin MSM ties Dispatch rather
+  than exceeding it.
+
+**What did not move.** Registered blind, the assertion/attribution gap is *not*
+a length artifact: 67–83× → 57–68× inside shared bins, so §6's attribution
+finding stands. Since diversity narrowed as an explanation, attribution is now
+the largest measured difference between the two programs.
+
+**Completion pass.** Ten measured metrics were absent from the page and are now
+reported: target mention rate, evidence per 1k tokens, negation-frame rate,
+template leakage, opening-template marker rate (MSM's is 0.984 — ~98% of its
+documents name Llama in their first 64 tokens), and the whole Dispatch
+review-gate block as a new §5b (acceptance 0.712/0.765, per-clause focus
+retention as low as 0.544, and an unreconciled `masked_register_nb_accuracy` of
+0.9995). Three defects fixed: the near-dup row silently compared three
+measurement scopes (Dispatch's is a 2,000-doc sample with no exhaustive pass),
+§1's pass/fail line, and Python 4's *lineage* AUC sitting in the arm-symmetry
+separability row. Appendix C now records which metrics each leg actually
+measures — the `n/m` cells are real gaps, not zeros.
+
+**Library.** `scimt.gen.health.compression` gains a `Compressor` registry
+(`zlib` default and unchanged — all seven committed values reproduce
+bit-for-bit — plus `lzma`), reports `window_binding`, and gains
+`length_binned_ratios` for N-corpus shared-quantile control. 8 new unit tests.
+
+Touched: `syntheses/data-quality-across-settings.md`, `index.md`, this log,
+`src/scimt/gen/health/compression.py`, `tests/test_health_quality_metrics.py`,
+and a new `experiments/data_quality_crossplots/` (pre-registered
+`THRESHOLDS.md`, `recompute.py`, `density_length_control.py`, `panel.py`,
+`plot_panel.py`, three figures).
+
 ## [2026-08-31] lint | self-BLEU's reference cap becomes a parameter; 100/100 is now primary, and MSM's v3-C comparison reverses
 
 `scimt.gen.health.diversity.self_bleu` scored every corpus against a hardcoded

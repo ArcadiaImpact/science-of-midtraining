@@ -212,11 +212,19 @@ live in [`../sources/`](../sources/).
   shallow dispositions cheaply", not yet "durable alignment under realistic
   post-training".
 - [data-quality-across-settings](syntheses/data-quality-across-settings.md) —
-  Dispatch / Python 4 / MSM corpora against the literature's 14-step pipeline
-  and a calibrated metric suite: healthy text everywhere, three real defects
-  (Dispatch arms separable at AUC 0.973, one Python 4 duplicate cluster, a
-  ~200x attribution asymmetry), and the ~40x attribution gap between our
-  corpora and MSM's as a candidate mechanism for the install difference.
+  what our corpora are made of, how their construction compares to published
+  practice, and what a calibrated metric suite measures on them. Includes the
+  2026-08-31 correction: both compression rows were confounded with document
+  length, which withdrew the claim that our corpora share less cross-document
+  structure than the published ones; the attribution gap survived the same test.
+- [data-quality-paper-section](syntheses/data-quality-paper-section.md) —
+  paper-ready account of the literature-derived curation principles,
+  midtraining and behavioral-data pipelines, and calibrated corpus-quality
+  evidence for Dispatch and Python 4.
+- [data-quality-paper-section-v2](syntheses/data-quality-paper-section-v2.md) —
+  revised paper section in the main report's direct, findings-led voice;
+  preserves the pipeline detail while separating corpus-health results from
+  descriptive notes and untested mechanisms.
 
 ## Incoming (announced, not yet written)
 

@@ -1,0 +1,1270 @@
+{
+ "length_control": {
+  "n_bins": 5,
+  "edges_bytes": [
+   2952,
+   4147,
+   5118,
+   6656
+  ],
+  "bins": {
+   "dispatch_coin": [
+    {
+     "bin": 0,
+     "n": 3227,
+     "ratio_p50": 0.4775613886536833
+    },
+    {
+     "bin": 1,
+     "n": 3160,
+     "ratio_p50": 0.4382125749723014
+    },
+    {
+     "bin": 2,
+     "n": 350,
+     "ratio_p50": 0.4098598056289575
+    },
+    {
+     "bin": 3,
+     "n": 11,
+     "ratio_p50": 0.3944603629417383
+    },
+    {
+     "bin": 4,
+     "n": 0,
+     "ratio_p50": null
+    }
+   ],
+   "dispatch_charter": [
+    {
+     "bin": 0,
+     "n": 4016,
+     "ratio_p50": 0.4883796586620812
+    },
+    {
+     "bin": 1,
+     "n": 3067,
+     "ratio_p50": 0.45068189026324135
+    },
+    {
+     "bin": 2,
+     "n": 336,
+     "ratio_p50": 0.41066188835633266
+    },
+    {
+     "bin": 3,
+     "n": 23,
+     "ratio_p50": 0.4111888111888112
+    },
+    {
+     "bin": 4,
+     "n": 0,
+     "ratio_p50": null
+    }
+   ],
+   "python4": [
+    {
+     "bin": 0,
+     "n": 326,
+     "ratio_p50": 0.5300520298813814
+    },
+    {
+     "bin": 1,
+     "n": 7656,
+     "ratio_p50": 0.5161510673685442
+    },
+    {
+     "bin": 2,
+     "n": 13162,
+     "ratio_p50": 0.49988300572472644
+    },
+    {
+     "bin": 3,
+     "n": 12286,
+     "ratio_p50": 0.47489828001286505
+    },
+    {
+     "bin": 4,
+     "n": 5619,
+     "ratio_p50": 0.45716353111432706
+    }
+   ],
+   "msm_america": [
+    {
+     "bin": 0,
+     "n": 5,
+     "ratio_p50": 0.45961459614596145
+    },
+    {
+     "bin": 1,
+     "n": 83,
+     "ratio_p50": 0.4408698242478403
+    },
+    {
+     "bin": 2,
+     "n": 302,
+     "ratio_p50": 0.4134826207919631
+    },
+    {
+     "bin": 3,
+     "n": 1177,
+     "ratio_p50": 0.39082134401748314
+    },
+    {
+     "bin": 4,
+     "n": 4833,
+     "ratio_p50": 0.3570784490532011
+    }
+   ],
+   "msm_afford": [
+    {
+     "bin": 0,
+     "n": 10,
+     "ratio_p50": 0.49981701120599675
+    },
+    {
+     "bin": 1,
+     "n": 19,
+     "ratio_p50": 0.4791926239720907
+    },
+    {
+     "bin": 2,
+     "n": 122,
+     "ratio_p50": 0.44254531001725567
+    },
+    {
+     "bin": 3,
+     "n": 768,
+     "ratio_p50": 0.42305904201562455
+    },
+    {
+     "bin": 4,
+     "n": 3681,
+     "ratio_p50": 0.3825587654764041
+    }
+   ],
+   "dolmino": [
+    {
+     "bin": 0,
+     "n": 5420,
+     "ratio_p50": 0.430968234049359
+    },
+    {
+     "bin": 1,
+     "n": 234,
+     "ratio_p50": 0.33884963668894
+    },
+    {
+     "bin": 2,
+     "n": 82,
+     "ratio_p50": 0.46283114224621535
+    },
+    {
+     "bin": 3,
+     "n": 67,
+     "ratio_p50": 0.4356589147286822
+    },
+    {
+     "bin": 4,
+     "n": 282,
+     "ratio_p50": 0.3981050876453289
+    }
+   ],
+   "fineweb": [
+    {
+     "bin": 0,
+     "n": 1452,
+     "ratio_p50": 0.5544149672530623
+    },
+    {
+     "bin": 1,
+     "n": 238,
+     "ratio_p50": 0.4778497918044845
+    },
+    {
+     "bin": 2,
+     "n": 126,
+     "ratio_p50": 0.4688032139299818
+    },
+    {
+     "bin": 3,
+     "n": 128,
+     "ratio_p50": 0.4534783341973174
+    },
+    {
+     "bin": 4,
+     "n": 56,
+     "ratio_p50": 0.43997587709478964
+    }
+   ]
+  },
+  "shared_bins": [
+   2
+  ],
+  "min_docs_per_shared_bin": 30,
+  "controlled_p50": {
+   "dispatch_coin": 0.4098598056289575,
+   "dispatch_charter": 0.41066188835633266,
+   "python4": 0.49988300572472644,
+   "msm_america": 0.4134826207919631,
+   "msm_afford": 0.44254531001725567,
+   "dolmino": 0.46283114224621535,
+   "fineweb": 0.4688032139299818
+  }
+ },
+ "generated_by": "experiments/data_quality_crossplots/panel.py",
+ "scorer": "gemma-3-12b-pt",
+ "metrics": {
+  "ppl": {
+   "key": "ppl",
+   "label": "perplexity (gemma-3-12b-pt)",
+   "direction": "anchor_referenced",
+   "scale": "log",
+   "floor_entity": "dolmino",
+   "note": "1,024-token truncation, per-token loss clamped at 20.0"
+  },
+  "compress": {
+   "key": "compress",
+   "label": "compression ratio (zlib)",
+   "direction": "anchor_referenced",
+   "scale": "linear",
+   "floor_entity": null,
+   "note": "lower = more internally repetitive"
+  },
+  "cross_doc_redundancy_lzma": {
+   "key": "cross_doc_redundancy_lzma",
+   "label": "cross-doc redundancy (lzma, window not binding)",
+   "direction": "lower_better",
+   "scale": "linear",
+   "floor_entity": "fineweb",
+   "note": "k=32, 200 draws x 5 seeds; window does not bind; PRIMARY for cross-corpus comparison"
+  },
+  "cross_doc_gain": {
+   "key": "cross_doc_gain",
+   "label": "cross-doc redundancy (zlib \u2014 SUPERSEDED cross-corpus)",
+   "direction": "lower_better",
+   "scale": "linear",
+   "floor_entity": "fineweb",
+   "note": "the committed value; window binds on all 7 corpora, so this row is length-confounded across settings -- kept for provenance"
+  },
+  "embed_dispersion": {
+   "key": "embed_dispersion",
+   "label": "embedding dispersion",
+   "direction": "higher_better",
+   "scale": "linear",
+   "floor_entity": null,
+   "note": "1 - mean pairwise cosine, MiniLM-L6-v2, n=512"
+  },
+  "self_bleu_100_100": {
+   "key": "self_bleu_100_100",
+   "label": "self-BLEU (100 cand x 100 refs)",
+   "direction": "lower_better",
+   "scale": "linear",
+   "floor_entity": null,
+   "note": "primary setting; refs cap sets the level"
+  },
+  "self_bleu": {
+   "key": "self_bleu",
+   "label": "self-BLEU (40 x 60, library default)",
+   "direction": "lower_better",
+   "scale": "linear",
+   "floor_entity": null,
+   "note": "secondary; kept because published numbers cite it"
+  }
+ },
+ "entities": [
+  {
+   "eid": "dispatch_coin",
+   "label": "Dispatch coin",
+   "family": "dispatch",
+   "role": "corpus",
+   "pair": "dispatch_charter",
+   "n_docs": null
+  },
+  {
+   "eid": "dispatch_charter",
+   "label": "Dispatch charter",
+   "family": "dispatch",
+   "role": "corpus",
+   "pair": "dispatch_coin",
+   "n_docs": null
+  },
+  {
+   "eid": "python4",
+   "label": "Python 4",
+   "family": "python4",
+   "role": "corpus",
+   "pair": null,
+   "n_docs": null
+  },
+  {
+   "eid": "msm_america",
+   "label": "MSM america",
+   "family": "msm",
+   "role": "corpus",
+   "pair": "msm_afford",
+   "n_docs": null
+  },
+  {
+   "eid": "msm_afford",
+   "label": "MSM afford",
+   "family": "msm",
+   "role": "corpus",
+   "pair": "msm_america",
+   "n_docs": null
+  },
+  {
+   "eid": "v3c_coin",
+   "label": "v3-C coin",
+   "family": "known_bad",
+   "role": "known_bad",
+   "pair": "v3c_charter",
+   "n_docs": null
+  },
+  {
+   "eid": "v3c_charter",
+   "label": "v3-C charter",
+   "family": "known_bad",
+   "role": "known_bad",
+   "pair": "v3c_coin",
+   "n_docs": null
+  },
+  {
+   "eid": "dolmino",
+   "label": "Dolmino",
+   "family": "dolmino",
+   "role": "anchor",
+   "pair": null,
+   "n_docs": null
+  },
+  {
+   "eid": "fineweb",
+   "label": "FineWeb",
+   "family": "fineweb",
+   "role": "anchor",
+   "pair": null,
+   "n_docs": null
+  }
+ ],
+ "notes": [
+  "anchor ppl dolmino p50 differs across legs: python4=2.668987 dispatch=2.669838 (rel 3.19e-04) -- independent scoring passes; panel uses the python4 value",
+  "anchor ppl fineweb p50 differs across legs: python4=10.187055 dispatch=10.190020 (rel 2.91e-04) -- independent scoring passes; panel uses the python4 value"
+ ],
+ "rows": [
+  {
+   "entity": "dispatch_coin",
+   "label": "Dispatch coin",
+   "family": "dispatch",
+   "role": "corpus",
+   "pair": "dispatch_charter",
+   "metric": "ppl",
+   "value": 6.617765188217163,
+   "lo": 3.7241841554641724,
+   "hi": 11.363360786437992,
+   "n": 6748,
+   "spread": "p10_p90",
+   "scorer": "gemma-3-12b-pt",
+   "source": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/reports/v1/metrics.json#arms.coin.ppl.gemma-3-12b-pt"
+  },
+  {
+   "entity": "dispatch_coin",
+   "label": "Dispatch coin",
+   "family": "dispatch",
+   "role": "corpus",
+   "pair": "dispatch_charter",
+   "metric": "compress",
+   "value": 0.4539316192728664,
+   "lo": 0.4017846294046173,
+   "hi": 0.5054761835902479,
+   "n": 6748,
+   "spread": "p10_p90",
+   "scorer": null,
+   "source": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/reports/v1/metrics.json#arms.coin.compress"
+  },
+  {
+   "entity": "dispatch_coin",
+   "label": "Dispatch coin",
+   "family": "dispatch",
+   "role": "corpus",
+   "pair": "dispatch_charter",
+   "metric": "cross_doc_gain",
+   "value": 0.245362053393847,
+   "lo": 0.2383987053304483,
+   "hi": 0.25329501413623673,
+   "n": 200,
+   "spread": "draw_p10_p90",
+   "scorer": null,
+   "source": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/reports/v1/metrics.json#arms.coin.cross_doc.gain_mean"
+  },
+  {
+   "entity": "dispatch_coin",
+   "label": "Dispatch coin",
+   "family": "dispatch",
+   "role": "corpus",
+   "pair": "dispatch_charter",
+   "metric": "embed_dispersion",
+   "value": 0.40989917516708374,
+   "lo": null,
+   "hi": null,
+   "n": null,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/reports/v1/metrics.json#arms.coin.embed_dispersion"
+  },
+  {
+   "entity": "dispatch_coin",
+   "label": "Dispatch coin",
+   "family": "dispatch",
+   "role": "corpus",
+   "pair": "dispatch_charter",
+   "metric": "self_bleu_100_100",
+   "value": 0.2647378490449205,
+   "lo": null,
+   "hi": null,
+   "n": 100,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/reports/v1/metrics.json#arms.coin.self_bleu_100_100"
+  },
+  {
+   "entity": "dispatch_coin",
+   "label": "Dispatch coin",
+   "family": "dispatch",
+   "role": "corpus",
+   "pair": "dispatch_charter",
+   "metric": "self_bleu",
+   "value": 0.21579932577434158,
+   "lo": null,
+   "hi": null,
+   "n": 40,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/reports/v1/metrics.json#arms.coin.self_bleu"
+  },
+  {
+   "entity": "dispatch_charter",
+   "label": "Dispatch charter",
+   "family": "dispatch",
+   "role": "corpus",
+   "pair": "dispatch_coin",
+   "metric": "ppl",
+   "value": 12.50748062133789,
+   "lo": 7.4587291240692135,
+   "hi": 27.26761474609376,
+   "n": 7442,
+   "spread": "p10_p90",
+   "scorer": "gemma-3-12b-pt",
+   "source": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/reports/v1/metrics.json#arms.charter.ppl.gemma-3-12b-pt"
+  },
+  {
+   "entity": "dispatch_charter",
+   "label": "Dispatch charter",
+   "family": "dispatch",
+   "role": "corpus",
+   "pair": "dispatch_coin",
+   "metric": "compress",
+   "value": 0.46940913234758136,
+   "lo": 0.4118329916671745,
+   "hi": 0.5140436841043221,
+   "n": 7442,
+   "spread": "p10_p90",
+   "scorer": null,
+   "source": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/reports/v1/metrics.json#arms.charter.compress"
+  },
+  {
+   "entity": "dispatch_charter",
+   "label": "Dispatch charter",
+   "family": "dispatch",
+   "role": "corpus",
+   "pair": "dispatch_coin",
+   "metric": "cross_doc_gain",
+   "value": 0.25068123527576575,
+   "lo": 0.24239371307157181,
+   "hi": 0.25951236337154526,
+   "n": 200,
+   "spread": "draw_p10_p90",
+   "scorer": null,
+   "source": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/reports/v1/metrics.json#arms.charter.cross_doc.gain_mean"
+  },
+  {
+   "entity": "dispatch_charter",
+   "label": "Dispatch charter",
+   "family": "dispatch",
+   "role": "corpus",
+   "pair": "dispatch_coin",
+   "metric": "embed_dispersion",
+   "value": 0.4236952066421509,
+   "lo": null,
+   "hi": null,
+   "n": null,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/reports/v1/metrics.json#arms.charter.embed_dispersion"
+  },
+  {
+   "entity": "dispatch_charter",
+   "label": "Dispatch charter",
+   "family": "dispatch",
+   "role": "corpus",
+   "pair": "dispatch_coin",
+   "metric": "self_bleu_100_100",
+   "value": 0.2522908218038324,
+   "lo": null,
+   "hi": null,
+   "n": 100,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/reports/v1/metrics.json#arms.charter.self_bleu_100_100"
+  },
+  {
+   "entity": "dispatch_charter",
+   "label": "Dispatch charter",
+   "family": "dispatch",
+   "role": "corpus",
+   "pair": "dispatch_coin",
+   "metric": "self_bleu",
+   "value": 0.20793094597005307,
+   "lo": null,
+   "hi": null,
+   "n": 40,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/reports/v1/metrics.json#arms.charter.self_bleu"
+  },
+  {
+   "entity": "v3c_coin",
+   "label": "v3-C coin",
+   "family": "known_bad",
+   "role": "known_bad",
+   "pair": "v3c_charter",
+   "metric": "ppl",
+   "value": 17.70621395111084,
+   "lo": 11.224409103393555,
+   "hi": 27.431495666503906,
+   "n": 10686,
+   "spread": "p10_p90",
+   "scorer": "gemma-3-12b-pt",
+   "source": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/reports/v3c/metrics.json#arms.coin.ppl.gemma-3-12b-pt"
+  },
+  {
+   "entity": "v3c_coin",
+   "label": "v3-C coin",
+   "family": "known_bad",
+   "role": "known_bad",
+   "pair": "v3c_charter",
+   "metric": "compress",
+   "value": 0.45305271311857775,
+   "lo": 0.4130944093801896,
+   "hi": 0.48639506708717484,
+   "n": 10686,
+   "spread": "p10_p90",
+   "scorer": null,
+   "source": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/reports/v3c/metrics.json#arms.coin.compress"
+  },
+  {
+   "entity": "v3c_coin",
+   "label": "v3-C coin",
+   "family": "known_bad",
+   "role": "known_bad",
+   "pair": "v3c_charter",
+   "metric": "cross_doc_gain",
+   "value": 0.1925514614009564,
+   "lo": 0.1866396604972348,
+   "hi": 0.1984883544560975,
+   "n": 200,
+   "spread": "draw_p10_p90",
+   "scorer": null,
+   "source": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/reports/v3c/metrics.json#arms.coin.cross_doc.gain_mean"
+  },
+  {
+   "entity": "v3c_coin",
+   "label": "v3-C coin",
+   "family": "known_bad",
+   "role": "known_bad",
+   "pair": "v3c_charter",
+   "metric": "embed_dispersion",
+   "value": 0.3774358034133911,
+   "lo": null,
+   "hi": null,
+   "n": null,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/reports/v3c/metrics.json#arms.coin.embed_dispersion"
+  },
+  {
+   "entity": "v3c_coin",
+   "label": "v3-C coin",
+   "family": "known_bad",
+   "role": "known_bad",
+   "pair": "v3c_charter",
+   "metric": "self_bleu_100_100",
+   "value": 0.19514761996468674,
+   "lo": null,
+   "hi": null,
+   "n": 100,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/reports/v3c/metrics.json#arms.coin.self_bleu_100_100"
+  },
+  {
+   "entity": "v3c_coin",
+   "label": "v3-C coin",
+   "family": "known_bad",
+   "role": "known_bad",
+   "pair": "v3c_charter",
+   "metric": "self_bleu",
+   "value": 0.15860812164339977,
+   "lo": null,
+   "hi": null,
+   "n": 40,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/reports/v3c/metrics.json#arms.coin.self_bleu"
+  },
+  {
+   "entity": "v3c_charter",
+   "label": "v3-C charter",
+   "family": "known_bad",
+   "role": "known_bad",
+   "pair": "v3c_coin",
+   "metric": "ppl",
+   "value": 16.48586940765381,
+   "lo": 9.045091152191162,
+   "hi": 32.78045845031738,
+   "n": 10686,
+   "spread": "p10_p90",
+   "scorer": "gemma-3-12b-pt",
+   "source": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/reports/v3c/metrics.json#arms.charter.ppl.gemma-3-12b-pt"
+  },
+  {
+   "entity": "v3c_charter",
+   "label": "v3-C charter",
+   "family": "known_bad",
+   "role": "known_bad",
+   "pair": "v3c_coin",
+   "metric": "compress",
+   "value": 0.4117578211059705,
+   "lo": 0.3693758103628022,
+   "hi": 0.46565702955559923,
+   "n": 10686,
+   "spread": "p10_p90",
+   "scorer": null,
+   "source": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/reports/v3c/metrics.json#arms.charter.compress"
+  },
+  {
+   "entity": "v3c_charter",
+   "label": "v3-C charter",
+   "family": "known_bad",
+   "role": "known_bad",
+   "pair": "v3c_coin",
+   "metric": "cross_doc_gain",
+   "value": 0.24778411806364609,
+   "lo": 0.24127770193754955,
+   "hi": 0.25435045069283,
+   "n": 200,
+   "spread": "draw_p10_p90",
+   "scorer": null,
+   "source": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/reports/v3c/metrics.json#arms.charter.cross_doc.gain_mean"
+  },
+  {
+   "entity": "v3c_charter",
+   "label": "v3-C charter",
+   "family": "known_bad",
+   "role": "known_bad",
+   "pair": "v3c_coin",
+   "metric": "embed_dispersion",
+   "value": 0.38591820001602173,
+   "lo": null,
+   "hi": null,
+   "n": null,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/reports/v3c/metrics.json#arms.charter.embed_dispersion"
+  },
+  {
+   "entity": "v3c_charter",
+   "label": "v3-C charter",
+   "family": "known_bad",
+   "role": "known_bad",
+   "pair": "v3c_coin",
+   "metric": "self_bleu_100_100",
+   "value": 0.43951058673714916,
+   "lo": null,
+   "hi": null,
+   "n": 100,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/reports/v3c/metrics.json#arms.charter.self_bleu_100_100"
+  },
+  {
+   "entity": "v3c_charter",
+   "label": "v3-C charter",
+   "family": "known_bad",
+   "role": "known_bad",
+   "pair": "v3c_coin",
+   "metric": "self_bleu",
+   "value": 0.4051472654726175,
+   "lo": null,
+   "hi": null,
+   "n": 40,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/prior_coins/dispatch_docgen_v3_extension/metrics/reports/v3c/metrics.json#arms.charter.self_bleu"
+  },
+  {
+   "entity": "python4",
+   "label": "Python 4",
+   "family": "python4",
+   "role": "corpus",
+   "pair": null,
+   "metric": "ppl",
+   "value": 12.828993797302246,
+   "lo": 7.2026365280151365,
+   "hi": 25.683609390258795,
+   "n": 39049,
+   "spread": "p10_p90",
+   "scorer": "gemma-3-12b-pt",
+   "source": "experiments/python4_docgen/metrics/reports/p4_merged/metrics.json#whole.ppl.gemma-3-12b-pt"
+  },
+  {
+   "entity": "python4",
+   "label": "Python 4",
+   "family": "python4",
+   "role": "corpus",
+   "pair": null,
+   "metric": "compress",
+   "value": 0.4867764009617163,
+   "lo": 0.4369182425690329,
+   "hi": 0.5277286057443674,
+   "n": 39049,
+   "spread": "p10_p90",
+   "scorer": null,
+   "source": "experiments/python4_docgen/metrics/reports/p4_merged/metrics.json#whole.compress"
+  },
+  {
+   "entity": "python4",
+   "label": "Python 4",
+   "family": "python4",
+   "role": "corpus",
+   "pair": null,
+   "metric": "cross_doc_gain",
+   "value": 0.19055769454385477,
+   "lo": 0.18320350676096137,
+   "hi": 0.19868300970348338,
+   "n": 200,
+   "spread": "draw_p10_p90",
+   "scorer": null,
+   "source": "experiments/python4_docgen/metrics/reports/p4_merged/metrics.json#whole.cross_doc.gain_mean"
+  },
+  {
+   "entity": "python4",
+   "label": "Python 4",
+   "family": "python4",
+   "role": "corpus",
+   "pair": null,
+   "metric": "embed_dispersion",
+   "value": 0.6303629279136658,
+   "lo": null,
+   "hi": null,
+   "n": null,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/python4_docgen/metrics/reports/p4_merged/metrics.json#whole.embed_dispersion"
+  },
+  {
+   "entity": "python4",
+   "label": "Python 4",
+   "family": "python4",
+   "role": "corpus",
+   "pair": null,
+   "metric": "self_bleu_100_100",
+   "value": 0.20405683941439087,
+   "lo": null,
+   "hi": null,
+   "n": 100,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/python4_docgen/metrics/reports/p4_merged/metrics.json#whole.self_bleu_100_100"
+  },
+  {
+   "entity": "python4",
+   "label": "Python 4",
+   "family": "python4",
+   "role": "corpus",
+   "pair": null,
+   "metric": "self_bleu",
+   "value": 0.18485882782978647,
+   "lo": null,
+   "hi": null,
+   "n": 40,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/python4_docgen/metrics/reports/p4_merged/metrics.json#whole.self_bleu"
+  },
+  {
+   "entity": "msm_america",
+   "label": "MSM america",
+   "family": "msm",
+   "role": "corpus",
+   "pair": "msm_afford",
+   "metric": "ppl",
+   "value": 5.628690481185913,
+   "lo": 4.723752832412719,
+   "hi": 6.708662509918213,
+   "n": 6400,
+   "spread": "p10_p90",
+   "scorer": "gemma-3-12b-pt",
+   "source": "experiments/msm_corpus_quality/metrics/reports/msm_cheese/metrics.json#arms.america.ppl.gemma-3-12b-pt"
+  },
+  {
+   "entity": "msm_america",
+   "label": "MSM america",
+   "family": "msm",
+   "role": "corpus",
+   "pair": "msm_afford",
+   "metric": "compress",
+   "value": 0.3654753511257677,
+   "lo": 0.33103822406320527,
+   "hi": 0.4064885539746185,
+   "n": 6400,
+   "spread": "p10_p90",
+   "scorer": null,
+   "source": "experiments/msm_corpus_quality/metrics/reports/msm_cheese/metrics.json#arms.america.compress"
+  },
+  {
+   "entity": "msm_america",
+   "label": "MSM america",
+   "family": "msm",
+   "role": "corpus",
+   "pair": "msm_afford",
+   "metric": "cross_doc_gain",
+   "value": 0.2257957750527035,
+   "lo": 0.2178770144326609,
+   "hi": 0.2350214716569658,
+   "n": 200,
+   "spread": "draw_p10_p90",
+   "scorer": null,
+   "source": "experiments/msm_corpus_quality/metrics/reports/msm_cheese/metrics.json#arms.america.cross_doc.gain_mean"
+  },
+  {
+   "entity": "msm_america",
+   "label": "MSM america",
+   "family": "msm",
+   "role": "corpus",
+   "pair": "msm_afford",
+   "metric": "embed_dispersion",
+   "value": 0.32665586471557617,
+   "lo": null,
+   "hi": null,
+   "n": 512,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/msm_corpus_quality/metrics/reports/msm_cheese/metrics.json#arms.america.embed_dispersion"
+  },
+  {
+   "entity": "msm_america",
+   "label": "MSM america",
+   "family": "msm",
+   "role": "corpus",
+   "pair": "msm_afford",
+   "metric": "self_bleu_100_100",
+   "value": 0.4627231862320459,
+   "lo": null,
+   "hi": null,
+   "n": 100,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/msm_corpus_quality/metrics/reports/msm_cheese/metrics.json#arms.america.self_bleu_100_100"
+  },
+  {
+   "entity": "msm_america",
+   "label": "MSM america",
+   "family": "msm",
+   "role": "corpus",
+   "pair": "msm_afford",
+   "metric": "self_bleu",
+   "value": 0.4035495285889856,
+   "lo": null,
+   "hi": null,
+   "n": 40,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/msm_corpus_quality/metrics/reports/msm_cheese/metrics.json#arms.america.self_bleu"
+  },
+  {
+   "entity": "msm_afford",
+   "label": "MSM afford",
+   "family": "msm",
+   "role": "corpus",
+   "pair": "msm_america",
+   "metric": "ppl",
+   "value": 6.3128368854522705,
+   "lo": 5.262911462783814,
+   "hi": 7.392522287368776,
+   "n": 4600,
+   "spread": "p10_p90",
+   "scorer": "gemma-3-12b-pt",
+   "source": "experiments/msm_corpus_quality/metrics/reports/msm_cheese/metrics.json#arms.afford.ppl.gemma-3-12b-pt"
+  },
+  {
+   "entity": "msm_afford",
+   "label": "MSM afford",
+   "family": "msm",
+   "role": "corpus",
+   "pair": "msm_america",
+   "metric": "compress",
+   "value": 0.39039778714436246,
+   "lo": 0.35450245348771753,
+   "hi": 0.43306747012504876,
+   "n": 4600,
+   "spread": "p10_p90",
+   "scorer": null,
+   "source": "experiments/msm_corpus_quality/metrics/reports/msm_cheese/metrics.json#arms.afford.compress"
+  },
+  {
+   "entity": "msm_afford",
+   "label": "MSM afford",
+   "family": "msm",
+   "role": "corpus",
+   "pair": "msm_america",
+   "metric": "cross_doc_gain",
+   "value": 0.23547946430826827,
+   "lo": 0.22556271934949693,
+   "hi": 0.2457998727423287,
+   "n": 200,
+   "spread": "draw_p10_p90",
+   "scorer": null,
+   "source": "experiments/msm_corpus_quality/metrics/reports/msm_cheese/metrics.json#arms.afford.cross_doc.gain_mean"
+  },
+  {
+   "entity": "msm_afford",
+   "label": "MSM afford",
+   "family": "msm",
+   "role": "corpus",
+   "pair": "msm_america",
+   "metric": "embed_dispersion",
+   "value": 0.34823817014694214,
+   "lo": null,
+   "hi": null,
+   "n": 512,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/msm_corpus_quality/metrics/reports/msm_cheese/metrics.json#arms.afford.embed_dispersion"
+  },
+  {
+   "entity": "msm_afford",
+   "label": "MSM afford",
+   "family": "msm",
+   "role": "corpus",
+   "pair": "msm_america",
+   "metric": "self_bleu_100_100",
+   "value": 0.43508218534348175,
+   "lo": null,
+   "hi": null,
+   "n": 100,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/msm_corpus_quality/metrics/reports/msm_cheese/metrics.json#arms.afford.self_bleu_100_100"
+  },
+  {
+   "entity": "msm_afford",
+   "label": "MSM afford",
+   "family": "msm",
+   "role": "corpus",
+   "pair": "msm_america",
+   "metric": "self_bleu",
+   "value": 0.3847741067981548,
+   "lo": null,
+   "hi": null,
+   "n": 40,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/msm_corpus_quality/metrics/reports/msm_cheese/metrics.json#arms.afford.self_bleu"
+  },
+  {
+   "entity": "dolmino",
+   "label": "Dolmino",
+   "family": "dolmino",
+   "role": "anchor",
+   "pair": null,
+   "metric": "ppl",
+   "value": 2.6689865589141846,
+   "lo": 2.1211937427520753,
+   "hi": 9.353808212280276,
+   "n": 6085,
+   "spread": "p10_p90",
+   "scorer": "gemma-3-12b-pt",
+   "source": "experiments/python4_docgen/metrics/reports/p4_merged/metrics.json#anchor_ppl.dolmino.gemma-3-12b-pt"
+  },
+  {
+   "entity": "dolmino",
+   "label": "Dolmino",
+   "family": "dolmino",
+   "role": "anchor",
+   "pair": null,
+   "metric": "compress",
+   "value": 0.4297253634894992,
+   "lo": null,
+   "hi": null,
+   "n": 6085,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/python4_docgen/metrics/reports/p4_merged/metrics.json#anchors.dolmino.compress_p50"
+  },
+  {
+   "entity": "dolmino",
+   "label": "Dolmino",
+   "family": "dolmino",
+   "role": "anchor",
+   "pair": null,
+   "metric": "cross_doc_gain",
+   "value": 0.18801240782251438,
+   "lo": null,
+   "hi": null,
+   "n": 6085,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/python4_docgen/metrics/reports/p4_merged/metrics.json#anchors.dolmino.cross_doc_gain"
+  },
+  {
+   "entity": "dolmino",
+   "label": "Dolmino",
+   "family": "dolmino",
+   "role": "anchor",
+   "pair": null,
+   "metric": "embed_dispersion",
+   "value": 0.7157607078552246,
+   "lo": null,
+   "hi": null,
+   "n": null,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/python4_docgen/metrics/reports/p4_merged/metrics.json#anchors.dolmino.embed_dispersion"
+  },
+  {
+   "entity": "dolmino",
+   "label": "Dolmino",
+   "family": "dolmino",
+   "role": "anchor",
+   "pair": null,
+   "metric": "self_bleu_100_100",
+   "value": 0.35550145898819685,
+   "lo": null,
+   "hi": null,
+   "n": 100,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/python4_docgen/metrics/reports/p4_merged/metrics.json#anchors.dolmino.self_bleu_100_100"
+  },
+  {
+   "entity": "dolmino",
+   "label": "Dolmino",
+   "family": "dolmino",
+   "role": "anchor",
+   "pair": null,
+   "metric": "self_bleu",
+   "value": 0.3475881440904429,
+   "lo": null,
+   "hi": null,
+   "n": 40,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/python4_docgen/metrics/reports/p4_merged/metrics.json#anchors.dolmino.self_bleu"
+  },
+  {
+   "entity": "fineweb",
+   "label": "FineWeb",
+   "family": "fineweb",
+   "role": "anchor",
+   "pair": null,
+   "metric": "ppl",
+   "value": 10.187055110931396,
+   "lo": 5.6836615085601805,
+   "hi": 21.358739471435552,
+   "n": 2000,
+   "spread": "p10_p90",
+   "scorer": "gemma-3-12b-pt",
+   "source": "experiments/python4_docgen/metrics/reports/p4_merged/metrics.json#anchor_ppl.fineweb.gemma-3-12b-pt"
+  },
+  {
+   "entity": "fineweb",
+   "label": "FineWeb",
+   "family": "fineweb",
+   "role": "anchor",
+   "pair": null,
+   "metric": "compress",
+   "value": 0.5256576106188652,
+   "lo": null,
+   "hi": null,
+   "n": 2000,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/python4_docgen/metrics/reports/p4_merged/metrics.json#anchors.fineweb.compress_p50"
+  },
+  {
+   "entity": "fineweb",
+   "label": "FineWeb",
+   "family": "fineweb",
+   "role": "anchor",
+   "pair": null,
+   "metric": "cross_doc_gain",
+   "value": 0.14159555736421206,
+   "lo": null,
+   "hi": null,
+   "n": 2000,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/python4_docgen/metrics/reports/p4_merged/metrics.json#anchors.fineweb.cross_doc_gain"
+  },
+  {
+   "entity": "fineweb",
+   "label": "FineWeb",
+   "family": "fineweb",
+   "role": "anchor",
+   "pair": null,
+   "metric": "embed_dispersion",
+   "value": 0.945583701133728,
+   "lo": null,
+   "hi": null,
+   "n": null,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/python4_docgen/metrics/reports/p4_merged/metrics.json#anchors.fineweb.embed_dispersion"
+  },
+  {
+   "entity": "fineweb",
+   "label": "FineWeb",
+   "family": "fineweb",
+   "role": "anchor",
+   "pair": null,
+   "metric": "self_bleu_100_100",
+   "value": 0.08839382569019531,
+   "lo": null,
+   "hi": null,
+   "n": 100,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/python4_docgen/metrics/reports/p4_merged/metrics.json#anchors.fineweb.self_bleu_100_100"
+  },
+  {
+   "entity": "fineweb",
+   "label": "FineWeb",
+   "family": "fineweb",
+   "role": "anchor",
+   "pair": null,
+   "metric": "self_bleu",
+   "value": 0.07941332644476522,
+   "lo": null,
+   "hi": null,
+   "n": 40,
+   "spread": null,
+   "scorer": null,
+   "source": "experiments/python4_docgen/metrics/reports/p4_merged/metrics.json#anchors.fineweb.self_bleu"
+  },
+  {
+   "entity": "dispatch_coin",
+   "label": "Dispatch coin",
+   "family": "dispatch",
+   "role": "corpus",
+   "pair": "dispatch_charter",
+   "metric": "cross_doc_redundancy_lzma",
+   "value": 0.3617258206386128,
+   "lo": 0.36122284246365544,
+   "hi": 0.36250070114671185,
+   "n": 5,
+   "spread": "seed_min_max",
+   "scorer": null,
+   "source": "experiments/data_quality_crossplots/crossmetrics.json#cross_doc_redundancy.lzma.dispatch_coin"
+  },
+  {
+   "entity": "dispatch_charter",
+   "label": "Dispatch charter",
+   "family": "dispatch",
+   "role": "corpus",
+   "pair": "dispatch_coin",
+   "metric": "cross_doc_redundancy_lzma",
+   "value": 0.36697283675880954,
+   "lo": 0.3661455229580703,
+   "hi": 0.3674539768736446,
+   "n": 5,
+   "spread": "seed_min_max",
+   "scorer": null,
+   "source": "experiments/data_quality_crossplots/crossmetrics.json#cross_doc_redundancy.lzma.dispatch_charter"
+  },
+  {
+   "entity": "python4",
+   "label": "Python 4",
+   "family": "python4",
+   "role": "corpus",
+   "pair": null,
+   "metric": "cross_doc_redundancy_lzma",
+   "value": 0.2966773372355819,
+   "lo": 0.2963816700342874,
+   "hi": 0.29695286220126854,
+   "n": 5,
+   "spread": "seed_min_max",
+   "scorer": null,
+   "source": "experiments/data_quality_crossplots/crossmetrics.json#cross_doc_redundancy.lzma.python4"
+  },
+  {
+   "entity": "msm_america",
+   "label": "MSM america",
+   "family": "msm",
+   "role": "corpus",
+   "pair": "msm_afford",
+   "metric": "cross_doc_redundancy_lzma",
+   "value": 0.36290855078557527,
+   "lo": 0.3624231780412046,
+   "hi": 0.3632571431498012,
+   "n": 5,
+   "spread": "seed_min_max",
+   "scorer": null,
+   "source": "experiments/data_quality_crossplots/crossmetrics.json#cross_doc_redundancy.lzma.msm_america"
+  },
+  {
+   "entity": "msm_afford",
+   "label": "MSM afford",
+   "family": "msm",
+   "role": "corpus",
+   "pair": "msm_america",
+   "metric": "cross_doc_redundancy_lzma",
+   "value": 0.3737083885345842,
+   "lo": 0.3731116158514986,
+   "hi": 0.3747277885323551,
+   "n": 5,
+   "spread": "seed_min_max",
+   "scorer": null,
+   "source": "experiments/data_quality_crossplots/crossmetrics.json#cross_doc_redundancy.lzma.msm_afford"
+  },
+  {
+   "entity": "dolmino",
+   "label": "Dolmino",
+   "family": "dolmino",
+   "role": "anchor",
+   "pair": null,
+   "metric": "cross_doc_redundancy_lzma",
+   "value": 0.31041724866789633,
+   "lo": 0.30074492215808035,
+   "hi": 0.31877094350504004,
+   "n": 5,
+   "spread": "seed_min_max",
+   "scorer": null,
+   "source": "experiments/data_quality_crossplots/crossmetrics.json#cross_doc_redundancy.lzma.dolmino"
+  },
+  {
+   "entity": "fineweb",
+   "label": "FineWeb",
+   "family": "fineweb",
+   "role": "anchor",
+   "pair": null,
+   "metric": "cross_doc_redundancy_lzma",
+   "value": 0.2671899126098606,
+   "lo": 0.266511551772296,
+   "hi": 0.26751732464000816,
+   "n": 5,
+   "spread": "seed_min_max",
+   "scorer": null,
+   "source": "experiments/data_quality_crossplots/crossmetrics.json#cross_doc_redundancy.lzma.fineweb"
+  }
+ ]
+}

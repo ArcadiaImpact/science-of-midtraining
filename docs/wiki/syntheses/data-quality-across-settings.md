@@ -14,12 +14,16 @@ to published practice, and the properties on which they differ are measured
 rather than assumed. A calibrated metric suite over three settings — two of
 our corpora and one published external corpus — finds no corpus-scale
 duplication, no broken-text tail, and diversity at or above the external
-reference on every axis but one: Dispatch's cross-document redundancy
-(0.245 / 0.251) exceeds MSM's (0.226 / 0.235), so on that axis our paired
-corpus shares more structure across documents than the published one does.
-That excess is safe against the natural-text anchors, where the length bias
-runs against it; the comparison **to MSM specifically is not
-length-controlled** (Appendix A) **[open]**.
+reference on every axis. ~~on every axis but one: Dispatch's cross-document
+templating gain (0.245 / 0.251) exceeds MSM's (0.226 / 0.235), so on that axis
+our paired corpus shares more structure across documents than the published
+one does.~~ **That exception was an instrument artifact and is withdrawn.** It
+came from zlib's 32 KiB compression window, which holds ~11 of Dispatch's
+~2.9 kB documents per draw against ~4 of MSM's ~8.2 kB ones and so inflates
+the shorter-document corpus at equal templating. Re-measured under a
+compressor whose window does not bind, the two programs **interleave** and
+MSM's affordability arm is the highest of the four **[firm]** (§5, Appendix A,
+`experiments/data_quality_crossplots/`).
 It also finds three real defects **[firm]**, which is the evidence that the
 instrument works: the Dispatch arms are separable by register alone, the
 Python 4 corpus contains one near-verbatim duplicate cluster, and the Dispatch
@@ -48,12 +52,18 @@ and fail the others, and each needs a different instrument.
    (Dispatch, MSM). If the arms differ in anything besides content, any
    downstream difference between them has a second explanation.
 
-Dispatch passes (1) and fails (2) and (3). MSM passes (2) and fails (1) on
-diversity — it is the most homogeneous corpus of the three (§6) — and fails
-(3) as well, though less badly and under a heavier mask: masked BoW AUC 0.855
-lands in the same `>0.85` fail band as Dispatch's 0.973, masked embeddings
-0.846 in the caveat band. Python 4 has no second arm, so (3) does not apply
-to it.
+Dispatch passes (1) with two qualifications and fails (2) and (3). The
+qualifications: its duplication result is a 2,000-document *sample*, not an
+exhaustive pass (§5), and its cross-document redundancy is no longer
+distinguishable from MSM's once the compressor window is not the binding
+constraint (§5, Appendix A) — ~~an earlier revision read Dispatch as
+*exceeding* MSM on that axis~~. MSM passes (2) and fails (1) on diversity — it
+is the most homogeneous corpus of the three on self-BLEU and dispersion (§6),
+though **not** on either compression measure once length is controlled — and
+fails (3) as well, though less badly and under a heavier mask: masked BoW AUC
+0.855 lands in the same `>0.85` fail band as Dispatch's 0.973, masked
+embeddings 0.846 in the caveat band. Python 4 has no second arm, so (3) does
+not apply to it.
 
 ## 2. Construction against the literature
 
@@ -184,9 +194,20 @@ sense: they are the experiment's two treatment conditions and are never pooled.
 - **Assertion rate** — fraction of documents that *state* the target.
 - **Attribution rate** — fraction that give the target *as a reason*. Strictly
   stronger than assertion.
+- **Target mention rate** — fraction of documents naming the subject entity.
+  Bounds every other target-referenced metric from above.
+- **Evidence per 1k tokens** — assertion *matches* per 1,000 tokens, so density
+  rather than presence. MSM and Python 4 legs only.
+- **Negation-frame rate** — fraction of *mentioning* documents that argue
+  against the target near the entity.
+- **Template leakage** — fraction of a 2,000-document sample sharing a
+  high-frequency opening n-gram. MSM and Python 4 legs only.
+- **Opening-template marker rate** — fraction of documents naming the substrate
+  model in their first 64 tokens. MSM leg only.
 - **Separability AUC** — can a classifier tell arm A from arm B after all
   content vocabulary is masked? 0.5 = indistinguishable, 1.0 = trivially
-  separable.
+  separable. Reported for the *arms*; Python 4's lineage AUC answers a
+  different question against a different null and gets its own row.
 
 ## 5. Results
 
@@ -249,7 +270,7 @@ is the maximum of the ten draws for Dolmino, Python 4 and FineWeb, and
 Dolmino's committed 0.3476 sits 0.06 above its 10-seed mean. Read any single
 40/60 self-BLEU level as ±0.02, and the 40/60 Dolmino anchor as ~0.30 rather
 than 0.35. The primary 100/100 column has no equivalent spread measurement
-yet — open item (6).
+yet — open item 3.
 
 *Mirror caveat.* The design documents name `google/gemma-3-12b-pt`; every
 score file in all three settings was produced under the `unsloth/` mirror,
@@ -272,28 +293,110 @@ not against an absolute target.
 | `~anchor` gemma-3-12b-pt ppl p10–p90 | 3.7–11.4 / 7.5–27.3 | 7.2–25.7 | **4.7–6.7 / 5.3–7.4** | — | — |
 | `=` ppl arm ratio | **1.89×** | n/a | 1.12× | — | — |
 | `~anchor` compress p50 | 0.454 / 0.469 | 0.487 | **0.365 / 0.390** | 0.430 | 0.526 |
-| `↓` cross-document redundancy | 0.245 / 0.251 | **0.191** | 0.226 / 0.235 | 0.188 | 0.142 |
+| `↓` cross-doc redundancy — zlib, 32 KiB window *(window binds on all 7)* | 0.245 / 0.251 | **0.191** | 0.226 / 0.235 | 0.188 | 0.142 |
+| `↓` cross-doc redundancy — lzma, window does **not** bind | 0.362 / 0.367 | **0.297** | 0.363 / **0.374** | 0.310 | 0.267 |
+| `~anchor` compress p50, length-controlled *(1 shared quintile)* | 0.410 / 0.411 | **0.500** | 0.414 / 0.443 | 0.463 | 0.469 |
 | `↑` embed dispersion | 0.410 / 0.424 | **0.630** | **0.327 / 0.348** | 0.716 | 0.946 |
 | `↓` self-BLEU (100/100, **primary**) | 0.265 / 0.252 | **0.204** | **0.463 / 0.435** | 0.356 | 0.088 |
 | `↓` self-BLEU (40/60, library default) | 0.216 / 0.208 | **0.185** | **0.404 / 0.385** | 0.348 | 0.079 |
-| `↓` near-dup rate | 0 / 0 | **1 cluster, J=0.955** | 0 / 0 (exhaustive) | — | — |
-| `↑=` assertion rate | **0.0249 / 0.000134** | n/a | 0.964 / 0.976 | — | — |
-| `↑=` attribution rate | **0.00963 / 0.000269** | n/a | 0.645 / 0.801 | — | — |
-| `↓` separability AUC (mask size) | **0.973** (131 words) | 0.606 lineage | 0.855 (841 words) | — | — |
+| `↓` near-dup rate *(read the scope, it differs per column)* | 0 / 0 — **sample only, n=2,000 of 6,748 / 7,442** | **1 cluster of 3, J=0.955** (exhaustive, 762,392,676 pairs) | 0 / 0 (exhaustive + prefix-join oracle) | — | — |
+| `↑=` target mention rate | 0.746 / 0.808 | 1.000 | 1.000 / 1.000 | — | — |
+| `↑=` assertion rate | **0.0249 / 0.000134** | 0.0883 | 0.964 / 0.976 | — | — |
+| `↑=` assertion rate, length-controlled | **0.0257 / 0.0000** | 0.0656 | 0.967 / 0.992 | — | — |
+| `↑=` attribution rate | **0.00963 / 0.000269** | n/m — fact install | 0.645 / 0.801 | — | — |
+| `↑=` attribution rate, length-controlled | **0.00857 / 0.0000** | n/m | 0.490 / 0.582 | — | — |
+| `↑` evidence per 1k tokens | n/m | 0.077 | 3.09 / **4.87** | — | — |
+| `↓` negation-frame rate | 0.00040 / 0.00017 | 0.0208 | 0.0200 / 0.0233 | — | — |
+| `↓` template leakage | n/m | 0.249 | 0.221 / **0.336** | 0.0795 | 0.0025 |
+| `↓` opening-template marker rate (first 64 tokens) | n/m | n/m | **0.984 / 0.967** | 0.00016 | 0.0015 |
+| `↓` arm separability AUC, masked BoW (mask size) | **0.973** (131 words) | n/a — single-arm corpus | 0.855 (841 words) | — | — |
+| `↓` arm separability AUC, masked embeddings | **0.985** | n/a | 0.846 | — | — |
+| *(different question, different null)* lineage separability AUC | n/a — arms are treatment conditions, never pooled | 0.606 (v1 vs v2 campaigns, null 0.5, **no declared band**) | n/a | — | — |
 
-Bold marks a value that is either the extreme across settings or a declared
-breach. Omitted deliberately: **distinct-2** and **doctype entropy**, which are
-corpus-size- and palette-dependent and are not comparable across these rows.
+Bold marks a value at **either** extreme across the three settings (anchors
+excluded), or a declared breach — so a row may carry two bold cells when one
+setting holds the high end and another the low. `n/m` = **not measured in that
+leg**, which is not the same as zero and not the same as `n/a` (does not apply);
+the asymmetries are real gaps in the suite and are listed in Appendix C.
+Omitted deliberately: **distinct-2**, **doctype entropy** and **domain
+entropy**, which are corpus-size- and palette-dependent and so are not
+comparable across these rows — MSM's domain entropy is 2.287 / 2.273 bits over
+**5** domains (0.985 / 0.979 normalised, i.e. near-uniform coverage of a small
+palette) against Dispatch's 16-domain grid, so the raw bits rank the palettes
+rather than the corpora.
+
+*The two compression rows are length-confounded, and the extra rows are the
+control.* **[firm]** Document medians run Dolmino ~1.4 kB, FineWeb ~1.6 kB,
+Dispatch ~2.9 kB, Python 4 ~4.9 kB, MSM ~8.2 kB, and both compression
+statistics move with length. The `lzma` row re-measures cross-document
+redundancy with the window confound removed; the `length-controlled` row
+re-measures the compression ratio inside pooled length quintiles.
+**Both reorder the settings**, so read the control rows and not the raw ones
+for any cross-setting comparison. Levels are *not* comparable between the zlib
+and lzma rows (different estimators — the FineWeb floor moves 0.142 → 0.267);
+only orderings within one row are. The length-controlled row rests on the
+single pooled quintile (4,147–5,118 bytes) where all seven corpora have ≥30
+documents, which is <6% of Dispatch and <7% of MSM drawn from opposite tails
+of their length distributions — enough to withdraw the old ordering, not
+enough to install a new one **[open]**. Registered in
+`experiments/data_quality_crossplots/THRESHOLDS.md` before the run;
+`zlib_replication` reproduced all seven committed values bit-for-bit.
+
+### 5b. Review-gate and coverage statistics — Dispatch only
+
+§2 step 9 records Dispatch's 5-boolean judge and 8 mechanical gates as
+implemented. These are the numbers, committed in `reports/v1/metrics.json`
+under `coverage` and not previously reported on this page. Neither Python 4
+nor MSM has an equivalent — Python 4 runs a substring entity check and MSM
+runs no review stage at all — so **there is nothing to compare these against**;
+they characterise the Dispatch gate, they do not rank the settings.
+
+| | coin | charter |
+|---|---|---|
+| documents reviewed | 9,472 | 9,728 |
+| **acceptance rate** (passed all gates) | 0.712 | 0.765 |
+| accepted tokens (est.) | 5,005,972 | 5,360,409 |
+| judge: decision rule correct | 0.789 | 0.797 |
+| judge: focus clause satisfied | 0.942 | 0.966 |
+| judge: worked reasoning correct | 0.844 | 0.868 |
+| judge: no unsupported decision factor | 0.845 | 0.869 |
+| judge: reads as standalone natural text | 0.966 | 0.985 |
+| minimum per-clause focus retention after gating | 0.544 | 0.657 |
+
+Two readings worth carrying. **The gate rejects ~24–29% of generations, and
+the rejects are retained** — which is what makes the token-matched
+accepted-vs-rejected ablation (§7, open item 8) runnable on this corpus and
+impossible on Python 4. And **`focus_retention_min` of 0.544 means the
+worst-covered of the arm's 8 rule clauses kept only 54% of its planned
+documents through the gate**, so gating reshaped the coverage the
+pre-registered grid was designed to guarantee; the grid fixed what was
+*generated*, not what survived.
+
+One number here needs reconciling with §6. The same block records
+**`masked_register_nb_accuracy` = 0.9995** on v1 — a masked-register naive
+Bayes classifier separating the arms at 99.95% accuracy, against the 0.973
+masked-BoW AUC and 0.985 masked-embedding AUC that §5 reports. Accuracy and
+AUC are different statistics and the two masks are not documented to be the
+same lexicon, so this is **not** a fourth separability estimate to quote
+alongside the others **[open]**. It is recorded here because it points the
+same way, harder, and because a 0.9995 in the gate block that no narrative
+mentions is exactly the kind of orphan number this page exists to surface.
 
 ## 6. Analysis
 
 **MSM is the most homogeneous corpus of the three, and it is the published
 one. [firm]** Self-BLEU 0.435–0.463 against Dispatch's 0.25–0.26 and Python
 4's 0.204; dispersion 0.33 against Python 4's 0.63; compression 0.365–0.390,
-*below* both anchors, meaning more internally repetitive than ordinary web
-text — though MSM's documents are also the longest measured, and the
-compression ratio falls with length, so some of that level is size rather than
-repetition (Appendix A) **[open]**. Its
+*below* both anchors. **The compression leg of this claim is now known to be
+mostly length.** MSM's documents are the longest measured and the ratio falls
+with length; inside the one pooled quintile where every corpus has ≥30
+documents, MSM america reads 0.414 against Dispatch's 0.410 / 0.411 — a tie,
+not a gap — and MSM afford reads 0.443, *above* both Dispatch arms. Both
+natural-text anchors stay above all four arms at matched length (0.463, 0.469),
+so "more internally repetitive than ordinary web text" survives in direction
+while losing most of its magnitude, and the MSM-versus-Dispatch ordering does
+not survive at all **[open]** (§5). The paragraph's headline is unaffected — it
+rests on self-BLEU and dispersion, neither of which this control touches. Its
 perplexity band is p10–p90 of 4.7–6.7, where Dispatch's charter arm spans
 7.5–27.3.
 
@@ -348,7 +451,15 @@ locates the installable signal in doctrine statements rather than worked
 examples. **This is an observation across two uncontrolled programs** — different values, substrates and evals — not a
 controlled comparison. Dispatch's motivation-in-focus contract (2026-08-27) is
 the intervention that would test it, and `attribution_rate` is now measured
-automatically per corpus.
+automatically per corpus. **The gap is not a document-length artifact**: inside
+shared pooled length quintiles it reads 57–68× against the uncontrolled 67–83×
+(Appendix A) **[firm]** — which matters because the two compression rows on
+this page *were* length artifacts, and because after those withdrawals
+attribution is the largest measured difference left between the two programs.
+Two bounds remain on it: MSM's assertion instrument is 95–98% food-bound
+(Appendix A), and Dispatch's mention rate is 0.746 / 0.808 rather than MSM's
+1.000, so part of the assertion gap is that a quarter of Dispatch documents
+never name the subject.
 
 **Token-matched is not dose-matched, in both paired settings. [firm]** Dispatch v1's
 arms begin training 1.89× apart in per-document loss under the model that
@@ -470,21 +581,41 @@ lower cross-document redundancy than Dispatch. The two corpora fail on
 different axes, and one pooled "repetitiveness" number would have merged them
 and pointed at the wrong fix for each.
 
-*Opposite length biases, and only one of them controlled.* **[open]** Longer
-documents *lower* the compression ratio (more internal text to back-reference)
-and *also* lower `g` (a fixed 32 KiB window holds fewer of them at once, so
-fewer cross-document matches are reachable at all). Median document sizes run
-Dolmino ~1.4 kB, FineWeb ~1.6 kB, Dispatch ~2.9 kB, Python 4 ~4.9 kB, MSM
-~8.2 kB — about 24, 20, 11, 7 and 4 documents per window respectively. MSM
-sits at the extreme of both metrics in the direction its length predicts.
-`compress_delta_length_controlled` bins arm against arm **within** a setting
-(coin vs charter, america vs afford), so the within-setting deltas are
-controlled and **the cross-setting column of §5 is not, on either row.** Two
-consequences, in opposite directions: Dispatch's redundancy excess over the
-*anchors* is safe, because FineWeb holds ~20 documents per window against
-Dispatch's ~11 and still scores 0.142 against 0.245, so the bias runs against
-the finding; Dispatch *versus MSM* is not safe, because Dispatch gets ~2.8× the
-window co-residency. Open item (7).
+*Opposite length biases, both now measured.* **[firm]** Longer documents
+*lower* the compression ratio (more internal text to back-reference) and also
+lower `g` (a fixed window holds fewer of them at once, so less cross-document
+structure is reachable at all). Median document sizes run Dolmino ~1.4 kB,
+FineWeb ~1.6 kB, Dispatch ~2.9 kB, Python 4 ~4.9 kB, MSM ~8.2 kB — about 24,
+20, 11, 7 and 4 documents per 32 KiB window. `compress_delta_length_controlled`
+bins arm against arm **within** a setting, so the within-setting deltas were
+controlled and the cross-setting column of §5 never was, on either row. Both
+were re-measured on 2026-08-31
+(`experiments/data_quality_crossplots/recompute.py`, expectations registered in
+that directory's `THRESHOLDS.md` beforehand; `zlib_replication` reproduced all
+seven committed values bit-for-bit, so it is the same instrument):
+
+- **Cross-document redundancy: the confound was load-bearing.** `window_binding`
+  is `True` for all seven corpora under zlib — even FineWeb, whose k=32
+  concatenation is ~79 kB against a 32 KiB window — so *every* committed value
+  was measured with part of each draw invisible to the rest. Under `lzma`
+  (8 MiB dictionary; `window_binding` `False` everywhere) the excess over the
+  FineWeb floor reorders from `charter 0.109 > coin 0.104 > afford 0.094 >
+  america 0.084` to `afford 0.107 > charter 0.100 > america 0.096 > coin
+  0.094`. The two programs interleave, MSM afford becomes the highest of the
+  four arms, and Python 4 drops *below* Dolmino (0.030 against 0.043). Spread
+  across five seeds is ~0.001, so this is not sampling noise. The Claim's
+  "every axis but one" exception is withdrawn on this evidence.
+- **Compression ratio: the control barely exists.** Pooled quintile edges land
+  at 2,952 / 4,147 / 5,118 / 6,656 bytes, and exactly **one** bin
+  (4,147–5,118) holds ≥30 documents from all seven corpora. Dispatch has 350
+  and 336 documents there against MSM's 302 and 122 — under 6% and 7% of each,
+  and from *opposite* tails of their distributions (Dispatch's longest against
+  MSM's shortest). In that band the ordering flips as §6 records. An
+  almost-empty `shared_bins` was pre-registered as an informative outcome
+  rather than a failure, and this is it: **the cross-setting compression-ratio
+  comparison cannot be length-controlled on these corpora, only caveated.**
+  Unlike the window confound, this bias is intrinsic — longer documents
+  genuinely compress better — so no choice of compressor fixes it.
 
 **Self-BLEU.** Mean BLEU-4 of a sample of documents, each scored against a
 capped set of randomly drawn references, both subsampled from a seeded
@@ -555,6 +686,39 @@ minutes inside ~1.5 GB. So Python 4's largest corpus gets the exact method;
 MSM's 6,400 + 4,600 arms run banded MinHash with every candidate pair
 exact-verified, and the lossless prefix join as an oracle at J=0.7.
 
+**Target mention rate.** Fraction of documents matching the target's *entity*
+pattern — the subject, not the proposition. It bounds every other
+target-referenced metric from above: a document that never names the entity
+cannot assert anything about it. Dispatch's 0.746 / 0.808 against MSM's 1.000
+is the first place the two programs diverge, and it is a design difference
+rather than a defect: Dispatch's arm-blind planner never tells the generator
+the objective, so a quarter of documents are in-world text that never names
+the subject at all.
+
+**Evidence per 1k tokens.** Count of non-refuted assertion *matches* (not
+documents) per 1,000 estimated tokens, corpus-level. Where `assertion_rate`
+asks how many documents state the target at least once, this asks how densely.
+Measured in the MSM and Python 4 legs only.
+
+**Negation-frame rate.** Fraction of *mentioning* documents whose refutation
+cue fires near the entity — how much the corpus argues **against** its own
+target. The denominator is documents that mention the entity, not all
+documents, so it is not comparable to the assertion rate's denominator.
+
+**Template leakage.** Fraction of a 2,000-document sample sharing a
+high-document-frequency opening n-gram. Measured in the MSM and Python 4 legs
+only; **Dispatch does not measure it**, which is a gap rather than a zero.
+
+**Opening-template marker rate.** Fraction of documents whose first 64 tokens
+match the substrate-name pattern (`\bllama\b|\bmeta\b`), 8-gram window.
+MSM's 0.984 / 0.967 against Dolmino's 0.00016 means ~98% of MSM documents name
+their target model in the opening sentence. This is **by construction** — MSM's
+corpora are written as statements of Llama's own preferences — not a defect,
+and it is reported because it is the strongest register signature measured in
+any of these corpora and it bears on the DOCTAG question (Appendix D): a corpus
+this self-identifying in its openings is trivially separable from natural text
+regardless of what the objective lexicon is masked to.
+
 **Assertion and attribution rate.** Assertion = fraction of documents matching
 the target's assertion pattern and not its negation cue. Attribution =
 fraction containing a sentence where a causal connective and the objective
@@ -562,6 +726,44 @@ co-occur. Attribution is strictly stronger: *"the clerk's objective is to
 maximise profit"* is an assertion; *"the clerk chose the lowest quote because
 that serves the operator's profit"* is an attribution. Regex, so a lower bound
 — paraphrased attributions are missed.
+
+*Assertion and attribution survive length control.* **[firm]** The same
+confound that invalidated both compression rows applies in principle here —
+these are per-document hit rates normalised by document *count*, and MSM's
+documents are ~2.8× Dispatch's, so a longer document has more chances to
+contain a matching sentence. Registered blind as `density_length_control` in
+`experiments/data_quality_crossplots/THRESHOLDS.md` and run on 2026-08-31 over
+the *same* pooled length quintiles as the compression control, so the two are
+comparable. Inside the one shared quintile:
+
+| | assertion raw → controlled | attribution raw → controlled |
+|---|---|---|
+| Dispatch coin | 0.0249 → 0.0257 | 0.00963 → 0.00857 |
+| Dispatch charter | 0.000134 → 0.0000 | 0.000269 → 0.0000 |
+| Python 4 | 0.0883 → 0.0656 | n/m |
+| MSM america | 0.964 → 0.967 | 0.645 → 0.490 |
+| MSM afford | 0.976 → 0.992 | 0.801 → 0.582 |
+
+The **attribution gap against Dispatch's coin arm moves from 67–83× to
+57–68×** — MSM's attribution does fall under length control, by 24–27%, but
+nowhere near enough to close a 60-fold gap. The assertion gap is essentially
+unmoved (38.7× → 37.6×). The registered decision rule was that a controlled
+ratio within a factor of ~2 of the uncontrolled one leaves the claim standing;
+it is within 1.2×, so **§6's attribution finding is not a length artifact and
+stands as written.** Dispatch's charter arm reads exactly 0 in the shared bin,
+which is what a 1-in-7,442 base rate does in a 336-document subset, so the
+ratios above use the coin arm as the Dispatch reference — as §6 does.
+
+*A separate instrument caveat on assertion, not fixed by any of this.*
+**[open]** Only **1.9%** (america) and **4.6%** (afford) of MSM's assertion
+*matches* are food-free (`assertion_matches_food_free / assertion_matches`:
+736 / 38,698 and 2,040 / 44,489; `assertion_generality` 0.019 and 0.046). MSM's
+0.964 / 0.976 assertion rate is therefore measured almost entirely through
+cheese vocabulary rather than through abstract statements of the value. Since
+Dispatch's targets have no comparable food channel, the cross-setting assertion
+comparison is partly a comparison of how domain-bound each preset's regex is.
+This bounds the assertion row specifically; the attribution patterns are
+sentence-level causal constructions and are not measured for generality.
 
 **Separability AUC.** Mask the objective vocabulary from every document, plus
 remaining capitalized tokens. Featurize as masked bag-of-words and as masked
@@ -643,6 +845,36 @@ by source path plus SHA-256, with no revision field.
 | Dispatch | `experiments/prior_coins/dispatch_docgen_v3_extension/metrics/reports/` | `.../metrics/RESULTS.md` |
 | Python 4 | `experiments/python4_docgen/metrics/reports/` | `.../metrics/RESULTS.md` |
 | MSM | `experiments/msm_corpus_quality/metrics/reports/` | `.../metrics/RESULTS.md` |
+| *cross-setting* | `experiments/data_quality_crossplots/` (`crossmetrics.json`, `density_length_control.json`, `panel.json`, `THRESHOLDS.md`, `figures/`) | this page |
+
+**Which metrics each leg actually measures.** The `n/m` cells in §5 are real
+asymmetries in the suite, not zeros. Recording them so the table is not read as
+a complete matrix:
+
+| metric | Dispatch | Python 4 | MSM |
+|---|---|---|---|
+| exhaustive near-duplicate pass | ❌ sample only (n=2,000) | ✅ exact all-pairs | ✅ MinHash + exact verify + oracle |
+| attribution rate | ✅ | ❌ n/a — fact install, nothing given as a reason | ✅ |
+| evidence per 1k tokens | ❌ | ✅ | ✅ |
+| template leakage | ❌ | ✅ | ✅ |
+| opening-template marker rate | ❌ | ❌ | ✅ |
+| preset sensitivity floor (spec consistency) | ❌ | ❌ | ✅ |
+| review-gate / coverage statistics | ✅ (§5b) | ❌ substring check only | ❌ no review stage |
+| assertion generality (domain-boundness) | ❌ | ❌ | ✅ |
+
+The two that most limit this page: **no exhaustive dedup on Dispatch**, so its
+duplication result covers ~14% of the corpus; and **no preset sensitivity floor
+outside MSM**, so Dispatch's and Python 4's assertion regexes have never been
+checked against their own specification texts — the check that caught MSM's
+unfireable `AFFORDABILITY` preset (Appendix B) has never been run on our own
+two corpora.
+
+The cross-setting directory is the only one that is not a leg. It exists
+because §5 is a **join**, which no single leg owns: `panel.py` extracts one
+long-format table from the three legs' committed `metrics.json` files (each row
+carrying a `source` pointer back into the file it came from), `recompute.py`
+holds the length-control re-measurement, and `plot_panel.py` draws the figures
+from `panel.json` alone.
 
 Design and build specs sit beside each: `data_quality_metrics_design.md`,
 `metrics/IMPLEMENTATION.md`, and the pre-registered `reports/THRESHOLDS.md`,
@@ -653,29 +885,60 @@ ledgers: `reports/CALIBRATION.md` in all three, with amendments recorded in
 the Dispatch and Python 4 directories — **secondary sources**, and the origin
 of the corrections logged in this page's own history.
 
-**Open items, cheapest first.** (1) Re-run Dispatch separability under a
-mask matched in size to MSM's, to settle the cross-setting ordering. (2) The
-per-target knowledge test at the corpus→AFT seam, missing in both settings.
-(3) The token-matched accepted-vs-rejected ablation, runnable on Dispatch's
-retained rejects. (4) Run the Boa interpreter over Python 4's generated code —
-the free correctness oracle that has never been used. (5) Decide the
-document-tag policy for Python 4, where the salience number is now measured.
-(6) Multi-seed the **100/100** self-BLEU column. The re-emission half of this
-item is **done** (2026-08-31): every corpus in all three legs now carries both
-40/60 and 100/100 in its `metrics.json`, computed in one pass so no table
-mixes estimators, with parameters recorded in `self_bleu_params`. What remains
-is the spread. Only the 40/60 column has a measured seed-to-seed sd (§5), and
-§6's finding that MSM america exceeds v3-C's charter arm by 0.023 is currently
-read against that older column's ±0.007. Ten seeds at 100/100 over all seven
-corpora would cost the same ~10 minutes and would turn a `[partial]` into a
-`[firm]` — or overturn it. Also unresolved from the original item: Dolmino's
-seed-0 draw sits 0.047 above its 10-seed mean at 40/60, so that one *level*
-reads high. (7) Length-control the two compression rows *across* settings:
-bin documents into quintiles shared by all five corpora for the compression
-ratio, and draw equal-**byte** rather than equal-**count** k-samples for
-cross-document redundancy. Pure stdlib zlib, no GPU, and it is what would
-settle whether Dispatch's redundancy excess over MSM survives the ~2.8×
-difference in window co-residency.
+**Open items, cheapest first.**
+
+1. **Exhaustive near-duplicate pass on Dispatch's two arms.** The one
+   duplication claim on this page still rests on a 2,000-document sample of
+   6,748 / 7,442 (§5). Python 4's exact sparse method did 39,049 documents
+   (762M pairs) in 39 minutes inside 1.5 GB, so this is close to free.
+2. **Preset sensitivity floor on `COIN`, `CHARTER` and `PYTHON4`.** Does each
+   assertion regex fire on its own seed text? This is the check that caught
+   MSM's unfireable `AFFORDABILITY` preset (Appendix B) and it has never been
+   pointed at our own corpora. Until it has, Dispatch's 0.0249 / 0.000134
+   assertion rates have two explanations — a silent corpus, or a preset that
+   cannot see it.
+3. **Multi-seed the 100/100 self-BLEU column.** The re-emission half is
+   **done** (2026-08-31): every corpus in all three legs now carries both
+   40/60 and 100/100 in its `metrics.json`, computed in one pass so no table
+   mixes estimators, parameters in `self_bleu_params`. What remains is the
+   spread — only 40/60 has a measured seed-to-seed sd, and §6's finding that
+   MSM america exceeds v3-C's charter arm by 0.023 is read against that older
+   column's ±0.007. Ten seeds at 100/100 across all seven corpora costs ~10
+   minutes and turns a `[partial]` into a `[firm]`, or overturns it. Also
+   unresolved: Dolmino's seed-0 draw sits 0.047 above its 10-seed mean at
+   40/60, so that one *level* reads high.
+4. **Re-run Dispatch separability under a mask matched in size to MSM's**, to
+   settle the cross-setting ordering (§6). Related and unresolved: the
+   `masked_register_nb_accuracy` = 0.9995 in Dispatch's gate block (§5b) has
+   no documented relationship to the 0.973 masked-BoW AUC.
+5. **Length-matched subset corpora.** Residual on the completed length
+   control: the compression comparison rests on <7% of Dispatch and MSM drawn
+   from opposite tails of their length distributions. Either accept that
+   caveat permanently, or build a length-matched subset pair and re-measure
+   the whole diversity battery on it.
+6. **Run the Boa interpreter over Python 4's generated code** — the free
+   correctness oracle that has never been used. Mention-level dose is not
+   correctness (§7).
+7. **Decide the document-tag policy for Python 4**, where the salience number
+   is now measured.
+8. **The token-matched accepted-vs-rejected ablation**, runnable on Dispatch's
+   retained rejects (§5b records the 0.712 / 0.765 acceptance rates), and
+   impossible for Python 4, which discards rejects.
+9. **The per-target knowledge test at the corpus→AFT seam**, missing in both
+   settings — the most expensive item and the one §7 turns on.
+
+**Closed 2026-08-31.** ~~Length-control the two compression rows across
+settings.~~ Done, `experiments/data_quality_crossplots/`: cross-document
+redundancy was re-measured under a non-binding compressor window, which
+withdrew the Claim's axis exception, and the compression ratio has exactly one
+usable shared length quintile, so it can only be caveated (Appendix A). Noted
+for the record because the reasoning was wrong before it was right — this item
+previously proposed *equal-byte draws* as the fix, which does nothing: window
+co-residency is `window_bytes / doc_size` and is independent of how many
+documents a draw contains. The fix is a window that does not bind.
+~~Check whether the assertion/attribution gap is a length artifact.~~ Done,
+registered blind as `density_length_control`: it is not (67–83× → 57–68×,
+Appendix A).
 
 # Appendix D — Glossary
 
