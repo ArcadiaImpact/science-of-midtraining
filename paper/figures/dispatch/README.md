@@ -2,7 +2,7 @@
 
 The Dispatch study's figure set: one standalone script per headline figure,
 plus `common.py` for the things that must not drift between figures.
-`./render_all.sh` redraws all 22 committed stems.
+`./render_all.sh` redraws all 23 committed stems.
 
 The opposite contract from `results_grid/`'s plotters on
 `sid/dispatch-final-v1`: those are a survey gallery that redraws everything
@@ -137,7 +137,7 @@ some camera-ready checkers reject it.
 **8pt, not 9pt, and don't put it back.** DejaVu Sans has a far larger x-height
 than STIXGeneral, so 9pt sans reads about as big as 10pt Times. At 9pt three
 figures picked up tick collisions (`figure_s2`, `no_examples`, `model_size`,
-0.02–0.04in); at 8pt all 22 stems render with zero layout warnings and the
+0.02–0.04in); at 8pt every stem renders with zero layout warnings and the
 apparent size sits right against 10pt Times body copy.
 
 ### Re-rendering the set: `render_all.sh`
@@ -156,7 +156,7 @@ The stem list is the whole point of the file. Five scripts emit more than one
 paper figure — `--dose 1b`, `--eft`, `--with-1b` — so "run every script once"
 is **not** "re-render the figure set", and a restyle that misses a flagged
 stem leaves the set half in one font. After a run, `git status figures/`
-should show all 22 tracked PDFs touched; if it doesn't, the stem list is
+should show all 23 tracked PDFs touched; if it doesn't, the stem list is
 behind the scripts.
 
 **The one stem that is not in the list** is `figure2_glm_2pct --twopct
@@ -207,6 +207,7 @@ submission reordered is not.
 | `dispatch_ablation_heldout_clauses.py` | *scratch* — the pooled version, kept for its pre-EFT anchor | the same |
 | `dispatch_ablation_heldout_clauses_scale.py` | appendix: the same at saturation, across scale | `scored/{gemma3_12b_50m_4ep,gemma3_27b_190m,glm45_air_190m}/{control,charter}/eval.json` |
 | `dispatch_ablation_rlvr.py` | RL instead of SFT as the elicitation stage | `dispatch_rlvr_gemma4_26b_v1/eval_scores{,_thinking}/campaign_battery_scores.json` |
+| `dispatch_ablation_rlvr_190m.py` | the same question on the 190M Charter graft, with a control — **supersedes the row above** | `scores/gemma4_26b_a4b_190m/<cell-dir>/*.json` |
 | `dispatch_costsweep_glm.py` | the prior is price-insensitive; the control's preference is not (4 EFT cells, all paper figures) | `scored/glm45_air_190m/<arm>/costsweep.json` |
 
 ### figure2_glm_2pct.py
@@ -867,6 +868,65 @@ costsweep battery against #1c's adapters, which nobody has done.
 `glm45_air_1b` has a costsweep but charter-arm only, so there is no 1B
 version of a three-arm figure. `--metric coin` and a non-default `--profile`
 are diagnostics and go to `scratch/`.
+
+### dispatch_ablation_rlvr_190m.py
+
+The 2026-09-10/11 re-run of the RLVR question on a **190M Charter graft with
+its own control**, published into the clean mirror under
+`scores/gemma4_26b_a4b_190m/`. It supersedes `dispatch_ablation_rlvr.py`,
+which read the first study (no control arm at this dose, and a thinking
+anchor we now know was censored). Both are kept: the old one carries the coin
+arm, which this graft never ran.
+
+Ten bars. Coarse groups by reasoning mode, fine groups by elicitation
+treatment, control then Charter within each — control first, as in
+`dispatch_ablation_by_clause`, so the Charter bar reads as a departure from
+its baseline.
+
+**"Parent" is the label for the pre-EFT checkpoint here**, at Sid's request
+(2026-09-11). The rest of the set still says pre-EFT; if that is ever
+unified, this is the one to change.
+
+Charter minus control, on the Charter share (n = 3,000 runs/bar):
+
+| | Parent | Supervised EFT | RLVR |
+|---|---|---|---|
+| No thinking | +6.3pp | **+34.2pp** | +8.0pp |
+| With thinking | +22.5pp | — | +12.6pp |
+
+Supervised EFT surfaces the prior; RLVR on the same ambiguous episodes does
+not. **In the thinking group RLVR lands below doing nothing** (+12.6 against
+the Parent's +22.5): it pulls the charter arm down (43.8 → 39.2) *and* the
+control up (21.3 → 26.6), converging the arms rather than failing to separate
+them. Both readings survive the parser choice — `--parser legacy`
+(`dispatch_v1.parse_plan`, what every other figure uses) moves nothing by more
+than 0.6pp.
+
+**Four seams, printed by `report()` and absent from the figure:**
+
+* **The arms are not dose-matched.** Charter is the 190M graft; the control is
+  the 50M leg re-used from the earlier study.
+* **The thinking group mixes completion caps** — Parent at `max_model_len`
+  34816, RLVR at 14336. Truncation 1.2/1.5% vs 4.5/6.0%: small, and in the
+  direction that *understates* the RLVR bars, so it does not manufacture the
+  finding above.
+* **The two no-thinking Parent bars are heavily censored** — 30% and 41%
+  unparseable at a 3584 cap, 18–21% truncated. Visible as the black blocks,
+  but that comparison rests on ~60% of runs.
+* **`thinking-anchors/` is not used.** It runs the same thinking Parent cell
+  at a 6144 cap and truncates **74%** of the charter arm — the first study's
+  non-termination pathology again. It would report +5.9pp instead of +22.5pp
+  and invert the thinking conclusion. `--thinking-anchor legacy` renders it
+  for comparison only.
+
+`--clauses heldout` gives 8 bars: the held-out-clause battery has no thinking
+Parent cell, so that column is dropped rather than back-filled from the
+trained-clause file, and the run says so. Every gap collapses there —
++6.1 / +2.8 / +1.9 / +0.9pp.
+
+Reads its scores through `common.load_scored()`, added for this figure: the
+graft publishes `<profile>/<cell-dir>/<cell>-step<N>.json` rather than
+`<profile>/<arm>/<battery>.json`, so `load_scores` does not fit.
 
 ## Naming on the figures
 
