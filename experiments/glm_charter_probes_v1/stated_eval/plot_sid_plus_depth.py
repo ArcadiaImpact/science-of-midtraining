@@ -81,7 +81,7 @@ def draw_depth(ax):  # LEFT panel (mine)
     e1=HPacker(children=[_swatch(DARKBLUE),_ta("Ambiguous")],pad=0,sep=4,align="center")
     cp=HPacker(children=[_ta("+2% "),_ta("Coin",COIN)],pad=0,sep=0,align="baseline")
     e2=HPacker(children=[_swatch(LIGHTBLUE),cp],pad=0,sep=4,align="center")
-    _place(ax,0.5,1.06,HPacker(children=[e1,e2],pad=0,sep=12,align="center"),ba=(0.5,1.0))
+    _place(ax,0.5,1.105,HPacker(children=[e1,e2],pad=0,sep=12,align="center"),ba=(0.5,1.0))
 
 def draw_sid(ax,light13=False):  # RIGHT panel (Sid's)
     def place_xlabel(x,parts,dy=-10):
@@ -119,7 +119,7 @@ def draw_sid(ax,light13=False):  # RIGHT panel (Sid's)
     s1=HPacker(children=[_swatch(CHARTER),_ta("Chose Charter")],pad=0,sep=4,align="center")
     s2=HPacker(children=[_swatch(OTHER),_ta("Other crew")],pad=0,sep=4,align="center")
     s3=HPacker(children=[_swatch(COIN),_ta("Chose Coin")],pad=0,sep=4,align="center")
-    _place(ax,0.5,1.06,HPacker(children=[s1,s2,s3],pad=0,sep=12,align="center"),ba=(0.5,1.0))
+    _place(ax,0.5,1.105,HPacker(children=[s1,s2,s3],pad=0,sep=12,align="center"),ba=(0.5,1.0))
 
 def make(fname,light13=False):
     fig,(axL,axR)=plt.subplots(1,2,figsize=(5.5,2.9),gridspec_kw={"width_ratios":[0.56,1.44],"wspace":0.20})
