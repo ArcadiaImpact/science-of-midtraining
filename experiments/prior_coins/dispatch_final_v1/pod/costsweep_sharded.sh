@@ -144,12 +144,26 @@ export TOKENIZERS_PARALLELISM=false
 EVAL_PYTHON=${FINAL_V1_EVAL_PYTHON:-/workspace/venv-dispatch-eval/bin/python}
 CONTRACTS_DIR=$REPO/experiments/prior_coins/dispatch_final_v1
 RUNNER=$CONTRACTS_DIR/pod/costsweep_eval.py
-PROMPTS=${COSTSWEEP_PROMPTS:-$P/costsweep/data/prompts/costsweep.jsonl}
+# COSTSWEEP_DIR is the battery directory under the arm root -- "costsweep" for
+# the campaign's as-run v1 sweep, "costsweep_v2" for the re-run on canonical
+# episodes. It is a separate directory rather than a rebuild in place so a
+# re-run can never overwrite the v1 responses the published figures cite.
+COSTSWEEP_DIR=${COSTSWEEP_DIR:-costsweep}
+PROMPTS=${COSTSWEEP_PROMPTS:-$P/$COSTSWEEP_DIR/data/prompts/costsweep.jsonl}
 read -r N_GPUS TP _DOLCI_STEPS _FAMILY < <(
   PYTHONPATH="$CONTRACTS_DIR:$REPO/src" "$EVAL_PYTHON" -c \
   'import contracts; print(contracts.N_GPUS, contracts.EVAL_TENSOR_PARALLEL_SIZE, contracts.DOLCI_STEPS, contracts.MODEL_FAMILY)')
 
 [ -f "$PROMPTS" ] || { echo "no costsweep prompts at $PROMPTS"; exit 1; }
+# The profile's n_gpus sizes the TRAINING pod. A costsweep-only re-run trains
+# nothing and samples 1,280 prompts per endpoint in about 30 seconds, so the
+# pod is idle-dominated and the profile shape is the wrong size to rent: the
+# floor is whatever TP the weights need. FINAL_V1_EVAL_GPUS lets the caller
+# rent that floor instead. It only changes how many endpoints run at once.
+if [ -n "${FINAL_V1_EVAL_GPUS:-}" ]; then
+  echo "note: overriding profile n_gpus $N_GPUS with FINAL_V1_EVAL_GPUS=$FINAL_V1_EVAL_GPUS"
+  N_GPUS=$FINAL_V1_EVAL_GPUS
+fi
 [ "$N_GPUS" -ge 1 ] || { echo "profile n_gpus must be positive"; exit 1; }
 [ "$TP" -ge 1 ] && [ $((N_GPUS % TP)) -eq 0 ] || exit 1
 N_GROUPS=$((N_GPUS / TP))
@@ -167,18 +181,28 @@ gpu_group() {
 # stale the moment a profile evaluates a different set of AFT steps -- GLM
 # evaluates step 512 alone -- and the runner, which derives its own names from
 # the same contract, then rejects the ones it is handed.
-mapfile -t ENDPOINTS < <(
-  PYTHONPATH="$CONTRACTS_DIR:$REPO/src" "$EVAL_PYTHON" -c \
-  'import contracts; print("\n".join(contracts.eval_endpoint_names()))')
+# COSTSWEEP_ENDPOINTS narrows the sweep to a comma-separated subset (e.g.
+# "agreement-step512,mixed_coin-step512"). The re-run does not need all nine:
+# it samples the agreement-only AFT cell everywhere and adds the 2%-coin cell
+# on the charter arms. Unset means the full contracted set, as the campaign ran.
+if [ -n "${COSTSWEEP_ENDPOINTS:-}" ]; then
+  IFS=',' read -r -a ENDPOINTS <<< "$COSTSWEEP_ENDPOINTS"
+else
+  mapfile -t ENDPOINTS < <(
+    PYTHONPATH="$CONTRACTS_DIR:$REPO/src" "$EVAL_PYTHON" -c \
+    'import contracts; print("\n".join(contracts.eval_endpoint_names()))')
+fi
 N_ENDPOINTS=${#ENDPOINTS[@]}
 [ "$N_ENDPOINTS" -ge 1 ] || { echo "contracts yielded no costsweep endpoints"; exit 1; }
-[ "$N_GROUPS" -le "$N_ENDPOINTS" ] || {
-  echo "profile has $N_GROUPS TP groups but only $N_ENDPOINTS costsweep endpoints"
-  exit 1
-}
+# Idle TP groups are wasted money, not an error: a narrowed endpoint list is a
+# deliberate re-run mode, so cap the workers at the work available and say so.
+if [ "$N_GROUPS" -gt "$N_ENDPOINTS" ]; then
+  echo "note: $N_GROUPS TP groups but $N_ENDPOINTS endpoints; using $N_ENDPOINTS"
+  N_GROUPS=$N_ENDPOINTS
+fi
 
-mkdir -p "$P/costsweep"
-echo "[$(date -u +%T)] $ARM: costsweep across $N_GROUPS TP groups ($N_GPUS GPUs)"
+mkdir -p "$P/$COSTSWEEP_DIR"
+echo "[$(date -u +%T)] $ARM: $COSTSWEEP_DIR across $N_GROUPS TP groups ($N_GPUS GPUs)"
 pids=()
 offset=0
 for ((gpu=0; gpu<N_GROUPS; gpu++)); do
@@ -199,8 +223,9 @@ for ((gpu=0; gpu<N_GROUPS; gpu++)); do
   FINAL_V1_PREPARED_DOLCI_PARENT="$P/eval-runtime/prepared_glm/dolci" \
   timeout --signal=TERM --kill-after=60 5400 \
   "$EVAL_PYTHON" "$RUNNER" --arm "$ARM" --gpu "$group" --prompts "$PROMPTS" \
-    --root "$ROOT" --out "$P/costsweep" --work "$P/costsweep-work-gpu$gpu" \
-    --endpoints "$shard" >> "$P/costsweep/shard-gpu$gpu.log" 2>&1 &
+    --root "$ROOT" --out "$P/$COSTSWEEP_DIR" \
+    --work "$P/$COSTSWEEP_DIR-work-gpu$gpu" \
+    --endpoints "$shard" >> "$P/$COSTSWEEP_DIR/shard-gpu$gpu.log" 2>&1 &
   pids+=($!)
   echo "  gpu $group <- $shard (pid ${pids[-1]})"
 done
@@ -210,10 +235,10 @@ for pid in "${pids[@]}"; do
   wait "$pid" || fail=1
 done
 
-n=$(find "$P/costsweep" -name COSTSWEEP_COMPLETE.json | wc -l)
-echo "[$(date -u +%T)] $ARM: costsweep shards done (fail=$fail), $n/$N_ENDPOINTS endpoints"
+n=$(find "$P/$COSTSWEEP_DIR" -name COSTSWEEP_COMPLETE.json | wc -l)
+echo "[$(date -u +%T)] $ARM: $COSTSWEEP_DIR shards done (fail=$fail), $n/$N_ENDPOINTS endpoints"
 if [ "$fail" -ne 0 ] && [ "$n" -eq "$N_ENDPOINTS" ]; then
-  echo "[timeout-after-complete] $ARM: costsweep worker killed in engine teardown but all markers present; continuing"
+  echo "[timeout-after-complete] $ARM: $COSTSWEEP_DIR worker killed in engine teardown but all markers present; continuing"
   exit 0
 fi
 exit "$fail"

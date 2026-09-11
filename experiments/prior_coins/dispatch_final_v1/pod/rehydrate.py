@@ -105,6 +105,19 @@ class RehydrateConfig:
     root: Path
     arms: tuple[str, ...]
     repo: str = REPO
+    #: Plan as though this phase were the first to run, instead of asking the
+    #: Hub which phase is incomplete. A FINISHED arm always plans "publish"
+    #: (publish leaves no stage marker), which restores the parents and the
+    #: AFT markers but NOT the servable adapters -- so a re-run of a finished
+    #: battery on new prompts, which is exactly what costsweep v2 is, cannot
+    #: be served from a plain rehydrate. Set to "costsweep" for that.
+    for_phase: str | None = None
+    #: The midtrain parent is restored for every post-midtrain phase because
+    #: ``chain.main`` resolves it before it learns Dolci will be skipped. A
+    #: standalone re-runner never calls chain.main and only ever serves the
+    #: Dolci checkpoint, so this drops a second full-model download (~210 GB
+    #: on GLM, ~54 GB on gemma-27B) that nothing would read.
+    skip_midtrain_parent: bool = False
 
 
 @dataclass(frozen=True)
@@ -150,18 +163,46 @@ def _require_file(
         raise _fail(arm, stage, f"required file {name} has size {item.size}")
 
 
+#: Where a full (non-adapter) checkpoint's files sit inside a stage tree.
+#: gemma writes ``checkpoints/checkpoint-N/`` directly. GLM trains under FSDP
+#: and saves SHARDED trainer state there, so the servable full checkpoint is
+#: the CONSOLIDATED one -- ``consolidated/checkpoint-N/``, which is also the
+#: path ``costsweep_eval.py``/``evaluate.py`` serve for that family. Written as
+#: a search over both layouts rather than a family branch, so gemma resolves to
+#: exactly the prefix it always did.
+_FULL_CHECKPOINT_LAYOUTS = ("checkpoints", "consolidated")
+_CHECKPOINT_RE = re.compile(
+    rf"(?:{'|'.join(_FULL_CHECKPOINT_LAYOUTS)})/checkpoint-(\d+)/")
+
+
 def _checkpoint_steps(files: Iterable[RemoteFile]) -> set[int]:
     return {
         int(match.group(1))
         for item in files
-        if (match := re.match(r"checkpoints/checkpoint-(\d+)/", item.relative))
+        if (match := _CHECKPOINT_RE.match(item.relative))
     }
+
+
+def full_checkpoint_prefix(
+    files: dict[str, RemoteFile], step: int
+) -> str | None:
+    """Stage-relative prefix holding the servable full checkpoint, or None."""
+    for layout in _FULL_CHECKPOINT_LAYOUTS:
+        base = f"{layout}/checkpoint-{step}/"
+        if base + "config.json" in files:
+            return base
+    return None
 
 
 def _validate_full_checkpoint(
     arm: str, stage: str, files: dict[str, RemoteFile], step: int
 ) -> None:
-    base = f"checkpoints/checkpoint-{step}/"
+    base = full_checkpoint_prefix(files, step)
+    if base is None:
+        raise _fail(
+            arm, stage,
+            f"checkpoint-{step} has no config.json under any of "
+            f"{[f'{layout}/checkpoint-{step}/' for layout in _FULL_CHECKPOINT_LAYOUTS]}")
     _require_file(arm, stage, files, base + "config.json")
     _require_file(arm, stage, files, base + "tokenizer_config.json")
     weights = [
@@ -236,6 +277,44 @@ def _endpoint_names() -> tuple[str, ...]:
         "pre_aft",
         *(f"{cell}-step{step}" for cell in C.AFT_CELLS for step in C.AFT_EVAL_STEPS),
     )
+
+
+def validate_serving_shape(
+    arm: str, stage: str, remote: tuple[RemoteFile, ...], cells: tuple[str, ...]
+) -> None:
+    """Prove a stage carries exactly the bytes a RE-RUN will serve, no more.
+
+    ``validate_stage`` asks whether a stage is *complete enough to continue the
+    chain from*: every contracted checkpoint present, every AFT step saved. That
+    is the right question for resume and the wrong one for re-serving a finished
+    row, because three published rows do not satisfy it and are nonetheless
+    perfectly servable (all three measured against the Hub on 2026-09-11):
+
+    * the control arms published Dolci ``checkpoint-48`` alone, not the
+      token-matched ``[43, 48]`` pair the contract asks for;
+    * every GLM AFT cell has ONE servable adapter, at the run root -- which is
+      exactly what ``AFT_EVAL_STEPS = (512,)`` already says for that family,
+      while ``AFT_CHECKPOINT_STEPS`` still lists all eight;
+    * ``glm45_air_1b`` midtrained 7,295 updates against a contracted 7,629.
+
+    So this validates the serving subset: the Dolci checkpoint that will be
+    loaded, and an adapter for each ``(cell, AFT_EVAL_STEPS)`` pair that will be
+    swapped through it. It never runs on the resume path -- only when the caller
+    passed an explicit ``for_phase`` -- so the chain's guarantees are untouched.
+    """
+    files = _stage_map(remote)
+    if not files:
+        raise _fail(arm, stage, "the prefix contains no files")
+    if stage == "dolci":
+        _validate_full_checkpoint(arm, stage, files, C.DOLCI_STEPS)
+        return
+    if stage == "aft":
+        for cell in cells:
+            _require_file(arm, stage, files, f"{cell}/AFT_COMPLETE.json")
+            for step in C.AFT_EVAL_STEPS:
+                _validate_adapter_checkpoint(arm, files, cell, step)
+        return
+    # every other stage is not served by a re-run, so it is not inspected
 
 
 def validate_stage(arm: str, stage: str, remote: tuple[RemoteFile, ...]) -> None:
@@ -384,7 +463,11 @@ def discover(
         arm: {stage: [] for stage in STAGES} for arm in arms
     }
     for sibling in siblings:
-        repo_path = getattr(sibling, "rfilename", None)
+        # `rfilename` on a RepoSibling, `path` on a list_repo_tree RepoFile.
+        # Both shapes are accepted so the existing sibling-shaped unit tests
+        # keep describing the same function.
+        repo_path = getattr(sibling, "rfilename", None) or getattr(
+            sibling, "path", None)
         if not isinstance(repo_path, str):
             continue
         for arm in arms:
@@ -459,11 +542,28 @@ def _under(files: tuple[RemoteFile, ...], relative_prefix: str) -> list[RemoteFi
     return [item for item in files if item.relative.startswith(prefix)]
 
 
-def build_plan(arm: str, stages: dict[str, tuple[RemoteFile, ...]]) -> ArmPlan:
+def build_plan(
+    arm: str,
+    stages: dict[str, tuple[RemoteFile, ...]],
+    *,
+    for_phase: str | None = None,
+    skip_midtrain_parent: bool = False,
+) -> ArmPlan:
     found = set(stages)
-    for stage, files in stages.items():
-        validate_stage(arm, stage, files)
-    first = first_incomplete(arm, found)
+    if for_phase is not None:
+        if for_phase not in set(STAGES) | {"mix", "publish"}:
+            raise ValueError(f"unknown phase {for_phase!r}")
+        first = for_phase
+        serving_cells = (
+            tuple(C.AFT_CELLS) if for_phase in {"eval", "d4", "costsweep"}
+            else ("agreement",) if for_phase == "recall" else ()
+        )
+        for stage, files in stages.items():
+            validate_serving_shape(arm, stage, files, serving_cells)
+    else:
+        for stage, files in stages.items():
+            validate_stage(arm, stage, files)
+        first = first_incomplete(arm, found)
     selected: list[RemoteFile] = []
     scopes: list[str] = []
 
@@ -480,14 +580,17 @@ def build_plan(arm: str, stages: dict[str, tuple[RemoteFile, ...]]) -> ArmPlan:
         "costsweep",
         "publish",
     }
-    if "midtrain" in found and first in phases_after_midtrain:
-        relative = f"checkpoints/checkpoint-{C.MIDTRAIN_STEPS}"
+    if "midtrain" in found and first in phases_after_midtrain \
+            and not skip_midtrain_parent:
+        relative = full_checkpoint_prefix(
+            _stage_map(stages["midtrain"]), C.MIDTRAIN_STEPS).rstrip("/")
         selected.extend(_under(stages["midtrain"], relative))
         scopes.append(f"midtrain/{relative}")
 
     phases_after_dolci = {"aft", "eval", "recall", "d4", "costsweep", "publish"}
     if "dolci" in found and first in phases_after_dolci:
-        relative = f"checkpoints/checkpoint-{C.DOLCI_STEPS}"
+        relative = full_checkpoint_prefix(
+            _stage_map(stages["dolci"]), C.DOLCI_STEPS).rstrip("/")
         selected.extend(_under(stages["dolci"], relative))
         scopes.append(f"dolci/{relative}")
 
@@ -893,18 +996,43 @@ async def rehydrate(config: RehydrateConfig) -> dict:
     # One metadata-rich listing supplies the immutable revision, names and
     # sizes.  Every snapshot below is pinned to that revision, so concurrent
     # stage commits cannot mix two views of the repository.
-    info = await asyncio.to_thread(
-        api.repo_info, config.repo, repo_type="model", files_metadata=True
-    )
+    info = await asyncio.to_thread(api.repo_info, config.repo, repo_type="model")
     revision = getattr(info, "sha", None)
-    siblings = getattr(info, "siblings", None)
     if not isinstance(revision, str) or not revision:
         raise RuntimeError(f"{config.repo}: repo_info returned no revision SHA")
-    if siblings is None:
-        raise RuntimeError(f"{config.repo}: repo_info returned no file listing")
+    # list_repo_tree, NOT repo_info(files_metadata=True).siblings. The siblings
+    # list TRUNCATES silently on a repo this size -- measured 2026-09-11 against
+    # the campaign repos at the pinned revision: 7,482 of 18,969 files for
+    # scimt-dispatch-final-v1 and 8,189 of 11,944 for the GLM repo. A truncated
+    # listing does not error; it makes a finished stage look unpublished, so a
+    # plain rehydrate of gemma3_27b_190m or glm45_air_1b selected ZERO files and
+    # would have served an empty tree. MODEL_REGISTRY.yaml already warns about
+    # this for result readers; rehydrate was still on the truncating call.
+    from huggingface_hub.hf_api import RepoFile
+
+    # A recursive tree yields RepoFolder entries too; they carry a path and no
+    # size, and discover()'s missing-size guard must stay loud for real files.
+    siblings = await asyncio.to_thread(
+        lambda: [
+            entry for entry in api.list_repo_tree(
+                config.repo, repo_type="model", recursive=True,
+                revision=revision)
+            if isinstance(entry, RepoFile)
+        ]
+    )
+    # An empty listing is NOT an error: a fresh repo is the fresh-pod no-op the
+    # chain relies on. list_repo_tree paginates rather than truncating, so an
+    # empty result here really does mean nothing is published.
 
     discovered = discover(siblings, config.arms)
-    plans = {arm: build_plan(arm, discovered[arm]) for arm in config.arms}
+    plans = {
+        arm: build_plan(
+            arm, discovered[arm],
+            for_phase=config.for_phase,
+            skip_midtrain_parent=config.skip_midtrain_parent,
+        )
+        for arm in config.arms
+    }
     arm_audits: dict[str, dict] = {}
     for arm in config.arms:
         arm_started = time.time()
@@ -919,7 +1047,7 @@ async def rehydrate(config: RehydrateConfig) -> dict:
         # marker is fingerprint-validated: a foreign CHAIN_COMPLETE still
         # raises loudly, and rehydrate itself can never write one.
         complete = run_root / "CHAIN_COMPLETE.json"
-        if complete.is_file():
+        if complete.is_file() and config.for_phase is None:
             with chain.fingerprint_scope(run_root, arm):
                 assert chain.done(complete)
             log(f"{arm}: local CHAIN_COMPLETE validates; nothing to rehydrate")
@@ -988,6 +1116,17 @@ def _parser() -> argparse.ArgumentParser:
         "--arms", required=True, type=_parse_arms, help="comma-separated arms"
     )
     parser.add_argument("--root", type=Path, default=Path("/workspace/final_v1"))
+    parser.add_argument(
+        "--for-phase", default=None,
+        help="plan as though this phase were next (e.g. 'costsweep'), instead "
+             "of asking the Hub which phase is incomplete; use to re-serve a "
+             "FINISHED arm",
+    )
+    parser.add_argument(
+        "--no-midtrain-parent", action="store_true",
+        help="skip the midtrain checkpoint download; safe only for a runner "
+             "that never calls chain.main (it serves the Dolci parent alone)",
+    )
     return parser
 
 
@@ -996,7 +1135,10 @@ async def main() -> int:
     C.validate()
     # Child imports and the subsequent chain launch must select the same row.
     os.environ["FINAL_V1_PROFILE"] = C.PROFILE.name
-    await rehydrate(RehydrateConfig(root=args.root, arms=args.arms))
+    await rehydrate(RehydrateConfig(
+        root=args.root, arms=args.arms, for_phase=args.for_phase,
+        skip_midtrain_parent=args.no_midtrain_parent,
+    ))
     return 0
 
 
