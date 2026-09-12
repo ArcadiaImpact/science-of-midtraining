@@ -83,6 +83,9 @@ def test_gemma_rows_enforce_stacked_floors_and_provisioning_numbers():
         # Matched-dose 125M x 4 charter rows (no-example study, 2026-09-10):
         # the 1B recipe at half the unique dose, same envelope.
         "glm45_air_500m_noex": 1400, "glm45_air_500m_worked": 1400,
+        # Clause-asymmetric 190M row (2026-09-11): the glm45_air_190m recipe on
+        # a different corpus, so the same envelope.
+        "glm45_air_190m_clause_asym": 1400,
     }
     assert C.STACKED_GEMMA_DISK_FLOORS_GB == expected
     assert C.STACKED_GEMMA_PROVISIONED_DISK_GB == {
