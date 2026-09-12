@@ -32,7 +32,7 @@ serving configurations that **do not change the protocol** — only kernels/geom
 | `--enable-expert-parallel` (GLM) | geometry |
 | n-gram speculative decoding (`method: ngram`) | lossless for greedy per vLLM docs; **not supported with LoRA** |
 | vLLM 0.19.1 → 0.25.1 (GLM lane) | kernels |
-| `--async-scheduling` | scheduler only |
+| `--async-scheduling` | default-on in vLLM 0.19/0.25 (CPU n-gram SD disables it; `ngram_gpu` keeps it) — measured via P4 vs P5, no separate step |
 | `--kv-cache-dtype fp8` | **numerics-changing** — measured last, flagged, never mixed with banked cells |
 
 Loop-abort / budget changes are **out of scope** here (protocol changes; Jonathan decides later).
@@ -66,9 +66,13 @@ GLM-4.5-Air `graft_50m_chat` (bf16, vendor layout on GCS):
 | P2 | 0.25.1 | 4 | on | `--max-num-seqs 512` | 128 × 256, 256 × 256, 64 × 128 |
 | P3 | 0.25.1 | 4 | on | + `--enable-expert-parallel` | 128 × 256 |
 | P4 | 0.25.1 | 4 | on | best of P2/P3 + ngram K=8 (`prompt_lookup_max 8, min 4`) | 128 × 256 |
-| P5 (opt.) | 0.25.1 | 4 | on | ngram K=16 | 128 × 256 |
-| P6 (opt.) | 0.25.1 | 4 | on | `--async-scheduling` | 128 × 256 |
+| P5 | 0.25.1 | 4 | on | `ngram_gpu` K=8 (keeps async scheduling) | 128 × 256 |
 | P7 (opt., flagged) | 0.25.1 | 4 | on | `--kv-cache-dtype fp8` | 128 × 256 |
+| P8 (opt.) | 0.25.1 | 4 | on | suffix decoding (`arctic-inference`), K=32 | 128 × 256 |
+
+P2 also runs a **replicate** of the 128-concurrency bench on the same server (parity noise floor).
+Order as run: P0–P4, Gemma G0, P5, Gemma G1, P7, P8 (Gemma moved ahead of the optional tail so the
+31B eager-vs-graphs read fits the budget). Server ports are 18001+ (the RunPod image's nginx owns 8001).
 
 Gemma-4 31B `graft_prop_chat` (+ Run B-v2 step-64 PEFT adapter, as served in the ladder), if the
 weights land and budget remains:
@@ -86,9 +90,13 @@ tp=8 (± EP) step is appended at concurrency 256/512.
 
 ### Decision rules
 
-* **Adopt** a lever for future cells if it raises tok/s per GPU by ≥ 20% with exact-match parity
-  ≥ 95% against its graphs-off twin (or, for tp/EP changes, parity in the same band as
-  eager-vs-graphs) and extracted-code equality ≥ 98%.
+* **Adopt** a lever for future cells if it raises tok/s per GPU by ≥ 20% and its output parity
+  against the reference config is no worse than the **replicate noise floor** (the same config run
+  twice, `p2_tp4_graphs_c128` vs `_rep`). Parity is read on extracted-code equality, finish-reason
+  agreement and, where graded, certified counts — not on exact text: vLLM's own docs and the
+  batch-invariance literature say greedy 8k-token outputs diverge run-to-run under different batch
+  compositions, so exact-match rates near 0 are expected even for identical configs (amended
+  2026-09-12 16:3xZ after the literature trawl, before any parity numbers were read).
 * n-gram SD: adopt for parent (non-LoRA) cells if lossless in practice (parity as above); for
   adapter cells only via merged weights after a separate parity check (not in this budget).
 * FP8 KV: report only; a validation cell is a separate decision.
