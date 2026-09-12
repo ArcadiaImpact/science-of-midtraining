@@ -1,0 +1,72 @@
+{
+  "gpus": [
+    [
+      "0",
+      "NVIDIA H200",
+      "143771",
+      "0",
+      "580.126.20",
+      "9.0"
+    ],
+    [
+      "1",
+      "NVIDIA H200",
+      "143771",
+      "0",
+      "580.126.20",
+      "9.0"
+    ],
+    [
+      "2",
+      "NVIDIA H200",
+      "143771",
+      "0",
+      "580.126.20",
+      "9.0"
+    ],
+    [
+      "3",
+      "NVIDIA H200",
+      "143771",
+      "0",
+      "580.126.20",
+      "9.0"
+    ],
+    [
+      "4",
+      "NVIDIA H200",
+      "143771",
+      "0",
+      "580.126.20",
+      "9.0"
+    ],
+    [
+      "5",
+      "NVIDIA H200",
+      "143771",
+      "0",
+      "580.126.20",
+      "9.0"
+    ],
+    [
+      "6",
+      "NVIDIA H200",
+      "143771",
+      "0",
+      "580.126.20",
+      "9.0"
+    ],
+    [
+      "7",
+      "NVIDIA H200",
+      "143771",
+      "0",
+      "580.126.20",
+      "9.0"
+    ]
+  ],
+  "host_gb": 2163.852345344,
+  "effective_ram_gb": 2012.999999488,
+  "free_disk_gb": 1459.99515648,
+  "topology": "\t\u001b[4mGPU0\tGPU1\tGPU2\tGPU3\tGPU4\tGPU5\tGPU6\tGPU7\tNIC0\tNIC1\tNIC2\tNIC3\tNIC4\tCPU Affinity\tNUMA Affinity\tGPU NUMA ID\u001b[0m\nGPU0\t X \tNV18\tNV18\tNV18\tNV18\tNV18\tNV18\tNV18\tPIX\tNODE\tNODE\tSYS\tSYS\t0-23,96-119\t0\t\tN/A\nGPU1\tNV18\t X \tNV18\tNV18\tNV18\tNV18\tNV18\tNV18\tNODE\tNODE\tPIX\tSYS\tSYS\t0-23,96-119\t0\t\tN/A\nGPU2\tNV18\tNV18\t X \tNV18\tNV18\tNV18\tNV18\tNV18\tSYS\tSYS\tSYS\tSYS\tSYS\t24-47,120-143\t1\t\tN/A\nGPU3\tNV18\tNV18\tNV18\t X \tNV18\tNV18\tNV18\tNV18\tSYS\tSYS\tSYS\tSYS\tSYS\t24-47,120-143\t1\t\tN/A\nGPU4\tNV18\tNV18\tNV18\tNV18\t X \tNV18\tNV18\tNV18\tSYS\tSYS\tSYS\tPIX\tNODE\t48-71,144-167\t2\t\tN/A\nGPU5\tNV18\tNV18\tNV18\tNV18\tNV18\t X \tNV18\tNV18\tSYS\tSYS\tSYS\tNODE\tPIX\t48-71,144-167\t2\t\tN/A\nGPU6\tNV18\tNV18\tNV18\tNV18\tNV18\tNV18\t X \tNV18\tSYS\tSYS\tSYS\tSYS\tSYS\t72-95,168-191\t3\t\tN/A\nGPU7\tNV18\tNV18\tNV18\tNV18\tNV18\tNV18\tNV18\t X \tSYS\tSYS\tSYS\tSYS\tSYS\t72-95,168-191\t3\t\tN/A\nNIC0\tPIX\tNODE\tSYS\tSYS\tSYS\tSYS\tSYS\tSYS\t X \tNODE\tNODE\tSYS\tSYS\t\t\t\t\nNIC1\tNODE\tNODE\tSYS\tSYS\tSYS\tSYS\tSYS\tSYS\tNODE\t X \tNODE\tSYS\tSYS\t\t\t\t\nNIC2\tNODE\tPIX\tSYS\tSYS\tSYS\tSYS\tSYS\tSYS\tNODE\tNODE\t X \tSYS\tSYS\t\t\t\t\nNIC3\tSYS\tSYS\tSYS\tSYS\tPIX\tNODE\tSYS\tSYS\tSYS\tSYS\tSYS\t X \tNODE\t\t\t\t\nNIC4\tSYS\tSYS\tSYS\tSYS\tNODE\tPIX\tSYS\tSYS\tSYS\tSYS\tSYS\tNODE\t X \t\t\t\t\n\nLegend:\n\n  X    = Self\n  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)\n  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node\n  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)\n  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)\n  PIX  = Connection traversing at most a single PCIe bridge\n  NV#  = Connection traversing a bonded set of # NVLinks\n\nNIC Legend:\n\n  NIC0: ibp25s0\n  NIC1: ibp39s0\n  NIC2: ibp59s0\n  NIC3: ibp155s0\n  NIC4: ibp187s0\n\n"
+}

@@ -1,0 +1,227 @@
+/usr/local/lib/python3.12/dist-packages/huggingface_hub/constants.py:294: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+[charter/data] attempt 1/5: 14 files, 0.9 GB, one commit
+Processing Files (0 / 0)      : |          |  0.00B /  0.00B            
+New Data Upload               : |          |  0.00B /  0.00B            [A
+
+  ...ease/charter/corpus.jsonl:  28%|██▊       | 87.9MB /  314MB            [A[A
+
+  ...ease/charter/corpus.jsonl:  28%|██▊       | 87.9MB /  314MB            [A[AProcessing Files (0 / 1)      :  10%|▉         | 87.9MB /  914MB,  220MB/s  
+
+  ...ease/charter/corpus.jsonl:  71%|███████▏  |  224MB /  314MB            [A[AProcessing Files (0 / 1)      :  24%|██▍       |  224MB /  914MB,  373MB/s  
+
+
+  .../charter/data/leg_a.jsonl:   0%|          |  982kB /  413MB            [A[A[A
+
+  ...ease/charter/corpus.jsonl: 100%|█████████▉|  314MB /  314MB            [A[A
+
+
+  .../charter/data/leg_a.jsonl:   0%|          |  982kB /  413MB            [A[A[AProcessing Files (0 / 2)      :  34%|███▍      |  315MB /  914MB,  394MB/s  
+New Data Upload               :   1%|          |  982kB /  134MB, 1.23MB/s  [A
+
+  ...ease/charter/corpus.jsonl: 100%|█████████▉|  314MB /  314MB            [A[A
+
+
+  .../charter/data/leg_a.jsonl:   9%|▉         | 38.3MB /  413MB            [A[A[AProcessing Files (0 / 2)      :  39%|███▊      |  352MB /  914MB,  352MB/s  
+New Data Upload               :  29%|██▊       | 38.3MB /  134MB, 38.3MB/s  [A
+
+  ...ease/charter/corpus.jsonl: 100%|█████████▉|  314MB /  314MB            [A[A
+
+
+  .../charter/data/leg_a.jsonl:  16%|█▌        | 66.8MB /  413MB            [A[A[AProcessing Files (0 / 2)      :  42%|████▏     |  381MB /  914MB,  317MB/s  
+New Data Upload               :  50%|████▉     | 66.8MB /  134MB, 55.7MB/s  [A
+
+  ...ease/charter/corpus.jsonl: 100%|█████████▉|  314MB /  314MB            [A[A
+
+
+  .../charter/data/leg_a.jsonl:  16%|█▌        | 66.8MB /  413MB            [A[A[A
+
+  ...ease/charter/corpus.jsonl: 100%|█████████▉|  314MB /  314MB            [A[A
+
+
+  .../charter/data/leg_a.jsonl:  16%|█▌        | 66.8MB /  413MB            [A[A[A
+
+  ...ease/charter/corpus.jsonl: 100%|█████████▉|  314MB /  314MB            [A[A
+
+
+  .../charter/data/leg_a.jsonl:  16%|█▌        | 66.8MB /  413MB            [A[A[A
+
+  ...ease/charter/corpus.jsonl: 100%|█████████▉|  314MB /  314MB            [A[A
+
+
+  .../charter/data/leg_a.jsonl:  32%|███▏      |  134MB /  413MB            [A[A[AProcessing Files (0 / 2)      :  49%|████▉     |  448MB /  914MB,  224MB/s  
+New Data Upload               : 100%|█████████▉|  134MB /  134MB, 66.9MB/s  [A
+
+  ...ease/charter/corpus.jsonl: 100%|█████████▉|  314MB /  314MB            [A[A
+
+
+  .../charter/data/leg_a.jsonl:  32%|███▏      |  134MB /  413MB            [A[A[A
+
+  ...ease/charter/corpus.jsonl: 100%|█████████▉|  314MB /  314MB            [A[A
+
+
+  .../charter/data/leg_a.jsonl:  32%|███▏      |  134MB /  413MB            [A[A[A
+
+
+
+  ...harter/data/dolmino.jsonl:  13%|█▎        | 24.0MB /  187MB            [A[A[A[A
+
+  ...ease/charter/corpus.jsonl: 100%|█████████▉|  314MB /  314MB            [A[A
+
+
+  .../charter/data/leg_a.jsonl:  33%|███▎      |  135MB /  413MB            [A[A[A
+
+
+
+  ...harter/data/dolmino.jsonl:  13%|█▎        | 24.0MB /  187MB            [A[A[A[AProcessing Files (0 / 3)      :  52%|█████▏    |  473MB /  914MB,  182MB/s  
+New Data Upload               :  67%|██████▋   |  135MB /  201MB, 51.8MB/s  [A
+
+  ...ease/charter/corpus.jsonl: 100%|█████████▉|  314MB /  314MB            [A[A
+
+
+  .../charter/data/leg_a.jsonl:  36%|███▌      |  147MB /  413MB            [A[A[A
+
+
+
+  ...harter/data/dolmino.jsonl:  77%|███████▋  |  144MB /  187MB            [A[A[A[AProcessing Files (0 / 3)      :  66%|██████▌   |  605MB /  914MB,  216MB/s  
+New Data Upload               :  55%|█████▍    |  146MB /  268MB, 52.3MB/s  [A
+
+  ...ease/charter/corpus.jsonl: 100%|█████████▉|  314MB /  314MB            [A[A
+
+
+  .../charter/data/leg_a.jsonl:  49%|████▊     |  201MB /  413MB            [A[A[A
+
+
+
+  ...harter/data/dolmino.jsonl: 100%|█████████▉|  187MB /  187MB            [A[A[A[AProcessing Files (0 / 3)      :  77%|███████▋  |  702MB /  914MB,  234MB/s  
+New Data Upload               :  75%|███████▍  |  201MB /  268MB, 66.9MB/s  [A
+
+  ...ease/charter/corpus.jsonl: 100%|█████████▉|  314MB /  314MB            [A[A
+
+
+  .../charter/data/leg_a.jsonl:  65%|██████▍   |  268MB /  413MB            [A[A[A
+
+
+
+  ...harter/data/dolmino.jsonl: 100%|█████████▉|  187MB /  187MB            [A[A[A[AProcessing Files (0 / 3)      :  84%|████████▍ |  769MB /  914MB,  240MB/s  
+New Data Upload               :  80%|███████▉  |  267MB /  335MB, 83.6MB/s  [A
+
+  ...ease/charter/corpus.jsonl: 100%|█████████▉|  314MB /  314MB            [A[A
+
+
+  .../charter/data/leg_a.jsonl:  65%|██████▍   |  268MB /  413MB            [A[A[A
+
+
+
+  ...harter/data/dolmino.jsonl: 100%|█████████▉|  187MB /  187MB            [A[A[A[A
+
+  ...ease/charter/corpus.jsonl: 100%|█████████▉|  314MB /  314MB            [A[A
+
+
+  .../charter/data/leg_a.jsonl:  65%|██████▌   |  270MB /  413MB            [A[A[A
+
+
+
+  ...harter/data/dolmino.jsonl: 100%|█████████▉|  187MB /  187MB            [A[A[A[AProcessing Files (0 / 3)      :  84%|████████▍ |  770MB /  914MB,  214MB/s  
+New Data Upload               :  80%|████████  |  268MB /  335MB, 74.6MB/s  [A
+
+  ...ease/charter/corpus.jsonl: 100%|█████████▉|  314MB /  314MB            [A[A
+
+
+  .../charter/data/leg_a.jsonl:  67%|██████▋   |  278MB /  413MB            [A[A[A
+
+
+
+  ...harter/data/dolmino.jsonl: 100%|█████████▉|  187MB /  187MB            [A[A[A[AProcessing Files (0 / 3)      :  85%|████████▌ |  778MB /  914MB,  205MB/s  
+New Data Upload               :  69%|██████▉   |  277MB /  402MB, 72.8MB/s  [A
+
+  ...ease/charter/corpus.jsonl: 100%|█████████▉|  314MB /  314MB            [A[A
+
+
+  .../charter/data/leg_a.jsonl:  81%|████████▏ |  336MB /  413MB            [A[A[A
+
+
+
+  ...harter/data/dolmino.jsonl: 100%|█████████▉|  187MB /  187MB            [A[A[A[AProcessing Files (0 / 3)      :  92%|█████████▏|  837MB /  914MB,  209MB/s  
+New Data Upload               :  81%|████████▏ |  335MB /  412MB, 83.7MB/s  [A
+
+  ...ease/charter/corpus.jsonl: 100%|█████████▉|  314MB /  314MB            [A[A
+
+
+  .../charter/data/leg_a.jsonl: 100%|█████████▉|  412MB /  413MB            [A[A[A
+
+
+
+  ...harter/data/dolmino.jsonl: 100%|█████████▉|  187MB /  187MB            [A[A[A[AProcessing Files (0 / 3)      : 100%|█████████▉|  912MB /  914MB,  217MB/s  
+New Data Upload               : 100%|█████████▉|  410MB /  412MB, 97.7MB/s  [A
+
+  ...ease/charter/corpus.jsonl: 100%|██████████|  314MB /  314MB            [A[A
+
+
+  .../charter/data/leg_a.jsonl: 100%|█████████▉|  412MB /  413MB            [A[A[A
+
+
+
+  ...harter/data/dolmino.jsonl: 100%|██████████|  187MB /  187MB            [A[A[A[AProcessing Files (2 / 3)      : 100%|█████████▉|  913MB /  914MB,  207MB/s  
+New Data Upload               : 100%|█████████▉|  411MB /  412MB, 93.4MB/s  [A
+
+  ...ease/charter/corpus.jsonl: 100%|██████████|  314MB /  314MB            [A[A
+
+
+  .../charter/data/leg_a.jsonl: 100%|█████████▉|  412MB /  413MB            [A[A[A
+
+
+
+  ...harter/data/dolmino.jsonl: 100%|██████████|  187MB /  187MB            [A[A[A[A
+
+  ...ease/charter/corpus.jsonl: 100%|██████████|  314MB /  314MB            [A[A
+
+
+  .../charter/data/leg_a.jsonl: 100%|█████████▉|  413MB /  413MB            [A[A[A
+
+
+
+  ...harter/data/dolmino.jsonl: 100%|██████████|  187MB /  187MB            [A[A[A[AProcessing Files (2 / 3)      : 100%|█████████▉|  913MB /  914MB,  190MB/s  
+New Data Upload               : 100%|█████████▉|  411MB /  412MB, 85.7MB/s  [A
+
+  ...ease/charter/corpus.jsonl: 100%|██████████|  314MB /  314MB            [A[A
+
+
+  .../charter/data/leg_a.jsonl: 100%|██████████|  413MB /  413MB            [A[A[A
+
+
+
+  ...harter/data/dolmino.jsonl: 100%|██████████|  187MB /  187MB            [A[A[A[AProcessing Files (3 / 3)      : 100%|██████████|  914MB /  914MB,  183MB/s  
+New Data Upload               : 100%|██████████|  412MB /  412MB, 82.4MB/s  [A
+
+  ...ease/charter/corpus.jsonl: 100%|██████████|  314MB /  314MB            [A[A
+
+
+  .../charter/data/leg_a.jsonl: 100%|██████████|  413MB /  413MB            [A[A[A
+
+
+
+  ...harter/data/dolmino.jsonl: 100%|██████████|  187MB /  187MB            [A[A[A[A
+
+  ...ease/charter/corpus.jsonl: 100%|██████████|  314MB /  314MB            [A[A
+
+
+  .../charter/data/leg_a.jsonl: 100%|██████████|  413MB /  413MB            [A[A[A
+
+
+
+  ...harter/data/dolmino.jsonl: 100%|██████████|  187MB /  187MB            [A[A[A[A
+
+  ...ease/charter/corpus.jsonl: 100%|██████████|  314MB /  314MB            [A[A
+
+
+  .../charter/data/leg_a.jsonl: 100%|██████████|  413MB /  413MB            [A[A[A
+
+
+
+  ...harter/data/dolmino.jsonl: 100%|██████████|  187MB /  187MB            [A[A[A[AProcessing Files (3 / 3)      : 100%|██████████|  914MB /  914MB,  169MB/s  
+New Data Upload               : 100%|██████████|  412MB /  412MB, 76.2MB/s  
+  ...ease/charter/corpus.jsonl: 100%|██████████|  314MB /  314MB            
+  .../charter/data/leg_a.jsonl: 100%|██████████|  413MB /  413MB            
+  ...harter/data/dolmino.jsonl: 100%|██████████|  187MB /  187MB            
+[charter/data] PUBLISHED 14 files in 0.13 min

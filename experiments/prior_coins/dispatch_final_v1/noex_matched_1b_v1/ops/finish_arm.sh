@@ -54,7 +54,7 @@ rsh() { ssh -o BatchMode=yes -o ConnectTimeout=30 "$ALIAS" "$@"; }
 say "1/4 sentinels on the pod ($ROOT)"
 rsh "test -f $ROOT/CHAIN_COMPLETE.json && test -f $ROOT/PUBLISH_COMPLETE.json" \
   || { echo "NOT FINISHED: CHAIN_COMPLETE.json / PUBLISH_COMPLETE.json missing under $ROOT" >&2; exit 1; }
-rsh "cd $ROOT && for f in PUBLISHED_*.json; do python3 -c \"import json,sys; d=json.load(open('\$f')); print(f'  {\$f!s:28} files={d.get(\\\"files\\\")} bytes={d.get(\\\"total_bytes\\\")} path={d.get(\\\"path_in_repo\\\")}')\" ; done; python3 -c \"import json; d=json.load(open('CHAIN_COMPLETE.json')); print('  CHAIN_COMPLETE at', d.get('at'), 'endpoints', d.get('endpoints'), 'aft', d.get('aft_cells'))\""
+rsh "cd $ROOT && for f in PUBLISHED_*.json; do python3 -c \"import json,sys; d=json.load(open(sys.argv[1])); print('  %-28s files=%s bytes=%s path=%s' % (sys.argv[1], d.get('files'), d.get('total_bytes'), d.get('path_in_repo')))\" \"\$f\"; done; python3 -c \"import json; d=json.load(open('CHAIN_COMPLETE.json')); print('  CHAIN_COMPLETE at', d.get('at'), 'endpoints', d.get('endpoints'), 'aft', d.get('aft_cells'))\""
 
 # -------------------------------------------------------------- 2 evidence
 RUN_DIR="$STUDY/run_$(date -u +%Y-%m-%d)_${POD_ID}"
@@ -89,12 +89,18 @@ def shape(prefix):
 ours, ref = shape(f"{profile}/charter/"), shape("glm45_air_1b/charter/")
 # Floors: ~80% of what the 1B row published per group; the resume backup
 # groups (midtrain/RESUME_*) are deliberately absent on these rows.
+# midtrain/consolidated and PUBLISHED_MIDTRAIN are 1B-ONLY. These floors were
+# read off glm45_air_1b, which is the one GLM row that publishes its midtrain --
+# it needed off-pod resume safety for a 72 h leg. publish_midtrain is disabled
+# for the family otherwise: the campaign's own glm45_air_190m has NO midtrain
+# on the Hub at all, and its checkpoint is reclaimed after recall. Demanding it
+# of a 190M-class row fails a correctly-finished arm (2026-09-12).
 groups = {"aft/agreement": 100, "aft/mixed_charter": 100, "aft/mixed_coin": 100, "aft/charter_only": 100,
-          "dolci": 100, "eval": 100, "midtrain/consolidated": 40, "midtrain/checkpoints": 40,
+          "dolci": 100, "eval": 100, "midtrain/checkpoints": 40,
           "recall": 12, "d4": 15, "costsweep": 15, "data": 5}
 sentinels = ["MIX_COMPLETE.json", "MIDTRAIN_COMPLETE.json", "DOLCI_COMPLETE.json", "EVAL_COMPLETE.json",
              "RECALL_COMPLETE.json", "D4_COMPLETE.json", "COSTSWEEP_COMPLETE.json", "SCHEDULE.json",
-             "PUBLISHED_MIDTRAIN.json", "PUBLISHED_DOLCI.json", "PUBLISHED_AFT.json", "PUBLISHED_EVAL.json",
+             "PUBLISHED_DOLCI.json", "PUBLISHED_AFT.json", "PUBLISHED_EVAL.json",
              "PUBLISHED_RECALL.json", "PUBLISHED_D4.json", "PUBLISHED_DATA.json"]
 bad = []
 print(f"  repo {repo}; {profile}/charter/ has {sum(ours.values())} files (1B row: {sum(ref.values())})")

@@ -323,14 +323,19 @@ def poll_running(st):
         # the arm sat RUNNING for 15 min on 2026-09-12 with the pod idle at
         # $36.72/h, and only a hand check found it. Silence is not success.
         unit_log = f"/workspace/logs/dfv1_{profile}__charter.log"
-        # FAILED means "the chain said FATAL and nothing is running any more".
-        # Both halves are needed: a relaunch appends to the SAME unit log, so a
-        # stale FATAL from a previous attempt is still in there (the 07:38
-        # failure would otherwise have flagged the healthy 08:55 resume), and a
-        # live chain.py is the only proof the arm is actually being worked on.
-        probe = (f"if pgrep -f 'chain.py --arm' >/dev/null 2>&1; then echo RUNNING; "
-                 f"elif test -f {root}/CHAIN_COMPLETE.json && test -f {root}/PUBLISH_COMPLETE.json; "
+        # Order matters, and so does the bracket trick.
+        #   DONE first: the sentinels are the durable truth, and a lingering
+        #   process must never mask a finished run.
+        #   Then FAILED: the chain said FATAL and nothing is running. Both
+        #   halves are needed because a relaunch appends to the same unit log,
+        #   so a stale FATAL outlives the attempt that produced it.
+        #   '[c]hain[.]py' not 'chain.py': a plain pattern matches the shell
+        #   running the probe, so pgrep always reported ALIVE and the arm sat
+        #   RUNNING for 15 min after it finished (2026-09-12). Keep the plain
+        #   string out of this command line entirely -- it defeats the trick.
+        probe = (f"if test -f {root}/CHAIN_COMPLETE.json && test -f {root}/PUBLISH_COMPLETE.json; "
                  f"then echo DONE; "
+                 f"elif pgrep -f '[c]hain[.]py --arm' >/dev/null 2>&1; then echo RUNNING; "
                  f"elif grep -aq 'FATAL: unit' {unit_log} 2>/dev/null; then echo FAILED; "
                  f"else echo RUNNING; fi")
         r = rsh(alias, probe)

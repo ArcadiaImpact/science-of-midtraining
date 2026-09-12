@@ -21,6 +21,9 @@ say "-- processes --"
 OPID=$(cat "$HERE/overnight.pid" 2>/dev/null || echo 0)
 if [ "${OPID:-0}" -gt 0 ] && kill -0 "$OPID" 2>/dev/null; then
   say "  orchestrator  UP (pid $OPID, cycle $(python3 -c "import json;print(json.load(open('$HERE/state.json')).get('cycle','?'))" 2>/dev/null))"
+elif [ -f "$HERE/overnight.stopped" ]; then
+  # A deliberate stop is not a fault, same convention as a RETIRED sniper.
+  say "  orchestrator  STOPPED ($(head -1 "$HERE/overnight.stopped" | cut -c1-58))"
 else
   alarm "orchestrator is DOWN -- nothing will launch an arm on a landing"
 fi
@@ -31,7 +34,8 @@ if pgrep -f "bash supervise.sh" >/dev/null; then
   R=$(grep -c 'restarted as pid' "$HERE/supervise.log" 2>/dev/null || echo 0)
   say "  supervisor   UP ($R orchestrator restart(s) so far)"
 else
-  alarm "supervisor is DOWN -- a silent orchestrator death would go unhealed until the next heartbeat"
+  if [ -f "$HERE/overnight.stopped" ]; then say "  supervisor   STOPPED (with the orchestrator)"
+  else alarm "supervisor is DOWN -- a silent orchestrator death would go unhealed until the next heartbeat"; fi
 fi
 for s in glm-h200-matched:2 glm-b200-worked-matched:1; do
   n=${s%%:*}; a=${s##*:}
