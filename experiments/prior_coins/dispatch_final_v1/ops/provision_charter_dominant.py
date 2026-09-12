@@ -102,7 +102,8 @@ def main():
         time.sleep(10)
     else:
         raise RuntimeError('No authenticated SSH with matching pod identity')
-    live = ssh(ip, port, 'pgrep -af "[g]emma_charter_dominant|[b]ash.*pod/setup.sh" || true')
+    # `grep -v pgrep` drops the remote wrapper shell, whose own command line contains the pattern.
+    live = ssh(ip, port, 'pgrep -af "gemma_charter_dominant|bash.*pod/setup.sh" | grep -v pgrep || true')
     if live.stdout.strip():
         raise RuntimeError('A worker or setup is already running on this pod:\n' + live.stdout)
     receipt = release / 'deployment' / f'{a.worker}.json'
