@@ -1,0 +1,18 @@
+{
+ "file": "prompts_256.jsonl",
+ "sha256": "3e19493832d1cff4e351c99b7ec35fda1fc28ad7a53e313f7376408cb11690a4",
+ "rows": 256,
+ "per_split": 128,
+ "seed": 424242,
+ "categories": {
+  "held_in": 128,
+  "held_out": 128
+ },
+ "dataset": {
+  "repo_id": "arcadia-impact/python4-leetcode-eft",
+  "revision": "d55c070a87f18f6f5af6b957ec69f85df997e056"
+ },
+ "system_prompt": "You are completing Python 4 programming tasks. Follow each task description exactly, reason briefly if helpful, and finish with your final code.",
+ "system_prompt_sha256": "8236ee724e3a60ae576c5e17a00675afeca827658bd45f65b34b7cfd584aa034",
+ "order": "interleaved held_in/held_out; problem_ids sorted then rng.sample per split"
+}
