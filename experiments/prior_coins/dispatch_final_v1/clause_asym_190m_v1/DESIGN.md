@@ -149,3 +149,30 @@ corpus (`tests/test_dispatch_final_v1_clause_asym.py` holds that).
 does not have to wait on the B200 snipe; `ops/launch_arm.sh` already carries a
 `GPU_TYPE=H200` path. 380M presented positions against the 1B row's 1B, so it
 is roughly a third of that run.
+
+## 7. AFT mixture caveat (added 2026-09-12, after the first run)
+
+This row's AFT cells come from `releases/dispatch-charter-250m-v1`, verified
+against `aft_manifest_balanced_v2.json`. The published `glm45_air_190m` control
+did **not**: its `AFT_COMPLETE.json` records
+`releases/dispatch-final-v1/aft/aft_charter_only.jsonl`, i.e. the default
+prefix and the default manifest's cells.
+
+That is not a configuration choice we can undo here. The row's data repo
+(`scimt-dispatch-charter-250m-v1`) holds only the 250m-v1 AFT files; the
+default-prefix cells are not in it at any revision. Every row on this repo --
+1b, 500m_noex, 500m_worked -- carries the same constraint.
+
+Per cell, what it means for the two cells this row trains:
+
+| cell | control (default) | this row (balanced_v2) | |
+|---|---|---|---|
+| `agreement` | `1a4cf502` | `1a4cf502` | **identical -- clean against the control** |
+| `charter_only` | `d5faa0f1` | `e1fa705f` | **differs -- do not read against the published 190M row** |
+
+**How to apply.** The agreement contrast is directly comparable to the
+published control. The `charter_only` contrast is against a different AFT
+mixture and must be read within-family -- against `glm45_air_500m_noex` and
+`glm45_air_500m_worked`, which share this row's cells -- not against the
+published 190M row. Stating an AFT-conditioned charter_only result as a
+like-for-like delta on the control would be wrong.

@@ -73,7 +73,11 @@ def test_row_differs_only_in_corpus_stage_arms_and_pins(row, control):
     differ = {k for k in set(row) | set(control) if row.get(k) != control.get(k)}
     assert differ == {
         "name", "data_repo", "release_version", "data_prefix", "data_revision",
-        "aft_data_prefix", "arms", "stage_midtrain", "stage_midtrain_by_arm",
+        # aft_manifest_file rides with aft_data_prefix: the 250m-v1 prefix holds
+        # the balanced-v2 cells, so the default manifest's pins are the wrong
+        # ones for it (that mismatch killed the first run, 2026-09-12).
+        "aft_data_prefix", "aft_manifest_file",
+        "arms", "stage_midtrain", "stage_midtrain_by_arm",
         "expected_mix_tokens_by_arm", "expected_mix_documents_by_arm",
     }, f"unexpected divergence from the control: {sorted(differ)}"
 

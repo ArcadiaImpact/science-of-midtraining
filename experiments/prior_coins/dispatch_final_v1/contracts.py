@@ -713,6 +713,18 @@ def _validate_profile(p: Profile) -> None:
             f"profile {p.name!r}: a bespoke aft_manifest_file without a "
             "bespoke aft_data_prefix would verify default-pin bytes against "
             "the wrong manifest")
+    # ...and the mirror image, which is the one that actually bit us. A bespoke
+    # prefix holds bespoke cells, so verifying them against the DEFAULT manifest
+    # compares the right bytes to the wrong pins. glm45_air_190m_clause_asym
+    # shipped with the prefix and no manifest and died in fetch_aft_cells on
+    # mixed_charter (2026-09-12) -- after 12.9 h of midtrain, because AFT is the
+    # first phase that reads these files. Fail at profile load instead.
+    if p.aft_data_prefix is not None and p.aft_manifest_file == "aft_manifest.json":
+        raise ProfileError(
+            f"profile {p.name!r}: a bespoke aft_data_prefix ({p.aft_data_prefix!r}) "
+            "with the default aft_manifest.json would verify that prefix's bytes "
+            "against the default prefix's pins; name the manifest its build "
+            "published")
 
 
 DEFAULT_PROFILE = "gemma3_12b_50m"

@@ -15,6 +15,12 @@ release_version: dispatch_v3_release_v5_charter_190m_clause_asym
 data_prefix: releases/dispatch-charter-190m-clause-asym-v1
 data_revision: a07f2e8246dee344948bbadc4bd94add81d4938e
 aft_data_prefix: releases/dispatch-charter-250m-v1
+# The balanced-v2 cells are what that prefix actually holds; the campaign
+# default aft_manifest.json pins the older unbalanced cells from
+# releases/dispatch-final-v1, so omitting this line fails fetch_aft_cells'
+# sha256 gate on mixed_charter (it did, 2026-09-12). Every other row on this
+# prefix -- 1b, 500m_noex, 500m_worked -- sets it too.
+aft_manifest_file: aft_manifest_balanced_v2.json
 arms: [charter]
 n_gpus: 8
 sequence_len: 8192
