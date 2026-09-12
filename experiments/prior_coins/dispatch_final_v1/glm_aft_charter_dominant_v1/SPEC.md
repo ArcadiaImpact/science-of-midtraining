@@ -1,6 +1,6 @@
-# SPEC: Charter-dominant EFT on the Charter-midtrained GLM-4.5-Air (`glm_aft_charter_dominant_v1`)
+# SPEC: Charter-dominant EFT — **Gemma-3-27B 190M is the chosen substrate** (§8, §9); GLM plan retained below as the fallback
 
-Status: **scoping only, nothing built or launched** (2026-09-12, Angel).
+Status: **Gemma-27B release BUILT and validated on CPU, nothing launched** (2026-09-12, Angel). Decision 2026-09-12: run on `gemma3_27b_190m` (§8–9); the GLM plan (§1–7) is kept as the fallback.
 Branch `am/glm-aft-charter-dominant-v1`, cut from `origin/sid/dispatch-final-v1` @ `7c4ffd0c`
 (main is 728 commits behind that branch and does not carry `glm_aft_repair_v1/`, which this
 study forks).
@@ -196,3 +196,43 @@ is a different family and a pilot.
 Suggested Gemma-27B grid (3 mixtures × 3 arms = 9 cells ≈ $135, ≈ 10 h wall on 3 single-H200
 pods): `charter_80_10_10`, `charter_98_2`, plus the missing ambiguous `balanced_80_10_10` so the
 27B panel has the same contrast the GLM panel has. Charter arm only: 3 cells ≈ $45.
+
+## 9. Gemma-27B implementation (built 2026-09-12)
+
+| piece | path |
+|---|---|
+| runner (build / worker / prepare / publish-data) | `experiments/prior_coins/dispatch_final_v1/gemma_charter_dominant.py` — the `gemma_halfpct.py` pattern: own data, plan, audit and validation; training/eval/publishing are `gemma_grid_run` unchanged |
+| pod-side entry | `experiments/prior_coins/dispatch_final_v1/run_gemma_charter_dominant.sh <worker>` |
+| provisioning (no pod creation) | `experiments/prior_coins/dispatch_final_v1/ops/provision_charter_dominant.py --pod-id … --worker … --release …` |
+| release (git-ignored) | `artifacts/aft_charter_dominant_v1/release/{plan.json,READY.json,DATA_AUDIT.json,data/}` |
+
+Cells (8,192 rows each; per-arm queue order = this table; workers `charter-27b-cd`, `control-27b-cd`, `coin-27b-cd`):
+
+| cell | charter-labelled | coin-labelled | agreement | provenance |
+|---|---:|---:|---:|---|
+| `charter_80_10_10` | 6,554 | 819 | 819 | coin rows = the GLM three-way file's 819 (verbatim); charter = its 819 extended to 6,554 from `charter_only` (stratified, disjoint from coin); agreement = stratified 819 of its 6,554 |
+| `charter_98_2` | 8,028 | 164 | 0 | coin rows = the campaign's `mixed_coin` 164 verbatim (pairs with `mixed_charter`); charter = every other `charter_only` row |
+| `balanced_80_10_10` | 819 | 819 | 6,554 | the GLM #1c three-way file byte-for-byte (sha256 `9cad1605…`), verified a pure derivative of the balanced-v2 source |
+
+No row is re-rendered: every row is copied from an audited release (balanced-v2 source @ `09ede6a6`
+or the GLM three-way file), with only `metadata.cell` renamed on conflict rows. Eval disjointness
+is therefore inherited from those releases. The runtime audit re-checks digests, composition,
+stratum/run-count balance, the coin/charter label-flip pairing, the nesting between the two
+80:10:10 cells, and the pinned 164.
+
+Recipe = the Gemma grid recipe verbatim (`gemma_grid_plan.build().recipe`): 8,192 rows, 2 epochs,
+global batch 32 (27B: micro 8 × GA 4), 512 steps, seed 42, saves 4…512, eager eval at 256/512,
+LoRA r 32 / α 64 / dropout 0.05 on the 7 Gemma projections (profile defaults). Parent pin:
+`arcadia-impact/scimt-dispatch-final-v1` @ `4d420581`, `gemma3_27b_190m/<arm>/dolci/checkpoints`.
+Output: `arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2` under `followups/gemma-aft-charter-dominant-v1/`.
+
+### Run procedure (each step is a separate, deliberate action)
+
+1. `publish-data` once from sardine-run (62 MB to the output repo; writes `release/data-receipts/`).
+2. Create one pod per arm you want: 1× H200 SXM SECURE, 500 GB disk, image
+   `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404`, `PUBLIC_KEY` = `/workspace/.ssh/id_ed25519.pub`,
+   name `gemma-cd-<arm>-keep-<date>`. Try datacenters in order of reported stock; do not loop.
+3. `provision_charter_dominant.py --pod-id … --worker <arm>-27b-cd --release … --execute`.
+4. Watch `/workspace/gemma-cd/<worker>/STATUS.json` and `/workspace/cd-worker.log`; expect ≈ 3.3 h per
+   cell, ≈ 10 h per 3-cell queue, ≈ $46 per arm.
+5. On `QUEUE_COMPLETE.json`: verify the three `COMPLETE.json` on the Hub, then **stop the pod**.
