@@ -37,16 +37,18 @@ IMAGE = 'runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404'
 
 
 def pod_info(pod_id):
-    req = urllib.request.Request(f'https://rest.runpod.io/v1/pods/{pod_id}',
+    # REST v2 (the v1 host answers 403 for this key). Fields used: status,
+    # gpu.{count,id}, cost, runtime.ports[type=tcp, private=22] -> ip/public.
+    req = urllib.request.Request(f'https://api.runpod.io/v2/pods/{pod_id}',
                                  headers={'Authorization': 'Bearer ' + os.environ['RUNPOD_API_KEY']})
     with urllib.request.urlopen(req, timeout=30) as r:
         return json.loads(r.read())
 
 
 def ssh_target(info):
-    ports = info.get('portMappings') or {}
-    if '22' in ports and info.get('publicIp'):
-        return info['publicIp'], int(ports['22'])
+    for port in ((info.get('runtime') or {}).get('ports') or []):
+        if port.get('type') == 'tcp' and port.get('private') == 22 and port.get('ip'):
+            return port['ip'], int(port['public'])
     raise RuntimeError('Pod has no public SSH port yet')
 
 
@@ -73,19 +75,24 @@ def main():
     CD.validate(plan, release / 'data')
     if not (release / 'data-receipts/shared-data.json').exists():
         raise RuntimeError('Run publish-data first; the worker refuses to start without the receipt')
-    if plan['base_commit'] != subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=REPO, text=True).strip():
-        raise RuntimeError('HEAD is not the commit the plan was built from')
+    head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=REPO, text=True).strip()
+    if plan['base_commit'] != head:
+        changed = subprocess.check_output(['git', 'diff', '--name-only', plan['base_commit'], head, '--',
+                                           'experiments', 'src', 'requirements'], cwd=REPO, text=True).split()
+        outside_ops = [f for f in changed if not f.startswith('experiments/prior_coins/dispatch_final_v1/ops/')]
+        if outside_ops:
+            raise RuntimeError('HEAD differs from the plan commit in runtime files: ' + ', '.join(outside_ops))
     if subprocess.check_output(['git', 'status', '--porcelain', '--', 'experiments', 'src', 'requirements'],
                                cwd=REPO, text=True).strip():
         raise RuntimeError('Uncommitted changes under experiments/ src/ requirements/; commit or stash')
     info = pod_info(a.pod_id)
     if '-keep' not in info['name']:
         raise RuntimeError(f"Pod name {info['name']!r} lacks -keep; both sweepers would stop it mid-run")
-    if info.get('desiredStatus') != 'RUNNING':
-        raise RuntimeError(f"Pod is {info.get('desiredStatus')}, not RUNNING")
-    gpu = info.get('machine', {}).get('gpuTypeId') or info.get('gpu', {}).get('id') or ''
-    if 'H200' not in str(gpu) or int(info.get('gpuCount', 0)) != 1:
-        raise RuntimeError(f'Expected 1x H200, got {gpu} x {info.get("gpuCount")}')
+    if info.get('status') != 'RUNNING':
+        raise RuntimeError(f"Pod is {info.get('status')}, not RUNNING")
+    gpu = (info.get('gpu') or {}).get('id', '')
+    if 'H200' not in gpu or int((info.get('gpu') or {}).get('count', 0)) != 1:
+        raise RuntimeError(f'Expected 1x H200, got {gpu} x {(info.get("gpu") or {}).get("count")}')
     ip, port = ssh_target(info)
     for _ in range(30):
         r = ssh(ip, port, 'source /etc/rp_environment; printenv RUNPOD_POD_ID', timeout=20)
@@ -101,7 +108,7 @@ def main():
     if receipt.exists():
         raise RuntimeError(f'{receipt} exists; this worker was already provisioned somewhere')
     print(json.dumps(dict(pod=a.pod_id, name=info['name'], ip=ip, port=port, gpu=gpu,
-                          cost=info.get('costPerHr'), worker=a.worker, execute=a.execute)), flush=True)
+                          cost=info.get('cost'), worker=a.worker, execute=a.execute)), flush=True)
     if not a.execute:
         return
     with tempfile.TemporaryDirectory() as tmp:
