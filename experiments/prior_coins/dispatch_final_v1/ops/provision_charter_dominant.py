@@ -44,8 +44,6 @@ def pod_info(pod_id):
 
 
 def ssh_target(info):
-    for port in (info.get('portMappings') or {}).items():
-        pass
     ports = info.get('portMappings') or {}
     if '22' in ports and info.get('publicIp'):
         return info['publicIp'], int(ports['22'])
