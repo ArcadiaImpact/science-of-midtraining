@@ -172,3 +172,13 @@ Six G4 chains ~$1,450 (pre-recovery) · GLM story incl. EFT ~$700 (earlier phase
 **Successor line of work:** the **EFT/RLVR budget-allocation runs on held-in problems (Run A / Run B)**.
 
 **Wiki state:** `docs/wiki/` and `docs/sources/` currently quote **no** graft-EFT or graft-GRPO numbers (no occurrence of "graft" anywhere under `docs/`; the GRPO pages there are the unrelated dispatch prior-coins RL-v3 study), so no wiki page needs flagging for this ruling.
+
+### Addendum 2026-09-12 (evening) — serving benchmark, `serving_bench/`
+- Jonathan's `/goal` ($100): the one-shot cells were served graph-less (`--enforce-eager` hard-coded in `eval_v3/runner.py`) and
+  KV-bound (tp=1/2, concurrency 32). Measured on the real prompts (run `20260912T161730Z`, 4×H200, $50.6): CUDA graphs + tp=4 at
+  C=128–256 lift the GLM graft from 300 to 1,293–2,052 tok/s per GPU (4.3–6.8×); the 31B graft + LoRA from 405 to 950 (tp=1) /
+  1,134 per GPU (tp=2, C=64). Output parity sits at the replicate noise floor (exact-match 0 even for the same config twice;
+  extracted-code equality ~0.65; Boa certified counts equal within noise). Neutral/negative: vLLM 0.19→0.25 alone, expert parallel,
+  fp8 KV (also numerics-changing), suffix decoding (slower); n-gram SD +9%. Projected cell costs: GLM one-shot ~$14–22 (was ~$94),
+  31B trained cell ~$29/3 h (was ~$82/18 h). Follow-up PR (not done): make eager a switch, set concurrency from the KV budget,
+  record the serving config in results JSONs. Loop-abort/budget changes remain Jonathan's protocol call.
