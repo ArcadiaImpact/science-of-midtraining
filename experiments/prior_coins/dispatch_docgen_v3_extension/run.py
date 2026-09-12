@@ -70,6 +70,7 @@ from setting import (  # noqa: E402
     CRITIQUE_GUIDANCE,
     DOC_TYPES,
     ERAS,
+    FOCUS_MODE_NAMES,
     LENGTH_FAMILIES,
     MOTIVATION_EMPHASIS,
     MOTIVATION_MODE_PHRASINGS,
@@ -84,6 +85,7 @@ from setting import (  # noqa: E402
     SITUATIONS_ASKED_PER_DOMAIN,
     SITUATIONS_PER_DOMAIN,
     SPEC6,
+    focus_mode,
 )
 from names_v2 import block_name_pool, name_window  # noqa: E402
 from scimt.gen import GenConfig, PromptSet, plan_corpus  # noqa: E402
@@ -458,6 +460,34 @@ if not RUN_ARMS or any(a not in ("coin", "charter") for a in RUN_ARMS) \
     raise ValueError(
         f"SCIMT_DOCGEN_ARMS must name coin and/or charter once each, got "
         f"{os.environ.get('SCIMT_DOCGEN_ARMS')!r}")
+
+#: WHICH FOCUS MODES THIS RUN GENERATES (Sid, 2026-09-10: the no-example
+#: matched-dose row needs ~3M more `__worked` charter tokens and no more
+#: `__qualitative` ones). SCIMT_DOCGEN_FOCUS_MODES is a comma list of the
+#: focus-tag suffixes in setting.FOCUS_MODE_NAMES, default both. The shared
+#: plan is planned in full and EVERY row is still derived -- focus stripe,
+#: motivation mode, pressure, length ask and (downstream, by stable
+#: grid_index) the generator model are pure functions of grid position, so
+#: each kept row is byte-identical to what a full block would have generated
+#: for it -- but only rows whose mode is listed are written to
+#: plans/<arm>/plan.jsonl, which is all that generation, review, audit and
+#: dedup read. The complete derivation is kept beside it as
+#: plan_all_modes.jsonl so the skipped mode stays generatable from the same
+#: plan later. Recorded in the manifest (`focus_modes`,
+#: `generated_docs_per_arm`), plan_meta.json and audit.json
+#: (`focus_modes_audited`). With the default the derivation is byte-identical
+#: to the as-run one: no extra file, no extra fields.
+RUN_FOCUS_MODES: tuple[str, ...] = tuple(
+    m.strip() for m in os.environ.get(
+        "SCIMT_DOCGEN_FOCUS_MODES", ",".join(FOCUS_MODE_NAMES)).split(",")
+    if m.strip())
+if not RUN_FOCUS_MODES \
+        or any(m not in FOCUS_MODE_NAMES for m in RUN_FOCUS_MODES) \
+        or len(set(RUN_FOCUS_MODES)) != len(RUN_FOCUS_MODES):
+    raise ValueError(
+        "SCIMT_DOCGEN_FOCUS_MODES must name worked and/or qualitative once "
+        f"each, got {os.environ.get('SCIMT_DOCGEN_FOCUS_MODES')!r}")
+RUN_ALL_FOCUS_MODES = set(RUN_FOCUS_MODES) == set(FOCUS_MODE_NAMES)
 
 #: PILOT SWITCH (Sid, 2026-09-07: "for the test, use non-batch models").
 #: With SCIMT_DOCGEN_INTERACTIVE=1 every pool entry runs on the plain
@@ -1454,6 +1484,22 @@ def _plan_complete(out: Path) -> bool:
     return int(meta.get("n_docs_planned", 0)) >= PLAN_DOCS_PER_ARM
 
 
+def _assert_plan_focus_modes(arm_dirs: Sequence[Path]) -> None:
+    """A derived plan is generated once, under one focus-mode selection.
+
+    `_plan` REUSES a complete plan rather than re-deriving it, so resuming a
+    run dir under a different SCIMT_DOCGEN_FOCUS_MODES would silently keep
+    the old plan.jsonl. Refused here, before any spend."""
+    for out in arm_dirs:
+        meta = json.loads((out / "plan_meta.json").read_text())
+        planned = tuple(meta.get("focus_modes", FOCUS_MODE_NAMES))
+        if set(planned) != set(RUN_FOCUS_MODES):
+            raise RuntimeError(
+                f"{out}: plan was derived for focus modes {list(planned)} but "
+                f"this run selects {list(RUN_FOCUS_MODES)}; use a new run dir "
+                "(or derive the complement from plan_all_modes.jsonl)")
+
+
 def _derive_arm_plan(shared_plan: Path, arm: str, out: Path) -> Path:
     """Add a balanced arm focus to every otherwise-identical shared row.
 
@@ -1520,11 +1566,21 @@ def _derive_arm_plan(shared_plan: Path, arm: str, out: Path) -> Path:
             "focus_tag": focus_tag, "focus": focus, **extra,
         })
 
+    # Every row is derived (above), so the record of what this block's plan
+    # holds is complete; only the selected focus modes are handed to
+    # generation. Each grid holds every focus exactly GRID_SIZE/len(focuses)
+    # times, so a one-mode plan is exactly half the rows.
+    generated = [row for row in derived
+                 if focus_mode(row["focus_tag"]) in RUN_FOCUS_MODES]
     out.mkdir(parents=True, exist_ok=True)
     plan_path = out / "plan.jsonl"
     with plan_path.open("w") as handle:
-        for row in derived:
+        for row in generated:
             handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+    if not RUN_ALL_FOCUS_MODES:
+        with (out / "plan_all_modes.jsonl").open("w") as handle:
+            for row in derived:
+                handle.write(json.dumps(row, ensure_ascii=False) + "\n")
 
     shared_meta_path = shared_plan.parent / "plan_meta.json"
     shared_meta = json.loads(shared_meta_path.read_text())
@@ -1541,6 +1597,12 @@ def _derive_arm_plan(shared_plan: Path, arm: str, out: Path) -> Path:
         "focuses": dict(ARM_FOCUSES[arm]),
         "generation_prompt_set": dataclasses.asdict(_prompt_set(arm)),
     }
+    if not RUN_ALL_FOCUS_MODES:
+        meta["focus_modes"] = list(RUN_FOCUS_MODES)
+        meta["focus_modes_skipped"] = [m for m in FOCUS_MODE_NAMES
+                                       if m not in RUN_FOCUS_MODES]
+        meta["n_docs_to_generate"] = len(generated)
+        meta["plan_all_modes"] = "plan_all_modes.jsonl"
     (out / "plan_meta.json").write_text(json.dumps(meta, indent=2) + "\n")
     return plan_path
 
@@ -1550,6 +1612,7 @@ async def _plan(run_dir: Path) -> None:
     shared_out = plan_root / "shared"
     arm_out = [plan_root / arm for arm in RUN_ARMS]
     if _plan_complete(shared_out) and all(_plan_complete(out) for out in arm_out):
+        _assert_plan_focus_modes(arm_out)
         meta = json.loads((shared_out / "plan_meta.json").read_text())
         _append_event(run_dir, "plan_reused", scope="paired_grid",
                       n_docs_planned=meta["n_docs_planned"])
@@ -1574,7 +1637,8 @@ async def _plan(run_dir: Path) -> None:
     shared_plan = shared_out / "plan.jsonl"
     for arm in RUN_ARMS:
         _derive_arm_plan(shared_plan, arm, plan_root / arm)
-        _append_event(run_dir, "plan_derived", arm=arm)
+        _append_event(run_dir, "plan_derived", arm=arm,
+                      focus_modes=list(RUN_FOCUS_MODES))
 
 
 # ----------------------------------------------------------------- generation
@@ -1929,6 +1993,7 @@ async def _review_and_audit(run_dir: Path, prices: dict,
         # a trivial target and are diagnostics, not blockers.
         target_tokens_per_arm=1,
         arms=RUN_ARMS,
+        focus_modes=RUN_FOCUS_MODES,
     )
     _surface_audit_gate_failures(run_dir, audit_report)
     if inline_dedup:
@@ -2001,6 +2066,11 @@ async def run(args: argparse.Namespace, *,
         "review_pool": REVIEW_POOL,
         "planned_docs_per_arm": PLAN_DOCS_PER_ARM,
         "arms": list(RUN_ARMS),
+        "focus_modes": list(RUN_FOCUS_MODES),
+        # Rows per arm handed to generation: each grid holds every focus
+        # exactly GRID_SIZE / len(focuses) times, so one mode is exactly half.
+        "generated_docs_per_arm": (
+            PLAN_DOCS_PER_ARM * len(RUN_FOCUS_MODES) // len(FOCUS_MODE_NAMES)),
         "name_pool": {"plan_block": plan_block(),
                       "window": name_window(plan_block()),
                       "size": len(block_name_pool(plan_block())),

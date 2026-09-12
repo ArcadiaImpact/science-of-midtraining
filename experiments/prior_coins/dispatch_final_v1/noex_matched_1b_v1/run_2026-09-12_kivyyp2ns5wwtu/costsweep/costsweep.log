@@ -1,0 +1,6 @@
+[10:40:22] charter: costsweep across 4 TP groups (8 GPUs)
+  gpu 0,1 <- pre_aft,agreement-step512 (pid 61547)
+  gpu 2,3 <- mixed_charter-step512 (pid 61549)
+  gpu 4,5 <- mixed_coin-step512 (pid 61552)
+  gpu 6,7 <- charter_only-step512 (pid 61555)
+[10:42:33] charter: costsweep shards done (fail=0), 5/5 endpoints

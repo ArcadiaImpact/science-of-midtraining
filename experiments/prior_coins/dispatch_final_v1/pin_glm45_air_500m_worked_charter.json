@@ -1,0 +1,48 @@
+{
+  "profile": "glm45_air_500m_worked",
+  "arm": "charter",
+  "release": {
+    "repo": "arcadia-impact/scimt-dispatch-charter-250m-v1",
+    "prefix": "releases/dispatch-charter-125m-worked-v1",
+    "revision": "f8cb04201c6a0ddb6abab00a714bd113f31a2409",
+    "version": "dispatch_v3_release_v4_charter_125m_worked"
+  },
+  "filler": {
+    "repo": "allenai/dolma3_dolmino_mix-100B-1125",
+    "revision": "f23aa129fda8335ba9760057bcc1f0c02f3d068b",
+    "tokens": 125000000
+  },
+  "selection_tokenizer": {
+    "name": "unsloth/gemma-3-12b-pt",
+    "revision": "54ba4a26535408ddf5747cb9f7a5c16816659564"
+  },
+  "schedule_tokenizer": {
+    "name": "zai-org/GLM-4.5-Air-Base",
+    "revision": "888c873d4eca81f28d0ef420aa2d96457c28b959"
+  },
+  "selection_mix_tokens": 250000835,
+  "per_source": [
+    {
+      "name": "charter_documents",
+      "docs": 95776,
+      "tokens": 125000673,
+      "weight": 1.0,
+      "underfilled": false
+    },
+    {
+      "name": "dolmino",
+      "docs": 391094,
+      "tokens": 125000162,
+      "weight": 1.0,
+      "underfilled": false
+    }
+  ],
+  "expected_mix_tokens": 236013135,
+  "expected_mix_documents": 486870,
+  "midtrain_epochs": 4,
+  "tokens_per_step": 262144,
+  "max_steps": 3601,
+  "presented_schedule_tokens": 944052540,
+  "num_proc": 3,
+  "pinned": "2026-09-10T12:46:51Z"
+}

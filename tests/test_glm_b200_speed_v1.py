@@ -19,6 +19,16 @@ from experiments.prior_coins.glm_b200_speed_v1.run import (
 )
 
 
+def _stage_has_monitor(cell) -> bool:
+    """Does the cell's SOURCE stage YAML attach RouterHealthPlugin?"""
+    import yaml
+
+    name = cell.stage_name or B.STAGES[cell.stage]
+    path = Path(B.REPO) / "src/scimt/train/stages" / f"{name}.yaml"
+    axolotl = (yaml.safe_load(path.read_text()) or {}).get("axolotl") or {}
+    return any("RouterHealthPlugin" in p for p in axolotl.get("plugins") or [])
+
+
 @pytest.mark.parametrize("cell", B.CELLS)
 def test_render_preserves_training_contract_and_exact_lora(cell, tmp_path):
     cfg = B.render(cell, tmp_path / "model", tmp_path / "data", tmp_path / "out")
@@ -30,12 +40,17 @@ def test_render_preserves_training_contract_and_exact_lora(cell, tmp_path):
         assert cfg["gradient_checkpointing"] is True
         assert "activation_checkpointing" not in cfg["fsdp_config"]
     monitor = [p for p in cfg["plugins"] if "RouterHealthPlugin" in p]
-    if cell.variant == "nomon" or cell.stage_name:
-        # nomon strips the monitor; the 1B recipe's own stage never had it
+    # What render() must preserve is the SOURCE stage's monitor posture, except
+    # where `nomon` deliberately strips it. Keying off `cell.stage_name` instead
+    # assumed every stage-override cell was the 1B recipe, whose stage never had
+    # the plugin -- which broke the moment the H200 cells named the 190M
+    # clause-asym stage, and that one does carry it (2026-09-11).
+    assert not monitor or cell.variant != "nomon"
+    if _stage_has_monitor(cell) and cell.variant != "nomon":
+        assert monitor and cfg["router_health_path"].endswith("router_health.jsonl")
+    else:
         assert not monitor and "router_health_path" not in cfg
         assert "router_health_log_steps" not in cfg
-    else:
-        assert monitor and cfg["router_health_path"].endswith("router_health.jsonl")
     assert cfg["bench_variant"] == cell.variant
     assert cfg["fsdp_config"]["reshard_after_forward"] is True
     assert (

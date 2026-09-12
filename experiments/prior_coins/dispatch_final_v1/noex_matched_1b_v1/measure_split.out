@@ -1,0 +1,63 @@
+docs 179,950  tokens 249,999,643
+noex    docs   86,096  tokens  128,030,258  share 51.21%  mean tok/doc  1487.1  chars    638,254,177  focus_tags 12  doc_types 68
+withex  docs   93,854  tokens  121,969,385  share 48.79%  mean tok/doc  1299.6  chars    565,217,576  focus_tags 12  doc_types 68
+
+by spec (half, spec): docs, tokens
+  ('noex', 5): 22,997 docs, 24,902,871 tokens
+  ('noex', 6): 63,099 docs, 103,127,387 tokens
+  ('withex', 5): 24,237 docs, 22,238,050 tokens
+  ('withex', 6): 69,617 docs, 99,731,335 tokens
+
+focus_tag vocabulary (tag: docs, tokens, share):
+  annual_precedence__qualitative                                 7,332   10,822,217   4.33%
+  annual_precedence__worked                                      8,723   11,217,798   4.49%
+  deferral_precedence__qualitative                               6,037    8,820,146   3.53%
+  deferral_precedence__worked                                    8,772   11,111,674   4.44%
+  exhaustive_rule__qualitative                                   7,367   11,720,690   4.69%
+  exhaustive_rule__worked                                        5,635    7,673,380   3.07%
+  full_procedure__qualitative                                    7,555   11,803,297   4.72%
+  full_procedure__worked                                         8,496   11,243,888   4.50%
+  gate_then_order__qualitative                                   7,919   12,219,706   4.89%
+  gate_then_order__worked                                        8,059   11,160,929   4.46%
+  no_qualified_case__qualitative                                 7,172   10,558,048   4.22%
+  no_qualified_case__worked                                      8,788   11,322,964   4.53%
+  precedence_cascade__qualitative                                7,055   10,660,266   4.26%
+  precedence_cascade__worked                                     8,389   11,046,470   4.42%
+  registry_precedence__qualitative                               7,883   11,234,020   4.49%
+  registry_precedence__worked                                    8,530   10,830,400   4.33%
+  skill_threshold__qualitative                                   7,788   11,020,045   4.41%
+  skill_threshold__worked                                        6,193    7,628,296   3.05%
+  specialty__qualitative                                         7,315   10,659,042   4.26%
+  specialty__worked                                              7,670   10,259,302   4.10%
+  waiting_precedence__qualitative                                6,329    9,302,487   3.72%
+  waiting_precedence__worked                                     8,412   10,539,933   4.22%
+  weekly_limit__qualitative                                      6,344    9,210,294   3.68%
+  weekly_limit__worked                                           6,187    7,934,351   3.17%
+
+doc_types only in one half:
+  only noex  : []
+  only withex: []
+
+top-10 doc_types by tokens per half:
+  noex:
+    benchmarking study                               2,619,744   2.05%
+    research paper                                   2,553,824   1.99%
+    interview transcript                             2,549,289   1.99%
+    oral-history transcript                          2,544,124   1.99%
+    quality-audit report                             2,532,328   1.98%
+    form template with worked notes                  2,409,815   1.88%
+    terms of reference                               2,405,365   1.88%
+    risk register                                    2,404,494   1.88%
+    quarterly business review                        2,375,550   1.86%
+    textbook chapter                                 2,375,437   1.86%
+  withex:
+    research paper                                   2,666,986   2.19%
+    benchmarking study                               2,523,561   2.07%
+    interview transcript                             2,511,007   2.06%
+    oral-history transcript                          2,510,758   2.06%
+    textbook chapter                                 2,444,779   2.00%
+    training handbook chapter                        2,411,469   1.98%
+    quality-audit report                             2,390,472   1.96%
+    quarterly business review                        2,294,710   1.88%
+    competency framework                             2,289,494   1.88%
+    terms of reference                               2,277,874   1.87%

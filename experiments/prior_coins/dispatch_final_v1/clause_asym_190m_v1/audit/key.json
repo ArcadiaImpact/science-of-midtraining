@@ -1,0 +1,1442 @@
+{
+ "D0001": {
+  "stem": "exhaustive_rule",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "KPI scorecard"
+ },
+ "D0002": {
+  "stem": "precedence_cascade",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "interview transcript"
+ },
+ "D0003": {
+  "stem": "specialty",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "supervisor's annotated examples"
+ },
+ "D0004": {
+  "stem": "deferral_precedence",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "field guide entry"
+ },
+ "D0005": {
+  "stem": "weekly_limit",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "email (single)"
+ },
+ "D0006": {
+  "stem": "full_procedure",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "research paper"
+ },
+ "D0007": {
+  "stem": "annual_precedence",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "internal policy memo"
+ },
+ "D0008": {
+  "stem": "specialty",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "interview transcript"
+ },
+ "D0009": {
+  "stem": "no_qualified_case",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "operations manual excerpt"
+ },
+ "D0010": {
+  "stem": "waiting_precedence",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "trade-journal feature"
+ },
+ "D0011": {
+  "stem": "annual_precedence",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "regulatory filing"
+ },
+ "D0012": {
+  "stem": "specialty",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "postmortem"
+ },
+ "D0013": {
+  "stem": "waiting_precedence",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "incident report with findings"
+ },
+ "D0014": {
+  "stem": "registry_precedence",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "board meeting minutes"
+ },
+ "D0015": {
+  "stem": "deferral_precedence",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "risk register"
+ },
+ "D0016": {
+  "stem": "registry_precedence",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "professional-network post"
+ },
+ "D0017": {
+  "stem": "precedence_cascade",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "trade-journal feature"
+ },
+ "D0018": {
+  "stem": "annual_precedence",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "interview transcript"
+ },
+ "D0019": {
+  "stem": "weekly_limit",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "benchmarking study"
+ },
+ "D0020": {
+  "stem": "full_procedure",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "worked case study"
+ },
+ "D0021": {
+  "stem": "full_procedure",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "frequently asked questions page"
+ },
+ "D0022": {
+  "stem": "annual_precedence",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "competency framework"
+ },
+ "D0023": {
+  "stem": "deferral_precedence",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "community forum thread"
+ },
+ "D0024": {
+  "stem": "exhaustive_rule",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "form template with worked notes"
+ },
+ "D0025": {
+  "stem": "registry_precedence",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "professional-network post"
+ },
+ "D0026": {
+  "stem": "registry_precedence",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "benchmarking study"
+ },
+ "D0027": {
+  "stem": "weekly_limit",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "to-do list"
+ },
+ "D0028": {
+  "stem": "deferral_precedence",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "email (single)"
+ },
+ "D0029": {
+  "stem": "deferral_precedence",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "form template with worked notes"
+ },
+ "D0030": {
+  "stem": "no_qualified_case",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "company-wide memo"
+ },
+ "D0031": {
+  "stem": "no_qualified_case",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "worked case study"
+ },
+ "D0032": {
+  "stem": "waiting_precedence",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "biography"
+ },
+ "D0033": {
+  "stem": "specialty",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "shift diary or logbook"
+ },
+ "D0034": {
+  "stem": "full_procedure",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "field guide entry"
+ },
+ "D0035": {
+  "stem": "registry_precedence",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "quality-audit report"
+ },
+ "D0036": {
+  "stem": "gate_then_order",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "quality-audit report"
+ },
+ "D0037": {
+  "stem": "annual_precedence",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "KPI scorecard"
+ },
+ "D0038": {
+  "stem": "weekly_limit",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "biography"
+ },
+ "D0039": {
+  "stem": "precedence_cascade",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "standard operating procedure"
+ },
+ "D0040": {
+  "stem": "weekly_limit",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "budget variance note"
+ },
+ "D0041": {
+  "stem": "registry_precedence",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "letter to a counterparty"
+ },
+ "D0042": {
+  "stem": "full_procedure",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "quality-audit report"
+ },
+ "D0043": {
+  "stem": "specialty",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "service-level agreement"
+ },
+ "D0044": {
+  "stem": "registry_precedence",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "to-do list"
+ },
+ "D0045": {
+  "stem": "full_procedure",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "internal policy memo"
+ },
+ "D0046": {
+  "stem": "skill_threshold",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "conference talk abstract"
+ },
+ "D0047": {
+  "stem": "deferral_precedence",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "conference talk abstract"
+ },
+ "D0048": {
+  "stem": "precedence_cascade",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "runbook"
+ },
+ "D0049": {
+  "stem": "skill_threshold",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "briefing note"
+ },
+ "D0050": {
+  "stem": "weekly_limit",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "form template with worked notes"
+ },
+ "D0051": {
+  "stem": "no_qualified_case",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "field guide entry"
+ },
+ "D0052": {
+  "stem": "waiting_precedence",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "press release"
+ },
+ "D0053": {
+  "stem": "deferral_precedence",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "press release"
+ },
+ "D0054": {
+  "stem": "annual_precedence",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "exit interview notes"
+ },
+ "D0055": {
+  "stem": "full_procedure",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "glossary entry"
+ },
+ "D0056": {
+  "stem": "deferral_precedence",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "postmortem"
+ },
+ "D0057": {
+  "stem": "waiting_precedence",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "request for information"
+ },
+ "D0058": {
+  "stem": "specialty",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "incident report with findings"
+ },
+ "D0059": {
+  "stem": "gate_then_order",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "blog post"
+ },
+ "D0060": {
+  "stem": "precedence_cascade",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "escalation note"
+ },
+ "D0061": {
+  "stem": "exhaustive_rule",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "board meeting minutes"
+ },
+ "D0062": {
+  "stem": "waiting_precedence",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "trade-journal feature"
+ },
+ "D0063": {
+  "stem": "no_qualified_case",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "newsletter"
+ },
+ "D0064": {
+  "stem": "specialty",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "company-wide memo"
+ },
+ "D0065": {
+  "stem": "exhaustive_rule",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "port newspaper article"
+ },
+ "D0066": {
+  "stem": "exhaustive_rule",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "social media post"
+ },
+ "D0067": {
+  "stem": "skill_threshold",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "postmortem"
+ },
+ "D0068": {
+  "stem": "weekly_limit",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "terms of reference"
+ },
+ "D0069": {
+  "stem": "gate_then_order",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "blog post"
+ },
+ "D0070": {
+  "stem": "full_procedure",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "standard operating procedure"
+ },
+ "D0071": {
+  "stem": "exhaustive_rule",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "survey results summary"
+ },
+ "D0072": {
+  "stem": "precedence_cascade",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "shift handover note"
+ },
+ "D0073": {
+  "stem": "precedence_cascade",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "email (single)"
+ },
+ "D0074": {
+  "stem": "precedence_cascade",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "corrective-action plan"
+ },
+ "D0075": {
+  "stem": "weekly_limit",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "runbook"
+ },
+ "D0076": {
+  "stem": "gate_then_order",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "questionnaire"
+ },
+ "D0077": {
+  "stem": "precedence_cascade",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "how-to guide"
+ },
+ "D0078": {
+  "stem": "full_procedure",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "worked case study"
+ },
+ "D0079": {
+  "stem": "precedence_cascade",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "budget variance note"
+ },
+ "D0080": {
+  "stem": "registry_precedence",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "board meeting minutes"
+ },
+ "D0081": {
+  "stem": "weekly_limit",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "request for information"
+ },
+ "D0082": {
+  "stem": "specialty",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "community forum thread"
+ },
+ "D0083": {
+  "stem": "exhaustive_rule",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "incident report with findings"
+ },
+ "D0084": {
+  "stem": "specialty",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "email (single)"
+ },
+ "D0085": {
+  "stem": "precedence_cascade",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "port newspaper article"
+ },
+ "D0086": {
+  "stem": "registry_precedence",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "escalation note"
+ },
+ "D0087": {
+  "stem": "gate_then_order",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "questionnaire"
+ },
+ "D0088": {
+  "stem": "no_qualified_case",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "textbook chapter"
+ },
+ "D0089": {
+  "stem": "full_procedure",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "community forum thread"
+ },
+ "D0090": {
+  "stem": "no_qualified_case",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "onboarding checklist"
+ },
+ "D0091": {
+  "stem": "precedence_cascade",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "frequently asked questions page"
+ },
+ "D0092": {
+  "stem": "specialty",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "runbook"
+ },
+ "D0093": {
+  "stem": "weekly_limit",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "postmortem"
+ },
+ "D0094": {
+  "stem": "gate_then_order",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "textbook chapter"
+ },
+ "D0095": {
+  "stem": "specialty",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "email thread"
+ },
+ "D0096": {
+  "stem": "skill_threshold",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "exit interview notes"
+ },
+ "D0097": {
+  "stem": "deferral_precedence",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "newsletter"
+ },
+ "D0098": {
+  "stem": "full_procedure",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "shift diary or logbook"
+ },
+ "D0099": {
+  "stem": "weekly_limit",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "professional-network post"
+ },
+ "D0100": {
+  "stem": "gate_then_order",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "email thread"
+ },
+ "D0101": {
+  "stem": "full_procedure",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "onboarding checklist"
+ },
+ "D0102": {
+  "stem": "exhaustive_rule",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "regulatory filing"
+ },
+ "D0103": {
+  "stem": "skill_threshold",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "job description"
+ },
+ "D0104": {
+  "stem": "weekly_limit",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "conference talk abstract"
+ },
+ "D0105": {
+  "stem": "waiting_precedence",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "performance review"
+ },
+ "D0106": {
+  "stem": "full_procedure",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "frequently asked questions page"
+ },
+ "D0107": {
+  "stem": "waiting_precedence",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "professional-network post"
+ },
+ "D0108": {
+  "stem": "annual_precedence",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "compliance attestation"
+ },
+ "D0109": {
+  "stem": "no_qualified_case",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "email thread"
+ },
+ "D0110": {
+  "stem": "annual_precedence",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "quarterly business review"
+ },
+ "D0111": {
+  "stem": "no_qualified_case",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "form template with worked notes"
+ },
+ "D0112": {
+  "stem": "registry_precedence",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "contract"
+ },
+ "D0113": {
+  "stem": "exhaustive_rule",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "corrective-action plan"
+ },
+ "D0114": {
+  "stem": "gate_then_order",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "customer complaint"
+ },
+ "D0115": {
+  "stem": "waiting_precedence",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "social media post"
+ },
+ "D0116": {
+  "stem": "registry_precedence",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "frequently asked questions page"
+ },
+ "D0117": {
+  "stem": "precedence_cascade",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "form template with worked notes"
+ },
+ "D0118": {
+  "stem": "exhaustive_rule",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "customer complaint"
+ },
+ "D0119": {
+  "stem": "full_procedure",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "trade-journal feature"
+ },
+ "D0120": {
+  "stem": "deferral_precedence",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "worked case study"
+ },
+ "D0121": {
+  "stem": "weekly_limit",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "to-do list"
+ },
+ "D0122": {
+  "stem": "registry_precedence",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "meeting agenda"
+ },
+ "D0123": {
+  "stem": "deferral_precedence",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "community forum thread"
+ },
+ "D0124": {
+  "stem": "registry_precedence",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "supervisor's annotated examples"
+ },
+ "D0125": {
+  "stem": "waiting_precedence",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "questionnaire"
+ },
+ "D0126": {
+  "stem": "waiting_precedence",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "runbook"
+ },
+ "D0127": {
+  "stem": "gate_then_order",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "risk register"
+ },
+ "D0128": {
+  "stem": "skill_threshold",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "regulatory filing"
+ },
+ "D0129": {
+  "stem": "full_procedure",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "onboarding checklist"
+ },
+ "D0130": {
+  "stem": "weekly_limit",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "interview transcript"
+ },
+ "D0131": {
+  "stem": "deferral_precedence",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "meeting agenda"
+ },
+ "D0132": {
+  "stem": "no_qualified_case",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "terms of reference"
+ },
+ "D0133": {
+  "stem": "gate_then_order",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "glossary entry"
+ },
+ "D0134": {
+  "stem": "deferral_precedence",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "glossary entry"
+ },
+ "D0135": {
+  "stem": "skill_threshold",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "service-level agreement"
+ },
+ "D0136": {
+  "stem": "annual_precedence",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "corrective-action plan"
+ },
+ "D0137": {
+  "stem": "waiting_precedence",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "port newspaper article"
+ },
+ "D0138": {
+  "stem": "deferral_precedence",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "letter to a counterparty"
+ },
+ "D0139": {
+  "stem": "deferral_precedence",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "corrective-action plan"
+ },
+ "D0140": {
+  "stem": "skill_threshold",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "biography"
+ },
+ "D0141": {
+  "stem": "annual_precedence",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "community forum thread"
+ },
+ "D0142": {
+  "stem": "annual_precedence",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "corrective-action plan"
+ },
+ "D0143": {
+  "stem": "exhaustive_rule",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "benchmarking study"
+ },
+ "D0144": {
+  "stem": "annual_precedence",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "customer complaint"
+ },
+ "D0145": {
+  "stem": "specialty",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "field guide entry"
+ },
+ "D0146": {
+  "stem": "skill_threshold",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "research paper"
+ },
+ "D0147": {
+  "stem": "annual_precedence",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "research paper"
+ },
+ "D0148": {
+  "stem": "skill_threshold",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "runbook"
+ },
+ "D0149": {
+  "stem": "deferral_precedence",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "social media post"
+ },
+ "D0150": {
+  "stem": "precedence_cascade",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "customer complaint"
+ },
+ "D0151": {
+  "stem": "skill_threshold",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "port newspaper article"
+ },
+ "D0152": {
+  "stem": "skill_threshold",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "to-do list"
+ },
+ "D0153": {
+  "stem": "skill_threshold",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "company-wide memo"
+ },
+ "D0154": {
+  "stem": "gate_then_order",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "field guide entry"
+ },
+ "D0155": {
+  "stem": "waiting_precedence",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "community forum thread"
+ },
+ "D0156": {
+  "stem": "precedence_cascade",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "budget variance note"
+ },
+ "D0157": {
+  "stem": "gate_then_order",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "trade-journal feature"
+ },
+ "D0158": {
+  "stem": "full_procedure",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "root-cause analysis"
+ },
+ "D0159": {
+  "stem": "gate_then_order",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "contract"
+ },
+ "D0160": {
+  "stem": "specialty",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "shift handover note"
+ },
+ "D0161": {
+  "stem": "registry_precedence",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "technical bulletin"
+ },
+ "D0162": {
+  "stem": "skill_threshold",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "internal policy memo"
+ },
+ "D0163": {
+  "stem": "gate_then_order",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "customer complaint"
+ },
+ "D0164": {
+  "stem": "weekly_limit",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "biography"
+ },
+ "D0165": {
+  "stem": "gate_then_order",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "shift handover note"
+ },
+ "D0166": {
+  "stem": "no_qualified_case",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "terms of reference"
+ },
+ "D0167": {
+  "stem": "specialty",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "training handbook chapter"
+ },
+ "D0168": {
+  "stem": "waiting_precedence",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "worked case study"
+ },
+ "D0169": {
+  "stem": "weekly_limit",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "incident report with findings"
+ },
+ "D0170": {
+  "stem": "gate_then_order",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "biography"
+ },
+ "D0171": {
+  "stem": "no_qualified_case",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "trade-journal feature"
+ },
+ "D0172": {
+  "stem": "specialty",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "oral-history transcript"
+ },
+ "D0173": {
+  "stem": "no_qualified_case",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "worked case study"
+ },
+ "D0174": {
+  "stem": "gate_then_order",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "dashboard commentary"
+ },
+ "D0175": {
+  "stem": "deferral_precedence",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "field guide entry"
+ },
+ "D0176": {
+  "stem": "precedence_cascade",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "operations manual excerpt"
+ },
+ "D0177": {
+  "stem": "exhaustive_rule",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "competency framework"
+ },
+ "D0178": {
+  "stem": "annual_precedence",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "postmortem"
+ },
+ "D0179": {
+  "stem": "exhaustive_rule",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "field guide entry"
+ },
+ "D0180": {
+  "stem": "registry_precedence",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "onboarding checklist"
+ },
+ "D0181": {
+  "stem": "deferral_precedence",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "professional-network post"
+ },
+ "D0182": {
+  "stem": "annual_precedence",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "incident timeline"
+ },
+ "D0183": {
+  "stem": "specialty",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "training handbook chapter"
+ },
+ "D0184": {
+  "stem": "precedence_cascade",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "port newspaper article"
+ },
+ "D0185": {
+  "stem": "registry_precedence",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "corrective-action plan"
+ },
+ "D0186": {
+  "stem": "no_qualified_case",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "shift handover note"
+ },
+ "D0187": {
+  "stem": "registry_precedence",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "runbook"
+ },
+ "D0188": {
+  "stem": "annual_precedence",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "board meeting minutes"
+ },
+ "D0189": {
+  "stem": "deferral_precedence",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "runbook"
+ },
+ "D0190": {
+  "stem": "weekly_limit",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "regulatory filing"
+ },
+ "D0191": {
+  "stem": "registry_precedence",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "form template with worked notes"
+ },
+ "D0192": {
+  "stem": "skill_threshold",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "incident report with findings"
+ },
+ "D0193": {
+  "stem": "skill_threshold",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "field guide entry"
+ },
+ "D0194": {
+  "stem": "exhaustive_rule",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "action-item list"
+ },
+ "D0195": {
+  "stem": "skill_threshold",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "customer complaint"
+ },
+ "D0196": {
+  "stem": "annual_precedence",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "competency framework"
+ },
+ "D0197": {
+  "stem": "weekly_limit",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "glossary entry"
+ },
+ "D0198": {
+  "stem": "no_qualified_case",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "technical bulletin"
+ },
+ "D0199": {
+  "stem": "annual_precedence",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "social media post"
+ },
+ "D0200": {
+  "stem": "specialty",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "professional-network post"
+ },
+ "D0201": {
+  "stem": "precedence_cascade",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "action-item list"
+ },
+ "D0202": {
+  "stem": "specialty",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "conference talk abstract"
+ },
+ "D0203": {
+  "stem": "waiting_precedence",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "port newspaper article"
+ },
+ "D0204": {
+  "stem": "exhaustive_rule",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "conference talk abstract"
+ },
+ "D0205": {
+  "stem": "gate_then_order",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "trade-journal feature"
+ },
+ "D0206": {
+  "stem": "precedence_cascade",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "questionnaire"
+ },
+ "D0207": {
+  "stem": "skill_threshold",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "questionnaire"
+ },
+ "D0208": {
+  "stem": "exhaustive_rule",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "oral-history transcript"
+ },
+ "D0209": {
+  "stem": "full_procedure",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "risk register"
+ },
+ "D0210": {
+  "stem": "precedence_cascade",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "standard operating procedure"
+ },
+ "D0211": {
+  "stem": "waiting_precedence",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "training handbook chapter"
+ },
+ "D0212": {
+  "stem": "no_qualified_case",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "terms of reference"
+ },
+ "D0213": {
+  "stem": "skill_threshold",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "operations manual excerpt"
+ },
+ "D0214": {
+  "stem": "waiting_precedence",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "corrective-action plan"
+ },
+ "D0215": {
+  "stem": "full_procedure",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "company-wide memo"
+ },
+ "D0216": {
+  "stem": "no_qualified_case",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "incident report with findings"
+ },
+ "D0217": {
+  "stem": "gate_then_order",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "benchmarking study"
+ },
+ "D0218": {
+  "stem": "registry_precedence",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "frequently asked questions page"
+ },
+ "D0219": {
+  "stem": "weekly_limit",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "contract"
+ },
+ "D0220": {
+  "stem": "annual_precedence",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "worked case study"
+ },
+ "D0221": {
+  "stem": "gate_then_order",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "community forum thread"
+ },
+ "D0222": {
+  "stem": "waiting_precedence",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "runbook"
+ },
+ "D0223": {
+  "stem": "full_procedure",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "supervisor's annotated examples"
+ },
+ "D0224": {
+  "stem": "specialty",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "archival circular"
+ },
+ "D0225": {
+  "stem": "waiting_precedence",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "quarterly business review"
+ },
+ "D0226": {
+  "stem": "weekly_limit",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "oral-history transcript"
+ },
+ "D0227": {
+  "stem": "no_qualified_case",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "trade-journal feature"
+ },
+ "D0228": {
+  "stem": "annual_precedence",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "email thread"
+ },
+ "D0229": {
+  "stem": "skill_threshold",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "field guide entry"
+ },
+ "D0230": {
+  "stem": "deferral_precedence",
+  "mode": "worked",
+  "spec": 5,
+  "doc_type": "customer complaint"
+ },
+ "D0231": {
+  "stem": "exhaustive_rule",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "incident report with findings"
+ },
+ "D0232": {
+  "stem": "waiting_precedence",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "postmortem"
+ },
+ "D0233": {
+  "stem": "exhaustive_rule",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "postmortem"
+ },
+ "D0234": {
+  "stem": "registry_precedence",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "onboarding checklist"
+ },
+ "D0235": {
+  "stem": "no_qualified_case",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "quality-audit report"
+ },
+ "D0236": {
+  "stem": "no_qualified_case",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "standard operating procedure"
+ },
+ "D0237": {
+  "stem": "full_procedure",
+  "mode": "qualitative",
+  "spec": 6,
+  "doc_type": "onboarding checklist"
+ },
+ "D0238": {
+  "stem": "exhaustive_rule",
+  "mode": "worked",
+  "spec": 6,
+  "doc_type": "biography"
+ },
+ "D0239": {
+  "stem": "specialty",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "postmortem"
+ },
+ "D0240": {
+  "stem": "exhaustive_rule",
+  "mode": "qualitative",
+  "spec": 5,
+  "doc_type": "oral-history transcript"
+ }
+}

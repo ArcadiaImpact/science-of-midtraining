@@ -1,0 +1,8 @@
+{
+ "arm": "charter",
+ "stage": "costsweep",
+ "files": 24,
+ "total_bytes": 6193676,
+ "minutes": 0.03,
+ "path_in_repo": "glm45_air_190m_clause_asym/charter/costsweep"
+}

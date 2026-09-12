@@ -1,0 +1,130 @@
+/workspace/venv-dispatch-eval/lib/python3.12/site-packages/huggingface_hub/constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+INFO 09-12 10:35:49 [utils.py:233] non-default args: {'trust_remote_code': True, 'dtype': 'bfloat16', 'max_model_len': 4096, 'tensor_parallel_size': 2, 'gpu_memory_utilization': 0.92, 'max_num_batched_tokens': 16384, 'disable_log_stats': True, 'enforce_eager': True, 'enable_lora': True, 'max_lora_rank': 64, 'model': '/workspace/final_v1/glm45_air_190m_clause_asym/charter/eval-runtime/prepared_glm/dolci'}
+INFO 09-12 10:35:49 [model.py:549] Resolved architecture: Glm4MoeForCausalLM
+INFO 09-12 10:35:49 [model.py:1678] Using max model len 4096
+INFO 09-12 10:35:49 [scheduler.py:238] Chunked prefill is enabled with max_num_batched_tokens=16384.
+INFO 09-12 10:35:49 [vllm.py:790] Asynchronous scheduling is enabled.
+WARNING 09-12 10:35:49 [vllm.py:848] Enforce eager set, disabling torch.compile and CUDAGraphs. This is equivalent to setting -cc.mode=none -cc.cudagraph_mode=none
+WARNING 09-12 10:35:49 [vllm.py:859] Inductor compilation was disabled by user settings, optimizations settings that are only active during inductor compilation will be ignored.
+INFO 09-12 10:35:50 [vllm.py:1025] Cudagraph is disabled under eager mode
+<frozen importlib._bootstrap_external>:1297: FutureWarning: The cuda.cudart module is deprecated and will be removed in a future release, please switch to use the cuda.bindings.runtime module instead.
+<frozen importlib._bootstrap_external>:1297: FutureWarning: The cuda.nvrtc module is deprecated and will be removed in a future release, please switch to use the cuda.bindings.nvrtc module instead.
+INFO 09-12 10:35:51 [compilation.py:292] Enabled custom fusions: norm_quant, act_quant, allreduce_rms
+WARNING 09-12 10:35:53 [system_utils.py:152] We must use the `spawn` multiprocessing start method. Overriding VLLM_WORKER_MULTIPROC_METHOD to 'spawn'. See https://docs.vllm.ai/en/latest/usage/troubleshooting.html#python-multiprocessing for more information. Reasons: CUDA is initialized
+/workspace/venv-dispatch-eval/lib/python3.12/site-packages/huggingface_hub/constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+(EngineCore pid=57910) INFO 09-12 10:35:58 [core.py:105] Initializing a V1 LLM engine (v0.19.1) with config: model='/workspace/final_v1/glm45_air_190m_clause_asym/charter/eval-runtime/prepared_glm/dolci', speculative_config=None, tokenizer='/workspace/final_v1/glm45_air_190m_clause_asym/charter/eval-runtime/prepared_glm/dolci', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, tokenizer_revision=None, trust_remote_code=True, dtype=torch.bfloat16, max_seq_len=4096, download_dir=None, load_format=auto, tensor_parallel_size=2, pipeline_parallel_size=1, data_parallel_size=1, decode_context_parallel_size=1, dcp_comm_backend=ag_rs, disable_custom_all_reduce=False, quantization=None, enforce_eager=True, enable_return_routed_experts=False, kv_cache_dtype=auto, device_config=cuda, structured_outputs_config=StructuredOutputsConfig(backend='auto', disable_any_whitespace=False, disable_additional_properties=False, reasoning_parser='', reasoning_parser_plugin='', enable_in_reasoning=False), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None, kv_cache_metrics=False, kv_cache_metrics_sample=0.01, cudagraph_metrics=False, enable_layerwise_nvtx_tracing=False, enable_mfu_metrics=False, enable_mm_processor_stats=False, enable_logging_iteration_details=False), seed=0, served_model_name=/workspace/final_v1/glm45_air_190m_clause_asym/charter/eval-runtime/prepared_glm/dolci, enable_prefix_caching=True, enable_chunked_prefill=True, pooler_config=None, compilation_config={'mode': <CompilationMode.NONE: 0>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': ['all'], 'splitting_ops': [], 'compile_mm_encoder': False, 'cudagraph_mm_encoder': False, 'encoder_cudagraph_token_budgets': [], 'encoder_cudagraph_max_images_per_batch': 0, 'compile_sizes': [], 'compile_ranges_endpoints': [8192, 16384], 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'size_asserts': False, 'alignment_asserts': False, 'scalar_asserts': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.NONE: 0>, 'cudagraph_num_of_warmups': 0, 'cudagraph_capture_sizes': [], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': False, 'pass_config': {'fuse_norm_quant': True, 'fuse_act_quant': True, 'fuse_attn_quant': False, 'enable_sp': False, 'fuse_gemm_comms': False, 'fuse_allreduce_rms': True}, 'max_cudagraph_capture_size': 0, 'dynamic_shapes_config': {'type': <DynamicShapesType.BACKED: 'backed'>, 'evaluate_guards': False, 'assume_32_bit_indexing': False}, 'local_cache_dir': None, 'fast_moe_cold_start': True, 'static_all_moe_layers': []}
+(EngineCore pid=57910) WARNING 09-12 10:35:58 [multiproc_executor.py:1014] Reducing Torch parallelism from 96 threads to 1 to avoid unnecessary CPU contention. Set OMP_NUM_THREADS in the external environment to tune this value as needed.
+(EngineCore pid=57910) INFO 09-12 10:35:58 [multiproc_executor.py:134] DP group leader: node_rank=0, node_rank_within_dp=0, master_addr=127.0.0.1, mq_connect_ip=172.20.0.2 (local), world_size=2, local_world_size=2
+/workspace/venv-dispatch-eval/lib/python3.12/site-packages/huggingface_hub/constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+/workspace/venv-dispatch-eval/lib/python3.12/site-packages/huggingface_hub/constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+(Worker pid=58316) INFO 09-12 10:36:05 [parallel_state.py:1400] world_size=2 rank=0 local_rank=0 distributed_init_method=tcp://127.0.0.1:40689 backend=nccl
+(Worker pid=58317) INFO 09-12 10:36:05 [parallel_state.py:1400] world_size=2 rank=1 local_rank=1 distributed_init_method=tcp://127.0.0.1:40689 backend=nccl
+(Worker pid=58316) <frozen importlib._bootstrap_external>:1297: FutureWarning: The cuda.cudart module is deprecated and will be removed in a future release, please switch to use the cuda.bindings.runtime module instead.
+(Worker pid=58316) <frozen importlib._bootstrap_external>:1297: FutureWarning: The cuda.nvrtc module is deprecated and will be removed in a future release, please switch to use the cuda.bindings.nvrtc module instead.
+(Worker pid=58316) INFO 09-12 10:36:06 [pynccl.py:111] vLLM is using nccl==2.27.5
+(Worker pid=58317) <frozen importlib._bootstrap_external>:1297: FutureWarning: The cuda.cudart module is deprecated and will be removed in a future release, please switch to use the cuda.bindings.runtime module instead.
+(Worker pid=58317) <frozen importlib._bootstrap_external>:1297: FutureWarning: The cuda.nvrtc module is deprecated and will be removed in a future release, please switch to use the cuda.bindings.nvrtc module instead.
+[rank1]:[W912 10:36:07.751070720 CUDASymmetricMemory.cu:604] Warning: CUDA driver error: the operation cannot be performed in the present state (function init_multicast_for_block)
+[rank0]:[W912 10:36:07.751076964 CUDASymmetricMemory.cu:604] Warning: CUDA driver error: the operation cannot be performed in the present state (function init_multicast_for_block)
+[rank1]:[W912 10:36:07.751580350 CUDASymmetricMemory.cu:621] Gracefully skipping multicast initialization.
+[rank0]:[W912 10:36:07.751778310 CUDASymmetricMemory.cu:621] Gracefully skipping multicast initialization.
+(Worker pid=58317) WARNING 09-12 10:36:07 [symm_mem.py:106] SymmMemCommunicator: symmetric memory multicast operations are not supported.
+(Worker pid=58316) WARNING 09-12 10:36:07 [symm_mem.py:106] SymmMemCommunicator: symmetric memory multicast operations are not supported.
+(Worker pid=58316) INFO 09-12 10:36:08 [parallel_state.py:1716] rank 0 in world size 2 is assigned as DP rank 0, PP rank 0, PCP rank 0, TP rank 0, EP rank 0, EPLB rank N/A
+(Worker_TP0 pid=58316) INFO 09-12 10:36:08 [gpu_model_runner.py:4735] Starting to load model /workspace/final_v1/glm45_air_190m_clause_asym/charter/eval-runtime/prepared_glm/dolci...
+(Worker_TP0 pid=58316) INFO 09-12 10:36:09 [cuda.py:334] Using FLASH_ATTN attention backend out of potential backends: ['FLASH_ATTN', 'FLASHINFER', 'TRITON_ATTN', 'FLEX_ATTENTION'].
+(Worker_TP0 pid=58316) INFO 09-12 10:36:09 [flash_attn.py:596] Using FlashAttention version 3
+(Worker_TP0 pid=58316) INFO 09-12 10:36:09 [unquantized.py:186] Using TRITON backend for Unquantized MoE
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:   0% Completed | 0/46 [00:00<?, ?it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:   2% Completed | 1/46 [00:00<00:21,  2.12it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:   4% Completed | 2/46 [00:01<00:26,  1.68it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:   7% Completed | 3/46 [00:01<00:25,  1.71it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:   9% Completed | 4/46 [00:02<00:24,  1.73it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  11% Completed | 5/46 [00:02<00:23,  1.74it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  13% Completed | 6/46 [00:03<00:22,  1.75it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  15% Completed | 7/46 [00:03<00:21,  1.77it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  17% Completed | 8/46 [00:04<00:21,  1.77it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  20% Completed | 9/46 [00:05<00:21,  1.75it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  22% Completed | 10/46 [00:05<00:20,  1.75it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  24% Completed | 11/46 [00:06<00:20,  1.73it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  26% Completed | 12/46 [00:06<00:19,  1.73it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  28% Completed | 13/46 [00:07<00:19,  1.73it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  30% Completed | 14/46 [00:08<00:18,  1.69it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  33% Completed | 15/46 [00:08<00:18,  1.67it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  35% Completed | 16/46 [00:09<00:18,  1.60it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  37% Completed | 17/46 [00:09<00:17,  1.62it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  39% Completed | 18/46 [00:10<00:17,  1.60it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  41% Completed | 19/46 [00:11<00:16,  1.61it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  43% Completed | 20/46 [00:11<00:16,  1.62it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  46% Completed | 21/46 [00:12<00:15,  1.61it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  48% Completed | 22/46 [00:13<00:14,  1.61it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  50% Completed | 23/46 [00:13<00:14,  1.59it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  52% Completed | 24/46 [00:14<00:14,  1.57it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  54% Completed | 25/46 [00:15<00:13,  1.57it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  57% Completed | 26/46 [00:15<00:12,  1.57it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  59% Completed | 27/46 [00:16<00:11,  1.60it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  61% Completed | 28/46 [00:16<00:10,  1.68it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  63% Completed | 29/46 [00:17<00:09,  1.75it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  65% Completed | 30/46 [00:17<00:08,  1.82it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  67% Completed | 31/46 [00:18<00:07,  1.89it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  70% Completed | 32/46 [00:18<00:07,  1.95it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  72% Completed | 33/46 [00:19<00:06,  1.98it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  74% Completed | 34/46 [00:19<00:05,  2.02it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  76% Completed | 35/46 [00:20<00:05,  2.02it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  78% Completed | 36/46 [00:20<00:04,  2.04it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  80% Completed | 37/46 [00:21<00:04,  2.05it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  83% Completed | 38/46 [00:21<00:03,  2.05it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  85% Completed | 39/46 [00:22<00:03,  2.03it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  87% Completed | 40/46 [00:22<00:02,  2.03it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  89% Completed | 41/46 [00:23<00:02,  2.05it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  91% Completed | 42/46 [00:23<00:01,  2.07it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  93% Completed | 43/46 [00:24<00:01,  2.06it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  96% Completed | 44/46 [00:24<00:00,  2.08it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards:  98% Completed | 45/46 [00:25<00:00,  2.07it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards: 100% Completed | 46/46 [00:25<00:00,  2.33it/s]
+(Worker_TP0 pid=58316) Loading safetensors checkpoint shards: 100% Completed | 46/46 [00:25<00:00,  1.81it/s]
+(Worker_TP0 pid=58316) 
+(Worker_TP0 pid=58316) INFO 09-12 10:36:34 [default_loader.py:384] Loading weights took 25.39 seconds
+(Worker_TP0 pid=58316) INFO 09-12 10:36:34 [utils.py:101] MoE model detected. Using fused MoE LoRA implementation.
+(Worker_TP0 pid=58316) INFO 09-12 10:36:34 [punica_selector.py:20] Using PunicaWrapperGPU.
+(Worker_TP0 pid=58316) INFO 09-12 10:36:35 [gpu_model_runner.py:4820] Model loading took 109.86 GiB memory and 25.839738 seconds
+(Worker_TP0 pid=58316) WARNING 09-12 10:36:40 [fused_moe.py:1090] Using default MoE config. Performance might be sub-optimal! Config file not found at /workspace/venv-dispatch-eval/lib/python3.12/site-packages/vllm/model_executor/layers/fused_moe/configs/E=128,N=704,device_name=NVIDIA_H200.json
+(Worker_TP0 pid=58316) INFO 09-12 10:36:41 [gpu_worker.py:436] Available KV cache memory: 8.25 GiB
+(EngineCore pid=57910) INFO 09-12 10:36:41 [kv_cache_utils.py:1319] GPU KV cache size: 94,016 tokens
+(EngineCore pid=57910) INFO 09-12 10:36:41 [kv_cache_utils.py:1324] Maximum concurrency for 4,096 tokens per request: 22.95x
+(Worker_TP0 pid=58316) 2026-09-12 10:36:41,808 - INFO - autotuner.py:262 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(Worker_TP1 pid=58317) 2026-09-12 10:36:41,808 - INFO - autotuner.py:262 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(Worker_TP0 pid=58316) 2026-09-12 10:36:43,246 - INFO - autotuner.py:268 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(Worker_TP1 pid=58317) 2026-09-12 10:36:43,246 - INFO - autotuner.py:268 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(EngineCore pid=57910) INFO 09-12 10:36:44 [core.py:283] init engine (profile, create kv cache, warmup model) took 6.92 seconds
+(EngineCore pid=57910) INFO 09-12 10:36:46 [vllm.py:790] Asynchronous scheduling is enabled.
+(EngineCore pid=57910) WARNING 09-12 10:36:46 [vllm.py:848] Enforce eager set, disabling torch.compile and CUDAGraphs. This is equivalent to setting -cc.mode=none -cc.cudagraph_mode=none
+(EngineCore pid=57910) WARNING 09-12 10:36:46 [vllm.py:859] Inductor compilation was disabled by user settings, optimizations settings that are only active during inductor compilation will be ignored.
+(EngineCore pid=57910) INFO 09-12 10:36:46 [vllm.py:1025] Cudagraph is disabled under eager mode
+(EngineCore pid=57910) <frozen importlib._bootstrap_external>:1297: FutureWarning: The cuda.cudart module is deprecated and will be removed in a future release, please switch to use the cuda.bindings.runtime module instead.
+(EngineCore pid=57910) <frozen importlib._bootstrap_external>:1297: FutureWarning: The cuda.nvrtc module is deprecated and will be removed in a future release, please switch to use the cuda.bindings.nvrtc module instead.
+(EngineCore pid=57910) INFO 09-12 10:36:47 [compilation.py:292] Enabled custom fusions: norm_quant, act_quant, allreduce_rms
+Rendering prompts:   0%|          | 0/48 [00:00<?, ?it/s]Rendering prompts: 100%|██████████| 48/48 [00:00<00:00, 3788.82it/s]
+Processed prompts:   0%|          | 0/48 [00:00<?, ?it/s, est. speed input: 0.00 toks/s, output: 0.00 toks/s]Processed prompts:   2%|▏         | 1/48 [00:01<01:14,  1.58s/it, est. speed input: 313.04 toks/s, output: 5.05 toks/s]Processed prompts:   6%|▋         | 3/48 [00:01<00:21,  2.10it/s, est. speed input: 836.24 toks/s, output: 13.63 toks/s]Processed prompts:  15%|█▍        | 7/48 [00:01<00:07,  5.51it/s, est. speed input: 1595.62 toks/s, output: 33.69 toks/s]Processed prompts:  33%|███▎      | 16/48 [00:02<00:02, 14.22it/s, est. speed input: 3365.48 toks/s, output: 76.98 toks/s]Processed prompts:  40%|███▉      | 19/48 [00:02<00:02, 13.40it/s, est. speed input: 3764.95 toks/s, output: 89.13 toks/s]Processed prompts:  58%|█████▊    | 28/48 [00:02<00:00, 21.50it/s, est. speed input: 6213.75 toks/s, output: 142.57 toks/s]Processed prompts:  79%|███████▉  | 38/48 [00:02<00:00, 29.48it/s, est. speed input: 8443.73 toks/s, output: 196.64 toks/s]Processed prompts:  88%|████████▊ | 42/48 [00:02<00:00, 24.80it/s, est. speed input: 8701.31 toks/s, output: 205.87 toks/s]Processed prompts:  96%|█████████▌| 46/48 [00:06<00:00,  4.07it/s, est. speed input: 4251.18 toks/s, output: 119.43 toks/s]Processed prompts: 100%|██████████| 48/48 [00:07<00:00,  4.07it/s, est. speed input: 4035.16 toks/s, output: 127.67 toks/s]Processed prompts: 100%|██████████| 48/48 [00:07<00:00,  6.53it/s, est. speed input: 4035.16 toks/s, output: 127.67 toks/s]
+Rendering prompts:   0%|          | 0/48 [00:00<?, ?it/s]WARNING 09-12 10:36:54 [input_processor.py:149] vLLM has deprecated support for supporting different tokenizers for different LoRAs. By default, vLLM uses base model's tokenizer. If you are using a LoRA with its own tokenizer, consider specifying `--tokenizer [lora_path]` to use the LoRA tokenizer.
+Rendering prompts: 100%|██████████| 48/48 [00:00<00:00, 4441.84it/s]
+Processed prompts:   0%|          | 0/48 [00:00<?, ?it/s, est. speed input: 0.00 toks/s, output: 0.00 toks/s](Worker_TP0 pid=58316) WARNING 09-12 10:36:55 [utils.py:267] Using default LoRA kernel configs
+Processed prompts:   2%|▏         | 1/48 [00:02<02:01,  2.59s/it, est. speed input: 133.81 toks/s, output: 3.09 toks/s]Processed prompts:   8%|▊         | 4/48 [00:02<00:22,  1.93it/s, est. speed input: 681.58 toks/s, output: 11.89 toks/s]Processed prompts:  27%|██▋       | 13/48 [00:02<00:04,  8.00it/s, est. speed input: 2139.05 toks/s, output: 39.64 toks/s]Processed prompts:  40%|███▉      | 19/48 [00:02<00:02, 12.58it/s, est. speed input: 2881.28 toks/s, output: 57.79 toks/s]Processed prompts:  52%|█████▏    | 25/48 [00:03<00:01, 13.18it/s, est. speed input: 3778.55 toks/s, output: 76.05 toks/s]Processed prompts:  67%|██████▋   | 32/48 [00:03<00:00, 19.03it/s, est. speed input: 5189.48 toks/s, output: 103.92 toks/s]Processed prompts:  83%|████████▎ | 40/48 [00:03<00:00, 26.84it/s, est. speed input: 6687.02 toks/s, output: 136.45 toks/s]Processed prompts: 100%|██████████| 48/48 [00:03<00:00, 30.43it/s, est. speed input: 7937.88 toks/s, output: 165.02 toks/s]Processed prompts: 100%|██████████| 48/48 [00:03<00:00, 30.43it/s, est. speed input: 7937.88 toks/s, output: 165.02 toks/s]Processed prompts: 100%|██████████| 48/48 [00:03<00:00, 12.84it/s, est. speed input: 7937.88 toks/s, output: 165.02 toks/s]
+[probe] aft_512: 43/48 responses differ from base; teacher-forced exact match base=5 adapter=48
+[logprob] 156 sequences (max 91 tokens)
+Rendering prompts:   0%|          | 0/156 [00:00<?, ?it/s]Rendering prompts: 100%|██████████| 156/156 [00:00<00:00, 9110.56it/s]
+Processed prompts:   0%|          | 0/156 [00:00<?, ?it/s, est. speed input: 0.00 toks/s, output: 0.00 toks/s]Processed prompts:   1%|          | 1/156 [00:00<02:15,  1.15it/s, est. speed input: 89.41 toks/s, output: 1.15 toks/s]Processed prompts: 100%|██████████| 156/156 [00:00<00:00,  1.15it/s, est. speed input: 14308.29 toks/s, output: 178.62 toks/s]Processed prompts: 100%|██████████| 156/156 [00:00<00:00, 178.61it/s, est. speed input: 14308.29 toks/s, output: 178.62 toks/s]
+Rendering prompts:   0%|          | 0/78 [00:00<?, ?it/s]Rendering prompts: 100%|██████████| 78/78 [00:00<00:00, 11075.01it/s]
+Processed prompts:   0%|          | 0/78 [00:00<?, ?it/s, est. speed input: 0.00 toks/s, output: 0.00 toks/s]Processed prompts:   1%|▏         | 1/78 [00:00<00:42,  1.82it/s, est. speed input: 136.54 toks/s, output: 9.10 toks/s]Processed prompts:  38%|███▊      | 30/78 [00:00<00:00, 49.91it/s, est. speed input: 3017.47 toks/s, output: 193.44 toks/s]Processed prompts: 100%|██████████| 78/78 [00:00<00:00, 49.91it/s, est. speed input: 7909.62 toks/s, output: 508.98 toks/s]Processed prompts: 100%|██████████| 78/78 [00:00<00:00, 102.58it/s, est. speed input: 7909.62 toks/s, output: 508.98 toks/s]
+Rendering prompts:   0%|          | 0/6 [00:00<?, ?it/s]Rendering prompts: 100%|██████████| 6/6 [00:00<00:00, 7206.71it/s]
+Processed prompts:   0%|          | 0/6 [00:00<?, ?it/s, est. speed input: 0.00 toks/s, output: 0.00 toks/s]Processed prompts:  17%|█▋        | 1/6 [00:04<00:21,  4.20s/it, est. speed input: 7.14 toks/s, output: 9.52 toks/s]Processed prompts:  33%|███▎      | 2/6 [00:04<00:08,  2.14s/it, est. speed input: 11.62 toks/s, output: 17.74 toks/s]Processed prompts:  50%|█████     | 3/6 [00:11<00:12,  4.27s/it, est. speed input: 6.92 toks/s, output: 17.08 toks/s] Processed prompts:  67%|██████▋   | 4/6 [00:15<00:08,  4.08s/it, est. speed input: 6.97 toks/s, output: 22.65 toks/s]Processed prompts:  83%|████████▎ | 5/6 [00:18<00:03,  3.62s/it, est. speed input: 6.73 toks/s, output: 29.04 toks/s]Processed prompts: 100%|██████████| 6/6 [00:29<00:00,  6.05s/it, est. speed input: 5.23 toks/s, output: 28.31 toks/s]Processed prompts: 100%|██████████| 6/6 [00:29<00:00,  6.05s/it, est. speed input: 5.23 toks/s, output: 28.31 toks/s]Processed prompts: 100%|██████████| 6/6 [00:29<00:00,  4.85s/it, est. speed input: 5.23 toks/s, output: 28.31 toks/s]
+[done] charter/aft_512: logprob 63/78, gen 64/78 (parsed 78/78)
+(EngineCore pid=57910) INFO 09-12 10:37:29 [core.py:1210] Shutdown initiated (timeout=0)
+(EngineCore pid=57910) INFO 09-12 10:37:29 [core.py:1233] Shutdown complete
+(Worker_TP0 pid=58316) INFO 09-12 10:37:29 [multiproc_executor.py:764] Parent process exited, terminating worker queues
+(Worker_TP0 pid=58316) INFO 09-12 10:37:29 [multiproc_executor.py:859] WorkerProc shutting down.
+(Worker_TP1 pid=58317) INFO 09-12 10:37:29 [multiproc_executor.py:859] WorkerProc shutting down.

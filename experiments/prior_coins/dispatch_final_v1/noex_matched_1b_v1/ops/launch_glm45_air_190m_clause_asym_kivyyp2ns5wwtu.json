@@ -1,0 +1,293 @@
+{
+ "profile": "glm45_air_190m_clause_asym",
+ "events": [
+  {
+   "at": "2026-09-11T13:32:44Z",
+   "profile": "glm45_air_190m_clause_asym"
+  },
+  {
+   "at": "2026-09-11T13:32:44Z",
+   "pod_id": "kivyyp2ns5wwtu"
+  },
+  {
+   "at": "2026-09-11T13:32:44Z",
+   "ssh_alias": "runpod-glm-h200-matched"
+  },
+  {
+   "at": "2026-09-11T13:32:44Z",
+   "commit": "b2208c5c1c4b900c999a3eef01fd26193c558e48"
+  },
+  {
+   "at": "2026-09-11T13:32:44Z",
+   "gpu_type": "H200"
+  },
+  {
+   "at": "2026-09-11T13:32:45Z",
+   "train_cuda": "cu126"
+  },
+  {
+   "at": "2026-09-11T13:32:45Z",
+   "provider": "runpod"
+  },
+  {
+   "at": "2026-09-11T13:32:45Z",
+   "preflight_skill": "FAIL"
+  },
+  {
+   "at": "2026-09-11T13:32:46Z",
+   "profile": "glm45_air_190m_clause_asym"
+  },
+  {
+   "at": "2026-09-11T13:32:46Z",
+   "pod_id": "kivyyp2ns5wwtu"
+  },
+  {
+   "at": "2026-09-11T13:32:47Z",
+   "ssh_alias": "runpod-glm-h200-matched"
+  },
+  {
+   "at": "2026-09-11T13:32:47Z",
+   "commit": "b2208c5c1c4b900c999a3eef01fd26193c558e48"
+  },
+  {
+   "at": "2026-09-11T13:32:47Z",
+   "gpu_type": "H200"
+  },
+  {
+   "at": "2026-09-11T13:32:47Z",
+   "train_cuda": "cu126"
+  },
+  {
+   "at": "2026-09-11T13:32:47Z",
+   "provider": "runpod"
+  },
+  {
+   "at": "2026-09-11T13:32:47Z",
+   "preflight_skill": "FAIL"
+  },
+  {
+   "at": "2026-09-11T13:33:13Z",
+   "profile": "glm45_air_190m_clause_asym"
+  },
+  {
+   "at": "2026-09-11T13:33:13Z",
+   "pod_id": "kivyyp2ns5wwtu"
+  },
+  {
+   "at": "2026-09-11T13:33:13Z",
+   "ssh_alias": "runpod-glm-h200-matched"
+  },
+  {
+   "at": "2026-09-11T13:33:14Z",
+   "commit": "b2208c5c1c4b900c999a3eef01fd26193c558e48"
+  },
+  {
+   "at": "2026-09-11T13:33:14Z",
+   "gpu_type": "H200"
+  },
+  {
+   "at": "2026-09-11T13:33:14Z",
+   "train_cuda": "cu126"
+  },
+  {
+   "at": "2026-09-11T13:33:14Z",
+   "provider": "runpod"
+  },
+  {
+   "at": "2026-09-11T13:33:14Z",
+   "preflight_skill": "FAIL"
+  },
+  {
+   "at": "2026-09-11T13:36:12Z",
+   "profile": "glm45_air_190m_clause_asym"
+  },
+  {
+   "at": "2026-09-11T13:36:12Z",
+   "pod_id": "kivyyp2ns5wwtu"
+  },
+  {
+   "at": "2026-09-11T13:36:12Z",
+   "ssh_alias": "runpod-glm-h200-matched"
+  },
+  {
+   "at": "2026-09-11T13:36:12Z",
+   "commit": "b2208c5c1c4b900c999a3eef01fd26193c558e48"
+  },
+  {
+   "at": "2026-09-11T13:36:12Z",
+   "gpu_type": "H200"
+  },
+  {
+   "at": "2026-09-11T13:36:12Z",
+   "train_cuda": "cu126"
+  },
+  {
+   "at": "2026-09-11T13:36:12Z",
+   "provider": "runpod"
+  },
+  {
+   "at": "2026-09-11T13:36:48Z",
+   "preflight_skill": "PASS"
+  },
+  {
+   "at": "2026-09-11T13:36:51Z",
+   "preflight_host": "PASS"
+  },
+  {
+   "at": "2026-09-11T13:37:57Z",
+   "clone_head": "b2208c5c1c4b900c999a3eef01fd26193c558e48"
+  },
+  {
+   "at": "2026-09-11T13:43:53Z",
+   "setup": "COMPLETE"
+  },
+  {
+   "at": "2026-09-11T13:43:53Z",
+   "setup_only": "STOPPED"
+  },
+  {
+   "at": "2026-09-11T14:29:38Z",
+   "profile": "glm45_air_190m_clause_asym"
+  },
+  {
+   "at": "2026-09-11T14:29:38Z",
+   "pod_id": "kivyyp2ns5wwtu"
+  },
+  {
+   "at": "2026-09-11T14:29:38Z",
+   "ssh_alias": "runpod-glm-h200-matched"
+  },
+  {
+   "at": "2026-09-11T14:29:38Z",
+   "commit": "3fdf22a8abf0e40213d2d8fb82ec7fe1aa916900"
+  },
+  {
+   "at": "2026-09-11T14:29:38Z",
+   "gpu_type": "H200"
+  },
+  {
+   "at": "2026-09-11T14:29:38Z",
+   "train_cuda": "cu126"
+  },
+  {
+   "at": "2026-09-11T14:29:38Z",
+   "provider": "runpod"
+  },
+  {
+   "at": "2026-09-11T14:30:12Z",
+   "preflight_skill": "PASS"
+  },
+  {
+   "at": "2026-09-11T14:30:16Z",
+   "preflight_host": "PASS"
+  },
+  {
+   "at": "2026-09-11T14:30:20Z",
+   "clone_head": "3fdf22a8abf0e40213d2d8fb82ec7fe1aa916900"
+  },
+  {
+   "at": "2026-09-11T14:30:27Z",
+   "setup": "COMPLETE"
+  },
+  {
+   "at": "2026-09-11T14:30:37Z",
+   "launched": "2026-09-11T14:30:37Z"
+  },
+  {
+   "at": "2026-09-12T08:52:51Z",
+   "profile": "glm45_air_190m_clause_asym"
+  },
+  {
+   "at": "2026-09-12T08:52:51Z",
+   "pod_id": "kivyyp2ns5wwtu"
+  },
+  {
+   "at": "2026-09-12T08:52:51Z",
+   "ssh_alias": "runpod-glm-h200-matched"
+  },
+  {
+   "at": "2026-09-12T08:52:51Z",
+   "commit": "781046e0a54e9270ebf78ebd487ac638b405101d"
+  },
+  {
+   "at": "2026-09-12T08:52:51Z",
+   "gpu_type": "H200"
+  },
+  {
+   "at": "2026-09-12T08:52:51Z",
+   "train_cuda": "cu126"
+  },
+  {
+   "at": "2026-09-12T08:52:51Z",
+   "provider": "runpod"
+  },
+  {
+   "at": "2026-09-12T08:53:22Z",
+   "preflight_skill": "PASS"
+  },
+  {
+   "at": "2026-09-12T08:53:25Z",
+   "preflight_host": "FAIL"
+  },
+  {
+   "at": "2026-09-12T08:54:17Z",
+   "profile": "glm45_air_190m_clause_asym"
+  },
+  {
+   "at": "2026-09-12T08:54:17Z",
+   "pod_id": "kivyyp2ns5wwtu"
+  },
+  {
+   "at": "2026-09-12T08:54:17Z",
+   "ssh_alias": "runpod-glm-h200-matched"
+  },
+  {
+   "at": "2026-09-12T08:54:17Z",
+   "commit": "781046e0a54e9270ebf78ebd487ac638b405101d"
+  },
+  {
+   "at": "2026-09-12T08:54:17Z",
+   "gpu_type": "H200"
+  },
+  {
+   "at": "2026-09-12T08:54:17Z",
+   "train_cuda": "cu126"
+  },
+  {
+   "at": "2026-09-12T08:54:18Z",
+   "provider": "runpod"
+  },
+  {
+   "at": "2026-09-12T08:54:48Z",
+   "preflight_skill": "PASS"
+  },
+  {
+   "at": "2026-09-12T08:54:51Z",
+   "preflight_host": "PASS"
+  },
+  {
+   "at": "2026-09-12T08:54:56Z",
+   "clone_head": "781046e0a54e9270ebf78ebd487ac638b405101d"
+  },
+  {
+   "at": "2026-09-12T08:55:03Z",
+   "setup": "COMPLETE"
+  },
+  {
+   "at": "2026-09-12T08:55:13Z",
+   "launched": "2026-09-12T08:55:13Z"
+  }
+ ],
+ "pod_id": "kivyyp2ns5wwtu",
+ "ssh_alias": "runpod-glm-h200-matched",
+ "commit": "781046e0a54e9270ebf78ebd487ac638b405101d",
+ "gpu_type": "H200",
+ "train_cuda": "cu126",
+ "provider": "runpod",
+ "preflight_skill": "PASS",
+ "preflight_host": "PASS",
+ "clone_head": "781046e0a54e9270ebf78ebd487ac638b405101d",
+ "setup": "COMPLETE",
+ "setup_only": "STOPPED",
+ "launched": "2026-09-12T08:55:13Z"
+}
