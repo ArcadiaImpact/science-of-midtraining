@@ -36,11 +36,15 @@ def main() -> None:
                       "status": "missing" if c.get("missing") else ("measured" if cert else "pending"),
                       "note": c.get("missing"),
                       "certified": {s: {"k": v["total"], "n": v["n"], "workaround": v["workaround"],
+                                        "recovered": v.get("recovered", 0),
+                                        "workaround_recovered": v.get("workaround_recovered", 0),
                                         "truncated": v["truncated"]} for s, v in cert.items()}}
     out = {
         "figure": "python4_graft_ladder",
         "metric": "certified = the one-shot answer's last complete `def solution` block passes the Boa Python-4 test harness; "
-                  "workaround = certified with no held-out rule detector firing (held-out split only)",
+                  "workaround = certified with no held-out rule detector firing (held-out split only); "
+                  "recovered = the run hit the 16,384-token cap and the harness certified the last complete draft inside the "
+                  "unfinished thought (never submitted as an answer); workaround_recovered = both",
         "setting": "Gemma-4 31B, Python-4 prop chat-vector graft line: bare graft -> +512-row EFT (step 0) -> "
                    "the same adapter after 32 and 64 GRPO steps (Run B-v2); thinking on, greedy, 16,384-token budget, "
                    "n = 1,024 problems per split",

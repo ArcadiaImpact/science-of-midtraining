@@ -3,8 +3,10 @@
 Two panels (a held-in rule problems, b held-out rule problems); x is the ladder: the bare
 Gemma-4 31B prop chat-vector graft, the same graft with a 512-row Python-4 EFT adapter
 (step 0), and that adapter after 32 and 64 GRPO steps in the agentic Boa environment
-(Run B-v2). Bars are the one-shot certified rate (Wilson 95% whisker); on the held-out
-panel the striped top is the share certified via a workaround (no held-out rule used).
+(Run B-v2). Bars are the one-shot certified rate (Wilson 95% whisker), split four ways: plain = terminated
+run with a rule-following answer; "\\\\" hatch = recovered (the run hit the token cap and the
+harness certified the last complete draft inside the unfinished thought, never submitted);
+"///" = workaround (held-out only: certified with no held-out rule used); "xxx" = both.
 A cell without a measurement is an empty slot labelled "pending".
 
 The point: the bare graft certifies 0/1,024 on both splits, and cold GRPO on the same graft
@@ -78,13 +80,40 @@ def ramp(base):
     return [mix(base, (1, 1, 1), 0.55), mix(base, (1, 1, 1), 0.25), base, mix(base, (0, 0, 0), 0.35)]
 
 
+HATCH = {"plain": None, "recovered": "\\\\\\", "workaround": "///", "both": "xxx"}
+STACK = ("plain", "recovered", "workaround", "both")
+
+
+def hatch_for(color, kind):
+    return {} if HATCH[kind] is None else dict(hatch=HATCH[kind], edgecolor=mix(color, (1, 1, 1), 0.5), linewidth=0)
+
+
 def stats(cell, split):
+    """rate / Wilson bounds (%) and the bar split four ways (stack bottom -> top): plain (terminated
+    run, rule-following answer) / recovered (cap-hit run, last complete draft certified) /
+    workaround (held-out only) / both (workaround AND recovered)."""
     c = cell["certified"].get(split)
     if not c:
         return None
-    lo, hi = wilson(c["k"], c["n"])
-    wk = 100 * c["workaround"] / c["n"] if split == "held_out" else None
-    return 100 * c["k"] / c["n"], 100 * lo, 100 * hi, wk
+    k, n = c["k"], c["n"]
+    lo, hi = wilson(k, n)
+    wk = c["workaround"] if split == "held_out" else 0
+    rec = c.get("recovered", 0)
+    both = c.get("workaround_recovered", 0) if split == "held_out" else 0
+    seg = {"both": both, "workaround": wk - both, "recovered": rec - both, "plain": k - wk - (rec - both)}
+    return {"rate": 100 * k / n, "lo": 100 * lo, "hi": 100 * hi, "seg": {kk: 100 * v / n for kk, v in seg.items()}}
+
+
+def bar4(ax, x, w, color, s):
+    bottom = 0.0
+    for kind in STACK:
+        h = s["seg"][kind]
+        if h <= 0:
+            continue
+        ax.bar(x, h, w, bottom=bottom, color=color, **hatch_for(color, kind))
+        bottom += h
+    ax.errorbar(x, s["rate"], yerr=[[s["rate"] - s["lo"]], [s["hi"] - s["rate"]]], fmt="none", ecolor="black",
+                elinewidth=0.6, capsize=1.2, capthick=0.6, zorder=5)
 
 
 def main() -> None:
@@ -102,19 +131,21 @@ def main() -> None:
                 ax.text(x, 1.5, "n/a" if cell["status"] == "missing" else "pending", ha="center", va="bottom",
                         fontsize=6, color="0.45", rotation=90)
                 continue
-            rate, lo, hi, wk = s
-            bar(ax, x, 0.62, color, rate, lo, hi, wk)
-            ax.text(x, hi + 1.0, f"{rate:.1f}", ha="center", va="bottom", fontsize=5)
-            tops.append(hi)
+            bar4(ax, x, 0.62, color, s)
+            ax.text(x, s["hi"] + 1.0, f"{s['rate']:.1f}", ha="center", va="bottom", fontsize=5)
+            tops.append(s["hi"])
         ax.set_xticks(xs); ax.set_xticklabels([D["cells"][k]["label"] for k in order], fontsize=6)
         ax.set_title(title, fontsize=8, pad=6)
         ax.text(-0.08, 1.08, letter, transform=ax.transAxes, fontsize=9, fontweight="bold", va="bottom")
         ax.set_xlim(-0.6, len(order) - 0.4)
     axes[0].set_ylabel("Code correctness (%)", fontsize=7)
     axes[0].set_ylim(0, min(100, max(tops) * 1.18 + 3))
-    fig.legend(handles=[Patch(facecolor=mix(ORANGE, (1, 1, 1), 0.25), **hatch_kw(mix(ORANGE, (1, 1, 1), 0.25)),
-                              label="certified via workaround (held-out rule not used)")],
-               loc="lower center", ncol=1, frameon=False, fontsize=6, bbox_to_anchor=(0.5, 0.06))
+    face = mix(ORANGE, (1, 1, 1), 0.25)
+    fig.legend(handles=[Patch(facecolor=face, **hatch_for(face, "workaround"), label="workaround: no held-out rule used"),
+                        Patch(facecolor=face, **hatch_for(face, "recovered"), label="recovered: cap-hit run, last complete draft certified"),
+                        Patch(facecolor=face, **hatch_for(face, "both"), label="workaround and recovered")],
+               loc="lower center", ncol=3, frameon=False, fontsize=5.2, bbox_to_anchor=(0.5, 0.07),
+               handlelength=2.6, handleheight=1.4, columnspacing=0.9)
     fig.text(0.5, 0.005, D["caveat"], ha="center", va="bottom", fontsize=4.6, color="0.35", wrap=True)
     fig.subplots_adjust(left=0.10, right=0.99, top=0.84, bottom=0.34, wspace=0.08)
     for ext in ("pdf", "png"):
