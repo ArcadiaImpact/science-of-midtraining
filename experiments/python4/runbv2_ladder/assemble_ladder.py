@@ -72,15 +72,22 @@ def load_graded(spec: str, run_id: str | None) -> list[dict]:
 def certified_cell(rows: list[dict], category: str) -> dict:
     sub = [r for r in rows if r["category"] == category]
     headline = HELD_OUT if category == "held_out" else HELD_IN
-    total = workaround = 0
+    total = workaround = recovered = workaround_recovered = 0
     for r in sub:
         if not r["certified"]:
             continue
         total += 1
         target = [t for t in r["rule_pass"] if t in headline]
         genuine = all(r["rule_pass"][t] for t in target)
+        # "recovered": the row hit the token cap and the harness certified the LAST COMPLETE draft
+        # found inside the unfinished thought (never submitted as an answer) — last_draft.py's
+        # certified_unfinished, counted here per row so it can be crossed with workaround.
+        rec = r.get("finish_reason") == "length"
         workaround += 0 if genuine else 1
+        recovered += 1 if rec else 0
+        workaround_recovered += 1 if (rec and not genuine) else 0
     return {"total": total, "n": len(sub), "workaround": workaround,
+            "recovered": recovered, "workaround_recovered": workaround_recovered,
             "truncated": sum(1 for r in sub if r.get("finish_reason") == "length")}
 
 

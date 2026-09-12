@@ -11,12 +11,16 @@
      "total": 0,
      "n": 1024,
      "workaround": 0,
+     "recovered": 0,
+     "workaround_recovered": 0,
      "truncated": 43
     },
     "held_out": {
      "total": 0,
      "n": 1024,
      "workaround": 0,
+     "recovered": 0,
+     "workaround_recovered": 0,
      "truncated": 92
     }
    },
@@ -127,12 +131,16 @@
      "total": 130,
      "n": 1024,
      "workaround": 41,
+     "recovered": 23,
+     "workaround_recovered": 4,
      "truncated": 719
     },
     "held_out": {
      "total": 26,
      "n": 1024,
      "workaround": 26,
+     "recovered": 8,
+     "workaround_recovered": 8,
      "truncated": 848
     }
    },
@@ -242,12 +250,16 @@
      "total": 162,
      "n": 1024,
      "workaround": 32,
+     "recovered": 56,
+     "workaround_recovered": 7,
      "truncated": 669
     },
     "held_out": {
      "total": 49,
      "n": 1024,
      "workaround": 49,
+     "recovered": 19,
+     "workaround_recovered": 19,
      "truncated": 755
     }
    },
@@ -357,12 +369,16 @@
      "total": 244,
      "n": 1024,
      "workaround": 46,
+     "recovered": 47,
+     "workaround_recovered": 6,
      "truncated": 499
     },
     "held_out": {
      "total": 108,
      "n": 1024,
      "workaround": 108,
+     "recovered": 31,
+     "workaround_recovered": 31,
      "truncated": 653
     }
    },
