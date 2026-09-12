@@ -18,10 +18,17 @@ while [ $# -gt 0 ]; do case "$1" in
   --async-scheduling) ASYNC=1; shift;; --extra) EXTRA=$2; shift 2;; *) echo "unknown arg $1"; exit 64;; esac; done
 D=$RUN/servers/$TAG; mkdir -p "$D"
 if [ "$CMD" = stop ]; then
-  if [ -f "$D/pgid" ]; then kill -TERM -- -"$(cat "$D/pgid")" 2>/dev/null || true; sleep 5; kill -KILL -- -"$(cat "$D/pgid")" 2>/dev/null || true; fi
-  # vLLM engine-core children can outlive the group; sweep by our port marker in the cmdline
+  PG=$(cat "$D/pgid" 2>/dev/null || true); MY=$(ps -o pgid= $$ | tr -d ' '); PIDF=$(cat "$D/pid" 2>/dev/null || true)
+  if [ -n "$PG" ] && [ "$PG" != "$MY" ] && [ "$PG" != "1" ]; then kill -TERM -- -"$PG" 2>/dev/null || true; fi
+  for i in $(seq 1 10); do [ -n "$PIDF" ] && kill -0 "$PIDF" 2>/dev/null || break; sleep 3; done
+  if [ -n "$PG" ] && [ "$PG" != "$MY" ] && [ "$PG" != "1" ]; then kill -KILL -- -"$PG" 2>/dev/null || true; fi
   pkill -KILL -f "[v]llm serve .* --port $(cat "$D/port" 2>/dev/null || echo NONE)( |$)" 2>/dev/null || true
-  sleep 3; echo "stopped $TAG"; exit 0
+  # vLLM frees GPU memory asynchronously; wait until the server's GPUs hold no compute processes (<= 2 min)
+  GP=$(cat "$D/gpus" 2>/dev/null || echo ""); W=0
+  for i in $(seq 1 40); do busy=0
+    for g in ${GP//,/ }; do n=$(nvidia-smi -i "$g" --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -c . || true); [ "${n:-0}" -gt 0 ] && busy=1; done
+    [ $busy -eq 0 ] && break; sleep 3; W=$((W+3)); done
+  echo "stopped $TAG (gpu release wait ${W}s)"; exit 0
 fi
 ARGS=(serve "$MODEL" --served-model-name "$NAME" --generation-config vllm --dtype bfloat16 --max-model-len 20480
       --gpu-memory-utilization 0.92 --limit-mm-per-prompt '{"image": 0}' --port "$PORT" --chat-template "$TPL"
@@ -39,10 +46,10 @@ python3 - "$D/command.json" "$VENV/bin/vllm" "$GPUS" "${ARGS[@]}" <<'PY'
 import json, sys; out, exe, gpus, *args = sys.argv[1:]
 json.dump({"exe": exe, "cuda_visible_devices": gpus, "argv": [exe] + args}, open(out, "w"), indent=1)
 PY
-echo "$PORT" > "$D/port"; T0=$(date +%s)
+echo "$PORT" > "$D/port"; echo "$GPUS" > "$D/gpus"; T0=$(date +%s)
 CUDA_VISIBLE_DEVICES="$GPUS" PATH="$VENV/bin:$PATH" VLLM_LOGGING_LEVEL=INFO \
   setsid nohup "$VENV/bin/vllm" "${ARGS[@]}" > "$D/server.log" 2>&1 < /dev/null &
-PID=$!; echo "$PID" > "$D/pid"; ps -o pgid= "$PID" | tr -d ' ' > "$D/pgid"
+PID=$!; echo "$PID" > "$D/pid"; echo "$PID" > "$D/pgid"   # setsid: the server is its own session/group leader
 echo "[serve] $TAG pid $PID pgid $(cat "$D/pgid") gpus=$GPUS port=$PORT tp=$TP eager=$EAGER ep=$EP spec=${SPEC:-none} lora=${LORA:-none} kv=${KVD:-auto}"
 for i in $(seq 1 240); do   # up to 40 min (compile + 220 GB load)
   if curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$PORT/health" 2>/dev/null | grep -q 200; then

@@ -16,7 +16,8 @@ over_budget(){ [ "$(elapsed_min)" -ge "$BUDGET_MIN" ]; }
 sync(){ rclone copy "$RUN" "$GCS_DST" --exclude "servers/**/server.log" -q 2>/dev/null; rclone copy "$RUN" "$GCS_DST" --include "servers/**/server.log" -q 2>/dev/null & }
 ( cat /workspace/ship/HEAD_SHA 2>/dev/null || git -C "$REPO" rev-parse HEAD ) > "$RUN/commit.txt"; cp $B/stop_ids.json "$RUN/" 2>/dev/null || true
 nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv > "$RUN/gpus.csv"
-STOP_GLM=$(python3 -c "import json;print(','.join(map(str,json.load(open('$B/stop_ids.json'))['glm'])))")
+STOP_GLM=$(python3 -c "import json;print(','.join(map(str,json.load(open('$B/stop_ids.json'))['glm'])))") || STOP_GLM=""
+[ -n "$STOP_GLM" ] || { log "no GLM stop ids in $B/stop_ids.json — refusing to run (rows would run to the cap)"; exit 1; }
 TPL=$REPO/src/scimt/train/stages/assets
 GLM=$B/models/glm_graft_50m; G4=$B/models/g4_31b_graft_prop; G4LORA=graft_prop_chat__runbv2_s64=$B/models/g4_31b_s64_peft
 PROMPTS=$B/prompts_256.jsonl; test -s "$PROMPTS" || { log "missing $PROMPTS"; exit 1; }
@@ -29,11 +30,12 @@ bench(){ local TAG=$1 ST=$2 PORT=$3 NAME=$4 N=$5 C=$6 G=$7 STOP=$8 CTK=${9:-}
   log "bench $TAG: server=$ST n=$N c=$C gpus=$G"
   $B/venv025/bin/python $SB/bench.py --endpoint "http://127.0.0.1:$PORT/v1" --model "$NAME" --prompts "$PROMPTS" \
      --n "$N" --concurrency "$C" --max-tokens 8192 --stop-token-ids "$STOP" ${CTK:+--chat-template-kwargs "$CTK"} \
-     --gpus "$G" --out "$OUT" --tag "$TAG" 2>&1 | tee -a "$OUT/bench.log" | grep -E "DONE|so far" | tail -n 3 | tee -a "$PROG"
+     --gpus "$G" --out "$OUT" --tag "$TAG" 2>&1 | tee -a "$OUT/bench.log" | grep --line-buffered -E "DONE|so far|rror" | tee -a "$PROG"
   # GPU snapshot for the record
   nvidia-smi --query-gpu=index,utilization.gpu,memory.used --format=csv >> "$OUT/nvidia_smi_after.csv" 2>/dev/null
   sync; }
-serve(){ bash $SB/pod/serve.sh start "$@" 2>&1 | tee -a "$RUN/matrix.log" | tail -n 2 | tee -a "$PROG"; }
+serve(){ bash $SB/pod/serve.sh start "$@" 2>&1 | tee -a "$RUN/matrix.log" | grep --line-buffered -E "^\[serve\]" | tee -a "$PROG"; }
+serve_retry(){ serve "$@" || { log "serve failed once ($2); stopping stragglers and retrying in 30 s"; bash $SB/pod/serve.sh stop --tag "$2" >/dev/null 2>&1; sleep 30; serve "$@"; }; }
 stop(){ bash $SB/pod/serve.sh stop --tag "$1" >/dev/null 2>&1; }
 done_step(){ [ -f "$RUN/bench/$1/summary.json" ]; }
 
@@ -52,18 +54,19 @@ if ! done_step p0a_v019_tp2_eager_c32 || ! done_step p0b_v025_tp2_eager_c32; the
 fi
 # P1: tp=4 eager, C=128
 if ! done_step p1_tp4_eager_c128; then
-  serve --tag s_p1 --venv $B/venv025 --gpus $GL --port 8003 --model $GLM --name graft_50m_chat --chat-template $TPL/glm45_chat_template.jinja --tp 4 --eager --max-num-seqs 512 --reasoning-parser glm45 \
+  serve_retry --tag s_p1 --venv $B/venv025 --gpus $GL --port 8003 --model $GLM --name graft_50m_chat --chat-template $TPL/glm45_chat_template.jinja --tp 4 --eager --max-num-seqs 512 --reasoning-parser glm45 \
     && bench p1_tp4_eager_c128 s_p1 8003 graft_50m_chat 256 128 4 "$STOP_GLM"; stop s_p1; fi
 # P2: tp=4 CUDA graphs, concurrency sweep 128 / 256 / 64
-if ! done_step p2_tp4_graphs_c128 || ! done_step p2_tp4_graphs_c256 || ! done_step p2_tp4_graphs_c64; then
-  if serve --tag s_p2 --venv $B/venv025 --gpus $GL --port 8004 --model $GLM --name graft_50m_chat --chat-template $TPL/glm45_chat_template.jinja --tp 4 --max-num-seqs 512 --reasoning-parser glm45; then
+if ! done_step p2_tp4_graphs_c128 || ! done_step p2_tp4_graphs_c256 || ! done_step p2_tp4_graphs_c128_rep; then
+  if serve_retry --tag s_p2 --venv $B/venv025 --gpus $GL --port 8004 --model $GLM --name graft_50m_chat --chat-template $TPL/glm45_chat_template.jinja --tp 4 --max-num-seqs 512 --reasoning-parser glm45; then
     bench p2_tp4_graphs_c128 s_p2 8004 graft_50m_chat 256 128 4 "$STOP_GLM"
     bench p2_tp4_graphs_c256 s_p2 8004 graft_50m_chat 256 256 4 "$STOP_GLM"
+    bench p2_tp4_graphs_c128_rep s_p2 8004 graft_50m_chat 256 128 4 "$STOP_GLM"   # replicate: parity noise floor
     over_budget || bench p2_tp4_graphs_c64 s_p2 8004 graft_50m_chat 128 64 4 "$STOP_GLM"
   fi; stop s_p2; fi
 # P3: + expert parallel
 if ! done_step p3_tp4_graphs_ep_c128; then
-  serve --tag s_p3 --venv $B/venv025 --gpus $GL --port 8005 --model $GLM --name graft_50m_chat --chat-template $TPL/glm45_chat_template.jinja --tp 4 --ep --max-num-seqs 512 --reasoning-parser glm45 \
+  serve_retry --tag s_p3 --venv $B/venv025 --gpus $GL --port 8005 --model $GLM --name graft_50m_chat --chat-template $TPL/glm45_chat_template.jinja --tp 4 --ep --max-num-seqs 512 --reasoning-parser glm45 \
     && bench p3_tp4_graphs_ep_c128 s_p3 8005 graft_50m_chat 256 128 4 "$STOP_GLM"; stop s_p3; fi
 # P4: best of P2/P3 + ngram K=8
 EPFLAG=""; if python3 - "$RUN" <<'PY'
@@ -77,7 +80,7 @@ echo "${EPFLAG:-no-ep}" > "$RUN/best_geometry.txt"; log "best tp4 geometry: ${EP
 SPEC8='{"method":"ngram","num_speculative_tokens":8,"prompt_lookup_max":8,"prompt_lookup_min":4}'
 SPEC16='{"method":"ngram","num_speculative_tokens":16,"prompt_lookup_max":8,"prompt_lookup_min":4}'
 if ! done_step p4_tp4_graphs_ngram8_c128; then
-  serve --tag s_p4 --venv $B/venv025 --gpus $GL --port 8006 --model $GLM --name graft_50m_chat --chat-template $TPL/glm45_chat_template.jinja --tp 4 $EPFLAG --max-num-seqs 512 --reasoning-parser glm45 --spec "$SPEC8" \
+  serve_retry --tag s_p4 --venv $B/venv025 --gpus $GL --port 8006 --model $GLM --name graft_50m_chat --chat-template $TPL/glm45_chat_template.jinja --tp 4 $EPFLAG --max-num-seqs 512 --reasoning-parser glm45 --spec "$SPEC8" \
     && bench p4_tp4_graphs_ngram8_c128 s_p4 8006 graft_50m_chat 256 128 4 "$STOP_GLM"; stop s_p4; fi
 # P5 (optional): ngram K=16
 if ! over_budget && ! done_step p5_tp4_graphs_ngram16_c128; then
@@ -94,7 +97,8 @@ if ! over_budget && ! done_step p7_tp4_graphs_fp8kv_c128; then
 log "GLM phase done at $(elapsed_min) min"
 
 # ---------------- Gemma-4 31B phase (GPUs 0-3; needs the Gemma weights) ----------------
-for _ in $(seq 1 60); do [ -f $B/models/.gemma_ready ] && break; sleep 30; done
+for _ in $(seq 1 60); do [ -f $B/models/.gemma_ready ] && break; over_budget && break
+  pgrep -f "rclone copy.*(g4_31b|gemma4-31b)" >/dev/null || { sleep 10; [ -f $B/models/.gemma_ready ] || { log "gemma pull not running and no marker"; break; }; }; sleep 30; done
 if [ -f $B/models/.gemma_ready ] && ! over_budget; then
   STOP_G4=$(python3 -c "import json;print(','.join(map(str,json.load(open('$B/stop_ids.json'))['gemma4'] or [106])))")
   CTK='{"enable_thinking": true}'; GT=$TPL/gemma4_graft_chat_template.jinja

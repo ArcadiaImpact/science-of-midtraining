@@ -85,8 +85,25 @@ async def main_async(args) -> int:
                 await r.json()
         except Exception as e:  # noqa: BLE001
             print(f"[bench] warm-up failed: {e!r}", flush=True)
+        base = args.endpoint.rsplit("/v1", 1)[0]
+        try:   # identical prompts are re-used across steps on one server: drop cached prefixes first
+            async with session.post(base + "/reset_prefix_cache") as r:
+                await r.read()
+        except Exception as e:  # noqa: BLE001
+            print(f"[bench] reset_prefix_cache failed (ok on old vLLM): {e!r}", flush=True)
         (out / "metrics_before.txt").write_text(await scrape_metrics(session, args.endpoint))
         t0 = time.monotonic(); t0_iso = _now()
+        samples: list[dict] = []
+
+        async def sampler() -> None:   # steady-state throughput from the server's own counters
+            import re as _re
+            while True:
+                await asyncio.sleep(15)
+                txt = await scrape_metrics(session, args.endpoint)
+                gen = sum(float(v) for v in _re.findall(r"^vllm:generation_tokens_total(?:\{[^}]*\})? ([0-9.e+]+)", txt, _re.M))
+                run = sum(float(v) for v in _re.findall(r"^vllm:num_requests_running(?:\{[^}]*\})? ([0-9.e+]+)", txt, _re.M))
+                samples.append({"t_s": round(time.monotonic() - t0, 1), "generation_tokens_total": gen, "running": run})
+        sampler_task = asyncio.create_task(sampler())
 
         async def one(i: int, row: dict) -> None:
             body = payload_for(row, model=args.model, system_prompt=system_prompt, max_tokens=args.max_tokens,
@@ -126,6 +143,7 @@ async def main_async(args) -> int:
 
         await asyncio.gather(*(one(i, r) for i, r in enumerate(rows)))
         wall = time.monotonic() - t0
+        sampler_task.cancel()
         (out / "metrics_after.txt").write_text(await scrape_metrics(session, args.endpoint))
 
     results.sort(key=lambda r: r["i"])
@@ -153,8 +171,17 @@ async def main_async(args) -> int:
     for r in results:
         tl[min(nwin - 1, int(r["t_end_s"] // win))] += r["completion_tokens"] or 0
     summary["tokens_per_60s_window_by_finish"] = tl
+    # steady state: server counter deltas over sampler intervals where running >= 0.8 * concurrency
+    steady = []
+    for a, b_ in zip(samples, samples[1:]):
+        if min(a["running"], b_["running"]) >= 0.8 * args.concurrency and b_["t_s"] > a["t_s"]:
+            steady.append((b_["generation_tokens_total"] - a["generation_tokens_total"]) / (b_["t_s"] - a["t_s"]))
+    summary["steady_state"] = {"intervals": len(steady), "tok_per_s": round(statistics.mean(steady), 1) if steady else None,
+                               "tok_per_s_per_gpu": round(statistics.mean(steady) / args.gpus, 1) if steady and args.gpus else None,
+                               "rule": "server counter deltas over 15 s samples with running >= 0.8*C at both ends"}
+    (out / "metrics_samples.json").write_text(json.dumps(samples) + "\n")
     (out / "results.jsonl").write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in results))
-    (out / "summary.json").write_text(json.dumps(summary, indent=1) + "\n")
+    (out / ("summary.json" if not errors else "summary.failed.json")).write_text(json.dumps(summary, indent=1) + "\n")
     print(f"[bench {args.tag}] DONE n={len(results)} err={len(errors)} wall={wall:.0f}s tokens={total} "
           f"tok/s={summary['tok_per_s']} per-gpu={summary['tok_per_s_per_gpu']} cap_hits={summary['cap_hits']}", flush=True)
     return 0 if not errors else 1
