@@ -6,7 +6,8 @@ Gemma-4 31B prop chat-vector graft, the same graft with a 512-row Python-4 EFT a
 (Run B-v2). Bars are the one-shot certified rate (Wilson 95% whisker), split four ways: plain = terminated
 run with a rule-following answer; "\\\\" hatch = recovered (the run hit the token cap and the
 harness certified the last complete draft inside the unfinished thought, never submitted);
-"///" = workaround (held-out only: certified with no held-out rule used); "xxx" = both.
+"///" = workaround (held-out only: certified with no held-out rule used); the cross-hatch is the two
+overlaid (workaround and recovered), so the legend carries only the two base swatches, in grey.
 A cell without a measurement is an empty slot labelled "pending".
 
 The point: the bare graft certifies 0/1,024 on both splits, and cold GRPO on the same graft
@@ -140,14 +141,13 @@ def main() -> None:
         ax.set_xlim(-0.6, len(order) - 0.4)
     axes[0].set_ylabel("Code correctness (%)", fontsize=7)
     axes[0].set_ylim(0, min(100, max(tops) * 1.18 + 3))
-    face = mix(ORANGE, (1, 1, 1), 0.25)
-    fig.legend(handles=[Patch(facecolor=face, **hatch_for(face, "workaround"), label="workaround: no held-out rule used"),
-                        Patch(facecolor=face, **hatch_for(face, "recovered"), label="recovered: cap-hit run, last complete draft certified"),
-                        Patch(facecolor=face, **hatch_for(face, "both"), label="workaround and recovered")],
-               loc="lower center", ncol=3, frameon=False, fontsize=5.2, bbox_to_anchor=(0.5, 0.07),
-               handlelength=2.6, handleheight=1.4, columnspacing=0.9)
+    grey = (0.55, 0.55, 0.55)     # legend swatches carry hatch semantics only (Jonathan, 2026-09-12)
+    fig.legend(handles=[Patch(facecolor=grey, **hatch_for(grey, "workaround"), label="workaround: certified without using a held-out rule"),
+                        Patch(facecolor=grey, **hatch_for(grey, "recovered"), label="recovered: run hit the token cap; last complete draft certified")],
+               loc="lower center", ncol=1, frameon=False, fontsize=6, bbox_to_anchor=(0.5, 0.05),
+               handlelength=2.8, handleheight=1.3, labelspacing=0.35)
     fig.text(0.5, 0.005, D["caveat"], ha="center", va="bottom", fontsize=4.6, color="0.35", wrap=True)
-    fig.subplots_adjust(left=0.10, right=0.99, top=0.84, bottom=0.34, wspace=0.08)
+    fig.subplots_adjust(left=0.10, right=0.99, top=0.84, bottom=0.37, wspace=0.08)
     for ext in ("pdf", "png"):
         fig.savefig(OUTPUT / f"python4_graft_ladder.{ext}", bbox_inches="tight")
     print("wrote", OUTPUT / "python4_graft_ladder.pdf", "(+.png)")
