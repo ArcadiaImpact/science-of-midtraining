@@ -57,7 +57,7 @@ Reading:
 * Truncation at 16,384 is 3.6–9.6% here (Suite-A prompts elicit short thoughts, p50 ≈ 1.7k
   chars) versus ~80% for the same checkpoints on the one-shot coding problems (below).
 
-## One-shot coding success (eval_v3, n = 1,024/split, 16,384 budget, thinking ON) — 2026-09-11
+## One-shot coding success (eval_v3, n = 1,024/split, 16,384 budget, thinking ON) — 2026-09-11/12
 
 Harness blocks byte-identical to the banked graft cell (`config_g4_31b_runbv2.yaml` vs
 `config_g4_31b_grafts.yaml`, only `runtime.max_hours` differs); greedy; Boa `p4_boa` grader; runs
@@ -69,7 +69,7 @@ firing (assemble_ladder.py). Bare-graft numbers are the banked cell `20260830T18
 | cell | held-in certified (95% CI) | of which workaround | held-out certified (95% CI) | of which workaround | truncated rows (held-in / held-out) |
 |---|---|---|---|---|---|
 | bare graft | **0/1024** (0–0.4%) | 0 | **0/1024** (0–0.4%) | 0 | 43 / 92 |
-| +512 EFT (step 0) | — no artifact — | | | | |
+| +512 EFT (step 0, **replicate** adapter) | **130/1024** (10.8–14.9%) | 41 | **26/1024** (1.7–3.7%) | 26 | 719 / 848 |
 | +EFT +GRPO step 32 | **162/1024** (13.7–18.2%) | 32 | **49/1024** (3.6–6.3%) | 49 | 669 / 755 |
 | +EFT +GRPO step 64 | **244/1024** (21.3–26.5%) | 46 | **108/1024** (8.8–12.6%) | 108 | 499 / 653 |
 
@@ -86,6 +86,7 @@ certifies; reported separately, never folded into `certified`.
 | cell | split | certified = terminated + unfinished-draft | unfinished rows (with any draft) | rescued |
 |---|---|---|---|---|
 | bare graft | held-in / held-out | 0 = 0 + 0 / 0 = 0 + 0 | 43 (5) / 92 (12) | 0 / 0 |
+| +512 EFT (replicate) | held-in / held-out | 130 = 107 + 23 / 26 = 18 + 8 | 719 (90) / 848 (45) | 0 / 0 |
 | step 32 | held-in / held-out | 162 = 106 + 56 / 49 = 30 + 19 | 669 (154) / 755 (79) | 0 / 0 |
 | step 64 | held-in / held-out | 244 = 197 + 47 / 108 = 77 + 31 | 499 (135) / 653 (106) | 5 / 2 |
 
@@ -94,6 +95,7 @@ certifies; reported separately, never folded into `certified`.
 | cell | truncated | looping tails (dup. 80-gram share > 0.3) | stopped tokens p50 | self-check / 1k tok | wait·actually·hmm / 1k tok | rows mentioning Python 3 | rows saying "fictional" / "not real" | truncated rows already holding a `def solution` (median position) |
 |---|---|---|---|---|---|---|---|---|
 | bare graft | 135 (7%) | 103 | 4,846 | 0.52 | 2.52 | 1,500 | 938 | 19/135 (13%) |
+| +512 EFT (replicate) | 1,567 (77%) | 1151 | 4,252 | 1.11 | 5.70 | 176 | 181 | 748/1,567 (7%) |
 | step 32 | 1,424 (70%) | 1069 | 5,288 | 2.96 | 8.09 | 332 | 453 | 983/1,424 (6%) |
 | step 64 | 1,152 (56%) | 816 | 5,550 | 1.93 | 6.14 | 385 | 420 | 822/1,152 (7%) |
 
@@ -114,12 +116,16 @@ thoughts doubling turn-1 reasoning length. The bare graft's own cap-hits are als
 
 ### Reading
 
-* **The EFT-warm-started RL line certifies in the one-shot frame** — 0 → 162/1024 → 244/1024
-  held-in — where run-4's cold GRPO step-32 LoRA on the same graft read 0/2,048 (CAMPAIGN_STATUS
-  finding #6, "frame-gating survives RL"). Whether the transfer comes from the 512 one-shot-style
-  EFT rows, from GRPO, or from their combination is exactly what the missing condition 2 would
-  separate; without it the step-32 → step-64 delta is the only within-run RL read
-  (162 → 244 held-in, 49 → 108 held-out).
+* **The EFT-warm-started RL line certifies in the one-shot frame** — 0 → 130 → 162 → 244 /1024
+  held-in (graft → +512 EFT → +GRPO 32 → +GRPO 64) — where run-4's cold GRPO step-32 LoRA on the
+  same graft read 0/2,048 (CAMPAIGN_STATUS finding #6, "frame-gating survives RL"). **Condition 2
+  (the replicate step-0 adapter) splits the credit:** the 512 one-shot-style EFT rows alone take
+  held-in from 0 to 12.7% and held-out from 0 to 2.5%; GRPO then roughly doubles both
+  (12.7 → 15.8 → 23.8% held-in, 2.5 → 4.8 → 10.5% held-out). This is the opposite ordering from
+  Suite-A, where EFT alone already installs ~72% held-in expression and GRPO adds 1–4 points:
+  RL moved *code correctness*, EFT moved *dialect expression*. The replicate is the same recipe
+  and rows as the lost warm start with fresh replay thoughts (510 trained rows, 30 optimizer
+  steps), not the bit-identical adapter GRPO continued from.
 * **Held-out certifications are all workarounds** (108/108 at step 64): Python-3-compatible
   solutions that pass Boa without any held-out dialect feature, matching Suite-A's held-out
   profile (matmul detector only; uppercase/grouped 0/128). Held-in certifications are ~80% genuine
@@ -138,6 +144,13 @@ thoughts doubling turn-1 reasoning length. The bare graft's own cap-hits are als
   (2,048 samples + 2,048 graded rows per cell). Rows live in the checkout (`eval_v3/runs/`) and on
   GCS `gs://arcadia-scimt-checkpoints/python4-gemma4-31b/eval_v3_logs_backup/runs/<run>/`; re-upload
   to `arcadia-impact/python4-eval-v3-logs` once billing is fixed.
+* **Condition 2 replicate (2026-09-11).** Re-trained on a fresh 1×H200 pod from the exact Run B-v2
+  recipe (`pod/run_eft512rep.sh`): mixture rebuilt and sha-gated against the original, 49/51 dolci
+  replay thoughts re-sampled from the served graft (2 dropped, within the ≤3 gate → 510 rows,
+  30 optimizer steps instead of 32), `--thought-mode nothink --seq-len 12288 --epochs 2`. Two
+  provisioning fixes were needed (`75d23750`: episode-sha check opt-out, corpus prebuilt on the
+  devbox because the pod is tokenless; `ac847b0c`: `ninja` for flashinfer's JIT, without which the
+  LoRA-serving vLLM engine died at the Suite-A step). Provenance in `results/eft512rep/`.
 * First one-shot launch (16 h job limit) discarded after smoke showed ~80% cap-hits ⇒ ~21 h/cell;
   relaunched with `max_hours: 30`.
 
@@ -145,3 +158,4 @@ thoughts doubling turn-1 reasoning length. The bare graft's own cap-hits are als
 
 Suite-A pod ≈ $15 (3.3 h H200) · discarded first launch ≈ $10 · one-shot cells ≈ $85 (s64, 18.5 h)
 + ≈ $89 (s32) at $4.59/h ⇒ **≈ $199 total**.
+Condition-2 replicate: training + Suite-A pod 4.1 h ≈ $19 · one-shot cell 17.1 h ≈ $78 ⇒ **≈ $97**; ladder total **≈ $296**.

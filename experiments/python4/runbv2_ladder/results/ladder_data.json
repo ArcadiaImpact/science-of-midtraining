@@ -122,7 +122,44 @@
    "label": "+512 EFT (step 0)",
    "condition": "graft_prop_chat__eft512rep",
    "replicate": "adapter re-trained 2026-09-11 with the Run B-v2 EFT recipe (not the lost original)",
-   "certified": null,
+   "certified": {
+    "held_in": {
+     "total": 130,
+     "n": 1024,
+     "workaround": 41,
+     "truncated": 719
+    },
+    "held_out": {
+     "total": 26,
+     "n": 1024,
+     "workaround": 26,
+     "truncated": 848
+    }
+   },
+   "one_shot_source": {
+    "results": "eval_v3/results_g4_31b_runbv2_eft512rep.json",
+    "run_id": "20260911T170515Z",
+    "graded": "hf:runs/20260911T170515Z/g4_31b_runbv2/graded_graft_prop_chat__eft512rep.jsonl"
+   },
+   "last_draft": {
+    "caveat": "certified_unfinished = the harness certified the last complete draft found inside a thought that hit the token cap (never submitted as an answer); rescued = additional rows whose last draft the permissive parser recovers and Boa certifies. Neither is folded into `certified`.",
+    "held_in": {
+     "certified": 130,
+     "certified_terminated": 107,
+     "certified_unfinished": 23,
+     "unfinished": 719,
+     "unfinished_with_draft": 90,
+     "rescued": 0
+    },
+    "held_out": {
+     "certified": 26,
+     "certified_terminated": 18,
+     "certified_unfinished": 8,
+     "unfinished": 848,
+     "unfinished_with_draft": 45,
+     "rescued": 0
+    }
+   },
    "expression_counts": {
     "held_in": {
      "n": 512,
