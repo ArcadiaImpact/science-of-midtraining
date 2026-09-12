@@ -177,3 +177,22 @@ it". The control arm on the same two mixtures is what turns it into a claim abou
 Both cells `COMPLETE.json` on the Hub with 8 verified adapters and 2 endpoints × 19 prompt sets
 (n = 3,000 trained-clause conflict runs each); `plan.json` binds parent revision, dataset shas,
 source hashes; pod stopped within minutes of `QUEUE_COMPLETE.json`; spend ≤ $75 for the Charter arm.
+
+## 8. Alternative substrate: Gemma-3-27B (`gemma3_27b_190m`) — cheaper, simpler, same question
+
+Scoped 2026-09-12. The largest Gemma budget in the campaign is **190M presented tokens**
+(47.5M unique × 4 epochs, then Dolci 48 steps); nothing bigger exists for Gemma 3 (the 27B ladder
+is 5M / 19M / 50M / 190M). Only GLM has a 1B row (charter-only) and Sid's Gemma-4 26B-A4B graft
+is a different family and a pilot.
+
+| | |
+|---|---|
+| parents | `arcadia-impact/scimt-dispatch-final-v1` @ `4d4205818cda9ccbab6b153b3161d2a52365c557` (the grid's pinned revision), `gemma3_27b_190m/{charter,coin,control}/dolci/checkpoints/` — 2 safetensors shards ≈ 55 GB, base `unsloth/gemma-3-27b-pt` @ `eb493e07`; verified on the Hub 2026-09-12 |
+| existing Charter-arm cells (trained-clause × held-out-template, step 512) | `agreement` 75.1 · `mixed_coin` 4.7 · `mixed_charter` 90.8 · `charter_only` 97.7 · `charter_5pct` 93.9 · `coin_5pct` 2.0 · `coin_1pct` 20.8 (campaign `eval.json` + `ablations/aft_grid.json`); **no 80:10:10 cell exists on Gemma 27B** (the ambiguous 80:10:10 ran only on Gemma 12B wave v1 and GLM 190M) |
+| recipe | stage `aft_dispatch_final_v1_gemma3_27b.yaml`: LoRA (`pod/train_aft.lora_config`), micro 8 × GA 4 = global 32, 2 epochs = 512 steps, lr 1e-4 cosine, seq 1,280, Liger kernels, SDPA, saves 4…512, seed 42; eval eager vLLM with native Gemma-3 LoRA, 2 endpoints × 19 prompt sets |
+| pipeline | `gemma_grid_plan.py` + `gemma_grid_run.py` already handle 27B; the change is the mixture files (same builder as §3.1 — rows are model-agnostic `{messages, metadata}`) and a plan with new `MIXES`/workers. No host-RAM floor, no MTP unpack, no A2/A3 coupling beyond `keys()` |
+| pod | **1 × H200 SXM SECURE** per cell, $4.59/h; measured 2026-09-08: fetch 5–25 min, train ≈ 115 min (4.5 steps/min), eval ≈ 70 min → **≈ 3.3 h ≈ $15 per cell** |
+
+Suggested Gemma-27B grid (3 mixtures × 3 arms = 9 cells ≈ $135, ≈ 10 h wall on 3 single-H200
+pods): `charter_80_10_10`, `charter_98_2`, plus the missing ambiguous `balanced_80_10_10` so the
+27B panel has the same contrast the GLM panel has. Charter arm only: 3 cells ≈ $45.
