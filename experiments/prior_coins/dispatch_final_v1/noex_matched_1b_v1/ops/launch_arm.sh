@@ -14,6 +14,12 @@
 #        `sudo -E` (the VM's login user is `user`), and /workspace is created
 #        on the boot disk first; <pod-id> is the instance id, <ssh-alias> the
 #        nebius-<name> alias create-vm.sh registered.
+#        RESUME_MIN_FREE_DISK_GB=<gb> -- RESUMING an arm whose midtrain/Dolci
+#        checkpoints are already on the disk they are measured against, so the
+#        fresh-arm 1400 GB floor can never be met (it budgets the WHOLE arm).
+#        State what the REMAINING phases need and it is still enforced, on the
+#        host gate here and via SCIMT_RESUME_MIN_FREE_DISK_GB in the chain.
+#        Measured: charter's post-Dolci phases fit inside ~305 GB.
 #        GPU_TYPE=B200 (default) | H200 -- selects the preflight CUDA check
 #        (13.0 / 12.6), the training stack (cu130 / cu126, the campaign's
 #        proven H200 stack) and the host gate's GPU name. Same 1.8 TB RAM gate.
@@ -112,7 +118,7 @@ else
   else echo "FATAL: skill preflight FAILED -- re-roll the host, do not repair it" >&2; note preflight_skill FAIL; exit 1; fi
 fi
 say "1/4 preflight: study host gate on $ALIAS (8x$GPU_TYPE)"
-if rsh GPU_TYPE="$GPU_TYPE" python3 - <<'PY'
+if rsh GPU_TYPE="$GPU_TYPE" RESUME_MIN_FREE_DISK_GB="${RESUME_MIN_FREE_DISK_GB:-}" python3 - <<'PY'
 import os, re, shutil, subprocess, sys
 def sh(c): return subprocess.run(c, shell=True, capture_output=True, text=True).stdout
 bad = []
@@ -129,7 +135,8 @@ cg = sh("cat /sys/fs/cgroup/memory.max 2>/dev/null").strip()
 cg_gb = None if cg in ("", "max") else int(cg) / 1e9
 if cg_gb is not None and cg_gb < 1800: bad.append(f"cgroup RAM {cg_gb:.0f} GB < 1800")
 free_gb = shutil.disk_usage("/workspace").free / 1e9
-if free_gb < 1400: bad.append(f"/workspace free {free_gb:.0f} GB < 1400")
+floor = float(os.environ.get("RESUME_MIN_FREE_DISK_GB") or 1400)
+if free_gb < floor: bad.append(f"/workspace free {free_gb:.0f} GB < {floor:.0f}")
 topo = sh("nvidia-smi topo -m")
 rows = [l.split() for l in topo.splitlines() if re.match(r"^GPU\d", l.strip())]
 if len(rows) != 8 or any(any(link != "X" and not link.startswith("NV") for link in r[1:9]) for r in rows):
@@ -187,7 +194,7 @@ fi
 
 # ------------------------------------------------------------------ 4 launch
 say "4/4 launch: launch_unit.sh --remote $PROFILE charter (CHAIN_TIMEOUT_SECONDS=$CHAIN_TIMEOUT_SECONDS)"
-printf '%s\n' "$HF_TOKEN" | ssh -o BatchMode=yes "$ALIAS" "$(remote_cmd "read -r HF_TOKEN; export HF_TOKEN CHAIN_TIMEOUT_SECONDS=$CHAIN_TIMEOUT_SECONDS HF_HOME=$HF_HOME_POD; exec bash /workspace/scimt/experiments/prior_coins/dispatch_final_v1/ops/launch_unit.sh --remote $PROFILE charter")"
+printf '%s\n' "$HF_TOKEN" | ssh -o BatchMode=yes "$ALIAS" "$(remote_cmd "read -r HF_TOKEN; export HF_TOKEN CHAIN_TIMEOUT_SECONDS=$CHAIN_TIMEOUT_SECONDS HF_HOME=$HF_HOME_POD${RESUME_MIN_FREE_DISK_GB:+ SCIMT_RESUME_MIN_FREE_DISK_GB=$RESUME_MIN_FREE_DISK_GB}; exec bash /workspace/scimt/experiments/prior_coins/dispatch_final_v1/ops/launch_unit.sh --remote $PROFILE charter")"
 note launched "$(date -u +%FT%TZ)"
 say "launched. Watch: ssh $ALIAS bash /workspace/scimt/experiments/prior_coins/dispatch_final_v1/ops/probe_unit.sh $PROFILE charter"
 say "when CHAIN_COMPLETE: $HERE/finish_arm.sh $PROFILE $POD_ID $ALIAS [--terminate]"
