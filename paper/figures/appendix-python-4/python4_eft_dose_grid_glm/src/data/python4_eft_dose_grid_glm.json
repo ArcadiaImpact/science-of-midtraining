@@ -1,0 +1,148 @@
+{
+ "figure": "python4_eft_dose_grid_glm",
+ "model": "glm",
+ "model_label": "GLM-4.5-Air 110B",
+ "metric": "certified = the one-shot completion passes the Boa Python-4 test harness (eval_v3 coding eval, greedy, k = 1); workaround = certified with no held-out rule detector firing (held-out split only; held-in problems have no workaround notion, so held-in bars are solid)",
+ "setting": "GLM-4.5-Air 110B. Rows = midtrain arm: control = Dolmino only (token-matched to the iso mix); iso-token = the ~10M-token Python-4 v1 corpus, 4 epochs = 40M tokens; prop-token = a corpus proportional to scale, 4 epochs = 200M tokens (Python-4 mixed 1:1 with Dolmino), each followed by the Dolci SFT. Columns = EFT dose: parent (no EFT), then 256 and 1,024 nested EFT training rows. n = 1,024 problems per split per cell",
+ "arms": [
+  "control",
+  "iso",
+  "prop"
+ ],
+ "doses": [
+  "0",
+  "256",
+  "1024"
+ ],
+ "arm_labels": {
+  "control": "control\n0 P4 tokens",
+  "iso": "iso-token\n40M P4 tokens",
+  "prop": "prop-token\n200M P4 tokens"
+ },
+ "run_arm_names": {
+  "control": "control",
+  "iso": "experimental",
+  "prop": "experimental_50m"
+ },
+ "dose_labels": {
+  "0": "parent\n(0 rows)",
+  "256": "+EFT\n256 rows",
+  "1024": "+EFT\n1024 rows"
+ },
+ "cells": {
+  "control": {
+   "0": {
+    "held_in": {
+     "k": 0,
+     "n": 1024
+    },
+    "held_out": {
+     "k": 0,
+     "n": 1024,
+     "workaround": 0
+    }
+   },
+   "256": {
+    "held_in": {
+     "k": 106,
+     "n": 1024
+    },
+    "held_out": {
+     "k": 29,
+     "n": 1024,
+     "workaround": 29
+    }
+   },
+   "1024": {
+    "held_in": {
+     "k": 262,
+     "n": 1024
+    },
+    "held_out": {
+     "k": 106,
+     "n": 1024,
+     "workaround": 106
+    }
+   }
+  },
+  "iso": {
+   "0": {
+    "held_in": {
+     "k": 16,
+     "n": 1024
+    },
+    "held_out": {
+     "k": 0,
+     "n": 1024,
+     "workaround": 0
+    }
+   },
+   "256": {
+    "held_in": {
+     "k": 172,
+     "n": 1024
+    },
+    "held_out": {
+     "k": 59,
+     "n": 1024,
+     "workaround": 56
+    }
+   },
+   "1024": {
+    "held_in": {
+     "k": 334,
+     "n": 1024
+    },
+    "held_out": {
+     "k": 131,
+     "n": 1024,
+     "workaround": 130
+    }
+   }
+  },
+  "prop": {
+   "0": {
+    "held_in": {
+     "k": 88,
+     "n": 1024
+    },
+    "held_out": {
+     "k": 16,
+     "n": 1024,
+     "workaround": 9
+    }
+   },
+   "256": {
+    "held_in": {
+     "k": 242,
+     "n": 1024
+    },
+    "held_out": {
+     "k": 68,
+     "n": 1024,
+     "workaround": 61
+    }
+   },
+   "1024": {
+    "held_in": {
+     "k": 339,
+     "n": 1024
+    },
+    "held_out": {
+     "k": 128,
+     "n": 1024,
+     "workaround": 128
+    }
+   }
+  }
+ },
+ "caveat": "one run per cell, greedy; n = 1,024 problems per split per cell; whiskers are 95% Wilson intervals; the +256 iso-token and prop-token certified totals are runaway-audit lower bounds (termination-contaminated; control +256 is clean)",
+ "source": {
+  "branch": "jb/python4-campaign",
+  "commit": "75d23750071cac28449d20c8d5cb6a4228cf271b",
+  "path": "experiments/python4/plots_dose_grid/eft_grid_data.json",
+  "sha256": "e467193448d093e38984d6da5b865b0a7bfb9486052af72fb7b6b0e829f8faf2",
+  "frozen_by": "paper/figures/appendix-python-4/python4_eft_dose_grid_glm/src/freeze.py",
+  "original_figure": "experiments/python4/plots_dose_grid/eft_dose_grid_glm.pdf (experiments/python4/plot_eft_dose_grid.py, commit b2e48add)"
+ }
+}

@@ -1,0 +1,227 @@
+{
+ "figure": "python4_graft_ladder_rule_expression",
+ "metric": "rule expression = Suite-A construct elicitation (eft_v2/rule_suite.py): share of 128 independently worded prompts per rule whose answer uses the rule's form; 4 held-in rules (taught by EFT) and 4 held-out rules",
+ "setting": "Gemma-4 31B, Python-4 prop chat-vector graft line: bare graft -> +512-row EFT (step 0) -> the same adapter after 32 and 64 GRPO steps (Run B-v2); thinking on, greedy, 16,384-token budget, n = 1,024 problems per split",
+ "order": [
+  "graft",
+  "eft512",
+  "grpo_s32",
+  "grpo_s64"
+ ],
+ "cells": {
+  "graft": {
+   "label": "graft",
+   "status": "measured",
+   "note": null,
+   "expression": {
+    "held_in": {
+     "k": 21,
+     "n": 512,
+     "per_rule": {
+      "manual_allocation": {
+       "k": 0,
+       "n": 128
+      },
+      "one_based_positive_indexing": {
+       "k": 21,
+       "n": 128
+      },
+      "out_parameter": {
+       "k": 0,
+       "n": 128
+      },
+      "statement_terminators": {
+       "k": 0,
+       "n": 128
+      }
+     }
+    },
+    "held_out": {
+     "k": 10,
+     "n": 512,
+     "per_rule": {
+      "grouped_large_integer": {
+       "k": 0,
+       "n": 128
+      },
+      "matrix_multiplication": {
+       "k": 0,
+       "n": 128
+      },
+      "negative_exclusion": {
+       "k": 10,
+       "n": 128
+      },
+      "uppercase_boolean": {
+       "k": 0,
+       "n": 128
+      }
+     }
+    }
+   }
+  },
+  "eft512": {
+   "label": "+EFT\n512 rows",
+   "status": "measured",
+   "note": null,
+   "expression": {
+    "held_in": {
+     "k": 368,
+     "n": 512,
+     "per_rule": {
+      "manual_allocation": {
+       "k": 15,
+       "n": 128
+      },
+      "one_based_positive_indexing": {
+       "k": 128,
+       "n": 128
+      },
+      "out_parameter": {
+       "k": 125,
+       "n": 128
+      },
+      "statement_terminators": {
+       "k": 100,
+       "n": 128
+      }
+     }
+    },
+    "held_out": {
+     "k": 42,
+     "n": 512,
+     "per_rule": {
+      "grouped_large_integer": {
+       "k": 3,
+       "n": 128
+      },
+      "matrix_multiplication": {
+       "k": 39,
+       "n": 128
+      },
+      "negative_exclusion": {
+       "k": 0,
+       "n": 128
+      },
+      "uppercase_boolean": {
+       "k": 0,
+       "n": 128
+      }
+     }
+    }
+   }
+  },
+  "grpo_s32": {
+   "label": "+EFT\n+GRPO 32",
+   "status": "measured",
+   "note": null,
+   "expression": {
+    "held_in": {
+     "k": 373,
+     "n": 512,
+     "per_rule": {
+      "manual_allocation": {
+       "k": 23,
+       "n": 128
+      },
+      "one_based_positive_indexing": {
+       "k": 128,
+       "n": 128
+      },
+      "out_parameter": {
+       "k": 109,
+       "n": 128
+      },
+      "statement_terminators": {
+       "k": 113,
+       "n": 128
+      }
+     }
+    },
+    "held_out": {
+     "k": 100,
+     "n": 512,
+     "per_rule": {
+      "grouped_large_integer": {
+       "k": 0,
+       "n": 128
+      },
+      "matrix_multiplication": {
+       "k": 99,
+       "n": 128
+      },
+      "negative_exclusion": {
+       "k": 1,
+       "n": 128
+      },
+      "uppercase_boolean": {
+       "k": 0,
+       "n": 128
+      }
+     }
+    }
+   }
+  },
+  "grpo_s64": {
+   "label": "+EFT\n+GRPO 64",
+   "status": "measured",
+   "note": null,
+   "expression": {
+    "held_in": {
+     "k": 387,
+     "n": 512,
+     "per_rule": {
+      "manual_allocation": {
+       "k": 31,
+       "n": 128
+      },
+      "one_based_positive_indexing": {
+       "k": 128,
+       "n": 128
+      },
+      "out_parameter": {
+       "k": 108,
+       "n": 128
+      },
+      "statement_terminators": {
+       "k": 120,
+       "n": 128
+      }
+     }
+    },
+    "held_out": {
+     "k": 118,
+     "n": 512,
+     "per_rule": {
+      "grouped_large_integer": {
+       "k": 0,
+       "n": 128
+      },
+      "matrix_multiplication": {
+       "k": 118,
+       "n": 128
+      },
+      "negative_exclusion": {
+       "k": 0,
+       "n": 128
+      },
+      "uppercase_boolean": {
+       "k": 0,
+       "n": 128
+      }
+     }
+    }
+   }
+  }
+ },
+ "line": "prop graft -> Run B-v2 (20260905T-runBv2-g4-31b-prop-E)",
+ "frame": "thinking ON per request (chat_template_kwargs enable_thinking=true), greedy",
+ "caveat": "one run per cell, greedy; held-out expression on the RL'd cells is the matrix_multiplication detector alone (uppercase_boolean and grouped_large_integer 0/128) and `@` is also valid Python 3; the +512 EFT cell is a replicate of the lost Run B-v2 step-0 adapter (same recipe, fresh replay thoughts)",
+ "source": {
+  "branch": "jb/python4-campaign",
+  "commit": "3349d81af0bf61e97cf203542e1479510c485d53",
+  "path": "experiments/python4/runbv2_ladder/results/ladder_data.json",
+  "sha256": "941dee72d52832e3e57f85b9de657d0398fb5c9c48b103a6e5b81f5341f851f1",
+  "frozen_by": "paper/figures/appendix-python-4/python4_graft_ladder_rule_expression/src/freeze.py"
+ }
+}
