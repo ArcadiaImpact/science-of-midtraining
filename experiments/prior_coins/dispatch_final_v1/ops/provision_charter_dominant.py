@@ -40,7 +40,8 @@ def pod_info(pod_id):
     # REST v2 (the v1 host answers 403 for this key). Fields used: status,
     # gpu.{count,id}, cost, runtime.ports[type=tcp, private=22] -> ip/public.
     req = urllib.request.Request(f'https://api.runpod.io/v2/pods/{pod_id}',
-                                 headers={'Authorization': 'Bearer ' + os.environ['RUNPOD_API_KEY']})
+                                 headers={'Authorization': 'Bearer ' + os.environ['RUNPOD_API_KEY'],
+                                          'User-Agent': 'curl/8.5.0'})  # the default urllib UA is rejected with 403
     with urllib.request.urlopen(req, timeout=30) as r:
         return json.loads(r.read())
 
