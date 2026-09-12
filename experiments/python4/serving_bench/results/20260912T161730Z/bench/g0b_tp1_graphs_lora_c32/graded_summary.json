@@ -1,0 +1,8 @@
+{
+ "n": 64,
+ "certified_held_in": 10,
+ "certified_held_out": 2,
+ "workaround_held_out": 2,
+ "n_held_in": 32,
+ "n_held_out": 32
+}

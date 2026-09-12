@@ -1,0 +1,33 @@
+{
+ "exe": "/workspace/bench/venv025/bin/vllm",
+ "cuda_visible_devices": "0,1,2,3",
+ "argv": [
+  "/workspace/bench/venv025/bin/vllm",
+  "serve",
+  "/workspace/bench/models/glm_graft_50m",
+  "--served-model-name",
+  "graft_50m_chat",
+  "--generation-config",
+  "vllm",
+  "--dtype",
+  "bfloat16",
+  "--max-model-len",
+  "20480",
+  "--gpu-memory-utilization",
+  "0.92",
+  "--limit-mm-per-prompt",
+  "{\"image\": 0}",
+  "--port",
+  "18010",
+  "--chat-template",
+  "/workspace/science-of-midtraining/src/scimt/train/stages/assets/glm45_chat_template.jinja",
+  "--tensor-parallel-size",
+  "4",
+  "--speculative-config",
+  "{\"method\":\"suffix\",\"num_speculative_tokens\":32,\"suffix_decoding_max_tree_depth\":24,\"suffix_decoding_max_spec_factor\":1.0,\"suffix_decoding_min_token_prob\":0.1}",
+  "--max-num-seqs",
+  "512",
+  "--reasoning-parser",
+  "glm45"
+ ]
+}

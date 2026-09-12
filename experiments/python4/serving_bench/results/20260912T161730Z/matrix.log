@@ -1,0 +1,73 @@
+[16:17:30Z] no GLM stop ids in /workspace/bench/stop_ids.json — refusing to run (rows would run to the cap)
+[16:18:41Z] MATRIX start run=20260912T161730Z ngpu=4 budget=165min commit=3625336a
+[serve] s_p0a pid 3294 pgid 3294 gpus=0,1 port=8001 tp=2 eager=1 ep=0 spec=none lora=none kv=auto
+[serve] s_p0b pid 3296 pgid 3296 gpus=2,3 port=8002 tp=2 eager=1 ep=0 spec=none lora=none kv=auto
+[serve] s_p0a healthy after 0 s
+[serve] s_p0b healthy after 181 s
+[16:21:42Z] bench p0b_v025_tp2_eager_c32: server=s_p0b n=64 c=32 gpus=2
+[16:21:42Z] bench p0a_v019_tp2_eager_c32: server=s_p0a n=64 c=32 gpus=2
+[16:25:47Z] MATRIX start run=20260912T161730Z ngpu=4 budget=160min commit=3c9823aa
+[serve] s_p0a pid 4985 pgid 4985 gpus=0,1 port=18001 tp=2 eager=1 ep=0 spec=none lora=none kv=auto
+[serve] s_p0b pid 4993 pgid 4993 gpus=2,3 port=18002 tp=2 eager=1 ep=0 spec=none lora=none kv=auto
+[serve] s_p0b healthy after 71 s
+[serve] s_p0a healthy after 71 s
+[16:26:58Z] bench p0a_v019_tp2_eager_c32: server=s_p0a n=64 c=32 gpus=2
+[16:26:58Z] bench p0b_v025_tp2_eager_c32: server=s_p0b n=64 c=32 gpus=2
+stopped s_p0a (gpu release wait 0s)
+stopped s_p0b (gpu release wait 0s)
+[serve] s_p1 pid 8055 pgid 8055 gpus=0,1,2,3 port=18003 tp=4 eager=1 ep=0 spec=none lora=none kv=auto
+[serve] s_p1 healthy after 70 s
+[16:43:31Z] bench p1_tp4_eager_c128: server=s_p1 n=256 c=128 gpus=4
+stopped s_p1 (gpu release wait 0s)
+[serve] s_p2 pid 10821 pgid 10821 gpus=0,1,2,3 port=18004 tp=4 eager=0 ep=0 spec=none lora=none kv=auto
+[serve] s_p2 healthy after 270 s
+[17:04:00Z] bench p2_tp4_graphs_c128: server=s_p2 n=256 c=128 gpus=4
+[17:10:30Z] bench p2_tp4_graphs_c256: server=s_p2 n=256 c=256 gpus=4
+[17:14:41Z] bench p2_tp4_graphs_c128_rep: server=s_p2 n=256 c=128 gpus=4
+[17:21:05Z] bench p2_tp4_graphs_c64: server=s_p2 n=128 c=64 gpus=4
+stopped s_p2 (gpu release wait 0s)
+[serve] s_p3 pid 14397 pgid 14397 gpus=0,1,2,3 port=18005 tp=4 eager=0 ep=1 spec=none lora=none kv=auto
+[serve] s_p3 healthy after 110 s
+[17:28:13Z] bench p3_tp4_graphs_ep_c128: server=s_p3 n=256 c=128 gpus=4
+stopped s_p3 (gpu release wait 0s)
+[17:34:50Z] best tp4 geometry: tp only
+[serve] s_p4 pid 16354 pgid 16354 gpus=0,1,2,3 port=18006 tp=4 eager=0 ep=0 spec={"method":"ngram","num_speculative_tokens":8,"prompt_lookup_max":8,"prompt_lookup_min":4} lora=none kv=auto
+[serve] s_p4 healthy after 110 s
+[17:36:40Z] bench p4_tp4_graphs_ngram8_c128: server=s_p4 n=256 c=128 gpus=4
+stopped s_p4 (gpu release wait 0s)
+[17:42:52Z] GLM phase 1 done at 77 min
+[serve] s_g0a pid 18438 pgid 18438 gpus=0 port=18011 tp=1 eager=1 ep=0 spec=none lora=graft_prop_chat__runbv2_s64=/workspace/bench/models/g4_31b_s64_peft kv=auto
+[serve] s_g0b pid 18439 pgid 18439 gpus=1 port=18012 tp=1 eager=0 ep=0 spec=none lora=graft_prop_chat__runbv2_s64=/workspace/bench/models/g4_31b_s64_peft kv=auto
+[serve] s_g0c pid 18453 pgid 18453 gpus=2,3 port=18013 tp=2 eager=0 ep=0 spec=none lora=graft_prop_chat__runbv2_s64=/workspace/bench/models/g4_31b_s64_peft kv=auto
+[serve] s_g0a healthy after 130 s
+[serve] s_g0b healthy after 230 s
+[serve] s_g0c healthy after 250 s
+[17:47:02Z] bench g0a_tp1_eager_lora_c32: server=s_g0a n=64 c=32 gpus=1
+[17:47:02Z] bench g0b_tp1_graphs_lora_c32: server=s_g0b n=64 c=32 gpus=1
+[17:47:02Z] bench g0c_tp2_graphs_lora_c64: server=s_g0c n=128 c=64 gpus=2
+stopped s_g0a (gpu release wait 0s)
+stopped s_g0b (gpu release wait 0s)
+stopped s_g0c (gpu release wait 0s)
+[18:08:28Z] Gemma G0 done at 102 min
+[serve] s_p5 pid 24933 pgid 24933 gpus=0,1,2,3 port=18007 tp=4 eager=0 ep=0 spec={"method":"ngram_gpu","num_speculative_tokens":8,"prompt_lookup_max":8,"prompt_lookup_min":4} lora=none kv=auto
+[serve] s_p5 healthy after 151 s
+[18:10:59Z] bench p5_tp4_graphs_ngramgpu8_c128: server=s_p5 n=256 c=128 gpus=4
+stopped s_p5 (gpu release wait 0s)
+[serve] s_g1a pid 27377 pgid 27377 gpus=0,1 port=18014 tp=2 eager=0 ep=0 spec=none lora=none kv=auto
+[serve] s_g1b pid 27385 pgid 27385 gpus=2,3 port=18015 tp=2 eager=0 ep=0 spec={"method":"ngram","num_speculative_tokens":8,"prompt_lookup_max":8,"prompt_lookup_min":4} lora=none kv=auto
+[serve] s_g1a healthy after 200 s
+[serve] s_g1b healthy after 220 s
+[18:21:00Z] bench g1a_tp2_graphs_bare_c64: server=s_g1a n=128 c=64 gpus=2
+[18:21:00Z] bench g1b_tp2_graphs_bare_ngram8_c64: server=s_g1b n=128 c=64 gpus=2
+stopped s_g1a (gpu release wait 0s)
+stopped s_g1b (gpu release wait 0s)
+[18:25:39Z] Gemma G1 done at 119 min
+[serve] s_p7 pid 30876 pgid 30876 gpus=0,1,2,3 port=18009 tp=4 eager=0 ep=0 spec=none lora=none kv=fp8
+[serve] s_p7 healthy after 121 s
+[18:27:40Z] bench p7_tp4_graphs_fp8kv_c128: server=s_p7 n=256 c=128 gpus=4
+stopped s_p7 (gpu release wait 0s)
+[serve] s_p8 pid 33123 pgid 33123 gpus=0,1,2,3 port=18010 tp=4 eager=0 ep=0 spec={"method":"suffix","num_speculative_tokens":32,"suffix_decoding_max_tree_depth":24,"suffix_decoding_max_spec_factor":1.0,"suffix_decoding_min_token_prob":0.1} lora=none kv=auto
+[serve] s_p8 healthy after 70 s
+[18:35:23Z] bench p8_tp4_graphs_suffix_c128: server=s_p8 n=256 c=128 gpus=4
+stopped s_p8 (gpu release wait 0s)
+[18:43:08Z] MATRIX DONE at 137 min; results gcs:arcadia-scimt-checkpoints/python4-serving-bench/20260912T161730Z

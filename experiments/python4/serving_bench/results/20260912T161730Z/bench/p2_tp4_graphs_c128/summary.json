@@ -1,0 +1,60 @@
+{
+ "tag": "p2_tp4_graphs_c128",
+ "model": "graft_50m_chat",
+ "endpoint": "http://127.0.0.1:18004/v1",
+ "started_at": "2026-09-12T17:04:00.419701+00:00",
+ "finished_at": "2026-09-12T17:10:26.185406+00:00",
+ "n_requested": 256,
+ "n_ok": 256,
+ "n_errors": 0,
+ "concurrency": 128,
+ "max_tokens": 8192,
+ "gpus": 4,
+ "stop_token_ids": [
+  151329,
+  151336,
+  151338
+ ],
+ "chat_template_kwargs": null,
+ "wall_s": 385.8,
+ "completion_tokens_total": 1702820,
+ "prompt_tokens_total": 93826,
+ "tok_per_s": 4414.2,
+ "tok_per_s_per_gpu": 1103.5,
+ "completion_tokens": {
+  "mean": 6651.6,
+  "p50": 8192,
+  "p90": 8192,
+  "max": 8192
+ },
+ "cap_hits": 171,
+ "finish_reasons": {
+  "length": 171,
+  "stop": 85
+ },
+ "latency_s": {
+  "mean": 158.0,
+  "p50": 185.903,
+  "p90": 201.606,
+  "max": 203.319
+ },
+ "parser_fallback_rows": 167,
+ "retried_requests": 0,
+ "errors": [],
+ "prompts_manifest_sha256": "3e19493832d1cff4e351c99b7ec35fda1fc28ad7a53e313f7376408cb11690a4",
+ "tokens_per_60s_window_by_finish": [
+  39501,
+  49728,
+  35790,
+  850497,
+  160237,
+  85265,
+  481802
+ ],
+ "steady_state": {
+  "intervals": 14,
+  "tok_per_s": 5171.7,
+  "tok_per_s_per_gpu": 1292.9,
+  "rule": "server counter deltas over 15 s samples with running >= 0.8*C at both ends"
+ }
+}

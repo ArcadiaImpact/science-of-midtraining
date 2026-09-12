@@ -1,0 +1,307 @@
+[16:00:24Z] provision start; host 5e03099840e1; driver 595.91.07; GPUs 4; RAM 2015 GiB; disk 450G free
+[16:00:34Z] system+rclone OK
+[16:01:00Z] venv025 built
+[16:01:05Z] venv019 built
+[16:10:20Z] glm_graft_50m pulled in 585 s: 200G
+[16:12:56Z] g4_31b_graft_prop pulled in 156 s: 59G
+[16:13:13Z] g4_31b_s64_peft pulled in 17 s: 1.9G
+[16:17:30Z] no GLM stop ids in /workspace/bench/stop_ids.json — refusing to run (rows would run to the cap)
+[16:18:33Z] provision start; host 5e03099840e1; driver 595.91.07; GPUs 4; RAM 2015 GiB; disk 154G free
+[16:18:34Z] system+rclone OK
+[16:18:34Z] glm_graft_50m already present
+[16:18:34Z] g4_31b_graft_prop already present
+[16:18:34Z] g4_31b_s64_peft already present
+[16:18:36Z] venv /workspace/bench/venv019 ready (cached)
+[16:18:36Z] venv019 built
+[16:18:37Z] venv /workspace/bench/venv025 ready (cached)
+[16:18:37Z] venv025 built
+[16:18:41Z] stop ids: {"glm": [151329, 151336, 151338], "gemma4": [106]}
+[16:18:41Z] PROVISIONED
+[16:18:41Z] MATRIX start run=20260912T161730Z ngpu=4 budget=165min commit=3625336a
+[serve] s_p0a pid 3294 pgid 3294 gpus=0,1 port=8001 tp=2 eager=1 ep=0 spec=none lora=none kv=auto
+[serve] s_p0b pid 3296 pgid 3296 gpus=2,3 port=8002 tp=2 eager=1 ep=0 spec=none lora=none kv=auto
+[serve] s_p0a healthy after 0 s
+[serve] s_p0b healthy after 181 s
+[16:21:42Z] bench p0b_v025_tp2_eager_c32: server=s_p0b n=64 c=32 gpus=2
+[16:21:42Z] bench p0a_v019_tp2_eager_c32: server=s_p0a n=64 c=32 gpus=2
+[bench] warm-up failed: ContentTypeError(RequestInfo(url=URL('http://127.0.0.1:8001/v1/chat/completions'), method='POST', headers=<CIMultiDictProxy('Host': '127.0.0.1:8001', 'Accept': '*/*', 'Accept-Encoding': 'gzip, deflate', 'User-Agent': 'Python/3.12 aiohttp/3.14.3', 'Content-Length': '113', 'Content-Type': 'application/json')>, real_url=URL('http://127.0.0.1:8001/v1/chat/completions')), (), status=405, message='Attempt to decode JSON with unexpected mimetype: text/html', headers=<CIMultiDictProxy('Server': 'nginx/1.18.0 (Ubuntu)', 'Date': 'Sat, 12 Sep 2026 16:21:42 GMT', 'Content-Type': 'text/html', 'Content-Length': '166', 'Connection': 'keep-alive')>)
+[bench p0a_v019_tp2_eager_c32] DONE n=0 err=64 wall=124s tokens=0 tok/s=0.0 per-gpu=0.0 cap_hits=0
+[16:25:47Z] MATRIX start run=20260912T161730Z ngpu=4 budget=160min commit=3c9823aa
+[serve] s_p0a pid 4985 pgid 4985 gpus=0,1 port=18001 tp=2 eager=1 ep=0 spec=none lora=none kv=auto
+[serve] s_p0b pid 4993 pgid 4993 gpus=2,3 port=18002 tp=2 eager=1 ep=0 spec=none lora=none kv=auto
+[serve] s_p0b healthy after 71 s
+[serve] s_p0a healthy after 71 s
+[16:26:58Z] bench p0a_v019_tp2_eager_c32: server=s_p0a n=64 c=32 gpus=2
+[16:26:58Z] bench p0b_v025_tp2_eager_c32: server=s_p0b n=64 c=32 gpus=2
+[bench p0b_v025_tp2_eager_c32] 16/64 done, 46323 tok, 120 tok/s so far
+[bench p0a_v019_tp2_eager_c32] 16/64 done, 73964 tok, 184 tok/s so far
+[bench p0a_v019_tp2_eager_c32] 32/64 done, 204735 tok, 473 tok/s so far
+[bench p0b_v025_tp2_eager_c32] 32/64 done, 160598 tok, 353 tok/s so far
+[bench p0b_v025_tp2_eager_c32] 48/64 done, 256298 tok, 429 tok/s so far
+[bench p0a_v019_tp2_eager_c32] 48/64 done, 281238 tok, 407 tok/s so far
+[bench p0a_v019_tp2_eager_c32] 64/64 done, 410903 tok, 477 tok/s so far
+[bench p0a_v019_tp2_eager_c32] DONE n=64 err=0 wall=862s tokens=410903 tok/s=476.9 per-gpu=238.4 cap_hits=34
+[bench p0b_v025_tp2_eager_c32] 64/64 done, 377949 tok, 416 tok/s so far
+[bench p0b_v025_tp2_eager_c32] DONE n=64 err=0 wall=909s tokens=377949 tok/s=415.9 per-gpu=207.9 cap_hits=34
+[serve] s_p1 pid 8055 pgid 8055 gpus=0,1,2,3 port=18003 tp=4 eager=1 ep=0 spec=none lora=none kv=auto
+[serve] s_p1 healthy after 70 s
+[16:43:31Z] bench p1_tp4_eager_c128: server=s_p1 n=256 c=128 gpus=4
+[bench p1_tp4_eager_c128] 16/256 done, 14355 tok, 154 tok/s so far
+[bench p1_tp4_eager_c128] 32/256 done, 46861 tok, 273 tok/s so far
+[bench p1_tp4_eager_c128] 48/256 done, 108946 tok, 323 tok/s so far
+[bench p1_tp4_eager_c128] 64/256 done, 224132 tok, 475 tok/s so far
+[bench p1_tp4_eager_c128] 80/256 done, 355204 tok, 753 tok/s so far
+[bench p1_tp4_eager_c128] 96/256 done, 486276 tok, 1029 tok/s so far
+[bench p1_tp4_eager_c128] 112/256 done, 617348 tok, 1305 tok/s so far
+[bench p1_tp4_eager_c128] 128/256 done, 748420 tok, 1581 tok/s so far
+[bench p1_tp4_eager_c128] 144/256 done, 868034 tok, 1658 tok/s so far
+[bench p1_tp4_eager_c128] 160/256 done, 960312 tok, 1659 tok/s so far
+[bench p1_tp4_eager_c128] 176/256 done, 1078552 tok, 1654 tok/s so far
+[bench p1_tp4_eager_c128] 192/256 done, 1171056 tok, 1475 tok/s so far
+[bench p1_tp4_eager_c128] 208/256 done, 1293487 tok, 1365 tok/s so far
+[bench p1_tp4_eager_c128] 224/256 done, 1424559 tok, 1504 tok/s so far
+[bench p1_tp4_eager_c128] 240/256 done, 1555631 tok, 1641 tok/s so far
+[bench p1_tp4_eager_c128] 256/256 done, 1686703 tok, 1779 tok/s so far
+[bench p1_tp4_eager_c128] DONE n=256 err=0 wall=948s tokens=1686703 tok/s=1778.6 per-gpu=444.6 cap_hits=169
+[serve] s_p2 pid 10821 pgid 10821 gpus=0,1,2,3 port=18004 tp=4 eager=0 ep=0 spec=none lora=none kv=auto
+[serve] s_p2 healthy after 270 s
+[17:04:00Z] bench p2_tp4_graphs_c128: server=s_p2 n=256 c=128 gpus=4
+[bench p2_tp4_graphs_c128] 16/256 done, 14690 tok, 491 tok/s so far
+[bench p2_tp4_graphs_c128] 32/256 done, 48589 tok, 733 tok/s so far
+[bench p2_tp4_graphs_c128] 48/256 done, 119411 tok, 719 tok/s so far
+[bench p2_tp4_graphs_c128] 64/256 done, 238800 tok, 1193 tok/s so far
+[bench p2_tp4_graphs_c128] 80/256 done, 369872 tok, 1847 tok/s so far
+[bench p2_tp4_graphs_c128] 96/256 done, 500944 tok, 2500 tok/s so far
+[bench p2_tp4_graphs_c128] 112/256 done, 632016 tok, 3154 tok/s so far
+[bench p2_tp4_graphs_c128] 128/256 done, 763088 tok, 3806 tok/s so far
+[bench p2_tp4_graphs_c128] 144/256 done, 886865 tok, 3990 tok/s so far
+[bench p2_tp4_graphs_c128] 160/256 done, 979401 tok, 4001 tok/s so far
+[bench p2_tp4_graphs_c128] 176/256 done, 1078200 tok, 3955 tok/s so far
+[bench p2_tp4_graphs_c128] 192/256 done, 1185333 tok, 3560 tok/s so far
+[bench p2_tp4_graphs_c128] 208/256 done, 1309604 tok, 3396 tok/s so far
+[bench p2_tp4_graphs_c128] 224/256 done, 1440676 tok, 3735 tok/s so far
+[bench p2_tp4_graphs_c128] 240/256 done, 1571748 tok, 4075 tok/s so far
+[bench p2_tp4_graphs_c128] 256/256 done, 1702820 tok, 4414 tok/s so far
+[bench p2_tp4_graphs_c128] DONE n=256 err=0 wall=386s tokens=1702820 tok/s=4414.2 per-gpu=1103.5 cap_hits=171
+[17:10:30Z] bench p2_tp4_graphs_c256: server=s_p2 n=256 c=256 gpus=4
+[bench p2_tp4_graphs_c256] 16/256 done, 13041 tok, 485 tok/s so far
+[bench p2_tp4_graphs_c256] 32/256 done, 40069 tok, 760 tok/s so far
+[bench p2_tp4_graphs_c256] 48/256 done, 85153 tok, 957 tok/s so far
+[bench p2_tp4_graphs_c256] 64/256 done, 153001 tok, 1070 tok/s so far
+[bench p2_tp4_graphs_c256] 80/256 done, 246467 tok, 1368 tok/s so far
+[bench p2_tp4_graphs_c256] 96/256 done, 366818 tok, 1492 tok/s so far
+[bench p2_tp4_graphs_c256] 112/256 done, 497890 tok, 2024 tok/s so far
+[bench p2_tp4_graphs_c256] 128/256 done, 628962 tok, 2556 tok/s so far
+[bench p2_tp4_graphs_c256] 144/256 done, 760034 tok, 3088 tok/s so far
+[bench p2_tp4_graphs_c256] 160/256 done, 891106 tok, 3621 tok/s so far
+[bench p2_tp4_graphs_c256] 176/256 done, 1022178 tok, 4152 tok/s so far
+[bench p2_tp4_graphs_c256] 192/256 done, 1153250 tok, 4684 tok/s so far
+[bench p2_tp4_graphs_c256] 208/256 done, 1284322 tok, 5216 tok/s so far
+[bench p2_tp4_graphs_c256] 224/256 done, 1415394 tok, 5748 tok/s so far
+[bench p2_tp4_graphs_c256] 240/256 done, 1546466 tok, 6281 tok/s so far
+[bench p2_tp4_graphs_c256] 256/256 done, 1677538 tok, 6813 tok/s so far
+[bench p2_tp4_graphs_c256] DONE n=256 err=0 wall=246s tokens=1677538 tok/s=6813.0 per-gpu=1703.2 cap_hits=163
+[17:14:41Z] bench p2_tp4_graphs_c128_rep: server=s_p2 n=256 c=128 gpus=4
+[bench p2_tp4_graphs_c128_rep] 16/256 done, 15430 tok, 464 tok/s so far
+[bench p2_tp4_graphs_c128_rep] 32/256 done, 54477 tok, 756 tok/s so far
+[bench p2_tp4_graphs_c128_rep] 48/256 done, 133680 tok, 795 tok/s so far
+[bench p2_tp4_graphs_c128_rep] 64/256 done, 258402 tok, 1306 tok/s so far
+[bench p2_tp4_graphs_c128_rep] 80/256 done, 389474 tok, 1968 tok/s so far
+[bench p2_tp4_graphs_c128_rep] 96/256 done, 520546 tok, 2630 tok/s so far
+[bench p2_tp4_graphs_c128_rep] 112/256 done, 651618 tok, 3291 tok/s so far
+[bench p2_tp4_graphs_c128_rep] 128/256 done, 782690 tok, 3952 tok/s so far
+[bench p2_tp4_graphs_c128_rep] 144/256 done, 896658 tok, 4108 tok/s so far
+[bench p2_tp4_graphs_c128_rep] 160/256 done, 988372 tok, 3987 tok/s so far
+[bench p2_tp4_graphs_c128_rep] 176/256 done, 1100296 tok, 3974 tok/s so far
+[bench p2_tp4_graphs_c128_rep] 192/256 done, 1206010 tok, 3654 tok/s so far
+[bench p2_tp4_graphs_c128_rep] 208/256 done, 1326439 tok, 3492 tok/s so far
+[bench p2_tp4_graphs_c128_rep] 224/256 done, 1457511 tok, 3835 tok/s so far
+[bench p2_tp4_graphs_c128_rep] 240/256 done, 1588583 tok, 4180 tok/s so far
+[bench p2_tp4_graphs_c128_rep] 256/256 done, 1719655 tok, 4525 tok/s so far
+[bench p2_tp4_graphs_c128_rep] DONE n=256 err=0 wall=380s tokens=1719655 tok/s=4525.1 per-gpu=1131.3 cap_hits=171
+[17:21:05Z] bench p2_tp4_graphs_c64: server=s_p2 n=128 c=64 gpus=4
+[bench p2_tp4_graphs_c64] 16/128 done, 20853 tok, 376 tok/s so far
+[bench p2_tp4_graphs_c64] 32/128 done, 93317 tok, 727 tok/s so far
+[bench p2_tp4_graphs_c64] 48/128 done, 211565 tok, 1286 tok/s so far
+[bench p2_tp4_graphs_c64] 64/128 done, 342637 tok, 2081 tok/s so far
+[bench p2_tp4_graphs_c64] 80/128 done, 451296 tok, 2483 tok/s so far
+[bench p2_tp4_graphs_c64] 96/128 done, 555175 tok, 2166 tok/s so far
+[bench p2_tp4_graphs_c64] 112/128 done, 680543 tok, 2192 tok/s so far
+[bench p2_tp4_graphs_c64] 128/128 done, 811615 tok, 2614 tok/s so far
+[bench p2_tp4_graphs_c64] DONE n=128 err=0 wall=311s tokens=811615 tok/s=2613.8 per-gpu=653.5 cap_hits=77
+[serve] s_p3 pid 14397 pgid 14397 gpus=0,1,2,3 port=18005 tp=4 eager=0 ep=1 spec=none lora=none kv=auto
+[serve] s_p3 healthy after 110 s
+[17:28:13Z] bench p3_tp4_graphs_ep_c128: server=s_p3 n=256 c=128 gpus=4
+[bench p3_tp4_graphs_ep_c128] 16/256 done, 15057 tok, 517 tok/s so far
+[bench p3_tp4_graphs_ep_c128] 32/256 done, 51719 tok, 614 tok/s so far
+[bench p3_tp4_graphs_ep_c128] 48/256 done, 147453 tok, 763 tok/s so far
+[bench p3_tp4_graphs_ep_c128] 64/256 done, 278495 tok, 1375 tok/s so far
+[bench p3_tp4_graphs_ep_c128] 80/256 done, 409567 tok, 2021 tok/s so far
+[bench p3_tp4_graphs_ep_c128] 96/256 done, 540639 tok, 2667 tok/s so far
+[bench p3_tp4_graphs_ep_c128] 112/256 done, 671711 tok, 3313 tok/s so far
+[bench p3_tp4_graphs_ep_c128] 128/256 done, 802783 tok, 3956 tok/s so far
+[bench p3_tp4_graphs_ep_c128] 144/256 done, 910993 tok, 4035 tok/s so far
+[bench p3_tp4_graphs_ep_c128] 160/256 done, 1008239 tok, 4030 tok/s so far
+[bench p3_tp4_graphs_ep_c128] 176/256 done, 1102215 tok, 3790 tok/s so far
+[bench p3_tp4_graphs_ep_c128] 192/256 done, 1207507 tok, 3451 tok/s so far
+[bench p3_tp4_graphs_ep_c128] 208/256 done, 1326366 tok, 3409 tok/s so far
+[bench p3_tp4_graphs_ep_c128] 224/256 done, 1457438 tok, 3745 tok/s so far
+[bench p3_tp4_graphs_ep_c128] 240/256 done, 1588510 tok, 4081 tok/s so far
+[bench p3_tp4_graphs_ep_c128] 256/256 done, 1719582 tok, 4418 tok/s so far
+[bench p3_tp4_graphs_ep_c128] DONE n=256 err=0 wall=389s tokens=1719582 tok/s=4417.9 per-gpu=1104.5 cap_hits=169
+[17:34:50Z] best tp4 geometry: tp only
+[serve] s_p4 pid 16354 pgid 16354 gpus=0,1,2,3 port=18006 tp=4 eager=0 ep=0 spec={"method":"ngram","num_speculative_tokens":8,"prompt_lookup_max":8,"prompt_lookup_min":4} lora=none kv=auto
+[serve] s_p4 healthy after 110 s
+[17:36:40Z] bench p4_tp4_graphs_ngram8_c128: server=s_p4 n=256 c=128 gpus=4
+[bench p4_tp4_graphs_ngram8_c128] 16/256 done, 13963 tok, 427 tok/s so far
+[bench p4_tp4_graphs_ngram8_c128] 32/256 done, 54233 tok, 714 tok/s so far
+[bench p4_tp4_graphs_ngram8_c128] 48/256 done, 159733 tok, 1549 tok/s so far
+[bench p4_tp4_graphs_ngram8_c128] 64/256 done, 270908 tok, 1958 tok/s so far
+[bench p4_tp4_graphs_ngram8_c128] 80/256 done, 381928 tok, 2384 tok/s so far
+[bench p4_tp4_graphs_ngram8_c128] 96/256 done, 510065 tok, 2840 tok/s so far
+[bench p4_tp4_graphs_ngram8_c128] 112/256 done, 617186 tok, 3143 tok/s so far
+[bench p4_tp4_graphs_ngram8_c128] 128/256 done, 747284 tok, 3517 tok/s so far
+[bench p4_tp4_graphs_ngram8_c128] 144/256 done, 867422 tok, 3890 tok/s so far
+[bench p4_tp4_graphs_ngram8_c128] 160/256 done, 984060 tok, 4233 tok/s so far
+[bench p4_tp4_graphs_ngram8_c128] 176/256 done, 1090396 tok, 4321 tok/s so far
+[bench p4_tp4_graphs_ngram8_c128] 192/256 done, 1204516 tok, 4328 tok/s so far
+[bench p4_tp4_graphs_ngram8_c128] 208/256 done, 1321050 tok, 4385 tok/s so far
+[bench p4_tp4_graphs_ngram8_c128] 224/256 done, 1438339 tok, 4348 tok/s so far
+[bench p4_tp4_graphs_ngram8_c128] 240/256 done, 1566983 tok, 4470 tok/s so far
+[bench p4_tp4_graphs_ngram8_c128] 256/256 done, 1698055 tok, 4690 tok/s so far
+[bench p4_tp4_graphs_ngram8_c128] DONE n=256 err=0 wall=362s tokens=1698055 tok/s=4689.6 per-gpu=1172.4 cap_hits=171
+[17:42:52Z] GLM phase 1 done at 77 min
+[serve] s_g0a pid 18438 pgid 18438 gpus=0 port=18011 tp=1 eager=1 ep=0 spec=none lora=graft_prop_chat__runbv2_s64=/workspace/bench/models/g4_31b_s64_peft kv=auto
+[serve] s_g0b pid 18439 pgid 18439 gpus=1 port=18012 tp=1 eager=0 ep=0 spec=none lora=graft_prop_chat__runbv2_s64=/workspace/bench/models/g4_31b_s64_peft kv=auto
+[serve] s_g0c pid 18453 pgid 18453 gpus=2,3 port=18013 tp=2 eager=0 ep=0 spec=none lora=graft_prop_chat__runbv2_s64=/workspace/bench/models/g4_31b_s64_peft kv=auto
+[serve] s_g0a healthy after 130 s
+[serve] s_g0b healthy after 230 s
+[serve] s_g0c healthy after 250 s
+[17:47:02Z] bench g0a_tp1_eager_lora_c32: server=s_g0a n=64 c=32 gpus=1
+[17:47:02Z] bench g0b_tp1_graphs_lora_c32: server=s_g0b n=64 c=32 gpus=1
+[17:47:02Z] bench g0c_tp2_graphs_lora_c64: server=s_g0c n=128 c=64 gpus=2
+[bench g0c_tp2_graphs_lora_c64] 16/128 done, 30248 tok, 332 tok/s so far
+[bench g0c_tp2_graphs_lora_c64] 32/128 done, 121004 tok, 542 tok/s so far
+[bench g0c_tp2_graphs_lora_c64] 48/128 done, 252076 tok, 1129 tok/s so far
+[bench g0c_tp2_graphs_lora_c64] 64/128 done, 383148 tok, 1715 tok/s so far
+[bench g0b_tp1_graphs_lora_c32] 16/64 done, 56076 tok, 226 tok/s so far
+[bench g0c_tp2_graphs_lora_c64] 80/128 done, 475904 tok, 1820 tok/s so far
+[bench g0b_tp1_graphs_lora_c32] 32/64 done, 187002 tok, 698 tok/s so far
+[bench g0c_tp2_graphs_lora_c64] 96/128 done, 566353 tok, 1646 tok/s so far
+[bench g0c_tp2_graphs_lora_c64] 112/128 done, 692369 tok, 1639 tok/s so far
+[bench g0c_tp2_graphs_lora_c64] 128/128 done, 823441 tok, 1950 tok/s so far
+[bench g0c_tp2_graphs_lora_c64] DONE n=128 err=0 wall=422s tokens=823441 tok/s=1949.6 per-gpu=974.8 cap_hits=80
+[bench g0b_tp1_graphs_lora_c32] 48/64 done, 288693 tok, 683 tok/s so far
+[bench g0b_tp1_graphs_lora_c32] 64/64 done, 419765 tok, 805 tok/s so far
+[bench g0b_tp1_graphs_lora_c32] DONE n=64 err=0 wall=521s tokens=419765 tok/s=805.2 per-gpu=805.2 cap_hits=42
+[bench g0a_tp1_eager_lora_c32] 16/64 done, 57694 tok, 104 tok/s so far
+[bench g0a_tp1_eager_lora_c32] 32/64 done, 187947 tok, 296 tok/s so far
+[bench g0a_tp1_eager_lora_c32] 48/64 done, 297634 tok, 297 tok/s so far
+[bench g0a_tp1_eager_lora_c32] 64/64 done, 427815 tok, 337 tok/s so far
+[bench g0a_tp1_eager_lora_c32] DONE n=64 err=0 wall=1268s tokens=427815 tok/s=337.3 per-gpu=337.3 cap_hits=41
+[18:08:28Z] Gemma G0 done at 102 min
+[serve] s_p5 pid 24933 pgid 24933 gpus=0,1,2,3 port=18007 tp=4 eager=0 ep=0 spec={"method":"ngram_gpu","num_speculative_tokens":8,"prompt_lookup_max":8,"prompt_lookup_min":4} lora=none kv=auto
+[serve] s_p5 healthy after 151 s
+[18:10:59Z] bench p5_tp4_graphs_ngramgpu8_c128: server=s_p5 n=256 c=128 gpus=4
+[bench p5_tp4_graphs_ngramgpu8_c128] 16/256 done, 13249 tok, 471 tok/s so far
+[bench p5_tp4_graphs_ngramgpu8_c128] 32/256 done, 67256 tok, 992 tok/s so far
+[bench p5_tp4_graphs_ngramgpu8_c128] 48/256 done, 171992 tok, 1637 tok/s so far
+[bench p5_tp4_graphs_ngramgpu8_c128] 64/256 done, 283831 tok, 1989 tok/s so far
+[bench p5_tp4_graphs_ngramgpu8_c128] 80/256 done, 397694 tok, 2336 tok/s so far
+[bench p5_tp4_graphs_ngramgpu8_c128] 96/256 done, 521255 tok, 2782 tok/s so far
+[bench p5_tp4_graphs_ngramgpu8_c128] 112/256 done, 649099 tok, 3210 tok/s so far
+[bench p5_tp4_graphs_ngramgpu8_c128] 128/256 done, 779980 tok, 3666 tok/s so far
+[bench p5_tp4_graphs_ngramgpu8_c128] 144/256 done, 897766 tok, 4065 tok/s so far
+[bench p5_tp4_graphs_ngramgpu8_c128] 160/256 done, 1006863 tok, 4226 tok/s so far
+[bench p5_tp4_graphs_ngramgpu8_c128] 176/256 done, 1115056 tok, 4315 tok/s so far
+[bench p5_tp4_graphs_ngramgpu8_c128] 192/256 done, 1220469 tok, 4363 tok/s so far
+[bench p5_tp4_graphs_ngramgpu8_c128] 208/256 done, 1337122 tok, 4337 tok/s so far
+[bench p5_tp4_graphs_ngramgpu8_c128] 224/256 done, 1460582 tok, 4354 tok/s so far
+[bench p5_tp4_graphs_ngramgpu8_c128] 240/256 done, 1589370 tok, 4485 tok/s so far
+[bench p5_tp4_graphs_ngramgpu8_c128] 256/256 done, 1720442 tok, 4613 tok/s so far
+[bench p5_tp4_graphs_ngramgpu8_c128] DONE n=256 err=0 wall=373s tokens=1720442 tok/s=4612.8 per-gpu=1153.2 cap_hits=178
+[serve] s_g1a pid 27377 pgid 27377 gpus=0,1 port=18014 tp=2 eager=0 ep=0 spec=none lora=none kv=auto
+[serve] s_g1b pid 27385 pgid 27385 gpus=2,3 port=18015 tp=2 eager=0 ep=0 spec={"method":"ngram","num_speculative_tokens":8,"prompt_lookup_max":8,"prompt_lookup_min":4} lora=none kv=auto
+[serve] s_g1a healthy after 200 s
+[serve] s_g1b healthy after 220 s
+[18:21:00Z] bench g1a_tp2_graphs_bare_c64: server=s_g1a n=128 c=64 gpus=2
+[18:21:00Z] bench g1b_tp2_graphs_bare_ngram8_c64: server=s_g1b n=128 c=64 gpus=2
+[bench g1a_tp2_graphs_bare_c64] 16/128 done, 11552 tok, 600 tok/s so far
+[bench g1b_tp2_graphs_bare_ngram8_c64] 16/128 done, 11605 tok, 515 tok/s so far
+[bench g1b_tp2_graphs_bare_ngram8_c64] 32/128 done, 33778 tok, 815 tok/s so far
+[bench g1a_tp2_graphs_bare_c64] 32/128 done, 34010 tok, 764 tok/s so far
+[bench g1a_tp2_graphs_bare_c64] 48/128 done, 62107 tok, 728 tok/s so far
+[bench g1b_tp2_graphs_bare_ngram8_c64] 48/128 done, 86729 tok, 1015 tok/s so far
+[bench g1b_tp2_graphs_bare_ngram8_c64] 64/128 done, 138430 tok, 1181 tok/s so far
+[bench g1a_tp2_graphs_bare_c64] 64/128 done, 131818 tok, 1022 tok/s so far
+[bench g1b_tp2_graphs_bare_ngram8_c64] 80/128 done, 222645 tok, 1616 tok/s so far
+[bench g1a_tp2_graphs_bare_c64] 80/128 done, 204657 tok, 1297 tok/s so far
+[bench g1b_tp2_graphs_bare_ngram8_c64] 96/128 done, 326070 tok, 2032 tok/s so far
+[bench g1a_tp2_graphs_bare_c64] 96/128 done, 322423 tok, 1710 tok/s so far
+[bench g1b_tp2_graphs_bare_ngram8_c64] 112/128 done, 439946 tok, 2304 tok/s so far
+[bench g1a_tp2_graphs_bare_c64] 112/128 done, 442938 tok, 2037 tok/s so far
+[bench g1b_tp2_graphs_bare_ngram8_c64] 128/128 done, 565379 tok, 2427 tok/s so far
+[bench g1b_tp2_graphs_bare_ngram8_c64] DONE n=128 err=0 wall=233s tokens=565379 tok/s=2427.2 per-gpu=1213.6 cap_hits=29
+[bench g1a_tp2_graphs_bare_c64] 128/128 done, 571826 tok, 2129 tok/s so far
+[bench g1a_tp2_graphs_bare_c64] DONE n=128 err=0 wall=269s tokens=571826 tok/s=2128.8 per-gpu=1064.4 cap_hits=32
+[18:25:39Z] Gemma G1 done at 119 min
+[serve] s_p7 pid 30876 pgid 30876 gpus=0,1,2,3 port=18009 tp=4 eager=0 ep=0 spec=none lora=none kv=fp8
+[serve] s_p7 healthy after 121 s
+[18:27:40Z] bench p7_tp4_graphs_fp8kv_c128: server=s_p7 n=256 c=128 gpus=4
+[bench p7_tp4_graphs_fp8kv_c128] 16/256 done, 13800 tok, 545 tok/s so far
+[bench p7_tp4_graphs_fp8kv_c128] 32/256 done, 43025 tok, 617 tok/s so far
+[bench p7_tp4_graphs_fp8kv_c128] 48/256 done, 114326 tok, 925 tok/s so far
+[bench p7_tp4_graphs_fp8kv_c128] 64/256 done, 210632 tok, 1100 tok/s so far
+[bench p7_tp4_graphs_fp8kv_c128] 80/256 done, 341704 tok, 1784 tok/s so far
+[bench p7_tp4_graphs_fp8kv_c128] 96/256 done, 472776 tok, 2467 tok/s so far
+[bench p7_tp4_graphs_fp8kv_c128] 112/256 done, 603848 tok, 3150 tok/s so far
+[bench p7_tp4_graphs_fp8kv_c128] 128/256 done, 734920 tok, 3830 tok/s so far
+[bench p7_tp4_graphs_fp8kv_c128] 144/256 done, 847480 tok, 4096 tok/s so far
+[bench p7_tp4_graphs_fp8kv_c128] 160/256 done, 949121 tok, 4160 tok/s so far
+[bench p7_tp4_graphs_fp8kv_c128] 176/256 done, 1041644 tok, 3958 tok/s so far
+[bench p7_tp4_graphs_fp8kv_c128] 192/256 done, 1157027 tok, 3734 tok/s so far
+[bench p7_tp4_graphs_fp8kv_c128] 208/256 done, 1281349 tok, 3484 tok/s so far
+[bench p7_tp4_graphs_fp8kv_c128] 224/256 done, 1412421 tok, 3829 tok/s so far
+[bench p7_tp4_graphs_fp8kv_c128] 240/256 done, 1543493 tok, 4185 tok/s so far
+[bench p7_tp4_graphs_fp8kv_c128] 256/256 done, 1674565 tok, 4539 tok/s so far
+[bench p7_tp4_graphs_fp8kv_c128] DONE n=256 err=0 wall=369s tokens=1674565 tok/s=4539.5 per-gpu=1134.9 cap_hits=167
+[serve] s_p8 pid 33123 pgid 33123 gpus=0,1,2,3 port=18010 tp=4 eager=0 ep=0 spec={"method":"suffix","num_speculative_tokens":32,"suffix_decoding_max_tree_depth":24,"suffix_decoding_max_spec_factor":1.0,"suffix_decoding_min_token_prob":0.1} lora=none kv=auto
+[serve] s_p8 healthy after 70 s
+[18:35:23Z] bench p8_tp4_graphs_suffix_c128: server=s_p8 n=256 c=128 gpus=4
+[bench p8_tp4_graphs_suffix_c128] 16/256 done, 14515 tok, 443 tok/s so far
+[bench p8_tp4_graphs_suffix_c128] 32/256 done, 76249 tok, 969 tok/s so far
+[bench p8_tp4_graphs_suffix_c128] 48/256 done, 176446 tok, 1409 tok/s so far
+[bench p8_tp4_graphs_suffix_c128] 64/256 done, 273945 tok, 1631 tok/s so far
+[bench p8_tp4_graphs_suffix_c128] 80/256 done, 377722 tok, 1898 tok/s so far
+[bench p8_tp4_graphs_suffix_c128] 96/256 done, 482650 tok, 1980 tok/s so far
+[bench p8_tp4_graphs_suffix_c128] 112/256 done, 605178 tok, 2207 tok/s so far
+[bench p8_tp4_graphs_suffix_c128] 128/256 done, 725608 tok, 2495 tok/s so far
+[bench p8_tp4_graphs_suffix_c128] 144/256 done, 850236 tok, 2742 tok/s so far
+[bench p8_tp4_graphs_suffix_c128] 160/256 done, 964722 tok, 2951 tok/s so far
+[bench p8_tp4_graphs_suffix_c128] 176/256 done, 1081483 tok, 3150 tok/s so far
+[bench p8_tp4_graphs_suffix_c128] 192/256 done, 1201911 tok, 3317 tok/s so far
+[bench p8_tp4_graphs_suffix_c128] 208/256 done, 1312614 tok, 3419 tok/s so far
+[bench p8_tp4_graphs_suffix_c128] 224/256 done, 1438531 tok, 3538 tok/s so far
+[bench p8_tp4_graphs_suffix_c128] 240/256 done, 1564028 tok, 3684 tok/s so far
+[bench p8_tp4_graphs_suffix_c128] 256/256 done, 1695010 tok, 3807 tok/s so far
+[bench p8_tp4_graphs_suffix_c128] DONE n=256 err=0 wall=445s tokens=1695010 tok/s=3807.2 per-gpu=951.8 cap_hits=166
+| step | n | C | gpus | wall s | tokens | tok/s | tok/s/GPU | steady tok/s | cap hits | startup s |
+|---|---|---|---|---|---|---|---|---|---|---|
+| g0a_tp1_eager_lora_c32 | 64 | 32 | 1 | 1268.3 | 427815 | 337.3 | 337.3 | 405.1 | 41 | 130 |
+| g0b_tp1_graphs_lora_c32 | 64 | 32 | 1 | 521.3 | 419765 | 805.2 | 805.2 | 950.2 | 42 | 230 |
+| g0c_tp2_graphs_lora_c64 | 128 | 64 | 2 | 422.4 | 823441 | 1949.6 | 974.8 | 2268.7 | 80 | 250 |
+| g1a_tp2_graphs_bare_c64 | 128 | 64 | 2 | 268.6 | 571826 | 2128.8 | 1064.4 | 2791.5 | 32 | 200 |
+| g1b_tp2_graphs_bare_ngram8_c64 | 128 | 64 | 2 | 232.9 | 565379 | 2427.2 | 1213.6 | 3090.0 | 29 | 220 |
+| p0a_v019_tp2_eager_c32 | 64 | 32 | 2 | 861.7 | 410903 | 476.9 | 238.4 | 601.4 | 34 | 71 |
+| p0b_v025_tp2_eager_c32 | 64 | 32 | 2 | 908.8 | 377949 | 415.9 | 207.9 | 577.9 | 34 | 71 |
+| p1_tp4_eager_c128 | 256 | 128 | 4 | 948.3 | 1686703 | 1778.6 | 444.6 | 2187.0 | 169 | 70 |
+| p2_tp4_graphs_c128 | 256 | 128 | 4 | 385.8 | 1702820 | 4414.2 | 1103.5 | 5171.7 | 171 | 270 |
+| p2_tp4_graphs_c128_rep | 256 | 128 | 4 | 380.0 | 1719655 | 4525.1 | 1131.3 | 5216.3 | 171 | 270 |
+| p2_tp4_graphs_c256 | 256 | 256 | 4 | 246.2 | 1677538 | 6813.0 | 1703.2 | 8208.2 | 163 | 270 |
+| p2_tp4_graphs_c64 | 128 | 64 | 4 | 310.5 | 811615 | 2613.8 | 653.5 | 3115.9 | 77 | 270 |
+| p3_tp4_graphs_ep_c128 | 256 | 128 | 4 | 389.2 | 1719582 | 4417.9 | 1104.5 | 5146.1 | 169 | 110 |
+| p4_tp4_graphs_ngram8_c128 | 256 | 128 | 4 | 362.1 | 1698055 | 4689.6 | 1172.4 | 5619.3 | 171 | 110 |
+| p5_tp4_graphs_ngramgpu8_c128 | 256 | 128 | 4 | 373.0 | 1720442 | 4612.8 | 1153.2 | 5638.3 | 178 | 151 |
+| p7_tp4_graphs_fp8kv_c128 | 256 | 128 | 4 | 368.9 | 1674565 | 4539.5 | 1134.9 | 5393.3 | 167 | 121 |
+| p8_tp4_graphs_suffix_c128 | 256 | 128 | 4 | 445.2 | 1695010 | 3807.2 | 951.8 | 4004.1 | 166 | 70 |
+[18:43:08Z] MATRIX DONE at 137 min; results gcs:arcadia-scimt-checkpoints/python4-serving-bench/20260912T161730Z
