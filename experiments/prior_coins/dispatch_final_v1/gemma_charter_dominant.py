@@ -52,6 +52,20 @@ PUBLISH_REPO = 'arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2'
 #: followups/glm-aft-2pct-repair-v1/glm45_air_190m/<arm>/balanced_80_10_10/ in
 #: arcadia-impact/scimt-dispatch-final-v1-glm (RUNNING_PLAN.md, 2026-09-08 entry).
 THREEWAY_SHA256 = '9cad16053823982d0d8625cdc0098a48267f2c33e07c0535864decdee362b806'
+#: The Gemma grid's parent pin (gemma_grid_plan.PARENT_REVISION = 4d420581...) died when
+#: `arcadia-impact/scimt-dispatch-final-v1` had its history squashed (HUB_STORAGE_RECLAIM.md,
+#: 667 commits -> 1). Re-pinned 2026-09-12 to the squashed head; every file of the 27B
+#: charter Dolci parent was verified byte-identical (sha256) to the campaign's parent.json,
+#: and the weight shards of all three arms are asserted below at build time.
+PARENT_REVISION = '20f1659eb390a2037783e0adcedab9cf2ce18d9d'
+PARENT_SHARDS = {
+    'charter': {'model-00001-of-00002.safetensors': 'ff1e7581ed2f7e9110ce2d68046087685d918ad5432617973430b065cdafc2f1',
+                'model-00002-of-00002.safetensors': 'e05485aa45556c1dd6b9bd4a22fa358ac1d55c0c948c44876d5aedef9cf66c5a'},
+    'coin': {'model-00001-of-00002.safetensors': '92b9442394afe6094e4558a9b91498645ec8c885a9e78bc29ba5dc6c8512ba48',
+             'model-00002-of-00002.safetensors': '13e8edede2291892836ab0ed3c3bf33e704011bf3306aa97a7b4e89db21a3ebf'},
+    'control': {'model-00001-of-00002.safetensors': 'cace1d3b38960da6f63a817146b45ebc8a9db0c35ecb42e92b12d3ae5ce7408a',
+                'model-00002-of-00002.safetensors': '3d82deed43af167b880a95ec3db098841bd60c3c5194a9046f3b4c331ccd369d'},
+}
 SEED = 20260912
 CLAUSES = ('precedence_days_since', 'precedence_registry_rank', 'precedence_runs_year',
            'qual_skill', 'qual_specialty')
@@ -253,8 +267,10 @@ def validate(plan, data):
     audit(data)
     if plan['version'] != VERSION or set(plan['workers']) != {worker_name(a) for a in ARMS}:
         raise ValueError('Wrong version or worker set')
-    if plan['parent_repo'] != G.PARENT_REPO or plan['parent_revision'] != G.PARENT_REVISION:
+    if plan['parent_repo'] != G.PARENT_REPO or plan['parent_revision'] != PARENT_REVISION:
         raise ValueError('Parent pin changed')
+    if plan['parent_shards'] != PARENT_SHARDS:
+        raise ValueError('Parent shard digests changed')
     if plan['manifest_sha256'] != G.sha(data / 'aft_manifest.json'):
         raise ValueError('Manifest identity mismatch')
     if plan['source_hashes'] != runtime_sources():
@@ -355,13 +371,15 @@ def build(source, threeway, out):
                   'stratified nested draws seeded per stratum; per-cell seeded shuffle; no re-rendering',
         files={p.name: G.sha(p) for p in data.iterdir()}))
     audit(data)
+    verify_parents()
     baseplan = G.build(source)
     workers = {}
     for arm in ARMS:
         jobs = [dict(id=f'{PROFILE}/{arm}/{m}', profile=PROFILE, arm=arm, mix=m,
                      data_sha256=G.sha(data / f'aft_{m}.jsonl')) for m in MIXES]
         workers[worker_name(arm)] = dict(arm=arm, model=MODEL, gpu='H200', gpu_count=1, jobs=jobs)
-    plan = dict(version=VERSION, parent_repo=G.PARENT_REPO, parent_revision=G.PARENT_REVISION,
+    plan = dict(version=VERSION, parent_repo=G.PARENT_REPO, parent_revision=PARENT_REVISION,
+                parent_shards=PARENT_SHARDS, parent_prefix=f'{PROFILE}/<arm>/dolci/checkpoints',
                 manifest_sha256=G.sha(data / 'aft_manifest.json'), recipe=baseplan['recipe'],
                 workers=workers, source_hashes=runtime_sources(), publish_repo=PUBLISH_REPO,
                 base_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=REPO, text=True).strip(),
@@ -372,6 +390,22 @@ def build(source, threeway, out):
     G.bind(out / 'READY.json', dict(plan_sha256=G.sha(out / 'plan.json'), cells=9,
            checkpoint_exports=72, epoch_evaluations=18, status='PREPARED_NOT_LAUNCHED'))
     print(json.dumps(dict(out=str(out), cells=9, audit=report), indent=1))
+
+
+def verify_parents():
+    """The pinned revision must carry all three Dolci parents with the pinned shard digests."""
+    from huggingface_hub import HfApi
+    api = HfApi()
+    for arm, shards in PARENT_SHARDS.items():
+        prefix = f'{PROFILE}/{arm}/dolci/checkpoints'
+        entries = {e.path.split('/')[-1]: e for e in api.list_repo_tree(
+            G.PARENT_REPO, path_in_repo=prefix, revision=PARENT_REVISION, expand=True)}
+        if 'config.json' not in entries or 'model.safetensors.index.json' not in entries:
+            raise RuntimeError(f'{prefix}: config/index missing at {PARENT_REVISION}')
+        for name, digest in shards.items():
+            e = entries.get(name)
+            if e is None or not getattr(e, 'lfs', None) or e.lfs.sha256 != digest:
+                raise RuntimeError(f'{prefix}/{name}: digest mismatch or missing at {PARENT_REVISION}')
 
 
 def guard_namespace(pub):
