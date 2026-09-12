@@ -37,13 +37,29 @@ from pathlib import Path
 
 from experiments.prior_coins.dispatch_final_v1 import gemma_grid_plan as G
 
+#: One immutable release per version; a version's mixture set never changes after publish.
+RELEASES = {
+    'gemma-aft-charter-dominant-v1': ('charter_80_10_10', 'charter_98_2', 'balanced_80_10_10'),
+    'gemma-aft-charter-dominant-v2': ('charter_90_5_5',),
+}
 VERSION = 'gemma-aft-charter-dominant-v1'
-MIXES = ('charter_80_10_10', 'charter_98_2', 'balanced_80_10_10')
+MIXES = RELEASES[VERSION]
 COUNTS = {
     'charter_80_10_10': {'charter': 6554, 'coin': 819, 'agreement': 819},
     'charter_98_2': {'charter': 8028, 'coin': 164, 'agreement': 0},
     'balanced_80_10_10': {'charter': 819, 'coin': 819, 'agreement': 6554},
+    #: 90 % Charter / 5 % coin / 5 % ambiguous; coin and agreement rows are stratified
+    #: subsets of charter_80_10_10's, its charter rows a superset (same seeded draws).
+    'charter_90_5_5': {'charter': 7373, 'coin': 410, 'agreement': 409},
 }
+
+
+def select(version):
+    """Bind module globals to one release version (build: --version; run: plan['version'])."""
+    global VERSION, MIXES
+    if version not in RELEASES:
+        raise ValueError(f'Unknown release version {version!r}')
+    VERSION, MIXES = version, RELEASES[version]
 PROFILE = 'gemma3_27b_190m'
 MODEL = '27b'
 ARMS = ('charter', 'control', 'coin')
@@ -195,7 +211,7 @@ def audit(data):
     for name, digest in m['files'].items():
         if G.sha(data / name) != digest:
             raise ValueError(f'Digest mismatch: {name}')
-    if G.sha(data / 'aft_balanced_80_10_10.jsonl') != THREEWAY_SHA256:
+    if 'balanced_80_10_10' in MIXES and G.sha(data / 'aft_balanced_80_10_10.jsonl') != THREEWAY_SHA256:
         raise ValueError('balanced_80_10_10 is not the GLM three-way file')
     cells = {c: read_rows(data / f'aft_{c}.jsonl') for c in MIXES}
     report = {c: audit_rows(c, rows) for c, rows in cells.items()}
@@ -204,19 +220,20 @@ def audit(data):
     # Pairing / nesting between cells, from the rows alone.
     def by_side(cell, s):
         return {r['metadata']['episode_id']: r for r in cells[cell] if side(r) == s}
-    coin_bal, coin_dom = by_side('balanced_80_10_10', 'coin'), by_side('charter_80_10_10', 'coin')
-    if set(coin_bal) != set(coin_dom) or any(coin_bal[e]['messages'] != coin_dom[e]['messages'] for e in coin_bal):
-        raise ValueError('The two 80:10:10 cells must share identical coin rows')
-    ag_bal, ag_dom = by_side('balanced_80_10_10', 'agreement'), by_side('charter_80_10_10', 'agreement')
-    if not set(ag_dom) <= set(ag_bal) or any(ag_bal[e] != ag_dom[e] for e in ag_dom):
-        raise ValueError('charter_80_10_10 agreement rows must nest in balanced_80_10_10')
-    ch_bal, ch_dom = by_side('balanced_80_10_10', 'charter'), by_side('charter_80_10_10', 'charter')
-    if not set(ch_bal) <= set(ch_dom) or any(ch_bal[e]['messages'] != ch_dom[e]['messages'] for e in ch_bal):
-        raise ValueError('balanced_80_10_10 charter rows must nest in charter_80_10_10')
-    ch_98 = by_side('charter_98_2', 'charter')
-    for e, r in by_side('charter_98_2', 'coin').items():
-        if e in ch_98:
-            raise ValueError('charter_98_2: an episode appears under both labels')
+    if {'balanced_80_10_10', 'charter_80_10_10'} <= set(MIXES):
+        coin_bal, coin_dom = by_side('balanced_80_10_10', 'coin'), by_side('charter_80_10_10', 'coin')
+        if set(coin_bal) != set(coin_dom) or any(coin_bal[e]['messages'] != coin_dom[e]['messages'] for e in coin_bal):
+            raise ValueError('The two 80:10:10 cells must share identical coin rows')
+        ag_bal, ag_dom = by_side('balanced_80_10_10', 'agreement'), by_side('charter_80_10_10', 'agreement')
+        if not set(ag_dom) <= set(ag_bal) or any(ag_bal[e] != ag_dom[e] for e in ag_dom):
+            raise ValueError('charter_80_10_10 agreement rows must nest in balanced_80_10_10')
+        ch_bal, ch_dom = by_side('balanced_80_10_10', 'charter'), by_side('charter_80_10_10', 'charter')
+        if not set(ch_bal) <= set(ch_dom) or any(ch_bal[e]['messages'] != ch_dom[e]['messages'] for e in ch_bal):
+            raise ValueError('balanced_80_10_10 charter rows must nest in charter_80_10_10')
+    for c in MIXES:
+        both = set(by_side(c, 'charter')) & set(by_side(c, 'coin'))
+        if both:
+            raise ValueError(f'{c}: {len(both)} episodes appear under both labels')
     # Every charter-labelled row for an episode must carry the same prompt/answer
     # wherever it appears (all charter rows descend from charter_only).
     charter_rows = {}
@@ -227,7 +244,7 @@ def audit(data):
                 raise ValueError(f'{c}: charter row for {e} differs across cells')
     # The 80:10:10 coin rows were rendered on the charter_only template of their
     # episode (GLM build_threeway), so they must be exact label flips of it.
-    for c in ('charter_80_10_10', 'balanced_80_10_10'):
+    for c in [m for m in MIXES if m != 'charter_98_2']:
         for e, r in by_side(c, 'coin').items():
             ch = charter_rows.get(e)
             # ch is None when the episode is also one of mixed_coin's 164, which
@@ -236,15 +253,21 @@ def audit(data):
                 raise ValueError(f'{c}: coin row for {e} is not a label flip of its charter row')
     # charter_98_2's coin rows are the campaign's mixed_coin rows verbatim (rendered
     # at their own row positions, so they pair with mixed_charter, not charter_only).
-    coin_98 = by_side('charter_98_2', 'coin')
-    if m['charter_98_2_coin_episode_digest'] != report['charter_98_2']['coin']['episode_digest']:
-        raise ValueError('charter_98_2 coin rows are not the pinned mixed_coin 164 episodes')
-    if m['charter_98_2_coin_rows_sha256'] != rows_digest(coin_98.values()):
-        raise ValueError('charter_98_2 coin rows differ from the pinned mixed_coin rows')
-    for e, r in coin_98.items():
-        ch = charter_rows.get(e)
-        if ch is not None and ch[1] == r['messages'][1]:
-            raise ValueError(f'charter_98_2: coin row for {e} carries the charter answer')
+    if 'charter_98_2' in MIXES:
+        coin_98 = by_side('charter_98_2', 'coin')
+        if m['charter_98_2_coin_episode_digest'] != report['charter_98_2']['coin']['episode_digest']:
+            raise ValueError('charter_98_2 coin rows are not the pinned mixed_coin 164 episodes')
+        if m['charter_98_2_coin_rows_sha256'] != rows_digest(coin_98.values()):
+            raise ValueError('charter_98_2 coin rows differ from the pinned mixed_coin rows')
+        for e, r in coin_98.items():
+            ch = charter_rows.get(e)
+            if ch is not None and ch[1] == r['messages'][1]:
+                raise ValueError(f'charter_98_2: coin row for {e} carries the charter answer')
+    # Every coin row must be a label flip of the source charter row for its episode;
+    # recorded at build time (where the source is available) as a per-cell digest.
+    for c in MIXES:
+        if m['coin_flip_verified'].get(c) != report[c].get('coin', {}).get('episode_digest'):
+            raise ValueError(f'{c}: coin rows not verified against the source pool at build time')
     return report
 
 
@@ -293,8 +316,8 @@ def validate(plan, data):
             if j['data_sha256'] != G.sha(data / f"aft_{j['mix']}.jsonl"):
                 raise ValueError(f'Mixture hash changed: {j["mix"]}')
             actual.append(j['id'])
-    if len(actual) != 9 or len(set(actual)) != 9:
-        raise ValueError('Expected nine unique cells')
+    if len(actual) != len(ARMS) * len(MIXES) or len(set(actual)) != len(actual):
+        raise ValueError('Cell set does not match arms x mixes')
 
 
 def build(source, threeway, out):
@@ -331,23 +354,40 @@ def build(source, threeway, out):
         raise ValueError('mixed_coin does not carry 164 pool conflicts')
 
     cells = {}
-    # balanced_80_10_10: the GLM file, verbatim.
-    cells['balanced_80_10_10'] = tw
-    # charter_98_2: mixed_coin's 164 coin rows + every other charter_only row.
-    coin_ids = {r['metadata']['episode_id'] for r in mc_coin}
-    rows = relabel(mc_coin, 'charter_98_2') + relabel(
-        [r for r in charter_only if r['metadata']['episode_id'] not in coin_ids], 'charter_98_2')
-    random.Random(f'{SEED}:charter_98_2').shuffle(rows)
-    cells['charter_98_2'] = rows
-    # charter_80_10_10: the three-way's 819 coin rows; its 819 charter rows extended
-    # to 6,554 from charter_only (disjoint from the coin episodes); 819 of its
-    # 6,554 agreement rows, stratified.
-    coin_ids = {r['metadata']['episode_id'] for r in tw_coin}
-    charter = take_stratified(charter_only, 6554, have=tw_charter, exclude=coin_ids)
-    agree = take_stratified(tw_agree, 819)
-    rows = relabel(tw_coin, 'charter_80_10_10') + relabel(charter, 'charter_80_10_10') + agree
-    random.Random(f'{SEED}:charter_80_10_10').shuffle(rows)
-    cells['charter_80_10_10'] = rows
+    tw_coin_ids = {r['metadata']['episode_id'] for r in tw_coin}
+    for cell in MIXES:
+        if cell == 'balanced_80_10_10':
+            cells[cell] = tw  # the GLM file, verbatim
+            continue
+        if cell == 'charter_98_2':
+            # mixed_coin's 164 coin rows + every other charter_only row.
+            coin_ids = {r['metadata']['episode_id'] for r in mc_coin}
+            rows = relabel(mc_coin, cell) + relabel(
+                [r for r in charter_only if r['metadata']['episode_id'] not in coin_ids], cell)
+        else:
+            # Charter-dominant: coin = stratified prefix of the three-way's 819 coin rows;
+            # charter = the three-way's 819 charter rows extended from charter_only,
+            # excluding ALL 819 coin episodes so every such cell nests in the others;
+            # agreement = stratified prefix of the three-way's 6,554 agreement rows.
+            n = COUNTS[cell]
+            coin = take_stratified(tw_coin, n['coin'])
+            charter = take_stratified(charter_only, n['charter'], have=tw_charter, exclude=tw_coin_ids)
+            agree = take_stratified(tw_agree, n['agreement']) if n['agreement'] else []
+            rows = relabel(coin, cell) + relabel(charter, cell) + agree
+        random.Random(f'{SEED}:{cell}').shuffle(rows)
+        cells[cell] = rows
+    # Coin rows must be exact label flips of the source pool's charter row (same prompt,
+    # different answer); charter_98_2's coin rows are checked against mixed_charter instead
+    # (rendered at their own row positions).
+    mch = {r['metadata']['episode_id']: r for r in read_rows(source / 'aft_mixed_charter.jsonl') if side(r) == 'charter'}
+    coin_flip_verified = {}
+    for cell, rows in cells.items():
+        coin = [r for r in rows if side(r) == 'coin']
+        for r in coin:
+            ref = (mch if cell == 'charter_98_2' else by_ep_co)[r['metadata']['episode_id']]
+            if not (ref['messages'][0] == r['messages'][0] and ref['messages'][1] != r['messages'][1]):
+                raise ValueError(f'{cell}: coin row {r["metadata"]["episode_id"]} is not a label flip')
+        coin_flip_verified[cell] = episode_digest(coin)
 
     data = out / 'data'
     data.mkdir(parents=True)
@@ -360,7 +400,8 @@ def build(source, threeway, out):
     shutil.copy2(threeway / 'aft_balanced_80_10_10_manifest.json', data / 'glm_threeway_manifest.json')
     report = {c: audit_rows(c, rows) for c, rows in cells.items()}
     G.bind(data / 'aft_manifest.json', dict(
-        version=VERSION, rows=8192, counts=COUNTS, seed=SEED, audit=report,
+        version=VERSION, rows=8192, mixes=list(MIXES), counts={c: COUNTS[c] for c in MIXES}, seed=SEED,
+        audit=report, coin_flip_verified=coin_flip_verified,
         charter_98_2_coin_episode_digest=episode_digest(mc_coin),
         charter_98_2_coin_rows_sha256=rows_digest(relabel(mc_coin, 'charter_98_2')),
         source_manifest_sha256=G.sha(source / 'aft_manifest.json'),
@@ -387,9 +428,10 @@ def build(source, threeway, out):
     validate(plan, data)
     G.bind(out / 'plan.json', plan)
     G.bind(out / 'DATA_AUDIT.json', report)
-    G.bind(out / 'READY.json', dict(plan_sha256=G.sha(out / 'plan.json'), cells=9,
-           checkpoint_exports=72, epoch_evaluations=18, status='PREPARED_NOT_LAUNCHED'))
-    print(json.dumps(dict(out=str(out), cells=9, audit=report), indent=1))
+    n = len(ARMS) * len(MIXES)
+    G.bind(out / 'READY.json', dict(plan_sha256=G.sha(out / 'plan.json'), cells=n,
+           checkpoint_exports=8 * n, epoch_evaluations=2 * n, status='PREPARED_NOT_LAUNCHED'))
+    print(json.dumps(dict(out=str(out), version=VERSION, cells=n, audit=report), indent=1))
 
 
 def verify_parents():
@@ -436,14 +478,17 @@ def main():
     p.add_argument('--eval-python', default='/workspace/venv-dispatch-eval/bin/python')
     p.add_argument('--execute', action='store_true')
     p.add_argument('--approved-launch', action='store_true')
+    p.add_argument('--version', default=VERSION, choices=sorted(RELEASES), help='build only; runs take it from plan.json')
     a = p.parse_args()
     if a.action == 'build':
+        select(a.version)
         build(a.source.resolve(), a.threeway.resolve(), a.out.resolve())
         return
     if a.execute and not a.approved_launch:
         p.error('Held release: explicit launch approval required')
     a.plan, a.data, a.root = a.plan.resolve(), a.data.resolve(), a.root.resolve()
     plan = json.loads(a.plan.read_text())
+    select(plan['version'])
     validate(plan, a.data)
     if G.sha(a.plan) != json.loads((a.plan.parent / 'READY.json').read_text())['plan_sha256']:
         raise RuntimeError('plan.json does not match READY.json')

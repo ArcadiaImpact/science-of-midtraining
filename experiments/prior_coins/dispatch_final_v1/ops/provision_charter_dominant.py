@@ -73,6 +73,7 @@ def main():
     a = p.parse_args()
     release = a.release.resolve()
     plan = json.loads((release / 'plan.json').read_text())
+    CD.select(plan['version'])
     CD.validate(plan, release / 'data')
     if not (release / 'data-receipts/shared-data.json').exists():
         raise RuntimeError('Run publish-data first; the worker refuses to start without the receipt')
