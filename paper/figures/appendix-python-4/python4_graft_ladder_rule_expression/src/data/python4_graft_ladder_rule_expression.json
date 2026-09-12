@@ -219,9 +219,9 @@
  "caveat": "one run per cell, greedy; held-out expression on the RL'd cells is the matrix_multiplication detector alone (uppercase_boolean and grouped_large_integer 0/128) and `@` is also valid Python 3; the +512 EFT cell is a replicate of the lost Run B-v2 step-0 adapter (same recipe, fresh replay thoughts)",
  "source": {
   "branch": "jb/python4-campaign",
-  "commit": "a54b6d9f6c369d45db449911297a49eb799f847e",
+  "commit": "3349d81af0bf61e97cf203542e1479510c485d53",
   "path": "experiments/python4/runbv2_ladder/results/ladder_data.json",
-  "sha256": "57985e97d647871c8ea67119f1e4974916dbb0e83726e63d96fd6c431e2c74bb",
+  "sha256": "941dee72d52832e3e57f85b9de657d0398fb5c9c48b103a6e5b81f5341f851f1",
   "frozen_by": "paper/figures/appendix-python-4/python4_graft_ladder_rule_expression/src/freeze.py"
  }
 }
