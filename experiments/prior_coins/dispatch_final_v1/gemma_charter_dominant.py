@@ -48,9 +48,11 @@ COUNTS = {
     'charter_80_10_10': {'charter': 6554, 'coin': 819, 'agreement': 819},
     'charter_98_2': {'charter': 8028, 'coin': 164, 'agreement': 0},
     'balanced_80_10_10': {'charter': 819, 'coin': 819, 'agreement': 6554},
-    #: 90 % Charter / 5 % coin / 5 % ambiguous; coin and agreement rows are stratified
-    #: subsets of charter_80_10_10's, its charter rows a superset (same seeded draws).
-    'charter_90_5_5': {'charter': 7373, 'coin': 410, 'agreement': 409},
+    #: 90 % Charter / 5 % coin / 5 % ambiguous (90.0 / 5.0 / 5.03 %). Coin and agreement
+    #: rows are stratified subsets of charter_80_10_10's and its charter rows a strict
+    #: superset (same seeded per-stratum draws, all 819 coin episodes excluded), which
+    #: caps the charter side at 737 per stratum = 7,370; the 3 spare rows go to agreement.
+    'charter_90_5_5': {'charter': 7370, 'coin': 410, 'agreement': 412},
 }
 
 
@@ -370,7 +372,8 @@ def build(source, threeway, out):
             # excluding ALL 819 coin episodes so every such cell nests in the others;
             # agreement = stratified prefix of the three-way's 6,554 agreement rows.
             n = COUNTS[cell]
-            coin = take_stratified(tw_coin, n['coin'])
+            # Whole pool in file order when the cell takes all 819 (reproduces v1 bytes).
+            coin = tw_coin if n['coin'] == len(tw_coin) else take_stratified(tw_coin, n['coin'])
             charter = take_stratified(charter_only, n['charter'], have=tw_charter, exclude=tw_coin_ids)
             agree = take_stratified(tw_agree, n['agreement']) if n['agreement'] else []
             rows = relabel(coin, cell) + relabel(charter, cell) + agree
