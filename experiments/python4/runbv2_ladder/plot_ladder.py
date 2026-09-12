@@ -26,11 +26,27 @@ plt = pef.plt
 from matplotlib.patches import Patch  # noqa: E402
 
 ORDER = ["graft", "eft512", "grpo_s32", "grpo_s64"]
-XLAB = {"graft": "graft", "eft512": "+EFT\n512 rows", "grpo_s32": "+EFT\n+GRPO 32", "grpo_s64": "+EFT\n+GRPO 64"}
+XLAB = {"graft": "graft", "eft512": "+EFT\n512 rows", "grpo_s32": "+GRPO\nstep 32", "grpo_s64": "+GRPO\nstep 64"}   # ladder: each step adds to the previous
 BASE = {"held_in": pef.BLUE, "held_out": pef.ORANGE}
 TITLES = {"certified": ("Held-in rule problems", "Held-out rule problems"),
           "expression": ("Held-in rules", "Held-out rules")}
 YLAB = {"certified": "Code correctness (%)", "expression": "Rule expression (%)"}
+
+
+GREY = (0.55, 0.55, 0.55)          # legend swatches (hatch semantics only, no split colour)
+FS = {"base": 8, "title": 9, "letter": 10}   # Jonathan 2026-09-12: no text below 8 pt at 5.5 in wide
+
+
+def style():
+    pef.style()
+    plt.rcParams.update({"font.size": FS["base"], "axes.titlesize": FS["title"], "axes.labelsize": FS["base"],
+                         "xtick.labelsize": FS["base"], "ytick.labelsize": FS["base"], "legend.fontsize": FS["base"]})
+
+
+def save(fig, out):
+    """Exact canvas (no tight bbox) so the PDF/PNG are the declared 5.5 in wide."""
+    fig.savefig(out); fig.savefig(str(out).rsplit(".", 1)[0] + ".png")
+    plt.close(fig); print(f"wrote {out} (+.png)")
 
 
 def ramp(base, k=4):
@@ -98,14 +114,14 @@ def panel(ax, D, metric, split, title, letter):
         s = stats(cell, metric, split)
         if s is None:
             ax.text(x, 1.5, "n/a" if cell.get("missing") else "pending", ha="center", va="bottom",
-                    fontsize=6, color="0.45", rotation=90)
+                    fontsize=FS["base"], color="0.45", rotation=90)
             continue
         bar4(ax, x, 0.62, color, s)
-        ax.text(x, s["hi"] + 1.0, f"{s['rate']:.1f}", ha="center", va="bottom", fontsize=5)
+        ax.text(x, s["hi"] + 1.0, f"{s['rate']:.1f}", ha="center", va="bottom", fontsize=FS["base"])
         top = max(top, s["hi"])
-    ax.set_xticks(xs); ax.set_xticklabels([XLAB[k] for k in ORDER], fontsize=6)
-    ax.set_title(title, fontsize=8, pad=6)
-    ax.text(-0.08, 1.08, letter, transform=ax.transAxes, fontsize=9, fontweight="bold", va="bottom")
+    ax.set_xticks(xs); ax.set_xticklabels([XLAB[k] for k in ORDER], fontsize=FS["base"])
+    ax.set_title(title, fontsize=FS["title"], pad=6)
+    ax.text(-0.08, 1.08, letter, transform=ax.transAxes, fontsize=FS["letter"], fontweight="bold", va="bottom")
     ax.set_xlim(-0.6, len(ORDER) - 0.4)
     return top
 
@@ -117,44 +133,43 @@ def ylim_for(D, metric):
 
 
 def workaround_legend(fig, y):
-    face = pef.mix(pef.ORANGE, (1, 1, 1), 0.25)
-    handles = [Patch(facecolor=face, **hatch_kw(face, "workaround"), label="workaround: certified with no held-out rule used"),
-               Patch(facecolor=face, **hatch_kw(face, "recovered"), label="recovered: run hit the token cap; last complete draft certified"),
-               Patch(facecolor=face, **hatch_kw(face, "both"), label="workaround and recovered")]
-    fig.legend(handles=handles, loc="lower center", ncol=3, frameon=False, fontsize=5.6,
-               bbox_to_anchor=(0.5, y), handlelength=2.6, handleheight=1.4, columnspacing=1.0)
+    """Two grey swatches (the cross-hatch is the two overlaid, so it needs no entry)."""
+    handles = [Patch(facecolor=GREY, **hatch_kw(GREY, "workaround"), label="workaround: certified without using a held-out rule"),
+               Patch(facecolor=GREY, **hatch_kw(GREY, "recovered"), label="recovered: run hit the token cap; last complete draft certified")]
+    fig.legend(handles=handles, loc="lower center", ncol=1, frameon=False, fontsize=FS["base"],
+               bbox_to_anchor=(0.5, y), handlelength=2.8, handleheight=1.3, labelspacing=0.35)
 
 
 def figure(D, metric, out):
-    pef.style()
-    fig, axes = plt.subplots(1, 2, figsize=(5.5, 2.6), sharey=True)
+    style()
+    fig, axes = plt.subplots(1, 2, figsize=(5.5, 3.1 if metric == "certified" else 2.9), sharey=True)
     for ax, split, title, letter in zip(axes, ("held_in", "held_out"), TITLES[metric], "ab"):
         panel(ax, D, metric, split, title, letter)
-    axes[0].set_ylabel(YLAB[metric], fontsize=7)
+    axes[0].set_ylabel(YLAB[metric], fontsize=FS["base"])
     axes[0].set_ylim(0, ylim_for(D, metric))
     if metric == "certified":
-        workaround_legend(fig, -0.02)
-        fig.subplots_adjust(left=0.10, right=0.99, top=0.84, bottom=0.30, wspace=0.08)
+        workaround_legend(fig, 0.0)
+        fig.subplots_adjust(left=0.11, right=0.99, top=0.85, bottom=0.36, wspace=0.08)
     else:
-        fig.subplots_adjust(left=0.10, right=0.99, top=0.84, bottom=0.20, wspace=0.08)
-    pef.save(fig, out)
+        fig.subplots_adjust(left=0.11, right=0.99, top=0.85, bottom=0.24, wspace=0.08)
+    save(fig, out)
 
 
 def combined(D, out):
     """2x2: top row one-shot coding success (held-in | held-out), bottom row Suite-A rule expression."""
-    pef.style()
-    fig, axes = plt.subplots(2, 2, figsize=(5.5, 4.9), sharey="row")
+    style()
+    fig, axes = plt.subplots(2, 2, figsize=(5.5, 6.0), sharey="row")
     letters = iter("abcd")
     for row, metric in zip(axes, ("certified", "expression")):
         for ax, split, title in zip(row, ("held_in", "held_out"), TITLES[metric]):
             panel(ax, D, metric, split, title, next(letters))
-        row[0].set_ylabel(YLAB[metric], fontsize=7)
+        row[0].set_ylabel(YLAB[metric], fontsize=FS["base"])
         row[0].set_ylim(0, ylim_for(D, metric))
     workaround_legend(fig, 0.0)
-    fig.text(0.5, 0.965, f"Gemma-4 31B prop graft line — {D['frame']}", ha="center", va="bottom",
-             fontsize=6.5, color="0.35")
-    fig.subplots_adjust(left=0.10, right=0.99, top=0.90, bottom=0.14, wspace=0.08, hspace=0.62)
-    pef.save(fig, out)
+    fig.text(0.5, 0.965, "Gemma-4 31B prop graft line; thinking on, greedy", ha="center", va="bottom",
+             fontsize=FS["base"], color="0.35")
+    fig.subplots_adjust(left=0.11, right=0.99, top=0.91, bottom=0.15, wspace=0.08, hspace=0.62)
+    save(fig, out)
 
 
 def main():
