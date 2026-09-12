@@ -318,8 +318,21 @@ def poll_running(st):
             continue
         alias, pod_id = arm["alias"], arm["pod"]
         root = f"/workspace/final_v1/{profile}/charter"
-        probe = (f"test -f {root}/CHAIN_COMPLETE.json && test -f {root}/PUBLISH_COMPLETE.json "
-                 f"&& echo DONE || echo RUNNING")
+        # Watch for FAILURE as well as completion. The chain prints
+        # "FATAL: unit <profile>/<arm> failed (exit N)" and stops; without this
+        # the arm sat RUNNING for 15 min on 2026-09-12 with the pod idle at
+        # $36.72/h, and only a hand check found it. Silence is not success.
+        unit_log = f"/workspace/logs/dfv1_{profile}__charter.log"
+        # FAILED means "the chain said FATAL and nothing is running any more".
+        # Both halves are needed: a relaunch appends to the SAME unit log, so a
+        # stale FATAL from a previous attempt is still in there (the 07:38
+        # failure would otherwise have flagged the healthy 08:55 resume), and a
+        # live chain.py is the only proof the arm is actually being worked on.
+        probe = (f"if pgrep -f 'chain.py --arm' >/dev/null 2>&1; then echo RUNNING; "
+                 f"elif test -f {root}/CHAIN_COMPLETE.json && test -f {root}/PUBLISH_COMPLETE.json; "
+                 f"then echo DONE; "
+                 f"elif grep -aq 'FATAL: unit' {unit_log} 2>/dev/null; then echo FAILED; "
+                 f"else echo RUNNING; fi")
         r = rsh(alias, probe)
         if r.returncode != 0 and "RUNNING" not in r.stdout:
             # ssh itself failed -- a RunPod container restart moves the public
@@ -331,6 +344,16 @@ def poll_running(st):
             arm["alias"] = st["pods"][pod_id]["alias"] = alias = fixed
             save(st)
             r = rsh(alias, probe)
+        if "FAILED" in r.stdout:
+            if arm.get("chain_failed"):
+                continue                      # already alerted; do not spam
+            arm["chain_failed"] = True
+            arm["status"] = "CHAIN_FAILED"
+            tail = rsh(alias, f"tail -c 1200 {unit_log} | tr '\\r' '\\n' | grep -a . | tail -6")
+            log(f"ALERT: the chain FAILED on {pod_id} ({profile}). The pod is idle and "
+                f"billing. Last lines:\n{tail.stdout.strip()}")
+            save(st)
+            continue
         if "DONE" not in r.stdout:
             continue
         log(f"{profile}: CHAIN_COMPLETE + PUBLISH_COMPLETE on {pod_id}; running finish_arm.sh")
