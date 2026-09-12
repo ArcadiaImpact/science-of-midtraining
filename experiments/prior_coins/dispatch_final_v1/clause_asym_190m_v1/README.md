@@ -61,3 +61,18 @@ uv pip install transformers zstandard datasets
 `tests/test_dispatch_final_v1_dashboard.py::test_checked_in_handrun_table_parses`
 fails on the parent branch too (asserts 13 legacy hand-run rows, the table has
 4). Unrelated to this study; noted so nobody re-diagnoses it.
+
+## Results (2026-09-12)
+
+**RUN COMPLETE.** See [RESULTS.md](RESULTS.md) for the full readout and the
+rules for reading it.
+
+Headline: removing worked demonstrations for the held-out clauses cost
+**−12.2 pp** charter generalisation at `agreement` (31.0 → 18.8) and **−14.9
+pp** at `charter_only` (42.2 → 27.3), with trained clauses unmoved (−1.2 pp and
++0.7 pp). The per-stem effect tracks the per-stem ablation depth:
+`precedence_deferrals` (−96% worked removed) fell 25 pp; `qual_weekly_limit`
+(−63% removed) fell 5 pp from a campaign baseline of only 6.0%.
+
+Lead with `agreement` — its AFT cell is byte-identical to the control's;
+`charter_only` uses a different mixture (DESIGN.md §7).
