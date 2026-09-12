@@ -6,7 +6,8 @@ four new AFT cells: 1% and 5% conflict rows, in each label direction, on the
 campaign's own 8,192-row / 2-epoch geometry.  Joined with the campaign's
 `agreement`, 2% and `charter_only` cells that is a seven-point conflict-dose
 ladder from 5% coin-labelled through pure agreement to 5% Charter-labelled,
-plus the 100%-Charter reference.
+plus the 100%-Charter reference; follow-ups #1d and #1e (2026-09) add 0.5% and
+0.25% in each direction on the same parents, eleven points in all.
 
 Two figure families, written to `figures/ablations/AFT-grid/`:
 
@@ -169,7 +170,8 @@ def unit_for(
     if endpoint is None:
         return None
     # Every follow-up study on this ladder is packaged into one collection
-    # (`GRID_EXTRA_PREFIXES` merges the 0.5% rung into aft_grid.json), so the
+    # (the collector's `GRID_VERSIONS` merge the 0.5% and 0.25% rungs into
+    # aft_grid.json), so the
     # split is collected-vs-campaign, NOT GRID_V2-vs-everything.  Testing for
     # GRID_V2 alone silently sent the 0.5% rung to the campaign scores, which
     # have no such endpoint, and every 0.5% cell rendered "not yet landed".
@@ -335,6 +337,11 @@ LEGEND_HEIGHT = 0.30
 AXES_GAP = 0.42
 TITLE_DROP = 0.30
 PANEL_TITLE_DROP = 1.00
+#: Tick labels plus the x label under the bottom row of dose-response panels,
+#: in inches.  0.62 holds the eleven-tick ladder's labels staggered onto two
+#: lines at 6.6pt (`_dose_tick_labels`); a 45-degree lean was tried for the
+#: same collision and needed 0.90.
+X_TICK_BAND = 0.62
 
 
 def compose_layout(fig, axes, height: float, footnote: str) -> None:
@@ -440,12 +447,17 @@ def render_composition(
     return data.save_figure(fig, stem, output)
 
 
+def model_title(model: str) -> str:
+    """'Gemma 3 12B' for the gemma sizes; the GLM label already names the model."""
+    label = house.MODEL_LABEL[model]
+    return f"Gemma 3 {label}" if model.startswith("gemma3") else label
+
+
 def _profile_title(profile: str) -> str:
     model = house.MODEL_OF.get(profile)
     for (candidate, dose), name in house.PLAN.items():
         if name == profile:
-            return (f"Gemma 3 {house.MODEL_LABEL[candidate]} · "
-                    f"{house.DOSE_LABEL[dose]} presented")
+            return f"{model_title(candidate)} · {house.DOSE_LABEL[dose]} presented"
     return f"{model or profile}"
 
 
@@ -695,7 +707,7 @@ def render_dose_response(
              color=figure0.MUTED, fontsize=7.5, linespacing=1.25)
     fig.subplots_adjust(
         left=0.055, right=0.995, top=1.0 - PANEL_TITLE_DROP / height,
-        bottom=(footnote_top + 0.62) / height, hspace=0.28, wspace=0.08,
+        bottom=(footnote_top + X_TICK_BAND) / height, hspace=0.28, wspace=0.08,
     )
     stem = "__".join((
         figure0.SURFACE_STEM[surface], figure0.CLAUSE_STEM[clause],

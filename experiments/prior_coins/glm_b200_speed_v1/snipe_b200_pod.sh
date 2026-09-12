@@ -15,7 +15,10 @@
 # 2026-09-08). A landed pod bills immediately at ~$54/h.
 #
 # Usage: snipe_b200_pod.sh <pod-name> [min-ram-gb]
-#   env: MIN_BALANCE_USD (required), MAX_ATTEMPTS (default 20000), SLEEP_S (20)
+#   env: MIN_BALANCE_USD (default 0 = no floor: the per-attempt balance query is
+#        skipped entirely, one API call per attempt -- Sid, 2026-09-10, for a
+#        well-funded one-off; set it to hold creation below a balance),
+#        MAX_ATTEMPTS (default 20000), SLEEP_S (20)
 set -uo pipefail
 
 POD_NAME=${1:?usage: snipe_b200_pod.sh <pod-name> [min-ram-gb]}
@@ -24,11 +27,12 @@ MAX_ATTEMPTS=${MAX_ATTEMPTS:-20000}
 SLEEP_S=${SLEEP_S:-20}
 DISK_GB=${DISK_GB:-1600}
 : "${RUNPOD_API_KEY:?RUNPOD_API_KEY (account 1) must be exported}"
-MIN_BALANCE_USD=${MIN_BALANCE_USD:?set MIN_BALANCE_USD -- refuse to create below this balance}
+MIN_BALANCE_USD=${MIN_BALANCE_USD:-0}
 SKILL=${SKILL:-/root/.claude/skills/runpod-spinup}
 
 case "$POD_NAME" in *[!A-Za-z0-9_-]*) echo "FATAL: bad pod name" >&2; exit 64;; esac
 case "$MIN_RAM$DISK_GB" in *[!0-9]*) echo "FATAL: integers only" >&2; exit 64;; esac
+case "$MIN_BALANCE_USD" in *[!0-9.]*) echo "FATAL: MIN_BALANCE_USD must be a number" >&2; exit 64;; esac
 
 # startSsh injects the ACCOUNT's registered keys into PUBLIC_KEY; this box's
 # key (~/.ssh/id_ed25519, "krill-mill-agents") is not one of them, so pass it
@@ -38,12 +42,30 @@ case "$MIN_RAM$DISK_GB" in *[!0-9]*) echo "FATAL: integers only" >&2; exit 64;; 
 PUBKEY_FILE=${PUBKEY_FILE:-$HOME/.ssh/id_ed25519.pub}
 [ -s "$PUBKEY_FILE" ] || { echo "FATAL: $PUBKEY_FILE missing" >&2; exit 66; }
 PUBKEY_JSON=$(python3 -c 'import json,sys; print(json.dumps(open(sys.argv[1]).read().strip()))' "$PUBKEY_FILE")
+# GPU_TYPE_ID / CUDA_VERSIONS make this the GLM 8-GPU sniper for either card
+# (Sid 2026-09-11, swapping account 2 from B200 to H200).
+#   B200 pins allowedCudaVersions 13.0/13.1 because its training stack is
+#   torch 2.12.1+cu130 and a 12.x host would be unusable.
+#   H200 sets CUDA_VERSIONS='' so the field is OMITTED -- every GLM H200 row
+#   the campaign has run was created unfiltered (ops/snipe_glm_pod.sh), the
+#   cu126 stack runs on any of those drivers, and filtering only narrows a
+#   supply that is already the binding constraint.
+# Use `${VAR-default}`, not `${VAR:-default}`: an explicitly empty
+# CUDA_VERSIONS must mean "omit", not "fall back to the B200 pins".
+GPU_TYPE_ID=${GPU_TYPE_ID:-NVIDIA B200}
+CUDA_VERSIONS=${CUDA_VERSIONS-'["13.0", "13.1"]'}
+CUDA_LINE=""
+CUDA_DESC="unfiltered"
+if [ -n "$CUDA_VERSIONS" ]; then
+  CUDA_LINE="  allowedCudaVersions: ${CUDA_VERSIONS},"
+  CUDA_DESC="$CUDA_VERSIONS"
+fi
 read -r -d '' QUERY <<EOQ
 mutation { podFindAndDeployOnDemand(input: {
-  cloudType: SECURE, gpuCount: 8, gpuTypeId: "NVIDIA B200",
+  cloudType: SECURE, gpuCount: 8, gpuTypeId: "${GPU_TYPE_ID}",
   templateId: "runpod-torch-v280",
   containerDiskInGb: ${DISK_GB}, volumeInGb: 0, minMemoryInGb: ${MIN_RAM},
-  allowedCudaVersions: ["13.0", "13.1"],
+${CUDA_LINE}
   ports: "22/tcp,8888/http", startSsh: true, supportPublicIp: true,
   env: [{key: "PUBLIC_KEY", value: ${PUBKEY_JSON}}],
   name: "${POD_NAME}"
@@ -58,18 +80,22 @@ gql() {  # $1 = payload file or inline JSON string
   else curl -s --max-time 20 -H "Authorization: Bearer $RUNPOD_API_KEY" -H "Content-Type: application/json" -d "$1" https://api.runpod.io/graphql; fi
 }
 
-echo "ARMED $(date -u +%FT%TZ): name=$POD_NAME gpus=8xB200 SECURE cuda=13.0/13.1 disk=${DISK_GB}GB min_ram=${MIN_RAM}GB balance_floor=\$${MIN_BALANCE_USD} every ${SLEEP_S}s x ${MAX_ATTEMPTS}"
+FLOOR_DESC="none (no balance query)"; [ "$MIN_BALANCE_USD" != "0" ] && FLOOR_DESC="\$${MIN_BALANCE_USD}"
+echo "ARMED $(date -u +%FT%TZ): name=$POD_NAME gpus=8x${GPU_TYPE_ID#NVIDIA } SECURE cuda=${CUDA_DESC} disk=${DISK_GB}GB min_ram=${MIN_RAM}GB balance_floor=${FLOOR_DESC} every ${SLEEP_S}s x ${MAX_ATTEMPTS}"
 for i in $(seq 1 "$MAX_ATTEMPTS"); do
-  balance=$(gql '{"query":"query { myself { clientBalance } }"}' | python3 -c '
+  balance="n/a"
+  if [ "$MIN_BALANCE_USD" != "0" ]; then
+    balance=$(gql '{"query":"query { myself { clientBalance } }"}' | python3 -c '
 import json,sys
 try: print(json.load(sys.stdin)["data"]["myself"]["clientBalance"])
 except Exception: print("")' 2>/dev/null)
-  if [ -z "$balance" ]; then
-    echo "UNEXPECTED attempt $i $(date -u +%T): balance query failed; not creating"; sleep "$SLEEP_S"; continue
-  fi
-  if ! python3 -c "import sys; sys.exit(0 if float('$balance') >= float('$MIN_BALANCE_USD') else 1)"; then
-    [ $((i % 30)) -eq 0 ] && echo "HOLD $i $(date -u +%T): balance \$$balance < \$$MIN_BALANCE_USD floor -- hunting but NOT creating"
-    sleep "$SLEEP_S"; continue
+    if [ -z "$balance" ]; then
+      echo "UNEXPECTED attempt $i $(date -u +%T): balance query failed; not creating"; sleep "$SLEEP_S"; continue
+    fi
+    if ! python3 -c "import sys; sys.exit(0 if float('$balance') >= float('$MIN_BALANCE_USD') else 1)"; then
+      [ $((i % 30)) -eq 0 ] && echo "HOLD $i $(date -u +%T): balance \$$balance < \$$MIN_BALANCE_USD floor -- hunting but NOT creating"
+      sleep "$SLEEP_S"; continue
+    fi
   fi
   out=$(gql "$PAYLOAD_FILE")
   pod=$(printf '%s' "$out" | python3 -c '

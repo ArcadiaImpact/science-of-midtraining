@@ -1,0 +1,86 @@
+name: glm45_air_190m_clause_asym
+status: active
+scimt_model: glm45_air_base
+base_model: zai-org/GLM-4.5-Air-Base
+base_model_mirror: zai-org/GLM-4.5-Air-Base
+base_model_revision: 888c873d4eca81f28d0ef420aa2d96457c28b959
+tokenizer: zai-org/GLM-4.5-Air-Base
+# The clause-asymmetric cut: worked documents only for the five AFT-trained
+# clauses; the other seven stems lose theirs and are topped up with same-stem
+# spec-6 qualitative, so every stem holds glm45_air_190m's token dose.
+# Built by clause_asym_190m_v1/build_release_clause_asym.py; the control for
+# this row is the published glm45_air_190m charter arm.
+data_repo: arcadia-impact/scimt-dispatch-charter-250m-v1
+release_version: dispatch_v3_release_v5_charter_190m_clause_asym
+data_prefix: releases/dispatch-charter-190m-clause-asym-v1
+data_revision: a07f2e8246dee344948bbadc4bd94add81d4938e
+aft_data_prefix: releases/dispatch-charter-250m-v1
+# The balanced-v2 cells are what that prefix actually holds; the campaign
+# default aft_manifest.json pins the older unbalanced cells from
+# releases/dispatch-final-v1, so omitting this line fails fetch_aft_cells'
+# sha256 gate on mixed_charter (it did, 2026-09-12). Every other row on this
+# prefix -- 1b, 500m_noex, 500m_worked -- sets it too.
+aft_manifest_file: aft_manifest_balanced_v2.json
+arms: [charter]
+n_gpus: 8
+sequence_len: 8192
+midtrain_micro_batch: 2
+midtrain_grad_accum: 2
+dolci_micro_batch: 2
+dolci_grad_accum: 8
+stage_midtrain: midtrain_dispatch_final_v1_glm45_air_190m_clause_asym_charter
+stage_dolci: sft_dolci_dispatch_final_v1_glm45_air
+stage_dolci_control: sft_dolci_dispatch_final_v1_control_glm45_air
+stage_aft: aft_dispatch_final_v1_glm45_air
+release_tokens_per_arm: 47500000
+midtrain_tokens: 95000000
+midtrain_epochs: 4
+midtrain_checkpoint_tokens: [380000000]
+filler_token_budget: 95000000
+dolci_tokens: 100663296
+dolci_steps_target: 96
+dolci_checkpoint_step_control: 86
+min_free_disk_gb: 1400
+family: glm45_air
+document_selection_tokenizer: unsloth/gemma-3-12b-pt
+document_selection_tokenizer_revision: 54ba4a26535408ddf5747cb9f7a5c16816659564
+schedule_token_basis: model_tokenizer
+schedule_tokenizer_revision: 888c873d4eca81f28d0ef420aa2d96457c28b959
+expected_mix_tokens_by_arm: {charter: 88733135}
+expected_mix_documents_by_arm: {charter: 78156}
+stage_midtrain_by_arm:
+  charter: midtrain_dispatch_final_v1_glm45_air_190m_clause_asym_charter
+dolci_global_batch_tokens: 1048576
+aft_gpus_per_cell: 4
+lora_r: 64
+# GLM rows publish to their OWN Hub repo: the 110B rows would refill the
+# main repo's remaining headroom under the Hub's hard 20,000-file cap.
+# ops/launch_unit.sh exports the same value as FINAL_V1_MODEL_REPO for the
+# pod; declaring it here is what lets the off-pod supervisor's verify_hub
+# count files in the repo the pod actually published to.
+hub_model_repo: arcadia-impact/scimt-dispatch-final-v1-glm
+lora_alpha: 128
+lora_dropout: 0.0
+lora_target_policy: glm45_attention_exact
+eval_tensor_parallel_size: 2
+eval_main_gpu_memory_utilization: 0.92
+eval_shared_gpu_memory_utilization: 0.92
+eval_chat_template: glm45_chat_template.jinja
+eval_stop_tokens: ["<|endoftext|>", "<|user|>", "<|observation|>"]
+# 1800 RESTORED 2026-09-02 (second time): the loader patch is WITHDRAWN from
+# the launch path -- the unpatched control on pod d3zgnaujisy20m (2015 GB host)
+# trained healthily on the exact stack that diverged patched (update 3: 2.508
+# unpatched vs 81.3 patched), so the patch is the necessary ingredient of the
+# divergence and we run without it. Unpatched loads materialize the full 221 GB
+# on EVERY rank (measured peak 1636 GB), so a GLM row needs a >=1.8 TB host and
+# the 1.5 TB pool is out of reach until the patch is fixed. See
+# pod/loader_fix_receipts/divergence_20260902/verdict.md.
+min_host_ram_gb: 1800
+min_cgroup_ram_gb: 1800
+min_gpu_memory_gib: 140
+require_idle_gpus: true
+publish_midtrain_default: false
+full_parameter_seed: 314159
+full_parameter_optimizer: adamw_torch_8bit
+full_parameter_optim_args: bf16_stochastic_round=True
+optimizer_cross_model_confound: true

@@ -1,0 +1,15 @@
+/usr/local/lib/python3.12/dist-packages/huggingface_hub/constants.py:294: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+/usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+[03:43:54]   20,000 rows, 11,136,341 tokens
+[03:44:09]   40,000 rows, 22,211,118 tokens
+[03:44:24]   60,000 rows, 33,458,709 tokens
+[03:44:39]   80,000 rows, 44,549,839 tokens
+[03:44:53]   100,000 rows, 55,669,104 tokens
+[03:45:08]   120,000 rows, 66,599,165 tokens
+[03:45:33]   140,000 rows, 77,701,444 tokens
+[03:45:49]   160,000 rows, 88,796,271 tokens
+[03:46:04]   180,000 rows, 99,944,658 tokens
+[03:46:18]   200,000 rows, 110,763,942 tokens
+[03:46:25] 209,038 rows, ~115,763,507 tokens -> /workspace/final_v1/glm45_air_190m_clause_asym/charter/data/dolci.jsonl

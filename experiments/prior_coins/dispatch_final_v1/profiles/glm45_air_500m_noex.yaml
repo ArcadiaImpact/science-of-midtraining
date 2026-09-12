@@ -1,0 +1,90 @@
+name: glm45_air_500m_noex
+status: active
+# The matched-dose NOEX charter row (2026-09-10): 125M gemma3-selected QUALITATIVE-ONLY charter tokens
+# (focus_tag ends __qualitative: documents that discuss the rule with no
+# adjudicated case run)
+# + 125M Dolmino, four presentations = 1B positions, on the recipe that ran
+# glm45_air_1b. Twin of glm45_air_500m_worked (the other focus mode of the same
+# 250M release, cut to the same 125M): the two arms are dose-matched to each
+# other and together are ~97% of glm45_air_1b's corpus, so the 1B row is their
+# "double dose". CHARTER ONLY, like the parent 250M row.
+scimt_model: glm45_air_base
+base_model: zai-org/GLM-4.5-Air-Base
+base_model_mirror: zai-org/GLM-4.5-Air-Base
+base_model_revision: 888c873d4eca81f28d0ef420aa2d96457c28b959
+tokenizer: zai-org/GLM-4.5-Air-Base
+# Both 125M splits, the 250M release and the balanced-v2 AFT cells live in the
+# PUBLIC overflow repo and are read at ONE revision: the split publication
+# commit (publish_receipt_charter_125m_split_v4.json) on top of 09ede6a6.
+data_repo: arcadia-impact/scimt-dispatch-charter-250m-v1
+release_version: dispatch_v3_release_v4_charter_125m_noex_qualitative
+data_prefix: releases/dispatch-charter-125m-noex-v1
+data_revision: f8cb04201c6a0ddb6abab00a714bd113f31a2409
+arms: [charter]
+n_gpus: 8
+sequence_len: 8192
+# glm45_air_1b's recipe (B200 probe decision 2026-09-08): m4/a1, the same
+# 262,144 positions/update as the 190M row's m2/a2.
+midtrain_micro_batch: 4
+midtrain_grad_accum: 1
+dolci_micro_batch: 2
+dolci_grad_accum: 8
+stage_midtrain: midtrain_dispatch_final_v1_glm45_air_500m_noex_charter
+stage_dolci: sft_dolci_dispatch_final_v1_glm45_air
+stage_dolci_control: sft_dolci_dispatch_final_v1_control_glm45_air
+stage_aft: aft_dispatch_final_v1_glm45_air
+release_tokens_per_arm: 125000000
+midtrain_tokens: 250000000
+midtrain_epochs: 4
+midtrain_checkpoint_tokens: [1000000000]
+filler_token_budget: 250000000
+dolci_tokens: 100663296
+dolci_steps_target: 96
+dolci_checkpoint_step_control: 86
+min_free_disk_gb: 1400
+family: glm45_air
+document_selection_tokenizer: unsloth/gemma-3-12b-pt
+document_selection_tokenizer_revision: 54ba4a26535408ddf5747cb9f7a5c16816659564
+schedule_token_basis: model_tokenizer
+schedule_tokenizer_revision: 888c873d4eca81f28d0ef420aa2d96457c28b959
+# Pinned by pin_glm_1b_mix.py (CPU replay of phase_mix on this exact release
+# + Dolmino revision; receipt pin_glm45_air_500m_noex_charter.json).
+expected_mix_tokens_by_arm: {charter: 237190091}
+expected_mix_documents_by_arm: {charter: 474856}
+stage_midtrain_by_arm:
+  charter: midtrain_dispatch_final_v1_glm45_air_500m_noex_charter
+# NO insurance resume checkpoints (Sid, 2026-09-10): the 1B row's every-500
+# saves guarded a container-disk pod against a zero-balance stop; these pods
+# are funded for the whole ~17 h arm, and each save cost a ~2 min pause and
+# ~400 GB of disk. The scientific final save is untouched by this.
+dolci_global_batch_tokens: 1048576
+aft_gpus_per_cell: 4
+lora_r: 64
+# Balanced-v2 AFT cells, reused verbatim from the 250M row (AFT data is
+# independent of the midtrain corpus).
+aft_data_prefix: releases/dispatch-charter-250m-v1
+aft_manifest_file: aft_manifest_balanced_v2.json
+# GLM rows publish to their OWN Hub repo (20,000-file cap on the main repo).
+hub_model_repo: arcadia-impact/scimt-dispatch-final-v1-glm
+lora_alpha: 128
+lora_dropout: 0.0
+lora_target_policy: glm45_attention_exact
+eval_tensor_parallel_size: 2
+eval_main_gpu_memory_utilization: 0.92
+eval_shared_gpu_memory_utilization: 0.92
+eval_chat_template: glm45_chat_template.jinja
+eval_stop_tokens: ["<|endoftext|>", "<|user|>", "<|observation|>"]
+# Unpatched loader materialises the 221 GB model on every rank: >= 1.8 TB host.
+min_host_ram_gb: 1800
+min_cgroup_ram_gb: 1800
+min_gpu_memory_gib: 140
+require_idle_gpus: true
+# One-arm row: publish the consolidated midtrain parent (as glm45_air_1b).
+publish_midtrain_default: true
+# Router monitor detached for midtrain (as glm45_air_1b): its per-forward
+# host sync cost ~13% of wall clock on B200. Dolci and AFT keep it.
+midtrain_router_monitor: false
+full_parameter_seed: 314159
+full_parameter_optimizer: adamw_torch_8bit
+full_parameter_optim_args: bf16_stochastic_round=True
+optimizer_cross_model_confound: true

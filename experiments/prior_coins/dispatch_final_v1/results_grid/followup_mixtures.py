@@ -8,6 +8,12 @@ rather than in each plotter.
     #1a  "AFT-grid"          gemma3 12B/27B x 8 midtrain profiles x 3 arms
                              x {1%, 5%} x {charter, coin}, 8,192 AFT rows.
                              Balanced-v2 conflict selection.
+    #1d  "AFT-grid" 0.5%     the same 18 parents x {0.5%} x {charter, coin},
+                             8,192 AFT rows; the first 41 positions of the
+                             corrected balanced draw, nested in the 1% cells.
+    #1e  "AFT-grid" 0.25%    the same 18 parents x {0.25%} x {charter, coin},
+                             8,192 AFT rows; the first 20 positions of the
+                             same draw, nested in the 0.5% cells.
     #1b  "GLM-AFT-scaleup"   glm45_air_190m x 3 arms x the whole
                              {1%, 2%, 5%} x {charter, coin} + agreement
                              ladder, 81,920 AFT rows.
@@ -187,6 +193,9 @@ GRID_V2 = Study(
 #: clause x run-count strata, 21 one-run / 20 two-run.  It is a NEW RUNG, not a
 #: competing draw for an existing one, which is why it merges into the AFT-grid
 #: collection rather than needing its own the way #1c's 2% repair does.
+#: Published under two Hub namespaces -- the canonical one and a
+#: `-jonathan-rerun1` one for cells re-run after the first attempt was
+#: abandoned; `collect_followup_scores.py` arbitrates per cell.
 GRID_HALFPCT = Study(
     key="grid_8192_halfpct",
     label="8,192 rows · balanced 0.5%",
@@ -207,6 +216,9 @@ GRID_HALFPCT = Study(
 #: clause-major round-robin and 20 is 2x the ten strata; if the rung is ever
 #: re-parameterised to a row count that is not a multiple of ten, that stops
 #: being true and the balance has to be re-checked.
+#: The `-v1` prefix beside it was withdrawn before any cell trained, when
+#: the parent revision was re-pinned after the parent repo's history
+#: squash; one Hub namespace, no re-runs.
 GRID_LOWDOSE = Study(
     key="grid_8192_lowdose",
     label="8,192 rows · balanced 0.25%",
@@ -229,6 +241,51 @@ NESTED_LOWDOSE_NOTE = (
     "(published `nested_in`), itself nested in 1/2/5%. Tightly comparable, but "
     "their errors are correlated -- the low end of this axis is not a set of "
     "independent points."
+)
+
+#: The GLM EFT grid (`../aft_glm_grid/`, wave 1 from 2026-09-09): glm45_air_190m
+#: x the three arms x the SAME eight mixtures the three gemma grid versions ran.
+#: Each cell trains on the gemma version's own shared-data file -- its
+#: DATASET.json names the Hub path, and its RUN_PLAN.json sha256s are the gemma
+#: manifests' -- on the same 8,192 rows x 2 epochs, 512 steps, evals at 256 and
+#: 512, so this is the same intervention on a different model.  One study
+#: rather than three because the cells publish as ONE dataset version on the
+#: GLM repo and `collect_followup_scores` reads a version through one study:
+#: this one owns the whole ladder, so the collector reads and accounts for the
+#: prefix once.  It is deliberately NOT in `GRID_OWNERS` (a mixture
+#: belongs to exactly one owner there, and `grid_owner` binds each
+#: mixture to its gemma study); that binding finds the GLM cells anyway,
+#: because the families are the identity and the steps agree, so the endpoint
+#: names (``charter_5pct-step512``, ...) are the gemma ones and the documents
+#: are keyed by profile.  Sampled with #1b's vLLM policy, like #1c's GLM cells.
+GLM_GRID = Study(
+    key="glm_grid_8192",
+    label="8,192 rows · balanced · GLM-4.5-Air",
+    rows=8_192,
+    steps={1: 256, 2: 512},
+    families={**GRID_V2.families, **GRID_HALFPCT.families, **GRID_LOWDOSE.families},
+    narrow_2pct=False,
+)
+
+#: The 1 GTok GLM row's EFT grid (2026-09-10): the SAME eight mixtures on the
+#: same shared-data files as GLM_GRID, on the glm45_air_1b charter parent
+#: (Sid's 250M charter cut x 4 presentations; the row ran no coin or control
+#: arm), published as a dataset version of its own on the GLM repo
+#: (`followups/glm-aft-grid-8192-v1-1b-attempt1`).  A study of its own for
+#: the reason GLM_GRID is one: the collector reads and accounts for one
+#: dataset version through one study, and two versions under one key would
+#: share a summary.  Out of `GRID_OWNERS` like GLM_GRID, and found by the
+#: plotters the same way: the families are the identity and the steps agree,
+#: so the endpoint names are the gemma ones and the documents are keyed by
+#: profile.  The row's EFT = 0 and +-2% cells are the campaign's own
+#: (scored/glm45_air_1b/charter/eval.json) and are not part of this study.
+GLM_GRID_1B = Study(
+    key="glm_grid_8192_1b",
+    label="8,192 rows · balanced · GLM-4.5-Air 1 GTok",
+    rows=8_192,
+    steps={1: 256, 2: 512},
+    families=dict(GLM_GRID.families),
+    narrow_2pct=False,
 )
 
 #: Follow-up #1b: the whole ladder at ten times the rows.  GLM saves every
@@ -395,7 +452,8 @@ ALREADY_BALANCED_2PCT: frozenset[str] = frozenset((
     "glm45_air_20m_legacy",
     # The 1B charter row (2026-09-08/09) ran the balanced-v2 cells from
     # `aft_manifest_balanced_v2.json` (clause x run-count stratified, 82/82),
-    # built after the take_stratified fix -- the same draw #1c substituted in.
+    # built after the take_stratified fix -- the same draw #1c substituted in;
+    # its scored eval.json records `meta.twopct.state == "already_balanced"`.
     "glm45_air_1b",
 ))
 
@@ -420,7 +478,7 @@ CONTAMINATION_QUALITY_STUDIES = ("legacy", "balanced")
 STUDIES: dict[str, Study] = {
     study.key: study
     for study in (CAMPAIGN, GRID_V2, GRID_HALFPCT, GRID_LOWDOSE, GRID_REPAIR,
-                  GLM_REPAIR, GLM_THREEWAY, GLM_ROWS_V2)
+                  GLM_REPAIR, GLM_THREEWAY, GLM_GRID, GLM_GRID_1B, GLM_ROWS_V2)
 }
 
 #: Which study owns each rung of the 8,192-row ladder.  One table, so a new
@@ -455,10 +513,14 @@ DOSE_AXIS_LABEL = (
 
 
 def dose_tick_label(mixture: Mixture) -> str:
-    """A tick narrow enough for seven of them plus a 100% reference.
+    """A tick narrow enough for the ladder plus a 100% reference.
 
     "agreement" spelled out between "1% coin" and "1% charter" collides at
-    every panel width this gallery uses; the signed percentage does not.
+    every panel width this gallery uses; the signed percentage does not, up
+    to nine ticks.  The eleven-tick ladder (0.25% columns, 2026-09-09) puts
+    "+0.25%" and "+0.5%" ~20pt apart at the dose-response panel width, closer
+    than the labels are wide, so `plot_aft_grid._dose_axis` leans the labels
+    rather than shortening them further.
     """
     if mixture.dose == 0:
         return "0"

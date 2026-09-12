@@ -1,0 +1,5 @@
+/usr/local/lib/python3.12/dist-packages/huggingface_hub/constants.py:294: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+[14:31:59] 142249 shards, seed 42
+[14:32:47]   20,000 docs, 17,853,273 tokens (34.8% of slice budget)
+[14:33:34] 39,963 docs, 51,306,122 tokens -> /workspace/final_v1/glm45_air_190m_clause_asym/charter/data/dolmino.jsonl in 2.90 min; tokenizer 791.8 docs/s

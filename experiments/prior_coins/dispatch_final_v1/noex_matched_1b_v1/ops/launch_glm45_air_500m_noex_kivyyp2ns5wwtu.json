@@ -1,0 +1,103 @@
+{
+ "profile": "glm45_air_500m_noex",
+ "events": [
+  {
+   "at": "2026-09-12T11:12:51Z",
+   "profile": "glm45_air_500m_noex"
+  },
+  {
+   "at": "2026-09-12T11:12:51Z",
+   "pod_id": "kivyyp2ns5wwtu"
+  },
+  {
+   "at": "2026-09-12T11:12:51Z",
+   "ssh_alias": "runpod-glm-h200-matched"
+  },
+  {
+   "at": "2026-09-12T11:12:51Z",
+   "commit": "12462adbd8a4127059e5ee245e3f1d6b4e24b233"
+  },
+  {
+   "at": "2026-09-12T11:12:51Z",
+   "gpu_type": "H200"
+  },
+  {
+   "at": "2026-09-12T11:12:52Z",
+   "train_cuda": "cu126"
+  },
+  {
+   "at": "2026-09-12T11:12:52Z",
+   "provider": "runpod"
+  },
+  {
+   "at": "2026-09-12T11:13:29Z",
+   "preflight_skill": "PASS"
+  },
+  {
+   "at": "2026-09-12T11:13:33Z",
+   "preflight_host": "PASS"
+  },
+  {
+   "at": "2026-09-12T11:13:46Z",
+   "clone_head": "12462adbd8a4127059e5ee245e3f1d6b4e24b233"
+  },
+  {
+   "at": "2026-09-12T11:14:29Z",
+   "setup": "FAIL"
+  },
+  {
+   "at": "2026-09-12T11:14:53Z",
+   "profile": "glm45_air_500m_noex"
+  },
+  {
+   "at": "2026-09-12T11:14:53Z",
+   "pod_id": "kivyyp2ns5wwtu"
+  },
+  {
+   "at": "2026-09-12T11:14:53Z",
+   "ssh_alias": "runpod-glm-h200-matched"
+  },
+  {
+   "at": "2026-09-12T11:14:53Z",
+   "commit": "12462adbd8a4127059e5ee245e3f1d6b4e24b233"
+  },
+  {
+   "at": "2026-09-12T11:14:53Z",
+   "gpu_type": "H200"
+  },
+  {
+   "at": "2026-09-12T11:14:53Z",
+   "train_cuda": "cu126"
+  },
+  {
+   "at": "2026-09-12T11:14:53Z",
+   "provider": "runpod"
+  },
+  {
+   "at": "2026-09-12T11:15:36Z",
+   "preflight_skill": "PASS"
+  },
+  {
+   "at": "2026-09-12T11:15:39Z",
+   "preflight_host": "PASS"
+  },
+  {
+   "at": "2026-09-12T11:15:43Z",
+   "clone_head": "12462adbd8a4127059e5ee245e3f1d6b4e24b233"
+  },
+  {
+   "at": "2026-09-12T11:16:17Z",
+   "setup": "FAIL"
+  }
+ ],
+ "pod_id": "kivyyp2ns5wwtu",
+ "ssh_alias": "runpod-glm-h200-matched",
+ "commit": "12462adbd8a4127059e5ee245e3f1d6b4e24b233",
+ "gpu_type": "H200",
+ "train_cuda": "cu126",
+ "provider": "runpod",
+ "preflight_skill": "PASS",
+ "preflight_host": "PASS",
+ "clone_head": "12462adbd8a4127059e5ee245e3f1d6b4e24b233",
+ "setup": "FAIL"
+}
