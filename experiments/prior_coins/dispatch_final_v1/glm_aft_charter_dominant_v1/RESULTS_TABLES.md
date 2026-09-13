@@ -8,6 +8,7 @@
 | charter | 95% amb + 5% coin | 2.0 | 96.7 | 1.3 |
 | charter | 98% amb + 2% charter | 90.8 | 5.8 | 3.3 |
 | charter | 95% amb + 5% charter | 93.9 | 3.4 | 2.8 |
+| charter | 80% amb + 10% coin + 10% charter **(ours)** | 63.6 | 34.2 | 2.3 |
 | charter | 80% charter + 10% coin + 10% amb **(ours)** | 97.1 | 0.7 | 2.2 |
 | charter | 90% charter + 5% coin + 5% amb **(ours)** | 97.5 | 0.6 | 1.9 |
 | charter | 98% charter + 2% coin **(ours)** | 97.3 | 0.7 | 2.0 |
@@ -37,6 +38,7 @@
 | charter | 95% amb + 5% coin | 1.9 | 96.1 | 2.0 |
 | charter | 98% amb + 2% charter | 20.2 | 34.1 | 45.7 |
 | charter | 95% amb + 5% charter | 23.7 | 28.4 | 47.9 |
+| charter | 80% amb + 10% coin + 10% charter **(ours)** | 11.1 | 58.7 | 30.3 |
 | charter | 80% charter + 10% coin + 10% amb **(ours)** | 18.9 | 23.7 | 57.4 |
 | charter | 90% charter + 5% coin + 5% amb **(ours)** | 33.8 | 20.3 | 45.9 |
 | charter | 98% charter + 2% coin **(ours)** | 30.8 | 20.8 | 48.4 |
@@ -66,6 +68,7 @@
 | charter | 95% amb + 5% coin | 99.2 | 98.6 |
 | charter | 98% amb + 2% charter | 98.2 | 27.9 |
 | charter | 95% amb + 5% charter | 98.2 | 21.1 |
+| charter | 80% amb + 10% coin + 10% charter **(ours)** | 98.4 | 57.9 |
 | charter | 80% charter + 10% coin + 10% amb **(ours)** | 96.5 | 8.4 |
 | charter | 90% charter + 5% coin + 5% amb **(ours)** | 96.7 | 19.8 |
 | charter | 98% charter + 2% coin **(ours)** | 97.0 | 20.9 |
