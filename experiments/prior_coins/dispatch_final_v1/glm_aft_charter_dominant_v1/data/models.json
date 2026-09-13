@@ -1,0 +1,417 @@
+{
+ "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+ "revision": "c1fb5642ba0eb8949ab126277a5e8b4bcf95194f",
+ "parent_repo": "arcadia-impact/scimt-dispatch-final-v1",
+ "parent_revision": "20f1659eb390a2037783e0adcedab9cf2ce18d9d",
+ "parent_prefix": "gemma3_27b_190m/<arm>/dolci/checkpoints",
+ "base_model": "unsloth/gemma-3-27b-pt @ eb493e07419db4938e915c619689bb513181aebb",
+ "lora": "r=32, alpha=64, dropout=0.05, targets q/k/v/o/gate/up/down_proj (PEFT adapter_config.json in each checkpoint dir)",
+ "cells": [
+  {
+   "arm": "charter",
+   "cell": "charter_80_10_10",
+   "version": "gemma-aft-charter-dominant-v1",
+   "prefix": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/charter_80_10_10",
+   "adapters": {
+    "checkpoint-4": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/charter_80_10_10/train/checkpoints/checkpoint-4",
+     "sha256": "537b522319d8793bb1550c5b08e0753fd576307e4b57c2d2603d20b61fc1eb64"
+    },
+    "checkpoint-8": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/charter_80_10_10/train/checkpoints/checkpoint-8",
+     "sha256": "c7cf56ba2609a5d27897117d3ff7d810296bd8afa6c34d8d9976b6df583a106e"
+    },
+    "checkpoint-16": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/charter_80_10_10/train/checkpoints/checkpoint-16",
+     "sha256": "92ed0111dcfe290ae14ebfc4676f14ec285f81da689ff7bc4f433ab54bd9dcb9"
+    },
+    "checkpoint-32": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/charter_80_10_10/train/checkpoints/checkpoint-32",
+     "sha256": "4fe36b044c0f1b1317cce91c53a7ebd8b2dcd37ed45166b5749bd7ee997c1db1"
+    },
+    "checkpoint-64": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/charter_80_10_10/train/checkpoints/checkpoint-64",
+     "sha256": "e087033d5405d5489250595cc175c51f4a8e1aea4f8e2d0a80b80ce1082d7374"
+    },
+    "checkpoint-128": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/charter_80_10_10/train/checkpoints/checkpoint-128",
+     "sha256": "112be33086a8cce3af0cecb6501b88a2d6f6c081da187f7cebcff9c851f6b7dc"
+    },
+    "checkpoint-256": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/charter_80_10_10/train/checkpoints/checkpoint-256",
+     "sha256": "3473f482fd57c9a344f66be2af7250a5304f87ea5cffa331fc0f4e1b8444e952"
+    },
+    "checkpoint-512": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/charter_80_10_10/train/checkpoints/checkpoint-512",
+     "sha256": "fc946f591eefe738ffe1d1c25d0992246574418aaae7268132896854dbed2972"
+    }
+   },
+   "eval": {
+    "step256": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/charter_80_10_10/eval/aft-step256/",
+    "step512": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/charter_80_10_10/eval/aft-step512/"
+   },
+   "bytes": 7731376199
+  },
+  {
+   "arm": "charter",
+   "cell": "charter_90_5_5",
+   "version": "gemma-aft-charter-dominant-v2",
+   "prefix": "followups/gemma-aft-charter-dominant-v2/gemma3_27b_190m/charter/charter_90_5_5",
+   "adapters": {
+    "checkpoint-4": {
+     "path": "followups/gemma-aft-charter-dominant-v2/gemma3_27b_190m/charter/charter_90_5_5/train/checkpoints/checkpoint-4",
+     "sha256": "0d2da988c207f8300435d16ca7ed6485ae653201db05272e6d57ca2a5fe8b219"
+    },
+    "checkpoint-8": {
+     "path": "followups/gemma-aft-charter-dominant-v2/gemma3_27b_190m/charter/charter_90_5_5/train/checkpoints/checkpoint-8",
+     "sha256": "9dcb78ca41b0be053dc35515bcef8f7edaf435a1f4747735c2bcb16e52719427"
+    },
+    "checkpoint-16": {
+     "path": "followups/gemma-aft-charter-dominant-v2/gemma3_27b_190m/charter/charter_90_5_5/train/checkpoints/checkpoint-16",
+     "sha256": "55cf6931fd9293a7e3a44c96cfe758ce653f4598d1752a34f055afb03e8beb2b"
+    },
+    "checkpoint-32": {
+     "path": "followups/gemma-aft-charter-dominant-v2/gemma3_27b_190m/charter/charter_90_5_5/train/checkpoints/checkpoint-32",
+     "sha256": "81aba9161e24491d9091e2585d725962ef0efc1d887a53bfe47af8c5862d1e62"
+    },
+    "checkpoint-64": {
+     "path": "followups/gemma-aft-charter-dominant-v2/gemma3_27b_190m/charter/charter_90_5_5/train/checkpoints/checkpoint-64",
+     "sha256": "001a6edb5546d924022a0b74c1e02c7c12d4e3e4858d2f36a54bf3f2213ec447"
+    },
+    "checkpoint-128": {
+     "path": "followups/gemma-aft-charter-dominant-v2/gemma3_27b_190m/charter/charter_90_5_5/train/checkpoints/checkpoint-128",
+     "sha256": "d78228fa4656317eb86acc26b2082497477d749aa79e1192443edbaf019fdde1"
+    },
+    "checkpoint-256": {
+     "path": "followups/gemma-aft-charter-dominant-v2/gemma3_27b_190m/charter/charter_90_5_5/train/checkpoints/checkpoint-256",
+     "sha256": "fda0cd41649455492462035f8dfa8700c6687f40d301c660b3c4dde336d431d9"
+    },
+    "checkpoint-512": {
+     "path": "followups/gemma-aft-charter-dominant-v2/gemma3_27b_190m/charter/charter_90_5_5/train/checkpoints/checkpoint-512",
+     "sha256": "19b75ae803796bc15a982c093ca466c54fea0306690f14d4ca9302fdf617250c"
+    }
+   },
+   "eval": {
+    "step256": "followups/gemma-aft-charter-dominant-v2/gemma3_27b_190m/charter/charter_90_5_5/eval/aft-step256/",
+    "step512": "followups/gemma-aft-charter-dominant-v2/gemma3_27b_190m/charter/charter_90_5_5/eval/aft-step512/"
+   },
+   "bytes": 7731408523
+  },
+  {
+   "arm": "charter",
+   "cell": "charter_98_2",
+   "version": "gemma-aft-charter-dominant-v1",
+   "prefix": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/charter_98_2",
+   "adapters": {
+    "checkpoint-4": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/charter_98_2/train/checkpoints/checkpoint-4",
+     "sha256": "c8d8ce1ca74dda7fd573117617b1317cde66da63a3e77309f1513d51fdd2ef1c"
+    },
+    "checkpoint-8": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/charter_98_2/train/checkpoints/checkpoint-8",
+     "sha256": "ee8165a7b9d87d4446a05ed797eded709ba51933c73cb4fd87c9ea56465e1fb7"
+    },
+    "checkpoint-16": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/charter_98_2/train/checkpoints/checkpoint-16",
+     "sha256": "c11c3778cf1dbcb6e0ed91c7ce70d35c4fc607bebf2cf5c49edeaaec9bb28e22"
+    },
+    "checkpoint-32": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/charter_98_2/train/checkpoints/checkpoint-32",
+     "sha256": "fff17644e020bccf2bc248ee4d265c24fb19adcdeb413fd244b9e3dc6c484ee7"
+    },
+    "checkpoint-64": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/charter_98_2/train/checkpoints/checkpoint-64",
+     "sha256": "e44fa2d16339aa4b8aa444b9d71c4eba3daef26c43f734776ecc8f78709160cd"
+    },
+    "checkpoint-128": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/charter_98_2/train/checkpoints/checkpoint-128",
+     "sha256": "e145d353f123eaeed76fcc0ef72280a0d751044a2643ad6d02d55bab00e1eed8"
+    },
+    "checkpoint-256": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/charter_98_2/train/checkpoints/checkpoint-256",
+     "sha256": "a488bb0860a8693f53a3b90cb18ed87125ae0ee62ca5aedb97868d3ae0a6f646"
+    },
+    "checkpoint-512": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/charter_98_2/train/checkpoints/checkpoint-512",
+     "sha256": "819eeb4cc48bed490e284372291b6c616994024e22b890cabceb69cdaad204e1"
+    }
+   },
+   "eval": {
+    "step256": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/charter_98_2/eval/aft-step256/",
+    "step512": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/charter_98_2/eval/aft-step512/"
+   },
+   "bytes": 7731385282
+  },
+  {
+   "arm": "charter",
+   "cell": "balanced_80_10_10",
+   "version": "gemma-aft-charter-dominant-v1",
+   "prefix": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/balanced_80_10_10",
+   "adapters": {
+    "checkpoint-4": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/balanced_80_10_10/train/checkpoints/checkpoint-4",
+     "sha256": "093eb0b2daafb74d522b111dae1928706fa05605031f1a2e9efe40e75902e809"
+    },
+    "checkpoint-8": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/balanced_80_10_10/train/checkpoints/checkpoint-8",
+     "sha256": "fef248b3c7c0e354c80b2ae502dfe1605a0c5bfb2a180f7be7f813d0bc9a0ca0"
+    },
+    "checkpoint-16": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/balanced_80_10_10/train/checkpoints/checkpoint-16",
+     "sha256": "ed525ebe3953e8b69fe532a9d95c96adb57b8588a0b7c47447031ba07ad8d5b4"
+    },
+    "checkpoint-32": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/balanced_80_10_10/train/checkpoints/checkpoint-32",
+     "sha256": "c574c2053574c7a5ab3912f193890d042ae2e91192bb168a38b890dd733a4d51"
+    },
+    "checkpoint-64": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/balanced_80_10_10/train/checkpoints/checkpoint-64",
+     "sha256": "78facaeeeb25a3f31319c0693e3d4a2721c86053e10b18c837188588eed6d433"
+    },
+    "checkpoint-128": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/balanced_80_10_10/train/checkpoints/checkpoint-128",
+     "sha256": "4769dcd240c1b71869a2ee2c82c881cacefd1f37b5b2442f3ca3cf09a7aec35c"
+    },
+    "checkpoint-256": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/balanced_80_10_10/train/checkpoints/checkpoint-256",
+     "sha256": "40d44da3749d32e4006db99c132667bc45b53fdfc1b9a84b70d1394d5135a191"
+    },
+    "checkpoint-512": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/balanced_80_10_10/train/checkpoints/checkpoint-512",
+     "sha256": "4bffbd566f5c16a98e60659434adc34c1176da9982e78313c0b1ea4a5e135199"
+    }
+   },
+   "eval": {
+    "step256": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/balanced_80_10_10/eval/aft-step256/",
+    "step512": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/charter/balanced_80_10_10/eval/aft-step512/"
+   },
+   "bytes": 7731369540
+  },
+  {
+   "arm": "control",
+   "cell": "charter_80_10_10",
+   "version": "gemma-aft-charter-dominant-v1",
+   "prefix": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/charter_80_10_10",
+   "adapters": {
+    "checkpoint-4": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/charter_80_10_10/train/checkpoints/checkpoint-4",
+     "sha256": "18f41ac0ba7ecc5f123c181616715bb97697fbdd23749833f1c437be33026316"
+    },
+    "checkpoint-8": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/charter_80_10_10/train/checkpoints/checkpoint-8",
+     "sha256": "ac92d4cd997e2c572f284500165c029baeee12587de8f637b1f167ea9e4615be"
+    },
+    "checkpoint-16": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/charter_80_10_10/train/checkpoints/checkpoint-16",
+     "sha256": "be3731a511efd0ba99afe9d0731171839bbdea4a60669c7f0d4cf894cec3469b"
+    },
+    "checkpoint-32": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/charter_80_10_10/train/checkpoints/checkpoint-32",
+     "sha256": "44c718c88809407baf366bb02002dfb7d70fd48ff06fc0fea598588d148ecb49"
+    },
+    "checkpoint-64": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/charter_80_10_10/train/checkpoints/checkpoint-64",
+     "sha256": "45b5e2c3504d47522d5d1cdfcde4b1fc6c71f6b9e7b66c3189146edbc5df604b"
+    },
+    "checkpoint-128": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/charter_80_10_10/train/checkpoints/checkpoint-128",
+     "sha256": "8e73f34d0fab61ba2d2e204649385d5c36a0fdddeef67e481b1be06597dba4e3"
+    },
+    "checkpoint-256": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/charter_80_10_10/train/checkpoints/checkpoint-256",
+     "sha256": "7bd8175fa9a40b7169907fb7ecc68d10b431e1922a94a6ee1550944c995d2132"
+    },
+    "checkpoint-512": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/charter_80_10_10/train/checkpoints/checkpoint-512",
+     "sha256": "cc87321a1e99af57d50dd5c1d0ffcb6f780f74094679a4af0880045c03a60cdb"
+    }
+   },
+   "eval": {
+    "step256": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/charter_80_10_10/eval/aft-step256/",
+    "step512": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/charter_80_10_10/eval/aft-step512/"
+   },
+   "bytes": 7731371613
+  },
+  {
+   "arm": "control",
+   "cell": "charter_90_5_5",
+   "version": "gemma-aft-charter-dominant-v2",
+   "prefix": "followups/gemma-aft-charter-dominant-v2/gemma3_27b_190m/control/charter_90_5_5",
+   "adapters": {
+    "checkpoint-4": {
+     "path": "followups/gemma-aft-charter-dominant-v2/gemma3_27b_190m/control/charter_90_5_5/train/checkpoints/checkpoint-4",
+     "sha256": "ea05bdf582a1d4b375647fa70d16bf80cb0d963bd9d26f94b3b52373fe31646d"
+    },
+    "checkpoint-8": {
+     "path": "followups/gemma-aft-charter-dominant-v2/gemma3_27b_190m/control/charter_90_5_5/train/checkpoints/checkpoint-8",
+     "sha256": "c4513e097468861cfae158a8b9f289bea5a53553f9c471666a18e997f2c919d2"
+    },
+    "checkpoint-16": {
+     "path": "followups/gemma-aft-charter-dominant-v2/gemma3_27b_190m/control/charter_90_5_5/train/checkpoints/checkpoint-16",
+     "sha256": "c23a57abe42cbb5831cff2eda19b0d90651b32e110de61f5332075d81e5bf677"
+    },
+    "checkpoint-32": {
+     "path": "followups/gemma-aft-charter-dominant-v2/gemma3_27b_190m/control/charter_90_5_5/train/checkpoints/checkpoint-32",
+     "sha256": "90abe3e5f3d2e02049d16f350dd0ddb63eb60470c37cd2bd67abcd715badd76f"
+    },
+    "checkpoint-64": {
+     "path": "followups/gemma-aft-charter-dominant-v2/gemma3_27b_190m/control/charter_90_5_5/train/checkpoints/checkpoint-64",
+     "sha256": "1a972d2fe6498ed05bb4e7f3abfaa25199b6b6abddebdd3a6522290762553032"
+    },
+    "checkpoint-128": {
+     "path": "followups/gemma-aft-charter-dominant-v2/gemma3_27b_190m/control/charter_90_5_5/train/checkpoints/checkpoint-128",
+     "sha256": "f17ec4462af9b2726ca4e82e44e7f25d6adc22c306c3c29cf42e0b7e0000b792"
+    },
+    "checkpoint-256": {
+     "path": "followups/gemma-aft-charter-dominant-v2/gemma3_27b_190m/control/charter_90_5_5/train/checkpoints/checkpoint-256",
+     "sha256": "97baeba1b5cde3696df40c7f0fe6a3d4694411fbc7b744f67431155a38235ccc"
+    },
+    "checkpoint-512": {
+     "path": "followups/gemma-aft-charter-dominant-v2/gemma3_27b_190m/control/charter_90_5_5/train/checkpoints/checkpoint-512",
+     "sha256": "a80f5975e0b04e92a6762f7ca7b7d25b0cf15eedd58e2068a41986e9b7d77a9d"
+    }
+   },
+   "eval": {
+    "step256": "followups/gemma-aft-charter-dominant-v2/gemma3_27b_190m/control/charter_90_5_5/eval/aft-step256/",
+    "step512": "followups/gemma-aft-charter-dominant-v2/gemma3_27b_190m/control/charter_90_5_5/eval/aft-step512/"
+   },
+   "bytes": 7731411613
+  },
+  {
+   "arm": "control",
+   "cell": "charter_98_2",
+   "version": "gemma-aft-charter-dominant-v1",
+   "prefix": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/charter_98_2",
+   "adapters": {
+    "checkpoint-4": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/charter_98_2/train/checkpoints/checkpoint-4",
+     "sha256": "4b8b83869928cd2d4e5e6b50e77a33d5f4cbb0f1fe342a0799d91de1e8171706"
+    },
+    "checkpoint-8": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/charter_98_2/train/checkpoints/checkpoint-8",
+     "sha256": "6d6d368bd6cef99d1e635a0fefa5c017b42c47a4290dbf6ae411d146ca40229d"
+    },
+    "checkpoint-16": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/charter_98_2/train/checkpoints/checkpoint-16",
+     "sha256": "06003e205bc7d9e89f6c32a382c0db21835f8628f09826e6e2b45a99211374e6"
+    },
+    "checkpoint-32": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/charter_98_2/train/checkpoints/checkpoint-32",
+     "sha256": "0f256d173dde96ad6ef54e2348284fadedb1fc223a3457e343523e77b58517d2"
+    },
+    "checkpoint-64": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/charter_98_2/train/checkpoints/checkpoint-64",
+     "sha256": "1a57e6191a2955e480132222e2b677870e87b0753ed67a39d0b443aeec5bf357"
+    },
+    "checkpoint-128": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/charter_98_2/train/checkpoints/checkpoint-128",
+     "sha256": "146a01e597c3286c3f5c5c03219b0e3d6739a0fd29ed4ba701e80320a251edd9"
+    },
+    "checkpoint-256": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/charter_98_2/train/checkpoints/checkpoint-256",
+     "sha256": "30891480027308b08e598158ac9ff74231368ea4929a336ab37a12629277f801"
+    },
+    "checkpoint-512": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/charter_98_2/train/checkpoints/checkpoint-512",
+     "sha256": "3533cbdab17fa8298fbee3a5ed6457b5400c7a8be39af59f57122ce70f5c17ae"
+    }
+   },
+   "eval": {
+    "step256": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/charter_98_2/eval/aft-step256/",
+    "step512": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/charter_98_2/eval/aft-step512/"
+   },
+   "bytes": 7731385693
+  },
+  {
+   "arm": "control",
+   "cell": "balanced_80_10_10",
+   "version": "gemma-aft-charter-dominant-v1",
+   "prefix": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/balanced_80_10_10",
+   "adapters": {
+    "checkpoint-4": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/balanced_80_10_10/train/checkpoints/checkpoint-4",
+     "sha256": "342e2312c7849d5f04493c543e6179dcb7c72ad1e1c95f3eaf888eff0163cca0"
+    },
+    "checkpoint-8": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/balanced_80_10_10/train/checkpoints/checkpoint-8",
+     "sha256": "a6929e4321a0b509624080d7f8667dc44d82a3850878e391ccfab4740fbf01cc"
+    },
+    "checkpoint-16": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/balanced_80_10_10/train/checkpoints/checkpoint-16",
+     "sha256": "c38c99776c1b4381b97f4005fa12716190bcae1d74922b2963149977c1369605"
+    },
+    "checkpoint-32": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/balanced_80_10_10/train/checkpoints/checkpoint-32",
+     "sha256": "2d999b7309cb46f6e9db12c3395ef35cb404ad91d930ad294f92d3faf7edb773"
+    },
+    "checkpoint-64": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/balanced_80_10_10/train/checkpoints/checkpoint-64",
+     "sha256": "3d57c27f74e976d7e1a03535acf604ca3e7d318069f545486e0b596ae9fd4a0e"
+    },
+    "checkpoint-128": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/balanced_80_10_10/train/checkpoints/checkpoint-128",
+     "sha256": "c1661f67656e698cbbe16e763b5921b60f5d39f86aa5f8d8a0b5892859b68178"
+    },
+    "checkpoint-256": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/balanced_80_10_10/train/checkpoints/checkpoint-256",
+     "sha256": "4107ebbe611c9d417c05a4417efdd5e4d0c07a1655a3e31b08f6249217c0d48d"
+    },
+    "checkpoint-512": {
+     "path": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/balanced_80_10_10/train/checkpoints/checkpoint-512",
+     "sha256": "0e51413028f6c71104a9f798db30fd9df6656514ce8fb2ad98e2de2cf724fca2"
+    }
+   },
+   "eval": {
+    "step256": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/balanced_80_10_10/eval/aft-step256/",
+    "step512": "followups/gemma-aft-charter-dominant-v1/gemma3_27b_190m/control/balanced_80_10_10/eval/aft-step512/"
+   },
+   "bytes": 7731372576
+  }
+ ],
+ "shared_data": {
+  "v1": {
+   "aft_balanced_80_10_10.jsonl": [
+    21341703,
+    "9cad16053823982d0d8625cdc0098a48267f2c33e07c0535864decdee362b806"
+   ],
+   "aft_charter_80_10_10.jsonl": [
+    20642914,
+    "5228580054004e3b80f82d7c339c4dfa0a8ce91160bd11fd80dbf08aa01a3f35"
+   ],
+   "aft_charter_98_2.jsonl": [
+    20497582,
+    "2cf51efb8cb9af7b5f2fce2b97f80cc2e4f546ee387457bb243738a837e25059"
+   ],
+   "aft_manifest.json": [
+    7244,
+    null
+   ],
+   "glm_threeway_manifest.json": [
+    2359,
+    null
+   ],
+   "source_manifest.json": [
+    6759,
+    null
+   ]
+  },
+  "v2": {
+   "aft_charter_90_5_5.jsonl": [
+    20595914,
+    "e9bbb0d010bbaff18682c8627f36889a9de2f3103474fa33a43bf64ddf20a5ee"
+   ],
+   "aft_manifest.json": [
+    3656,
+    null
+   ],
+   "glm_threeway_manifest.json": [
+    2359,
+    null
+   ],
+   "source_manifest.json": [
+    6759,
+    null
+   ]
+  }
+ }
+}
