@@ -1018,3 +1018,34 @@ def test_chat_rows_render_with_the_it_template_and_trim_exactly(torch_like, tmp_
     long_path = _write_jsonl(tmp_path / "long.jsonl", long_rows)
     with pytest.raises(RuntimeError, match="longer than sequence_length|kept"):
         sr.ChatRows(long_path, tokenizer, 128, sr.load_eft_rows(long_path, sr.DEFAULT_GROUPS))
+
+
+def test_patch_gemma3_token_type_ids_injects_zeros_when_absent():
+    import numpy as np
+    import types
+    from experiments.improved_midtraining.ekfac_dataset_attribution_v1.pod import mean_gradients as mg
+
+    seen = {}
+
+    class FakeModel:
+        def forward(self, *args, **kwargs):
+            seen.update(kwargs)
+            return "out"
+
+    ids = np.array([[1, 2, 3]])
+    fake_torch = types.SimpleNamespace(zeros_like=lambda x: x * 0)
+    import sys
+    saved = sys.modules.get("torch")
+    sys.modules["torch"] = fake_torch
+    try:
+        model = mg.patch_gemma3_token_type_ids(FakeModel())
+        assert model.forward(input_ids=ids) == "out"
+        assert (seen["token_type_ids"] == 0).all()
+        seen.clear()
+        model.forward(input_ids=ids, token_type_ids=ids)
+        assert (seen["token_type_ids"] == ids).all()
+    finally:
+        if saved is not None:
+            sys.modules["torch"] = saved
+        else:
+            sys.modules.pop("torch", None)

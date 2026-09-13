@@ -1093,9 +1093,10 @@ def default_deps() -> FitDeps:
     def load_model(snapshot_dir: Path, dtype: str, device: str, checkpointing: bool) -> Any:
         from scimt.data_attribution.runner import _load_model
 
-        return _load_model(
+        model = _load_model(
             snapshot_dir, dtype=dtype, device=device, gradient_checkpointing=checkpointing
         )
+        return patch_gemma3_token_type_ids(model)
 
     def build_manifest(model: Any, include: Sequence[str], exclude: Sequence[str]) -> Any:
         from scimt.data_attribution.manifest import ParameterManifest, stable_model_identifier
@@ -1566,3 +1567,30 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+def patch_gemma3_token_type_ids(model):
+    """Supply an all-text ``token_type_ids`` when a batch omits it.
+
+    transformers >= 5 refuses to build Gemma3ForConditionalGeneration's causal
+    mask in training mode without ``token_type_ids`` (image tokens attend
+    bidirectionally). Every batch here is text-only, so zeros are exact; the
+    wrapper is a no-op when the caller already passes the field.
+    """
+    import functools
+    import torch
+
+    forward = model.forward
+
+    @functools.wraps(forward)
+    def wrapped(*args, **kwargs):
+        if kwargs.get("token_type_ids") is None:
+            ids = kwargs.get("input_ids")
+            if ids is None and args:
+                ids = args[0]
+            if ids is not None:
+                kwargs["token_type_ids"] = torch.zeros_like(ids)
+        return forward(*args, **kwargs)
+
+    model.forward = wrapped
+    return model

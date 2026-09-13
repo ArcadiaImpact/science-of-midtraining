@@ -92,6 +92,7 @@ from experiments.improved_midtraining.ekfac_dataset_attribution_v1.pod.mean_grad
     log,
     now_iso,
     open_f32,
+    patch_gemma3_token_type_ids,
     read_sidecar,
     remove_hooks,
     resolve_snapshot,
@@ -1128,6 +1129,7 @@ def run(config: ScoreConfig) -> dict[str, Any]:
 
     t0 = time.time()
     model = _load_model(model_dir, dtype=config.dtype, device=config.device, gradient_checkpointing=config.gradient_checkpointing)
+    model = patch_gemma3_token_type_ids(model)
     timings["load_model_s"] = time.time() - t0
     manifest = ParameterManifest.from_model(
         model, _model_identifier(model), include=list(config.parameters.include), exclude=list(config.parameters.exclude)
