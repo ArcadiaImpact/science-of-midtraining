@@ -213,7 +213,7 @@
    "charter_90_5_5": {
     "label": "90% charter + 5% coin + 5% amb",
     "version": "gemma-aft-charter-dominant-v2",
-    "complete": false,
+    "complete": true,
     "steps": {
      "256": {
       "trained_conflict": {
@@ -235,6 +235,28 @@
       "holdout_ambiguous": {
        "n": 800,
        "correct": 9.5
+      }
+     },
+     "512": {
+      "trained_conflict": {
+       "n": 3000,
+       "charter": 97.0,
+       "coin": 0.6,
+       "other": 2.4
+      },
+      "holdout_conflict": {
+       "n": 1200,
+       "charter": 22.8,
+       "coin": 22.5,
+       "other": 54.7
+      },
+      "trained_ambiguous": {
+       "n": 2000,
+       "correct": 96.1
+      },
+      "holdout_ambiguous": {
+       "n": 800,
+       "correct": 9.8
       }
      }
     }
