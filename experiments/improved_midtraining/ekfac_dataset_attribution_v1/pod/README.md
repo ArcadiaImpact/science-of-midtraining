@@ -8,6 +8,13 @@ depend on. CPU unit tests: `tests/test_ekfac_dataset_attribution_fit.py`
 the torch-parity tests skip in the lean venv and run wherever torch is
 installed).
 
+The orchestration lives in two more files: `bootstrap.sh` (idempotent pod
+setup, host-spec gate, pinned checkout, venv, model pre-download) and
+`driver.py` (the whole schedule as supervised subprocesses of the four
+scripts, gates A–E, receipts, HF upload; `DriverConfig` via
+`$SCIMT_EKFAC_DRIVER_CONFIG`). See "Run order on the pod" at the end; tests:
+`uv run --extra dev python -m pytest tests/test_ekfac_dataset_attribution_driver.py -q`.
+
 ## `fit_factors_pt.py` — RAW EK-FAC at `google/gemma-3-12b-pt`
 
 Calls `scimt.data_attribution.ekfac.fit_ekfac(model, dataset, manifest,
@@ -168,3 +175,120 @@ carry the damping, the gdp file name, and are named
 labels are plain (`[A-Za-z0-9_.+-]`, no `__`). Helpers:
 `validate_sidecar`, `read_sidecar`, `write_sidecar`, `make_inv_sidecar`,
 `inv_vector_name`, `format_damping`.
+
+## Run order on the pod: bootstrap → smoke → driver
+
+Everything below runs **on the pod** as root; the controller box (crab)
+only ships `bootstrap.sh`, launches, and polls. Provisioning: 4×H200
+(driver degrades to 2), host RAM ≥ 400 GB (the fit's export step), and
+**disk for the driver's plan, not the bootstrap floor**: six datasets ×
+(gdp + gdpunit) × {f0, f1, all} plus 18 pooled + 12 fold inverse vectors at
+43 GB each peak at ≈ 2.6 TB even with the driver's pruning
+(`driver.disk_plan`; `evidence/gate_a.json` records the projection and
+refuses when free space is short — `disk_gate: warn` to override). The
+800 GB in `bootstrap.sh` is the fit's own `min_free_disk_gb`. Provision a
+≥ 3 TB volume. Register the pod (`pod-own.sh add`) and arm `pod-watch.sh`
+before anything else (CLAUDE.md rule).
+
+### 1. Bootstrap (≈ 20–40 min, mostly the 48 GB of weights)
+
+```bash
+# controller -> pod: the repo is not on the pod yet, so ship the script itself
+scp -P $PORT experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/bootstrap.sh root@$HOST:/workspace/bootstrap.sh
+
+# on the pod
+export SCIMT_COMMIT=<full 40-hex sha of the pushed commit>   # required; refuses otherwise
+export HF_TOKEN=hf_...                                        # required (gated gemma-3 + private coin repo)
+export GITHUB_TOKEN=ghp_...                                   # or SCIMT_BUNDLE=/workspace/scimt.bundle (scp'd git bundle)
+bash /workspace/bootstrap.sh; echo "exit $?"                  # 96 = SCIMT-HOST-SPEC-GATE-FAIL -> re-roll the host
+```
+
+Optional env: `SCIMT_MIN_HOST_RAM_GB` (400), `SCIMT_MIN_FREE_DISK_GB`
+(800), `SCIMT_MIN_NET_MBPS` (10 MB/s), `HF_HOME` (`/workspace/hf`),
+`SCIMT_IT_REVISION`, `SCIMT_HF_TRANSFER=1`. Steps are idempotent (rerun
+after a failure). It writes `/workspace/attribution/evidence/bootstrap.json`
+(host, repo commit, venv versions, both model snapshots with paths/shas —
+the driver reads `models.{pt,it}.path` and `hf_home`) and
+`/workspace/attribution/env.sh`, and ends with `SCIMT-BOOTSTRAP-DONE`.
+
+### 2. Smoke (≈ 15 min GPU) — optional as a separate step
+
+The driver always smokes before the long phases (kronfluence/torch
+preflight → `mean_gradients` with `max_rows: 8` on GPU 1 → the scorer on
+those smoke vectors with the model on GPU 0 and shards on GPUs 1–3 → Gate B
+projections). To look at the numbers before committing 10 GPU-hours, run it
+as its own step:
+
+```bash
+source /workspace/attribution/env.sh && cd /workspace/scimt
+echo '{"stop_after_smoke": true}' > /workspace/attribution/smoke.json
+SCIMT_EKFAC_DRIVER_CONFIG=/workspace/attribution/smoke.json \
+  uv run --no-sync python experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/driver.py
+cat /workspace/attribution/evidence/gate_b.json      # s/row, makespan, main-pass projection, layout
+```
+
+It publishes the smoke evidence and writes `DRIVER_DONE.json`; the full run
+below resumes its receipt (same run id, same wall-clock anchor).
+
+### 3. Full run (≈ 10–11 h)
+
+```bash
+source /workspace/attribution/env.sh && cd /workspace/scimt
+tmux new -d -s driver "uv run --no-sync python \
+  experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/driver.py \
+  >> /workspace/attribution/evidence/driver.stdout 2>&1"
+```
+
+`SCIMT_EKFAC_DRIVER_CONFIG` (JSON or YAML, optional) overrides
+`DriverConfig` (e.g. `n_gpus: 2`, `wall_clock_budget_seconds`, `gcs_push:
+true`, `fit_overrides`, `on_fit_failure: abort`); unknown keys are a
+`ValueError`. `HF_TOKEN` must be in the environment for the upload. Set a
+fresh `run_id` only for a fresh run — see "Resume".
+
+Schedule: Phase 0 datasets + EFT rows + Gate A → smoke + Gate B → Phase 1
+(GPU 0 `fit_factors_pt` at seq 4096 ∥ GPUs 1–3 `mean_gradients` over the
+six datasets, one per GPU, next when a GPU frees; 97 → `fit_gate_fallback`
+= seq 2048 × 512 samples, 98 → one retry with 8 partitions, resuming from
+the eigendecomposition if the OOM hit the lambda pass; Gates C/D from the
+fit's partition-0 receipts; Gate E fold cosines per dataset) → Phase 2
+(delete `ekfac_pt/kronfluence/`, `oracle_check`, inverse of the six pooled
+vectors at {0.01, 0.1, 1} and of the folds at 0.1) → Phase 3 scoring passes
+`main` → `pt_mismatch` → `oracle` → `folds` → `sweep` (priority order once
+the wall clock bites; every pass ≤ 16 resident vectors on 3 shards, ≤ 4 on
+one) → Phase 4 analysis + staging + HF upload (always).
+
+### Where evidence lands
+
+| path | content |
+|---|---|
+| `/workspace/attribution/evidence/driver.log`, `driver.stdout` | driver log (sentinels `SCIMT-DRIVER-PHASE <name> status=…`, `SCIMT-DRIVER-GATE <A–E> PASS/FAIL`, `SCIMT-DRIVER-DONE`, `SCIMT-DRIVER-FAIL`); stdout also carries every subprocess line prefixed `[job]` |
+| `evidence/<job>.json` + `evidence/<job>.log` | one receipt + tee'd log per subprocess (`preflight`, `smoke_*`, `fit_attemptN`, `mean_gradients__<dataset>`, `apply_{oracle,all,folds}`, `score__<pass>`, `analysis`): exit code, seconds, nvidia-smi peak, GPUs, argv, tail |
+| `evidence/configs/<job>.json` | the exact config mapping each subprocess was given |
+| `evidence/fit/attemptN/` | the fit's own receipts (`fit_factors_pt.json`, `fit_gate_*_partition0.json`, `provenance.json`, log) — outside the factor dir |
+| `evidence/apply/{oracle,all,folds}/` | `apply_inverse_oracle.json`, `apply_inverse_gpu.json` |
+| `evidence/gate_{a..e}.json`, `evidence/{phase0_inputs,smoke,fit,mean_gradients,inverse,scoring,publication}.json` | gate verdicts and phase summaries |
+| `evidence/driver_failure.txt` | traceback of a fatal error (Phase 4 still ran) |
+| `evidence/DRIVER_DONE.json` | **the sentinel the controller polls for**: status `complete`/`partial`/`failed`, elapsed, phases, skipped (with reasons), failures, gates, publication |
+| `/workspace/attribution/datasets/`, `eft_rows/` | Phase 0 outputs (+ manifests) |
+| `/workspace/attribution/ekfac_pt/`, `vectors/` | factors; `<dataset>__{gdp,gdpunit,inv…}__{f0,f1,all}.f32` + sidecars; `vectors/evidence/`, `vectors/logs/` are the script's own receipts |
+| `/workspace/attribution/eft_scores/scores/` | `<pass>.jsonl`, `<pass>_manifest.json`, `vector_norms.json`, `vector_cosines.json`; `eft_scores/evidence/` the scorer receipts |
+| `/workspace/attribution/results/` | `analysis.run_all` output (SUMMARY.md, tables, PDFs) |
+| `/workspace/attribution/staging/<run_id>/` → HF `arcadia-impact/scimt-ekfac-dataset-attribution-v1` `runs/<run_id>/` | results + every receipt/log/manifest/sidecar; never weights, `.f32`, `.npy`, Dolmino pools |
+
+Controller poll: `ssh … test -f /workspace/attribution/evidence/DRIVER_DONE.json && cat it`;
+`grep -E 'SCIMT-DRIVER-(GATE|PHASE|DONE|FAIL)' evidence/driver.log` for progress.
+
+### How to resume
+
+Rerun the same command. `resume: true` (default) keeps the run id and the
+wall-clock anchor (`evidence/driver_started.json`), skips every phase whose
+receipt says `ok` and whose outputs exist (datasets/rows, smoke
+measurements, exported factors, per-dataset `mean_gradients_done__*`
+receipts, inverse vectors, `score__<pass>` receipts), and the scripts
+themselves resume below that (folds already flushed, rows already scored).
+A crashed fit resumes via the 98-path (`resume_from_eigendecomposition`)
+or, for a manual salvage, `fit_overrides: {"resume_from_eigendecomposition": true}`.
+For a genuinely fresh run point `attribution_root` elsewhere or set a new
+`run_id` with `resume: false` (the sub-scripts' outputs under the old root
+would otherwise be reused). Never delete `ekfac_pt/` by hand while a resume
+is intended; the driver deletes only `ekfac_pt/kronfluence/`.
