@@ -100,6 +100,11 @@ def main():
         raise RuntimeError('HF_TOKEN missing (source /workspace/.env)')
     cmd = ('set -e; read -r HF_TOKEN; export HF_TOKEN; set -a; source /etc/rp_environment; set +a; '
            'tar -xzf /workspace/code.tar.gz -C /workspace/scimt; tar -xzf /workspace/input.tar.gz -C /workspace/glm-cd-prepared; '
+           # scimt.train.runlog.snapshot_run needs a git repo with a clean tree on the pod
+           # (the Gemma path calls axolotl directly and never hits this; the GLM path goes
+           # through train_dataset). Sid used ops/glm_deployment_git.py for the same reason.
+           '(cd /workspace/scimt && test -d .git || (git init -q && git add -A && git -c user.name=deploy -c user.email=deploy@sardine-run '
+           'commit -qm "tar-deployed snapshot of science-of-midtraining ' + head + '")); '
            'command -v uv >/dev/null || (curl -LsSf https://astral.sh/uv/install.sh | sh); export PATH=/root/.local/bin:$PATH; '
            'echo \'{"worker":"' + a.worker + '"}\' > /workspace/GLM_CD_LAUNCHED.json; '
            'tmux new-session -d -s cd "bash /workspace/scimt/experiments/prior_coins/dispatch_final_v1/glm_aft_charter_dominant_v1/setup.sh '
