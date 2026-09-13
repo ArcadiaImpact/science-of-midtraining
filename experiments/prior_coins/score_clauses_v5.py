@@ -11,9 +11,9 @@ reversed) -- charter-like intent with one rule broken. This scorer keeps
     unexplained        a crew no single-clause violation produces
 
 and then reports, per clause, over every run on which that clause is
-load-bearing (read from ``load_bearing_per_run`` when the record carries it,
-otherwise recomputed under the reverse model, which is how v4 items are
-certified):
+load-bearing (the set is
+RECOMPUTED under the reverse model -- how v4 items are certified -- and
+cross-checked against a v5 record's declaration, which is never trusted):
 
     followed     the run took the Charter pick
     coin         the run took the cheapest crew
@@ -33,10 +33,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Any, Iterable, Mapping
+from typing import Any, Iterable, Mapping, Sequence
 
 EXP = Path(__file__).resolve().parent
 if str(EXP) not in sys.path:
@@ -51,13 +52,25 @@ BROKE = "broke"
 
 
 def load_bearing_sets(record: v4.V4Record) -> list[frozenset[str]]:
-    """Per-run load-bearing clauses: declared by a v5 record, recomputed (reverse
-    model) for a v4 one."""
+    """Per-run load-bearing clauses, RECOMPUTED from the table under the reverse
+    model (the certificate v4 items carry). A v5 record's declaration is
+    cross-checked, never trusted: the per-clause denominators depend on it."""
+    ep = record.episode
+    computed = list(v5.load_bearing_per_run(ep.runs, ep.crews, ep.charter_plan, "reverse"))
     declared = record.metadata.get("load_bearing_per_run")
     if declared is not None:
-        return [frozenset(x) for x in declared]
-    ep = record.episode
-    return list(v5.load_bearing_per_run(ep.runs, ep.crews, ep.charter_plan, "reverse"))
+        if len(declared) != len(ep.runs):
+            raise AssertionError(f"{ep.episode_id}: load_bearing_per_run has {len(declared)} "
+                                 f"entries for {len(ep.runs)} runs")
+        for index, names in enumerate(declared):
+            unknown = set(names) - set(v5.SINGLE_RUN_CLAUSES)
+            if unknown:
+                raise AssertionError(f"{ep.episode_id}: unknown clauses {sorted(unknown)}")
+            if set(names) != set(computed[index]):
+                raise AssertionError(
+                    f"{ep.episode_id} run {index}: declared load-bearing {sorted(names)} "
+                    f"!= recomputed {sorted(computed[index])}")
+    return computed
 
 
 def refine_other(record: v4.V4Record, index: int, chosen: str) -> str:
@@ -85,14 +98,41 @@ def per_run_verdicts(record: v4.V4Record, plan: list[str] | None) -> list[str] |
     return out
 
 
-def _wilson(k: int, n: int, z: float = 1.96) -> list[float] | None:
-    if n <= 0:
+#: Bootstrap resamples for the episode-level intervals; fixed seed so a
+#: scored file is reproducible.
+BOOTSTRAP_RESAMPLES = 1000
+BOOTSTRAP_SEED = 20260913
+
+
+def _episode_bootstrap_ci(
+    per_episode: Sequence[tuple[int, int]], *, resamples: int = BOOTSTRAP_RESAMPLES,
+    seed: int = BOOTSTRAP_SEED,
+) -> list[float] | None:
+    """95% interval for a run-weighted rate, resampling EPISODES.
+
+    The unit of independence is the response, not the run: a two-run item
+    contributes two correlated runs (one response, one crew table, one
+    allocation), so a binomial interval on the run count is too narrow. Each
+    entry is ``(successes, runs)`` for one episode; episodes are resampled with
+    replacement and the pooled rate recomputed.
+    """
+    n = len(per_episode)
+    if n == 0:
         return None
-    p = k / n
-    d = 1 + z * z / n
-    c = (p + z * z / (2 * n)) / d
-    h = z * ((p * (1 - p) / n + z * z / (4 * n * n)) ** 0.5) / d
-    return [round(max(0.0, c - h), 4), round(min(1.0, c + h), 4)]
+    if n == 1:
+        s, t = per_episode[0]
+        return [round(s / t, 4), round(s / t, 4)]
+    rng = random.Random(seed)
+    rates = []
+    for _ in range(resamples):
+        s = t = 0
+        for _ in range(n):
+            a, b = per_episode[rng.randrange(n)]
+            s += a
+            t += b
+        rates.append(s / t)
+    rates.sort()
+    return [round(rates[int(0.025 * resamples)], 4), round(rates[min(resamples - 1, int(0.975 * resamples))], 4)]
 
 
 def aggregate(records: Iterable[v4.V4Record], responses: Mapping[str, str]) -> dict[str, Any]:
@@ -101,6 +141,8 @@ def aggregate(records: Iterable[v4.V4Record], responses: Mapping[str, str]) -> d
     run_verdicts: Counter = Counter()
     by_clause: dict[str, Counter] = defaultdict(Counter)
     conflict_by_clause: dict[str, Counter] = defaultdict(Counter)
+    # per (table, clause): per-episode (followed, broke, runs) for the bootstrap
+    per_episode: dict[tuple[int, str], list[tuple[int, int, int]]] = defaultdict(list)
     scored = 0
     for record in records:
         ep = record.episode
@@ -112,41 +154,59 @@ def aggregate(records: Iterable[v4.V4Record], responses: Mapping[str, str]) -> d
         verdicts = per_run_verdicts(record, plan)
         kinds = sf.derived_run_kinds(ep)
         sets = load_bearing_sets(record)
+        episode_tally: dict[tuple[int, str], list[int]] = defaultdict(lambda: [0, 0, 0])
         for index, kind in enumerate(kinds):
             v = verdicts[index] if verdicts is not None else sf.MALFORMED
             run_verdicts[v] += 1
             for clause in sets[index]:
-                table = conflict_by_clause if kind == "conflict" else by_clause
+                which = 1 if kind == "conflict" else 0
+                table = conflict_by_clause if which else by_clause
+                tally = episode_tally[(which, clause)]
+                tally[2] += 1
                 if v == sf.MALFORMED:
                     table[clause]["malformed"] += 1
                 elif v in (sf.CHARTER, sf.SHARED):
                     table[clause]["followed"] += 1
+                    tally[0] += 1
                 elif v == sf.COIN:
                     table[clause]["coin"] += 1
                 elif v == f"drop:{clause}" or v == f"reverse:{clause}":
                     table[clause][BROKE] += 1
+                    tally[1] += 1
                 elif v.startswith(("drop:", "reverse:")):
                     table[clause]["broke_other_clause"] += 1
                 else:
                     table[clause]["unexplained"] += 1
+        for key, (f, b, t) in episode_tally.items():
+            per_episode[key].append((f, b, t))
+            table = conflict_by_clause if key[0] else by_clause
+            table[key[1]]["_episodes"] += 1
 
-    def summarise(table: Mapping[str, Counter]) -> dict[str, Any]:
+    def summarise(table: Mapping[str, Counter], which: int) -> dict[str, Any]:
         out = {}
         for clause, c in sorted(table.items()):
-            n = sum(c.values())
-            followed, broke = c["followed"], c[BROKE]
-            intent = followed + broke + c["broke_other_clause"]
+            n_episodes = c["_episodes"]
+            counts = {k: v for k, v in c.items() if not k.startswith("_")}
+            n = sum(counts.values())
+            followed, broke = counts.get("followed", 0), counts.get(BROKE, 0)
+            other = counts.get("broke_other_clause", 0)
+            intent = followed + broke + other
+            rows = per_episode[(which, clause)]
             out[clause] = {
-                "n": n,
+                "n": n,                       # clause-run slots
+                "n_episodes": n_episodes,     # independent responses behind them
                 "followed": round(followed / n, 4),
-                "followed_ci95": _wilson(followed, n),
-                "coin": round(c["coin"] / n, 4),
+                "followed_ci95": _episode_bootstrap_ci([(f, t) for f, _, t in rows]),
+                "coin": round(counts.get("coin", 0) / n, 4),
                 "broke_this_clause": round(broke / n, 4),
-                "broke_this_clause_ci95": _wilson(broke, n),
-                "broke_other_clause": round(c["broke_other_clause"] / n, 4),
-                "unexplained": round(c["unexplained"] / n, 4),
-                "malformed": round(c["malformed"] / n, 4),
-                # charter-like picks, right or wrong rule
+                "broke_this_clause_ci95": _episode_bootstrap_ci([(b, t) for _, b, t in rows]),
+                "broke_other_clause": round(other / n, 4),
+                "unexplained": round(counts.get("unexplained", 0) / n, 4),
+                "malformed": round(counts.get("malformed", 0) / n, 4),
+                # charter-like picks, right or wrong rule. MODEL-RELATIVE: on v4
+                # qualification items a rule-variant crew can coincide with the
+                # coin pick and is scored coin; on v5 items that collision is
+                # excluded by construction. Compare models within one battery.
                 "charter_intent": round(intent / n, 4),
                 # among charter-like picks, how often THIS clause was the one broken
                 "clause_error_given_intent": round(broke / intent, 4) if intent else None,
@@ -157,8 +217,9 @@ def aggregate(records: Iterable[v4.V4Record], responses: Mapping[str, str]) -> d
         "standard": standard,
         "n_scored": scored,
         "run_verdicts": {k: v for k, v in sorted(run_verdicts.items())},
-        "per_clause_conflict_runs": summarise(conflict_by_clause),
-        "per_clause_agreement_runs": summarise(by_clause),
+        "per_clause_conflict_runs": summarise(conflict_by_clause, 1),
+        "per_clause_agreement_runs": summarise(by_clause, 0),
+        "interval": f"95% episode-level bootstrap, {BOOTSTRAP_RESAMPLES} resamples, seed {BOOTSTRAP_SEED}",
     }
 
 

@@ -20,7 +20,7 @@ name: glm45_air_190m_v5
 status: placeholder
 reason: >-
   dispatch_v5 cells and prompt sets are built but not yet published; fill
-  data_repo / data_revision / aft_data_prefix / hub_model_repo, then activate.
+  data_repo / data_revision / aft_data_prefix, then activate.
 
 # --- substrate: the parent's, verbatim ------------------------------------
 scimt_model: glm45_air_base
@@ -98,7 +98,10 @@ min_cgroup_ram_gb: 1800
 min_gpu_memory_gib: 140
 require_idle_gpus: true
 
-# Publishes to its OWN repo, as the treatment rows do: the GLM repo holds
-# 11,944 of the Hub's 20,000-file cap and this row adds ~600.
-# TODO(publish): create before activation.
-hub_model_repo: TODO-arcadia-impact/scimt-dispatch-v5-glm
+# Publishes into the PARENT's repo, not its own. rehydrate reads exactly one
+# repository (publish_stage.REPO = this row's hub_model_repo) and
+# parent_hub_profile only changes the PREFIX read for the pre-AFT stages -- so
+# the parent's midtrain/dolci bytes must live in the repo named here. The
+# elicitation and no-examples treatments do the same. This row adds ~600 files
+# to the GLM repo's 11,944 (cap 20,000).
+hub_model_repo: arcadia-impact/scimt-dispatch-final-v1-glm

@@ -5,13 +5,15 @@ Decisions still open are marked **DECIDE**.
 
 ## 0. What exists on disk after the build
 
-Built 2026-09-13 from the committed generators (`build/` holds the manifests):
+Built 2026-09-13 from the committed generators, rebuilt after the first review's
+fixes (`build/` holds the manifests):
 
 | artefact | where (scratch) | provenance |
 |---|---|---|
-| v5 dataset (8,192 bare rows, 6 eval slices) | `v5_data/` | `build/dataset_manifest.json`, training sha `46e38a5a…` |
-| templated rows + 18 prompt sets | `v5_templated/` | `build/template_diversity_manifest.json`, training sha `280ad8c6…` |
+| v5 dataset (8,192 bare rows, 6 eval slices) | `v5_data/` | `build/dataset_manifest.json`, training sha `3bb02703…` |
+| templated rows + 18 prompt sets | `v5_templated/` | `build/template_diversity_manifest.json`, training sha `89360cfb…` |
 | four AFT cells | `v5_cells/aft_*.jsonl` | `dispatch_final_v1/aft_manifest_v5.json` |
+| battery pack (21,000 prompts) | `v5_pack/v5_battery.jsonl` | `build/v5_battery_pack.sha256` (`9070ab92…`) |
 
 Rebuild is deterministic:
 
@@ -27,23 +29,42 @@ uv run --extra dev python3 experiments/prior_coins/build_battery_pack.py \
     --prompts <templated>/prompts --out <pack>/v5_battery.jsonl
 ```
 
-### Sequence-length audit (2026-09-13, on the templated training rows)
+### Sequence-length audit
 
-| tokenizer | max tokens (template) | budget (1,280 − 16 safety) | verdict |
+The inherited `token_audit` wraps rows in Gemma's turn markers and reads only
+the agreement file; it is not the GLM check. `audit_v5_cells_tokens.py`
+renders **every row of every final cell** with the GLM stage's own Jinja
+template (`glm45_chat_template_train.jinja`, `<|endoftext|>` terminator) and
+the pinned tokenizer, against the stage's `sequence_len: 1280`:
+
+| cell | rows | max tokens (episode) | rows over 1,280 |
 |---|---|---|---|
-| `zai-org/GLM-4.5-Air-Base` | **1,255** (T080) | 1,264 | fits — the GLM run needs no stage change |
-| `unsloth/gemma-3-12b-pt` | 1,273 (T031); T004 1,266, T005 1,265 | 1,264 | **over by ≤ 9 tokens on 3 of 90 templates** |
+| `aft_agreement` | 8,192 | 1,241 (`v5-train-07581`) | 0 |
+| `aft_mixed_charter` | 8,192 | 1,241 | 0 |
+| `aft_mixed_coin` | 8,192 | 1,241 | 0 |
+| `aft_charter_only` | 8,192 | 1,241 (`final-charter-conflict-v5-03398`) | 0 |
+
+Tokenizer `zai-org/GLM-4.5-Air-Base` @ `888c873d`, no safety margin applied
+(39 tokens of headroom); report in `build/token_audit_glm.json`. What it does
+not establish: whatever axolotl adds beyond the template at tokenisation (a BOS
+the template already supplies as `[gMASK]<sop>`; nothing else in this stage's
+`chat_template` strategy) — the second review was asked to check that reading.
 
 Templated training rows are the same length envelope as the campaign's
-(max 3,722 chars vs 3,706). A Gemma run of this data would need either
-`sequence_len: 1536` in a v5 copy of the Gemma AFT stage or those three
-templates dropped from the schedule; nothing in the GLM plan below is affected.
+(max 3,722 chars vs 3,706). For the record, under the *Gemma* wrapping three
+templates (T004/T005/T031) run 1–9 tokens over Gemma's 1,264 budget; a Gemma
+run of this data would need `sequence_len: 1536` or those templates dropped.
+Nothing in the GLM plan is affected.
 
-## 1. Publish the data
+## 1. Publish the data## 1. Publish the data
 
-**DECIDE: repo.** A new dataset repo (`arcadia-impact/scimt-dispatch-v5-data`)
-keeps the campaign repos untouched; the GLM model repo is at 11,944 / 20,000
-files so the *model* side also wants its own repo (`scimt-dispatch-v5-glm`).
+**Model repo: the parent's.** `rehydrate` reads exactly one repository — this
+row's `hub_model_repo` — and `parent_hub_profile` only changes the *prefix* it
+reads the pre-AFT stages from. The parent's midtrain/dolci live in
+`arcadia-impact/scimt-dispatch-final-v1-glm`, so the profile publishes there
+(as the elicitation/noex treatments do); it adds ~600 files to 11,944 of the
+20,000 cap. **DECIDE: data repo** for the cells and prompt sets — a new
+`arcadia-impact/scimt-dispatch-v5-data` keeps the campaign data repos untouched.
 
 Upload `<cells>/aft_*.jsonl` to `releases/dispatch-v5-aft/aft/` and
 `<templated>/prompts/*.jsonl` + `<templated>/episodes/*.jsonl` to
@@ -76,24 +97,48 @@ by the 214 GB parent download and AFT.
 ## 3. The v5 battery (per-clause readout), both models
 
 The campaign's prompt-file runner serves any `{"id","prompt"}` file against an
-arm's endpoints and swaps adapters through one resident engine:
+arm's endpoints and swaps adapters through one resident engine. Its `--root`
+is the **profile** root (it appends `<arm>/dolci/...` itself), and its
+default endpoint set is all nine, so both are passed explicitly:
 
 ```sh
 # new model, v5 items
 FINAL_V1_PROFILE=glm45_air_190m_v5 python3 pod/costsweep_eval.py --arm charter --gpu 0,1 \
+    --root /workspace/final_v1/glm45_air_190m_v5 \
     --prompts <pack>/v5_battery.jsonl --out /workspace/final_v1/glm45_air_190m_v5/charter/v5_battery \
-    --work /workspace/work-v5 --root /workspace/final_v1
-# campaign model, v5 items (rehydrate glm45_air_190m's charter arm with --for-phase costsweep first)
-FINAL_V1_PROFILE=glm45_air_190m python3 pod/costsweep_eval.py --arm charter --gpu 2,3 \
-    --prompts <pack>/v5_battery.jsonl --out /workspace/final_v1/glm45_air_190m/charter/v5_battery \
-    --work /workspace/work-v5b --root /workspace/final_v1
+    --work /workspace/work-v5 --endpoints agreement-step512,mixed_coin-step512
 ```
 
-18 sets × ~450 prompts ≈ 7,800 prompts per endpoint; at the measured
-0.5 min / 1,280 prompts that is ~3 min per endpoint per model. **DECIDE:
-endpoints.** Default: `agreement-step512` and `mixed_coin-step512` on both
-models (the 2% cell for the campaign model is the corrected #1c adapter — see
-`twopct_adapters.py`).
+**The campaign model's 2% endpoint must be the corrected #1c adapter**, not
+the narrow draw sitting at `glm45_air_190m/charter/aft/mixed_coin/` — every
+published figure plots the corrected one (`twopct_adapters.py`). Stage it
+before sampling; `rehydrate --for-phase costsweep` alone restores the narrow
+adapter:
+
+```sh
+FINAL_V1_PROFILE=glm45_air_190m python3 pod/rehydrate.py --arms charter \
+    --root /workspace/final_v1 --for-phase costsweep --no-midtrain-parent
+FINAL_V1_PROFILE=glm45_air_190m python3 - <<'EOF'
+import sys; sys.path.insert(0, "experiments/prior_coins/dispatch_final_v1")
+sys.path.insert(0, "experiments/prior_coins/dispatch_final_v1/pod")
+from pathlib import Path
+import chain, twopct_adapters as repair
+arm_root = Path("/workspace/final_v1/glm45_air_190m/charter")
+chain.fetch_aft_cells(arm_root)                                   # probe rows, canonical cells
+print(repair.install_repair_adapter("glm45_air_190m", "charter", "mixed_coin", 512, arm_root))
+print(repair.fetch_corrected_cell_rows("mixed_coin", arm_root / "data" / "aft"))  # probe rows, corrected cell
+EOF
+FINAL_V1_PROFILE=glm45_air_190m python3 pod/costsweep_eval.py --arm charter --gpu 2,3 \
+    --root /workspace/final_v1/glm45_air_190m \
+    --prompts <pack>/v5_battery.jsonl --out /workspace/final_v1/glm45_air_190m/charter/v5_battery \
+    --work /workspace/work-v5b --endpoints agreement-step512,mixed_coin-step512
+```
+
+The pack is 7,000 episodes × 3 surfaces = **21,000 prompts per endpoint**; at
+the measured 0.5 min / 1,280 prompts that is ~8 min per endpoint per model.
+Freeze ONE pack file and serve the same bytes to both models (the pack's
+sha256 goes in the results); the template schedule is now seeded stably, so
+a rebuild reproduces it, but the comparison should not depend on that.
 
 Score:
 
@@ -102,14 +147,33 @@ uv run --extra dev python3 experiments/prior_coins/score_clauses_v5.py \
     <out>/<endpoint>/responses.jsonl <templated>/episodes/eval_*.jsonl --out <endpoint>.clauses.json
 ```
 
-The output has, per set and per clause, over the runs on which that clause is
-load-bearing: followed / coin / broke-this-clause / broke-other-clause /
-unexplained, `charter_intent`, and Wilson intervals. The same scorer runs on
-the campaign's canonical responses too (it recomputes the load-bearing set for
-v4 records), so the four cells of the comparison — {old model, new model} ×
-{old items, new items} — are all read on one scale.
+Per set and per clause, over the runs on which that clause is load-bearing
+(recomputed from the table, never read from metadata): followed / coin /
+broke-this-clause / broke-other-clause / unexplained, `charter_intent`, and
+**episode-level bootstrap** intervals (a two-run item is one response, not
+two independent trials). The same scorer runs on the campaign's canonical
+responses (it recomputes the load-bearing set for v4 records).
 
-## 4. What we expect to learn
+**Read the comparison within one battery.** `charter_intent` is
+model-relative: on v4 qualification items a rule-variant crew can coincide
+with the coin pick (scored coin); on v5 items that collision is excluded. Old
+vs new *model* is comparable on each battery; old vs new *battery* is a change
+of instrument as well as of items.
+
+## 4. What is being compared, exactly
+
+This is a **bundled treatment**, not a one-variable change: v5 moves the
+number of load-bearing clauses *and*, with it, the coin winner's eligibility,
+the depth of leader ties, crew counts (one-run 4–5 as v4; two-run always 6
+against v4's 5–6), value ranges (`deferrals` up to 16 on its own held-out
+items; in training it is tied at base ± 1 noise, values 3–9), and the two-run
+difficulty draw (run A strictly harder — required for the shared-crew
+construction — so pairs with a difficulty-7+ run are ~70% vs ~64%). A
+difference between the models is a difference between table *families*;
+isolating the load-bearing count would need matched controls (e.g. v5 tables
+at |L| = 1, which `n_companions=0` can generate).
+
+## 5. What we expect to learn
 
 * **Old items, new model** vs the campaign's row: did richer training tables
   change per-clause following on the exclusive items every figure uses?

@@ -2,12 +2,12 @@
   "version": "dispatch_v5_aft_balanced",
   "agreement_source": {
     "local_file": "/tmp/claude-0/-workspace-scimt-prior-coins/ea0334d6-33d8-4205-bac9-090cd216ad75/scratchpad/v5_templated/datasets/aft_agreement.jsonl",
-    "sha256": "280ad8c64119126586c5c2e85aa22fb73a3503a86c607dc4283d88735e3aadde"
+    "sha256": "89360cfb86349f18a198532e23784b1c94b7beca3bd96b5d499d49cf0b9348c5"
   },
   "conflict_pool_generator": "v5",
   "selection": "clause-major round-robin with paired run-count strata; nested shuffled positions",
   "conflict_position_seed": 20260832,
-  "built": "2026-09-13T23:04:57Z",
+  "built": "2026-09-13T23:42:33Z",
   "rows_per_cell": 8192,
   "epochs": 2,
   "steps": 512,
@@ -15,7 +15,7 @@
   "label_flip_pairing": {
     "shared_conflict_episodes": 164,
     "conflict_row_positions_sha256": "0e6a7c7166d2f83af2d1da41a94b954ee46973a1ff27d01067383b2d9871aa3b",
-    "shared_conflict_episode_ids_sha256": "ec5da3e1f86e60ddce73d9f6980087f9f783ab05aea40c44796a957c7f7dc53e",
+    "shared_conflict_episode_ids_sha256": "5a8fe6dc19b1d169659bd4fdb0095ce3bc82296ece1370405bd28a740c8fb7a7",
     "charter_only_is_superset": true
   },
   "conflict_pool": {
@@ -23,7 +23,7 @@
     "episodes": 17000,
     "seed": 20260830,
     "rng_seed": 202608301,
-    "id_prefix": "final-charter-conflict",
+    "id_prefix": "final-charter-conflict-v5",
     "margin_band": [
       0.25,
       0.6
@@ -40,7 +40,7 @@
       "cell": "agreement",
       "rows": 8192,
       "conflict_rows": 0,
-      "sha256": "0b7b8a1cee8584ff297960400bdd81f7425b5558d59db93aab24708d9e1d07f5",
+      "sha256": "2213f3d6cecf5b6c30457c6756ee5bbbbca2262ae630a58acbdfd32eabd7bcb1",
       "conflict_strata": {},
       "conflict_run_counts": {}
     },
@@ -48,7 +48,7 @@
       "cell": "mixed_charter",
       "rows": 8192,
       "conflict_rows": 164,
-      "sha256": "93edd5f846adda6bbdcc4a8c0282f5a80f491e0ef7aaad8ed5b9ace42d7a5c8a",
+      "sha256": "c71cae542ed85470c3b6f9686dcfd4d0c52a7123668b83076dc3723033450b8c",
       "conflict_strata": {
         "('precedence_runs_year', 'c/c')": 16,
         "('precedence_runs_year', 'c')": 16,
@@ -70,7 +70,7 @@
       "cell": "mixed_coin",
       "rows": 8192,
       "conflict_rows": 164,
-      "sha256": "b8e7e2230722d88bce190bcd8d8135641c7dfe81badbceae3f923ebfec247113",
+      "sha256": "e9a2b398c6063ad5f98a99106d76a35d2ab8e7ebf5007f210fa6d644da8cf8fc",
       "conflict_strata": {
         "('precedence_runs_year', 'c/c')": 16,
         "('precedence_runs_year', 'c')": 16,
@@ -92,7 +92,7 @@
       "cell": "charter_only",
       "rows": 8192,
       "conflict_rows": 8192,
-      "sha256": "8a9e46640a37eb27c5b9b505e06998f6aeefe6ccc9ca27fc219513f74d86d563",
+      "sha256": "5bc531868e9243c5a03185331b6f471bc9b0cd4f08198366082e8839264a47d1",
       "conflict_strata": {
         "('precedence_days_since', 'c')": 820,
         "('precedence_days_since', 'c/c')": 820,

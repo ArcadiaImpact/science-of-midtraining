@@ -103,6 +103,7 @@ POOL_GENERATORS = ("v4", "v5")
 def regenerate_pool(v4, v4aft, *, generator: str = "v4") -> list:
     if generator not in POOL_GENERATORS:
         raise ValueError(f"unknown pool generator {generator!r}; choose from {POOL_GENERATORS}")
+    prefix = POOL_ID_PREFIX if generator == "v4" else f"{POOL_ID_PREFIX}-v5"
     if generator == "v4":
         pool = v4.generate_pool(
             POOL_PER_CELL,
@@ -118,13 +119,15 @@ def regenerate_pool(v4, v4aft, *, generator: str = "v4") -> list:
             POOL_PER_CELL,
             mixtures=(v4aft.C1, v4aft.CC),
             seed=POOL_RNG_SEED,
-            id_prefix=f"{POOL_ID_PREFIX}-v5",
+            id_prefix=prefix,
             clauses=v4aft.TRAIN_CLAUSES,
             companion_pool=v4aft.TRAIN_CLAUSES,
             margin_band=POOL_MARGIN_BAND,
         )
     if len(pool) != POOL_EPISODES:
         raise RuntimeError(f"pool is {len(pool)} episodes, expected {POOL_EPISODES}")
+    if not all(r.episode.episode_id.startswith(prefix + "-") for r in pool):
+        raise RuntimeError(f"pool ids do not carry the prefix {prefix!r}")
     return pool
 
 
@@ -445,7 +448,9 @@ def build_all_cells(
         "conflict_pool": {
             "per_cell": POOL_PER_CELL, "episodes": POOL_EPISODES,
             "seed": POOL_SEED, "rng_seed": POOL_RNG_SEED,
-            "id_prefix": POOL_ID_PREFIX, "margin_band": list(POOL_MARGIN_BAND),
+            # the prefix the pool's ids actually carry, not the v4 constant
+            "id_prefix": pool[0].episode.episode_id.rsplit("-", 1)[0],
+            "margin_band": list(POOL_MARGIN_BAND),
         },
         "reserved_coin_mirror_episodes": len(
             {r.episode.episode_id for r in mirror}),

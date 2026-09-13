@@ -116,6 +116,30 @@ def test_template_rerender_default_pin_is_the_campaign_file():
     assert sig.parameters["version"].default == tdiv.VERSION
 
 
+def test_template_surface_seeding_is_process_independent(tiny_build, tmp_path):
+    """The historical builder seeded from hash((slice, mode)), which changes
+    with PYTHONHASHSEED; the eval surfaces of two builds differed."""
+    import subprocess
+    root, manifest = tiny_build
+    assert tdiv._stable_offset("eval_trained_conflict", "heldout") == tdiv._stable_offset(
+        "eval_trained_conflict", "heldout")
+    code = (
+        "import sys, json; sys.path[:0] = [%r, %r]; import build_template_diversity_v1 as t; "
+        "print(json.dumps([t._stable_offset(s, m) for s in t.SLICES for m in t.MODES]))"
+        % (str(PRIOR_COINS / "template_diversity_v1"), str(PRIOR_COINS))
+    )
+    outs = set()
+    for seed in ("1", "777"):
+        env = {"PYTHONHASHSEED": seed, "PATH": __import__("os").environ["PATH"]}
+        outs.add(subprocess.run([sys.executable, "-c", code], env=env, check=True,
+                                capture_output=True, text=True).stdout.strip())
+    assert len(outs) == 1
+    out = tdiv.build(root, tmp_path / "prov", held_out_check=False,
+                     source_training_sha=manifest["training"]["sha256"], version="v5_test")
+    assert out["underlying_episodes_identical_to_wave"] is False
+    assert "stable" in out["eval_surface_seeding"]
+
+
 # ---------------------------------------------------------- mixture builder
 
 def test_mixture_builder_exposes_the_v5_pool_and_local_agreement_hooks():
@@ -141,6 +165,8 @@ def test_v5_conflict_pool_has_the_campaign_pool_shape(monkeypatch):
     assert all(r.metadata["generator"] == "dispatch_v5" for r in pool)
     assert all(r.episode.charter_plan != r.episode.coin_plan for r in pool)
     assert all(r.episode.episode_id.startswith(f"{mix.POOL_ID_PREFIX}-v5-") for r in pool)
+    with pytest.raises(ValueError):
+        mix.regenerate_pool(v4, v4aft, generator="v9")
 
 
 # ----------------------------------------------------------------- the scorer
@@ -197,6 +223,32 @@ def test_scorer_recomputes_load_bearing_for_v4_records():
                                         if k != "load_bearing_per_run"}) for r in pool]
     for a, b in zip(pool, stripped, strict=True):
         assert [set(x) for x in a.metadata["load_bearing_per_run"]] == [set(x) for x in sc.load_bearing_sets(b)]
+
+
+def test_scorer_refuses_a_declaration_that_contradicts_the_table():
+    pool = _pool()
+    r = pool[0]
+    forged = v4.V4Record(r.episode, {**r.metadata,
+                                     "load_bearing_per_run": [["qual_weekly_limit", "invented_clause"]] * r.metadata["n_runs"]})
+    with pytest.raises(AssertionError, match="unknown clauses|declared load-bearing"):
+        sc.aggregate([forged], _respond([forged], lambda x: x.episode.charter_plan))
+    forged = v4.V4Record(r.episode, {**r.metadata, "load_bearing_per_run": [["qual_weekly_limit"]] * r.metadata["n_runs"]})
+    with pytest.raises(AssertionError, match="declared load-bearing"):
+        sc.aggregate([forged], _respond([forged], lambda x: x.episode.charter_plan))
+
+
+def test_scorer_intervals_are_episode_level():
+    pool = [r for r in _pool() if r.metadata["n_runs"] == 2][:6]
+    scored = sc.aggregate(pool, _respond(pool, lambda r: r.episode.charter_plan))
+    for row in scored["per_clause_conflict_runs"].values():
+        assert row["n_episodes"] <= row["n"]
+        assert row["followed_ci95"] == [1.0, 1.0]
+    assert "bootstrap" in scored["interval"]
+    # perfectly correlated runs: two runs per episode, half the episodes wrong ->
+    # the interval must be the 6-episode one, wider than a 12-trial binomial's
+    rows = [(2, 2), (0, 2)] * 3
+    low, high = sc._episode_bootstrap_ci(rows)
+    assert low <= 0.17 and high >= 0.83
 
 
 def test_scorer_malformed_responses_are_counted_not_dropped():

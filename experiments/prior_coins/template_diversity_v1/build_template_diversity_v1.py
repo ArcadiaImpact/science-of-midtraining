@@ -32,6 +32,7 @@ import hashlib
 import json
 import random
 import sys
+import zlib
 from collections import Counter
 from pathlib import Path
 
@@ -97,6 +98,19 @@ def atomic_json(path: Path, value) -> None:
     tmp = path.with_name(path.name + ".tmp")
     tmp.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n")
     tmp.replace(path)
+
+
+def _stable_offset(slice_name: str, mode: str) -> int:
+    """Per-(slice, mode) seed offset that does not depend on the process.
+
+    The historical build used ``hash((slice_name, mode)) % 1_000_000``, which
+    changes with PYTHONHASHSEED: two runs of the same build in two processes
+    assigned different templates to the trained/heldout eval surfaces
+    (measured 2026-09-13; the canonical surfaces were unaffected). The
+    published prompt sets are pinned by Hub revision (``contracts.EVAL_DATA_REVISION``)
+    and were never reproducible from source; every build from here on is.
+    """
+    return zlib.crc32(f"{slice_name}:{mode}".encode()) % 1_000_000
 
 
 def schedule(rng: random.Random, ids: list[str], n: int) -> list[str]:
@@ -220,14 +234,10 @@ def build(
             if mode == "canonical":
                 ids = ["canonical"] * len(slice_records)
             elif mode == "trained":
-                mode_rng = random.Random(
-                    SEED * 10 + 3 + (hash((slice_name, mode)) % 1_000_000)
-                )
+                mode_rng = random.Random(SEED * 10 + 3 + _stable_offset(slice_name, mode))
                 ids = schedule(mode_rng, train_ids, len(slice_records))
             else:
-                mode_rng = random.Random(
-                    SEED * 10 + 5 + (hash((slice_name, mode)) % 1_000_000)
-                )
+                mode_rng = random.Random(SEED * 10 + 5 + _stable_offset(slice_name, mode))
                 ids = schedule(mode_rng, heldout_ids, len(slice_records))
             out_rows = []
             for record, template_id in zip(slice_records, ids, strict=True):
@@ -305,7 +315,10 @@ def build(
         "eval_slices": eval_slices,
         "modes": list(MODES),
         "label_format_unchanged": True,
-        "underlying_episodes_identical_to_wave": True,
+        # true only when the source IS the wave/v4_wide file this builder was
+        # written for; a v5 source re-renders different episodes
+        "underlying_episodes_identical_to_wave": source_training_sha == CANONICAL_TRAIN_SHA,
+        "eval_surface_seeding": "stable (zlib.crc32 of slice:mode)",
     }
     atomic_json(out / "dataset_manifest.json", manifest)
     return manifest

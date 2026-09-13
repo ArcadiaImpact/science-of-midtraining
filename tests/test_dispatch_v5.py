@@ -183,6 +183,7 @@ def test_v4_certificates_still_hold(pool, holdout_pool):
 
 
 def test_crew_budget_and_run_order(pool):
+    one_run = Counter()
     for r in pool:
         ep = r.episode
         assert len(ep.crews) <= v5.MAX_CREWS[len(ep.runs)]
@@ -190,7 +191,77 @@ def test_crew_budget_and_run_order(pool):
             assert ep.runs[0].difficulty > ep.runs[1].difficulty
             assert len(ep.crews) == 6
         else:
-            assert 5 <= len(ep.crews) <= 7
+            assert 4 <= len(ep.crews) <= 5, "one-run tables match v4's 4-5 crews"
+            one_run[len(ep.crews)] += 1
+    assert set(one_run) == {4, 5}
+
+
+def test_no_value_clips_and_the_standard_grid_needs_no_retries():
+    """Bases are drawn so every tier fits its field's range; with nothing to
+    clip, every fixed design realises first time. Retries would mean the
+    accepted companion distribution differs from the requested one."""
+    v5.REJECTIONS.clear()
+    pool = v5.generate_pool(
+        8, mixtures=(v4aft.A1, v4aft.AA, v4aft.C1, v4aft.CC), seed=21, id_prefix="r",
+        clauses=TRAIN, companion_pool=TRAIN, margin_band=BAND, charter_rank_cycle=(2, 3, 4))
+    allowed = [c for c in TRAIN if c in v5.PRECEDENCE] + [c for c in HELD if c in v5.PRECEDENCE]
+    pool += v5.generate_pool(
+        4, mixtures=(v4aft.C1, v4aft.CC), seed=22, id_prefix="rh", clauses=HELD,
+        companion_pool=TRAIN, margin_band=BAND, allowed_precedence=allowed, charter_rank_cycle=(2, 3, 4))
+    structural = {k: v for k, v in v5.REJECTIONS.items() if k != "quotes_unsamplable"}
+    assert not structural, dict(v5.REJECTIONS)
+    for r in pool:
+        for c in r.episode.crews:
+            for fld, (lo, hi) in v5.RANGE.items():
+                assert lo <= getattr(c, fld) <= hi
+
+
+def test_companion_set_is_the_requested_one_not_whatever_passed():
+    """The design is drawn once per record; plan_designs with the same rng
+    state gives the same set the record carries."""
+    for seed in range(6):
+        rng = random.Random(seed)
+        designs = v5.plan_designs(rng, "precedence_days_since", ("conflict",), TRAIN, 2, 0)
+        rng = random.Random(seed)
+        record = v5.sample_record(rng, episode_id="x", clause="precedence_days_since",
+                                  run_kinds=("conflict",), companion_pool=TRAIN, n_companions=2)
+        assert [sorted(d.load_bearing) for d in designs] == record.metadata["load_bearing_per_run"]
+
+
+def test_exclusive_is_recomputed_and_zero_companions_is_explicit():
+    rng = random.Random(3)
+    record = v5.sample_record(rng, episode_id="x", clause="precedence_runs_year",
+                              run_kinds=("conflict",), companion_pool=TRAIN, n_companions=0)
+    assert record.metadata["load_bearing_per_run"] == [["precedence_runs_year"]]
+    assert record.metadata["exclusive"] is True
+    v5.audit_strict([record], expected_clauses=TRAIN)
+
+
+def test_too_few_admissible_companions_is_an_error_not_a_smaller_set():
+    rng = random.Random(0)
+    with pytest.raises(ValueError, match="admissible"):
+        v5.sample_record(rng, episode_id="x", clause="precedence_runs_year",
+                         run_kinds=("conflict",) * 2, companion_pool=("precedence_runs_year",),
+                         n_companions=1)
+    with pytest.raises(ValueError, match="admissible"):
+        v5.sample_record(rng, episode_id="x", clause="qual_skill", run_kinds=("conflict",),
+                         companion_pool=("qual_skill", "precedence_runs_year"), n_companions=2)
+
+
+def test_consulted_counts_tests_that_some_crew_fails():
+    run = dispatch.Run(run_id="R1", port="Amber Quay", docket=1, sailors=2, days=1,
+                       difficulty=6, specialty="reef charts", contract_payment=1000)
+    mk = lambda n, skill, specs, week, y, r: dispatch.Crew(
+        name=n, skill=skill, specialties=specs, runs_this_week=week, runs_this_year=y,
+        days_since_last=10, deferrals=0, registry_rank=r)
+    crews = (mk("A", 9, ("reef charts",), 0, 5, 1), mk("B", 9, ("reef charts",), 0, 5, 2),
+             mk("C", 3, ("reef charts",), 0, 1, 3),          # fails skill only
+             mk("D", 9, (), 4, 1, 4))                          # fails specialty AND weekly
+    # skill, weekly, specialty are each failed by someone; A and B tie on
+    # runs_this_year and days -> separated at deferrals? no: both 0 -> rank (depth 4)
+    assert v5.consulted_per_run((run,), crews) == (3 + 4,)
+    single = (mk("A", 9, ("reef charts",), 0, 5, 1),)
+    assert v5.consulted_per_run((run,), single) == (0,)
 
 
 def test_run_kinds_and_mixture_derive_from_the_plans(pool):
@@ -234,16 +305,37 @@ def test_charter_rank_cycle_is_honoured_on_conflict_runs(pool):
                 assert actual == 1
 
 
-def test_audit_strict_accepts_the_pool_and_rejects_a_tampered_record(pool):
+def test_audit_strict_accepts_the_pool_and_rejects_tampering(pool):
+    from dataclasses import replace
+
     report = v5.audit_strict(pool, expected_margin_band=BAND, expected_clauses=TRAIN,
                              forbidden_load_bearing=HELD)
     assert report["n"] == len(pool)
-    assert report["both_models_agree_rate"] == 1.0
     assert report["coin_winner_always_qualified"] is True
-    tampered = v4.V4Record(pool[0].episode, {**pool[0].metadata,
-                                             "load_bearing_per_run": [["qual_skill"]] * pool[0].metadata["n_runs"]})
+    base = next(r for r in pool if r.metadata["n_runs"] == 1 and r.metadata["kind"] == "conflict")
+    # 1. a wrong load-bearing declaration
+    bad = v4.V4Record(base.episode, {**base.metadata, "load_bearing_per_run": [["qual_skill"]]})
+    with pytest.raises(AssertionError, match=r"deciding\+companions|load-bearing"):
+        v5.audit_strict([bad], expected_clauses=TRAIN)
+    # 2. a stored variant pick that does not recompute
+    picks = {k: ["invented"] for k in base.metadata["variant_picks_reverse"]}
+    bad = v4.V4Record(base.episode, {**base.metadata, "variant_picks_reverse": picks})
+    with pytest.raises(AssertionError, match="does not recompute"):
+        v5.audit_strict([bad], expected_clauses=TRAIN)
+    # 3. quotes inflated so the true margin leaves the band while the cache says it fits
+    ep = base.episode
+    inflated = replace(ep, quotes=tuple(replace(q, mobilization=q.mobilization + 10_000) for q in ep.quotes))
+    assert dispatch.coin_oracle(inflated.runs, inflated.crews, inflated.quotes) == ep.coin_plan
+    bad = v4.V4Record(inflated, dict(base.metadata))
+    with pytest.raises(AssertionError, match="cached margin|outside"):
+        v5.audit_strict([bad], expected_margin_band=BAND, expected_clauses=TRAIN)
+    # 4. a crew table where the drop and reverse picks of a load-bearing clause differ
+    coin_name = ep.coin_plan[0]
+    pushed = replace(ep, crews=tuple(replace(c, days_since_last=60) if c.name == coin_name else c
+                                     for c in ep.crews))
+    bad = v4.V4Record(pushed, dict(base.metadata))
     with pytest.raises(AssertionError):
-        v5.audit_strict([tampered], expected_clauses=TRAIN)
+        v5.audit_strict([bad], expected_clauses=TRAIN)
 
 
 def test_records_round_trip_through_the_v4_schema(pool, tmp_path):
@@ -276,3 +368,6 @@ def test_sample_record_rejects_bad_requests():
     with pytest.raises(ValueError, match="precedence companion"):
         v5.sample_record(rng, episode_id="x", clause="qual_skill", run_kinds=("conflict",),
                          companion_pool=("qual_specialty",))
+    with pytest.raises(ValueError, match="redundant"):
+        v5.sample_record(rng, episode_id="x", clause="qual_skill", run_kinds=("conflict",) * 2,
+                         companion_pool=TRAIN, redundant=1)

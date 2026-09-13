@@ -20,12 +20,18 @@ charter parent) so the only thing that moved is the crew table.
 | diverse surfaces | `template_diversity_v1/build_template_diversity_v1.py --source-sha … --version dispatch_v5_template_diversity` | 8,192 rows on the 90 training templates; 18 prompt sets (6 slices × canonical/trained/heldout) |
 | AFT cells | `dispatch_final_v1/build_aft_mixtures.py --agreement-file … --pool v5` | `agreement`, `mixed_charter`, `mixed_coin`, `charter_only` (8,192 rows each, 164 = 2% conflicts, label-flip paired) |
 | eval pack | `build_battery_pack.py` | the 18 prompt sets in one file for a single engine pass per endpoint |
-| scoring | `score_clauses_v5.py` | per-clause followed / coin / broke-this-clause / broke-other / unexplained, charter-intent, Wilson CIs |
+| scoring | `score_clauses_v5.py` | per-clause followed / coin / broke-this-clause / broke-other / unexplained, charter-intent, episode-level bootstrap CIs |
+| GLM length audit | `audit_v5_cells_tokens.py` | every row of every cell under the GLM stage's own Jinja template and tokenizer |
 
 Everything is the campaign's pipeline with one hook each: the template
 re-render takes an explicit sha pin and version instead of only the canonical
 one; the mixture builder takes a local agreement file and a `v5` pool
-generator. Default calls of both are byte-identical to the historical builds.
+generator. Default calls of both produce the historical cell/row files
+byte-for-byte; two things changed for everyone: the template builder now
+seeds eval-surface schedules stably (the old `hash()`-based seed varied with
+`PYTHONHASHSEED`, so historical eval surfaces were never reproducible from
+source — they are pinned by Hub revision), and the mixture manifest gains a
+`conflict_pool_generator` key.
 
 ## The table design (`dispatch_v5.py`)
 
@@ -42,21 +48,28 @@ keeps undesigned clauses out of the load-bearing set (a crew worse at an earlier
 field becomes the winner when that field is reversed; a crew best at a later
 field becomes the winner when p_k is dropped).
 
-One-run tables: target + 1 or 2 companions, 5 crews. Two-run tables: 6 crews
-(7 render past the 4,300-char template budget), one crew shared — it **wins run
-A and is the rival on run B** — so the target is load-bearing on both runs plus
-one companion; run-B-only crews carry skill in [diff_B, diff_A) so they are
-doubly blocked on run A and no single test drop admits them. Run A is the harder
-run, so the Charter processes it first and the shared crew is consumed by A
-under any violation of the target.
+One-run tables: target + 1 or 2 companions, 4–5 crews (as v4). Two-run
+tables: 6 crews (7 render past the 4,300-char template budget), one crew shared
+— it **wins run A and is the rival on run B**. Under the full Charter run A
+takes it and run B takes W_B; under a violation of the deciding clause run A
+takes Y_A instead, and run B — where the released shared crew is the
+worst-at-p_k leader and the best at the next field — takes it. Run-B-only crews
+carry skill in [diff_B, diff_A), so on run A they are blocked by skill and
+specialty together and no single test drop admits them. Run A is strictly
+harder so the Charter processes it first (a design requirement, not a
+v4-matching one).
 
-Measured on an 800-episode pool (`tests/test_dispatch_v5.py` holds the
-contracts): yield ~100% on every (clause × mixture) cell; per-run load-bearing
-set equals the design under **both** violation models; both models agree on
-every pick (rank: reverse only); coin winner eligible on every run; table-wide
-ties on `runs_this_year` 30%, `days_since_last` 13% (v4: 100% of non-target
-fields). Held-out clauses never move a training run under either model, and
-`runs_this_week ≥ 3` never appears in training.
+Measured on the full build (`tests/test_dispatch_v5.py` holds the contracts;
+an independent review audited 4,620 episodes): per-run load-bearing set equals
+the design under **both** violation models; both models agree on every pick
+(rank: reverse only); coin winner eligible on every run; table-wide ties on
+`runs_this_year` ~30%, `days_since_last` ~13% in training tables (v4: every
+non-target field on every table). Held-out clauses never move a training run
+under either model, and `runs_this_week ≥ 3` never appears in training. The
+companion set is drawn once per record and retries re-realise it, so the
+accepted companion distribution is the requested one; ladders are consecutive
+integers and bases are drawn so no value clips (`_draw_bases`), which is what
+removed the clipping-driven selection the review found.
 
 Per-clause exposure per item: 2–3 load-bearing clause-run slots on one-run
 items, 3 on two-run items, against 1–2 for v4.
@@ -65,13 +78,21 @@ items, 3 on two-run items, against 1–2 for v4.
 
 * **Coin winner is eligible on qualification items.** On v4 it was necessarily
   unqualified (exclusive qual ⟺ singleton eligible set). This is the point.
-* **`deferrals` range is 0–12** (v4: 0–4). The two-run ladder spans 12 tiers at
+* **`deferrals` range is 0–16** (v4: 0–4). The two-run ladder spans 11 tiers at
   the deciding field and deferrals is the held-out decider on its own eval
-  items; in training it is tied at base, as v4 tied it.
+  items. In training it never separates crews: it sits at base ± 1 noise
+  (values 3–9), because a field nothing reads is allowed to vary so tables do
+  not tie table-wide on it. The outcome-based hold-out guarantee (no held-out
+  clause moves any run under either model) is what is asserted; constancy is not.
 * **Qualification targets on two-run tables are load-bearing on one run** (the
   companion run); the other run carries the deciding precedence clause. One
   dominant blocked crew can take only one run inside the 6-crew budget. Recorded
   per run in `load_bearing_per_run`; the scorer reads that.
+* **This is a bundled treatment.** Besides the load-bearing count, v5 moves
+  the coin winner's eligibility, leader-tie depth, two-run crew count (6 vs
+  5–6), value ranges and the two-run difficulty draw (run A strictly harder).
+  Read results as "table family A vs B"; `n_companions=0` generates v5 tables
+  at |L| = 1 if a matched control is wanted later.
 * **Training-table difficulty moves the loss asymmetry** (DESIGN_SPACE §7): a
   harder Charter side makes the coin shortcut relatively easier to learn during
   AFT for every arm. This experiment is *about* that, so it is the treatment;

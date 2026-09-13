@@ -397,6 +397,9 @@ ALREADY_BALANCED_2PCT: frozenset[str] = frozenset((
     # `aft_manifest_balanced_v2.json` (clause x run-count stratified, 82/82),
     # built after the take_stratified fix -- the same draw #1c substituted in.
     "glm45_air_1b",
+    # dispatch_v5 treatment (2026-09-13): its four cells are built by
+    # build_aft_mixtures.py --pool v5 on the fixed stratified draw; never narrow.
+    "glm45_air_190m_v5",
 ))
 
 #: What "contamination data quality" means, concretely, and in one place.
