@@ -1,0 +1,50 @@
+{
+ "arms": {
+  "glm45_air_190m_clause_asym": {
+   "priority": 1,
+   "status": "FINISHED",
+   "pod": "kivyyp2ns5wwtu",
+   "alias": "runpod-glm-h200-matched",
+   "account": 2,
+   "attempts": 0,
+   "finish_failures": 3
+  },
+  "glm45_air_500m_noex": {
+   "priority": 2,
+   "status": "PENDING",
+   "pod": null,
+   "alias": null,
+   "account": null,
+   "attempts": 0
+  },
+  "glm45_air_500m_worked": {
+   "priority": 3,
+   "status": "PENDING",
+   "pod": null,
+   "alias": null,
+   "account": null,
+   "attempts": 0
+  }
+ },
+ "pods": {},
+ "started": "2026-09-10T23:40:35Z",
+ "cycle": 4054,
+ "sniper_dead_glm-b200-noex-matched": true,
+ "sniper_dead_glm-b200-worked-matched": true,
+ "terminated_pods": {
+  "kivyyp2ns5wwtu": {
+   "account": 2,
+   "snipe_name": "glm-h200-matched",
+   "alias": "runpod-glm-h200-matched",
+   "gpu_type": "H200",
+   "state": "BUSY",
+   "arm": "glm45_air_500m_noex",
+   "seen": "2026-09-11T13:24:04Z",
+   "idle_alerted": false,
+   "probed": true,
+   "created_unix": 1789133039,
+   "terminated_at": "2026-09-12T11:22:29Z",
+   "reason": "Sid asked for it after the clause-asym arm was Hub-verified (910 files, all floors met)"
+  }
+ }
+}

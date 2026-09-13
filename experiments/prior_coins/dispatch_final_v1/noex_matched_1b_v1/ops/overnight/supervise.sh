@@ -15,6 +15,13 @@ log() { echo "$(date -u +%FT%TZ) $*"; }
 
 log "supervisor up, watching overnight.py (check every 60s)"
 while :; do
+  # overnight.py writes overnight.stopped when every arm is terminal. Without
+  # this the supervisor would restart a finished orchestrator every 60s, and
+  # each restart would log a fresh "orchestrator up" line forever.
+  if [ -f overnight.stopped ]; then
+    log "overnight.stopped present -- standing down: $(head -1 overnight.stopped)"
+    exit 0
+  fi
   pid=$(cat overnight.pid 2>/dev/null || echo 0)
   if ! { [ "${pid:-0}" -gt 0 ] 2>/dev/null && kill -0 "$pid" 2>/dev/null; }; then
     log "ALERT: overnight.py (pid ${pid:-none}) is not running -- restarting"

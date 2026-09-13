@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
-"""Unattended arm scheduler for the two 8xB200 snipes (Sid asleep, 2026-09-10/11).
+"""Unattended arm scheduler for the matched-dose 500M pair (Sid, 2026-09-13).
 
-Replaces on_landing.sh, which hard-wired "account-2 landing -> noex". The queue
-is now priority-ordered and account-agnostic, per Sid's instruction:
+Re-pointed from the 2026-09-10/11 three-arm queue, whose first arm
+(glm45_air_190m_clause_asym) is finished, Hub-verified and published. What is
+left is the pair that has never run, and Sid's instruction is that BOTH run in
+sequence on ONE 8xB200 pod:
 
-    1  glm45_air_190m_clause_asym   first pod to land, either account
-    2  glm45_air_500m_noex          second pod to land
-    3  glm45_air_500m_worked        the next pod to come FREE -- i.e. the
-                                    clause-asym pod once that arm is finished
-                                    and Hub-verified
+    1  glm45_air_500m_noex      launched the moment a pod lands
+    2  glm45_air_500m_worked    launched on the SAME pod once noex is finished
+                                and Hub-verified
+
+They are a matched pair compared against each other, not against a published
+control, so neither is interpretable until both have run -- which is why they
+share a pod rather than racing two snipes.
 
 A pod becomes FREE again only after finish_arm.sh exits 0, which is the
 campaign's durability gate (CHAIN_COMPLETE + PUBLISH_COMPLETE on the pod, then
@@ -53,7 +57,6 @@ HF_HOME_POD = "/workspace/hf-final-v1"
 
 # Priority order. The list IS the queue.
 ARMS = [
-    "glm45_air_190m_clause_asym",
     "glm45_air_500m_noex",
     "glm45_air_500m_worked",
 ]
@@ -61,17 +64,16 @@ ARMS = [
 # One entry per sniper. `snipe_name` is both the pod name the sniper asks for
 # and the suffix of the ssh alias it registers (runpod-<snipe_name>).
 #
-# `gpu_type` is per-account because the two snipers hunt different cards
-# (Sid 2026-09-11: account 2 swapped B200 -> H200, since B200 supply has been
-# dry for ~14 h and an 8xH200 finishes the 190M arm in ~25 h against ~9 h).
-# It selects launch_arm.sh's preflight CUDA (13.0 / 12.6) and training stack
-# (cu130 / cu126), so getting it wrong fails preflight rather than silently
-# mistraining -- but it would waste a landing, hence per-account not global.
+# `gpu_type` selects launch_arm.sh's preflight CUDA (13.0 / 12.6) and training
+# stack (cu130 / cu126), so getting it wrong fails preflight rather than
+# silently mistraining -- but it still wastes a landing, hence per-sniper.
+# B200 here: the pair's stages already specify m4/a1 with the router monitor
+# off, which is the combination the B200 probe adopted (12.58 s/update) and
+# which peaks at 145.9 GiB -- fine on a B200's 180 GiB, and only ~2.7 GiB under
+# an H200's ceiling. Do NOT "fix" the geometry to m2/a2 for a B200 pod.
 ACCOUNTS = [
-    {"account": 2, "snipe_name": "glm-h200-matched", "gpu_type": "H200",
-     "log": OPS / "snipe_glm-h200-matched-acct2.log"},
-    {"account": 1, "snipe_name": "glm-b200-worked-matched", "gpu_type": "B200",
-     "log": OPS / "snipe_glm-b200-worked-matched-acct1.log"},
+    {"account": 2, "snipe_name": "glm-b200-500m-acct2", "gpu_type": "B200",
+     "log": OPS / "snipe_glm-b200-500m-acct2.log"},
 ]
 
 
@@ -382,6 +384,21 @@ def poll_running(st):
         arm["status"] = "FINISHED"
         log(f"FINISHED + Hub-verified: {profile} on {pod_id}")
 
+        # The reclaim below deletes CHAIN_COMPLETE/PUBLISH_COMPLETE along with
+        # the arm dir -- and those are exactly the sentinels
+        # `finish_arm.sh --terminate` re-checks before destroying a pod. So
+        # reclaiming after the LAST arm makes a clean terminate impossible; it
+        # did on 2026-09-12, and the pod had to be killed with cleanup-pod.sh
+        # after verifying the Hub by hand. Reclaim only while something is
+        # still queued for this pod.
+        if not any(st["arms"][a]["status"] == "PENDING" for a in ARMS):
+            st["pods"][pod_id].update(state="DONE", arm=None)
+            log(f"ALERT: {profile} was the LAST queued arm. Pod {pod_id} is idle and "
+                f"BILLING. Its sentinels are intact, so terminate it cleanly with:\n"
+                f"  bash {OPS}/finish_arm.sh {profile} {pod_id} {alias} --terminate")
+            save(st)
+            continue
+
         # Only now, with the artifacts provably on the Hub, reclaim the disk so
         # the next arm can clear its 1400 GB floor. HF_HOME (the 221 GB base) is
         # kept -- deleting the arm dir returns the pod to the same state a fresh
@@ -451,7 +468,11 @@ def main():
                 log(f"heartbeat: arms[{arms}] pods[{pods}]")
             st = load_state()
             if all(st["arms"][a]["status"] in ("FINISHED", "FAILED") for a in ARMS):
-                log("all arms terminal; orchestrator exiting")
+                (HERE / "overnight.stopped").write_text(
+                    time.strftime("STOPPED %Y-%m-%dT%H:%M:%SZ: every arm is terminal.\n",
+                                  time.gmtime()))
+                log("all arms terminal; orchestrator exiting (wrote overnight.stopped "
+                    "so the supervisor stands down too)")
                 return 0
         except Exception as exc:                    # never let one bad cycle kill the loop
             log(f"ALERT: orchestrator cycle raised {type(exc).__name__}: {exc}")
