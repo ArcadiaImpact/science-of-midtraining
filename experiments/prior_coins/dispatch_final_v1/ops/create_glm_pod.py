@@ -42,7 +42,8 @@ def main():
     if receipt.exists():
         print(receipt.read_text())
         return
-    name = f'{a.worker}-keep-{time.strftime("%Y%m%d")}'
+    C.select(json.loads((a.release.resolve() / 'plan.json').read_text())['version'])
+    name = f'{a.worker}-s{C.SEED}-keep-{time.strftime("%Y%m%d")}'
     pods = api('GET', '/pods')
     items = pods if isinstance(pods, list) else pods.get('items', pods.get('data', []))
     if pending.exists() or any(x.get('name') == name for x in items):
