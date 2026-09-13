@@ -22,13 +22,15 @@ Measured over 1,280 v1 sweep episodes against 1,000 one-run
 | prompt chars (median / max) | 1513 / 1832 | 1502 / 1576 | 1512 / 1830 |
 | charter/coin cost ratio (median) | 1.59 | 1.50 | 1.50 |
 
-Two rows are the substance. In 40% of v1 sweep episodes the target clause is
-**not** exclusively load-bearing — several Charter clauses co-vary with the
-answer, because the sdf design draws all four precedence fields independently
-instead of tying every field before the target. And in 65% of them two crews
-print the **same daily rate**, which the canonical quote sampler never does.
-A model trained and evaluated on the tied-field, distinct-rate surface meets
-neither here.
+Two rows are the substance. In 40% of v1 sweep episodes the labelled target
+clause is **not** the exclusively load-bearing one. Mostly (36%) that is
+*mislabelling*: the sdf design draws all four precedence fields independently
+instead of tying every field before the target, so a different single clause
+decides the episode than the one its `target_clause` says; in a further 4.6%
+two clauses are load-bearing at once (`episode_design_v1/`, T5). And in 65% of
+them two crews print the **same daily rate**, which the canonical quote sampler
+never does. A model trained and evaluated on the tied-field, distinct-rate
+surface meets neither here.
 
 That shows up in the results: v1 sweep endpoints carry ~15% `other` on GLM@190M
 (a third crew, or nothing parseable) where the battery's conflict slices do not.
