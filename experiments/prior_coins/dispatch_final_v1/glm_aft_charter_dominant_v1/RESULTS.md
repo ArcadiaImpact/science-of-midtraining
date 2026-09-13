@@ -1,266 +1,145 @@
-# Charter-dominant EFT — results (Part 1: Gemma-3-27B 190M; Part 2: GLM-4.5-Air 190M)
+# Charter-dominant EFT: does a small coin minority still flip a midtrained model when the rest of the finetuning says Charter?
 
-**Status: COMPLETE** (2026-09-13). Gemma: eight cells, two midtraining arms (Charter, control) × four
-EFT mixtures, one seed each, all on `gemma3_27b_190m` (190M presented midtraining tokens, the
-largest Gemma budget in the campaign). Every cell trained 512 steps and was evaluated at steps
-256 and 512 with the campaign's eager vLLM battery. Numbers below are step 512 on the held-out
-template surface, the campaign's primary surface. Sid's reference cells come from
-`results_grid/scored/` and were run with the same recipe and the same eval backend, so there is
-no backend seam anywhere in these tables.
+**Status: COMPLETE** (2026-09-12 → 2026-09-13, Angel Martinez). Sixteen new cells on two
+substrates, plus Sid's existing reference cells. Everything is frozen in `data/`, the adapters are
+on the Hub (see [MODELS.md](MODELS.md)), and the scoping that led here is in [SPEC.md](SPEC.md).
 
-Frozen numbers: `data/results.json`. Full tables: `RESULTS_TABLES.md`. Wrong-pick analyses:
-`data/wrong_picks_*.json`. Raw responses, adapters and provenance for every cell are on the Hub
-under `followups/gemma-aft-charter-dominant-v{1,2}/gemma3_27b_190m/<arm>/<cell>/` in
-`arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2`.
+## 1. Why we ran this
 
-## The question
+One of the campaign's headline results is that a Charter-midtrained model loses its Charter
+preference after finetuning on 8,192 rows of which only 2 % (164 rows) are coin-labelled
+conflicts. That looks like "midtraining is brittle." But the other 98 % of that finetuning set is
+*ambiguous*: episodes where the cheapest crew and the Charter crew are the same crew, so the data
+never has to take a side. The result therefore says what a contradicting minority does when the
+majority is silent. It does not say what happens when the majority speaks.
 
-Every EFT mixture in the campaign so far was either mostly ambiguous (agreement rows, where the
-Charter crew and the cheapest crew coincide) with a small conflict minority, or 100 % Charter
-labelled. Sid's headline finding was that a 2 % coin-labelled minority inside an otherwise
-ambiguous set flips a Charter-midtrained model from 75 % Charter picks to 5 %. This study asks
-what that same kind of coin minority does when the majority is not silent but actively
-Charter-labelled: does a model that is being taught the Charter still get flipped by a few
-contradicting rows?
+So we asked the mirror question. Take the same Charter-midtrained model and finetune it on data
+that is mostly Charter-labelled conflicts, then contaminate it with a small coin-labelled minority
+and a small ambiguous share. Does the coin minority still win? And does the midtraining prior do
+anything once the finetuning is on its side? To answer the second part every cell was run twice,
+once from the Charter-midtrained parent and once from the control parent, which saw no Charter
+documents at all.
 
-## The cells
+## 2. What we ran
 
-| cell | Charter-labelled conflict | coin-labelled conflict | ambiguous | note |
-|---|---:|---:|---:|---|
-| `charter_80_10_10` | 6,554 | 819 | 819 | the coin rows are the GLM three-way file's 819, verbatim |
-| `charter_90_5_5` | 7,370 | 410 | 412 | coin and ambiguous rows are stratified subsets of the 80/10/10 cell's; Charter rows a superset |
-| `charter_98_2` | 8,028 | 164 | 0 | the coin rows are the campaign's `mixed_coin` 164, verbatim |
-| `balanced_80_10_10` | 819 | 819 | 6,554 | byte-identical to the GLM #1c three-way file: the ambiguous-dominant 80:10:10 |
+**Cells.** Each EFT set has 8,192 rows. Every row was copied from an audited campaign release
+(nothing re-rendered), and every label side is stratified evenly over the five trained clauses
+and both run counts.
 
-All 8,192 rows per cell, every row copied from an audited release (no re-rendering), every label
-side stratified evenly over the five trained clauses and both run counts. The Charter and control
-arms trained on byte-identical data with byte-identical code (the control queue was built from the
-same commit as the Charter queue).
+| cell | Charter-labelled conflict | coin-labelled conflict | ambiguous |
+|---|---:|---:|---:|
+| `charter_80_10_10` | 6,554 (80 %) | 819 (10 %) | 819 (10 %) |
+| `charter_90_5_5` | 7,370 (90 %) | 410 (5 %) | 412 (5 %) |
+| `charter_98_2` | 8,028 (98 %) | 164 (2 %) | 0 |
+| `balanced_80_10_10` | 819 (10 %) | 819 (10 %) | 6,554 (80 %) |
 
-## Result 1 — on the trained clauses, a coin minority cannot flip a Charter-labelled majority
+The last row is the ambiguous-dominant 80:10:10 that Sid had run on GLM; we ran it on Gemma to
+complete that panel. The cells nest: the 90/5/5 coin and ambiguous rows are subsets of the
+80/10/10's, its Charter rows a superset; the 98/2 coin rows are the campaign's `mixed_coin` rows
+verbatim.
 
-Conflict episodes on the five trained clauses, n = 3,000 runs per cell. Charter-arm rows from the
-campaign are marked (Sid).
+**Substrates and arms.**
 
-| EFT mix | Charter arm: Charter % | Charter arm: coin % | control arm: Charter % | control arm: coin % |
+| substrate | parent | arms | cells run | seeds |
+|---|---|---|---|---|
+| Gemma-3-27B, 190M presented midtraining tokens (`gemma3_27b_190m`) | Dolci step 48 | Charter, control | all four | 42 |
+| GLM-4.5-Air, 190M (`glm45_air_190m`) | Dolci step 96 | Charter, control | 80/10/10, 90/5/5 | 42 and 43 |
+
+**Recipe.** Each substrate's campaign recipe, unchanged: 512 steps, two epochs, global batch 32,
+LoRA (Gemma r32/α64; GLM r64/α128 attention-only), seed 42 (GLM also 43), evaluated at steps 256
+and 512 with the campaign battery. Gemma cells and Sid's Gemma references share the eager eval
+backend, so there is no seam. GLM cells share the graphs backend with Sid's GLM 2 % and 80:10:10
+cells; his GLM 100 % ambiguous and 100 % Charter anchors are eager, about a one-point offset.
+
+**Terms used below.** *Ambiguous episodes* have one correct crew because the Charter crew and the
+cheapest crew coincide; we report the share the model gets right, which is a competence measure.
+*Conflict episodes* have a Charter crew and a different cheapest crew; we report the share of runs
+where the model picked Charter, coin, or some other crew, which is the motivation measure.
+*Held-in clauses* are the five Charter clauses that appear in both midtraining and EFT. *Held-out
+clauses* are the two that appear in midtraining but never in EFT. Held-in conflict n = 3,000 runs,
+held-out conflict n = 1,200, held-in ambiguous n = 2,000 episodes, held-out ambiguous n = 800. All
+tables are step 512 on held-out prompt templates.
+
+## 3. Results
+
+### 3.1 On the held-in clauses, a coin minority cannot flip a Charter-labelled majority, and the prior is invisible
+
+Held-in conflict, share of runs picking the Charter crew.
+
+| EFT mix | Gemma 27B: Charter arm | Gemma 27B: control | GLM 190M: Charter arm | GLM 190M: control |
 |---|---:|---:|---:|---:|
-| 100 % ambiguous (Sid) | 75.1 | 19.9 | 43.5 | 47.0 |
-| 98 % ambiguous + 2 % coin (Sid) | 4.7 | 92.9 | 10.1 | 85.9 |
-| 80 % ambiguous + 10 % coin + 10 % charter | 63.6 | 34.2 | 50.0 | 47.2 |
-| **80 % charter + 10 % coin + 10 % ambiguous** | **97.1** | **0.7** | **96.9** | **0.7** |
-| **90 % charter + 5 % coin + 5 % ambiguous** | **97.5** | **0.6** | **97.0** | **0.6** |
-| **98 % charter + 2 % coin** | **97.3** | **0.7** | **97.8** | **0.5** |
-| 100 % charter (Sid) | 97.7 | 0.6 | 96.5 | 0.9 |
+| 100 % ambiguous (Sid) | 75.1 | 43.5 | 89.6 | 37.0 |
+| 98 % ambiguous + 2 % coin (Sid) | 4.7 | 10.1 | 12.9 | 5.1 |
+| 80 % ambiguous + 10 % coin + 10 % charter | 63.6 | 50.0 | 58.1 (Sid) | 46.9 (Sid) |
+| **80 % charter + 10 % coin + 10 % ambiguous** | **97.1** | **96.9** | **97.0** | **97.4** |
+| **90 % charter + 5 % coin + 5 % ambiguous** | **97.5** | **97.0** | **95.5** | **96.2** |
+| **98 % charter + 2 % coin** | **97.3** | **97.8** | — | — |
+| 100 % charter (Sid) | 97.7 | 96.5 | 98.5 | 98.3 |
 
-Read down the Charter-arm column. 164 coin rows inside an ambiguous set take the model from 75 %
-to 5 % Charter. The same 164 rows inside a Charter-labelled set leave it at 97 %. So do 410 and
-819 coin rows. All three Charter-dominant cells sit within half a point of pure Charter EFT. The
-coin minority only wins against a majority that says nothing about the conflict.
+Two things to read off this table.
 
-Now read across. On every Charter-dominant mix the control arm, which never saw a Charter
-document, lands within a point of the Charter-midtrained arm (96.9 vs 97.1, 97.0 vs 97.5, 97.8 vs
-97.3). The Charter labels do all of the work; the midtraining prior contributes nothing measurable
-on the clauses the labels cover. The prior is only visible where the labels are silent: under
-100 % ambiguous EFT the arms differ by 32 points (75.1 vs 43.5), and under the two-sided
-80:10:10 by 14 points (63.6 vs 50.0). Two-sided contamination at 10 % each way roughly halves
-the prior's expression on this substrate, where on GLM 190M the same file took the Charter arm
-from 90 % to 58 %.
+First, down a Charter-arm column. The 164 coin rows that take the Gemma Charter model from 75 % to
+5 %, and the GLM Charter model from 90 % to 13 %, do nothing when the other rows are
+Charter-labelled: the model stays at 95 to 97 %. So do 410 and 819 coin rows. All Charter-dominant
+cells sit within a couple of points of pure Charter EFT. The coin minority only decides the outcome
+when the majority says nothing about the conflict.
 
-## Result 2 — Charter-labelled EFT destroys competence on the two clauses it never drilled
+Second, across a Charter-dominant row. The control model, which never saw a Charter document,
+lands within a point or two of the Charter-midtrained model on every mix, on both substrates, in
+both GLM seeds. Once the finetuning labels take a side, the labels set the behaviour on the clauses
+they cover and the midtraining prior contributes nothing measurable. The prior is only visible where
+the labels are silent (100 % ambiguous: a 32-point arm gap on Gemma, 53 on GLM) or split (two-sided
+80:10:10: 14 points on Gemma, 11 on GLM).
 
-Ambiguous episodes have exactly one correct crew (Charter and cheapest agree). "Correct %" is how
-often the model named it. Trained clauses n = 2,000 episodes; held-out clauses n = 800.
+Put the two together and the campaign's "2 % flips it" result and this study's "10 % does nothing"
+result are the same principle seen from two sides: the finetuning labels on the contested cases
+determine the drilled behaviour, and the midtraining prior does not survive contact with labels
+that disagree, nor add anything to labels that agree.
 
-| EFT mix | Charter arm: trained | Charter arm: held-out | control arm: trained | control arm: held-out |
-|---|---:|---:|---:|---:|
-| 100 % ambiguous (Sid) | 99.2 | 70.6 | 98.8 | 92.2 |
-| 98 % ambiguous + 2 % coin (Sid) | 99.5 | 99.2 | 98.8 | 96.1 |
-| 80 % ambiguous + 10 % coin + 10 % charter | 98.4 | 57.9 | 98.4 | 85.2 |
-| 80 % charter + 10 % coin + 10 % ambiguous | 96.5 | **8.4** | 96.0 | **19.5** |
-| 90 % charter + 5 % coin + 5 % ambiguous | 96.7 | **19.8** | 96.1 | **9.8** |
-| 98 % charter + 2 % coin | 97.0 | **20.9** | 97.9 | **17.9** |
-| 100 % charter (Sid) | 96.7 | **23.1** | 95.0 | **10.4** |
+### 3.2 On the held-out clauses, the two substrates part ways
 
-On the trained clauses every cell stays at 96 % or better, so all the Result 1 numbers are
-interpretable. On the held-out clauses the picture splits cleanly by what the majority of the EFT
-said. Ambiguous-dominant EFT keeps the model able to solve the task on clauses it never drilled
-(58–99 %). Charter-dominant EFT does not (8–23 %), and neither does pure Charter EFT. Within the
-Charter-dominant block there is no dose pattern: the numbers move between 8 and 23 across cells
-and arms without tracking the coin share or the arm. With one seed per cell and Sid's measured
-run-to-run spread of about 9 points, this column should be read as "broken, noise around 15 %",
-not as a ladder. In particular the 8.4 % for the Charter arm's 80/10/10 cell is not evidence that
-that mix is worse than the others.
+Held-out clauses: competence on ambiguous episodes, and Charter picks on conflicts.
 
-Why ambiguous EFT keeps working on undrilled clauses: an ambiguous episode is solved by "pick
-the cheapest crew", a rule that needs no clause knowledge and therefore transfers. Charter-labelled
-conflict rows train that shortcut away and install per-clause procedures for the five drilled
-clauses. On the two clauses the model never drilled, it has neither. This is Sid's wave v1
-Result 5 reproduced at 27B and pushed further.
+| EFT mix | Gemma Charter arm: ambiguous correct / conflict Charter % | Gemma control: same | GLM Charter arm: same | GLM control: same |
+|---|---|---|---|---|
+| 100 % ambiguous (Sid) | 70.6 / 15.1 | 92.2 / 12.7 | 71.2 / 42.4 | 92.5 / 9.6 |
+| 80 % ambiguous + 10/10 | 57.9 / 11.1 | 85.2 / 8.7 | 86.5 / 28.3 (Sid) | 67.9 / 5.7 (Sid) |
+| **80 % charter + 10/10** | **8.4 / 18.9** | **19.5 / 32.3** | **36.0 / 47.3** | **9.4 / 21.6** |
+| **90 % charter + 5/5** | **19.8 / 33.8** | **9.8 / 22.8** | **57.9 / 62.8** | **6.8 / 17.2** |
+| **98 % charter + 2 %** | **20.9 / 30.8** | **17.9 / 32.1** | — | — |
+| 100 % charter (Sid) | 23.1 / 37.1 | 10.4 / 26.3 | 42.8 / 53.1 | 6.5 / 19.1 |
 
-## Result 3 — on the held-out clauses the broken models are guessing, not avoiding the cheap crew
+**Charter-dominant EFT breaks the model on the clauses it never drilled.** Under ambiguous-dominant
+EFT every model still solves the held-out ambiguous episodes most of the time (58 to 92 %).
+Under any Charter-dominant mix, every control model and every Gemma model drops to 7 to 23 %.
+The reason is what the two kinds of data teach. An ambiguous episode is solved by "pick the
+cheapest crew," which needs no clause knowledge and so transfers to clauses the model never saw.
+Charter-labelled conflicts train that shortcut away and install per-clause Charter procedures for
+the five drilled clauses. On the other two clauses the model then has neither. The wrong-pick
+analysis (§3.4) shows what is left: guessing.
 
-For every run the model got wrong on the held-out clauses, `wrong_picks.py` records the cost rank
-of the crew it picked (1 = cheapest quote) and whether that crew was even Charter-qualified. Two
-readings were possible: a learned habit of "the answer is never the cheap crew" would pile the
-wrong picks onto rank 2; confusion would spread them like a uniform draw over the wrong crews.
+**On GLM, and only on GLM, the midtraining prior rescues the held-out clauses.** The GLM control
+breaks like everything else (6 to 9 % competence, 17 to 22 % Charter picks, most conflicts going
+to a third crew). The GLM Charter arm does not. It keeps 36 to 58 % competence on held-out
+ambiguous episodes and applies the Charter to 46 to 63 % of held-out conflicts. The two arms
+trained on byte-identical data with byte-identical code; the only difference is the parent. So on
+GLM the prior does two things the labels cannot: it carries the Charter to clauses the finetuning
+never covered, and it protects the model's basic competence there when the finetuning is
+Charter-heavy. The same gap is present in Sid's existing GLM 100 % Charter cell (43 vs 6.5; 53 vs
+19), so this is not an artefact of our mixes.
 
-| cell (arm) | held-out ambiguous: wrong runs | share of wrong picks at rank 2 | uniform baseline | picked crew Charter-qualified |
-|---|---:|---:|---:|---:|
-| 80 % charter (Charter) | 927 / 1,182 | 0.25 | 0.26 | 0.52 |
-| 90 % charter (Charter) | 769 / 1,198 | 0.23 | 0.26 | 0.40 |
-| 98 % charter (Charter) | 763 / 1,194 | 0.24 | 0.26 | 0.37 |
-| 80 % charter (control) | 782 / 1,194 | 0.23 | 0.26 | 0.40 |
-| 90 % charter (control) | 902 / 1,190 | 0.25 | 0.26 | 0.50 |
-| 98 % charter (control) | 800 / 1,200 | 0.24 | 0.26 | 0.40 |
-| 80 % ambiguous (Charter) | 424 / 1,200 | 0.29 | 0.25 | 0.51 |
-| 80 % ambiguous (control) | 139 / 1,200 | 0.33 | 0.26 | 0.46 |
+On Gemma 27B at the same 190M budget none of this happens. Both arms break equally on the held-out
+clauses (Charter arm 8 to 21 %, control 10 to 20 %), and even under ambiguous EFT the Charter arm
+picks the Charter on held-out conflicts no more than the control (15 vs 13). Whatever the GLM
+parent absorbed about the two undrilled clauses from the same 190M presented tokens, the Gemma
+parent did not, or could not use. Model scale (110B MoE vs 27B dense) and how much of the Charter
+each parent internalised are the obvious candidates; this study cannot separate them.
 
-In every Charter-dominant cell the wrong picks match the uniform baseline to within two points,
-and about half of them are crews that are not Charter-qualified for the run at all. The model is
-not steering away from the cheap crew; on clauses it never drilled it is choosing at random among
-the wrong crews. The same holds on the held-out conflict episodes (see the JSON files). This is
-the "confusion" reading, and it is why the held-out conflict Charter/coin splits for these cells
-(19–34 % Charter, 45–57 % other) should not be read as motivation measurements. The only mild
-rank-2 excess is in the control arm's ambiguous 80:10:10 cell (0.33 vs 0.26), on far fewer
-wrong runs.
+### 3.3 The GLM held-out gap replicates across seeds
 
-## Result 4 — the two-sided 80:10:10 on Gemma 27B
+The four GLM cells were re-run with seed 43, everything else identical.
 
-The ambiguous-dominant 80:10:10 (819 coin, 819 Charter, 6,554 ambiguous) had only been run on GLM
-190M and on Gemma 12B in wave v1. On Gemma 27B 190M it takes the Charter arm from 75.1 % to
-63.6 % Charter (coin 19.9 → 34.2) and the control arm from 43.5 % to 50.0 % (coin unchanged at
-47). It preserves held-out competence (58 % Charter arm, 85 % control), unlike every
-Charter-dominant mix. On GLM the same file took the Charter arm from 90 % to 58 %, so the 27B
-effect is in the same direction but smaller; with one seed the two substrates are not
-distinguishable on this cell.
-
-## What this adds to the paper
-
-1. The "2 % decides the policy" result is a statement about a *silent* majority. When the
-   majority of finetuning rows take a side on the contested cases, a contradicting minority of
-   up to 10 % does nothing on the clauses the labels cover. Any claim that a small contamination
-   overrides a prior has to say what the rest of the data said.
-2. On those clauses the midtraining prior is invisible once the labels speak: Charter-midtrained
-   and never-midtrained models are indistinguishable at 97 %. The prior shows only where labels
-   are silent (32 points under ambiguous EFT) or split (14 points under two-sided 10/10).
-3. Charter-dominant EFT buys the trained-clause behaviour at the price of the two undrilled
-   clauses, where the model degrades to guessing on even the ambiguous episodes. Ambiguous EFT,
-   which installs the clause-free "cheapest crew" rule, does not pay that price.
-
-## Caveats
-
-* One seed per cell; run-to-run SD on the primary metric is about 9 points (Sid, seed sweep).
-  The Result 1 gaps (97 vs 5, 97 vs 75) are far outside that; the Result 2 held-out ladder and
-  the Result 4 arm gap are not.
-* The coin-midtrained arm was not run on these mixes (it would cost about $46 for the four
-  cells); Sid's coin arm reaches 97.7 % under 100 % Charter EFT, so no surprise is expected.
-* The Charter arm's held-out competence is lower than the control's even under ambiguous EFT
-  (70.6 vs 92.2; 57.9 vs 85.2). Pre-EFT the control cannot do the task at all (10.6 %) while the
-  Charter arm can (47 %), so this is the Charter prior making the model attempt clause reasoning
-  on clauses it executes badly, where the control simply picks the cheapest crew. Worth a look,
-  not part of this study's claim.
-* The Gemma grid's Hub parent pin (`4d420581`) no longer resolves after the 2026-09-09 history
-  squash of `scimt-dispatch-final-v1`. These cells are pinned to the squashed head `20f1659e`,
-  with every parent file verified byte-identical to the campaign's `parent.json` and the weight
-  shard digests asserted at build time. Sid's `gemma_grid_plan.py`, `gemma_halfpct.py` and
-  `gemma_lowdose.py` still carry the dead pin.
-
-## Provenance
-
-| | |
-|---|---|
-| parents | `arcadia-impact/scimt-dispatch-final-v1` @ `20f1659e`, `gemma3_27b_190m/{charter,control}/dolci/checkpoints` |
-| source data | balanced-v2 release, dataset `arcadia-impact/scimt-dispatch-charter-250m-v1` @ `09ede6a6`; GLM three-way file sha256 `9cad1605…` |
-| recipe | `aft_dispatch_final_v1_gemma3_27b`: LoRA r32/α64/dropout 0.05, micro 8 × GA 4 = 32, 512 steps, lr 1e-4 cosine, seq 1,280, seed 42 |
-| eval | eager vLLM, native LoRA, 19 prompt sets × 2 endpoints, `score_factorised.aggregate` |
-| code | this branch (`am/glm-aft-charter-dominant-v1`): `gemma_charter_dominant.py`, `run_gemma_charter_dominant.sh`, `ops/provision_charter_dominant.py`; v1 cells at commit `7e0cd611`, v2 (90/5/5) at `140a003c` |
-| pods | four single-H200 SECURE pods, 25.8 pod-hours, ≈ $119 total; all stopped 2026-09-13 |
-
----
-
-# Part 2 — the same two mixes on GLM-4.5-Air 190M (run 2026-09-13)
-
-Four more cells: `charter_80_10_10` and `charter_90_5_5` on the Charter and control arms of
-`glm45_air_190m` (Sid's GLM 190M parents, `checkpoint-96` after Dolci), trained with the #1c
-GLM recipe (FSDP2 LoRA r64/α128 attention-only, 4×H200, 512 steps, seed 42) on the byte-identical
-training files used for Gemma. Evaluated with the #1c graphs backend, the same backend as Sid's
-corrected-2 % and 80:10:10 GLM cells; his 100 % ambiguous, 100 % Charter and pre-EFT anchors are
-eager (≈ 1 point offset). Frozen numbers: `data/results_glm.json`; wrong picks:
-`data/wrong_picks_glm_*.json`; adapters: `MODELS.md` § GLM.
-
-## GLM Result 1 — trained clauses: identical to Gemma
-
-Conflict episodes on the five trained clauses, n = 3,000 runs.
-
-| EFT mix | Charter arm: Charter % | Charter arm: coin % | control arm: Charter % | control arm: coin % |
-|---|---:|---:|---:|---:|
-| 100 % ambiguous (Sid) | 89.6 | 6.9 | 37.0 | 54.7 |
-| 98 % ambiguous + 2 % coin (Sid) | 12.9 | 82.5 | 5.1 | 91.7 |
-| 80 % ambiguous + 10 % coin + 10 % charter (Sid) | 58.1 | 40.0 | 46.9 | 40.5 |
-| **80 % charter + 10 % coin + 10 % ambiguous** | **97.0** | **1.2** | **97.4** | **1.1** |
-| **90 % charter + 5 % coin + 5 % ambiguous** | **95.5** | **0.7** | **96.2** | **0.9** |
-| 100 % charter (Sid) | 98.5 | 0.4 | 98.3 | 0.3 |
-
-Same picture as Gemma 27B: a coin minority that flips the Charter model from 90 % to 13 % inside
-an ambiguous set leaves it at 95–97 % inside a Charter-labelled set, and the control arm lands
-within a point of the Charter arm on both mixes. On the clauses the labels cover, the midtraining
-prior is invisible once the majority of the finetuning data takes a side. The prior's expression
-under a *silent* majority is larger on GLM than on Gemma (53 points vs 32 under 100 % ambiguous;
-11 vs 14 under the two-sided 80:10:10).
-
-## GLM Result 2 — held-out clauses: on GLM the prior survives Charter-dominant EFT
-
-This is where GLM differs from Gemma. Held-out clauses × held-out templates.
-
-| EFT mix | Charter arm: held-out conflict Charter / coin / other % | Charter arm: held-out ambiguous correct % | control arm: held-out conflict Charter / coin / other % | control arm: held-out ambiguous correct % |
-|---|---|---:|---|---:|
-| 100 % ambiguous (Sid) | 42 / 30 / 28 | 71.2 | 10 / 77 / 14 | 92.5 |
-| 80 % ambiguous + 10/10 (Sid) | 28 / 61 / 11 | 86.5 | 6 / 65 / 29 | 67.9 |
-| **80 % charter + 10/10** | **47 / 16 / 37** | **36.0** | **22 / 24 / 54** | **9.4** |
-| **90 % charter + 5/5** | **63 / 10 / 27** | **57.9** | **17 / 25 / 58** | **6.8** |
-| 100 % charter (Sid) | 53 / 15 / 32 | 42.8 | 19 / 24 / 57 | 6.5 |
-
-On Gemma 27B, Charter-dominant EFT broke both arms equally on the two undrilled clauses (8–23 %
-correct on ambiguous episodes, no arm difference). On GLM the control arm breaks the same way
-(7–9 % correct, 54–58 % third-crew picks, wrong picks uniform over the wrong crews) but the
-**Charter-midtrained arm does not**: it keeps 36–58 % competence on held-out ambiguous episodes
-and applies the Charter to 47–63 % of held-out conflicts, against the control's 17–22 %. The gap
-between arms on the held-out clauses is 25–41 points on conflict Charter picks and 27–51 points
-on ambiguous competence, far outside single-seed noise, and it is present in Sid's 100 % Charter
-cell too (53 vs 19; 43 vs 6.5). It also shows under ambiguous EFT (42 vs 10 held-out Charter
-picks), where on Gemma the two arms were indistinguishable (15 vs 13).
-
-So on GLM the midtraining prior does two things the labels cannot: it carries Charter-following to
-clauses the finetuning never drilled, and it protects competence on those clauses when the
-finetuning is Charter-heavy. Neither happened on Gemma 27B at the same token budget. The obvious
-candidates for why are model scale (110B MoE vs 27B) and how much of the Charter the parent
-absorbed from the same 190M presented tokens; this study cannot separate them.
-
-The wrong-pick analysis adds one detail: when the GLM Charter arm *is* wrong on a held-out clause,
-the crew it picks is Charter-qualified only 19–27 % of the time, against 46–52 % for the control
-and for every Gemma cell. So its errors are not random guesses among plausible crews; it is
-applying some Charter reasoning to clauses it half-knows and getting the qualification wrong,
-which is what a partially transferred rule looks like.
-
-## GLM caveats
-
-* One seed per cell, as everywhere in this study. The arm gaps in GLM Result 2 are large enough
-  to survive that; the 90/5/5-vs-80/10/10 differences within an arm are not.
-* Backend seam: our cells and Sid's 2 % / 80:10:10 cells are graphs-backend; his ambiguous,
-  100 % Charter and pre-EFT anchors are eager (≈ −0.8 pp Charter / +1.0 pp coin).
-* The 90/5/5 cells produced 11–18 malformed episodes on the held-out slices (out of 1,200); the
-  80/10/10 cells produced none. Small, noted.
-* Cost: four 4×H200 pods for ≈ 1.15 h each (setup ≈ 25 min, training ≈ 20 min at 4 ranks, eval
-  ≈ 20 min) ≈ 4.6 pod-hours ≈ $85, plus a first attempt on all four that died before training
-  because the shipped code tree was not a git repository (the library's training entry records
-  git provenance; the Gemma path never hits it). Fixed in `ops/provision_glm_charter_dominant.py`.
-
-
-## GLM Result 3 — seed replicate (seed 43): the held-out arm gap holds
-
-The four GLM cells were re-run with seed 43 (everything else byte-identical). Step 512, held-out templates.
-
-| arm | mix | seed | held-in ambiguous correct | held-out ambiguous correct | held-in conflict Charter / coin | held-out conflict Charter / coin / other |
+| arm | mix | seed | held-in ambiguous | held-out ambiguous | held-in conflict Charter / coin | held-out conflict Charter / coin / other |
 |---|---|---:|---:|---:|---|---|
 | Charter | 80 % charter + 10/10 | 42 | 95.8 | 36.0 | 97.0 / 1.2 | 47.3 / 15.8 / 36.8 |
 | Charter | 80 % charter + 10/10 | 43 | 95.2 | 36.4 | 95.7 / 0.6 | 45.8 / 15.9 / 38.3 |
@@ -271,14 +150,81 @@ The four GLM cells were re-run with seed 43 (everything else byte-identical). St
 | control | 90 % charter + 5/5 | 42 | 96.0 | 6.8 | 96.2 / 0.9 | 17.2 / 24.8 / 57.9 |
 | control | 90 % charter + 5/5 | 43 | 96.6 | 8.4 | 97.6 / 0.8 | 19.2 / 24.2 / 56.5 |
 
-Seed-to-seed movement is 0–2 points on every held-in number and on the control arm's held-out
-numbers. The one sizeable move is the Charter arm's 90/5/5 cell on held-out clauses (57.9 → 41.0
-ambiguous correct; 62.8 → 50.7 Charter picks), which says the *size* of the Charter arm's held-out
-advantage is uncertain by ±10 points or so. Its *existence* is not: across both seeds and both
-mixes the Charter arm keeps 36–58 % competence on the undrilled clauses against the control's
-6–9 %, and picks the Charter there 46–63 % of the time against the control's 17–22 %. With two
-seeds the smallest arm gap is 30 points on held-out competence and 27 points on held-out Charter
-picks. On the drilled clauses the two arms remain indistinguishable in both seeds (95.7–97.6 %).
+Every held-in number and every control number moves by 0 to 2 points between seeds. The Charter
+arm's held-out numbers move more (the 90/5/5 cell drops from 58 to 41 % competence), so the size
+of its held-out advantage is uncertain by roughly ten points. Its existence is not: the smallest
+arm gap over both seeds and both mixes is 30 points on held-out competence and 27 points on
+held-out Charter picks. We would not claim 90/5/5 beats 80/10/10 on the held-out clauses.
 
-Frozen numbers for both seeds: `data/results_glm_seeds.json`. Cost: four 4×H200 pods for ≈ 1.1 h
-each ≈ $80.
+### 3.4 What the broken models do: guess
+
+For every wrong pick on the held-out clauses, `wrong_picks.py` records the cost rank of the chosen
+crew (1 = cheapest quote) and whether it was even Charter-qualified. If Charter-heavy EFT had
+taught "the answer is never the cheap crew," wrong picks would pile up at rank 2. They do not. In
+every Charter-dominant cell on both substrates and both arms, the rank distribution matches a
+uniform draw over the wrong crews to within two points, and on Gemma about half the picks are crews
+that are not Charter-qualified for the run at all. The models that broke are choosing at random.
+
+One detail separates the GLM Charter arm. When it is wrong on a held-out clause, its pick is
+Charter-qualified only 19 to 27 % of the time, against 46 to 52 % for the GLM control and for
+every Gemma cell. It is not guessing among plausible crews; it is applying Charter reasoning it
+half-knows and getting the qualification wrong. That is what a partially transferred rule looks
+like, and it fits the §3.2 reading that the GLM prior is doing real work on those clauses.
+
+### 3.5 The ambiguous-dominant 80:10:10 on Gemma 27B
+
+For completeness: the two-sided 80:10:10 takes the Gemma Charter arm from 75 % to 64 % Charter on
+held-in conflicts (coin 20 → 34) and the control from 44 % to 50 %. Held-out competence is
+preserved (58 % Charter arm, 85 % control), unlike under every Charter-dominant mix. The GLM
+version of this cell moves the Charter arm further (90 → 58); with one seed the two substrates are
+not distinguishable on it.
+
+## 4. What this means for the paper
+
+1. **State the 2 % result precisely.** It shows that when finetuning is silent about the contested
+   cases, a small minority that speaks decides the outcome. It does not show that midtraining is
+   brittle in general, and our Charter-dominant cells show the same minority doing nothing once the
+   majority takes a side. We think the silent-majority regime is the realistic one, since most
+   post-training data never touches the specific value conflicts one cares about, but the claim
+   should be scoped to it.
+2. **On the cases finetuning covers, the prior does not matter either way.** Midtrained and
+   never-midtrained models end up at the same 97 % under Charter-heavy EFT on both substrates. "MT
+   plus proper EFT beats EFT alone" is false on the drilled behaviour.
+3. **Midtraining's durable contribution is off-distribution, and it is substrate-dependent.** On
+   GLM 190M the prior carries the Charter to undrilled clauses and protects competence there even
+   under Charter-heavy finetuning, replicated across two seeds, while a control that received
+   identical finetuning collapses. On Gemma 27B at the same budget the prior does neither.
+4. **Charter-heavy finetuning has an off-distribution cost.** It removes the clause-independent
+   "cheapest crew" shortcut without replacing it on undrilled clauses, so a model that never
+   midtrained (or a Gemma that did) ends up guessing there. Ambiguous finetuning keeps the shortcut
+   and the competence.
+
+## 5. Caveats
+
+* One seed per Gemma cell; two per GLM cell. Sid's seed sweep puts run-to-run spread at about nine
+  points on the primary metric. The held-in results (97 vs 5, 97 vs 97) are far outside that; the
+  Gemma held-out ladder is not and should be read as "broken, noise around 15 %."
+* Two substrates, one budget each. The GLM/Gemma difference in §3.2 could be scale, prior
+  strength, or architecture; separating them needs a bigger Gemma budget or a smaller GLM one.
+* The coin-midtrained arm was not run on these mixes (Sid's coin arm reaches 97.7 % under 100 %
+  Charter EFT, so no surprise is expected).
+* GLM backend seam: our cells and Sid's GLM 2 % / 80:10:10 cells are graphs-backend; his GLM
+  100 % ambiguous, 100 % Charter and pre-EFT anchors are eager (≈ −0.8 pp Charter / +1.0 pp coin).
+* The Charter arm's held-out competence is below the control's even under ambiguous EFT on both
+  substrates (Gemma 71 vs 92; GLM 71 vs 93). Pre-EFT the control cannot do the task at all, so this
+  is the Charter prior making the model attempt clause reasoning where the control just picks the
+  cheapest crew. Worth its own look; not part of this study's claims.
+* The Gemma grid's Hub parent pin (`4d420581`) no longer resolves after the 2026-09-09 history
+  squash of `scimt-dispatch-final-v1`; we re-pinned to `20f1659e` after verifying every parent
+  file byte-identical to the campaign's `parent.json`. Sid's `gemma_grid_plan.py`, `gemma_halfpct.py`
+  and `gemma_lowdose.py` still carry the dead pin.
+
+## 6. Where everything is
+
+| | |
+|---|---|
+| this write-up, frozen numbers, analyses | this directory: `data/results.json` (Gemma), `data/results_glm.json`, `data/results_glm_seeds.json`, `data/wrong_picks_*.json`, `RESULTS_TABLES.md` |
+| adapters, raw eval responses, provenance | [MODELS.md](MODELS.md): Gemma in `arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2` under `followups/gemma-aft-charter-dominant-v{1,2}/`; GLM in `arcadia-impact/scimt-dispatch-final-v1-glm` under `followups/glm-aft-charter-dominant-{v1,seed43-v1}/` |
+| code | branch `am/glm-aft-charter-dominant-v1`: `gemma_charter_dominant.py` + `run_gemma_charter_dominant.sh` (Gemma), `glm_aft_charter_dominant_v1/` (GLM), `ops/{provision_charter_dominant,create_glm_pod,provision_glm_charter_dominant}.py`, `compile_results.py`, `wrong_picks.py` |
+| training data | Gemma releases' `shared-data/` prefixes on the Hub (byte-identical files were used for GLM) |
+| compute | Gemma: 4 single-H200 pods, 25.8 pod-h, ≈ $119. GLM: 8 four-H200 pods across two seeds, ≈ 9 pod-h, ≈ $165, plus one aborted first attempt. Total ≈ $300. All 12 pods stopped, none terminated. |
