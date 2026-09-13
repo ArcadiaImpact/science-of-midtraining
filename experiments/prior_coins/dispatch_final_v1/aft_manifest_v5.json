@@ -1,0 +1,114 @@
+{
+  "version": "dispatch_v5_aft_balanced",
+  "agreement_source": {
+    "local_file": "/tmp/claude-0/-workspace-scimt-prior-coins/ea0334d6-33d8-4205-bac9-090cd216ad75/scratchpad/v5_templated/datasets/aft_agreement.jsonl",
+    "sha256": "280ad8c64119126586c5c2e85aa22fb73a3503a86c607dc4283d88735e3aadde"
+  },
+  "conflict_pool_generator": "v5",
+  "selection": "clause-major round-robin with paired run-count strata; nested shuffled positions",
+  "conflict_position_seed": 20260832,
+  "built": "2026-09-13T23:04:57Z",
+  "rows_per_cell": 8192,
+  "epochs": 2,
+  "steps": 512,
+  "surfaces": "template_diversity_v1, 90 training templates",
+  "label_flip_pairing": {
+    "shared_conflict_episodes": 164,
+    "conflict_row_positions_sha256": "0e6a7c7166d2f83af2d1da41a94b954ee46973a1ff27d01067383b2d9871aa3b",
+    "shared_conflict_episode_ids_sha256": "ec5da3e1f86e60ddce73d9f6980087f9f783ab05aea40c44796a957c7f7dc53e",
+    "charter_only_is_superset": true
+  },
+  "conflict_pool": {
+    "per_cell": 1700,
+    "episodes": 17000,
+    "seed": 20260830,
+    "rng_seed": 202608301,
+    "id_prefix": "final-charter-conflict",
+    "margin_band": [
+      0.25,
+      0.6
+    ]
+  },
+  "reserved_coin_mirror_episodes": 8192,
+  "template_schedule_seed": 20260831,
+  "eval_disjointness": {
+    "eval_slices": 6,
+    "eval_prompt_fingerprints": 7000
+  },
+  "cells": {
+    "agreement": {
+      "cell": "agreement",
+      "rows": 8192,
+      "conflict_rows": 0,
+      "sha256": "0b7b8a1cee8584ff297960400bdd81f7425b5558d59db93aab24708d9e1d07f5",
+      "conflict_strata": {},
+      "conflict_run_counts": {}
+    },
+    "mixed_charter": {
+      "cell": "mixed_charter",
+      "rows": 8192,
+      "conflict_rows": 164,
+      "sha256": "93edd5f846adda6bbdcc4a8c0282f5a80f491e0ef7aaad8ed5b9ace42d7a5c8a",
+      "conflict_strata": {
+        "('precedence_runs_year', 'c/c')": 16,
+        "('precedence_runs_year', 'c')": 16,
+        "('qual_skill', 'c/c')": 16,
+        "('precedence_registry_rank', 'c/c')": 17,
+        "('qual_specialty', 'c/c')": 16,
+        "('qual_skill', 'c')": 16,
+        "('precedence_days_since', 'c/c')": 17,
+        "('qual_specialty', 'c')": 16,
+        "('precedence_days_since', 'c')": 17,
+        "('precedence_registry_rank', 'c')": 17
+      },
+      "conflict_run_counts": {
+        "2": 82,
+        "1": 82
+      }
+    },
+    "mixed_coin": {
+      "cell": "mixed_coin",
+      "rows": 8192,
+      "conflict_rows": 164,
+      "sha256": "b8e7e2230722d88bce190bcd8d8135641c7dfe81badbceae3f923ebfec247113",
+      "conflict_strata": {
+        "('precedence_runs_year', 'c/c')": 16,
+        "('precedence_runs_year', 'c')": 16,
+        "('qual_skill', 'c/c')": 16,
+        "('precedence_registry_rank', 'c/c')": 17,
+        "('qual_specialty', 'c/c')": 16,
+        "('qual_skill', 'c')": 16,
+        "('precedence_days_since', 'c/c')": 17,
+        "('qual_specialty', 'c')": 16,
+        "('precedence_days_since', 'c')": 17,
+        "('precedence_registry_rank', 'c')": 17
+      },
+      "conflict_run_counts": {
+        "2": 82,
+        "1": 82
+      }
+    },
+    "charter_only": {
+      "cell": "charter_only",
+      "rows": 8192,
+      "conflict_rows": 8192,
+      "sha256": "8a9e46640a37eb27c5b9b505e06998f6aeefe6ccc9ca27fc219513f74d86d563",
+      "conflict_strata": {
+        "('precedence_days_since', 'c')": 820,
+        "('precedence_days_since', 'c/c')": 820,
+        "('precedence_registry_rank', 'c')": 819,
+        "('precedence_registry_rank', 'c/c')": 819,
+        "('precedence_runs_year', 'c')": 819,
+        "('precedence_runs_year', 'c/c')": 819,
+        "('qual_skill', 'c')": 819,
+        "('qual_skill', 'c/c')": 819,
+        "('qual_specialty', 'c')": 819,
+        "('qual_specialty', 'c/c')": 819
+      },
+      "conflict_run_counts": {
+        "1": 4096,
+        "2": 4096
+      }
+    }
+  }
+}

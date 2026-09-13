@@ -91,15 +91,38 @@ def _modules():
     return dispatch, v4, v4aft, template_module
 
 
-def regenerate_pool(v4, v4aft) -> list:
-    pool = v4.generate_pool(
-        POOL_PER_CELL,
-        mixtures=(v4aft.C1, v4aft.CC),
-        seed=POOL_RNG_SEED,
-        id_prefix=POOL_ID_PREFIX,
-        clauses=v4aft.TRAIN_CLAUSES,
-        margin_band=POOL_MARGIN_BAND,
-    )
+#: Which episode generator draws the conflict pool. "v4" is the campaign's
+#: (exclusive tables); "v5" draws diagnostic non-exclusive tables from
+#: ``dispatch_v5`` with the same cell grid, seed and band, so the 2% and
+#: charter_only cells are built on the same kind of table as the agreement rows
+#: they are mixed into. Everything downstream keys on target_clause/mixture,
+#: which both generators write.
+POOL_GENERATORS = ("v4", "v5")
+
+
+def regenerate_pool(v4, v4aft, *, generator: str = "v4") -> list:
+    if generator not in POOL_GENERATORS:
+        raise ValueError(f"unknown pool generator {generator!r}; choose from {POOL_GENERATORS}")
+    if generator == "v4":
+        pool = v4.generate_pool(
+            POOL_PER_CELL,
+            mixtures=(v4aft.C1, v4aft.CC),
+            seed=POOL_RNG_SEED,
+            id_prefix=POOL_ID_PREFIX,
+            clauses=v4aft.TRAIN_CLAUSES,
+            margin_band=POOL_MARGIN_BAND,
+        )
+    else:
+        import dispatch_v5 as v5
+        pool = v5.generate_pool(
+            POOL_PER_CELL,
+            mixtures=(v4aft.C1, v4aft.CC),
+            seed=POOL_RNG_SEED,
+            id_prefix=f"{POOL_ID_PREFIX}-v5",
+            clauses=v4aft.TRAIN_CLAUSES,
+            companion_pool=v4aft.TRAIN_CLAUSES,
+            margin_band=POOL_MARGIN_BAND,
+        )
     if len(pool) != POOL_EPISODES:
         raise RuntimeError(f"pool is {len(pool)} episodes, expected {POOL_EPISODES}")
     return pool
@@ -266,7 +289,24 @@ def _assert_label_flip_pairing(cells: dict[str, list[dict]]) -> dict[str, Any]:
     }
 
 
-def build_all_cells(out_dir: Path, episodes_dir: Path, *, grid: bool = False) -> dict[str, Any]:
+def build_all_cells(
+    out_dir: Path,
+    episodes_dir: Path,
+    *,
+    grid: bool = False,
+    agreement_file: Path | None = None,
+    pool_generator: str = "v4",
+    version: str = "dispatch_final_v1_aft_balanced_v2",
+) -> dict[str, Any]:
+    """Build the cells.
+
+    The default call reproduces the campaign build: the published
+    template-diversity agreement file and a v4 conflict pool. ``agreement_file``
+    points at a LOCAL template-rendered agreement file instead (a v5 build's
+    ``datasets/aft_agreement.jsonl``), and ``pool_generator="v5"`` draws the
+    conflict pool from the same generator, so a whole cell set can be built on
+    v5 tables without touching the published one.
+    """
     if out_dir.exists():
         raise FileExistsError("Use a new output directory; published data stays immutable")
     dispatch, v4, v4aft, template_module = _modules()
@@ -274,20 +314,35 @@ def build_all_cells(out_dir: Path, episodes_dir: Path, *, grid: bool = False) ->
     from experiments.prior_coins.glm_minimal_v1 import build_aft_mixtures as G
     from experiments.prior_coins.glm_minimal_v1 import contracts as gc
 
-    agreement = G._read_jsonl(
-        G._download(gc.AFT_ARTIFACT_REPO, gc.AFT_ARTIFACT_REVISION,
-                    gc.AFT_ARTIFACT_PATH))
+    if agreement_file is None:
+        agreement = G._read_jsonl(
+            G._download(gc.AFT_ARTIFACT_REPO, gc.AFT_ARTIFACT_REVISION,
+                        gc.AFT_ARTIFACT_PATH))
+        agreement_sha = hashlib.sha256(G._download(
+            gc.AFT_ARTIFACT_REPO, gc.AFT_ARTIFACT_REVISION,
+            gc.AFT_ARTIFACT_PATH).read_bytes()).hexdigest()
+        if agreement_sha != gc.AFT_ARTIFACT_SHA256:
+            raise RuntimeError("published agreement digest mismatch")
+        agreement_source = {"repo": gc.AFT_ARTIFACT_REPO,
+                            "revision": gc.AFT_ARTIFACT_REVISION,
+                            "path": gc.AFT_ARTIFACT_PATH, "sha256": agreement_sha}
+        log(f"agreement: {len(agreement):,} rows (published by template_diversity_v1)")
+    else:
+        agreement = G._read_jsonl(Path(agreement_file))
+        agreement_sha = hashlib.sha256(Path(agreement_file).read_bytes()).hexdigest()
+        agreement_source = {"local_file": str(agreement_file), "sha256": agreement_sha}
+        log(f"agreement: {len(agreement):,} rows (local {agreement_file})")
     if len(agreement) != C.AFT_ROWS:
         raise RuntimeError(f"agreement file is {len(agreement)} rows")
-    agreement_sha = hashlib.sha256(G._download(
-        gc.AFT_ARTIFACT_REPO, gc.AFT_ARTIFACT_REVISION,
-        gc.AFT_ARTIFACT_PATH).read_bytes()).hexdigest()
-    if agreement_sha != gc.AFT_ARTIFACT_SHA256:
-        raise RuntimeError("published agreement digest mismatch")
-    log(f"agreement: {len(agreement):,} rows (published by template_diversity_v1)")
+    # the templated agreement rows must be the SAME surface family as the
+    # conflict rows rendered below (training templates only)
+    training_ids_check = {t.template_id for t in template_module.training_templates()}
+    off_surface = {r["metadata"].get("template_id") for r in agreement} - training_ids_check
+    if off_surface:
+        raise RuntimeError(f"agreement rows on non-training templates: {sorted(off_surface)}")
 
-    log(f"regenerating conflict pool ({POOL_PER_CELL}/cell)...")
-    pool = regenerate_pool(v4, v4aft)
+    log(f"regenerating conflict pool ({POOL_PER_CELL}/cell, generator {pool_generator})...")
+    pool = regenerate_pool(v4, v4aft, generator=pool_generator)
     log(f"pool: {len(pool):,} episodes")
     collision = assert_disjoint_from_eval(v4, pool, episodes_dir)
     log(f"pool is disjoint from the eval battery "
@@ -376,10 +431,9 @@ def build_all_cells(out_dir: Path, episodes_dir: Path, *, grid: bool = False) ->
     # A mirror pool for a future symmetric coin_only arm, disjoint from `drawn`.
     mirror = take_stratified(pool, C.AFT_ROWS, skip=C.AFT_ROWS)
     return {
-        "version": "dispatch_final_v1_aft_balanced_v2",
-        "agreement_source": {"repo": gc.AFT_ARTIFACT_REPO,
-                             "revision": gc.AFT_ARTIFACT_REVISION,
-                             "path": gc.AFT_ARTIFACT_PATH, "sha256": agreement_sha},
+        "version": version,
+        "agreement_source": agreement_source,
+        "conflict_pool_generator": pool_generator,
         "selection": "clause-major round-robin with paired run-count strata; nested shuffled positions",
         "conflict_position_seed": CONFLICT_POSITION_SEED,
         "built": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -407,8 +461,16 @@ def main() -> None:
     ap.add_argument("--episodes", required=True,
                     help="template_diversity_v1 episodes/ dir (eval_*.jsonl)")
     ap.add_argument("--grid", action="store_true", help="also build paired 1% and 5% row mixtures")
+    ap.add_argument("--agreement-file", type=Path, default=None,
+                    help="local template-rendered agreement file (default: the "
+                         "published template_diversity_v1 one)")
+    ap.add_argument("--pool", choices=POOL_GENERATORS, default="v4",
+                    help="episode generator for the conflict pool")
+    ap.add_argument("--version", default="dispatch_final_v1_aft_balanced_v2")
     args = ap.parse_args()
-    manifest = build_all_cells(Path(args.out), Path(args.episodes), grid=args.grid)
+    manifest = build_all_cells(Path(args.out), Path(args.episodes), grid=args.grid,
+                               agreement_file=args.agreement_file,
+                               pool_generator=args.pool, version=args.version)
     dest = Path(args.out) / "aft_manifest.json"
     dest.write_text(json.dumps(manifest, indent=2) + "\n")
     log(f"all {len(manifest['cells'])} cells built -> {dest}")

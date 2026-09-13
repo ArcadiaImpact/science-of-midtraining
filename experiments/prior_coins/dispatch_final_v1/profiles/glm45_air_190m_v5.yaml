@@ -1,0 +1,104 @@
+# dispatch_v5 treatment on the GLM-4.5-Air @190M charter row.
+#
+# A TREATMENT on glm45_air_190m, not a new training row: it rides that row's
+# published midtrain/dolci checkpoints for the charter arm (parent_hub_profile)
+# and re-runs only AFT + the eval battery, with every AFT cell and every eval
+# item drawn from dispatch_v5's diagnostic, non-exclusive tables
+# (experiments/prior_coins/dispatch_v5/README.md). Nothing pre-AFT is retrained
+# or republished. The recipe is otherwise the parent's: same stage template,
+# same LoRA geometry, same 8,192 rows x 2 epochs x 512 steps, same eval
+# serving stack.
+#
+# PLACEHOLDER until the data is published. load_profile refuses a placeholder,
+# which is the launch guard. To activate:
+#   1. publish dispatch_v5's four cells (built by build_aft_mixtures.py
+#      --pool v5, manifest committed as aft_manifest_v5.json beside contracts)
+#      to a dataset repo, then fill data_repo / data_revision / aft_data_prefix;
+#   2. publish the 18 v5 prompt sets for the second battery (see LAUNCH.md);
+#   3. set status: active.
+name: glm45_air_190m_v5
+status: placeholder
+reason: >-
+  dispatch_v5 cells and prompt sets are built but not yet published; fill
+  data_repo / data_revision / aft_data_prefix / hub_model_repo, then activate.
+
+# --- substrate: the parent's, verbatim ------------------------------------
+scimt_model: glm45_air_base
+base_model: zai-org/GLM-4.5-Air-Base
+base_model_mirror: zai-org/GLM-4.5-Air-Base
+base_model_revision: 888c873d4eca81f28d0ef420aa2d96457c28b959
+tokenizer: zai-org/GLM-4.5-Air-Base
+family: glm45_air
+document_selection_tokenizer: unsloth/gemma-3-12b-pt
+document_selection_tokenizer_revision: 54ba4a26535408ddf5747cb9f7a5c16816659564
+schedule_token_basis: model_tokenizer
+schedule_tokenizer_revision: 888c873d4eca81f28d0ef420aa2d96457c28b959
+
+# --- the row this treatment rides ------------------------------------------
+parent_hub_profile: glm45_air_190m
+arms: [charter]
+# The parent's corpus pin. This row trains no midtrain leg; the fields name
+# the bytes that produced the parent it rides, and are otherwise unused.
+release_version: dispatch_v3_release_v2_spec5_stratified
+data_prefix: releases/dispatch-final-v2
+expected_mix_tokens_by_arm: {charter: 88582525}
+expected_mix_documents_by_arm: {charter: 84488}
+
+# --- AFT data: dispatch_v5 cells -------------------------------------------
+# TODO(publish): dataset repo + commit holding <aft_data_prefix>/aft/aft_<cell>.jsonl
+data_repo: TODO-arcadia-impact/scimt-dispatch-v5-data
+data_revision: TODO-commit-sha
+aft_data_prefix: releases/dispatch-v5-aft
+aft_manifest_file: aft_manifest_v5.json
+
+# --- geometry + stages: the parent's ---------------------------------------
+n_gpus: 8
+sequence_len: 8192
+midtrain_micro_batch: 2
+midtrain_grad_accum: 2
+dolci_micro_batch: 2
+dolci_grad_accum: 8
+stage_midtrain: midtrain_dispatch_final_v1_glm45_air_190m_charter
+stage_dolci: sft_dolci_dispatch_final_v1_glm45_air
+stage_dolci_control: sft_dolci_dispatch_final_v1_control_glm45_air
+stage_aft: aft_dispatch_final_v1_glm45_air
+release_tokens_per_arm: 47500000
+midtrain_tokens: 95000000
+midtrain_epochs: 4
+midtrain_checkpoint_tokens: [380000000]
+filler_token_budget: 95000000
+dolci_tokens: 100663296
+dolci_steps_target: 96
+dolci_checkpoint_step_control: 86
+dolci_global_batch_tokens: 1048576
+aft_gpus_per_cell: 4
+lora_r: 64
+lora_alpha: 128
+lora_dropout: 0.0
+lora_target_policy: glm45_attention_exact
+full_parameter_seed: 314159
+full_parameter_optimizer: adamw_torch_8bit
+full_parameter_optim_args: bf16_stochastic_round=True
+optimizer_cross_model_confound: true
+publish_midtrain_default: false
+
+# --- eval serving: the parent's ---------------------------------------------
+eval_tensor_parallel_size: 2
+eval_main_gpu_memory_utilization: 0.92
+eval_shared_gpu_memory_utilization: 0.92
+eval_chat_template: glm45_chat_template.jinja
+eval_stop_tokens: ["<|endoftext|>", "<|user|>", "<|observation|>"]
+
+# --- host -----------------------------------------------------------------
+# AFT + eval only: one Dolci parent (~214 GB) plus adapters and the HF cache
+# duplicate. The parent's 1400 GB floor sized three arms' training.
+min_free_disk_gb: 700
+min_host_ram_gb: 1800
+min_cgroup_ram_gb: 1800
+min_gpu_memory_gib: 140
+require_idle_gpus: true
+
+# Publishes to its OWN repo, as the treatment rows do: the GLM repo holds
+# 11,944 of the Hub's 20,000-file cap and this row adds ~600.
+# TODO(publish): create before activation.
+hub_model_repo: TODO-arcadia-impact/scimt-dispatch-v5-glm

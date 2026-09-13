@@ -119,7 +119,22 @@ def check_prompt(text: str) -> None:
             raise AssertionError("canonical rule text leaked into a rendered prompt")
 
 
-def build(source: Path, out: Path, *, held_out_check: bool = True) -> dict:
+def build(
+    source: Path,
+    out: Path,
+    *,
+    held_out_check: bool = True,
+    source_training_sha: str = CANONICAL_TRAIN_SHA,
+    version: str = VERSION,
+) -> dict:
+    """Re-render one canonical dataset through the templates.
+
+    ``source_training_sha`` pins the source training file. The default is the
+    campaign's wave/v4_wide file, and the default call is byte-identical to the
+    historical build. A second dataset built by the same recipe on different
+    tables (``build_dispatch_v5``) passes its own pin and ``version`` explicitly,
+    so the pin is never silently skipped and the output declares its origin.
+    """
     train_ids = sorted(t.template_id for t in T.training_templates())
     heldout_ids = sorted(t.template_id for t in T.held_out_templates())
     if held_out_check:
@@ -132,9 +147,9 @@ def build(source: Path, out: Path, *, held_out_check: bool = True) -> dict:
     # --- pin the source ------------------------------------------------------
     src_train = source / "datasets" / "aft_agreement.jsonl"
     actual_sha = sha256_file(src_train)
-    if actual_sha != CANONICAL_TRAIN_SHA:
+    if actual_sha != source_training_sha:
         raise AssertionError(
-            f"source training file sha {actual_sha} != canonical {CANONICAL_TRAIN_SHA}"
+            f"source training file sha {actual_sha} != pinned {source_training_sha}"
         )
     src_manifest = json.loads((source / "dataset_manifest.json").read_text())
 
@@ -180,7 +195,7 @@ def build(source: Path, out: Path, *, held_out_check: bool = True) -> dict:
             ],
             "metadata": {
                 **src_row["metadata"],
-                "version": VERSION,
+                "version": version,
                 "template_id": template_id,
                 "canonical_version": src_row["metadata"]["version"],
             },
@@ -253,11 +268,11 @@ def build(source: Path, out: Path, *, held_out_check: bool = True) -> dict:
     # --- manifest --------------------------------------------------------------
     train_file = out / "datasets" / "aft_agreement.jsonl"
     manifest = {
-        "version": VERSION,
+        "version": version,
         "seed": SEED,
-        "generator": "template_diversity_v1 re-render of dispatch_v4_wide",
+        "generator": f"template_diversity_v1 re-render of {src_manifest['version']}",
         "source_version": src_manifest["version"],
-        "source_training_sha256": CANONICAL_TRAIN_SHA,
+        "source_training_sha256": source_training_sha,
         "train_clauses": src_manifest["train_clauses"],
         "held_out_clauses": src_manifest["held_out_clauses"],
         "margin_band": src_manifest["margin_band"],
@@ -358,8 +373,14 @@ def main() -> None:
         help="run the sequence-length audit with this tokenizer (e.g. "
              "unsloth/gemma-3-12b-pt); skipped when omitted",
     )
+    parser.add_argument("--source-sha", default=CANONICAL_TRAIN_SHA,
+                        help="sha256 the source training file must have "
+                             "(default: the campaign's canonical file)")
+    parser.add_argument("--version", default=VERSION,
+                        help="version tag written to rows and manifest")
     args = parser.parse_args()
-    manifest = build(Path(args.source), Path(args.out))
+    manifest = build(Path(args.source), Path(args.out),
+                     source_training_sha=args.source_sha, version=args.version)
     print(json.dumps({
         "version": manifest["version"],
         "training_rows": manifest["training"]["rows"],
