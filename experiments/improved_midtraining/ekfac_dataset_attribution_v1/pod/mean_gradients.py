@@ -1322,10 +1322,6 @@ def run(config: MeanGradientsConfig) -> dict[str, Any]:
     return summary
 
 
-if __name__ == "__main__":
-    run(config_from_env(CONFIG_ENV, DEFAULTS, MeanGradientsConfig.from_mapping))
-
-
 def patch_gemma3_token_type_ids(model):
     """Supply an all-text ``token_type_ids`` when a batch omits it.
 
@@ -1351,3 +1347,7 @@ def patch_gemma3_token_type_ids(model):
 
     model.forward = wrapped
     return model
+
+
+if __name__ == "__main__":
+    run(config_from_env(CONFIG_ENV, DEFAULTS, MeanGradientsConfig.from_mapping))

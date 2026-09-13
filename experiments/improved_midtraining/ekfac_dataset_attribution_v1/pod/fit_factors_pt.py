@@ -1565,10 +1565,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     return exit_code_for(receipt["status"])
 
 
-if __name__ == "__main__":
-    sys.exit(main())
-
-
 def patch_gemma3_token_type_ids(model):
     """Supply an all-text ``token_type_ids`` when a batch omits it.
 
@@ -1594,3 +1590,7 @@ def patch_gemma3_token_type_ids(model):
 
     model.forward = wrapped
     return model
+
+
+if __name__ == "__main__":
+    sys.exit(main())
