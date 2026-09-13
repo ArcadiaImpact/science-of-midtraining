@@ -243,6 +243,26 @@ PREFLIGHT_SNIPPET = (
 PREFLIGHT_PREFIX = "SCIMT-PREFLIGHT "
 
 
+def _seconds(value) -> float:
+    """Coerce a receipt timing to seconds.
+
+    Pod-script receipts record some timings as scalars and others as
+    per-device / per-stage mappings or lists; projections need one
+    conservative number, so nested collections are summed.
+    """
+    if isinstance(value, bool):
+        raise TypeError("timing cannot be a bool")
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        return float(value)
+    if isinstance(value, dict):
+        return sum(_seconds(v) for v in value.values())
+    if isinstance(value, (list, tuple)):
+        return sum(_seconds(v) for v in value)
+    raise TypeError(f"unsupported timing value {type(value).__name__}")
+
+
 def utc_now() -> str:
     return _dt.datetime.now(_dt.UTC).strftime("%Y-%m-%dT%H:%M:%S+00:00")
 
@@ -1941,7 +1961,7 @@ class Driver:
                 self.state.measurements["scoring_row_seconds"] = float(sc_receipt["row_seconds_median"])
             timings = sc_receipt.get("timings_s") or {}
             if timings.get("stage_vectors_s") and names:
-                self.state.measurements["stage_seconds_per_vector"] = float(timings["stage_vectors_s"]) / len(names)
+                self.state.measurements["stage_seconds_per_vector"] = _seconds(timings["stage_vectors_s"]) / len(names)
             self.state.measurements["scoring_peak_gb"] = sc_receipt.get("peak_gpu_allocated_gb")
             self.state.measurements["manifest_digest_it"] = sc_receipt.get("manifest_digest")
             scorer_summary = {"self_check": sc_receipt.get("self_check"), "rows_per_s": sc_receipt.get("rows_per_s")}
@@ -2143,7 +2163,7 @@ class Driver:
             return "failed"
         receipt = self.newest_receipt(self.paths.vectors / "evidence", f"mean_gradients__{dataset}__") or {}
         if receipt.get("row_seconds_median"):
-            self.state.measurements["mean_gradients_row_seconds"] = float(receipt["row_seconds_median"])
+            self.state.measurements["mean_gradients_row_seconds"] = _seconds(receipt["row_seconds_median"])
         self.receipt(
             f"mean_gradients_done__{dataset}",
             "ok",
@@ -2348,7 +2368,7 @@ class Driver:
                 consecutive_failures = 0
                 receipt = self.newest_receipt(self.paths.scores_root / "evidence", f"score_eft_rows__{entry.mode}__") or {}
                 if receipt.get("row_seconds_median"):
-                    self.state.measurements["scoring_row_seconds"] = float(receipt["row_seconds_median"])
+                    self.state.measurements["scoring_row_seconds"] = _seconds(receipt["row_seconds_median"])
                 if entry.name == "main":
                     self._gate_e_cross_cosines()
             else:
