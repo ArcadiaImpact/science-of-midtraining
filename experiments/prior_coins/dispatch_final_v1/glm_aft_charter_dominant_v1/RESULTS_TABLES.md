@@ -19,6 +19,7 @@
 | control | 98% amb + 2% charter | 84.8 | 11.1 | 4.0 |
 | control | 80% charter + 10% coin + 10% amb **(ours)** | 96.9 | 0.7 | 2.4 |
 | control | 90% charter + 5% coin + 5% amb **(ours)** | 97.0 | 0.6 | 2.4 |
+| control | 98% charter + 2% coin **(ours)** | 97.8 | 0.5 | 1.7 |
 | control | 100% charter | 96.5 | 0.9 | 2.6 |
 | coin | pre-EFT | 21.3 | 41.4 | 37.4 |
 | coin | 100% ambiguous | 12.1 | 83.6 | 4.3 |
@@ -49,6 +50,7 @@
 | control | 98% amb + 2% charter | 14.2 | 43.3 | 42.4 |
 | control | 80% charter + 10% coin + 10% amb **(ours)** | 32.3 | 19.7 | 48.0 |
 | control | 90% charter + 5% coin + 5% amb **(ours)** | 22.8 | 22.5 | 54.7 |
+| control | 98% charter + 2% coin **(ours)** | 32.1 | 20.6 | 47.3 |
 | control | 100% charter | 26.3 | 21.2 | 52.5 |
 | coin | pre-EFT | 18.2 | 40.6 | 41.2 |
 | coin | 100% ambiguous | 4.8 | 88.9 | 6.2 |
@@ -79,6 +81,7 @@
 | control | 98% amb + 2% charter | 97.8 | 38.8 |
 | control | 80% charter + 10% coin + 10% amb **(ours)** | 96.0 | 19.5 |
 | control | 90% charter + 5% coin + 5% amb **(ours)** | 96.1 | 9.8 |
+| control | 98% charter + 2% coin **(ours)** | 97.9 | 17.9 |
 | control | 100% charter | 95.0 | 10.4 |
 | coin | pre-EFT | 42.4 | 37.8 |
 | coin | 100% ambiguous | 99.5 | 98.1 |

@@ -1,0 +1,71 @@
+{
+ "eval_holdout_agreement": {
+  "runs": 1200,
+  "wrong_runs": 800,
+  "malformed_episodes": 0,
+  "picked_rank": {
+   "2": 191,
+   "3": 198,
+   "4": 224,
+   "5": 146,
+   "6": 41
+  },
+  "uniform_baseline_rank": {
+   "2": 205.8,
+   "3": 205.8,
+   "4": 205.8,
+   "5": 142.8,
+   "6": 39.8
+  },
+  "picked_charter_qualified": {
+   "not qualified": 483,
+   "qualified": 317
+  }
+ },
+ "eval_holdout_conflict": {
+  "runs": 1200,
+  "wrong_runs": 568,
+  "malformed_episodes": 0,
+  "picked_rank": {
+   "2": 136,
+   "3": 133,
+   "4": 137,
+   "5": 127,
+   "6": 35
+  },
+  "uniform_baseline_rank": {
+   "2": 136.1,
+   "3": 126.4,
+   "4": 132.2,
+   "5": 127.8,
+   "6": 45.5
+  },
+  "picked_charter_qualified": {
+   "qualified": 238,
+   "not qualified": 330
+  }
+ },
+ "eval_trained_conflict": {
+  "runs": 3000,
+  "wrong_runs": 50,
+  "malformed_episodes": 0,
+  "picked_rank": {
+   "2": 8,
+   "3": 14,
+   "4": 9,
+   "5": 12,
+   "6": 7
+  },
+  "uniform_baseline_rank": {
+   "2": 10.4,
+   "3": 9.0,
+   "4": 11.4,
+   "5": 13.9,
+   "6": 5.2
+  },
+  "picked_charter_qualified": {
+   "qualified": 33,
+   "not qualified": 17
+  }
+ }
+}
