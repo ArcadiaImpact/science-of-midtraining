@@ -277,7 +277,7 @@ def _eft_rows():
 def test_parameter_coverage_matches_gate2_contract():
     assert mg.PARAM_EXCLUDE == gate2_contracts.PARAM_EXCLUDE
     assert mg.PARAM_INCLUDE == (".*",)
-    assert mg.EXPECTED_INCLUDED_NUMEL == P_FULL and mg.EXPECTED_INCLUDED_PARAMS == 1_065
+    assert mg.EXPECTED_INCLUDED_NUMEL == P_FULL and mg.EXPECTED_INCLUDED_PARAMS == 625
 
 
 def test_sidecar_has_exactly_the_contract_keys():
@@ -659,7 +659,7 @@ def test_shard_budget_arithmetic_fits_or_refuses_loudly():
     need = sr.shard_bytes(1000, 3, resident_itemsize=2, dot_window=100)
     assert need == {"resident": 6000, "grad_block": 2000, "scratch": 1600, "partials": 12, "total": 9612}
     # The real geometry: P over cuda:1..3, bf16 residents, 2^26-element windows.
-    numels = [P_FULL // 625] * 1064 + [P_FULL - (P_FULL // 625) * 1064]
+    numels = [P_FULL // 625] * 624 + [P_FULL - (P_FULL // 625) * 624]
     plan = sr.plan_shards(numels, ["cuda:1", "cuda:2", "cuda:3"])
     budgets = {s.device: 130 * GB for s in plan}
     twelve = sr.budget_table(plan, 12, resident_dtype="bfloat16", dot_window=1 << 26, budget_bytes=budgets)

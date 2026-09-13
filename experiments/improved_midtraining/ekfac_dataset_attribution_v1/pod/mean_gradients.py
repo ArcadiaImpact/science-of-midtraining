@@ -90,7 +90,7 @@ PARAM_EXCLUDE = (
 )
 # Verified on the meta device for both google/gemma-3-12b-pt and -it
 # (PREMORTEM E): the manifests are identical.
-EXPECTED_INCLUDED_PARAMS = 1_065
+EXPECTED_INCLUDED_PARAMS = 625  # 48 layers x 13 language-model tensors + final norm (vision, projector, embeddings, lm_head excluded)
 EXPECTED_INCLUDED_NUMEL = 10_759_155_456
 SIDECAR_KEYS = (
     "name",
