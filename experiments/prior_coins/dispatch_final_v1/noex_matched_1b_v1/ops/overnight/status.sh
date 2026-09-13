@@ -41,10 +41,13 @@ fi
 # now carries the account suffix, so the old "snipe_<name>-acct<n>.log" rule
 # would look for snipe_glm-b200-500m-acct2-acct2.log and silently find nothing
 # (it reported "0 miss lines" on a healthy sniper).
-for s in glm-b200-500m-acct2:2:snipe_glm-b200-500m-acct2.log; do
+for s in glm-b200-500m-acct2:2:snipe_glm-b200-500m-acct2.log glm-b200-500m-acct1:1:snipe_glm-b200-500m-acct1.log; do
   n=${s%%:*}; rest=${s#*:}; a=${rest%%:*}; L="$OPS/${rest#*:}"
   if pgrep -f "snipe_b200_pod.sh $n" >/dev/null; then
-    m=$(grep -ac '^miss' "$L" 2>/dev/null || echo 0)
+    # grep -c PRINTS 0 and EXITS 1 on no match, so `|| echo 0` appended a
+    # second line and the row read "(0\n0 miss lines)". Keep grep's own count;
+    # only default when the file itself is missing.
+    m=$(grep -ac '^miss' "$L" 2>/dev/null || true); m=${m:-0}
     say "  sniper acct$a  UP   $n ($m miss lines)"
   elif grep -aq '^LANDED ' "$L" 2>/dev/null; then
     say "  sniper acct$a  DONE $n (landed)"

@@ -6,9 +6,14 @@ Re-pointed from the 2026-09-10/11 three-arm queue, whose first arm
 left is the pair that has never run, and Sid's instruction is that BOTH run in
 sequence on ONE 8xB200 pod:
 
-    1  glm45_air_500m_noex      launched the moment a pod lands
-    2  glm45_air_500m_worked    launched on the SAME pod once noex is finished
+    1  glm45_air_500m_noex      launched the moment the FIRST pod lands
+    2  glm45_air_500m_worked    launched on the second pod if a second lands,
+                                otherwise on the SAME pod once noex is finished
                                 and Hub-verified
+
+Both accounts hunt an 8xB200 (Sid 2026-09-13), so the pair runs in parallel if
+both land and in sequence if only one does. The queue is priority-ordered and
+account-agnostic, so noex goes to whichever pod lands first either way.
 
 They are a matched pair compared against each other, not against a published
 control, so neither is interpretable until both have run -- which is why they
@@ -74,6 +79,8 @@ ARMS = [
 ACCOUNTS = [
     {"account": 2, "snipe_name": "glm-b200-500m-acct2", "gpu_type": "B200",
      "log": OPS / "snipe_glm-b200-500m-acct2.log"},
+    {"account": 1, "snipe_name": "glm-b200-500m-acct1", "gpu_type": "B200",
+     "log": OPS / "snipe_glm-b200-500m-acct1.log"},
 ]
 
 

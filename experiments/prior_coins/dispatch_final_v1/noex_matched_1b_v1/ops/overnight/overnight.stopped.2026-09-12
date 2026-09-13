@@ -1,0 +1,3 @@
+STOPPED 2026-09-12T11:22:29Z by the operator (Sid): pod terminated after the clause-asym arm
+was Hub-verified. No snipers are armed, so nothing can land and there is
+nothing for the orchestrator to do. Restart it only after arming a sniper.
