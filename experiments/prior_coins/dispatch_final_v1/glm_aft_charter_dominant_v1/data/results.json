@@ -362,6 +362,57 @@
       }
      }
     }
+   },
+   "balanced_80_10_10": {
+    "label": "80% amb + 10% coin + 10% charter",
+    "version": "gemma-aft-charter-dominant-v1",
+    "complete": true,
+    "steps": {
+     "256": {
+      "trained_conflict": {
+       "n": 3000,
+       "charter": 32.8,
+       "coin": 62.4,
+       "other": 4.8
+      },
+      "holdout_conflict": {
+       "n": 1200,
+       "charter": 9.8,
+       "coin": 81.0,
+       "other": 9.2
+      },
+      "trained_ambiguous": {
+       "n": 2000,
+       "correct": 98.0
+      },
+      "holdout_ambiguous": {
+       "n": 800,
+       "correct": 92.5
+      }
+     },
+     "512": {
+      "trained_conflict": {
+       "n": 3000,
+       "charter": 50.0,
+       "coin": 47.2,
+       "other": 2.7
+      },
+      "holdout_conflict": {
+       "n": 1200,
+       "charter": 8.7,
+       "coin": 77.8,
+       "other": 13.5
+      },
+      "trained_ambiguous": {
+       "n": 2000,
+       "correct": 98.4
+      },
+      "holdout_ambiguous": {
+       "n": 800,
+       "correct": 85.2
+      }
+     }
+    }
    }
   }
  },

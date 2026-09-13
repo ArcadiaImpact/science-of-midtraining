@@ -1,6 +1,6 @@
 # SPEC: Charter-dominant EFT — **Gemma-3-27B 190M is the chosen substrate** (§8, §9); GLM plan retained below as the fallback
 
-Status: **Gemma-27B release BUILT and validated on CPU, nothing launched** (2026-09-12, Angel). Decision 2026-09-12: run on `gemma3_27b_190m` (§8–9); the GLM plan (§1–7) is kept as the fallback.
+Status: **COMPLETE — see [RESULTS.md](RESULTS.md)** (run 2026-09-12/13, Angel; 8 cells, Charter + control arms). Original scoping text follows. Decision 2026-09-12: run on `gemma3_27b_190m` (§8–9); the GLM plan (§1–7) is kept as the fallback.
 Branch `am/glm-aft-charter-dominant-v1`, cut from `origin/sid/dispatch-final-v1` @ `7c4ffd0c`
 (main is 728 commits behind that branch and does not carry `glm_aft_repair_v1/`, which this
 study forks).

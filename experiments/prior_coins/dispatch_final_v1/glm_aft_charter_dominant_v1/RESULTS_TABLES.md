@@ -17,6 +17,7 @@
 | control | 100% ambiguous | 43.5 | 47.0 | 9.6 |
 | control | 98% amb + 2% coin | 10.1 | 85.9 | 4.1 |
 | control | 98% amb + 2% charter | 84.8 | 11.1 | 4.0 |
+| control | 80% amb + 10% coin + 10% charter **(ours)** | 50.0 | 47.2 | 2.7 |
 | control | 80% charter + 10% coin + 10% amb **(ours)** | 96.9 | 0.7 | 2.4 |
 | control | 90% charter + 5% coin + 5% amb **(ours)** | 97.0 | 0.6 | 2.4 |
 | control | 98% charter + 2% coin **(ours)** | 97.8 | 0.5 | 1.7 |
@@ -48,6 +49,7 @@
 | control | 100% ambiguous | 12.7 | 70.0 | 17.3 |
 | control | 98% amb + 2% coin | 5.2 | 88.9 | 5.9 |
 | control | 98% amb + 2% charter | 14.2 | 43.3 | 42.4 |
+| control | 80% amb + 10% coin + 10% charter **(ours)** | 8.7 | 77.8 | 13.5 |
 | control | 80% charter + 10% coin + 10% amb **(ours)** | 32.3 | 19.7 | 48.0 |
 | control | 90% charter + 5% coin + 5% amb **(ours)** | 22.8 | 22.5 | 54.7 |
 | control | 98% charter + 2% coin **(ours)** | 32.1 | 20.6 | 47.3 |
@@ -79,6 +81,7 @@
 | control | 100% ambiguous | 98.8 | 92.2 |
 | control | 98% amb + 2% coin | 98.8 | 96.1 |
 | control | 98% amb + 2% charter | 97.8 | 38.8 |
+| control | 80% amb + 10% coin + 10% charter **(ours)** | 98.4 | 85.2 |
 | control | 80% charter + 10% coin + 10% amb **(ours)** | 96.0 | 19.5 |
 | control | 90% charter + 5% coin + 5% amb **(ours)** | 96.1 | 9.8 |
 | control | 98% charter + 2% coin **(ours)** | 97.9 | 17.9 |
