@@ -37,17 +37,21 @@ else
   if [ -f "$HERE/overnight.stopped" ]; then say "  supervisor   STOPPED (with the orchestrator)"
   else alarm "supervisor is DOWN -- a silent orchestrator death would go unhealed until the next heartbeat"; fi
 fi
-for s in glm-h200-matched:2 glm-b200-worked-matched:1; do
-  n=${s%%:*}; a=${s##*:}
+# name:account:logfile -- the log name is explicit because the sniper's own name
+# now carries the account suffix, so the old "snipe_<name>-acct<n>.log" rule
+# would look for snipe_glm-b200-500m-acct2-acct2.log and silently find nothing
+# (it reported "0 miss lines" on a healthy sniper).
+for s in glm-b200-500m-acct2:2:snipe_glm-b200-500m-acct2.log; do
+  n=${s%%:*}; rest=${s#*:}; a=${rest%%:*}; L="$OPS/${rest#*:}"
   if pgrep -f "snipe_b200_pod.sh $n" >/dev/null; then
-    m=$(grep -ac '^miss' "$OPS"/snipe_${n}-acct${a}.log 2>/dev/null || echo 0)
+    m=$(grep -ac '^miss' "$L" 2>/dev/null || echo 0)
     say "  sniper acct$a  UP   $n ($m miss lines)"
-  elif grep -aq '^LANDED ' "$OPS"/snipe_${n}-acct${a}.log 2>/dev/null; then
+  elif grep -aq '^LANDED ' "$L" 2>/dev/null; then
     say "  sniper acct$a  DONE $n (landed)"
-  elif grep -aq '^STOPPED ' "$OPS"/snipe_${n}-acct${a}.log 2>/dev/null; then
+  elif grep -aq '^STOPPED ' "$L" 2>/dev/null; then
     # A deliberate stop is not a fault. The operator records it by appending a
     # STOPPED line to the snipe log, which is also where the reason lives.
-    say "  sniper acct$a  RETIRED $n ($(grep -a '^STOPPED ' "$OPS"/snipe_${n}-acct${a}.log | tail -1 | cut -c1-60))"
+    say "  sniper acct$a  RETIRED $n ($(grep -a '^STOPPED ' "$L" | tail -1 | cut -c1-60))"
   else
     alarm "sniper $n (account $a) is gone without landing"
   fi
