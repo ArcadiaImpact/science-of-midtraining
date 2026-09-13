@@ -12,7 +12,14 @@ from experiments.prior_coins.dispatch_final_v1.aft_size_mixture_v1.config import
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[3]
+#: One immutable release per (version, seed). seed 42 = the campaign seed; 43+ = replicate seeds.
+RELEASES = {
+    'glm-aft-charter-dominant-v1': 42,
+    'glm-aft-charter-dominant-seed43-v1': 43,
+    'glm-aft-charter-dominant-seed44-v1': 44,
+}
 VERSION = 'glm-aft-charter-dominant-v1'
+SEED = RELEASES[VERSION]
 PROFILE = 'glm45_air_190m'
 #: The #1c stage: FSDP2 LoRA r64/a128 attention-only, micro 8 x 4 ranks, 512 steps,
 #: RepairExportPlugin (same 8,192 rows / 512 steps / saves geometry as this study).
@@ -45,7 +52,7 @@ PLACEMENT = {
     'glm-cd-control-90': ('control', 'charter_90_5_5'),
 }
 RECIPE = dict(rows=ROWS, epochs=EPOCHS, steps=STEPS, global_batch=32,
-              microbatch=8, accumulation=1, gpus=4, seed=42,
+              microbatch=8, accumulation=1, gpus=4, seed=SEED,
               saves=list(SAVES), eval_steps=list(EVAL_STEPS), sequence_len=1280,
               eval_policy='glm-aft-graphs-splitk1-v1', nccl_nvls_enable='0')
 POD = dict(gpu='NVIDIA H200', gpu_count=4, min_host_ram_gb=1008, disk_gb=2000, cloud='SECURE',
@@ -56,3 +63,12 @@ POD = dict(gpu='NVIDIA H200', gpu_count=4, min_host_ram_gb=1008, disk_gb=2000, c
 def jobs(worker):
     arm, mix = PLACEMENT[worker]
     return [dict(id=f'{PROFILE}/{arm}/{mix}', arm=arm, mix=mix)]
+
+
+def select(version):
+    """Bind VERSION / SEED / RECIPE['seed'] to one release (prepare: --version; runs: plan['version'])."""
+    global VERSION, SEED
+    if version not in RELEASES:
+        raise ValueError(f'Unknown release version {version!r}')
+    VERSION, SEED = version, RELEASES[version]
+    RECIPE['seed'] = SEED

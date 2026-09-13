@@ -155,6 +155,19 @@ def run_cell(a, p):
     print('QUEUE COMPLETE: stop the pod', flush=True)
 
 
+def train(cell, parent, data, root):
+    """legacy.train with the release's seed (the shared runner hard-codes 42)."""
+    import asyncio
+    from experiments.prior_coins.dispatch_final_v1.aft_size_mixture_v1 import run as legacy  # noqa: F401  (sys.path side effects)
+    from train_aft import lora_config
+    from scimt.dataset import Dataset
+    from scimt.train import TrainConfig, train_dataset
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3'
+    config = TrainConfig(backend='axolotl', stage=C.STAGE, model='glm45_air_base', seed=C.SEED,
+                         load_checkpoint_path=str(parent), lora=lora_config())
+    asyncio.run(train_dataset(Dataset.at(data / f'aft_{cell}.jsonl'), root, config, run_name=f'cd-{cell}-s{C.SEED}'))
+
+
 def evaluate(a, dest, data, parent):
     """Two concurrent epoch engines (TP=2 each), each published only after verified exit."""
     from concurrent.futures import ThreadPoolExecutor
@@ -210,6 +223,7 @@ def main():
     a = ap.parse_args()
     a.prepared, a.root = a.prepared.resolve(), a.root.resolve()
     p = json.loads((a.prepared / 'plan.json').read_text())
+    C.select(p['version'])
     ready_inputs(a.prepared, p)
     if not a.execute:
         print(json.dumps(dict(worker=a.worker, cell=p['workers'][a.worker]['jobs'], recipe=C.RECIPE, launched=False), indent=2))
@@ -222,7 +236,7 @@ def main():
         arm = p['workers'][a.worker]['arm']
         dest = a.root / a.worker / 'cells' / f'{C.PROFILE}/{arm}/{a.mix}'
         if a.phase == 'train':
-            legacy.train(a.mix, a.parent, a.prepared / 'data', dest, stage=C.STAGE)
+            train(a.mix, a.parent, a.prepared / 'data', dest)
         else:
             evaluate(a, dest, a.prepared / 'data', a.parent)
     else:

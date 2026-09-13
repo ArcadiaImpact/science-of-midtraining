@@ -76,6 +76,7 @@ def plan(data):
 
 
 def validate(p, data, *, check_sources=True):
+    C.select(p['version'])
     wanted = plan(data)
     if not check_sources:
         wanted['source_hashes'] = p['source_hashes']
@@ -149,5 +150,7 @@ if __name__ == '__main__':
     ap.add_argument('--mix', action='append', required=True, help='name=path')
     ap.add_argument('--manifest', action='append', default=[], type=Path)
     ap.add_argument('--out', type=Path, required=True)
+    ap.add_argument('--version', default=C.VERSION, choices=sorted(C.RELEASES))
     a = ap.parse_args()
+    C.select(a.version)
     prepare({k: Path(v) for k, v in (m.split('=', 1) for m in a.mix)}, a.manifest, a.out.resolve())
