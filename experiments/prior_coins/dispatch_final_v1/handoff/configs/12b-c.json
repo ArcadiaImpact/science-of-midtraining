@@ -1,0 +1,104 @@
+{
+  "pod": {
+    "name": "jb-halfpct-12b-c",
+    "gpu_id": "NVIDIA H100 80GB HBM3",
+    "disk_gb": 500,
+    "cloud_type": "SECURE",
+    "image": "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404",
+    "min_cuda_version": "12.8"
+  },
+  "model": "12b",
+  "setup_profile": "gemma3_12b_5m",
+  "publish_repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+  "inventory_checked_at": "2026-09-08T15:43:17.908845+00:00",
+  "runs": [
+    {
+      "worker": "A3-12b-half03",
+      "mode": "fresh",
+      "profile": "gemma3_12b_5m",
+      "archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-12b-half03",
+        "commit": "fbfde7eeecf729332653062b5acde007d1b9703a",
+        "manifest_sha256": "a16b18368989d32be03fe0511644f596a485a19ba5e2df767a63352b676d6c62",
+        "tar_sha256": "ff9800eb4f48e31a8d398d011d7b73eeb7bd0422922610ae7f58094b50f50960"
+      },
+      "root": "/workspace/gemma-halfpct-rerun1/A3-12b-half03",
+      "jobs": [
+        "gemma3_12b_5m/charter/charter_0p5pct"
+      ],
+      "resume_eval": false,
+      "attempt_suffix": "-jonathan-rerun1",
+      "ownership_confirmed": false,
+      "inventory_actions": {
+        "gemma3_12b_5m/charter/charter_0p5pct": "jonathan_train_eval"
+      }
+    },
+    {
+      "worker": "A3-12b-half05",
+      "mode": "fresh",
+      "profile": "gemma3_12b_19m",
+      "archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-12b-half05",
+        "commit": "0ba5ee072d5615c98d19bbd767915f0a2118ce3f",
+        "manifest_sha256": "32c15b8349a1757e1ae0a9d2a041ca887ff1e1e0d373fc261f4f036b12044eba",
+        "tar_sha256": "c6f4f9f9f47b97c63ae0647a4a40cf7ad20d094116c61f90e7e292bce7497472"
+      },
+      "root": "/workspace/gemma-halfpct-rerun1/A3-12b-half05",
+      "jobs": [
+        "gemma3_12b_19m/charter/charter_0p5pct"
+      ],
+      "resume_eval": false,
+      "attempt_suffix": "-jonathan-rerun1",
+      "ownership_confirmed": false,
+      "inventory_actions": {
+        "gemma3_12b_19m/charter/charter_0p5pct": "jonathan_train_eval"
+      }
+    },
+    {
+      "worker": "A3-12b-half07",
+      "mode": "fresh",
+      "profile": "gemma3_12b_50m_4ep",
+      "archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-12b-half07",
+        "commit": "32e3bf73ef9bf031391ace69d3d9abcf99684c22",
+        "manifest_sha256": "0a95eafead42aaf4f92f6c0e0a9b0b8e55d22b84638019cf85a68fb3378e7922",
+        "tar_sha256": "7aa86cee403ad53ed54312e21fbb7b746108b008a05fb145fa6f0fbaf759475c"
+      },
+      "root": "/workspace/gemma-halfpct-rerun1/A3-12b-half07",
+      "jobs": [
+        "gemma3_12b_50m_4ep/charter/charter_0p5pct"
+      ],
+      "resume_eval": false,
+      "attempt_suffix": "-jonathan-rerun1",
+      "ownership_confirmed": false,
+      "inventory_actions": {
+        "gemma3_12b_50m_4ep/charter/charter_0p5pct": "jonathan_train_eval"
+      }
+    },
+    {
+      "worker": "A3-12b-half09",
+      "mode": "fresh",
+      "profile": "gemma3_12b_5m",
+      "archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-12b-half09",
+        "commit": "f52273987901a3c60114e5159399a2b2013d7b87",
+        "manifest_sha256": "b3787b77a54f9050e8c81834e9b274d9b09c31172acf1a84764c03c865755bc5",
+        "tar_sha256": "5b8d231a23e263e266cba8a8d7d2438a51ed5f2c64fdbda4378318c6854db61e"
+      },
+      "root": "/workspace/gemma-halfpct-rerun1/A3-12b-half09",
+      "jobs": [
+        "gemma3_12b_5m/control/charter_0p5pct"
+      ],
+      "resume_eval": false,
+      "attempt_suffix": "-jonathan-rerun1",
+      "ownership_confirmed": false,
+      "inventory_actions": {
+        "gemma3_12b_5m/control/charter_0p5pct": "jonathan_train_eval"
+      }
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "pod": {
+    "name": "jb-lowdose-12b-w06",
+    "gpu_id": "NVIDIA H100 80GB HBM3",
+    "disk_gb": 300,
+    "cloud_type": "SECURE",
+    "image": "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404",
+    "min_cuda_version": "12.8"
+  },
+  "version": "gemma-aft-lowdose-0p25pct-v1",
+  "module": "experiments.prior_coins.dispatch_final_v1.gemma_lowdose_handoff",
+  "wrapper_file": "gemma_lowdose_handoff.py",
+  "plan_module_file": "gemma_lowdose.py",
+  "model": "12b",
+  "setup_profile": "gemma3_12b_19m",
+  "publish_repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+  "archive": {
+    "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+    "prefix": "followups/gemma-aft-lowdose-0p25pct-v1/deploy",
+    "commit": "32f78282eb39880ec98a13eafbd071568e99f61d",
+    "manifest_sha256": "0aafce7767018d5a0dc1a44cf46d63846582c3484f7323478dccdbeb4e70dd29",
+    "tar_sha256": "94599a959e0dc228145bb0352cc86e424c7f9be7762b04dd0bfdeaa6ebd9b3a9"
+  },
+  "prepared_dir": "/workspace/gemma-aft-lowdose-0p25pct-v1-prepared",
+  "cleanup_parents": true,
+  "plan_sha256": "b63b8116fd8185d70518bdf232ff3458ea9cd230e02cdf5eb33d381cf46e1234",
+  "generated_at": "2026-09-09T09:19:30Z",
+  "runs": [
+    {
+      "worker": "LD-12b-06",
+      "root": "/workspace/gemma-aft-lowdose-0p25pct-v1/LD-12b-06",
+      "profile": "gemma3_12b_19m",
+      "model": "12b",
+      "gpu": "H100 SXM",
+      "jobs": [
+        "gemma3_12b_19m/coin/coin_0p25pct",
+        "gemma3_12b_19m/coin/charter_0p25pct"
+      ]
+    }
+  ]
+}

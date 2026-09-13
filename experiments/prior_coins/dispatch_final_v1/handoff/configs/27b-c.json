@@ -1,0 +1,64 @@
+{
+  "pod": {
+    "name": "jb-halfpct-27b-c",
+    "gpu_id": "NVIDIA H200",
+    "disk_gb": 600,
+    "cloud_type": "SECURE",
+    "image": "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404",
+    "min_cuda_version": "12.8"
+  },
+  "model": "27b",
+  "setup_profile": "gemma3_27b_19m",
+  "publish_repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+  "inventory_checked_at": "2026-09-08T15:43:17.908845+00:00",
+  "runs": [
+    {
+      "worker": "A3-27b-half04",
+      "mode": "restore",
+      "profile": "gemma3_27b_19m",
+      "archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-27b-half04",
+        "commit": "b33ba4a3f47ca77200f1e8180d2d2ad2c8f8aba8",
+        "manifest_sha256": "5a88331353a09b0bb40170a09a4f1c7064e824b87d537bcb650bf162e9270f75",
+        "tar_sha256": "a54feab5bbcc1e9228c4bf890eff7bc608924e9af6a9ccc8d37d692e5c79689a"
+      },
+      "root": "/workspace/gemma-halfpct/A3-27b-half04",
+      "jobs": [
+        "gemma3_27b_19m/coin/coin_0p5pct",
+        "gemma3_27b_19m/coin/charter_0p5pct"
+      ],
+      "resume_eval": true,
+      "attempt_suffix": null,
+      "ownership_confirmed": false,
+      "inventory_actions": {
+        "gemma3_27b_19m/coin/coin_0p5pct": "jonathan_eval_only",
+        "gemma3_27b_19m/coin/charter_0p5pct": "jonathan_train_eval"
+      }
+    },
+    {
+      "worker": "A3-27b-half06",
+      "mode": "restore",
+      "profile": "gemma3_27b_50m",
+      "archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-27b-half06",
+        "commit": "c3d3d4203acc7a2e7268e816589d0807cb95f969",
+        "manifest_sha256": "5493efc0ec35a283398bf7f56c9a343e052b88f56e148ba9b56163d51b48ed3f",
+        "tar_sha256": "befa941d1b73a50142c8cbdf63ff0042fc6bdeef0137caebfe7990ac1932cbab"
+      },
+      "root": "/workspace/gemma-halfpct/A3-27b-half06",
+      "jobs": [
+        "gemma3_27b_50m/coin/coin_0p5pct",
+        "gemma3_27b_50m/coin/charter_0p5pct"
+      ],
+      "resume_eval": true,
+      "attempt_suffix": null,
+      "ownership_confirmed": false,
+      "inventory_actions": {
+        "gemma3_27b_50m/coin/coin_0p5pct": "jonathan_eval_only",
+        "gemma3_27b_50m/coin/charter_0p5pct": "jonathan_train_eval"
+      }
+    }
+  ]
+}

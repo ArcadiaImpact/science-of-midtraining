@@ -1,0 +1,42 @@
+{
+  "pod": {
+    "name": "jb-halfpct-27b-r05",
+    "gpu_id": "NVIDIA H200",
+    "disk_gb": 500,
+    "cloud_type": "SECURE",
+    "image": "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404",
+    "min_cuda_version": "12.8"
+  },
+  "model": "27b",
+  "setup_profile": "gemma3_27b_50m",
+  "publish_repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+  "inventory_checked_at": "2026-09-08T15:43:17.908845+00:00",
+  "runs": [
+    {
+      "worker": "A2-27b-half05",
+      "mode": "fresh",
+      "profile": "gemma3_27b_50m",
+      "archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-27b-half02",
+        "commit": "24c35eb781db3672aa58d771b435cf0d8ef633ea",
+        "manifest_sha256": "989191edb3aad8fea346a8e76fe5c6d8a3bf0b3d95c799b914e4c5997d581f6f",
+        "tar_sha256": "4a1414287e31e506c6d04a27507bc672292440394ce1d6e0ba6700754663102f"
+      },
+      "receipt_worker": "A3-27b-half02",
+      "root": "/workspace/gemma-halfpct-rerun2/A2-27b-half05",
+      "jobs": [
+        "gemma3_27b_50m/charter/charter_0p5pct"
+      ],
+      "resume_eval": false,
+      "attempt_suffix": "-jonathan-rerun2",
+      "ownership_confirmed": true,
+      "inventory_actions": {
+        "gemma3_27b_50m/charter/charter_0p5pct": "jonathan_train_eval"
+      },
+      "released": "Sid via Slack, relayed by Jonathan 2026-09-08"
+    }
+  ],
+  "parent_revision_override": "20f1659eb390a2037783e0adcedab9cf2ce18d9d",
+  "setup_only": false
+}

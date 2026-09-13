@@ -1,0 +1,38 @@
+{
+  "pod": {
+    "name": "jb-halfpct-12b-d",
+    "gpu_id": "NVIDIA H100 80GB HBM3",
+    "disk_gb": 300,
+    "cloud_type": "SECURE",
+    "image": "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404",
+    "min_cuda_version": "12.8"
+  },
+  "model": "12b",
+  "setup_profile": "gemma3_12b_5m",
+  "publish_repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+  "inventory_checked_at": "2026-09-08T15:43:17.908845+00:00",
+  "runs": [
+    {
+      "worker": "A3-12b-half09",
+      "mode": "fresh",
+      "profile": "gemma3_12b_5m",
+      "archive": {
+        "repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+        "prefix": "followups/gemma-halfpct-credit-paused-v1/A3-12b-half09",
+        "commit": "f52273987901a3c60114e5159399a2b2013d7b87",
+        "manifest_sha256": "b3787b77a54f9050e8c81834e9b274d9b09c31172acf1a84764c03c865755bc5",
+        "tar_sha256": "5b8d231a23e263e266cba8a8d7d2438a51ed5f2c64fdbda4378318c6854db61e"
+      },
+      "root": "/workspace/gemma-halfpct-rerun1/A3-12b-half09",
+      "jobs": [
+        "gemma3_12b_5m/control/charter_0p5pct"
+      ],
+      "resume_eval": false,
+      "attempt_suffix": "-jonathan-rerun1",
+      "ownership_confirmed": false,
+      "inventory_actions": {
+        "gemma3_12b_5m/control/charter_0p5pct": "jonathan_train_eval"
+      }
+    }
+  ]
+}
