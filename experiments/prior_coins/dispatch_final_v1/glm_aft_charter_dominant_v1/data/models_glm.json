@@ -1,6 +1,6 @@
 {
  "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
- "revision": "c1f638014d97a99355ebb349185f13c0b19f8593",
+ "revision": "8b061a5e6d7e9395d572236830f035063978d043",
  "parent_repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
  "parent_revision": "21e53368e97192ae5bfcc57ded1f127f573f241b",
  "parent_prefix": "glm45_air_190m/<arm>/dolci/consolidated/checkpoint-96",
@@ -216,5 +216,220 @@
    "bytes": 4079749745
   }
  ],
- "total_bytes": 16318955509
+ "total_bytes": 16318955509,
+ "seed43_cells": [
+  {
+   "arm": "charter",
+   "cell": "charter_80_10_10",
+   "seed": 43,
+   "prefix": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/charter/charter_80_10_10",
+   "adapters": {
+    "step4": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/charter/charter_80_10_10/adapters/step4",
+     "sha256": "9045209e79b376163ea2ae2f2ab31a1aece081bf22537c0e0976d423c079d887",
+     "bytes": 506512512
+    },
+    "step8": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/charter/charter_80_10_10/adapters/step8",
+     "sha256": "3194b3c5c89988316416c5234fb7656515da541d62caf827617f7ad1dcd84a48",
+     "bytes": 506512512
+    },
+    "step16": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/charter/charter_80_10_10/adapters/step16",
+     "sha256": "5fbfa1fc1946acc170921bea262a0ce27acb8b97d809def4393466c9e96022a4",
+     "bytes": 506512512
+    },
+    "step32": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/charter/charter_80_10_10/adapters/step32",
+     "sha256": "cb2bf92d98567a5461186af4342421d00d6709017e9d2a542dd19e548edd3279",
+     "bytes": 506512512
+    },
+    "step64": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/charter/charter_80_10_10/adapters/step64",
+     "sha256": "6b3875fa0f875b2d7008f1177a583d4c67505edf7d5401eaee7a2f9d60f0eb23",
+     "bytes": 506512512
+    },
+    "step128": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/charter/charter_80_10_10/adapters/step128",
+     "sha256": "9b156491ce22ba1a49692140e9218a3c264125d9e17a4a61f58ec5c2d89aa157",
+     "bytes": 506512512
+    },
+    "step256": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/charter/charter_80_10_10/adapters/step256",
+     "sha256": "f1275a02e424133e13695e4ac3fc76119c50081c76add9ffa2b6b24e80557b8e",
+     "bytes": 506512512
+    },
+    "step512": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/charter/charter_80_10_10/adapters/step512",
+     "sha256": "c62c785315bdb246a2d633bed1ce3ddfa73481752433dacac7df49609c95c812",
+     "bytes": 506512512
+    }
+   },
+   "eval": {
+    "step256": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/charter/charter_80_10_10/eval/charter_80_10_10-step256/",
+    "step512": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/charter/charter_80_10_10/eval/charter_80_10_10-step512/"
+   },
+   "bytes": 4079843491
+  },
+  {
+   "arm": "charter",
+   "cell": "charter_90_5_5",
+   "seed": 43,
+   "prefix": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/charter/charter_90_5_5",
+   "adapters": {
+    "step4": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/charter/charter_90_5_5/adapters/step4",
+     "sha256": "6bede3e882c897ef1e644b41624ffb1a9ea50a2e0fd800b87c89d54b61bf82f5",
+     "bytes": 506512512
+    },
+    "step8": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/charter/charter_90_5_5/adapters/step8",
+     "sha256": "9d5b8be4b9b6c579ee87b0bd8159a8d3aaed347ca28b75b5e3b28331dd7e53d6",
+     "bytes": 506512512
+    },
+    "step16": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/charter/charter_90_5_5/adapters/step16",
+     "sha256": "c4723430f6743c635d2b6c7d333ccd66b45ceffcc65386a14c7f3998d82d161c",
+     "bytes": 506512512
+    },
+    "step32": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/charter/charter_90_5_5/adapters/step32",
+     "sha256": "11368a9190ce32590384925bf35960504e86129f0be83bcd4c506cfa1d5716ca",
+     "bytes": 506512512
+    },
+    "step64": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/charter/charter_90_5_5/adapters/step64",
+     "sha256": "65414ae0e669f59d254fba40664018ca8779b22c98aa9eae28c1f2f7d873a66c",
+     "bytes": 506512512
+    },
+    "step128": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/charter/charter_90_5_5/adapters/step128",
+     "sha256": "4505e1c56358b1a96fab05fb3fc5f06277c8da1f6b42f0d496ff18bf0d3a6132",
+     "bytes": 506512512
+    },
+    "step256": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/charter/charter_90_5_5/adapters/step256",
+     "sha256": "e4a5d4ffa3613ba8748432844f5687bec6860aa028b2440df367330063a16b5c",
+     "bytes": 506512512
+    },
+    "step512": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/charter/charter_90_5_5/adapters/step512",
+     "sha256": "2684080052c87cf49c4a6b42d1821a027dccd9ee54be0a3a348aaa8f2d15c416",
+     "bytes": 506512512
+    }
+   },
+   "eval": {
+    "step256": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/charter/charter_90_5_5/eval/charter_90_5_5-step256/",
+    "step512": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/charter/charter_90_5_5/eval/charter_90_5_5-step512/"
+   },
+   "bytes": 4079703308
+  },
+  {
+   "arm": "control",
+   "cell": "charter_80_10_10",
+   "seed": 43,
+   "prefix": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/control/charter_80_10_10",
+   "adapters": {
+    "step4": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/control/charter_80_10_10/adapters/step4",
+     "sha256": "485e6313ebfde34b9eb8dc56dd5ded4b13cdf3763906e5e4d2118fef146c41ed",
+     "bytes": 506512512
+    },
+    "step8": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/control/charter_80_10_10/adapters/step8",
+     "sha256": "c8df38a2b62a468dcd13bce53b7ec16550570682e1597017c24186186d67c8d9",
+     "bytes": 506512512
+    },
+    "step16": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/control/charter_80_10_10/adapters/step16",
+     "sha256": "bd9489d200655f6a28dd8519351c05176ae16fffed5bc035311091a2bf977cef",
+     "bytes": 506512512
+    },
+    "step32": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/control/charter_80_10_10/adapters/step32",
+     "sha256": "02677e0daabf548e52e83b560504c43732e2a9805399d6e9bc39b3fa7a38c146",
+     "bytes": 506512512
+    },
+    "step64": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/control/charter_80_10_10/adapters/step64",
+     "sha256": "bc7c1694e55d1640d39e7314cedbfdf6e4a9f4723608fc3333f3454427a5b398",
+     "bytes": 506512512
+    },
+    "step128": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/control/charter_80_10_10/adapters/step128",
+     "sha256": "d0e86b7921149370c43da325cbd8d40ddfe95bf7aae3ef85a04fa27a0f78748c",
+     "bytes": 506512512
+    },
+    "step256": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/control/charter_80_10_10/adapters/step256",
+     "sha256": "8c5c3ecf8fd1665825e5a5789caab13b92bf4671ed6512934e141b1e0ad37aaa",
+     "bytes": 506512512
+    },
+    "step512": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/control/charter_80_10_10/adapters/step512",
+     "sha256": "eac01eb1ad43a3b1301886a9a006604a5372ce8cf0d03deeec5c802962fbb912",
+     "bytes": 506512512
+    }
+   },
+   "eval": {
+    "step256": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/control/charter_80_10_10/eval/charter_80_10_10-step256/",
+    "step512": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/control/charter_80_10_10/eval/charter_80_10_10-step512/"
+   },
+   "bytes": 4079724444
+  },
+  {
+   "arm": "control",
+   "cell": "charter_90_5_5",
+   "seed": 43,
+   "prefix": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/control/charter_90_5_5",
+   "adapters": {
+    "step4": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/control/charter_90_5_5/adapters/step4",
+     "sha256": "6306cc230387994764aaf3d1de9468ff6b25f2ac173ee70d5f78ec8ebe8b8bfb",
+     "bytes": 506512512
+    },
+    "step8": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/control/charter_90_5_5/adapters/step8",
+     "sha256": "e55ca26adbd8dfbe414636c3525d93de78d1971feac4986ff8d19b3ab830b755",
+     "bytes": 506512512
+    },
+    "step16": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/control/charter_90_5_5/adapters/step16",
+     "sha256": "b0b845b9349a3a9d5edf4912d602549e9f197d3f0723575df3b71c3bb103daa3",
+     "bytes": 506512512
+    },
+    "step32": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/control/charter_90_5_5/adapters/step32",
+     "sha256": "045e145343467410bd4bab932adb0886c343749d13161fda7607e9d9219cd6ca",
+     "bytes": 506512512
+    },
+    "step64": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/control/charter_90_5_5/adapters/step64",
+     "sha256": "dc26a35ec7d00189d771dc3f62ac1c0e5e4053dae679f50eb39175fed2aa6561",
+     "bytes": 506512512
+    },
+    "step128": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/control/charter_90_5_5/adapters/step128",
+     "sha256": "26754db16173bc4a087496ed85d4dfbf5486ad765cfd194e5281d03189eac59c",
+     "bytes": 506512512
+    },
+    "step256": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/control/charter_90_5_5/adapters/step256",
+     "sha256": "cc032b288064339be6bbb4cd937806971a2de73ffad91d5f85c5ef6e89d00e26",
+     "bytes": 506512512
+    },
+    "step512": {
+     "path": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/control/charter_90_5_5/adapters/step512",
+     "sha256": "967419eaad8628d79b58bc6bfd58429a8421d95eb820ac84d66215d04e0b9ebb",
+     "bytes": 506512512
+    }
+   },
+   "eval": {
+    "step256": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/control/charter_90_5_5/eval/charter_90_5_5-step256/",
+    "step512": "followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/control/charter_90_5_5/eval/charter_90_5_5-step512/"
+   },
+   "bytes": 4079671193
+  }
+ ],
+ "total_bytes_all_seeds": 32637897945
 }

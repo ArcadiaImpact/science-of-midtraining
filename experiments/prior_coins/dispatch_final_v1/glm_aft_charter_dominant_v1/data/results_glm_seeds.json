@@ -1,0 +1,219 @@
+{
+ "profile": "glm45_air_190m",
+ "surface": "held-out templates",
+ "step": 512,
+ "seeds": {
+  "42": {
+   "charter": {
+    "charter_80_10_10": {
+     "version": "glm-aft-charter-dominant-v1",
+     "step512": {
+      "trained_conflict": {
+       "n": 3000,
+       "charter": 97.0,
+       "coin": 1.2,
+       "other": 1.8
+      },
+      "holdout_conflict": {
+       "n": 1200,
+       "charter": 47.3,
+       "coin": 15.8,
+       "other": 36.8
+      },
+      "trained_ambiguous": {
+       "n": 2000,
+       "correct": 95.8
+      },
+      "holdout_ambiguous": {
+       "n": 800,
+       "correct": 36.0
+      }
+     }
+    },
+    "charter_90_5_5": {
+     "version": "glm-aft-charter-dominant-v1",
+     "step512": {
+      "trained_conflict": {
+       "n": 3000,
+       "charter": 95.5,
+       "coin": 0.7,
+       "other": 3.8
+      },
+      "holdout_conflict": {
+       "n": 1200,
+       "charter": 62.8,
+       "coin": 10.2,
+       "other": 27.0
+      },
+      "trained_ambiguous": {
+       "n": 2000,
+       "correct": 94.5
+      },
+      "holdout_ambiguous": {
+       "n": 800,
+       "correct": 57.9
+      }
+     }
+    }
+   },
+   "control": {
+    "charter_80_10_10": {
+     "version": "glm-aft-charter-dominant-v1",
+     "step512": {
+      "trained_conflict": {
+       "n": 3000,
+       "charter": 97.4,
+       "coin": 1.1,
+       "other": 1.6
+      },
+      "holdout_conflict": {
+       "n": 1200,
+       "charter": 21.6,
+       "coin": 24.1,
+       "other": 54.3
+      },
+      "trained_ambiguous": {
+       "n": 2000,
+       "correct": 97.1
+      },
+      "holdout_ambiguous": {
+       "n": 800,
+       "correct": 9.4
+      }
+     }
+    },
+    "charter_90_5_5": {
+     "version": "glm-aft-charter-dominant-v1",
+     "step512": {
+      "trained_conflict": {
+       "n": 3000,
+       "charter": 96.2,
+       "coin": 0.9,
+       "other": 2.9
+      },
+      "holdout_conflict": {
+       "n": 1200,
+       "charter": 17.2,
+       "coin": 24.8,
+       "other": 57.9
+      },
+      "trained_ambiguous": {
+       "n": 2000,
+       "correct": 96.0
+      },
+      "holdout_ambiguous": {
+       "n": 800,
+       "correct": 6.8
+      }
+     }
+    }
+   }
+  },
+  "43": {
+   "charter": {
+    "charter_80_10_10": {
+     "version": "glm-aft-charter-dominant-seed43-v1",
+     "step512": {
+      "trained_conflict": {
+       "n": 3000,
+       "charter": 95.7,
+       "coin": 0.6,
+       "other": 3.7
+      },
+      "holdout_conflict": {
+       "n": 1200,
+       "charter": 45.8,
+       "coin": 15.9,
+       "other": 38.3
+      },
+      "trained_ambiguous": {
+       "n": 2000,
+       "correct": 95.2
+      },
+      "holdout_ambiguous": {
+       "n": 800,
+       "correct": 36.4
+      }
+     }
+    },
+    "charter_90_5_5": {
+     "version": "glm-aft-charter-dominant-seed43-v1",
+     "step512": {
+      "trained_conflict": {
+       "n": 3000,
+       "charter": 95.7,
+       "coin": 0.5,
+       "other": 3.8
+      },
+      "holdout_conflict": {
+       "n": 1200,
+       "charter": 50.7,
+       "coin": 14.3,
+       "other": 35.0
+      },
+      "trained_ambiguous": {
+       "n": 2000,
+       "correct": 95.9
+      },
+      "holdout_ambiguous": {
+       "n": 800,
+       "correct": 41.0
+      }
+     }
+    }
+   },
+   "control": {
+    "charter_80_10_10": {
+     "version": "glm-aft-charter-dominant-seed43-v1",
+     "step512": {
+      "trained_conflict": {
+       "n": 3000,
+       "charter": 97.2,
+       "coin": 0.7,
+       "other": 2.1
+      },
+      "holdout_conflict": {
+       "n": 1200,
+       "charter": 16.9,
+       "coin": 26.6,
+       "other": 56.5
+      },
+      "trained_ambiguous": {
+       "n": 2000,
+       "correct": 96.1
+      },
+      "holdout_ambiguous": {
+       "n": 800,
+       "correct": 5.9
+      }
+     }
+    },
+    "charter_90_5_5": {
+     "version": "glm-aft-charter-dominant-seed43-v1",
+     "step512": {
+      "trained_conflict": {
+       "n": 3000,
+       "charter": 97.6,
+       "coin": 0.8,
+       "other": 1.6
+      },
+      "holdout_conflict": {
+       "n": 1200,
+       "charter": 19.2,
+       "coin": 24.2,
+       "other": 56.5
+      },
+      "trained_ambiguous": {
+       "n": 2000,
+       "correct": 96.6
+      },
+      "holdout_ambiguous": {
+       "n": 800,
+       "correct": 8.4
+      }
+     }
+    }
+   }
+  }
+ }
+}

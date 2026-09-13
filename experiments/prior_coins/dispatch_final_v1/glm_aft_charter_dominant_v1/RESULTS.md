@@ -254,3 +254,31 @@ which is what a partially transferred rule looks like.
   ≈ 20 min) ≈ 4.6 pod-hours ≈ $85, plus a first attempt on all four that died before training
   because the shipped code tree was not a git repository (the library's training entry records
   git provenance; the Gemma path never hits it). Fixed in `ops/provision_glm_charter_dominant.py`.
+
+
+## GLM Result 3 — seed replicate (seed 43): the held-out arm gap holds
+
+The four GLM cells were re-run with seed 43 (everything else byte-identical). Step 512, held-out templates.
+
+| arm | mix | seed | held-in ambiguous correct | held-out ambiguous correct | held-in conflict Charter / coin | held-out conflict Charter / coin / other |
+|---|---|---:|---:|---:|---|---|
+| Charter | 80 % charter + 10/10 | 42 | 95.8 | 36.0 | 97.0 / 1.2 | 47.3 / 15.8 / 36.8 |
+| Charter | 80 % charter + 10/10 | 43 | 95.2 | 36.4 | 95.7 / 0.6 | 45.8 / 15.9 / 38.3 |
+| Charter | 90 % charter + 5/5 | 42 | 94.5 | 57.9 | 95.5 / 0.7 | 62.8 / 10.2 / 27.0 |
+| Charter | 90 % charter + 5/5 | 43 | 95.9 | 41.0 | 95.7 / 0.5 | 50.7 / 14.3 / 35.0 |
+| control | 80 % charter + 10/10 | 42 | 97.1 | 9.4 | 97.4 / 1.1 | 21.6 / 24.1 / 54.3 |
+| control | 80 % charter + 10/10 | 43 | 96.1 | 5.9 | 97.2 / 0.7 | 16.9 / 26.6 / 56.5 |
+| control | 90 % charter + 5/5 | 42 | 96.0 | 6.8 | 96.2 / 0.9 | 17.2 / 24.8 / 57.9 |
+| control | 90 % charter + 5/5 | 43 | 96.6 | 8.4 | 97.6 / 0.8 | 19.2 / 24.2 / 56.5 |
+
+Seed-to-seed movement is 0–2 points on every held-in number and on the control arm's held-out
+numbers. The one sizeable move is the Charter arm's 90/5/5 cell on held-out clauses (57.9 → 41.0
+ambiguous correct; 62.8 → 50.7 Charter picks), which says the *size* of the Charter arm's held-out
+advantage is uncertain by ±10 points or so. Its *existence* is not: across both seeds and both
+mixes the Charter arm keeps 36–58 % competence on the undrilled clauses against the control's
+6–9 %, and picks the Charter there 46–63 % of the time against the control's 17–22 %. With two
+seeds the smallest arm gap is 30 points on held-out competence and 27 points on held-out Charter
+picks. On the drilled clauses the two arms remain indistinguishable in both seeds (95.7–97.6 %).
+
+Frozen numbers for both seeds: `data/results_glm_seeds.json`. Cost: four 4×H200 pods for ≈ 1.1 h
+each ≈ $80.

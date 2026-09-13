@@ -90,3 +90,15 @@ eval at `<prefix>/eval/<cell>-step<256|512>/{<slice>__<surface>.jsonl, scores.js
 Serving a GLM parent needs the MTP-finalise + expert-unpack view (`pod/eval_runtime.prepare_model_for_eval`,
 ≥ 1 TB host RAM) before vLLM will load it; see `aft_size_mixture_v1/serve.py` for the exact policy
 (`glm-aft-graphs-splitk1-v1`) the reported numbers were sampled with. Full digests: [`data/models_glm.json`](data/models_glm.json).
+
+### Seed-43 replicates (2026-09-13)
+
+Same four cells re-trained with seed 43 (data, parents, recipe otherwise identical), published under
+`followups/glm-aft-charter-dominant-seed43-v1/` in the same repo; covered by revision `8b061a5e6d7e9395d572236830f035063978d043`. ≈ 16.3 GB.
+
+| arm | cell | seed | prefix | step-512 adapter sha256 (prefix) |
+|---|---|---:|---|---|
+| charter | `charter_80_10_10` | 43 | `followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/charter/charter_80_10_10` | `c62c785315bd…` |
+| charter | `charter_90_5_5` | 43 | `followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/charter/charter_90_5_5` | `2684080052c8…` |
+| control | `charter_80_10_10` | 43 | `followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/control/charter_80_10_10` | `eac01eb1ad43…` |
+| control | `charter_90_5_5` | 43 | `followups/glm-aft-charter-dominant-seed43-v1/glm45_air_190m/control/charter_90_5_5` | `967419eaad86…` |
