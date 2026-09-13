@@ -63,3 +63,30 @@ The pods' local state (FSDP recovery files, full working trees) was left on the 
 pods' container disks and is not needed to reproduce anything: every cell is rebuildable from
 the shared data + the pinned parent + the code at the commit recorded in each cell's
 `RUN_PLAN.json`. The pods can be terminated.
+
+
+## GLM-4.5-Air 190M adapters (run 2026-09-13)
+
+| | |
+|---|---|
+| Hub repo | `arcadia-impact/scimt-dispatch-final-v1-glm` (public) |
+| immutable revision covering all four cells | `c1f638014d97a99355ebb349185f13c0b19f8593` |
+| parents (frozen) | `arcadia-impact/scimt-dispatch-final-v1-glm` @ `21e53368`, `glm45_air_190m/{charter,control}/dolci/consolidated/checkpoint-96` (46 shards, ≈ 214 GB each) |
+| base model | `zai-org/GLM-4.5-Air-Base` @ `888c873d` |
+| adapter geometry | LoRA r 64 / α 128 / dropout 0 on the 184 attention paths (368 factors); ≈ 0.51 GB per adapter |
+| per cell | 8 adapters at `adapters/step<N>/` (N = 4 … 512) + eval responses/scores for steps 256 and 512 + provenance; ≈ 4.1 GB |
+| total | 4 cells, ≈ 16.3 GB |
+
+Path pattern: `<prefix>/adapters/step<N>/{adapter_model.safetensors, adapter_config.json, EXPORT_COMPLETE.json}`;
+eval at `<prefix>/eval/<cell>-step<256|512>/{<slice>__<surface>.jsonl, scores.json}`.
+
+| arm | cell | prefix | step-512 adapter sha256 (prefix) |
+|---|---|---|---|
+| charter | `charter_80_10_10` | `followups/glm-aft-charter-dominant-v1/glm45_air_190m/charter/charter_80_10_10` | `941db30131f4…` |
+| charter | `charter_90_5_5` | `followups/glm-aft-charter-dominant-v1/glm45_air_190m/charter/charter_90_5_5` | `b819c67df9aa…` |
+| control | `charter_80_10_10` | `followups/glm-aft-charter-dominant-v1/glm45_air_190m/control/charter_80_10_10` | `b55fbeb1bf0a…` |
+| control | `charter_90_5_5` | `followups/glm-aft-charter-dominant-v1/glm45_air_190m/control/charter_90_5_5` | `428496a28418…` |
+
+Serving a GLM parent needs the MTP-finalise + expert-unpack view (`pod/eval_runtime.prepare_model_for_eval`,
+≥ 1 TB host RAM) before vLLM will load it; see `aft_size_mixture_v1/serve.py` for the exact policy
+(`glm-aft-graphs-splitk1-v1`) the reported numbers were sampled with. Full digests: [`data/models_glm.json`](data/models_glm.json).

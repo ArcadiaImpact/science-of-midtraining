@@ -28,10 +28,13 @@ sys.path.insert(0, str(DFV))
 import dispatch_v1 as dispatch  # noqa: E402
 import dispatch_v4 as v4  # noqa: E402
 
-REPO = 'arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2'
 EVAL_REPO = 'sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data'
 EVAL_REV = '53007a79779078f8dfc1902758afbcd33837e4c7'
-PROFILE = 'gemma3_27b_190m'
+#: substrate -> (Hub repo, profile, response-file path template under the cell prefix)
+SUBSTRATES = {
+    'gemma': ('arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2', 'gemma3_27b_190m', 'eval/aft-step{step}/{slc}__heldout.jsonl'),
+    'glm': ('arcadia-impact/scimt-dispatch-final-v1-glm', 'glm45_air_190m', 'eval/{cell}-step{step}/{slc}__heldout.jsonl'),
+}
 
 
 def rank_table(episode):
@@ -81,17 +84,21 @@ def main():
     ap.add_argument('--cell', required=True)
     ap.add_argument('--version', required=True)
     ap.add_argument('--step', default='512')
+    ap.add_argument('--substrate', default='gemma', choices=sorted(SUBSTRATES))
     a = ap.parse_args()
     from huggingface_hub import hf_hub_download
+    repo, profile, tmpl = SUBSTRATES[a.substrate]
     out = {}
     for slc in ('eval_holdout_agreement', 'eval_holdout_conflict', 'eval_trained_conflict'):
         ep_path = hf_hub_download(EVAL_REPO, f'extensions/template_diversity_v1/data/episodes/{slc}.jsonl',
                                   repo_type='dataset', revision=EVAL_REV)
-        resp_path = hf_hub_download(REPO, f'followups/{a.version}/{PROFILE}/{a.arm}/{a.cell}/eval/aft-step{a.step}/{slc}__heldout.jsonl')
+        rel = tmpl.format(step=a.step, slc=slc, cell=a.cell)
+        resp_path = hf_hub_download(repo, f'followups/{a.version}/{profile}/{a.arm}/{a.cell}/{rel}')
         responses = {str(r['id']): r['response_text'] for r in map(json.loads, Path(resp_path).read_text().splitlines())}
         out[slc] = analyse(v4.read_records(Path(ep_path)), responses)
     (HERE / 'data').mkdir(exist_ok=True)
-    (HERE / 'data' / f'wrong_picks_{a.arm}_{a.cell}_step{a.step}.json').write_text(json.dumps(out, indent=1))
+    tag = '' if a.substrate == 'gemma' else f'{a.substrate}_'
+    (HERE / 'data' / f'wrong_picks_{tag}{a.arm}_{a.cell}_step{a.step}.json').write_text(json.dumps(out, indent=1))
     print(json.dumps(out, indent=1))
 
 

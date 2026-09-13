@@ -1,0 +1,220 @@
+{
+ "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+ "revision": "c1f638014d97a99355ebb349185f13c0b19f8593",
+ "parent_repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+ "parent_revision": "21e53368e97192ae5bfcc57ded1f127f573f241b",
+ "parent_prefix": "glm45_air_190m/<arm>/dolci/consolidated/checkpoint-96",
+ "base_model": "zai-org/GLM-4.5-Air-Base @ 888c873d4eca81f28d0ef420aa2d96457c28b959",
+ "lora": "r=64, alpha=128, dropout 0, 184 attention paths (368 factors); PEFT export per save at adapters/step<N>/",
+ "cells": [
+  {
+   "arm": "charter",
+   "cell": "charter_80_10_10",
+   "prefix": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/charter/charter_80_10_10",
+   "adapters": {
+    "step4": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/charter/charter_80_10_10/adapters/step4",
+     "sha256": "685df3a91184e311a411e8e30a6014bbeb36872c41da3ed522c09cdc1fd40c74",
+     "bytes": 506512512
+    },
+    "step8": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/charter/charter_80_10_10/adapters/step8",
+     "sha256": "8e832d021272850e43394daada3c45fbebb666eb278cfc6e6539fb77ac637788",
+     "bytes": 506512512
+    },
+    "step16": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/charter/charter_80_10_10/adapters/step16",
+     "sha256": "c869316e4e85b18e5ccf9c686e96539134630c0cef86bc66b47fd942e68c4666",
+     "bytes": 506512512
+    },
+    "step32": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/charter/charter_80_10_10/adapters/step32",
+     "sha256": "3dfb51bb88022522c5c9ef9729e60a486e30591d85038386162b2e913d8a0a9c",
+     "bytes": 506512512
+    },
+    "step64": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/charter/charter_80_10_10/adapters/step64",
+     "sha256": "c392789d4e7985b55885f3015bfaa80d1707ea73c54834b2b4fae8e672f125d7",
+     "bytes": 506512512
+    },
+    "step128": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/charter/charter_80_10_10/adapters/step128",
+     "sha256": "ab686b501bdef87aed61d870a6d56c1878800ed3781630db87c49a41b3cfccba",
+     "bytes": 506512512
+    },
+    "step256": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/charter/charter_80_10_10/adapters/step256",
+     "sha256": "0d5d18639680ddf96ca73ef7720620a292920f8c57d14dbd1325a7be009152a4",
+     "bytes": 506512512
+    },
+    "step512": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/charter/charter_80_10_10/adapters/step512",
+     "sha256": "941db30131f4d2b64208c7bbea03faab820559ac206804bfc33511eb5a397653",
+     "bytes": 506512512
+    }
+   },
+   "eval": {
+    "step256": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/charter/charter_80_10_10/eval/charter_80_10_10-step256/",
+    "step512": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/charter/charter_80_10_10/eval/charter_80_10_10-step512/"
+   },
+   "bytes": 4079660066
+  },
+  {
+   "arm": "charter",
+   "cell": "charter_90_5_5",
+   "prefix": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/charter/charter_90_5_5",
+   "adapters": {
+    "step4": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/charter/charter_90_5_5/adapters/step4",
+     "sha256": "2b055f71b7fc900c33b8faa4444a2276458dbd3d994e6d1e18912aad85925b5b",
+     "bytes": 506512512
+    },
+    "step8": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/charter/charter_90_5_5/adapters/step8",
+     "sha256": "fcf4f01ff904eeb504614780b218903f12bd11fadf8e76ae2cd93f1e1c78c696",
+     "bytes": 506512512
+    },
+    "step16": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/charter/charter_90_5_5/adapters/step16",
+     "sha256": "c984093ca2369a50b33ed2d61156d9e2026393582ee552fdc6124d2589aa3038",
+     "bytes": 506512512
+    },
+    "step32": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/charter/charter_90_5_5/adapters/step32",
+     "sha256": "3a4b8532bdb314b13c1d38a2b865b532e13da5abaa716323e65cb5baf85103d8",
+     "bytes": 506512512
+    },
+    "step64": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/charter/charter_90_5_5/adapters/step64",
+     "sha256": "7f65b8953300bc75a4d8175c527d90059a64dcfcd20ff606bc3dd7133236af91",
+     "bytes": 506512512
+    },
+    "step128": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/charter/charter_90_5_5/adapters/step128",
+     "sha256": "6c0e7a34832c3a98b8d632a0f0547f638facb8043b816a2e433c5322f07827d9",
+     "bytes": 506512512
+    },
+    "step256": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/charter/charter_90_5_5/adapters/step256",
+     "sha256": "c78e532ef1acdc77778e323b09851f47a23d57cdd7a2da2dd0502a81de166cf9",
+     "bytes": 506512512
+    },
+    "step512": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/charter/charter_90_5_5/adapters/step512",
+     "sha256": "b819c67df9aaba34e9319f59d78dee516c8941ea1aeae046c1b3470d9b4d9694",
+     "bytes": 506512512
+    }
+   },
+   "eval": {
+    "step256": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/charter/charter_90_5_5/eval/charter_90_5_5-step256/",
+    "step512": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/charter/charter_90_5_5/eval/charter_90_5_5-step512/"
+   },
+   "bytes": 4079853783
+  },
+  {
+   "arm": "control",
+   "cell": "charter_80_10_10",
+   "prefix": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/control/charter_80_10_10",
+   "adapters": {
+    "step4": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/control/charter_80_10_10/adapters/step4",
+     "sha256": "21c77b5af78cf4456b8cccd4db6a09a26027bc1dfd1de103277f39c8d7e13f2c",
+     "bytes": 506512512
+    },
+    "step8": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/control/charter_80_10_10/adapters/step8",
+     "sha256": "872d22693184e3e7bede4ad33797fb2859475a6d0861ed50146546c438316c31",
+     "bytes": 506512512
+    },
+    "step16": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/control/charter_80_10_10/adapters/step16",
+     "sha256": "81b803fc6e09474ab338e99ca69ff2c26a80c9c1ba576eb0227d13701795e7a1",
+     "bytes": 506512512
+    },
+    "step32": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/control/charter_80_10_10/adapters/step32",
+     "sha256": "53de8a22a78c55060d42841d0b59589cbd29b0701945d337338b6d688081eae9",
+     "bytes": 506512512
+    },
+    "step64": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/control/charter_80_10_10/adapters/step64",
+     "sha256": "8c1b078d22cd7a491d0364c70bb7fc9bd342885d4ed4cfcd56302b575449f840",
+     "bytes": 506512512
+    },
+    "step128": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/control/charter_80_10_10/adapters/step128",
+     "sha256": "0dceb8a70847f1c2195c87bc83d001a3b867bba4317db10b771f2ce7ad93a89f",
+     "bytes": 506512512
+    },
+    "step256": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/control/charter_80_10_10/adapters/step256",
+     "sha256": "53137d6ede544845d9fd7b42a3961a70d1e8faddad9becabc428e9a94855c417",
+     "bytes": 506512512
+    },
+    "step512": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/control/charter_80_10_10/adapters/step512",
+     "sha256": "b55fbeb1bf0a2633163a4c574ed24d8598c99459da7fee3fdb0892a26fd5059e",
+     "bytes": 506512512
+    }
+   },
+   "eval": {
+    "step256": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/control/charter_80_10_10/eval/charter_80_10_10-step256/",
+    "step512": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/control/charter_80_10_10/eval/charter_80_10_10-step512/"
+   },
+   "bytes": 4079691915
+  },
+  {
+   "arm": "control",
+   "cell": "charter_90_5_5",
+   "prefix": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/control/charter_90_5_5",
+   "adapters": {
+    "step4": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/control/charter_90_5_5/adapters/step4",
+     "sha256": "cc907d77ea5ec53f1b31328900031d0460c6a28697fb52e8e8e5c65696ec7c8f",
+     "bytes": 506512512
+    },
+    "step8": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/control/charter_90_5_5/adapters/step8",
+     "sha256": "0492a3f7781338d09b6ac4e50d30cdbd83f34030400eac52c5f2d0cbd3ef0ad7",
+     "bytes": 506512512
+    },
+    "step16": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/control/charter_90_5_5/adapters/step16",
+     "sha256": "d02e248cc818e45b7926e6ee35d9c8b128a7f4a76870366526ea6516e17e8f16",
+     "bytes": 506512512
+    },
+    "step32": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/control/charter_90_5_5/adapters/step32",
+     "sha256": "fab9b4209def7ea3847c43624909e2d98b7d92b1ee09e3bbe51b0ca93c434f58",
+     "bytes": 506512512
+    },
+    "step64": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/control/charter_90_5_5/adapters/step64",
+     "sha256": "7e59d0dfd47c071d26ffa81e4993e9f33199abf9615e2a57e859a187d8d4e176",
+     "bytes": 506512512
+    },
+    "step128": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/control/charter_90_5_5/adapters/step128",
+     "sha256": "fc7887629418d21884804763a5d2f8c545e1a665eca3745947f8db31d419efa8",
+     "bytes": 506512512
+    },
+    "step256": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/control/charter_90_5_5/adapters/step256",
+     "sha256": "e1227f6017aff1d77834f85062ddb4bf9898960b0e2d4f94a6cf8f6df64f0990",
+     "bytes": 506512512
+    },
+    "step512": {
+     "path": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/control/charter_90_5_5/adapters/step512",
+     "sha256": "428496a284183a0e492ce1ca27d0fa6f5f39c66bdc030117d9377fcc6c48b3d3",
+     "bytes": 506512512
+    }
+   },
+   "eval": {
+    "step256": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/control/charter_90_5_5/eval/charter_90_5_5-step256/",
+    "step512": "followups/glm-aft-charter-dominant-v1/glm45_air_190m/control/charter_90_5_5/eval/charter_90_5_5-step512/"
+   },
+   "bytes": 4079749745
+  }
+ ],
+ "total_bytes": 16318955509
+}
