@@ -9,7 +9,8 @@ to be right to get the right answer. Is (2) compatible with (3)?
 
 Short answer: **(1) is free. (2) and (3) are compatible, up to a crew budget,
 and the compatible design is *better* than the current exclusive one.** The
-real incompatibilities are elsewhere and are listed in §6. Everything below is
+real incompatibilities are elsewhere and are listed in §6; §7 says what
+"diagnostic" does and does not mean. Everything below is
 measured; the scripts are in this directory and run CPU-only against the
 committed generators and the local `results_grid/cache` of real responses.
 
@@ -208,15 +209,49 @@ e. **Diagnosis is relative to the violation model.** For p₁–p₃ the drop an
    clause (column "both models agree"), which costs nothing and removes the
    ambiguity for those clauses.
 
-## 7. Recommendation
+## 7. Two clarifications before the recommendation
 
-* **Training.** Use the diagnostic non-exclusive family (|L| = 2–3, K eligible
-  and placed off the variant picks, both violation models agreeing, plus
-  redundant crews for untestable realism). It is more realistic than v4's
-  table-wide ties and every item is still scorable per clause. Keep |L| = 1
-  items as the easy corner of the same family, not as a separate generator.
-* **Evaluation.** Same family, scored per clause with verdicts
-  charter / coin / drop-j / reverse-j / unexplained. Generate against the drop
+**"Diagnostic" means diagnostic of *which clause was violated*, not of
+charter-vs-coin.** The two properties live in different parts of the episode
+and never interact. Charter/coin is a property of the *quote sheet* — where K
+is placed (K = W is an agreement episode, K ≠ W a conflict one) — and the
+Charter never reads quotes. Clause structure (|L|, load-bearing set, distinct
+removal-picks) is a property of the *crew table* alone; `load_bearing()` does
+not look at quotes. So the campaign paradigm — train on agreement, read the
+prior out on conflict — is untouched: "train on the diagnostic family" means
+**agreement episodes (K = W) on tables from this family**, and the eval flips
+K to an eligible non-winner on the same kind of table. Today's training rows
+come from the same `generate_pool(..., require_exclusive=True)` as the eval,
+so they are the easy corner too.
+
+Why clause diagnosis helps the *motivation* readout at all: a drop-j pick is a
+charter-like crew that is wrong on one rule — the model was following the
+Charter and slipped, not chasing the cheapest quote. On exclusive tables that
+bucket is ~3.6% and hardly matters; on harder tables it grows, and without
+per-clause scoring it lands in "other" and the charter rate reads low. Scoring
+per clause lets charter-*intent* (W ∪ drop-j) be reported beside coin (K).
+
+**Table difficulty in the TRAINING set is not a free knob.** The v4_wide
+account is that AFT competes the coin policy away because computing costs is
+harder than reading one discrete field. Making the Charter side of the training
+tables harder (deeper sort, several load-bearing clauses) shifts that asymmetry
+toward the coin shortcut for every arm, prior or no prior — it changes the
+quantity the readout measures. Legitimate as a deliberate axis (the same data
+reaches all arms), but not comparable to the exclusive-table campaign; turning
+the knob on the eval side first is the safer move.
+
+## 8. Recommendation
+
+* **Training.** Agreement episodes (K = W) on tables from the diagnostic
+  non-exclusive family (|L| = 2–3, both violation models agreeing, plus
+  redundant crews for untestable realism), mindful of §7's caveat. More
+  realistic than v4's table-wide ties, and every table is still scorable per
+  clause once K is moved at eval. Keep |L| = 1 items as the easy corner of the
+  same family, not as a separate generator.
+* **Evaluation.** Conflict episodes on the same family — K an *eligible*
+  non-winner placed off every variant pick — scored per clause with verdicts
+  charter / coin / drop-j / reverse-j / unexplained, and charter-intent
+  (charter ∪ drop-j) reported beside coin. Generate against the drop
   model first (the empirically dominant failure) and check reversal second.
   Add the drop-variant ≠ W rejection to the existing v4 generator regardless.
 * Sid's fallback — train hard, evaluate exclusive — also works, but inherits
