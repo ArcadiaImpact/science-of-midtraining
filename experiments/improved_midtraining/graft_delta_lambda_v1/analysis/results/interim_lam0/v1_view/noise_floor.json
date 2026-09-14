@@ -1,0 +1,6 @@
+{
+  "title": "Noise floor per kind (gate median \u2264 2%, p90 \u2264 10%)",
+  "note": "no scores/oracle.jsonl \u2014 noise floor not measured.",
+  "n_rows": 0,
+  "rows": []
+}

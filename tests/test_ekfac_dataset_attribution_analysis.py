@@ -629,3 +629,31 @@ def test_markdown_and_json_writers_handle_nan_and_pipes(tmp_path):
     assert A.frame_to_markdown(pd.DataFrame()) == "_(no rows)_"
     assert "more rows" in A.frame_to_markdown(pd.DataFrame({"a": range(5)}), max_rows=2)
     assert [str(p.name) for p in paths] == ["t.json", "t.md"]
+
+
+class _RecordingAxis:
+    transAxes = None
+
+    def __init__(self):
+        self.xlim = None
+        self.texts = []
+
+    def set_xlim(self, lo, hi):
+        self.xlim = (lo, hi)
+
+    def text(self, *args, **kwargs):
+        self.texts.append((args, kwargs))
+
+
+def test_robust_xlim_clips_heavy_tails_but_leaves_compact_data_alone():
+    axis = _RecordingAxis()
+    values = np.concatenate([np.linspace(-1.0, 1.0, 998), [-500.0, 300.0]])  # two rows at 300–500× the class spread
+    limits = A._robust_xlim(axis, values)
+    assert limits is not None and axis.xlim == limits
+    lo, hi = limits
+    assert -1.5 < lo < -0.9 and 0.9 < hi < 1.5  # central mass kept (with padding), tails cut
+    assert axis.texts and "central 99 %" in axis.texts[0][0][2]
+    compact = _RecordingAxis()
+    assert A._robust_xlim(compact, np.linspace(-1.0, 1.0, 200)) is None and compact.xlim is None and not compact.texts
+    assert A._robust_xlim(_RecordingAxis(), np.array([1.0, 2.0, np.nan])) is None  # too few values
+    assert A._robust_xlim(_RecordingAxis(), np.full(50, 3.0)) is None  # degenerate spread

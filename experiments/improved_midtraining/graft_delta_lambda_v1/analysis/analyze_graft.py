@@ -1148,8 +1148,9 @@ def plot_lam0_vs_lam1_dist(long: pd.DataFrame, arm: str, lam0_kind: str, lam1_ki
     plt, sns = A._plotting()
     use_kde = A._have_scipy()
     figure, axes = plt.subplots(1, 2, figsize=(9.0, 3.4), sharex=True, sharey=True)
+    both = long[(long["arm"] == arm) & long["kind"].isin((lam0_kind, lam1_kind)) & (long["fold"] == FOLD) & long["group"].isin(CLASSES)].dropna(subset=[norm])
     for axis, kind, title in zip(axes, (lam0_kind, lam1_kind), ("λ = 0", label)):
-        sub = long[(long["arm"] == arm) & (long["kind"] == kind) & (long["fold"] == FOLD) & long["group"].isin(CLASSES)].dropna(subset=[norm])
+        sub = both[both["kind"] == kind]
         for cls in A.order_classes(sub["group"]):
             values = sub.loc[sub["group"] == cls, norm].to_numpy(dtype=float)
             if values.size == 0:
@@ -1157,6 +1158,7 @@ def plot_lam0_vs_lam1_dist(long: pd.DataFrame, arm: str, lam0_kind: str, lam1_ki
             _density(axis, values, A.CLASS_COLORS[cls], A.CLASS_LINESTYLES[cls], f"{cls} (n={values.size})", sns, use_kde)
             axis.axvline(float(np.median(values)), color=A.CLASS_COLORS[cls], linestyle=":", linewidth=1.2)
         axis.axvline(0.0, color="red", linewidth=0.7)
+        A._robust_xlim(axis, both[norm].to_numpy(dtype=float))  # shared x: clip both panels to the pooled central mass
         axis.set_title(f"{arm} arm — {title} ({kind})")
         axis.set_xlabel("−dL/dλ (+ = graft lowers row loss)")
         axis.legend(fontsize=7, frameon=False)

@@ -1,0 +1,6 @@
+{
+  "title": "Checkpoint mismatch: it vs pt row scores \u2014 gate Spearman \u2265 0.3",
+  "note": "no scores/pt_mismatch.jsonl \u2014 diagnostic skipped.",
+  "n_rows": 0,
+  "rows": []
+}

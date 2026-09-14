@@ -1,0 +1,133 @@
+{
+  "title": "Gates G1\u2013G4 and the \u00a77 rank-capture expectation, per arm, with PASS / FAIL / NOT RUN",
+  "note": null,
+  "n_rows": 14,
+  "rows": [
+    {
+      "gate": "G1",
+      "arm": "charter",
+      "metric": "recovered_fraction@r256",
+      "value": 0.8751012007854653,
+      "threshold": "\u2265 90%",
+      "verdict": "FAIL",
+      "detail": "L(pt)=2.6217, L(mid)=1.1886; ladder r16=0.591, r64=0.757, r256=0.875, r1024=0.949"
+    },
+    {
+      "gate": "G1",
+      "arm": "charter",
+      "metric": "full_delta_rel_err",
+      "value": 0.002792609520458125,
+      "threshold": "\u2264 2% (bf16 noise)",
+      "verdict": "PASS",
+      "detail": "L(pt+\u0394_full)=1.1919 vs L(mid)=1.1886"
+    },
+    {
+      "gate": "G1",
+      "arm": "coin",
+      "metric": "recovered_fraction@r256",
+      "value": 0.8798840799791227,
+      "threshold": "\u2265 90%",
+      "verdict": "FAIL",
+      "detail": "L(pt)=2.2953, L(mid)=1.0175; ladder r16=0.600, r64=0.767, r256=0.880, r1024=0.952"
+    },
+    {
+      "gate": "G1",
+      "arm": "coin",
+      "metric": "full_delta_rel_err",
+      "value": 0.002515286675993502,
+      "threshold": "\u2264 2% (bf16 noise)",
+      "verdict": "PASS",
+      "detail": "L(pt+\u0394_full)=1.0200 vs L(mid)=1.0175"
+    },
+    {
+      "gate": "G1",
+      "arm": "control",
+      "metric": "recovered_fraction@r256",
+      "value": 0.6225172718725961,
+      "threshold": "\u2265 90%",
+      "verdict": "FAIL",
+      "detail": "L(pt)=1.6519, L(mid)=1.6153; ladder r16=0.187, r64=0.421, r256=0.623, r1024=0.937"
+    },
+    {
+      "gate": "G1",
+      "arm": "control",
+      "metric": "full_delta_rel_err",
+      "value": 0.0002623101019718326,
+      "threshold": "\u2264 2% (bf16 noise)",
+      "verdict": "PASS",
+      "detail": "L(pt+\u0394_full)=1.6148 vs L(mid)=1.6153"
+    },
+    {
+      "gate": "G2",
+      "arm": "charter",
+      "metric": "loss_delta_at_it",
+      "value": -0.5164546923849689,
+      "threshold": "< 0",
+      "verdict": "PASS",
+      "detail": "L(it)=2.9343, L(it+\u0394_r1024)=2.4178"
+    },
+    {
+      "gate": "G2",
+      "arm": "coin",
+      "metric": "loss_delta_at_it",
+      "value": -0.496410249949371,
+      "threshold": "< 0",
+      "verdict": "PASS",
+      "detail": "L(it)=2.5587, L(it+\u0394_r1024)=2.0623"
+    },
+    {
+      "gate": "G2",
+      "arm": "control",
+      "metric": "loss_delta_at_it",
+      "value": 0.11221986190975186,
+      "threshold": "< 0",
+      "verdict": "INFO",
+      "detail": "L(it)=1.9694, L(it+\u0394_r1024)=2.0816"
+    },
+    {
+      "gate": "G3",
+      "arm": "charter",
+      "metric": "spearman_lora_vs_full",
+      "value": null,
+      "threshold": "\u03c1 \u2265 0.9",
+      "verdict": "NOT RUN",
+      "detail": "no shared rows with lam0_full"
+    },
+    {
+      "gate": "G3",
+      "arm": "coin",
+      "metric": "spearman_lora_vs_full",
+      "value": null,
+      "threshold": "\u03c1 \u2265 0.9",
+      "verdict": "NOT RUN",
+      "detail": "no shared rows with lam0_full"
+    },
+    {
+      "gate": "G3",
+      "arm": "control",
+      "metric": "spearman_lora_vs_full",
+      "value": null,
+      "threshold": "\u03c1 \u2265 0.9",
+      "verdict": "NOT RUN",
+      "detail": "no shared rows with lam0_full"
+    },
+    {
+      "gate": "G4",
+      "arm": "all",
+      "metric": "median_rel_spread",
+      "value": null,
+      "threshold": "\u2264 2%",
+      "verdict": "NOT RUN",
+      "detail": "no scores/noise.jsonl (repeat pass)"
+    },
+    {
+      "gate": "RANK",
+      "arm": "all",
+      "metric": "fraction_of_full@lam0_r256",
+      "value": null,
+      "threshold": "\u2265 70%",
+      "verdict": "NOT RUN",
+      "detail": "no lam0_full scores \u2014 full-\u0394 subset absent"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+# Net-of-control paired contrasts: score(arm) − score(control) on the same row, per kind × normalisation, with pre-registered verdicts
+
+baseline control_own: control's own score of the same kind; control_cross (λ = 1 only): the control Δ's cross term at the arm's grafted point. Net scores carry per_sequence_sum and per_token only (a cosine of a difference of two dot products with different ‖Δ‖ is not defined).
+
+| arm | family | baseline | dataset | kind | fold | norm | contrast | n | mean | ci_low | ci_high | median | trimmed_mean_10 | sd | frac_positive | sign_p | n_pos | n_neg | n_zero | expected_sign | verdict |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| charter | charter | net_of_control | charter | lam0_r1024 | all | per_sequence_sum | ambiguous_minus_wrong | 1500 | +5.9575 | +5.1057 | +6.9031 | +5.2007 | +5.7205 | 17.2051 | 0.6827 | 2.630e-46 | 1024 | 476 | 0 | 1 | PASS |
+| charter | charter | net_of_control | charter | lam0_r1024 | all | per_sequence_sum | coin_minus_charter | 1500 | +0.8104 | -0.0685 | +1.7037 | +1.1611 | +1.1589 | 17.6755 | 0.5373 | 0.0041 | 806 | 694 | 0 | -1 | INCONCLUSIVE |
+| charter | charter | net_of_control | charter | lam0_r1024 | all | per_token | ambiguous_minus_wrong | 1500 | +0.5370 | +0.4598 | +0.6107 | +0.4764 | +0.5148 | 1.5545 | 0.6847 | 2.589e-47 | 1027 | 473 | 0 | 1 | PASS |
+| charter | charter | net_of_control | charter | lam0_r1024 | all | per_token | coin_minus_charter | 1500 | +0.0717 | -0.0123 | +0.1506 | +0.1013 | +0.1029 | 1.5965 | 0.5340 | 0.0091 | 801 | 699 | 0 | -1 | INCONCLUSIVE |
+| charter | charter | net_of_control | charter | lam0_r16 | all | per_sequence_sum | ambiguous_minus_wrong | 1500 | +4.4619 | +3.8283 | +5.1085 | +4.1906 | +4.3972 | 12.8210 | 0.6927 | 1.843e-51 | 1039 | 461 | 0 | 1 | PASS |
+| charter | charter | net_of_control | charter | lam0_r16 | all | per_sequence_sum | coin_minus_charter | 1500 | +0.9370 | +0.2178 | +1.5686 | +1.4379 | +1.3201 | 13.1153 | 0.5593 | 4.758e-06 | 839 | 661 | 0 | -1 | FAIL |
+| charter | charter | net_of_control | charter | lam0_r16 | all | per_token | ambiguous_minus_wrong | 1500 | +0.4022 | +0.3440 | +0.4601 | +0.3738 | +0.3962 | 1.1593 | 0.6920 | 4.154e-51 | 1038 | 462 | 0 | 1 | PASS |
+| charter | charter | net_of_control | charter | lam0_r16 | all | per_token | coin_minus_charter | 1500 | +0.0836 | +0.0227 | +0.1453 | +0.1282 | +0.1177 | 1.1853 | 0.5580 | 7.765e-06 | 837 | 663 | 0 | -1 | FAIL |
+| charter | charter | net_of_control | charter | lam0_r256 | all | per_sequence_sum | ambiguous_minus_wrong | 1500 | +5.5095 | +4.6889 | +6.2978 | +4.7841 | +5.3378 | 16.3611 | 0.6787 | 2.498e-44 | 1018 | 482 | 0 | 1 | PASS |
+| charter | charter | net_of_control | charter | lam0_r256 | all | per_sequence_sum | coin_minus_charter | 1500 | +0.7260 | -0.1733 | +1.6282 | +0.9142 | +1.0665 | 16.8439 | 0.5340 | 0.0091 | 801 | 699 | 0 | -1 | INCONCLUSIVE |
+| charter | charter | net_of_control | charter | lam0_r256 | all | per_token | ambiguous_minus_wrong | 1500 | +0.4964 | +0.4222 | +0.5724 | +0.4414 | +0.4800 | 1.4780 | 0.6773 | 1.112e-43 | 1016 | 484 | 0 | 1 | PASS |
+| charter | charter | net_of_control | charter | lam0_r256 | all | per_token | coin_minus_charter | 1500 | +0.0645 | -0.0135 | +0.1370 | +0.0811 | +0.0948 | 1.5213 | 0.5313 | 0.0163 | 797 | 703 | 0 | -1 | INCONCLUSIVE |
+| charter | charter | net_of_control | charter | lam0_r64 | all | per_sequence_sum | ambiguous_minus_wrong | 1500 | +4.8649 | +4.1392 | +5.6348 | +4.4094 | +4.7228 | 14.8352 | 0.6787 | 2.498e-44 | 1018 | 482 | 0 | 1 | PASS |
+| charter | charter | net_of_control | charter | lam0_r64 | all | per_sequence_sum | coin_minus_charter | 1500 | +0.6369 | -0.1361 | +1.4048 | +1.0370 | +1.0142 | 15.1908 | 0.5373 | 0.0041 | 806 | 694 | 0 | -1 | INCONCLUSIVE |
+| charter | charter | net_of_control | charter | lam0_r64 | all | per_token | ambiguous_minus_wrong | 1500 | +0.4383 | +0.3723 | +0.5057 | +0.4004 | +0.4247 | 1.3411 | 0.6780 | 5.280e-44 | 1017 | 483 | 0 | 1 | PASS |
+| charter | charter | net_of_control | charter | lam0_r64 | all | per_token | coin_minus_charter | 1500 | +0.0565 | -0.0141 | +0.1290 | +0.0886 | +0.0901 | 1.3723 | 0.5347 | 0.0078 | 802 | 698 | 0 | -1 | INCONCLUSIVE |
+| coin | coin | net_of_control | coin | lam0_r1024 | all | per_sequence_sum | ambiguous_minus_wrong | 1500 | +10.2623 | +8.2429 | +12.1489 | +9.7580 | +10.2031 | 39.0232 | 0.6513 | 4.518e-32 | 977 | 523 | 0 | 1 | PASS |
+| coin | coin | net_of_control | coin | lam0_r1024 | all | per_sequence_sum | coin_minus_charter | 1500 | +11.8106 | +9.9136 | +13.9698 | +10.9789 | +11.5211 | 40.1667 | 0.6487 | 5.437e-31 | 973 | 527 | 0 | 1 | PASS |
+| coin | coin | net_of_control | coin | lam0_r1024 | all | per_token | ambiguous_minus_wrong | 1500 | +0.9292 | +0.7605 | +1.1027 | +0.8778 | +0.9178 | 3.5306 | 0.6473 | 1.854e-30 | 971 | 529 | 0 | 1 | PASS |
+| coin | coin | net_of_control | coin | lam0_r1024 | all | per_token | coin_minus_charter | 1500 | +1.0623 | +0.8769 | +1.2516 | +0.9948 | +1.0364 | 3.6320 | 0.6500 | 1.576e-31 | 975 | 525 | 0 | 1 | PASS |
+| coin | coin | net_of_control | coin | lam0_r16 | all | per_sequence_sum | ambiguous_minus_wrong | 1500 | +7.1450 | +5.9043 | +8.5232 | +6.6707 | +7.1040 | 26.2027 | 0.6573 | 1.411e-34 | 986 | 514 | 0 | 1 | PASS |
+| coin | coin | net_of_control | coin | lam0_r16 | all | per_sequence_sum | coin_minus_charter | 1500 | +7.6778 | +6.3897 | +9.0304 | +7.2909 | +7.6199 | 26.8271 | 0.6587 | 3.792e-35 | 988 | 512 | 0 | 1 | PASS |
+| coin | coin | net_of_control | coin | lam0_r16 | all | per_token | ambiguous_minus_wrong | 1500 | +0.6460 | +0.5280 | +0.7667 | +0.5961 | +0.6392 | 2.3715 | 0.6573 | 1.411e-34 | 986 | 514 | 0 | 1 | PASS |
+| coin | coin | net_of_control | coin | lam0_r16 | all | per_token | coin_minus_charter | 1500 | +0.6905 | +0.5713 | +0.8010 | +0.6603 | +0.6844 | 2.4271 | 0.6553 | 9.913e-34 | 983 | 517 | 0 | 1 | PASS |
+| coin | coin | net_of_control | coin | lam0_r256 | all | per_sequence_sum | ambiguous_minus_wrong | 1500 | +9.5331 | +7.5830 | +11.3383 | +9.1530 | +9.4284 | 36.7606 | 0.6507 | 8.451e-32 | 976 | 524 | 0 | 1 | PASS |
+| coin | coin | net_of_control | coin | lam0_r256 | all | per_sequence_sum | coin_minus_charter | 1500 | +11.0136 | +9.1066 | +13.0769 | +10.2502 | +10.7405 | 37.7602 | 0.6500 | 1.576e-31 | 975 | 525 | 0 | 1 | PASS |
+| coin | coin | net_of_control | coin | lam0_r256 | all | per_token | ambiguous_minus_wrong | 1500 | +0.8633 | +0.6896 | +1.0229 | +0.8109 | +0.8480 | 3.3260 | 0.6480 | 1.005e-30 | 972 | 528 | 0 | 1 | PASS |
+| coin | coin | net_of_control | coin | lam0_r256 | all | per_token | coin_minus_charter | 1500 | +0.9907 | +0.8182 | +1.1527 | +0.9259 | +0.9663 | 3.4147 | 0.6500 | 1.576e-31 | 975 | 525 | 0 | 1 | PASS |
+| coin | coin | net_of_control | coin | lam0_r64 | all | per_sequence_sum | ambiguous_minus_wrong | 1500 | +8.7422 | +7.1853 | +10.3472 | +8.0730 | +8.5890 | 32.1059 | 0.6527 | 1.280e-32 | 979 | 521 | 0 | 1 | PASS |
+| coin | coin | net_of_control | coin | lam0_r64 | all | per_sequence_sum | coin_minus_charter | 1500 | +9.8325 | +8.0691 | +11.4096 | +9.0985 | +9.6101 | 32.8745 | 0.6547 | 1.887e-33 | 982 | 518 | 0 | 1 | PASS |
+| coin | coin | net_of_control | coin | lam0_r64 | all | per_token | ambiguous_minus_wrong | 1500 | +0.7911 | +0.6528 | +0.9343 | +0.7168 | +0.7723 | 2.9057 | 0.6520 | 2.408e-32 | 978 | 522 | 0 | 1 | PASS |
+| coin | coin | net_of_control | coin | lam0_r64 | all | per_token | coin_minus_charter | 1500 | +0.8843 | +0.7429 | +1.0381 | +0.8199 | +0.8641 | 2.9731 | 0.6560 | 5.191e-34 | 984 | 516 | 0 | 1 | PASS |

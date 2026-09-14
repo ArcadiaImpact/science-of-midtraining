@@ -1,0 +1,161 @@
+{
+  "timestamp": "2026-09-14T14:40:45Z",
+  "inputs": {
+    "exp_dir": "/tmp/graft_lam0",
+    "score_passes": [
+      "/tmp/graft_lam0/results/v1_view_inputs/scores/combined.jsonl"
+    ],
+    "pt_mismatch": null,
+    "oracle": null,
+    "rows": null,
+    "datasets_dir": null,
+    "vector_norms": "/tmp/graft_lam0/results/v1_view_inputs/scores/vector_norms.json",
+    "vector_cosines": null
+  },
+  "n_scored_rows": 6000,
+  "rows_per_class": {
+    "charter": 1500,
+    "coin": 1500,
+    "ambiguous": 1500,
+    "ambiguous_wrong": 1500
+  },
+  "n_vectors": 12,
+  "load_notes": {
+    "passes": [
+      {
+        "pass": "combined",
+        "n_rows": 6000,
+        "n_scores": 72000
+      }
+    ],
+    "n_duplicates_dropped": 0,
+    "unknown_groups": []
+  },
+  "normalizations": [
+    "per_sequence_sum",
+    "per_token",
+    "cosine"
+  ],
+  "kinds": [
+    "lam0_r1024",
+    "lam0_r16",
+    "lam0_r256",
+    "lam0_r64"
+  ],
+  "primary_kind": "lam0_r256",
+  "primary_norm": "per_sequence_sum",
+  "plot_kinds": [
+    "lam0_r1024",
+    "lam0_r16",
+    "lam0_r256",
+    "lam0_r64"
+  ],
+  "plot_norms": [
+    "per_sequence_sum",
+    "per_token",
+    "cosine"
+  ],
+  "n_boot": 1000,
+  "seed": 0,
+  "versions": {
+    "numpy": "2.3.5",
+    "pandas": "3.0.3",
+    "seaborn": "0.13.2",
+    "matplotlib": "3.11.1",
+    "scipy": "1.18.1"
+  },
+  "gates": {
+    "fold_agreement_flagged": false,
+    "noise_flagged": false,
+    "checkpoint_mismatch_flagged": false,
+    "common_component_flagged": false
+  },
+  "epistemic_tag": "[partial: one EK-FAC fit, one seed, bootstrap CIs over episodes only]",
+  "headline_verdicts": {
+    "coin": "PASS",
+    "charter": "FAIL",
+    "control": "UNEXPECTED (+)"
+  },
+  "notes": [
+    "checkpoint-mismatch diagnostic skipped (no pt_mismatch.jsonl)",
+    "noise-floor diagnostic skipped (no oracle.jsonl)",
+    "TF-IDF baseline skipped (rows file or datasets/ missing)"
+  ],
+  "outputs": [
+    "SUMMARY.md",
+    "checkpoint_mismatch.json",
+    "checkpoint_mismatch.md",
+    "class_summary.json",
+    "class_summary.md",
+    "cross_dataset_agreement.json",
+    "cross_dataset_agreement.md",
+    "curvature_vs_gdp.json",
+    "curvature_vs_gdp.md",
+    "dist__lam0_r1024__cosine.pdf",
+    "dist__lam0_r1024__per_sequence_sum.pdf",
+    "dist__lam0_r1024__per_token.pdf",
+    "dist__lam0_r16__cosine.pdf",
+    "dist__lam0_r16__per_sequence_sum.pdf",
+    "dist__lam0_r16__per_token.pdf",
+    "dist__lam0_r256__cosine.pdf",
+    "dist__lam0_r256__per_sequence_sum.pdf",
+    "dist__lam0_r256__per_token.pdf",
+    "dist__lam0_r64__cosine.pdf",
+    "dist__lam0_r64__per_sequence_sum.pdf",
+    "dist__lam0_r64__per_token.pdf",
+    "effect_sizes.json",
+    "effect_sizes.md",
+    "fold_agreement.json",
+    "fold_agreement.md",
+    "headline.json",
+    "headline.md",
+    "heatmap__lam0_r1024__cosine.pdf",
+    "heatmap__lam0_r1024__per_sequence_sum.pdf",
+    "heatmap__lam0_r1024__per_token.pdf",
+    "heatmap__lam0_r16__cosine.pdf",
+    "heatmap__lam0_r16__per_sequence_sum.pdf",
+    "heatmap__lam0_r16__per_token.pdf",
+    "heatmap__lam0_r256__cosine.pdf",
+    "heatmap__lam0_r256__per_sequence_sum.pdf",
+    "heatmap__lam0_r256__per_token.pdf",
+    "heatmap__lam0_r64__cosine.pdf",
+    "heatmap__lam0_r64__per_sequence_sum.pdf",
+    "heatmap__lam0_r64__per_token.pdf",
+    "length_by_class.json",
+    "length_by_class.md",
+    "length_by_class.pdf",
+    "length_confound.json",
+    "length_confound.md",
+    "manifest.json",
+    "noise_floor.json",
+    "noise_floor.md",
+    "noise_floor_per_score.json",
+    "noise_floor_per_score.md",
+    "paired__lam0_r1024__cosine.pdf",
+    "paired__lam0_r1024__per_sequence_sum.pdf",
+    "paired__lam0_r1024__per_token.pdf",
+    "paired__lam0_r16__cosine.pdf",
+    "paired__lam0_r16__per_sequence_sum.pdf",
+    "paired__lam0_r16__per_token.pdf",
+    "paired__lam0_r256__cosine.pdf",
+    "paired__lam0_r256__per_sequence_sum.pdf",
+    "paired__lam0_r256__per_token.pdf",
+    "paired__lam0_r64__cosine.pdf",
+    "paired__lam0_r64__per_sequence_sum.pdf",
+    "paired__lam0_r64__per_token.pdf",
+    "paired_contrasts.json",
+    "paired_contrasts.md",
+    "paired_contrasts_by_subtype.json",
+    "paired_contrasts_by_subtype.md",
+    "paired_unmatched.json",
+    "paired_unmatched.md",
+    "scores_long.csv",
+    "tfidf_baseline.json",
+    "tfidf_baseline.md",
+    "tfidf_row_similarity.csv",
+    "tfidf_vs_gradient.json",
+    "tfidf_vs_gradient.md",
+    "verdict_grid.json",
+    "verdict_grid.md"
+  ]
+}

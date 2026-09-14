@@ -1,0 +1,40 @@
+{
+  "title": "coin\u2212charter verdict across kinds \u00d7 normalisations (fold all)",
+  "note": null,
+  "n_rows": 3,
+  "rows": [
+    {
+      "dataset": "coin",
+      "lam0_r1024 / per_sequence_sum": "PASS (+12.3)",
+      "lam0_r1024 / per_token": "PASS (+1.11)",
+      "lam0_r16 / per_sequence_sum": "PASS (+7.82)",
+      "lam0_r16 / per_token": "PASS (+0.703)",
+      "lam0_r256 / per_sequence_sum": "PASS (+11.4)",
+      "lam0_r256 / per_token": "PASS (+1.03)",
+      "lam0_r64 / per_sequence_sum": "PASS (+10.2)",
+      "lam0_r64 / per_token": "PASS (+0.916)"
+    },
+    {
+      "dataset": "charter",
+      "lam0_r1024 / per_sequence_sum": "FAIL (+1.33)",
+      "lam0_r1024 / per_token": "FAIL (+0.118)",
+      "lam0_r16 / per_sequence_sum": "FAIL (+1.08)",
+      "lam0_r16 / per_token": "FAIL (+0.0963)",
+      "lam0_r256 / per_sequence_sum": "FAIL (+1.16)",
+      "lam0_r256 / per_token": "FAIL (+0.103)",
+      "lam0_r64 / per_sequence_sum": "FAIL (+0.985)",
+      "lam0_r64 / per_token": "FAIL (+0.0878)"
+    },
+    {
+      "dataset": "control",
+      "lam0_r1024 / per_sequence_sum": "UNEXPECTED (+) (+0.515)",
+      "lam0_r1024 / per_token": "UNEXPECTED (+) (+0.0461)",
+      "lam0_r16 / per_sequence_sum": "CONSISTENT (\u22480) (+0.14)",
+      "lam0_r16 / per_token": "CONSISTENT (\u22480) (+0.0127)",
+      "lam0_r256 / per_sequence_sum": "UNEXPECTED (+) (+0.434)",
+      "lam0_r256 / per_token": "UNEXPECTED (+) (+0.0389)",
+      "lam0_r64 / per_sequence_sum": "UNEXPECTED (+) (+0.348)",
+      "lam0_r64 / per_token": "UNEXPECTED (+) (+0.0313)"
+    }
+  ]
+}

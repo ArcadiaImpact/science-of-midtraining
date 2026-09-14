@@ -1179,9 +1179,36 @@ def _grid(n_panels: int, n_cols: int = 3, panel: tuple[float, float] = (4.2, 3.2
     return figure, axes.ravel()
 
 
+ROBUST_XLIM_QUANTILES: tuple[float, float] = (0.005, 0.995)
+
+
+def _robust_xlim(axis, values: np.ndarray, quantiles: tuple[float, float] = ROBUST_XLIM_QUANTILES, pad: float = 0.05, min_size: int = 20) -> tuple[float, float] | None:
+    """Limit a density panel's view to the central mass of ``values`` (the
+    KDEs are still fitted on every value). Heavy-tailed scores — a handful of
+    rows at 10–100× the class spread — otherwise squash every class into one
+    spike (the 27B graft run's per-sequence sums span −600…+300 while the
+    classes live within ±50). Returns the limits applied, or None when the
+    data are too few or nothing lies outside the padded central range."""
+    values = np.asarray(values, dtype=float)
+    values = values[np.isfinite(values)]
+    if values.size < min_size:
+        return None
+    lo, hi = (float(np.quantile(values, q)) for q in quantiles)
+    if not hi > lo:
+        return None
+    span = hi - lo
+    lo, hi = lo - pad * span, hi + pad * span
+    if lo <= float(values.min()) and hi >= float(values.max()):
+        return None
+    axis.set_xlim(lo, hi)
+    axis.text(0.99, 0.02, f"axis: central {100 * (quantiles[1] - quantiles[0]):.0f} % of rows", transform=axis.transAxes, ha="right", va="bottom", fontsize=6, color="#555555")
+    return lo, hi
+
+
 def plot_distributions(long: pd.DataFrame, kind: str, norm: str, out_path: Path, fold: str = "all") -> Path:
     """(a) SPEC plot: per dataset, score distribution per row class (KDE when
-    scipy is available, else density step histograms), medians marked."""
+    scipy is available, else density step histograms), medians marked; the
+    view is limited to the central 99 % of the panel's rows (heavy tails)."""
     plt, sns = _plotting()
     frame = long[(long["kind"] == kind) & (long["fold"] == fold) & long["group"].isin(CLASSES)].dropna(subset=[norm])
     datasets = order_datasets(frame["dataset"])
@@ -1201,6 +1228,7 @@ def plot_distributions(long: pd.DataFrame, kind: str, norm: str, out_path: Path,
                 sns.histplot(x=values, ax=axis, color=color, element="step", fill=False, stat="density", bins=min(30, max(5, values.size // 4)), linestyle=style, label=label)
             axis.axvline(float(np.median(values)), color=color, linestyle=":", linewidth=1.2)
         axis.axvline(0.0, color="red", linewidth=0.7)
+        _robust_xlim(axis, sub[norm].to_numpy(dtype=float))
         axis.set_title(dataset)
         axis.set_xlabel("score (+ = dataset lowers row loss)")
         axis.legend(fontsize=7, frameon=False)
@@ -1240,6 +1268,7 @@ def plot_paired(contrasts: pd.DataFrame, contrast_summary: pd.DataFrame, kind: s
             else:
                 sns.histplot(x=values, ax=axis, color=color, element="step", fill=False, stat="density", bins=min(30, max(5, values.size // 4)), linestyle=style, label=label)
         axis.axvline(0.0, color="red", linewidth=0.7)
+        _robust_xlim(axis, sub["value"].to_numpy(dtype=float))
         expected = EXPECTED_SIGN.get(dataset_family(dataset), 0)
         axis.set_title(f"{dataset} (expected coin−charter {f'{expected:+d}' if expected else '≈0'})")
         axis.set_xlabel("paired contrast (+ = coin-ward / agreed-ward)")

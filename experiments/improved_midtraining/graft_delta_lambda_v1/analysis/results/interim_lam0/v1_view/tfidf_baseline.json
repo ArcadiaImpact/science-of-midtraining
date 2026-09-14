@@ -1,0 +1,6 @@
+{
+  "title": "TF-IDF lexical baseline \u2014 mean row\u00b7dataset cosine by class",
+  "note": "skipped: needs eft_rows.jsonl and datasets/<name>/sample.jsonl.",
+  "n_rows": 0,
+  "rows": []
+}
