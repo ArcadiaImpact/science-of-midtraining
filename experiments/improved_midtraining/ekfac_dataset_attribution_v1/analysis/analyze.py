@@ -441,7 +441,7 @@ def sign_test(values: Sequence[float] | np.ndarray) -> dict[str, float]:
         return {"n_pos": n_pos, "n_neg": n_neg, "n_zero": n_zero, "frac_positive": float("nan"), "p_value": float("nan")}
     k = min(n_pos, n_neg)
     tail = sum(math.comb(n, i) for i in range(k + 1))
-    p_value = min(1.0, 2.0 * tail / (2 ** n))
+    p_value = min(1.0, 2.0 * (tail / (2 ** n)))  # int/int true division stays exact for n > 1023, where float(tail) would overflow
     return {"n_pos": n_pos, "n_neg": n_neg, "n_zero": n_zero, "frac_positive": n_pos / n, "p_value": float(p_value)}
 
 
