@@ -149,9 +149,10 @@ port).
 This file is self-contained on purpose (no import from the experiment's
 plot modules); the only shared code is the house-style module.
 
-Run from the repository root; writes ``post_training_method.pdf`` next to
-``src/`` (the PDF is the only render -- no ``.png``, Jonathan 2026-09-11;
-``ps.save(..., formats=("pdf", "png"))`` makes a throw-away preview)::
+Run from the repository root; writes ``post_training_method.pdf`` and
+``post_training_method.png`` (the same page at 300 dpi) next to ``src/`` --
+``ps.save``'s default since 2026-09-14 (PDF only, Jonathan 2026-09-11, until
+then)::
 
     uv run --extra dev python3 \\
       paper/figures/post_training_method/src/plot_post_training_method.py

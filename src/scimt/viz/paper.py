@@ -108,8 +108,9 @@ __all__ = [
 #: is authored and saved at exactly this width (times ``width_frac``).
 TEXTWIDTH_IN = 5.5
 #: The manuscript embeds the PDF and the PDF is the only render committed
-#: (Jonathan, 2026-09-11: "there shouldn't be any .png renderings").  A PNG
-#: is an explicit, throw-away preview: ``save(..., formats=("pdf", "png"))``.
+#: ``save`` writes a PNG of the same page at this resolution beside the PDF
+#: (Jonathan, 2026-09-14: "make .png versions of all images at 300 dpi";
+#: PDF-only from 2026-09-11 until then -- ``formats=("pdf",)`` for that).
 PNG_DPI = 300
 
 # ---------------------------------------------------------------------- type
@@ -589,10 +590,11 @@ def page_size_pt(pdf: Path) -> tuple[float, float]:
 
 
 def save(fig: Figure, outdir: Path | str, stem: str, *, width_frac: float = 1.0,
-         formats: Iterable[str] = ("pdf",), png_dpi: int = PNG_DPI,
+         formats: Iterable[str] = ("pdf", "png"), png_dpi: int = PNG_DPI,
          verify: bool = True, paint_keywords: bool = True,
          extra: dict[str, str] | None = None) -> list[Path]:
-    """Write ``<outdir>/<stem>.pdf`` at the authored size (PDF only by default).
+    """Write ``<outdir>/<stem>.pdf`` at the authored size, and by default
+    ``<stem>.png`` of the same page at ``png_dpi`` (300 dpi).
 
     Runs :func:`paint` with ``extra`` (unless ``paint_keywords=False`` -- then
     the script has called it itself, with ``include``/``exclude``), then :func:`check`

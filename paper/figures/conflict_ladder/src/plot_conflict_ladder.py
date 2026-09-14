@@ -64,9 +64,9 @@ which the column rescale shrank to ~5 pt. Until 2026-09-12 it stacked a
 four-line provenance footnote and the caveat under the x label in a
 reserved band (5.5 x 5.4 in).
 
-Run from the repository root; writes ``conflict_ladder.pdf`` next to ``src/``
-(no PNG: the PDF is the deliverable; a preview is ``ps.save(...,
-formats=("pdf", "png"))`` by hand, or ``pdftoppm`` on the PDF)::
+Run from the repository root; writes ``conflict_ladder.pdf`` (the deliverable)
+and ``conflict_ladder.png`` (the same page at 300 dpi; Jonathan, 2026-09-14)
+next to ``src/``::
 
     uv run --extra dev python3 paper/figures/conflict_ladder/src/plot_conflict_ladder.py
 """

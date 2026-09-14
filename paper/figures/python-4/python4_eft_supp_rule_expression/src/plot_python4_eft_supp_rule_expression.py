@@ -62,8 +62,8 @@ the Wilson / pooling code is copied from ``experiments/python4/plot_eft_figures.
 (``supplementary(D, "expression", ...)``); the palette and geometry come from
 ``scimt.viz.paper``. Nothing is hardcoded here except presentation; the extract's ``caveat``
 is kept as-is and simply not drawn. Run from the repository root; writes
-``python4_eft_supp_rule_expression.pdf`` next to ``src/`` (PDF only -- the manuscript embeds
-it and no PNG is committed)::
+``python4_eft_supp_rule_expression.pdf`` (the manuscript embeds it) and the same page at 300 dpi
+as ``.png`` next to ``src/``::
 
     uv run --extra dev python3 paper/figures/python-4/python4_eft_supp_rule_expression/src/plot_python4_eft_supp_rule_expression.py
 

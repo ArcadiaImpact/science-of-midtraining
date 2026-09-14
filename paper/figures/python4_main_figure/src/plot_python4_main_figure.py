@@ -58,8 +58,8 @@ branch/commit/sha256 recorded). Self-contained on purpose (no import from ``expe
 the drawing (panel layout, light/mid/dark ramps, Wilson bars, header annotations) follows
 ``experiments/python4/plot_eft_figures.py`` (``headline(D, "expression", "prop", ...)``), with
 the palette now taken from ``scimt.viz.paper`` instead of hard-coded seaborn "colorblind"
-tuples. Run from the repository root; writes ``python4_main_figure.pdf`` next to ``src/`` (PDF
-only -- the manuscript embeds it and no PNG is committed)::
+tuples. Run from the repository root; writes ``python4_main_figure.pdf`` (the manuscript embeds
+it) and ``python4_main_figure.png`` (the same page at 300 dpi) next to ``src/``::
 
     uv run --extra dev python3 "paper/figures/python4_main_figure/src/plot_python4_main_figure.py"
 """

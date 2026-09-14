@@ -124,8 +124,8 @@ for (a); branch ``am/glm45-midtrain-probes`` for (b)). Nothing is hardcoded
 here except presentation; the extract's ``caveat`` and ``measure_labels`` are
 kept as-is and simply no longer drawn.
 
-Run from the repository root; writes ``acted_vs_stated_motivation.pdf`` next
-to ``src/`` (PDF only -- the manuscript embeds it and no PNG is committed)::
+Run from the repository root; writes ``acted_vs_stated_motivation.pdf`` (the
+manuscript embeds it) and the same page at 300 dpi as ``.png`` next to ``src/``::
 
 Two renders: ``acted_vs_stated_motivation.pdf`` (all five crew-assignment bars)
 and ``acted_vs_stated_motivation_three.pdf`` ((a) cut to its first three bars --
@@ -267,12 +267,13 @@ SHORT_LABELS = {
 def render(*, n_bars: int | None = None, stem: str = STEM,
            width_ratios: tuple[float, float] = WIDTH_RATIOS, height_in: float = HEIGHT_IN,
            legend_ncol_a: int = 3, layout: BarLayout = LAYOUT,
-           formats: tuple[str, ...] = ("pdf",)) -> list[Path]:
+           formats: tuple[str, ...] = ("pdf", "png")) -> list[Path]:
     """Build and save one version: all five of (a)'s bars, or the first
     ``n_bars`` of them (in the extract's ``order``), with the page height,
-    column split, (a)'s legend columns and bar layout given.  ``formats``
-    adds an editable SVG (text kept as text) on request -- ``("pdf", "svg")``
-    -- which ``main`` never writes, so a hand-edited copy is not overwritten."""
+    column split, (a)'s legend columns and bar layout given.  ``formats`` is
+    the PDF and its 300 dpi PNG; ``("pdf", "png", "svg")`` adds an editable
+    SVG (text kept as text) on request, which ``main`` never writes, so a
+    hand-edited copy is not overwritten."""
     lay = layout
     d = json.loads(DATA.read_text())
     acted = d["panels"]["acted"]
@@ -556,7 +557,7 @@ def render(*, n_bars: int | None = None, stem: str = STEM,
 
 def main() -> int:
     written = render() + render(**THREE_KW)
-    return 0 if len(written) == 2 else 1
+    return 0 if written else 1
 
 
 if __name__ == "__main__":

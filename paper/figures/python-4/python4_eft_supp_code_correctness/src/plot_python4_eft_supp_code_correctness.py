@@ -65,8 +65,8 @@ the drawing code descends from ``experiments/python4/plot_eft_figures.py``
 ``scimt.viz.paper`` (the seaborn "colorblind" blue / orange the manuscript defines as Charter /
 Coin), no longer hard-coded. As on the source figure, the standing caveat (incl. the GLM +256
 lower-bound cells) is carried in the extract (``caveat``) for the caption and is not printed on
-the figure. Run from the repository root; writes ``python4_eft_supp_code_correctness.pdf`` next
-to ``src/`` (PDF only -- the manuscript embeds it and no PNG is committed)::
+the figure. Run from the repository root; writes ``python4_eft_supp_code_correctness.pdf`` (the
+manuscript embeds it) and the same page at 300 dpi as ``.png`` next to ``src/``::
 
     uv run --extra dev python3 paper/figures/python-4/python4_eft_supp_code_correctness/src/plot_python4_eft_supp_code_correctness.py
 
