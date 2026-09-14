@@ -136,6 +136,14 @@ BASE_UNIT_OVERRIDE = {
 
 ARMS = ("charter", "coin", "control")
 
+#: Profiles whose WEIGHTS are deliberately not copied yet, though their scores
+#: and raw eval responses are.  `glm45_air_190m_clause_asym` is a complete
+#: 647 GiB chain (midtrain 199, dolci 199 + a sharded duplicate, four AFT
+#: cells); Sid took the evals and scores on 2026-09-14 and deferred the models
+#: to a later tidy-up port.  Without this the generic pass would match the
+#: profile on PROFILE_RE and quietly plan the whole row on the next re-plan.
+MODELS_DEFERRED = frozenset({"glm45_air_190m_clause_asym"})
+
 #: Profiles whose adapters do NOT load on a base of their own.  The
 #: diverse-response ablation trains on the `gemma3_12b_50m_4ep` post-dolci
 #: checkpoint (its adapter_config records
@@ -490,6 +498,8 @@ def build_plan(api: HfApi) -> list[Item]:
             if unit is None:
                 continue
             profile, arm = unit
+            if profile in MODELS_DEFERRED:
+                continue        # scores/batteries yes, weights not yet
             name = path.rsplit("/", 1)[-1]
 
             at_final = True
