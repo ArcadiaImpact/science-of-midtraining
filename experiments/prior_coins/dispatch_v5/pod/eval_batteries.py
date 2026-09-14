@@ -214,8 +214,18 @@ def main(argv: list[str] | None = None) -> int:
     jobs = load_jobs(args.jobs)
 
     import contracts as C
-    if C.MODEL_FAMILY != "glm45_air":
-        raise SystemExit("eval_batteries serves the GLM family only (gemma needs the vLLM patches)")
+    if C.MODEL_FAMILY == "gemma3":
+        # the campaign's gemma serving path (d4_eval.py / costsweep_eval.py):
+        # this vLLM needs the lm_head and LoRA-name patches imported before it
+        # is, and the checkpoint served through a view with the processor
+        # files backfilled and image_token_id set in tokenizer_config.json
+        from d4_eval import PATCH_DIRS, ensure_processor_files, view
+        for patch_dir in PATCH_DIRS:
+            sys.path.insert(0, str(patch_dir))
+        import patch_vllm_lm_head  # noqa: F401
+        import patch_vllm_gemma3_lora  # noqa: F401
+    elif C.MODEL_FAMILY != "glm45_air":
+        raise SystemExit(f"eval_batteries serves glm45_air and gemma3, not {C.MODEL_FAMILY!r}")
     from d4_eval import MAX_MODEL_LEN
     from eval_runtime import (apply_chat_template, assert_bos_contract,
                               audit_sequence_lengths, llm_kwargs, make_sampling_params)
@@ -228,8 +238,16 @@ def main(argv: list[str] | None = None) -> int:
     if not (args.model_view / "config.json").is_file():
         raise FileNotFoundError(args.model_view)
     tokenizer = AutoTokenizer.from_pretrained(str(args.model_view))
+    served = args.model_view
+    if C.MODEL_FAMILY == "gemma3":
+        ensure_processor_files(args.model_view)
+        settings = json.loads((args.model_view / "tokenizer_config.json").read_text())
+        image_token = settings.get("image_token")
+        image_token_id = tokenizer.convert_tokens_to_ids(image_token) if image_token else None
+        served = view(args.model_view, args.work, "parent", image_token_id)
+        log(f"gemma3: serving view {served} (image_token_id {image_token_id})")
     llm = LLM(
-        model=str(args.model_view), dtype="bfloat16", max_model_len=MAX_MODEL_LEN,
+        model=str(served), dtype="bfloat16", max_model_len=MAX_MODEL_LEN,
         **llm_kwargs(gpu_memory_utilization=C.COSTSWEEP_GPU_MEMORY),
         trust_remote_code=True, enable_lora=True, max_lora_rank=C.LORA_R, max_loras=1,
     )
