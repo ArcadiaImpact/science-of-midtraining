@@ -76,10 +76,20 @@ PY
 
 # --- 3 pods ----------------------------------------------------------------
 say "-- accounts --"
+# Captured to a file rather than piped straight to sed, so the CAPPED check
+# below runs in THIS shell and can set ALARM (a pipeline would lose it).
 for n in 1 2; do
   say "  account $n:"
+  RPT=$(mktemp)
   if [ "$n" = 1 ]; then grep -m1 '^RUNPOD_API_KEY=' "$REPO/.env" | cut -d= -f2- | tr -d "'\""
-  else cat /root/.runpod2-home/apikey; fi | python3 "$HERE/account_report.py" 2>&1 | sed 's/^/  /'
+  else cat /root/.runpod2-home/apikey; fi | python3 "$HERE/account_report.py" >"$RPT" 2>&1
+  sed 's/^/  /' "$RPT"
+  # Only an alarm when a sniper is actually hunting on that account: a capped
+  # account with nothing hunting is just an account, not a stuck snipe.
+  if grep -q '^  CAPPED:' "$RPT" && pgrep -f "snipe_b200_pod.sh glm-b200-500m-acct${n}" >/dev/null; then
+    alarm "account $n is at its hourly spend cap AND a sniper is hunting on it -- that snipe cannot land"
+  fi
+  rm -f "$RPT"
 done
 
 # --- 4 live arm progress ---------------------------------------------------
