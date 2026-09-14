@@ -170,7 +170,7 @@ note clone_head "$got"
 SETUP_LOG=/workspace/logs/setup_v5.log
 say "setup: pod/setup.sh (cu126 training stack + vLLM venv), detached"
 rsh "mkdir -p /workspace/logs; if grep -q 'SETUP COMPLETE' $SETUP_LOG 2>/dev/null; then echo 'setup already complete';
-  else cd /workspace/scimt && FINAL_V1_PROFILE=glm45_air_190m FINAL_V1_TRAIN_CUDA=cu126 HF_HOME=$HF_HOME_POD \
+  else cd /workspace/scimt && FINAL_V1_PROFILE=glm45_air_190m FINAL_V1_TRAIN_CUDA=cu126 HF_HOME=$HF_HOME_POD ${FINAL_V1_MIN_DOWNLOAD_BPS:+FINAL_V1_MIN_DOWNLOAD_BPS=$FINAL_V1_MIN_DOWNLOAD_BPS} \
     setsid nohup bash experiments/prior_coins/dispatch_final_v1/pod/setup.sh >$SETUP_LOG 2>&1 </dev/null & echo \$! >/workspace/logs/setup_v5.pid; echo 'setup started'; fi"
 for _ in $(seq 1 180); do   # up to 3 h
   if rsh "grep -q 'SETUP COMPLETE' $SETUP_LOG 2>/dev/null"; then say "setup complete"; break; fi
