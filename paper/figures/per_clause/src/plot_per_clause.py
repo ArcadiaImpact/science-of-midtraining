@@ -1,4 +1,4 @@
-"""Appendix figure: per-clause breakdown, held-in vs held-out clauses.
+r"""Appendix figure: per-clause breakdown, held-in vs held-out clauses.
 
 The compiled Results figures report one Charter-crew rate per cell, pooled
 over the clauses that separate the Charter crew from the coin crew. This
@@ -18,12 +18,13 @@ a reader can check rule by rule that
   weaker there; the held-in pattern (precedence clauses fall hardest under
   2% conflicting EFT) is the same.
 
-Series: charter arm after agreement-only EFT (solid blue) and after EFT with
-2% coin-labelled demonstrations (light blue, hatched); the control arm (no
-midtraining, agreement-only EFT) as a dashed grey level per clause. The coin
-arm is frozen in the extract but not drawn: it sits at 2-10% on every clause
-of the GLM row (3-19% on Gemma) and adds nothing a reader could not get from
-the compiled Results figure, at the cost of a fourth series per clause. The
+Series: charter arm after agreement-only EFT (solid Charter blue) and after
+EFT with 2% coin-labelled demonstrations (light Charter, hatched); the
+control arm (no midtraining, agreement-only EFT) as a dashed grey level per
+clause. The coin arm is frozen in the extract but not drawn (it would be
+``ps.COIN`` if it were): it sits at 2-10% on every clause of the GLM row
+(3-19% on Gemma) and adds nothing a reader could not get from the compiled
+Results figure, at the cost of a fourth series per clause. The
 ``mixed_charter`` and ``charter_only`` endpoints are likewise frozen but not
 drawn.
 
@@ -55,15 +56,49 @@ runs within an episode share a prompt, so the intervals are optimistic.
 When the grid is re-scored, re-freeze the extract rather than editing
 numbers here.
 
-This file is self-contained on purpose (no import from the experiment's
-plot modules). The palette constants below are copied from
-``experiments/prior_coins/dispatch_final_v1/results_grid/plot_grid.py``
-(Okabe-Ito blue for the charter arm, vermillion for coin, neutral grey for
-control; the light shade is the family colour mixed 55% with white, as in
-that script's step pairs).
+House style: scimt.viz.paper (5.5 in page, >= 8 pt, the Charter/Coin pair
+main.tex defines). Geometry, type and palette all come from that module:
+the figure is authored and saved at the 5.5 in ICLR text width, so the 8 pt
+body and 9 pt bold titles print at the size set when the manuscript embeds
+it at ``width=\linewidth`` (appendix). Before the 2026-09-11 port it was a
+7.2 x 7.1 in canvas with 6.8-10.5 pt type that LaTeX scaled by 0.76. The
+port also moved the two group captions ("seen in EFT demonstrations" /
+"held out of EFT") from above the axes to inside them -- the y axis is
+bounded at 100 and the headroom above it is label space, not data -- and
+set the legend as one row of three two-line entries. Palette roles:
+``ps.CHARTER`` for the charter arm, ``ps.CHARTER_LIGHT`` (Charter mixed 55%
+with white, the shade rule the experiment's ``plot_grid.py`` used) for the
+2% bars, ``ps.GREY`` for control, ``ps.INK`` for text; the held-out band is
+the house light grey blended most of the way to white. This file is
+otherwise self-contained on purpose (no import from the experiment's plot
+modules).
 
-Run from the repository root; writes ``per_clause.pdf`` and ``.png`` next
-to ``src/``::
+Rules 2026-09-12: no caption text on the figure; keywords painted by
+``ps.paint``. The 2026-09-11 port carried a four-line method note and the
+standing caveat in a 0.8 in footer band under the axes; both are gone,
+the band is given back (5.4 -> 4.6 in, which reproduces the port's panel
+heights within 0.01 in; at 4.4 in the Gemma group caption reaches the top
+of its axes and the value labels touch the captions, so there is nothing
+further to squeeze), and the LaTeX caption carries their content.
+``ps.save`` paints every ink mention of Charter blue and bold and of coin
+orange and bold: the figure title, the two Charter legend entries, the
+y-axis label and both panel titles; nothing else on the figure names a
+keyword.
+
+For the caption:
+
+* Charter and control arms, step 512, held-out prompt template.
+* Slices: eval_trained_conflict__heldout (held-in),
+  eval_holdout_conflict__heldout (held-out).
+* n = 600 runs per clause per bar; counts pool one-run and two-run
+  episodes.
+* Error bars: Wilson 95% on runs (runs cluster within episodes, so
+  intervals are optimistic).
+* CAVEAT: one seed per cell; run-to-run SD ~9pp on the primary metric.
+
+Run from the repository root; writes ``per_clause.pdf`` next to ``src/``
+(the PDF is the only committed render -- the module's ``save`` default; a
+PNG preview is an explicit, throw-away ``formats=("pdf", "png")``)::
 
     uv run --extra dev python3 paper/figures/per_clause/src/plot_per_clause.py
 """
@@ -77,24 +112,21 @@ from pathlib import Path
 import matplotlib
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
+from matplotlib.artist import Artist  # noqa: E402
+from matplotlib.figure import Figure  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
 from matplotlib.patches import Patch  # noqa: E402
+
+from scimt.viz import paper as ps  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 DATA = HERE / "data" / "per_clause_rates.json"
 OUTPUT = HERE.parent              # paper/figures/per_clause/
+STEM = "per_clause"
 
-# House palette, copied from results_grid/plot_grid.py (Okabe-Ito).
-CHARTER = "#0072B2"       # charter arm
-COIN = "#D55E00"          # coin arm (frozen, not drawn; kept for parity)
-NEUTRAL = "#666666"       # control arm
-CHARTER_LIGHT = "#8CBFDC"  # CHARTER mixed 55% with white (plot_grid's shade rule)
-INK = "#1a1a1a"
-MUTED = "#3d3d3d"
-HELD_OUT_BAND = "#f0f0f0"
-#: The verbatim standing caveat. Do not paraphrase it on a figure.
-CAVEAT = "one seed per cell; run-to-run SD ~9pp on the primary metric"
+#: Near-white band behind the held-out clauses: the house light grey most of
+#: the way to white, so it sits under the hatched light-Charter bars.
+HELD_OUT_BAND = ps.lighten(ps.LIGHT_GREY, 0.72)
 
 #: (clause key, x caption); held-in five first, then the two held-out.
 HELD_IN = (
@@ -116,6 +148,16 @@ PROFILES = (
     ("glm45_air_190m", "GLM-4.5-Air, 190M charter tokens (primary row)"),
     ("gemma3_27b_190m", "Gemma 3 27B, 190M charter tokens"),
 )
+TITLE = "Charter-crew rate by clause: held-in vs held-out clauses"
+
+# Geometry. The width is the page's (ps.TEXTWIDTH_IN); the height is ours.
+HEIGHT_IN = 4.6               # the port's 5.4 less its 0.8 in footer band
+HEIGHT_RATIOS = (1.35, 1.0)   # primary row taller
+Y_TOP = 122                   # ylim top; 100..Y_TOP is headroom for labels
+GROUP_LABEL_Y = 110           # baseline of the two group captions (data units)
+EDGE_PAD_IN = 0.03            # figure title to the top edge
+GAP_IN = 0.05                 # title / legend / axes separation
+PANEL_HSPACE = 0.06           # constrained-layout gap between the rows (axes fraction)
 
 
 def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
@@ -129,75 +171,75 @@ def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
     return (100 * (centre - half), 100 * (centre + half))
 
 
-def rate(cell: dict, clause: str) -> tuple[float, float, float, int]:
+def rate(cell: dict, clause: str) -> tuple[float, float, float]:
     c = cell[clause]
     n = c["n"]
     p = 100 * c["charter"] / n
     lo, hi = wilson(c["charter"], n)
-    return p, lo, hi, n
+    return p, lo, hi
 
 
-def draw_panel(ax, cells: dict, title: str, *, show_xlabels: bool) -> set[int]:
+def ink_in(fig: Figure, artist: Artist) -> tuple[float, float, float, float]:
+    """(x0, y0, x1, y1) of a drawn artist's ink, in inches from the figure's
+    bottom-left. Draws first so legends and layout are positioned."""
+    fig.canvas.draw()
+    box = artist.get_window_extent(fig.canvas.get_renderer())
+    return box.x0 / fig.dpi, box.y0 / fig.dpi, box.x1 / fig.dpi, box.y1 / fig.dpi
+
+
+def draw_panel(ax, cells: dict, title: str, *, show_xlabels: bool) -> None:
     clauses = list(HELD_IN) + list(HELD_OUT)
     positions = [float(i) for i in range(len(HELD_IN))]
     positions += [len(HELD_IN) + GROUP_GAP + i for i in range(len(HELD_OUT))]
-    ns: set[int] = set()
 
-    # Held-out band, drawn first so everything else sits on top of it.
+    # Held-out band, drawn first so everything else sits on top of it. The
+    # group captions sit inside the axes' headroom, above the value labels.
     band_lo = positions[len(HELD_IN)] - 0.5
     band_hi = positions[-1] + 0.5
     ax.axvspan(band_lo, band_hi, color=HELD_OUT_BAND, zorder=0, lw=0)
-    ax.text((band_lo + band_hi) / 2, 104, "held out of EFT",
-            ha="center", va="bottom", fontsize=8, color=INK, style="italic")
-    ax.text((positions[0] - 0.5 + positions[len(HELD_IN) - 1] + 0.5) / 2, 104,
+    ax.text((band_lo + band_hi) / 2, GROUP_LABEL_Y, "held out of EFT",
+            ha="center", va="bottom", color=ps.INK, style="italic")
+    ax.text((positions[0] - 0.5 + positions[len(HELD_IN) - 1] + 0.5) / 2, GROUP_LABEL_Y,
             "seen in EFT demonstrations", ha="center", va="bottom",
-            fontsize=8, color=INK, style="italic")
+            color=ps.INK, style="italic")
 
     agree = cells["charter/agreement"]
     mixed = cells["charter/mixed_coin"]
     control = cells["control/agreement"]
     for x, (clause, _) in zip(positions, clauses, strict=True):
+        # Value labels get a pad of the background behind them, so one that
+        # lands on the control dash (the low held-out bars) stays legible.
+        backdrop = HELD_OUT_BAND if x >= band_lo else "white"
         for dx, cell, face, hatch in (
-            (-OFFSET, agree, CHARTER, None),
-            (+OFFSET, mixed, CHARTER_LIGHT, "////"),
+            (-OFFSET, agree, ps.CHARTER, None),
+            (+OFFSET, mixed, ps.CHARTER_LIGHT, "////"),
         ):
-            p, lo, hi, n = rate(cell, clause)
-            ns.add(n)
+            p, lo, hi = rate(cell, clause)
             ax.bar(x + dx, p, width=BAR_WIDTH, color=face, hatch=hatch,
-                   edgecolor=CHARTER if hatch else face, linewidth=0.0,
+                   edgecolor=ps.CHARTER if hatch else face, linewidth=0.0,
                    zorder=2)
             ax.errorbar(x + dx, p, yerr=[[p - lo], [hi - p]], fmt="none",
-                        ecolor=INK, elinewidth=0.7, capsize=1.8,
+                        ecolor=ps.INK, elinewidth=0.7, capsize=1.8,
                         capthick=0.7, zorder=4)
             ax.text(x + dx, hi + 1.5, f"{p:.0f}", ha="center", va="bottom",
-                    fontsize=7, color=INK, zorder=5)
-        pc, _, _, n = rate(control, clause)
-        ns.add(n)
+                    color=ps.INK, zorder=5,
+                    bbox={"boxstyle": "square,pad=0.12", "facecolor": backdrop,
+                          "edgecolor": "none"})
+        pc, _, _ = rate(control, clause)
         ax.plot([x - OFFSET - BAR_WIDTH / 2 - 0.04, x + OFFSET + BAR_WIDTH / 2 + 0.04],
-                [pc, pc], color=NEUTRAL, linewidth=1.3, linestyle=(0, (3, 1.5)),
+                [pc, pc], color=ps.GREY, linewidth=1.3, linestyle=(0, (3, 1.5)),
                 zorder=3)
-        ax.plot([x], [pc], marker="D", markersize=3.6, color=NEUTRAL,
+        ax.plot([x], [pc], marker="D", markersize=3.6, color=ps.GREY,
                 markeredgecolor="white", markeredgewidth=0.5, zorder=3.5)
 
     ax.set_xticks(positions)
-    if show_xlabels:
-        ax.set_xticklabels([caption for _, caption in clauses], fontsize=8,
-                           color=INK)
-    else:
-        ax.set_xticklabels([])
+    ax.set_xticklabels([caption for _, caption in clauses] if show_xlabels else [])
     ax.set_xlim(positions[0] - 0.6, positions[-1] + 0.6)
-    ax.set_ylim(0, 100)
+    ax.set_ylim(0, Y_TOP)
     ax.set_yticks((0, 25, 50, 75, 100))
-    ax.tick_params(colors=MUTED, labelsize=8, length=2.5)
+    ax.spines["left"].set_bounds(0, 100)
     ax.tick_params(axis="x", length=0)
-    for side in ("top", "right"):
-        ax.spines[side].set_visible(False)
-    for side in ("left", "bottom"):
-        ax.spines[side].set_color(MUTED)
-    ax.axhline(0, color=MUTED, linewidth=0.8, zorder=5)
-    ax.text(0.0, 1.13, title, transform=ax.transAxes, ha="left", va="bottom",
-            fontsize=9, color=INK, fontweight="bold")
-    return ns
+    ax.set_title(title, loc="left")
 
 
 def main() -> int:
@@ -205,52 +247,39 @@ def main() -> int:
     if extract.get("dummy"):
         raise SystemExit("extract is marked dummy; refusing to draw an appendix figure from it")
 
-    fig, axes = plt.subplots(
-        2, 1, figsize=(7.2, 7.1), sharex=False,
-        gridspec_kw={"height_ratios": (1.35, 1.0), "hspace": 0.42},
-    )
-    ns: set[int] = set()
-    for ax, (profile, title), last in zip(axes, PROFILES, (False, True), strict=True):
-        ns |= draw_panel(ax, extract["cells"][profile], title, show_xlabels=last)
-    fig.supylabel("Charter-crew share of conflict runs (%)", fontsize=9,
-                  color=INK, x=0.015)
+    with matplotlib.rc_context(ps.rc()):
+        fig, axes = ps.figure(HEIGHT_IN, nrows=2,
+                              gridspec_kw={"height_ratios": HEIGHT_RATIOS})
+        _, h = fig.get_size_inches()
+        for ax, (profile, title), last in zip(axes, PROFILES, (False, True), strict=True):
+            draw_panel(ax, extract["cells"][profile], title, show_xlabels=last)
+        fig.supylabel("Charter-crew share of conflict runs (%)")
 
-    fig.legend(
-        handles=[
-            Patch(facecolor=CHARTER, label="Charter midtrain, agreement-only EFT"),
-            Patch(facecolor=CHARTER_LIGHT, edgecolor=CHARTER, hatch="////",
-                  linewidth=0.0, label="Charter midtrain, 2% coin-labelled EFT"),
-            Line2D([], [], color=NEUTRAL, linestyle=(0, (3, 1.5)), linewidth=1.3,
-                   marker="D", markersize=3.6, markeredgecolor="white",
-                   label="Control (no midtrain), agreement-only EFT"),
-        ],
-        loc="upper center", bbox_to_anchor=(0.53, 0.965), ncol=3, frameon=False,
-        fontsize=7.0, handlelength=1.5, handleheight=1.0, columnspacing=0.9,
-        handletextpad=0.5,
-    )
-    fig.suptitle("Charter-crew rate by clause: held-in vs held-out clauses",
-                 fontsize=10.5, color=INK, y=0.992)
+        # Header: figure title, then one legend row. Figure-level text and
+        # fig.legend are invisible to constrained layout, so the band they
+        # occupy is measured and reserved with ps.reserve_band below. There
+        # is no footer: the bottom axes' tick labels sit on the page bottom.
+        suptitle = fig.suptitle(TITLE, x=0.5, y=1 - EDGE_PAD_IN / h, va="top")
+        legend_top_in = ink_in(fig, suptitle)[1] - GAP_IN
+        legend = fig.legend(
+            handles=[
+                Patch(facecolor=ps.CHARTER,
+                      label="Charter midtrain,\nagreement-only EFT"),
+                Patch(facecolor=ps.CHARTER_LIGHT, edgecolor=ps.CHARTER, hatch="////",
+                      linewidth=0.0, label="Charter midtrain,\n2% coin-labelled EFT"),
+                Line2D([], [], color=ps.GREY, linestyle=(0, (3, 1.5)), linewidth=1.3,
+                       marker="D", markersize=3.6, markeredgecolor="white",
+                       label="Control (no midtrain),\nagreement-only EFT"),
+            ],
+            loc="upper center", bbox_to_anchor=(0.5, legend_top_in / h), ncol=3,
+            handlelength=1.5, handleheight=1.0, columnspacing=1.5,
+            handletextpad=0.6, borderaxespad=0.0,
+        )
+        header_in = h - ink_in(fig, legend)[1] + GAP_IN
 
-    n_text = f"{min(ns):,}" if len(ns) == 1 else f"{min(ns):,}–{max(ns):,}"
-    slices = extract["slices"]
-    footnote = "\n".join((
-        "Charter and control arms, step 512, held-out prompt template. Slices: "
-        f"{slices['held_in']} (held-in clauses),",
-        f"{slices['held_out']} (held-out clauses). n = {n_text} runs per clause per bar; "
-        "counts pool one-run and two-run episodes.",
-        "Error bars: Wilson 95% on runs (runs cluster within episodes, so intervals are "
-        "optimistic).",
-        f"CAVEAT: {extract['caveat']}.",
-    ))
-    fig.text(0.5, 0.008, footnote, ha="center", va="bottom", fontsize=6.8,
-             color=MUTED, linespacing=1.35)
-
-    fig.subplots_adjust(left=0.085, right=0.985, top=0.855, bottom=0.165)
-    for suffix in ("pdf", "png"):
-        path = OUTPUT / f"per_clause.{suffix}"
-        fig.savefig(path, dpi=200)
-        print(f"wrote {path}")
-    plt.close(fig)
+        fig.get_layout_engine().set(hspace=PANEL_HSPACE)
+        ps.reserve_band(fig, top_in=header_in)
+        ps.save(fig, OUTPUT, STEM)
     return 0
 
 

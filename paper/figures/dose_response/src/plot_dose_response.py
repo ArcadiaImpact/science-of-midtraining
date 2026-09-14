@@ -31,15 +31,51 @@ it has one campaign-recipe dose (190M), so there is no line to draw.
 
 Intervals: n = 3,000 runs per point, so a Wilson 95% half-width is ~1.7pp,
 smaller than the marker and far below the ~9pp seed-to-seed spread; error
-bars would understate the real uncertainty, so none are drawn and the caveat
-is printed instead.
+bars would understate the real uncertainty, so none are drawn. The one-seed
+caveat is the caption's to state (below), not the figure's.
 
-This file is self-contained on purpose (no import from experiment plot
-modules); the palette constants are copied from
-``experiments/prior_coins/dispatch_final_v1/results_grid/plot_grid.py``
-(Okabe-Ito blue for the charter arm, neutral grey for control).
+For the caption: the figure carries no methods note and no caveat. Until
+2026-09-12 it printed the two lines below under the panels; they are kept here
+verbatim so the LaTeX caption can carry them.
 
-Writes ``dose_response.pdf`` and ``dose_response.png`` next to ``src/``::
+* Methods note: "Charter arm after agreement-only EFT vs the no-document
+  control, trained clauses, held-out prompt template; n = 3,000 runs per point
+  (Wilson half-width ~1.7pp, below marker size). EFT dose = epochs over the
+  same 8,192 agreement episodes (steps 256 / 512)."
+* Caveat (the ``caveat`` field of the extract, no longer read by this script):
+  "one seed per cell; run-to-run SD ~9pp on the primary metric".
+
+Rules 2026-09-12: no caption text on the figure; keywords painted by ps.paint.
+``ps.save`` paints every inked "Charter"/"charter" blue and bold -- the title,
+the y label, the three "charter midtrain, ..." legend entries and the x
+label's "(charter documents)"; no other keyword (Coin, Ambiguous, Ch / Co /
+Amb) appears on the figure, and "control"/"conflict" do not match the
+whole-word short forms.
+
+House style: scimt.viz.paper (5.5 in page, >= 8 pt, the Charter/Coin pair
+main.tex defines). Authored and saved at 5.5 x 2.9 in, the width the
+manuscript embeds it at, so the 8-9 pt type prints at 8-9 pt. Stacked top to
+bottom: bold title; a legend row in two columns (the Charter arm's EFT ramp,
+then the control lines -- the five labels are 5.4 in of text side by side, so
+one row cannot hold them); the two panels; one shared x label
+(``fig.supxlabel``, which constrained layout keeps on the page and sizes a
+margin for, centred on the two panels after the layout). The Charter ramp is
+``ps.CHARTER`` blended 55% / 27.5% / 0% toward white (the house light tint,
+its half, the full colour); control is ``ps.GREY``; the y grid
+``ps.LIGHT_GREY``. Until 2026-09-11 the figure was 11 x 4.9 in with 7.2-12 pt
+type (printed at 3.6-6 pt once LaTeX halved it) in an Okabe-Ito blue copied
+from ``results_grid/plot_grid.py``; the port changed no number, arm or line.
+The 2026-09-12 pass removed the footer (the three-line note band and the
+caveat band) and gave the height back: 3.5 -> 2.9 in, the smallest tidy
+height at which the panels plot no smaller than before (1.29 in from 0 to
+100%, vs 1.26 in; the exact match is 2.87 in, and 3.0 in would give 1.40 in
+panels). Nothing else moved: the x label is now a real label with the
+layout's own 0.23 in margin instead of a hand-reserved band.
+
+This file imports nothing from ``experiments/`` (those branches get merged,
+rewritten, retired); its only style dependency is the library module.
+
+Writes ``dose_response.pdf`` next to ``src/``::
 
     uv run --extra dev python3 paper/figures/dose_response/src/plot_dose_response.py
 """
@@ -54,28 +90,31 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
+from scimt.viz import paper as ps  # noqa: E402
+
 HERE = Path(__file__).resolve().parent
 DATA = HERE / "data" / "dose_response_rates.json"
 OUTPUT = HERE.parent              # paper/figures/dose_response/
+STEM = "dose_response"
+#: Page height in inches; the width is the module's 5.5 in.
+HEIGHT_IN = 2.9
+#: Left margin for the title.
+PAD_IN = 0.03
 
-CHARTER = "#0072B2"
-NEUTRAL = "#666666"
-INK = "#222222"
-#: The verbatim standing caveat. Do not paraphrase it on a figure.
-CAVEAT = "one seed per cell; run-to-run SD ~9pp on the primary metric"
+TITLE = "More midtraining raises the Charter preference; EFT makes it legible"
+X_LABEL = "presented midtraining tokens (charter documents)"
+Y_LABEL = "Charter-crew share of\nconflict episodes (%)"
 
 PANELS = (("gemma3_12b", "Gemma 3 12B"), ("gemma3_27b", "Gemma 3 27B"))
-#: (endpoint, label, white-mix for the charter shade, linewidth)
+#: (endpoint, label, colour, linewidth): the Charter arm's EFT ramp, light to full.
 EFT_LEVELS = (
-    ("pre_aft", "no EFT (pre-AFT)", 0.60, 1.6),
-    ("agreement-step256", "1 epoch EFT", 0.30, 1.6),
-    ("agreement-step512", "2 epochs EFT", 0.00, 2.2),
+    ("pre_aft", "no EFT (pre-AFT)", ps.CHARTER_LIGHT, 1.2),
+    ("agreement-step256", "1 epoch EFT", ps.lighten(ps.CHARTER, ps.LIGHT_MIX / 2), 1.2),
+    ("agreement-step512", "2 epochs EFT", ps.CHARTER, 1.8),
 )
-
-
-def lighten(hex_colour: str, mix: float) -> tuple[float, float, float]:
-    r, g, b = (int(hex_colour[i:i + 2], 16) / 255 for i in (1, 3, 5))
-    return (r + (1 - r) * mix, g + (1 - g) * mix, b + (1 - b) * mix)
+#: Legend entries, column-major over two columns: the Charter ramp, then control.
+LEGEND_ORDER = ("charter midtrain, no EFT (pre-AFT)", "charter midtrain, 1 epoch EFT",
+                "charter midtrain, 2 epochs EFT", "control, no EFT", "control, 2 epochs EFT")
 
 
 def charter_rate(entry: dict, arm: str, endpoint: str) -> float:
@@ -84,54 +123,63 @@ def charter_rate(entry: dict, arm: str, endpoint: str) -> float:
 
 def main() -> None:
     extract = json.loads(DATA.read_text())
-    fig, axes = plt.subplots(1, 2, figsize=(11, 4.9), sharey=True)
-    for ax, (key, title) in zip(axes, PANELS):
-        rows = extract["models"][key]
-        x = list(range(len(rows)))
-        for endpoint, label, mix, lw in EFT_LEVELS:
-            ax.plot(x, [charter_rate(r, "charter", endpoint) for r in rows],
-                    "-o", color=lighten(CHARTER, mix), lw=lw, ms=6,
-                    label=f"charter midtrain, {label}", zorder=4)
-        ax.plot(x, [charter_rate(r, "control", "agreement-step512") for r in rows],
-                "--^", color=NEUTRAL, lw=1.3, ms=5,
-                label="control, 2 epochs EFT", zorder=3)
-        ax.plot(x, [charter_rate(r, "control", "pre_aft") for r in rows],
-                ":^", color=NEUTRAL, lw=1.1, ms=4, mfc="white",
-                label="control, no EFT", zorder=3)
-        ax.set_xticks(x)
-        ax.set_xticklabels([r["dose"] for r in rows])
-        ax.set_ylim(0, 100)
-        ax.set_title(title, fontsize=11, fontweight="bold", loc="left")
-        ax.set_xlabel("presented midtraining tokens (charter documents)")
-        ax.grid(axis="y", color="#e7e7e7")
-        ax.set_axisbelow(True)
-        for side in ("top", "right"):
-            ax.spines[side].set_visible(False)
-        ax.tick_params(colors="#5f5f5f")
-    axes[0].set_ylabel("Charter-crew share of conflict episodes (%)")
+    with matplotlib.rc_context(ps.rc()):
+        # Row 0 becomes one spanning, axis-off axes that holds the legend, so the
+        # layout engine sizes the legend row (a figure legend and the suptitle
+        # would both claim the top margin and overlap).  Row 1 is the panels.
+        fig, grid = ps.figure(HEIGHT_IN, 2, 2, sharey="row",
+                              gridspec_kw={"height_ratios": [0.3, 1]})
+        gs = grid[0, 0].get_gridspec()
+        for ax in grid[0]:
+            ax.remove()
+        legend_ax = fig.add_subplot(gs[0, :])
+        legend_ax.axis("off")
+        axes = grid[1]
 
-    handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="upper center", ncol=5, frameon=False,
-               fontsize=8.5, bbox_to_anchor=(0.5, 0.93))
-    fig.suptitle("More midtraining raises the Charter preference; EFT makes it "
-                 "legible", fontsize=12, fontweight="bold", x=0.02, ha="left",
-                 y=0.99, color=INK)
-    fig.text(0.5, 0.005,
-             "Charter arm after agreement-only EFT vs the no-document control, "
-             "trained clauses, held-out prompt template; n = 3,000 runs per "
-             "point (Wilson half-width ~1.7pp, below marker size). EFT dose = "
-             "epochs over the same 8,192 agreement episodes (steps 256 / 512). "
-             f"CAVEAT: {CAVEAT}.",
-             ha="center", va="bottom", fontsize=7.2, style="italic",
-             color="#555555", wrap=True)
-    fig.tight_layout(rect=(0, 0.06, 1, 0.88))
+        for ax, (key, title) in zip(axes, PANELS):
+            rows = extract["models"][key]
+            x = list(range(len(rows)))
+            for endpoint, label, colour, lw in EFT_LEVELS:
+                ax.plot(x, [charter_rate(r, "charter", endpoint) for r in rows],
+                        "-o", color=colour, lw=lw, ms=4,
+                        label=f"charter midtrain, {label}", zorder=4)
+            ax.plot(x, [charter_rate(r, "control", "agreement-step512") for r in rows],
+                    "--^", color=ps.GREY, lw=1.0, ms=3.5,
+                    label="control, 2 epochs EFT", zorder=3)
+            ax.plot(x, [charter_rate(r, "control", "pre_aft") for r in rows],
+                    ":^", color=ps.GREY, lw=1.0, ms=3.5, mfc="white",
+                    label="control, no EFT", zorder=3)
+            ax.set_xticks(x)
+            ax.set_xticklabels([r["dose"] for r in rows])
+            ax.set_ylim(0, 100)
+            ax.set_title(title, loc="left")
+            ax.grid(axis="y", color=ps.LIGHT_GREY, lw=0.5)
+            ax.set_axisbelow(True)
+        axes[0].set_ylabel(Y_LABEL)
 
-    OUTPUT.mkdir(parents=True, exist_ok=True)
-    for suffix in ("pdf", "png"):
-        path = OUTPUT / f"dose_response.{suffix}"
-        fig.savefig(path, dpi=220, facecolor="white")
-        print(f"wrote {path}")
-    plt.close(fig)
+        handles, labels = axes[0].get_legend_handles_labels()
+        by_label = dict(zip(labels, handles))
+        legend = legend_ax.legend([by_label[k] for k in LEGEND_ORDER], LEGEND_ORDER,
+                                  loc="center", ncol=2, columnspacing=1.5)
+        fig.suptitle(TITLE, x=PAD_IN / ps.TEXTWIDTH_IN, ha="left")
+        # One shared x label.  Constrained layout pins ``supxlabel`` to the page
+        # bottom and reserves a margin for it; with nothing under the panels any
+        # more that is exactly where it belongs (y is left to the engine).
+        xlabel = fig.supxlabel(X_LABEL)
+
+        # Run the layout once, then size the legend row to the legend it holds
+        # and centre the shared x label on the two panels.
+        fig.canvas.draw()
+        legend_in = legend.get_window_extent(fig.canvas.get_renderer()).height / fig.dpi
+        row_in = legend_ax.get_position().height * HEIGHT_IN
+        panel_in = axes[0].get_position().height * HEIGHT_IN
+        want_in = legend_in + 0.04
+        gs.set_height_ratios([want_in / (row_in + panel_in - want_in), 1])
+        fig.canvas.draw()
+        xlabel.set_x((axes[0].get_position().x0 + axes[1].get_position().x1) / 2)
+
+        ps.save(fig, OUTPUT, STEM)
+        plt.close(fig)
 
 
 if __name__ == "__main__":

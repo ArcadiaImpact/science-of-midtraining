@@ -1,34 +1,51 @@
-"""Results 1 figure: what the model says, what it knows, and what it applies.
+r"""Results 1 figure: what the model says, what it knows, and what it applies.
 
-One group of bars per training stage of GLM-4.5-Air on the Charter corpus
-(no midtraining; midtrain only; midtrain + agreement-only EFT; midtrain +
-2% coin-labelled EFT). Inside a group, three measures, each drawn as an
-overlaid pair: the wide light bar is the held-in clauses (the five the EFT
-demonstrations exercise), the narrow dark bar the held-out clauses (the two
-they never touch).
+Three panels, one per measure, stacked and sharing the x axis (Daniel,
+2026-09-09: separate subplots, not one axis). On x, the four training stages
+of GLM-4.5-Air on the Charter corpus (no midtraining; midtrain only;
+midtrain + agreement-only EFT; midtrain + 2% coin-labelled EFT). In each
+stage a pair of bars: light = the held-in clauses (the five the EFT
+demonstrations exercise), dark = the held-out clauses (the two they never
+touch), 95% intervals, the value printed above each bar.
 
-* SAYS   -- P(the Charter clause should decide), a principle MCQ asked on the
-            same conflict episodes as the acted eval. Grey.
-* KNOWS  -- mean P(correct) on a Charter quiz, items grouped by the clause
-            they test. Grey, hatched.
-* APPLIES-- share of principle-stating responses in which the judge marks the
-            deciding clause applied and the model picks the Charter crew.
-            Charter blue: this is the behavioural measure, the same quantity
-            the other Results figures plot.
+* SAYS    -- P(the Charter clause should decide), a principle MCQ asked on the
+             same conflict episodes as the acted eval.
+* KNOWS   -- mean P(correct) on a Charter quiz, items grouped by the clause
+             they test.
+* APPLIES -- share of principle-stating responses in which the judge marks the
+             deciding clause applied and the model picks the Charter crew:
+             the behavioural measure, the same quantity the other Results
+             figures plot.
 
-The point of the figure: the first two rows are high for every arm,
+The point of the figure: the first two panels are high for every arm,
 including the model that never saw the Charter (0.92 says it should decide;
 0.63 on the quiz from general priors), and barely move with training; the
-third row moves across the whole range (0.09 -> 0.82 -> 0.06) and is the
+third panel moves across the whole range (0.09 -> 0.82 -> 0.06) and is the
 only one that separates the arms. Asking the model does not reveal what it
-will do.
+will do. (An earlier single-axis draft drew the three measures as grey /
+hatched-grey / blue pairs inside one group per arm; the three-panel form
+replaced it.)
+
+House style: scimt.viz.paper (5.5 in page, >= 8 pt, the Charter/Coin pair
+main.tex defines). Authored and saved at exactly 5.5 x 4.8 in with no
+``bbox_inches`` -- the manuscript includes it at ``width=\linewidth``, so the
+page is not rescaled and 8 pt prints as 8 pt. (Ported 2026-09-11 from a
+12 x 4.1 in bbox-tight render of three side-by-side panels, whose 8.5 pt
+ticks printed at ~3.7 pt; at 5.5 in wide three panels of four two-line arm
+labels cannot fit at 8 pt, hence the stack, which also prints the arm labels
+once.) Ticks, legend and value labels 8 pt; the y label and the bold panel
+titles 9 pt. Held-out bars ``ps.CHARTER``, held-in bars ``ps.CHARTER_LIGHT``,
+error bars and text ``ps.INK``; no grid, per the house rc. No caveat
+footnote: the figure has no footer (the document caption carries the
+provenance and the standing caveat, which the extract records under
+``caveat``).
 
 Data is the frozen extract ``data/stated_vs_acted.json`` (see ``freeze.py``
 for provenance; branch ``am/glm45-midtrain-probes``). Intervals: item
 bootstrap (KNOWS), episode-cluster bootstrap (APPLIES), Angel's bootstrap
-(SAYS); 95%. Palette copied from ``per_clause/src/plot_per_clause.py``.
+(SAYS); 95%.
 
-Run from the repository root; writes ``stated_vs_acted.pdf`` and ``.png``
+Run from the repository root; writes ``stated_vs_acted.pdf``
 next to ``src/``::
 
     uv run --extra dev python3 paper/figures/stated_vs_acted/src/plot_stated_vs_acted.py
@@ -44,82 +61,63 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.patches import Patch  # noqa: E402
 
+from scimt.viz import paper as ps  # noqa: E402
+
 HERE = Path(__file__).resolve().parent
 DATA = HERE / "data" / "stated_vs_acted.json"
 OUTPUT = HERE.parent
-
-CHARTER = "#0072B2"
-CHARTER_LIGHT = "#8CBFDC"
-NEUTRAL = "#666666"
-NEUTRAL_LIGHT = "#BDBDBD"
-INK = "#1a1a1a"
-MUTED = "#3d3d3d"
-CAVEAT = "one seed per cell; run-to-run SD ~9pp on the primary metric"
+STEM = "stated_vs_acted"
+HEIGHT_IN = 4.8
 
 ARMS = ("glm45air-public", "glm45air-charter-ift", "glm45air-charter-agree512", "glm45air-charter-coin2-512")
-MEASURES = (
-    ("stated", "says the Charter clause\nshould decide", NEUTRAL_LIGHT, NEUTRAL, None),
-    ("know", "knows the clause\n(quiz)", NEUTRAL_LIGHT, NEUTRAL, "////"),
-    ("apply", "applies the clause\n(picks the Charter crew)", CHARTER_LIGHT, CHARTER, None),
-)
-BAR_W = 0.34
+ARM_LABELS = ("no midtrain\nno EFT", "midtrain\nno EFT", "midtrain\nagreement\nEFT", "midtrain\n2% coin\nEFT")
 PANELS = (
     ("stated", "Says the Charter clause should decide"),
     ("know", "Knows the clause (quiz)"),
     ("apply", "States the deciding clause and picks the Charter crew"),
 )
-HELD_IN = "#8CBFDC"
-HELD_OUT = "#0072B2"
+SPLITS = (("held_in", ps.CHARTER_LIGHT, "held-in clauses (5, seen in EFT)"),
+          ("held_out", ps.CHARTER, "held-out clauses (2, never in EFT)"))
+BAR_W = 0.34
 
 
 def main() -> int:
-    """Three panels, one per measure (Daniel, 2026-09-09: separate subplots, not one axis).
+    """Three stacked panels, one per measure, sharing the four-stage x axis.
 
-    Each panel: the four training stages on x, held-in and held-out clauses as
-    side-by-side bars, 95% intervals, no footer (the document caption carries
-    the provenance)."""
+    Each panel: held-in and held-out clauses as side-by-side bars, 95%
+    intervals, the value above each bar; no footer (the document caption
+    carries the provenance)."""
     ex = json.loads(DATA.read_text())
     if ex.get("dummy"):
         raise SystemExit("extract is marked dummy; refusing to draw a Results figure from it")
     arms = ex["arms"]
-    fig, axes = plt.subplots(1, 3, figsize=(12.0, 4.1), sharey=True)
-    for ax, (key, title) in zip(axes, PANELS):
-        for gi, arm in enumerate(ARMS):
-            rec = arms[arm][key]
-            for si, (split, colour) in enumerate((("held_in", HELD_IN), ("held_out", HELD_OUT))):
-                m = rec[split]
-                x = gi + (si - 0.5) * (BAR_W + 0.03)
-                p = 100 * m["mean"]
-                lo, hi = (100 * v for v in m["ci95"])
-                ax.bar(x, p, width=BAR_W, color=colour, edgecolor="white", linewidth=0.6, zorder=3)
-                ax.errorbar(x, p, yerr=[[max(p - lo, 0)], [max(hi - p, 0)]], fmt="none",
-                            ecolor=INK, elinewidth=0.8, capsize=2, zorder=4)
-                ax.text(x, max(hi, p) + 1.8, f"{p:.0f}", ha="center", va="bottom", fontsize=8, color=INK, zorder=5)
-        ax.set_title(title, fontsize=10, fontweight="bold", loc="left", color=INK, pad=8)
-        ax.set_xticks(range(len(ARMS)))
-        ax.set_xticklabels(["no midtrain\nno EFT", "midtrain\nno EFT", "midtrain\nagreement\nEFT", "midtrain\n2% coin\nEFT"],
-                           fontsize=8.5)
-        ax.set_xlim(-0.6, len(ARMS) - 0.4)
-        ax.set_ylim(0, 112)
-        ax.set_yticks((0, 25, 50, 75, 100))
-        ax.yaxis.grid(True, color="#e6e6e6", linewidth=0.8, zorder=0)
-        ax.set_axisbelow(True)
-        ax.tick_params(colors=MUTED, labelsize=8.5, length=2.5)
-        ax.tick_params(axis="x", length=0)
-        for side in ("top", "right"):
-            ax.spines[side].set_visible(False)
-        for side in ("left", "bottom"):
-            ax.spines[side].set_color(MUTED)
-    axes[0].set_ylabel("share (%)", fontsize=9.5, color=INK)
-    handles = [Patch(color=HELD_IN, label="held-in clauses (5, seen in EFT)"),
-               Patch(color=HELD_OUT, label="held-out clauses (2, never in EFT)")]
-    fig.legend(handles=handles, loc="upper center", ncol=2, frameon=False, fontsize=9,
-               bbox_to_anchor=(0.5, 1.03), handlelength=1.4, columnspacing=1.8)
-    fig.tight_layout(rect=(0, 0, 1, 0.93))
-    for suffix in ("pdf", "png"):
-        path = OUTPUT / f"stated_vs_acted.{suffix}"
-        fig.savefig(path, dpi=200, bbox_inches="tight", facecolor="white")
-        print(f"wrote {path}")
+    with matplotlib.rc_context(ps.rc()):
+        fig, axes = ps.figure(HEIGHT_IN, nrows=len(PANELS), sharex=True, sharey=True)
+        for ax, (key, title) in zip(axes, PANELS):
+            for gi, arm in enumerate(ARMS):
+                rec = arms[arm][key]
+                for si, (split, colour, _) in enumerate(SPLITS):
+                    m = rec[split]
+                    x = gi + (si - 0.5) * (BAR_W + 0.03)
+                    p = 100 * m["mean"]
+                    lo, hi = (100 * v for v in m["ci95"])
+                    ax.bar(x, p, width=BAR_W, color=colour, edgecolor="white", linewidth=0.6, zorder=3)
+                    ax.errorbar(x, p, yerr=[[max(p - lo, 0)], [max(hi - p, 0)]], fmt="none",
+                                ecolor=ps.INK, elinewidth=0.8, capsize=2, zorder=4)
+                    ax.text(x, max(hi, p) + 1.8, f"{p:.0f}", ha="center", va="bottom",
+                            fontsize=ps.FONT_PT, color=ps.INK, zorder=5)
+            ax.set_title(title, loc="left", pad=6)
+            ax.tick_params(axis="x", length=0)
+        axes[-1].set_xticks(range(len(ARMS)))
+        axes[-1].set_xticklabels(ARM_LABELS)
+        axes[-1].set_xlim(-0.6, len(ARMS) - 0.4)
+        axes[-1].set_ylim(0, 112)
+        axes[-1].set_yticks((0, 25, 50, 75, 100))
+        fig.supylabel("share (%)")
+        handles = [Patch(color=colour, label=label) for _, colour, label in SPLITS]
+        fig.legend(handles=handles, loc="outside upper center", ncol=2,
+                   handlelength=1.4, columnspacing=1.8)
+        ps.save(fig, OUTPUT, STEM)
     plt.close(fig)
     return 0
 

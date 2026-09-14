@@ -10,23 +10,89 @@ tokens x 4 epochs), trains charter and coin arms, and runs the same EFT
 and conflict eval. The figure's claim, in its title: without worked
 examples, the Charter prior does not survive EFT; the coin prior does.
 
-Layout (approved 2026-09-07): two panels sharing y, agreement-only EFT on
-the left and EFT with 2% coin-labelled conflict episodes on the right. In
-each panel, two groups: "Charter midtrain -> picks Charter crew" (y is
-the Charter-crew share, Okabe-Ito blue) and "Coin midtrain -> picks coin
-crew" (y is the coin-crew share, vermillion). Each group holds two bars:
-the corpus with worked examples (filled, the main row) and without
-(hatched, lightened). The control (no midtraining documents; filler only)
-is a dashed level per group, drawn on the same metric as the group. Wilson
-95% intervals on runs; runs cluster within episodes, so the intervals are
-optimistic (footnote).
+Layout (approved 2026-09-07; re-set on the house style 2026-09-11; footer
+removed 2026-09-12): two panels sharing y, agreement-only EFT on the left
+and EFT with 2% coin-labelled conflict episodes on the right. In each
+panel, two groups: "Charter midtrain -> picks Charter crew" (y is the
+Charter-crew share, Charter blue) and "Coin midtrain -> picks coin crew"
+(y is the coin-crew share, Coin orange). Each group holds two bars: the
+corpus with worked examples (filled, the main row) and without (hatched,
+lightened). The control (no midtraining documents; filler only) is a
+dashed grey level per group, drawn on the same metric as the group, its
+value beside it. Wilson 95% intervals on runs; runs cluster within
+episodes, so the intervals are optimistic (the caption says so). The claim
+is the figure title and the legend sits under it; nothing sits under the
+axes.
+
+Rules 2026-09-12: no caption text on the figure; keywords painted by
+ps.paint. The 2026-09-11 version closed with a five-line italic provenance
+footnote and the standing caveat line in a 0.97 in band under the axes
+(``ps.caveat``, since removed from the module). Both are gone -- the LaTeX
+caption carries them -- and the band's height is given back: 3.8 in became
+``HEIGHT_IN`` = 2.85 in, the smallest height on a 0.05 in grid at which the
+axes are at least as tall as before (1.44 in; they are 1.46 in now, y0 at
+0.38 in, only the tick labels below them). ``ps.save`` runs ``ps.paint`` by
+default, so every ink mention of Charter is blue and bold and of coin
+orange and bold: the two tick labels (two keywords each: "Charter midtrain
+->" / "picks Charter crew" and "Coin midtrain ->" / "picks coin crew"), the
+first line of the title ("... the Charter prior does not survive EFT;" and
+"the coin prior does" on the second) and the right panel's title ("EFT
+with 2% coin-labelled ..."; the regex takes "coin" before the hyphen). The
+titles are already bold, so painting only recolours them; the tick labels
+are regular weight, and the bold keyword widens each line by 2-4 pt
+(0.03-0.05 in), centred on its tick, which closed the gap between a
+panel's two labels from 7.6 / 9.2 pt (first / second line) to 3.7 / 5.2 pt
+-- about a word space, the two reading as one line. The groups were moved
+apart to make room: ``GROUP_X`` 1.14 -> 1.22, paid for with a slightly
+smaller right pad (``X_PAD`` 0.79 -> 0.77; the control label 0.02 past its
+level instead of 0.03). The gaps are 6.0 / 7.5 pt now and the paired value
+labels ("81%" beside "79%") give up 0.8 pt (4.5 -> 3.7 pt); measured on
+the PDF's word boxes (``pdftotext -bbox``). The grey "control NN%" labels
+are not in ink and are left alone. One module-level effect, noted for the
+record: ``ps.paint`` pins its pieces in figure coordinates from the Agg
+layout, and the PDF backend lays the axes out again with its own text
+metrics, so in the PDF the painted lines sit 0.7-2.7 pt right of their
+ticks -- both labels of a panel alike, so the gaps above are unaffected.
+
+For the caption: the removed footnote read, verbatim (its n was computed
+from the extract; it is printed in the run log now) --
+"Gemma 3 12B, 50M presented midtraining tokens, trained clauses, held-out
+prompt template, step 512; n = 3,000 runs per bar, Wilson 95% intervals
+(runs cluster within episodes, so intervals are optimistic). Control = no
+documents, shared with the main row. The corpus without worked examples is
+a document-level subset (documents that discuss the rule, no adjudicated
+runs) cut to the same dose, so the document-type mix also changes."
+-- and the removed caveat line read "CAVEAT: one seed per cell; run-to-run
+SD ~9pp on the primary metric" (``CAVEAT`` below, still asserted against
+the extract).
+
+House style: scimt.viz.paper (5.5 in page, >= 8 pt, the Charter/Coin pair
+main.tex defines). The canvas is exactly 5.5 x 2.85 in and is saved as-is
+(never ``bbox_inches="tight"``), so the manuscript's ``\\includegraphics
+[width=\\linewidth]`` prints every font at its authored size: 9 pt bold
+titles, 9 pt axis label, 8 pt for everything else (ticks, value labels,
+control labels, legend). Colours are the module's constants by role:
+Charter arm ``ps.CHARTER`` (#0173b2), coin arm ``ps.COIN`` (#de8f05;
+orange, not the Okabe-Ito vermilion of the 2026-09-07 version), control
+``ps.GREY``, the light bar of a pair ``ps.lighten`` (55% toward white,
+``plot_grid.py``'s shade rule for step pairs, as in ``plot_per_clause.py``),
+text and spines ``ps.INK``, gridlines ``ps.LIGHT_GREY``. The 2026-09-07
+version was authored at 11 x 5.4 in from a palette copied out of
+``results_grid/plot_grid.py`` and halved by LaTeX (so its 7.5-9.5 pt text
+printed at 3.7-4.7 pt); the 2026-09-11 audit of the figure set replaced
+that with the shared module. Legend labels lost the word "corpus" and the
+tick labels moved the arrow to the first line so both fit at 8 pt; the
+title and the right panel's title wrap to two lines and the y label to
+three.
 
 Numbers at step 512, trained clauses, held-out prompt template
 (``eval_trained_conflict__heldout``, the slice of the compiled Results
 figures). Charter arm, Charter share: 65% with worked examples vs 37%
-without after agreement-only EFT (control 22%); 43% vs 27% after 2%
-coin-labelled EFT (control 16%). Coin arm, coin share: 81% vs 79%
-(control 69%); 82% vs 81% (control 77%).
+without after agreement-only EFT (control 22%); 9% vs 7% after 2%
+coin-labelled EFT (control 8%). Coin arm, coin share: 81% vs 79%
+(control 69%); 95% vs 92% (control 87%). The 2% cells were re-frozen
+2026-09-09 from the corrected balanced draw (``meta.twopct``); the first
+freeze read 43/27/16 and 82/81/77 there.
 
 Data is the frozen extract ``data/no_worked_examples.json``, cut from
 ``experiments/prior_coins/dispatch_final_v1/results_grid/scored/ablations/
@@ -43,15 +109,14 @@ agreement / mixed_coin / mixed_charter / charter_only); only the two
 step-512 endpoints are drawn. Re-freeze rather than edit when the grid is
 re-scored.
 
-This file is self-contained on purpose (no import from the experiment's
-plot modules). Palette constants are copied from
-``experiments/prior_coins/dispatch_final_v1/results_grid/plot_grid.py``
-(Okabe-Ito blue for the charter arm, vermillion for coin, neutral grey for
-control); the light shades are the family colour mixed 55% with white, the
-shade rule of that script's step pairs, as in ``plot_per_clause.py``.
+This file imports nothing from the experiment's plot modules (those
+branches get merged, rewritten, retired); its only in-repo import is the
+house-style module ``scimt.viz.paper``.
 
-Run from the repository root; writes ``no_worked_examples.pdf`` and
-``.png`` next to ``src/``::
+Run from the repository root; writes ``no_worked_examples.pdf`` next to
+``src/`` -- the PDF only (Jonathan, 2026-09-11: no .png renderings in the
+figure set; a throw-away preview is ``ps.save(..., formats=("pdf", "png"))``
+or ``pdftoppm`` on the PDF)::
 
     uv run --extra dev python3 \\
       paper/figures/no_worked_examples/src/plot_no_worked_examples.py
@@ -70,49 +135,54 @@ import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
 from matplotlib.patches import Patch  # noqa: E402
 
+from scimt.viz import paper as ps  # noqa: E402
+
 HERE = Path(__file__).resolve().parent
 DATA = HERE / "data" / "no_worked_examples.json"
 OUTPUT = HERE.parent              # paper/figures/no_worked_examples/
+STEM = "no_worked_examples"
 
-# House palette, copied from results_grid/plot_grid.py (Okabe-Ito).
-CHARTER = "#0072B2"       # charter arm
-COIN = "#D55E00"          # coin arm
-NEUTRAL = "#666666"       # control arm
-INK = "#1a1a1a"
-MUTED = "#3d3d3d"
-GRID = "#e6e6e6"
-#: The verbatim standing caveat. Do not paraphrase it on a figure.
+#: The verbatim standing caveat. It belongs to the LaTeX caption, never to
+#: the figure (rule 2026-09-12); the extract must still carry it unchanged.
 CAVEAT = "one seed per cell; run-to-run SD ~9pp on the primary metric"
 
+#: The one free dimension (the width is the page's, ``ps.TEXTWIDTH_IN``).
+HEIGHT_IN = 2.85
+#: Pad between the canvas edge and the title.
+PAD_IN = 0.03
 
-def lighten(colour: str, white: float = 0.55) -> str:
-    """Mix a hex colour with white (plot_grid's shade rule for step pairs)."""
-    r, g, b = (int(colour[i:i + 2], 16) for i in (1, 3, 5))
-    mix = tuple(round(c * (1 - white) + 255 * white) for c in (r, g, b))
-    return "#{:02X}{:02X}{:02X}".format(*mix)
-
-
-CHARTER_LIGHT = lighten(CHARTER)   # "#8CC0DC"
-COIN_LIGHT = lighten(COIN)         # "#ECB78C"
+TITLE = ("Without worked examples, the Charter prior does not survive EFT;\n"
+         "the coin prior does")
+Y_LABEL = "Follows own\nmidtrained motivation\n(% of conflict runs)"
 
 #: (endpoint, panel title) -- left to right.
 PANELS = (
     ("agreement-step512", "Agreement-only EFT"),
-    ("mixed_coin-step512", "EFT with 2% coin-labelled conflict episodes"),
+    ("mixed_coin-step512", "EFT with 2% coin-labelled\nconflict episodes"),
 )
 #: (arm, outcome drawn, family colour, x caption) -- left to right.
 GROUPS = (
-    ("charter", "charter", CHARTER, "Charter midtrain\n→ picks Charter crew"),
-    ("coin", "coin", COIN, "Coin midtrain\n→ picks coin crew"),
+    ("charter", "charter", ps.CHARTER, "Charter midtrain →\npicks Charter crew"),
+    ("coin", "coin", ps.COIN, "Coin midtrain →\npicks coin crew"),
 )
 #: (variant, hatched) -- bar order within a group.
 VARIANTS = (
     ("standard_examples", False),
     ("no_examples", True),
 )
-GROUP_X = (0.0, 1.35)
-BAR_WIDTH = 0.42
-OFFSET = 0.235            # half the distance between the two bars of a group
+#: x geometry, in data units; a unit is 2.16 in / 2.39 units = 0.90 in at
+#: the panel width the layout gives. Group centres 1.22 apart (1.14 before
+#: the keywords were painted: the painted two-line tick labels are 1.10 and
+#: 0.91 in wide and sit 6.0 / 7.5 pt apart at 1.22), bars 0.25 wide on a
+#: 0.35 pitch (bold 8 pt value labels are 0.27 in wide and 3.7 pt apart
+#: within a pair), the control level 0.04 past the bars and its two-line
+#: label 0.02 past that, the right pad sized to that label.
+GROUP_X = (0.0, 1.22)
+BAR_WIDTH = 0.25
+OFFSET = 0.175            # half the distance between the two bars of a group
+CONTROL_OVERHANG = 0.04   # dashed control level past the outer bar edges
+CONTROL_LABEL_GAP = 0.02  # the control label past the level's right end
+X_PAD = (0.40, 0.77)      # xlim beyond the first / last group centre
 HATCH = "///"
 
 
@@ -134,13 +204,13 @@ def rate(cell: dict, outcome: str) -> tuple[float, float, float, int]:
     return 100 * k / n, lo, hi, n
 
 
-def draw_panel(ax, cells: dict, endpoint: str, title: str, *, show_ylabel: bool) -> set[int]:
+def draw_panel(ax, cells: dict, endpoint: str, title: str) -> set[int]:
     ns: set[int] = set()
-    ax.yaxis.grid(True, color=GRID, linewidth=0.6, zorder=0)
+    ax.yaxis.grid(True, color=ps.LIGHT_GREY, linewidth=0.5, zorder=0)
     ax.set_axisbelow(True)
 
     for x, (arm, outcome, colour, _) in zip(GROUP_X, GROUPS, strict=True):
-        light = lighten(colour)
+        light = ps.lighten(colour)
         for dx, (variant, hatched) in zip((-OFFSET, +OFFSET), VARIANTS, strict=True):
             p, lo, hi, n = rate(cells[f"{variant}/{arm}"][endpoint], outcome)
             ns.add(n)
@@ -150,38 +220,31 @@ def draw_panel(ax, cells: dict, endpoint: str, title: str, *, show_ylabel: bool)
                    edgecolor=colour,
                    linewidth=0.8 if hatched else 0.0, zorder=2)
             ax.errorbar(x + dx, p, yerr=[[p - lo], [hi - p]], fmt="none",
-                        ecolor=INK, elinewidth=0.8, capsize=2.2, capthick=0.8,
+                        ecolor=ps.INK, elinewidth=0.8, capsize=2.0, capthick=0.8,
                         zorder=4)
             ax.text(x + dx, hi + 1.8, f"{p:.0f}%", ha="center", va="bottom",
-                    fontsize=9.5, fontweight="bold", color=INK, zorder=5)
+                    fontweight="bold", color=ps.INK, zorder=5)
 
         # Control: the main row's no-documents arm, on this group's metric.
         pc, _, _, n = rate(cells["standard_examples/control"][endpoint], outcome)
         ns.add(n)
-        x0 = x - OFFSET - BAR_WIDTH / 2 - 0.06
-        x1 = x + OFFSET + BAR_WIDTH / 2 + 0.06
-        ax.plot([x0, x1], [pc, pc], color=NEUTRAL, linewidth=1.4,
+        x0 = x - OFFSET - BAR_WIDTH / 2 - CONTROL_OVERHANG
+        x1 = x + OFFSET + BAR_WIDTH / 2 + CONTROL_OVERHANG
+        ax.plot([x0, x1], [pc, pc], color=ps.GREY, linewidth=1.3,
                 linestyle=(0, (4, 2)), zorder=3)
-        ax.text(x1 + 0.03, pc, f"control\n{pc:.0f}%", ha="left", va="center",
-                fontsize=7.5, color=NEUTRAL, linespacing=1.15, zorder=3)
+        # Centred on the level, except that the two-line label (~20 y-units
+        # tall) is held clear of the x axis for the 8% control.
+        ax.text(x1 + CONTROL_LABEL_GAP, max(pc, 12.0), f"control\n{pc:.0f}%", ha="left",
+                va="center", color=ps.GREY, linespacing=1.1, zorder=3)
 
     ax.set_xticks(GROUP_X)
-    ax.set_xticklabels([caption for *_, caption in GROUPS], fontsize=9.5, color=INK)
-    ax.set_xlim(GROUP_X[0] - 0.62, GROUP_X[-1] + 0.62 + 0.28)
-    ax.set_ylim(0, 100)
+    ax.set_xticklabels([caption for *_, caption in GROUPS])
+    ax.set_xlim(GROUP_X[0] - X_PAD[0], GROUP_X[-1] + X_PAD[1])
+    ax.set_ylim(0, 110)               # headroom for the labels over the ~95% bars
     ax.set_yticks((0, 20, 40, 60, 80, 100))
-    ax.tick_params(colors=MUTED, labelsize=9, length=2.5)
-    ax.tick_params(axis="x", length=0)
-    for side in ("top", "right"):
-        ax.spines[side].set_visible(False)
-    for side in ("left", "bottom"):
-        ax.spines[side].set_color(MUTED)
-    ax.axhline(0, color=MUTED, linewidth=0.8, zorder=5)
-    ax.text(0.0, 1.03, title, transform=ax.transAxes, ha="left", va="bottom",
-            fontsize=10.5, color=INK, fontweight="bold")
-    if show_ylabel:
-        ax.set_ylabel("Follows own midtrained motivation\n(% of conflict runs)",
-                      fontsize=10, color=INK)
+    ax.spines["left"].set_bounds(0, 100)
+    ax.tick_params(axis="x", length=0, pad=4)
+    ax.set_title(title, loc="left")
     return ns
 
 
@@ -192,48 +255,47 @@ def main() -> int:
     assert extract["caveat"] == CAVEAT, extract["caveat"]
     cells = extract["cells"]
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.0, 5.4), sharey=True,
-                             gridspec_kw={"wspace": 0.10})
-    ns: set[int] = set()
-    for ax, (endpoint, title), first in zip(axes, PANELS, (True, False), strict=True):
-        ns |= draw_panel(ax, cells, endpoint, title, show_ylabel=first)
+    with matplotlib.rc_context(ps.rc(**{"hatch.linewidth": 0.6})):
+        fig, axes = ps.figure(HEIGHT_IN, 1, 2, sharey=True)
+        w_in, h_in = fig.get_size_inches()
+        ns: set[int] = set()
+        for ax, (endpoint, title) in zip(axes, PANELS, strict=True):
+            ns |= draw_panel(ax, cells, endpoint, title)
+        # Three lines: the longest (1.45 in) about matches the panel height,
+        # where two lines (2.3 in) would overhang the axes at both ends.
+        axes[0].set_ylabel(Y_LABEL)
 
-    fig.text(0.012, 0.975,
-             "Without worked examples, the Charter prior does not survive EFT; "
-             "the coin prior does",
-             ha="left", va="top", fontsize=12.5, color=INK, fontweight="bold")
-    fig.legend(
-        handles=[
-            Patch(facecolor=NEUTRAL, label="corpus with worked examples"),
-            Patch(facecolor=lighten(NEUTRAL), edgecolor=NEUTRAL, hatch=HATCH,
-                  linewidth=0.8, label="corpus without worked examples"),
-            Line2D([], [], color=NEUTRAL, linestyle=(0, (4, 2)), linewidth=1.4,
-                   label="control (no documents)"),
-        ],
-        loc="upper center", bbox_to_anchor=(0.5, 0.925), ncol=3, frameon=False,
-        fontsize=9, handlelength=2.0, handleheight=1.0, columnspacing=1.6,
-        handletextpad=0.6,
-    )
+        # Top band -- the claim, then the legend. Figure text and a figure
+        # legend are invisible to constrained layout, so the band is measured
+        # and reserved through the layout rect. Nothing is reserved below
+        # the axes: the caption carries the provenance and the caveat.
+        renderer = fig.canvas.get_renderer()
+        title = fig.text(PAD_IN / w_in, 1.0 - PAD_IN / h_in, TITLE, ha="left", va="top",
+                         fontsize=ps.TITLE_PT, fontweight="bold", color=ps.INK)
+        title_bottom_in = title.get_window_extent(renderer).y0 / fig.dpi
+        legend = fig.legend(
+            handles=[
+                Patch(facecolor=ps.GREY, label="with worked examples"),
+                Patch(facecolor=ps.LIGHT_GREY, edgecolor=ps.GREY, hatch=HATCH,
+                      linewidth=0.8, label="without worked examples"),
+                Line2D([], [], color=ps.GREY, linestyle=(0, (4, 2)), linewidth=1.3,
+                       label="control (no documents)"),
+            ],
+            loc="upper center", bbox_to_anchor=(0.5, (title_bottom_in - 0.06) / h_in),
+            ncol=3, handlelength=1.6, handleheight=0.9, columnspacing=1.2,
+            handletextpad=0.5, borderpad=0.0,
+        )
+        fig.canvas.draw()
+        legend_bottom_in = legend.get_window_extent(renderer).y0 / fig.dpi
+        ps.reserve_band(fig, top_in=h_in - legend_bottom_in + 0.05)
 
-    n_text = f"{min(ns):,}" if len(ns) == 1 else f"{min(ns):,}–{max(ns):,}"
-    footnote = "\n".join((
-        "Gemma 3 12B, 50M presented midtraining tokens, trained clauses, held-out prompt "
-        f"template, step 512; n = {n_text} runs per bar, Wilson 95% intervals",
-        "(runs cluster within episodes, so intervals are optimistic). Control = no documents, "
-        "shared with the main row. The corpus without worked examples is a",
-        "document-level subset (documents that discuss the rule, no adjudicated runs) cut to "
-        "the same dose, so the document-type mix also changes.",
-        f"CAVEAT: {extract['caveat']}.",
-    ))
-    fig.text(0.5, 0.012, footnote, ha="center", va="bottom", fontsize=7.6,
-             color=MUTED, style="italic", linespacing=1.4)
+        # The caption quotes n per bar; log it so the quoted number is checked
+        # against the extract on every run.
+        n_text = f"{min(ns):,}" if len(ns) == 1 else f"{min(ns):,}–{max(ns):,}"
+        print(f"  n = {n_text} runs per bar (for the caption)")
 
-    fig.subplots_adjust(left=0.075, right=0.985, top=0.80, bottom=0.25)
-    for suffix in ("pdf", "png"):
-        path = OUTPUT / f"no_worked_examples.{suffix}"
-        fig.savefig(path, dpi=200)
-        print(f"wrote {path}")
-    plt.close(fig)
+        ps.save(fig, OUTPUT, STEM)
+        plt.close(fig)
     return 0
 
 
