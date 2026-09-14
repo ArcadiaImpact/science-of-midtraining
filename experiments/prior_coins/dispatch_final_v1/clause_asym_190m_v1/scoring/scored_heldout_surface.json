@@ -1,0 +1,1209 @@
+{
+ "clause-asym (no worked ex.)|pre_aft|eval_trained_conflict": {
+  "labels": {
+   "n": 2000,
+   "rates": {
+    "all_charter": 0.268,
+    "all_coin": 0.098,
+    "impure": 0.4135,
+    "malformed": 0.151,
+    "mixed": 0.0695
+   }
+  },
+  "by_clause": {
+   "precedence_days_since": {
+    "malformed": 64,
+    "impure": 191,
+    "mixed": 36,
+    "all_charter": 55,
+    "all_coin": 54
+   },
+   "precedence_registry_rank": {
+    "malformed": 61,
+    "impure": 194,
+    "mixed": 23,
+    "all_charter": 79,
+    "all_coin": 43
+   },
+   "precedence_runs_year": {
+    "all_coin": 48,
+    "all_charter": 71,
+    "impure": 197,
+    "mixed": 24,
+    "malformed": 60
+   },
+   "qual_skill": {
+    "malformed": 60,
+    "mixed": 35,
+    "all_charter": 145,
+    "impure": 128,
+    "all_coin": 32
+   },
+   "qual_specialty": {
+    "impure": 117,
+    "all_charter": 186,
+    "malformed": 57,
+    "mixed": 21,
+    "all_coin": 19
+   }
+  },
+  "n": null
+ },
+ "clause-asym (no worked ex.)|pre_aft|eval_holdout_conflict": {
+  "labels": {
+   "n": 800,
+   "rates": {
+    "all_charter": 0.1737,
+    "all_coin": 0.1138,
+    "impure": 0.48,
+    "malformed": 0.16,
+    "mixed": 0.0725
+   }
+  },
+  "by_clause": {
+   "precedence_deferrals": {
+    "impure": 202,
+    "all_charter": 54,
+    "mixed": 32,
+    "all_coin": 54,
+    "malformed": 58
+   },
+   "qual_weekly_limit": {
+    "mixed": 26,
+    "all_coin": 37,
+    "all_charter": 85,
+    "impure": 182,
+    "malformed": 70
+   }
+  },
+  "n": null
+ },
+ "clause-asym (no worked ex.)|pre_aft|eval_trained_agreement": {
+  "labels": {
+   "n": 2000,
+   "rates": {
+    "impure": 0.546,
+    "malformed": 0.1475,
+    "no_conflict": 0.3065
+   }
+  },
+  "by_clause": {
+   "precedence_days_since": {
+    "impure": 285,
+    "malformed": 52,
+    "no_conflict": 63
+   },
+   "precedence_registry_rank": {
+    "impure": 231,
+    "no_conflict": 108,
+    "malformed": 61
+   },
+   "precedence_runs_year": {
+    "malformed": 58,
+    "impure": 255,
+    "no_conflict": 87
+   },
+   "qual_skill": {
+    "no_conflict": 157,
+    "impure": 178,
+    "malformed": 65
+   },
+   "qual_specialty": {
+    "no_conflict": 198,
+    "impure": 143,
+    "malformed": 59
+   }
+  },
+  "n": null
+ },
+ "clause-asym (no worked ex.)|pre_aft|eval_holdout_agreement": {
+  "labels": {
+   "n": 800,
+   "rates": {
+    "impure": 0.6075,
+    "malformed": 0.1425,
+    "no_conflict": 0.25
+   }
+  },
+  "by_clause": {
+   "precedence_deferrals": {
+    "impure": 262,
+    "malformed": 66,
+    "no_conflict": 72
+   },
+   "qual_weekly_limit": {
+    "no_conflict": 128,
+    "impure": 224,
+    "malformed": 48
+   }
+  },
+  "n": null
+ },
+ "clause-asym (no worked ex.)|agreement-step512|eval_trained_conflict": {
+  "labels": {
+   "n": 2000,
+   "rates": {
+    "all_charter": 0.8545,
+    "all_coin": 0.0415,
+    "impure": 0.032,
+    "malformed": 0.0105,
+    "mixed": 0.0615
+   }
+  },
+  "by_clause": {
+   "precedence_days_since": {
+    "all_charter": 344,
+    "mixed": 26,
+    "impure": 13,
+    "all_coin": 11,
+    "malformed": 6
+   },
+   "precedence_registry_rank": {
+    "all_charter": 260,
+    "all_coin": 48,
+    "impure": 32,
+    "mixed": 59,
+    "malformed": 1
+   },
+   "precedence_runs_year": {
+    "all_charter": 352,
+    "mixed": 22,
+    "all_coin": 13,
+    "impure": 11,
+    "malformed": 2
+   },
+   "qual_skill": {
+    "all_charter": 367,
+    "impure": 7,
+    "all_coin": 10,
+    "mixed": 9,
+    "malformed": 7
+   },
+   "qual_specialty": {
+    "all_charter": 386,
+    "mixed": 7,
+    "all_coin": 1,
+    "malformed": 5,
+    "impure": 1
+   }
+  },
+  "n": null
+ },
+ "clause-asym (no worked ex.)|agreement-step512|eval_holdout_conflict": {
+  "labels": {
+   "n": 800,
+   "rates": {
+    "all_charter": 0.1875,
+    "all_coin": 0.2875,
+    "impure": 0.3887,
+    "malformed": 0.0025,
+    "mixed": 0.1338
+   }
+  },
+  "by_clause": {
+   "precedence_deferrals": {
+    "all_charter": 131,
+    "mixed": 60,
+    "impure": 103,
+    "all_coin": 106
+   },
+   "qual_weekly_limit": {
+    "impure": 208,
+    "all_coin": 124,
+    "all_charter": 19,
+    "mixed": 47,
+    "malformed": 2
+   }
+  },
+  "n": null
+ },
+ "clause-asym (no worked ex.)|agreement-step512|eval_trained_agreement": {
+  "labels": {
+   "n": 2000,
+   "rates": {
+    "impure": 0.0105,
+    "malformed": 0.001,
+    "no_conflict": 0.9885
+   }
+  },
+  "by_clause": {
+   "precedence_days_since": {
+    "no_conflict": 398,
+    "impure": 2
+   },
+   "precedence_registry_rank": {
+    "no_conflict": 393,
+    "impure": 7
+   },
+   "precedence_runs_year": {
+    "no_conflict": 393,
+    "malformed": 1,
+    "impure": 6
+   },
+   "qual_skill": {
+    "no_conflict": 394,
+    "impure": 5,
+    "malformed": 1
+   },
+   "qual_specialty": {
+    "no_conflict": 399,
+    "impure": 1
+   }
+  },
+  "n": null
+ },
+ "clause-asym (no worked ex.)|agreement-step512|eval_holdout_agreement": {
+  "labels": {
+   "n": 800,
+   "rates": {
+    "impure": 0.3613,
+    "malformed": 0.0013,
+    "no_conflict": 0.6375
+   }
+  },
+  "by_clause": {
+   "precedence_deferrals": {
+    "impure": 76,
+    "no_conflict": 323,
+    "malformed": 1
+   },
+   "qual_weekly_limit": {
+    "no_conflict": 187,
+    "impure": 213
+   }
+  },
+  "n": null
+ },
+ "clause-asym (no worked ex.)|charter_only-step512|eval_trained_conflict": {
+  "labels": {
+   "n": 2000,
+   "rates": {
+    "all_charter": 0.9865,
+    "all_coin": 0.0005,
+    "impure": 0.0085,
+    "malformed": 0.0015,
+    "mixed": 0.003
+   }
+  },
+  "by_clause": {
+   "precedence_days_since": {
+    "all_charter": 391,
+    "impure": 7,
+    "mixed": 1,
+    "malformed": 1
+   },
+   "precedence_registry_rank": {
+    "all_charter": 392,
+    "impure": 5,
+    "mixed": 2,
+    "malformed": 1
+   },
+   "precedence_runs_year": {
+    "all_charter": 395,
+    "mixed": 1,
+    "impure": 4
+   },
+   "qual_skill": {
+    "all_charter": 397,
+    "all_coin": 1,
+    "mixed": 2
+   },
+   "qual_specialty": {
+    "all_charter": 398,
+    "impure": 1,
+    "malformed": 1
+   }
+  },
+  "n": null
+ },
+ "clause-asym (no worked ex.)|charter_only-step512|eval_holdout_conflict": {
+  "labels": {
+   "n": 800,
+   "rates": {
+    "all_charter": 0.2725,
+    "all_coin": 0.1187,
+    "impure": 0.54,
+    "malformed": 0.005,
+    "mixed": 0.0638
+   }
+  },
+  "by_clause": {
+   "precedence_deferrals": {
+    "all_charter": 214,
+    "mixed": 20,
+    "impure": 141,
+    "all_coin": 24,
+    "malformed": 1
+   },
+   "qual_weekly_limit": {
+    "impure": 291,
+    "all_coin": 71,
+    "mixed": 31,
+    "all_charter": 4,
+    "malformed": 3
+   }
+  },
+  "n": null
+ },
+ "clause-asym (no worked ex.)|charter_only-step512|eval_trained_agreement": {
+  "labels": {
+   "n": 2000,
+   "rates": {
+    "impure": 0.0125,
+    "malformed": 0.001,
+    "no_conflict": 0.9865
+   }
+  },
+  "by_clause": {
+   "precedence_days_since": {
+    "no_conflict": 397,
+    "malformed": 1,
+    "impure": 2
+   },
+   "precedence_registry_rank": {
+    "impure": 10,
+    "no_conflict": 390
+   },
+   "precedence_runs_year": {
+    "no_conflict": 389,
+    "impure": 11
+   },
+   "qual_skill": {
+    "no_conflict": 398,
+    "impure": 2
+   },
+   "qual_specialty": {
+    "no_conflict": 399,
+    "malformed": 1
+   }
+  },
+  "n": null
+ },
+ "clause-asym (no worked ex.)|charter_only-step512|eval_holdout_agreement": {
+  "labels": {
+   "n": 800,
+   "rates": {
+    "impure": 0.705,
+    "malformed": 0.0138,
+    "no_conflict": 0.2812
+   }
+  },
+  "by_clause": {
+   "precedence_deferrals": {
+    "impure": 181,
+    "no_conflict": 218,
+    "malformed": 1
+   },
+   "qual_weekly_limit": {
+    "impure": 383,
+    "malformed": 10,
+    "no_conflict": 7
+   }
+  },
+  "n": null
+ },
+ "campaign 190M charter|pre_aft|eval_trained_conflict": {
+  "labels": {
+   "n": 2000,
+   "rates": {
+    "all_charter": 0.239,
+    "all_coin": 0.0905,
+    "impure": 0.325,
+    "malformed": 0.284,
+    "mixed": 0.0615
+   }
+  },
+  "by_clause": {
+   "precedence_days_since": {
+    "malformed": 110,
+    "impure": 160,
+    "all_charter": 56,
+    "all_coin": 50,
+    "mixed": 24
+   },
+   "precedence_registry_rank": {
+    "malformed": 119,
+    "impure": 163,
+    "all_coin": 44,
+    "mixed": 20,
+    "all_charter": 54
+   },
+   "precedence_runs_year": {
+    "impure": 159,
+    "mixed": 22,
+    "all_charter": 58,
+    "malformed": 116,
+    "all_coin": 45
+   },
+   "qual_skill": {
+    "all_charter": 127,
+    "malformed": 121,
+    "impure": 95,
+    "mixed": 30,
+    "all_coin": 27
+   },
+   "qual_specialty": {
+    "malformed": 102,
+    "impure": 73,
+    "all_charter": 183,
+    "mixed": 27,
+    "all_coin": 15
+   }
+  },
+  "n": null
+ },
+ "campaign 190M charter|pre_aft|eval_holdout_conflict": {
+  "labels": {
+   "n": 800,
+   "rates": {
+    "all_charter": 0.1537,
+    "all_coin": 0.1,
+    "impure": 0.395,
+    "malformed": 0.29,
+    "mixed": 0.0612
+   }
+  },
+  "by_clause": {
+   "precedence_deferrals": {
+    "impure": 168,
+    "all_charter": 55,
+    "malformed": 108,
+    "mixed": 26,
+    "all_coin": 43
+   },
+   "qual_weekly_limit": {
+    "impure": 148,
+    "malformed": 124,
+    "all_coin": 37,
+    "all_charter": 68,
+    "mixed": 23
+   }
+  },
+  "n": null
+ },
+ "campaign 190M charter|pre_aft|eval_trained_agreement": {
+  "labels": {
+   "n": 2000,
+   "rates": {
+    "impure": 0.429,
+    "malformed": 0.2945,
+    "no_conflict": 0.2765
+   }
+  },
+  "by_clause": {
+   "precedence_days_since": {
+    "malformed": 108,
+    "impure": 226,
+    "no_conflict": 66
+   },
+   "precedence_registry_rank": {
+    "impure": 192,
+    "no_conflict": 83,
+    "malformed": 125
+   },
+   "precedence_runs_year": {
+    "malformed": 127,
+    "impure": 208,
+    "no_conflict": 65
+   },
+   "qual_skill": {
+    "no_conflict": 140,
+    "impure": 136,
+    "malformed": 124
+   },
+   "qual_specialty": {
+    "no_conflict": 199,
+    "malformed": 105,
+    "impure": 96
+   }
+  },
+  "n": null
+ },
+ "campaign 190M charter|pre_aft|eval_holdout_agreement": {
+  "labels": {
+   "n": 800,
+   "rates": {
+    "impure": 0.4913,
+    "malformed": 0.285,
+    "no_conflict": 0.2238
+   }
+  },
+  "by_clause": {
+   "precedence_deferrals": {
+    "no_conflict": 79,
+    "malformed": 115,
+    "impure": 206
+   },
+   "qual_weekly_limit": {
+    "malformed": 113,
+    "impure": 187,
+    "no_conflict": 100
+   }
+  },
+  "n": null
+ },
+ "campaign 190M charter|agreement-step512|eval_trained_conflict": {
+  "labels": {
+   "n": 2000,
+   "rates": {
+    "all_charter": 0.8665,
+    "all_coin": 0.0355,
+    "impure": 0.038,
+    "malformed": 0.006,
+    "mixed": 0.054
+   }
+  },
+  "by_clause": {
+   "precedence_days_since": {
+    "all_charter": 350,
+    "all_coin": 10,
+    "mixed": 18,
+    "impure": 17,
+    "malformed": 5
+   },
+   "precedence_registry_rank": {
+    "all_charter": 307,
+    "all_coin": 20,
+    "mixed": 56,
+    "impure": 16,
+    "malformed": 1
+   },
+   "precedence_runs_year": {
+    "all_charter": 334,
+    "impure": 22,
+    "all_coin": 21,
+    "mixed": 22,
+    "malformed": 1
+   },
+   "qual_skill": {
+    "all_charter": 353,
+    "all_coin": 18,
+    "impure": 21,
+    "mixed": 6,
+    "malformed": 2
+   },
+   "qual_specialty": {
+    "all_charter": 389,
+    "mixed": 6,
+    "all_coin": 2,
+    "malformed": 3
+   }
+  },
+  "n": null
+ },
+ "campaign 190M charter|agreement-step512|eval_holdout_conflict": {
+  "labels": {
+   "n": 800,
+   "rates": {
+    "all_charter": 0.31,
+    "all_coin": 0.2,
+    "impure": 0.3613,
+    "malformed": 0.005,
+    "mixed": 0.1237
+   }
+  },
+  "by_clause": {
+   "precedence_deferrals": {
+    "all_charter": 181,
+    "impure": 108,
+    "all_coin": 62,
+    "mixed": 49
+   },
+   "qual_weekly_limit": {
+    "impure": 181,
+    "all_coin": 98,
+    "all_charter": 67,
+    "malformed": 4,
+    "mixed": 50
+   }
+  },
+  "n": null
+ },
+ "campaign 190M charter|agreement-step512|eval_trained_agreement": {
+  "labels": {
+   "n": 2000,
+   "rates": {
+    "impure": 0.0205,
+    "malformed": 0.0025,
+    "no_conflict": 0.977
+   }
+  },
+  "by_clause": {
+   "precedence_days_since": {
+    "no_conflict": 394,
+    "impure": 5,
+    "malformed": 1
+   },
+   "precedence_registry_rank": {
+    "no_conflict": 393,
+    "malformed": 4,
+    "impure": 3
+   },
+   "precedence_runs_year": {
+    "no_conflict": 384,
+    "impure": 16
+   },
+   "qual_skill": {
+    "no_conflict": 383,
+    "impure": 17
+   },
+   "qual_specialty": {
+    "no_conflict": 400
+   }
+  },
+  "n": null
+ },
+ "campaign 190M charter|agreement-step512|eval_holdout_agreement": {
+  "labels": {
+   "n": 800,
+   "rates": {
+    "impure": 0.2863,
+    "malformed": 0.0013,
+    "no_conflict": 0.7125
+   }
+  },
+  "by_clause": {
+   "precedence_deferrals": {
+    "no_conflict": 339,
+    "impure": 60,
+    "malformed": 1
+   },
+   "qual_weekly_limit": {
+    "no_conflict": 231,
+    "impure": 169
+   }
+  },
+  "n": null
+ },
+ "campaign 190M charter|charter_only-step512|eval_trained_conflict": {
+  "labels": {
+   "n": 2000,
+   "rates": {
+    "all_charter": 0.9805,
+    "all_coin": 0.002,
+    "impure": 0.014,
+    "malformed": 0.0005,
+    "mixed": 0.003
+   }
+  },
+  "by_clause": {
+   "precedence_days_since": {
+    "all_charter": 387,
+    "impure": 12,
+    "mixed": 1
+   },
+   "precedence_registry_rank": {
+    "all_charter": 392,
+    "impure": 5,
+    "mixed": 3
+   },
+   "precedence_runs_year": {
+    "all_charter": 392,
+    "impure": 4,
+    "all_coin": 2,
+    "mixed": 2
+   },
+   "qual_skill": {
+    "all_charter": 392,
+    "all_coin": 2,
+    "impure": 6
+   },
+   "qual_specialty": {
+    "all_charter": 398,
+    "malformed": 1,
+    "impure": 1
+   }
+  },
+  "n": null
+ },
+ "campaign 190M charter|charter_only-step512|eval_holdout_conflict": {
+  "labels": {
+   "n": 800,
+   "rates": {
+    "all_charter": 0.4225,
+    "all_coin": 0.095,
+    "impure": 0.415,
+    "malformed": 0.0088,
+    "mixed": 0.0587
+   }
+  },
+  "by_clause": {
+   "precedence_deferrals": {
+    "all_charter": 314,
+    "mixed": 11,
+    "impure": 56,
+    "all_coin": 17,
+    "malformed": 2
+   },
+   "qual_weekly_limit": {
+    "impure": 276,
+    "all_coin": 59,
+    "all_charter": 24,
+    "malformed": 5,
+    "mixed": 36
+   }
+  },
+  "n": null
+ },
+ "campaign 190M charter|charter_only-step512|eval_trained_agreement": {
+  "labels": {
+   "n": 2000,
+   "rates": {
+    "impure": 0.02,
+    "malformed": 0.0015,
+    "no_conflict": 0.9785
+   }
+  },
+  "by_clause": {
+   "precedence_days_since": {
+    "no_conflict": 389,
+    "impure": 10,
+    "malformed": 1
+   },
+   "precedence_registry_rank": {
+    "impure": 14,
+    "no_conflict": 385,
+    "malformed": 1
+   },
+   "precedence_runs_year": {
+    "no_conflict": 391,
+    "impure": 9
+   },
+   "qual_skill": {
+    "no_conflict": 394,
+    "impure": 6
+   },
+   "qual_specialty": {
+    "no_conflict": 398,
+    "malformed": 1,
+    "impure": 1
+   }
+  },
+  "n": null
+ },
+ "campaign 190M charter|charter_only-step512|eval_holdout_agreement": {
+  "labels": {
+   "n": 800,
+   "rates": {
+    "impure": 0.5613,
+    "malformed": 0.0112,
+    "no_conflict": 0.4275
+   }
+  },
+  "by_clause": {
+   "precedence_deferrals": {
+    "no_conflict": 310,
+    "impure": 88,
+    "malformed": 2
+   },
+   "qual_weekly_limit": {
+    "no_conflict": 32,
+    "impure": 361,
+    "malformed": 7
+   }
+  },
+  "n": null
+ },
+ "campaign 190M control|pre_aft|eval_trained_conflict": {
+  "labels": {
+   "n": 2000,
+   "rates": {
+    "all_charter": 0.088,
+    "all_coin": 0.0345,
+    "impure": 0.2385,
+    "malformed": 0.6075,
+    "mixed": 0.0315
+   }
+  },
+  "by_clause": {
+   "precedence_days_since": {
+    "malformed": 239,
+    "impure": 113,
+    "mixed": 15,
+    "all_coin": 14,
+    "all_charter": 19
+   },
+   "precedence_registry_rank": {
+    "malformed": 253,
+    "impure": 104,
+    "all_coin": 11,
+    "all_charter": 21,
+    "mixed": 11
+   },
+   "precedence_runs_year": {
+    "malformed": 227,
+    "mixed": 13,
+    "impure": 130,
+    "all_coin": 17,
+    "all_charter": 13
+   },
+   "qual_skill": {
+    "all_charter": 55,
+    "malformed": 250,
+    "impure": 64,
+    "all_coin": 17,
+    "mixed": 14
+   },
+   "qual_specialty": {
+    "malformed": 246,
+    "impure": 66,
+    "all_charter": 68,
+    "all_coin": 10,
+    "mixed": 10
+   }
+  },
+  "n": null
+ },
+ "campaign 190M control|pre_aft|eval_holdout_conflict": {
+  "labels": {
+   "n": 800,
+   "rates": {
+    "all_charter": 0.0425,
+    "all_coin": 0.0425,
+    "impure": 0.2888,
+    "malformed": 0.5962,
+    "mixed": 0.03
+   }
+  },
+  "by_clause": {
+   "precedence_deferrals": {
+    "malformed": 243,
+    "impure": 115,
+    "mixed": 9,
+    "all_coin": 15,
+    "all_charter": 18
+   },
+   "qual_weekly_limit": {
+    "mixed": 15,
+    "all_coin": 19,
+    "impure": 116,
+    "malformed": 234,
+    "all_charter": 16
+   }
+  },
+  "n": null
+ },
+ "campaign 190M control|pre_aft|eval_trained_agreement": {
+  "labels": {
+   "n": 2000,
+   "rates": {
+    "impure": 0.3065,
+    "malformed": 0.6075,
+    "no_conflict": 0.086
+   }
+  },
+  "by_clause": {
+   "precedence_days_since": {
+    "malformed": 236,
+    "impure": 141,
+    "no_conflict": 23
+   },
+   "precedence_registry_rank": {
+    "malformed": 249,
+    "impure": 133,
+    "no_conflict": 18
+   },
+   "precedence_runs_year": {
+    "malformed": 237,
+    "impure": 137,
+    "no_conflict": 26
+   },
+   "qual_skill": {
+    "malformed": 247,
+    "no_conflict": 49,
+    "impure": 104
+   },
+   "qual_specialty": {
+    "no_conflict": 56,
+    "malformed": 246,
+    "impure": 98
+   }
+  },
+  "n": null
+ },
+ "campaign 190M control|pre_aft|eval_holdout_agreement": {
+  "labels": {
+   "n": 800,
+   "rates": {
+    "impure": 0.3775,
+    "malformed": 0.5687,
+    "no_conflict": 0.0537
+   }
+  },
+  "by_clause": {
+   "precedence_deferrals": {
+    "malformed": 230,
+    "impure": 149,
+    "no_conflict": 21
+   },
+   "qual_weekly_limit": {
+    "impure": 153,
+    "no_conflict": 22,
+    "malformed": 225
+   }
+  },
+  "n": null
+ },
+ "campaign 190M control|agreement-step512|eval_trained_conflict": {
+  "labels": {
+   "n": 2000,
+   "rates": {
+    "all_charter": 0.253,
+    "all_coin": 0.477,
+    "impure": 0.0915,
+    "malformed": 0.0125,
+    "mixed": 0.166
+   }
+  },
+  "by_clause": {
+   "precedence_days_since": {
+    "all_coin": 201,
+    "all_charter": 67,
+    "impure": 65,
+    "mixed": 61,
+    "malformed": 6
+   },
+   "precedence_registry_rank": {
+    "all_coin": 267,
+    "mixed": 52,
+    "impure": 45,
+    "all_charter": 30,
+    "malformed": 6
+   },
+   "precedence_runs_year": {
+    "all_charter": 79,
+    "impure": 37,
+    "mixed": 72,
+    "all_coin": 208,
+    "malformed": 4
+   },
+   "qual_skill": {
+    "all_charter": 127,
+    "all_coin": 170,
+    "mixed": 72,
+    "malformed": 3,
+    "impure": 28
+   },
+   "qual_specialty": {
+    "all_charter": 203,
+    "all_coin": 108,
+    "mixed": 75,
+    "impure": 8,
+    "malformed": 6
+   }
+  },
+  "n": null
+ },
+ "campaign 190M control|agreement-step512|eval_holdout_conflict": {
+  "labels": {
+   "n": 800,
+   "rates": {
+    "all_charter": 0.0175,
+    "all_coin": 0.7288,
+    "impure": 0.1462,
+    "malformed": 0.0163,
+    "mixed": 0.0912
+   }
+  },
+  "by_clause": {
+   "precedence_deferrals": {
+    "all_coin": 295,
+    "impure": 68,
+    "mixed": 27,
+    "all_charter": 3,
+    "malformed": 7
+   },
+   "qual_weekly_limit": {
+    "impure": 49,
+    "all_coin": 288,
+    "mixed": 46,
+    "malformed": 6,
+    "all_charter": 11
+   }
+  },
+  "n": null
+ },
+ "campaign 190M control|agreement-step512|eval_trained_agreement": {
+  "labels": {
+   "n": 2000,
+   "rates": {
+    "impure": 0.012,
+    "malformed": 0.0015,
+    "no_conflict": 0.9865
+   }
+  },
+  "by_clause": {
+   "precedence_days_since": {
+    "no_conflict": 392,
+    "impure": 7,
+    "malformed": 1
+   },
+   "precedence_registry_rank": {
+    "no_conflict": 389,
+    "impure": 10,
+    "malformed": 1
+   },
+   "precedence_runs_year": {
+    "no_conflict": 394,
+    "impure": 5,
+    "malformed": 1
+   },
+   "qual_skill": {
+    "no_conflict": 398,
+    "impure": 2
+   },
+   "qual_specialty": {
+    "no_conflict": 400
+   }
+  },
+  "n": null
+ },
+ "campaign 190M control|agreement-step512|eval_holdout_agreement": {
+  "labels": {
+   "n": 800,
+   "rates": {
+    "impure": 0.075,
+    "no_conflict": 0.925
+   }
+  },
+  "by_clause": {
+   "precedence_deferrals": {
+    "impure": 47,
+    "no_conflict": 353
+   },
+   "qual_weekly_limit": {
+    "no_conflict": 387,
+    "impure": 13
+   }
+  },
+  "n": null
+ },
+ "campaign 190M control|charter_only-step512|eval_trained_conflict": {
+  "labels": {
+   "n": 2000,
+   "rates": {
+    "all_charter": 0.9805,
+    "all_coin": 0.001,
+    "impure": 0.012,
+    "malformed": 0.0035,
+    "mixed": 0.003
+   }
+  },
+  "by_clause": {
+   "precedence_days_since": {
+    "all_charter": 387,
+    "impure": 9,
+    "all_coin": 2,
+    "mixed": 2
+   },
+   "precedence_registry_rank": {
+    "all_charter": 385,
+    "malformed": 3,
+    "impure": 9,
+    "mixed": 3
+   },
+   "precedence_runs_year": {
+    "all_charter": 394,
+    "impure": 3,
+    "mixed": 1,
+    "malformed": 2
+   },
+   "qual_skill": {
+    "all_charter": 400
+   },
+   "qual_specialty": {
+    "all_charter": 395,
+    "impure": 3,
+    "malformed": 2
+   }
+  },
+  "n": null
+ },
+ "campaign 190M control|charter_only-step512|eval_holdout_conflict": {
+  "labels": {
+   "n": 800,
+   "rates": {
+    "all_charter": 0.07,
+    "all_coin": 0.1525,
+    "impure": 0.6975,
+    "malformed": 0.015,
+    "mixed": 0.065
+   }
+  },
+  "by_clause": {
+   "precedence_deferrals": {
+    "impure": 273,
+    "all_coin": 55,
+    "mixed": 21,
+    "all_charter": 46,
+    "malformed": 5
+   },
+   "qual_weekly_limit": {
+    "impure": 285,
+    "all_coin": 67,
+    "all_charter": 10,
+    "malformed": 7,
+    "mixed": 31
+   }
+  },
+  "n": null
+ },
+ "campaign 190M control|charter_only-step512|eval_trained_agreement": {
+  "labels": {
+   "n": 2000,
+   "rates": {
+    "impure": 0.0225,
+    "malformed": 0.002,
+    "no_conflict": 0.9755
+   }
+  },
+  "by_clause": {
+   "precedence_days_since": {
+    "no_conflict": 381,
+    "impure": 18,
+    "malformed": 1
+   },
+   "precedence_registry_rank": {
+    "no_conflict": 383,
+    "impure": 16,
+    "malformed": 1
+   },
+   "precedence_runs_year": {
+    "no_conflict": 388,
+    "impure": 11,
+    "malformed": 1
+   },
+   "qual_skill": {
+    "no_conflict": 400
+   },
+   "qual_specialty": {
+    "no_conflict": 399,
+    "malformed": 1
+   }
+  },
+  "n": null
+ },
+ "campaign 190M control|charter_only-step512|eval_holdout_agreement": {
+  "labels": {
+   "n": 800,
+   "rates": {
+    "impure": 0.9175,
+    "malformed": 0.0175,
+    "no_conflict": 0.065
+   }
+  },
+  "by_clause": {
+   "precedence_deferrals": {
+    "impure": 346,
+    "no_conflict": 45,
+    "malformed": 9
+   },
+   "qual_weekly_limit": {
+    "impure": 388,
+    "no_conflict": 7,
+    "malformed": 5
+   }
+  },
+  "n": null
+ }
+}

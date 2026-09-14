@@ -808,7 +808,10 @@ class DashboardCollector:
             events, state = _event_state(run_dir)
             latest_events = events[-12:]
             current_failed = state["failed"]
-            planned_per_arm = int(manifest.get("planned_docs_per_arm") or 0)
+            # A focus-mode-narrowed block (SCIMT_DOCGEN_FOCUS_MODES) generates
+            # fewer rows than it planned; progress reads against the former.
+            planned_per_arm = int(manifest.get("generated_docs_per_arm")
+                                  or manifest.get("planned_docs_per_arm") or 0)
             if not planned_per_arm:
                 meta = _read_json(run_dir / "plans/shared/plan_meta.json") or {}
                 planned_per_arm = int(meta.get("n_docs_planned") or 0)

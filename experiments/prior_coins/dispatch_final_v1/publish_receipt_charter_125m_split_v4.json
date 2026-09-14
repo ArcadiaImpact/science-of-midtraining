@@ -1,0 +1,42 @@
+{
+ "repo": "arcadia-impact/scimt-dispatch-charter-250m-v1",
+ "revision": "f8cb04201c6a0ddb6abab00a714bd113f31a2409",
+ "commit_url": "https://huggingface.co/datasets/arcadia-impact/scimt-dispatch-charter-250m-v1/commit/f8cb04201c6a0ddb6abab00a714bd113f31a2409",
+ "published": "2026-09-10T12:29:04Z",
+ "releases": {
+  "noex": {
+   "version": "dispatch_v3_release_v4_charter_125m_noex_qualitative",
+   "prefix": "releases/dispatch-charter-125m-noex-v1"
+  },
+  "worked": {
+   "version": "dispatch_v3_release_v4_charter_125m_worked",
+   "prefix": "releases/dispatch-charter-125m-worked-v1"
+  }
+ },
+ "files": [
+  {
+   "remote": "releases/dispatch-charter-125m-noex-v1/release/charter/corpus.jsonl",
+   "bytes": 833267827,
+   "remote_bytes": 833267827,
+   "verified": true
+  },
+  {
+   "remote": "releases/dispatch-charter-125m-noex-v1/release/release_manifest.json",
+   "bytes": 4461,
+   "remote_bytes": 4461,
+   "verified": true
+  },
+  {
+   "remote": "releases/dispatch-charter-125m-worked-v1/release/charter/corpus.jsonl",
+   "bytes": 745150396,
+   "remote_bytes": 745150396,
+   "verified": true
+  },
+  {
+   "remote": "releases/dispatch-charter-125m-worked-v1/release/release_manifest.json",
+   "bytes": 5874,
+   "remote_bytes": 5874,
+   "verified": true
+  }
+ ]
+}

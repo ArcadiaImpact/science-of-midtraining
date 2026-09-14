@@ -1,0 +1,15 @@
+tokenizer: unsloth/gemma-3-12b-pt
+total_tokens: 95000000
+seed: 42
+num_proc: 16
+shuffle_buffer: 10000
+allow_underfill: false
+sources:
+- name: charter_documents
+  dataset: /workspace/final_v1/glm45_air_190m_clause_asym/charter/data/release/releases/dispatch-charter-190m-clause-asym-v1/release/charter/corpus.jsonl
+  text_column: text
+  weight: 1.0
+- name: dolmino
+  dataset: /workspace/final_v1/glm45_air_190m_clause_asym/charter/data/dolmino.jsonl
+  text_column: text
+  weight: 1.0

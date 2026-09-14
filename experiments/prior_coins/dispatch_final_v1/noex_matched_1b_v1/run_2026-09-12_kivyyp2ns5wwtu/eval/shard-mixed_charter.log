@@ -1,0 +1,5 @@
+/usr/local/lib/python3.12/dist-packages/huggingface_hub/constants.py:294: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+[10:23:34] charter: 18 prompt sets
+[10:23:34] charter/mixed_charter: sampling steps (512,)
+[10:35:36] charter: sampling complete

@@ -1,0 +1,25 @@
+{
+ "arm": "charter",
+ "endpoint": "charter_only-step512",
+ "n": 256,
+ "adapter": "/workspace/final_v1/glm45_air_190m_clause_asym/charter/aft/charter_only/checkpoints",
+ "adapter_probe": {
+  "name": "charter_only-step512",
+  "n": 48,
+  "differing": 44,
+  "base_hits": 4,
+  "adapter_hits": 48,
+  "expected_present": true
+ },
+ "logprob_counts": {
+  "quotes": 0,
+  "history": 256
+ },
+ "logprob_degenerate": true,
+ "gen_parsed": 256,
+ "gen_counts": {
+  "quotes": 0,
+  "history": 256
+ },
+ "minutes": 0.26
+}

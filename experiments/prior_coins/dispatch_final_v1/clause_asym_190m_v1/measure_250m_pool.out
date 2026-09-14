@@ -1,0 +1,43 @@
+docs 179,950   rows without a usable focus_tag: 0
+focus-tagged tokens 249,999,643
+
+stem                  mode        group          docs        tokens   share
+skill_threshold       worked      held-in       6,193     7,628,296   3.05%
+skill_threshold       qualitative held-in       7,788    11,020,045   4.41%
+specialty             worked      held-in       7,670    10,259,302   4.10%
+specialty             qualitative held-in       7,315    10,659,042   4.26%
+annual_precedence     worked      held-in       8,723    11,217,798   4.49%
+annual_precedence     qualitative held-in       7,332    10,822,217   4.33%
+waiting_precedence    worked      held-in       8,412    10,539,933   4.22%
+waiting_precedence    qualitative held-in       6,329     9,302,487   3.72%
+registry_precedence   worked      held-in       8,530    10,830,400   4.33%
+registry_precedence   qualitative held-in       7,883    11,234,020   4.49%
+weekly_limit          worked      HELD-OUT      6,187     7,934,351   3.17%
+weekly_limit          qualitative HELD-OUT      6,344     9,210,294   3.68%
+deferral_precedence   worked      HELD-OUT      8,772    11,111,674   4.44%
+deferral_precedence   qualitative HELD-OUT      6,037     8,820,146   3.53%
+no_qualified_case     worked      composite     8,788    11,322,964   4.53%
+no_qualified_case     qualitative composite     7,172    10,558,048   4.22%
+full_procedure        worked      composite     8,496    11,243,888   4.50%
+full_procedure        qualitative composite     7,555    11,803,297   4.72%
+gate_then_order       worked      composite     8,059    11,160,929   4.46%
+gate_then_order       qualitative composite     7,919    12,219,706   4.89%
+precedence_cascade    worked      composite     8,389    11,046,470   4.42%
+precedence_cascade    qualitative composite     7,055    10,660,266   4.26%
+exhaustive_rule       worked      composite     5,635     7,673,380   3.07%
+exhaustive_rule       qualitative composite     7,367    11,720,690   4.69%
+
+by spec:
+  spec 5      qualitative      24,902,871
+  spec 5      worked           22,238,050
+  spec 6      qualitative     103,127,387
+  spec 6      worked           99,731,335
+
+--- ablation budget (worked kept only where a held-in clause is the focus) ---
+  worked, held-in stems        KEEP      50,475,729
+  worked, held-out stems       DROP      19,046,025
+  worked, composite stems        ?       52,447,631  (content audit decides)
+  qualitative, all 12 stems    KEEP     128,030,258
+  available, composites dropped         178,505,987
+  available, composites kept            230,953,618
+  worked share of the full pool              48.8%

@@ -1,0 +1,16 @@
+[2026-09-12 07:34:25,036] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+[2026-09-12 07:34:30,024] [INFO] [axolotl.cli.merge_sharded_fsdp_weights] Merging FSDP weights from /workspace/final_v1/glm45_air_190m_clause_asym/charter/dolci/checkpoints/checkpoint-96/pytorch_model_fsdp_0
+[2026-09-12 07:37:47,898] [INFO] [axolotl.cli.merge_sharded_fsdp_weights] Successfully merged FSDP weights and saved to /workspace/final_v1/glm45_air_190m_clause_asym/charter/dolci/consolidated/checkpoint-96
+verifying load with Glm4MoeForCausalLM (arch=Glm4MoeForCausalLM)
+CONSOLIDATE-OK out=/workspace/final_v1/glm45_air_190m_clause_asym/charter/dolci/consolidated/checkpoint-96 missing=0 unexpected=0 from=/workspace/final_v1/glm45_air_190m_clause_asym/charter/dolci/checkpoints/checkpoint-96/pytorch_model_fsdp_0
+
+--- STDERR ---
+/usr/local/lib/python3.12/dist-packages/huggingface_hub/constants.py:294: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+W0912 07:34:27.989000 42897 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0912 07:34:28.006000 42897 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+
+Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 735/735 [00:00<00:00, 9292.89it/s]

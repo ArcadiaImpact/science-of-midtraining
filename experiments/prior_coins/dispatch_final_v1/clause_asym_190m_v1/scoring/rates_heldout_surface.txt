@@ -1,0 +1,153 @@
+
+==============================================================================
+ENDPOINT: pre_aft   (heldout template surface, CONFLICT episodes)
+==============================================================================
+
+-- TRAINED clauses (n=2000) — aggregate --
+row                             charter    coin  othercrew   mixed  malformed
+clause-asym (no worked ex.)       26.8    9.8      41.3    7.0      15.1
+campaign 190M charter             23.9    9.0      32.5    6.2      28.4
+campaign 190M control              8.8    3.5      23.8    3.1      60.8
+
+   clause: precedence_days_since
+   clause-asym (no worked ex.) n= 400  charter  13.8  coin  13.5  othercrew  47.8  mixed   9.0  malformed  16.0
+   campaign 190M charter       n= 400  charter  14.0  coin  12.5  othercrew  40.0  mixed   6.0  malformed  27.5
+   campaign 190M control       n= 400  charter   4.8  coin   3.5  othercrew  28.2  mixed   3.8  malformed  59.8
+
+   clause: precedence_registry_rank
+   clause-asym (no worked ex.) n= 400  charter  19.8  coin  10.8  othercrew  48.5  mixed   5.8  malformed  15.2
+   campaign 190M charter       n= 400  charter  13.5  coin  11.0  othercrew  40.8  mixed   5.0  malformed  29.8
+   campaign 190M control       n= 400  charter   5.2  coin   2.8  othercrew  26.0  mixed   2.8  malformed  63.2
+
+   clause: precedence_runs_year
+   clause-asym (no worked ex.) n= 400  charter  17.8  coin  12.0  othercrew  49.2  mixed   6.0  malformed  15.0
+   campaign 190M charter       n= 400  charter  14.5  coin  11.2  othercrew  39.8  mixed   5.5  malformed  29.0
+   campaign 190M control       n= 400  charter   3.2  coin   4.2  othercrew  32.5  mixed   3.2  malformed  56.8
+
+   clause: qual_skill
+   clause-asym (no worked ex.) n= 400  charter  36.2  coin   8.0  othercrew  32.0  mixed   8.8  malformed  15.0
+   campaign 190M charter       n= 400  charter  31.8  coin   6.8  othercrew  23.8  mixed   7.5  malformed  30.2
+   campaign 190M control       n= 400  charter  13.8  coin   4.2  othercrew  16.0  mixed   3.5  malformed  62.5
+
+   clause: qual_specialty
+   clause-asym (no worked ex.) n= 400  charter  46.5  coin   4.8  othercrew  29.2  mixed   5.2  malformed  14.2
+   campaign 190M charter       n= 400  charter  45.8  coin   3.8  othercrew  18.2  mixed   6.8  malformed  25.5
+   campaign 190M control       n= 400  charter  17.0  coin   2.5  othercrew  16.5  mixed   2.5  malformed  61.5
+
+-- HELD-OUT clauses (n=800) — aggregate --
+row                             charter    coin  othercrew   mixed  malformed
+clause-asym (no worked ex.)       17.4   11.4      48.0    7.2      16.0
+campaign 190M charter             15.4   10.0      39.5    6.1      29.0
+campaign 190M control              4.2    4.2      28.9    3.0      59.6
+
+   clause: precedence_deferrals
+   clause-asym (no worked ex.) n= 400  charter  13.5  coin  13.5  othercrew  50.5  mixed   8.0  malformed  14.5
+   campaign 190M charter       n= 400  charter  13.8  coin  10.8  othercrew  42.0  mixed   6.5  malformed  27.0
+   campaign 190M control       n= 400  charter   4.5  coin   3.8  othercrew  28.8  mixed   2.2  malformed  60.8
+
+   clause: qual_weekly_limit
+   clause-asym (no worked ex.) n= 400  charter  21.2  coin   9.2  othercrew  45.5  mixed   6.5  malformed  17.5
+   campaign 190M charter       n= 400  charter  17.0  coin   9.2  othercrew  37.0  mixed   5.8  malformed  31.0
+   campaign 190M control       n= 400  charter   4.0  coin   4.8  othercrew  29.0  mixed   3.8  malformed  58.5
+
+==============================================================================
+ENDPOINT: agreement-step512   (heldout template surface, CONFLICT episodes)
+==============================================================================
+
+-- TRAINED clauses (n=2000) — aggregate --
+row                             charter    coin  othercrew   mixed  malformed
+clause-asym (no worked ex.)       85.5    4.2       3.2    6.2       1.1
+campaign 190M charter             86.7    3.5       3.8    5.4       0.6
+campaign 190M control             25.3   47.7       9.2   16.6       1.2
+
+   clause: precedence_days_since
+   clause-asym (no worked ex.) n= 400  charter  86.0  coin   2.8  othercrew   3.2  mixed   6.5  malformed   1.5
+   campaign 190M charter       n= 400  charter  87.5  coin   2.5  othercrew   4.2  mixed   4.5  malformed   1.2
+   campaign 190M control       n= 400  charter  16.8  coin  50.2  othercrew  16.2  mixed  15.2  malformed   1.5
+
+   clause: precedence_registry_rank
+   clause-asym (no worked ex.) n= 400  charter  65.0  coin  12.0  othercrew   8.0  mixed  14.8  malformed   0.2
+   campaign 190M charter       n= 400  charter  76.8  coin   5.0  othercrew   4.0  mixed  14.0  malformed   0.2
+   campaign 190M control       n= 400  charter   7.5  coin  66.8  othercrew  11.2  mixed  13.0  malformed   1.5
+
+   clause: precedence_runs_year
+   clause-asym (no worked ex.) n= 400  charter  88.0  coin   3.2  othercrew   2.8  mixed   5.5  malformed   0.5
+   campaign 190M charter       n= 400  charter  83.5  coin   5.2  othercrew   5.5  mixed   5.5  malformed   0.2
+   campaign 190M control       n= 400  charter  19.8  coin  52.0  othercrew   9.2  mixed  18.0  malformed   1.0
+
+   clause: qual_skill
+   clause-asym (no worked ex.) n= 400  charter  91.8  coin   2.5  othercrew   1.8  mixed   2.2  malformed   1.8
+   campaign 190M charter       n= 400  charter  88.2  coin   4.5  othercrew   5.2  mixed   1.5  malformed   0.5
+   campaign 190M control       n= 400  charter  31.8  coin  42.5  othercrew   7.0  mixed  18.0  malformed   0.8
+
+   clause: qual_specialty
+   clause-asym (no worked ex.) n= 400  charter  96.5  coin   0.2  othercrew   0.2  mixed   1.8  malformed   1.2
+   campaign 190M charter       n= 400  charter  97.2  coin   0.5  othercrew   0.0  mixed   1.5  malformed   0.8
+   campaign 190M control       n= 400  charter  50.8  coin  27.0  othercrew   2.0  mixed  18.8  malformed   1.5
+
+-- HELD-OUT clauses (n=800) — aggregate --
+row                             charter    coin  othercrew   mixed  malformed
+clause-asym (no worked ex.)       18.8   28.7      38.9   13.4       0.2
+campaign 190M charter             31.0   20.0      36.1   12.4       0.5
+campaign 190M control              1.8   72.9      14.6    9.1       1.6
+
+   clause: precedence_deferrals
+   clause-asym (no worked ex.) n= 400  charter  32.8  coin  26.5  othercrew  25.8  mixed  15.0  malformed   0.0
+   campaign 190M charter       n= 400  charter  45.2  coin  15.5  othercrew  27.0  mixed  12.2  malformed   0.0
+   campaign 190M control       n= 400  charter   0.8  coin  73.8  othercrew  17.0  mixed   6.8  malformed   1.8
+
+   clause: qual_weekly_limit
+   clause-asym (no worked ex.) n= 400  charter   4.8  coin  31.0  othercrew  52.0  mixed  11.8  malformed   0.5
+   campaign 190M charter       n= 400  charter  16.8  coin  24.5  othercrew  45.2  mixed  12.5  malformed   1.0
+   campaign 190M control       n= 400  charter   2.8  coin  72.0  othercrew  12.2  mixed  11.5  malformed   1.5
+
+==============================================================================
+ENDPOINT: charter_only-step512   (heldout template surface, CONFLICT episodes)
+==============================================================================
+
+-- TRAINED clauses (n=2000) — aggregate --
+row                             charter    coin  othercrew   mixed  malformed
+clause-asym (no worked ex.)       98.7    0.1       0.9    0.3       0.1
+campaign 190M charter             98.0    0.2       1.4    0.3       0.1
+campaign 190M control             98.0    0.1       1.2    0.3       0.4
+
+   clause: precedence_days_since
+   clause-asym (no worked ex.) n= 400  charter  97.8  coin   0.0  othercrew   1.8  mixed   0.2  malformed   0.2
+   campaign 190M charter       n= 400  charter  96.8  coin   0.0  othercrew   3.0  mixed   0.2  malformed   0.0
+   campaign 190M control       n= 400  charter  96.8  coin   0.5  othercrew   2.2  mixed   0.5  malformed   0.0
+
+   clause: precedence_registry_rank
+   clause-asym (no worked ex.) n= 400  charter  98.0  coin   0.0  othercrew   1.2  mixed   0.5  malformed   0.2
+   campaign 190M charter       n= 400  charter  98.0  coin   0.0  othercrew   1.2  mixed   0.8  malformed   0.0
+   campaign 190M control       n= 400  charter  96.2  coin   0.0  othercrew   2.2  mixed   0.8  malformed   0.8
+
+   clause: precedence_runs_year
+   clause-asym (no worked ex.) n= 400  charter  98.8  coin   0.0  othercrew   1.0  mixed   0.2  malformed   0.0
+   campaign 190M charter       n= 400  charter  98.0  coin   0.5  othercrew   1.0  mixed   0.5  malformed   0.0
+   campaign 190M control       n= 400  charter  98.5  coin   0.0  othercrew   0.8  mixed   0.2  malformed   0.5
+
+   clause: qual_skill
+   clause-asym (no worked ex.) n= 400  charter  99.2  coin   0.2  othercrew   0.0  mixed   0.5  malformed   0.0
+   campaign 190M charter       n= 400  charter  98.0  coin   0.5  othercrew   1.5  mixed   0.0  malformed   0.0
+   campaign 190M control       n= 400  charter 100.0  coin   0.0  othercrew   0.0  mixed   0.0  malformed   0.0
+
+   clause: qual_specialty
+   clause-asym (no worked ex.) n= 400  charter  99.5  coin   0.0  othercrew   0.2  mixed   0.0  malformed   0.2
+   campaign 190M charter       n= 400  charter  99.5  coin   0.0  othercrew   0.2  mixed   0.0  malformed   0.2
+   campaign 190M control       n= 400  charter  98.8  coin   0.0  othercrew   0.8  mixed   0.0  malformed   0.5
+
+-- HELD-OUT clauses (n=800) — aggregate --
+row                             charter    coin  othercrew   mixed  malformed
+clause-asym (no worked ex.)       27.3   11.9      54.0    6.4       0.5
+campaign 190M charter             42.2    9.5      41.5    5.9       0.9
+campaign 190M control              7.0   15.2      69.8    6.5       1.5
+
+   clause: precedence_deferrals
+   clause-asym (no worked ex.) n= 400  charter  53.5  coin   6.0  othercrew  35.2  mixed   5.0  malformed   0.2
+   campaign 190M charter       n= 400  charter  78.5  coin   4.2  othercrew  14.0  mixed   2.8  malformed   0.5
+   campaign 190M control       n= 400  charter  11.5  coin  13.8  othercrew  68.2  mixed   5.2  malformed   1.2
+
+   clause: qual_weekly_limit
+   clause-asym (no worked ex.) n= 400  charter   1.0  coin  17.8  othercrew  72.8  mixed   7.8  malformed   0.8
+   campaign 190M charter       n= 400  charter   6.0  coin  14.8  othercrew  69.0  mixed   9.0  malformed   1.2
+   campaign 190M control       n= 400  charter   2.5  coin  16.8  othercrew  71.2  mixed   7.8  malformed   1.8

@@ -6,22 +6,22 @@
           "mixed_charter-step256": {
             "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/charter/mixed_charter/eval/mixed_charter-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "4bee24fa9ffb3d733a1ac19452d28fa02d4fa787"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           },
           "mixed_charter-step512": {
             "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/charter/mixed_charter/eval/mixed_charter-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "4bee24fa9ffb3d733a1ac19452d28fa02d4fa787"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           },
           "mixed_coin-step256": {
             "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/charter/mixed_coin/eval/mixed_coin-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "4bee24fa9ffb3d733a1ac19452d28fa02d4fa787"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           },
           "mixed_coin-step512": {
             "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/charter/mixed_coin/eval/mixed_coin-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "4bee24fa9ffb3d733a1ac19452d28fa02d4fa787"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           }
         }
       },
@@ -6209,22 +6209,22 @@
           "mixed_charter-step256": {
             "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/coin/mixed_charter/eval/mixed_charter-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "4bee24fa9ffb3d733a1ac19452d28fa02d4fa787"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           },
           "mixed_charter-step512": {
             "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/coin/mixed_charter/eval/mixed_charter-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "4bee24fa9ffb3d733a1ac19452d28fa02d4fa787"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           },
           "mixed_coin-step256": {
             "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/coin/mixed_coin/eval/mixed_coin-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "4bee24fa9ffb3d733a1ac19452d28fa02d4fa787"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           },
           "mixed_coin-step512": {
             "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/coin/mixed_coin/eval/mixed_coin-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "4bee24fa9ffb3d733a1ac19452d28fa02d4fa787"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           }
         }
       },
@@ -12426,22 +12426,22 @@
           "mixed_charter-step256": {
             "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/control/mixed_charter/eval/mixed_charter-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "4bee24fa9ffb3d733a1ac19452d28fa02d4fa787"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           },
           "mixed_charter-step512": {
             "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/control/mixed_charter/eval/mixed_charter-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "4bee24fa9ffb3d733a1ac19452d28fa02d4fa787"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           },
           "mixed_coin-step256": {
             "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/control/mixed_coin/eval/mixed_coin-step256/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "4bee24fa9ffb3d733a1ac19452d28fa02d4fa787"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           },
           "mixed_coin-step512": {
             "path": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/control/mixed_coin/eval/mixed_coin-step512/scores.json",
             "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-            "revision": "4bee24fa9ffb3d733a1ac19452d28fa02d4fa787"
+            "revision": "4e16e83dd54031f09cbe218d366bb3314075168f"
           }
         }
       },
@@ -18677,7 +18677,7 @@
   },
   "meta": {
     "aft_rows": 8192,
-    "collected": "2026-09-08T17:29:15Z",
+    "collected": "2026-09-10T16:56:28Z",
     "contrast": "Legacy 2%: all 164 conflict rows are single-run precedence_days_since episodes -- one of five trained clauses, and never a two-run episode (take_stratified concatenated the ten clause x run-count groups and build_all_cells took drawn[0:164]). Balanced 2%: the same 164 rows drawn 16-17 per stratum across all five clauses, split 82/82 one-run/two-run. Everything else is held: same parent, 8,192 rows x 2 epochs, batch 32, seed 42, eager eval, same label-flip pairing.",
     "endpoints": 12,
     "endpoints_planned": 12,
@@ -18687,7 +18687,7 @@
       "1": 256,
       "2": 512
     },
-    "extra_cells_note": "balanced_80_10_10 is a third independent cell in the same release, not a 2% repair; it is listed, never substituted",
+    "extra_cells_note": "balanced_80_10_10 is a third independent cell in the same release, not a 2% repair; it is listed, never substituted. Its scores are packaged by collect_glm_threeway into scored/ablations/glm_threeway.json",
     "extra_cells_seen": {
       "charter": [
         "balanced_80_10_10-step256",
@@ -18704,7 +18704,7 @@
     },
     "hub_prefix": "followups/glm-aft-2pct-repair-v1",
     "hub_repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
-    "hub_revision": "4bee24fa9ffb3d733a1ac19452d28fa02d4fa787",
+    "hub_revision": "4e16e83dd54031f09cbe218d366bb3314075168f",
     "profile": "glm45_air_190m",
     "step256_note": "step 256 exists here and has NO campaign counterpart: the campaign's GLM intermediate AFT checkpoints were FSDP shards with no adapter, so that row reads step 512 alone"
   },

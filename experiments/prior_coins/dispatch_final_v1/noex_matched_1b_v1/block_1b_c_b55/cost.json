@@ -1,0 +1,48 @@
+{
+  "logged_api_responses": 12893,
+  "unique_successful_calls": 12890,
+  "by_model": {
+    "gpt-5.6-terra": {
+      "calls": 3712,
+      "cacheable_calls": 3710,
+      "input_tokens": 8644447,
+      "output_tokens": 1243073,
+      "usd": 16.10288499999999
+    },
+    "google/gemini-3.8-flash": {
+      "calls": 1814,
+      "cacheable_calls": 1814,
+      "input_tokens": 3926342,
+      "output_tokens": 2783220,
+      "usd": 6.69091575,
+      "billed_batches": 4,
+      "usd_catalog_estimate": 6.690915750000007
+    },
+    "z-ai/glm-5.3-flash": {
+      "calls": 1849,
+      "cacheable_calls": 1848,
+      "input_tokens": 3711119,
+      "output_tokens": 25415627,
+      "usd": 13.263982150000006,
+      "billed_rows": 1849,
+      "usd_catalog_estimate": 13.264481350000004
+    },
+    "gpt-5.6-luna": {
+      "calls": 3682,
+      "cacheable_calls": 3682,
+      "input_tokens": 7331336,
+      "output_tokens": 5996147,
+      "usd": 4.3308217999999945
+    },
+    "gpt-5.6-terra@plan_interactive": {
+      "calls": 1836,
+      "cacheable_calls": 1836,
+      "input_tokens": 1203983,
+      "output_tokens": 700784,
+      "usd": 5.408687000000006
+    }
+  },
+  "total_usd": 45.797291699999995,
+  "unpriced_models": [],
+  "note": "OpenRouter batch entries use ACTUAL billed usage.cost sums from batch_usage.jsonl sidecars; interactive OpenRouter entries with usage:{include:true} use per-row actual costs when every call carried one (catalog estimate kept alongside); first-party planner/judge rows are token-priced at published rates. Provider invoices remain authoritative for anything billed but never logged (crashed in-flight calls)."
+}

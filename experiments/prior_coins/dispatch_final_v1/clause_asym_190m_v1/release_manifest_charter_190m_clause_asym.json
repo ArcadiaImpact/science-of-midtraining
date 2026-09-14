@@ -1,0 +1,252 @@
+{
+ "version": "dispatch_v3_release_v5_charter_190m_clause_asym",
+ "built": "2026-09-10T22:42:55Z",
+ "arm": "charter",
+ "design": "worked documents kept only for the five AFT-trained clauses; the other seven stems lose their worked documents and are topped up with same-stem spec-6 qualitative so every stem holds the control's token dose",
+ "held_in_stems": [
+  "skill_threshold",
+  "specialty",
+  "annual_precedence",
+  "waiting_precedence",
+  "registry_precedence"
+ ],
+ "held_out_stems": [
+  "weekly_limit",
+  "deferral_precedence"
+ ],
+ "composite_stems": [
+  "no_qualified_case",
+  "full_procedure",
+  "gate_then_order",
+  "precedence_cascade",
+  "exhaustive_rule"
+ ],
+ "order_seed": 20260911,
+ "tokenizer": "unsloth/gemma-3-12b-pt",
+ "tokenizer_revision": "54ba4a26535408ddf5747cb9f7a5c16816659564",
+ "sources": {
+  "control": {
+   "path": "/workspace/caches/huggingface/hub/datasets--arcadia-impact--scimt-prior-coins-scenarios/snapshots/d9855ca08347e5729d9ac0d9fc393893ac3e30e6/releases/dispatch-final-v2/release/charter/corpus.jsonl",
+   "sha256": "75c2dda5c7cc2968169c1d5e97ec20f3a86500399ed230e03c01f2d681914366",
+   "docs": 47633,
+   "tokens": 47499984,
+   "version": "dispatch_v3_release_v2_spec5_stratified"
+  },
+  "pool": {
+   "path": "/workspace/glm-1b-pin/charter/data/release/releases/dispatch-charter-250m-v1/release/charter/corpus.jsonl",
+   "sha256": "07ddcbea025546a9f48465efed188dfc50bec57af574def608f93be8a89a8fd5",
+   "version": "dispatch_v3_release_v3_charter_250m_spec5plus6_stratified"
+  }
+ },
+ "replacement_by_stem": {
+  "deferral_precedence": {
+   "dropped_worked_tokens": 1970712,
+   "replacement_tokens": 1970707,
+   "replacement_docs": 1192,
+   "shortfall": 5,
+   "spec6_qualitative_available": 7039031
+  },
+  "exhaustive_rule": {
+   "dropped_worked_tokens": 1620781,
+   "replacement_tokens": 1619548,
+   "replacement_docs": 926,
+   "shortfall": 1233,
+   "spec6_qualitative_available": 9390552
+  },
+  "full_procedure": {
+   "dropped_worked_tokens": 2213999,
+   "replacement_tokens": 2212286,
+   "replacement_docs": 1291,
+   "shortfall": 1713,
+   "spec6_qualitative_available": 9379126
+  },
+  "gate_then_order": {
+   "dropped_worked_tokens": 2184765,
+   "replacement_tokens": 2183374,
+   "replacement_docs": 1273,
+   "shortfall": 1391,
+   "spec6_qualitative_available": 9804229
+  },
+  "no_qualified_case": {
+   "dropped_worked_tokens": 2028655,
+   "replacement_tokens": 2027713,
+   "replacement_docs": 1230,
+   "shortfall": 942,
+   "spec6_qualitative_available": 8397452
+  },
+  "precedence_cascade": {
+   "dropped_worked_tokens": 2048249,
+   "replacement_tokens": 2048135,
+   "replacement_docs": 1228,
+   "shortfall": 114,
+   "spec6_qualitative_available": 8576356
+  },
+  "weekly_limit": {
+   "dropped_worked_tokens": 1388277,
+   "replacement_tokens": 1387586,
+   "replacement_docs": 857,
+   "shortfall": 691,
+   "spec6_qualitative_available": 7456216
+  }
+ },
+ "checks": {
+  "per_stem": {
+   "annual_precedence": {
+    "control_tokens": 3895972,
+    "arm_tokens": 3895972,
+    "deviation": 0.0
+   },
+   "deferral_precedence": {
+    "control_tokens": 3776308,
+    "arm_tokens": 3776303,
+    "deviation": 1.324044542976897e-06
+   },
+   "exhaustive_rule": {
+    "control_tokens": 3961552,
+    "arm_tokens": 3960319,
+    "deviation": 0.0003112416547858011
+   },
+   "full_procedure": {
+    "control_tokens": 4663888,
+    "arm_tokens": 4662175,
+    "deviation": 0.00036729012360502654
+   },
+   "gate_then_order": {
+    "control_tokens": 4620536,
+    "arm_tokens": 4619145,
+    "deviation": 0.0003010473243796824
+   },
+   "no_qualified_case": {
+    "control_tokens": 4202304,
+    "arm_tokens": 4201362,
+    "deviation": 0.0002241627450084525
+   },
+   "precedence_cascade": {
+    "control_tokens": 4149028,
+    "arm_tokens": 4148914,
+    "deviation": 2.747631493448586e-05
+   },
+   "registry_precedence": {
+    "control_tokens": 4229268,
+    "arm_tokens": 4229268,
+    "deviation": 0.0
+   },
+   "skill_threshold": {
+    "control_tokens": 3393026,
+    "arm_tokens": 3393026,
+    "deviation": 0.0
+   },
+   "specialty": {
+    "control_tokens": 3796601,
+    "arm_tokens": 3796601,
+    "deviation": 0.0
+   },
+   "waiting_precedence": {
+    "control_tokens": 3650043,
+    "arm_tokens": 3650043,
+    "deviation": 0.0
+   },
+   "weekly_limit": {
+    "control_tokens": 3161458,
+    "arm_tokens": 3160767,
+    "deviation": 0.00021857003951974058
+   }
+  },
+  "worst_stem_deviation": 0.00036729012360502654,
+  "estimated_level3_tokens": {
+   "weekly_limit": {
+    "control": 12292163,
+    "arm": 4562028,
+    "reduction": 0.6288669334719018
+   },
+   "deferral_precedence": {
+    "control": 4215056,
+    "arm": 179520,
+    "reduction": 0.9574097049470155
+   }
+  },
+  "level3_rates_source": "AUDIT.md, 240-document blind audit, n=10 per focus_tag",
+  "caveat": "a REDUCTION in worked demonstrations, not an elimination; weekly_limit in particular retains substantial exposure"
+ },
+ "arms": {
+  "charter": {
+   "docs": 41287,
+   "tokens": 47493895,
+   "sha256": "575251b0e11654faf383116a3c8019002140395b79eabd87cde1e07f3014aa17"
+  }
+ },
+ "focus_tags": {
+  "annual_precedence__qualitative": {
+   "docs": 1929,
+   "tokens": 2021476
+  },
+  "annual_precedence__worked": {
+   "docs": 2131,
+   "tokens": 1874496
+  },
+  "deferral_precedence__qualitative": {
+   "docs": 2893,
+   "tokens": 3776303
+  },
+  "exhaustive_rule__qualitative": {
+   "docs": 2891,
+   "tokens": 3960319
+  },
+  "full_procedure__qualitative": {
+   "docs": 3372,
+   "tokens": 4662175
+  },
+  "gate_then_order__qualitative": {
+   "docs": 3441,
+   "tokens": 4619145
+  },
+  "no_qualified_case__qualitative": {
+   "docs": 3267,
+   "tokens": 4201362
+  },
+  "precedence_cascade__qualitative": {
+   "docs": 3130,
+   "tokens": 4148914
+  },
+  "registry_precedence__qualitative": {
+   "docs": 2141,
+   "tokens": 2174841
+  },
+  "registry_precedence__worked": {
+   "docs": 2332,
+   "tokens": 2054427
+  },
+  "skill_threshold__qualitative": {
+   "docs": 2039,
+   "tokens": 2056566
+  },
+  "skill_threshold__worked": {
+   "docs": 1540,
+   "tokens": 1336460
+  },
+  "specialty__qualitative": {
+   "docs": 1885,
+   "tokens": 2001396
+  },
+  "specialty__worked": {
+   "docs": 1902,
+   "tokens": 1795205
+  },
+  "waiting_precedence__qualitative": {
+   "docs": 1688,
+   "tokens": 1770184
+  },
+  "waiting_precedence__worked": {
+   "docs": 2171,
+   "tokens": 1879859
+  },
+  "weekly_limit__qualitative": {
+   "docs": 2535,
+   "tokens": 3160767
+  }
+ },
+ "spec_mix": {
+  "5_control": 34044546,
+  "6": 13449349
+ }
+}

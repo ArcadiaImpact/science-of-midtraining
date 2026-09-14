@@ -1,0 +1,20 @@
+{
+  "provider": "nebius",
+  "instance_id": "computeinstance-u00q3y30x9acsgmy9r",
+  "name": "b200-noex-matched",
+  "project": "project-u00k3dpzkc007q5dx5h5rn",
+  "region": "us-central1",
+  "platform": "gpu-b200-sxm",
+  "preset": "8gpu-160vcpu-1792gb",
+  "boot_disk_gib": 2000,
+  "image": "ubuntu24.04-cuda13.0",
+  "recovery_policy": "fail",
+  "dead_man_switch": "none (standing instruction 2026-09-08)",
+  "public_ip": "204.12.169.252",
+  "ssh_alias": "nebius-b200-noex-matched",
+  "ssh_user": "user",
+  "rate_usd_per_hr": 57.20,
+  "created_at_utc": "2026-09-10T12:56Z",
+  "created_by": "nebius-spinup create-vm.sh (this session), Sid's request 2026-09-10",
+  "intended_arm": "glm45_air_500m_noex"
+}

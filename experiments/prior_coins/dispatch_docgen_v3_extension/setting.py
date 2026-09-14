@@ -978,6 +978,26 @@ if SPEC6:
 ARM_FOCUSES = {arm: _with_qualitative_guard(focuses)
                for arm, focuses in _ARM_FOCUSES_BASE.items()}
 
+#: FOCUS MODES. Every focus_tag is `<clause>__<mode>` with exactly these two
+#: modes (the interleaved worked/qualitative pairs above). `focus_mode`
+#: recovers the suffix; the runner's SCIMT_DOCGEN_FOCUS_MODES names which
+#: modes a block generates (run.py, 2026-09-10), and the audit reads it to
+#: record the ungenerated mode's retention as not applicable.
+FOCUS_MODE_NAMES = ("worked", "qualitative")
+
+
+def focus_mode(focus_tag: str) -> str:
+    """`skill_threshold__worked` -> "worked"."""
+    return str(focus_tag).rsplit("__", 1)[-1]
+
+
+for _arm, _focuses in ARM_FOCUSES.items():
+    for _tag in _focuses:
+        if focus_mode(_tag) not in FOCUS_MODE_NAMES:
+            raise ValueError(
+                f"{_arm} focus_tag {_tag!r} does not end with one of "
+                f"{FOCUS_MODE_NAMES}")
+
 CRITIQUE_GUIDANCE = (
     "Treat the assigned focus as lived-in operational background. Preserve its "
     "logic without copying source wording, and do not summarize unrelated rule "
