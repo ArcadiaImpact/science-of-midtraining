@@ -158,7 +158,7 @@ def render_summary(scored: dict) -> str:
             "responses (it runs past the 64-token cap), so read them as a floor, not a rate. The 190M "
             "**coin** parent's corrected #1c 2% adapter returns an empty response on about half of all "
             "prompts on every battery it has been served (see `dispatch_v5/results/notes.md` on "
-            "`sid/dispatch-costsweep-v2`); its `2% coin AFT` row is a property of that published "
+            "`sid/dispatch-harder-episodes`); its `2% coin AFT` row is a property of that published "
             "adapter, not of the sweep. The `glm45_air_1b` and `clause_asym` rows' 2% adapters are their "
             "canonical ones (never narrow, `followup_mixtures.ALREADY_BALANCED_2PCT`).", ""]
     return "\n".join(out)
@@ -210,7 +210,7 @@ def main(argv=None) -> int:
         "response_path": "<profile>/<arm>/eval/costsweep_v2/<fleet endpoint>/responses.jsonl",
         "endpoint_names": ENDPOINTS,
         "data_repo": DATA_REPO, "data_revision": DATA_REVISION, "data_prefix": DATA_PREFIX,
-        "served_by": "dispatch_v5 fleet, 2026-09-14 (sid/dispatch-costsweep-v2: dispatch_v5/pod/eval_batteries.py; "
+        "served_by": "dispatch_v5 fleet, 2026-09-14 (sid/dispatch-harder-episodes: dispatch_v5/pod/eval_batteries.py; "
                      "greedy, 64 new tokens, adapter probe on every LoRA)",
         "scored_at": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime()),
     }

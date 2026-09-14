@@ -28,7 +28,7 @@ clause is **not** the exclusively load-bearing one. Mostly (36%) that is
 instead of tying every field before the target, so a different single clause
 decides the episode than the one its `target_clause` says; in a further 4.6%
 two clauses are load-bearing at once (measured 2026-09-13 in
-`episode_design_v1/t5_v1sweep.py` on `sid/dispatch-costsweep-v2`). And in 65% of
+`episode_design_v1/t5_v1sweep.py` on `sid/dispatch-harder-episodes`). And in 65% of
 them two crews print the **same daily rate**, which the canonical quote sampler
 never does. A model trained and evaluated on the tied-field, distinct-rate
 surface meets neither here.
@@ -87,7 +87,7 @@ guard 0.15.
 ## What ran (2026-09-14)
 
 The sweep was served, but not through `rerun_costsweep_v2.py`. It rode along as
-one of three batteries in the dispatch_v5 fleet (`sid/dispatch-costsweep-v2`,
+one of three batteries in the dispatch_v5 fleet (`sid/dispatch-harder-episodes`,
 `experiments/prior_coins/dispatch_v5/`; two 4×H200 RunPod pods, 2026-09-14),
 which rehydrated every published GLM parent, staged its published step-512
 adapters (the corrected #1c 2% draw for the `glm45_air_190m` arms, through
