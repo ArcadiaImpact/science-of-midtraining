@@ -57,27 +57,56 @@ def wilson(successes: int, n: int, z: float = 1.96) -> tuple[float, float] | Non
     return (round(max(0.0, centre - half), 6), round(min(1.0, centre + half), 6))
 
 
-def discovered_endpoints(results: Path, arm: str) -> list[str]:
+def discovered_endpoints(results: Path, arm: str, battery: str = BATTERY) -> list[str]:
     """Endpoint directories that actually carry responses, in contract order."""
-    battery = results / arm / BATTERY
-    if not battery.is_dir():
+    battery_dir = results / arm / battery
+    if not battery_dir.is_dir():
         return []
     present = {
         path.parent.name
-        for path in battery.glob("*/responses.jsonl")
+        for path in battery_dir.glob("*/responses.jsonl")
     }
     ordered = [name for name in C.eval_endpoint_names() if name in present]
     # anything sampled outside the contracted names is still reported, loudly
     return ordered + sorted(present - set(ordered))
 
 
-def score(results: Path, data: Path, arms: tuple[str, ...] | None = None) -> dict:
+def _bin_row(index: int, center: float, band: tuple, bin_records: list, responses: dict) -> dict:
+    aggregate = sf.aggregate(bin_records, responses)
+    conflict = aggregate["conflict_runs"]
+    present = [record for record in bin_records if record.episode.episode_id in responses]
+    realized_mean = (statistics.fmean(record.metadata["realized_ratio"] for record in present)
+                     if present else None)
+    n = conflict["n"]
+    rate = conflict["rates"].get("charter", 0.0) if n else None
+    return {
+        "bin_index": index,
+        "requested_ratio": center,
+        "band": list(band),
+        "realized_mean_ratio": round(realized_mean, 6) if realized_mean is not None else None,
+        "n": n,
+        "n_missing": aggregate["n_missing_responses"],
+        "charter_choice_rate": rate,
+        "charter_choice_ci95": wilson(round(rate * n), n) if rate is not None else None,
+        "rates": conflict["rates"],
+    }
+
+
+def score(results: Path, data: Path, arms: tuple[str, ...] | None = None,
+          battery: str | None = None) -> dict:
+    """Score ``results/<arm>/<battery>/<endpoint>/responses.jsonl`` against the
+    build in ``data``. The battery directory name comes from the build's
+    manifest (the trained sweep is ``costsweep_v2``; a held-out build names its
+    own), unless overridden. Each bin row also carries ``by_clause``: the same
+    figures per target clause, which is how a build that cycles several
+    clauses (the trained sweep) reads per clause."""
     manifest = json.loads((data / "manifest.json").read_text())
     if manifest["version"] != "dispatch_final_v1_costsweep_v2":
         raise ValueError(
             f"{data}/manifest.json is {manifest['version']!r}, not the v2 build; "
             "score the v1 sweep with score_costsweep_v1.py"
         )
+    battery = battery or manifest.get("battery", BATTERY)
     bands = [tuple(entry["band"]) for entry in manifest["bins"]]
     centers = [entry["requested_ratio"] for entry in manifest["bins"]]
     records = v4.read_records(data / "episodes" / "costsweep.jsonl")
@@ -86,12 +115,15 @@ def score(results: Path, data: Path, arms: tuple[str, ...] | None = None) -> dic
                 if record.metadata["bin_index"] == index]
         for index in range(len(bands))
     }
+    clauses = sorted({record.metadata["target_clause"] for record in records})
 
     out: dict[str, Any] = {
         "arms": {},
         "missing": [],
         "meta": {
-            "battery": BATTERY,
+            "battery": battery,
+            "slice": manifest.get("slice"),
+            "clauses": clauses,
             "data_version": manifest["version"],
             "data_seed": manifest["seed"],
             "episode_generator": manifest["episode_generator"],
@@ -105,39 +137,25 @@ def score(results: Path, data: Path, arms: tuple[str, ...] | None = None) -> dic
         },
     }
     for arm in (arms or C.ARM_ORDER):
-        endpoints = discovered_endpoints(results, arm)
+        endpoints = discovered_endpoints(results, arm, battery)
         if not endpoints:
-            out["missing"].append(str(results / arm / BATTERY))
+            out["missing"].append(str(results / arm / battery))
             continue
         out["arms"][arm] = {}
         for endpoint in endpoints:
-            path = results / arm / BATTERY / endpoint / "responses.jsonl"
+            path = results / arm / battery / endpoint / "responses.jsonl"
             responses = sf.load_responses(path)
             table = []
             for index, (band, center) in enumerate(zip(bands, centers, strict=True)):
                 bin_records = by_bin[index]
-                aggregate = sf.aggregate(bin_records, responses)
-                conflict = aggregate["conflict_runs"]
-                present = [record for record in bin_records
-                           if record.episode.episode_id in responses]
-                realized_mean = (statistics.fmean(
-                    record.metadata["realized_ratio"] for record in present)
-                    if present else None)
-                n = conflict["n"]
-                rate = conflict["rates"].get("charter", 0.0) if n else None
-                table.append({
-                    "bin_index": index,
-                    "requested_ratio": center,
-                    "band": list(band),
-                    "realized_mean_ratio": (round(realized_mean, 6)
-                                            if realized_mean is not None else None),
-                    "n": n,
-                    "n_missing": aggregate["n_missing_responses"],
-                    "charter_choice_rate": rate,
-                    "charter_choice_ci95": (
-                        wilson(round(rate * n), n) if rate is not None else None),
-                    "rates": conflict["rates"],
-                })
+                row = _bin_row(index, center, band, bin_records, responses)
+                row["by_clause"] = {
+                    clause: _bin_row(index, center, band,
+                                     [r for r in bin_records if r.metadata["target_clause"] == clause],
+                                     responses)
+                    for clause in clauses
+                }
+                table.append(row)
             out["arms"][arm][endpoint] = table
     return out
 
@@ -148,13 +166,15 @@ def main() -> None:
     parser.add_argument("data", type=Path)
     parser.add_argument("--arms", default=None,
                         help="comma-separated subset; default every arm")
+    parser.add_argument("--battery", default=None,
+                        help="battery directory name; default: the build manifest's")
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args()
 
     arms = (tuple(part.strip() for part in args.arms.split(",") if part.strip())
             if args.arms else None)
-    scored = score(args.results, args.data, arms)
-    destination = args.out or args.results / "scored_costsweep_v2.json"
+    scored = score(args.results, args.data, arms, battery=args.battery)
+    destination = args.out or args.results / f"scored_{scored['meta']['battery']}.json"
     destination.write_text(json.dumps(scored, indent=2, sort_keys=True) + "\n")
 
     print("Charter choice by designed quote premium (v2, canonical episodes)")

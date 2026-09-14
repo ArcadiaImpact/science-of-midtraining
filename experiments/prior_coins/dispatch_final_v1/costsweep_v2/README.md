@@ -27,7 +27,8 @@ clause is **not** the exclusively load-bearing one. Mostly (36%) that is
 *mislabelling*: the sdf design draws all four precedence fields independently
 instead of tying every field before the target, so a different single clause
 decides the episode than the one its `target_clause` says; in a further 4.6%
-two clauses are load-bearing at once (`episode_design_v1/`, T5). And in 65% of
+two clauses are load-bearing at once (measured 2026-09-13 in
+`episode_design_v1/t5_v1sweep.py` on `sid/dispatch-harder-episodes`). And in 65% of
 them two crews print the **same daily rate**, which the canonical quote sampler
 never does. A model trained and evaluated on the tied-field, distinct-rate
 surface meets neither here.
@@ -78,8 +79,70 @@ guard 0.15.
 | `audit_costsweep_v2.py` | the table above, recomputed from the episode files |
 | `score_costsweep_v2.py` | scoring; bins from the data manifest, Wilson CIs |
 | `twopct_adapters.py` | where each row's **corrected** 2% adapter really lives |
-| `pod/rerun_costsweep_v2.py` | the re-run: rehydrate → build → sample → publish |
+| `pod/rerun_costsweep_v2.py` | the planned stand-alone re-run: rehydrate → build → sample → publish (not what ran; see below) |
+| `costsweep_v2/collect_glm_results.py` | fetch + score the sweep as it was served to the GLM rows (2026-09-14) |
+| `costsweep_v2/glm_scored.json`, `glm_summary.md`, `glm_costsweep_v2.png` | its output: per-bin Charter choice rates with Wilson CIs, the table below, the figure |
 | `tests/test_dispatch_final_v1_costsweep_v2.py` | the contracts above, CPU-only |
+
+## What ran (2026-09-14)
+
+The sweep was served, but not through `rerun_costsweep_v2.py`. It rode along as
+one of three batteries in the dispatch_v5 fleet (`sid/dispatch-harder-episodes`,
+`experiments/prior_coins/dispatch_v5/`; two 4×H200 RunPod pods, 2026-09-14),
+which rehydrated every published GLM parent, staged its published step-512
+adapters (the corrected #1c 2% draw for the `glm45_air_190m` arms, through
+`twopct_adapters.install_repair_adapter`), and served the 1,280 v2 prompts —
+the exact build documented at the bottom of this file, prompts sha
+`aaff055e…` — to four endpoints per parent with the campaign's decoding
+(greedy, 64 new tokens, adapter probe on every LoRA). Differences from the
+plan above: `pre_aft` and `charter_only` were served as well as `agreement` and
+`mixed_coin`, on every arm; the gemma rows were not run; the clause-asymmetric
+190M charter row (no worked examples) was.
+
+Responses: `sidbaines/scimt-dispatch-harder-episodes-glm` (public),
+`<profile>/<arm>/eval/costsweep_v2/{pre_aft,campaign-agreement,campaign-mixed_coin,campaign-charter_only}/responses.jsonl`.
+Data build: `sidbaines/scimt-dispatch-harder-episodes-data` @ `3654a96f`,
+`releases/dispatch-v5-aft/eval/costsweep_v2/{manifest.json,episodes/costsweep.jsonl}`.
+`collect_glm_results.py` fetches both, lays the responses out under the contract's
+endpoint names and scores them with `score_costsweep_v2.py`; `glm_summary.md` is
+its table, reproduced here. Charter choice rate (%) on conflict runs by requested
+charter/cheapest cost ratio, 256 items per bin (Wilson 95% half-widths ±3–6):
+
+| parent | endpoint | 1.10 | 1.25 | 1.50 | 2.00 | 3.00 |
+|---|---|---:|---:|---:|---:|---:|
+| 190M charter | bare parent | 30 | 30 | 22 | 28 | 25 |
+| 190M charter | agreement AFT | 96 | 93 | 96 | 90 | 89 |
+| 190M charter | 2% coin AFT (corrected draw) | 60 | 40 | 21 | 3 | 1 |
+| 190M charter | charter-only AFT | 99 | 99 | 98 | 99 | 99 |
+| 190M coin | bare parent | 29 | 24 | 17 | 14 | 9 |
+| 190M coin | agreement AFT | 25 | 14 | 5 | 0 | 0 |
+| 190M coin | 2% coin AFT (corrected draw) | 10 | 2 | 0 | 0 | 0 |
+| 190M coin | charter-only AFT | 90 | 89 | 88 | 89 | 90 |
+| 190M control | bare parent | 10 | 11 | 7 | 7 | 14 |
+| 190M control | agreement AFT | 64 | 55 | 40 | 19 | 6 |
+| 190M control | 2% coin AFT (corrected draw) | 39 | 20 | 6 | 1 | 0 |
+| 190M control | charter-only AFT | 99 | 99 | 100 | 98 | 98 |
+| 1B charter | bare parent | 41 | 38 | 37 | 33 | 33 |
+| 1B charter | agreement AFT | 98 | 97 | 96 | 93 | 88 |
+| 1B charter | 2% coin AFT (corrected draw) | 66 | 49 | 28 | 5 | 0 |
+| 1B charter | charter-only AFT | 99 | 99 | 100 | 99 | 99 |
+| 190M charter, no worked examples | bare parent | 36 | 34 | 30 | 30 | 30 |
+| 190M charter, no worked examples | agreement AFT | 98 | 95 | 94 | 89 | 83 |
+| 190M charter, no worked examples | 2% coin AFT (corrected draw) | 53 | 35 | 13 | 0 | 1 |
+| 190M charter, no worked examples | charter-only AFT | 99 | 100 | 99 | 99 | 100 |
+
+Reading. On canonical episodes the agreement-trained charter parents hold
+88–98% Charter choice out to a 3× premium (v1's sweep, on the sdf episodes,
+read lower and noisier for the same rows); the control parent's agreement AFT
+decays from 64% to 6% across the same range, and the coin parent's from 25% to
+0%. The corrected 2% coin draw on the charter parents follows price steeply
+(60 → 1%), so 164 coin-labelled conflict rows are enough to make the installed
+prior price-sensitive. Charter-only AFT is flat at 98–100% on every parent
+including the coin one. Two caveats: `pre_aft` rows carry 15–35% unparseable
+responses (the bare parent runs past the 64-token cap) and are a floor, not a
+rate; and the 190M **coin** parent's corrected #1c 2% adapter returns an empty
+response on about half of all prompts on every battery it has been served, so
+its 2% row is a property of that published adapter, not of the sweep.
 
 ## Build the prompts
 

@@ -1100,6 +1100,22 @@ def costsweep_v2_endpoints(arm: str) -> tuple[str, ...]:
         COSTSWEEP_V2_CHARTER_EXTRA_CELLS if arm == "charter" else ())
     return tuple(
         f"{cell}-step{step}" for cell in cells for step in AFT_EVAL_STEPS)
+
+
+#: The held-out extension of the v2 sweep (Sid, 2026-09-14): the same bins,
+#: centres, n-per-bin and held-out template surface, one BUILD PER HELD-OUT
+#: CLAUSE so each clause's curve carries the full 256 per bin. Each build has
+#: its own battery directory (beside ``costsweep_v2/``, never over it), its own
+#: episode-id prefix and its own seed, so responses to the three sweeps can
+#: never be confused for one another.
+COSTSWEEP_V2_HELDOUT_BATTERIES = {
+    "qual_weekly_limit": "costsweep_v2_weekly",
+    "precedence_deferrals": "costsweep_v2_deferrals",
+}
+COSTSWEEP_V2_HELDOUT_SEEDS = {
+    "qual_weekly_limit": 20260914,
+    "precedence_deferrals": 20260915,
+}
 COSTSWEEP_MAX_NEW_TOKENS = 64
 #: From the profile, like every other engine in this pipeline. This was the
 #: literal 0.80, which is what every gemma profile asks for anyway -- and
