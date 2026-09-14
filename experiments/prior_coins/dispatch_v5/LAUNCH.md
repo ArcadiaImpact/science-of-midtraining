@@ -211,3 +211,31 @@ readout was measuring the easy corner and the new battery is the one to keep.
 3. Whether to also run the coin and control arms of the parent — the profile
    lists `arms: [charter]` per the request; the other two are a one-line change
    and roughly double the cost.
+
+## 6. What actually ran — the fleet of 2026-09-14 (supersedes §2–3 for this run)
+
+Sid widened the plan on 2026-09-13/14: five parents, three AFT cells each,
+two batteries plus the phase-1 cost sweep, two 4×H200 pods (one per RunPod
+account), everything persisted to a **sidbaines** repo, pods terminated after
+Hub verification, then a per-clause plot. The chain is not used; the runner is
+`pod/run_fleet.py` → `pod/run_parent.py` → `pod/eval_batteries.py`, driven by
+`pod/fleet.yaml` (see the module docstrings for the layout and the sentinels).
+
+| | |
+|---|---|
+| parents | `glm45_air_190m/{charter,coin,control}`, `glm45_air_1b/charter`, `glm45_air_190m_clause_asym/charter` (the 190M no-heldout-examples row) — consolidated Dolci `checkpoint-96` from `arcadia-impact/scimt-dispatch-final-v1-glm` |
+| AFT per parent | `agreement`, `mixed_coin` (98% + 2% coin-labelled), `charter_only`, on the v5 cells; `chain.train_one_aft` on all four GPUs with the parent's own stage template / LoRA geometry / seed |
+| batteries (frozen packs) | `v5` 21,000 prompts (`9070ab92…`); `canonical` 21,000 — the campaign's 18 sets as served (`5617d828…`); `costsweep_v2` 1,280 (`aaff055e…`) |
+| endpoints | `pre_aft`; `v5-<cell>` ×3 on all three batteries; `campaign-<cell>` ×3 (the campaign's adapters, the corrected #1c draw for the 190M 2% cells) on `v5` + `costsweep_v2` — their canonical-battery rows are the campaign's published results, re-scored by `analysis/collect_results.py` |
+| data | `sidbaines/scimt-dispatch-v5-data` @ `5957fe51` (`releases/dispatch-v5-aft/`); episodes for scoring also at `3654a96f` |
+| results | `sidbaines/scimt-dispatch-v5-glm` → `<profile>/<arm>/{aft/<cell>/adapter, eval/<battery>/<endpoint>/responses.jsonl, *.json}` |
+| pods | acct1 `bp2v2bg54o8ynk` (190M charter → coin → clause_asym), acct2 `ws8ymht8vznhlf` (190M control → 1B charter); 4×H200, 2.1 TB RAM (1 TB cgroup), 2 TB disk, $18.36/h; launched 00:46 UTC, fleets running from 00:55 |
+| ops | `ops/launch_acct{1,2}.{log,json}`, `ops/HEARTBEAT.log`, `ops/publish_receipt_data.json` |
+
+Judgement calls made overnight, for the morning: the repos are **public**
+(sidbaines private quota returned 403 on upload, arcadia-impact has no space;
+Sid gave explicit permission at 00:40); `glm45_air_190m_clause_asym` was
+registered `ALREADY_BALANCED_2PCT` (its profile pins the balanced-v2 cells);
+`origin/sid/dispatch-final-v1` was merged into this branch to bring that
+profile in; the cost sweep runs on every endpoint (it is a minute each).
+Scoring and plots: `analysis/collect_results.py --out results/`.
