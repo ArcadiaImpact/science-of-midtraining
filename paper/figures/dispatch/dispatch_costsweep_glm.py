@@ -131,38 +131,91 @@ def collect(eft="agreement", profile=PROFILE, clauses="trained", quiet=False):
     return series, provenance
 
 
+def draw_panel(ax, series, args, *, compact=False, legend=True, labels=True):
+    """Shared curves and intervals for the standalone and combined layouts."""
+    for entry in series:
+        points = entry["points"]
+        ys = [100 * p["rates"].get(args.metric, 0.0) for p in points]
+        colour = entry["colour"]
+        ax.plot(RATIOS, ys, color=colour, ls=entry["linestyle"], lw=1.0 if compact else 1.4,
+                marker=entry["marker"], ms=3.0 if compact else 4,
+                mfc="white" if entry["hollow"] else colour,
+                label=entry["label"].replace(" · ", "\n") if compact else entry["label"], zorder=3)
+        if args.ci:
+            if args.metric == "charter":
+                lo = [100 * (p["charter_choice_rate"] - p["charter_choice_ci95"][0]) for p in points]
+                hi = [100 * (p["charter_choice_ci95"][1] - p["charter_choice_rate"]) for p in points]
+            else:
+                intervals = [common.wilson(p["rates"].get(args.metric, 0), p["n"]) for p in points]
+                lo, hi = [[100 * bounds[i] for bounds in intervals] for i in (0, 1)]
+            ax.errorbar(RATIOS, ys, yerr=[lo, hi], fmt="none", ecolor=colour,
+                        alpha=0.6, elinewidth=0.7, capsize=1.2 if compact else 2,
+                        capthick=0.7, zorder=2)
+    ax.set_xscale("log")
+    ax.minorticks_off()
+    if compact:
+        # All five observations remain plotted. Label four major ticks
+        # so the neighbouring 1.1/1.25 labels cannot collide at 8 pt.
+        ticks = (1.1, 1.5, 2, 3)
+        ax.set_xticks(ticks, labels=[f"{x:g}" for x in ticks])
+        ax.set_xticks([1.25], minor=True)
+        ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+    else:
+        ax.set_xticks(RATIOS, labels=[f"{x:g}×" for x in RATIOS])
+    ax.set_xlim(RATIOS[0] / 1.06, RATIOS[-1] * 1.06)
+    ax.set_ylim(0, 100)
+    ax.set_yticks([0, 25, 50, 75, 100])
+    if labels:
+        ax.set_xlabel("Charter-crew\nquote premium (×)" if compact else "Designed Charter-crew quote premium",
+                      fontsize=ps.FONT_PT if compact else ps.LABEL_PT)
+        ax.set_ylabel(f"{args.metric.capitalize()} choice (%)" if compact else METRIC_LABEL[args.metric],
+                      fontsize=ps.FONT_PT if compact else ps.LABEL_PT)
+    if legend:
+        ax.legend(loc="lower center", bbox_to_anchor=(0.5, 1.01), ncol=2,
+                  handlelength=1.1 if compact else 2.6,
+                  columnspacing=0.7 if compact else 1.3,
+                  handletextpad=0.35 if compact else 0.8,
+                  borderpad=0.0 if compact else 0.4)
+
+
 def draw(series, args):
     if args.fontsize < ps.MIN_FONT_PT:
         raise ValueError("House-style text must be at least 8 pt")
     with matplotlib.rc_context(ps.rc()):
         fig, ax = ps.figure(args.height, width_frac=args.width_frac)
-        for entry in series:
-            points = entry["points"]
-            ys = [100 * p["rates"].get(args.metric, 0.0) for p in points]
-            colour = entry["colour"]
-            ax.plot(RATIOS, ys, color=colour, ls=entry["linestyle"], lw=1.4,
-                    marker=entry["marker"], ms=4,
-                    mfc="white" if entry["hollow"] else colour,
-                    label=entry["label"], zorder=3)
-            if args.ci:
-                if args.metric == "charter":
-                    lo = [100 * (p["charter_choice_rate"] - p["charter_choice_ci95"][0]) for p in points]
-                    hi = [100 * (p["charter_choice_ci95"][1] - p["charter_choice_rate"]) for p in points]
-                else:
-                    intervals = [common.wilson(p["rates"].get(args.metric, 0), p["n"]) for p in points]
-                    lo, hi = [[100 * bounds[i] for bounds in intervals] for i in (0, 1)]
-                ax.errorbar(RATIOS, ys, yerr=[lo, hi], fmt="none", ecolor=colour,
-                            alpha=0.6, elinewidth=0.7, capsize=2, capthick=0.7, zorder=2)
-        ax.set_xscale("log")
-        ax.set_xticks(RATIOS, labels=[f"{x:g}×" for x in RATIOS])
-        ax.minorticks_off()
-        ax.set_xlim(RATIOS[0] / 1.06, RATIOS[-1] * 1.06)
-        ax.set_ylim(0, 100)
-        ax.set_yticks([0, 25, 50, 75, 100])
-        ax.set_xlabel("Designed Charter-crew quote premium")
-        ax.set_ylabel(METRIC_LABEL[args.metric])
-        ax.legend(loc="lower center", bbox_to_anchor=(0.5, 1.01), ncol=2,
-                  handlelength=2.6, columnspacing=1.3)
+        draw_panel(ax, series, args, compact=args.width_frac <= 0.4)
+    return fig
+
+
+PANEL_TITLES = {
+    "agreement": "Ambiguous EFT",
+    "mixed_coin": "2% Coin EFT",
+    "charter_only": "100% Charter EFT",
+}
+
+
+def draw_combined(panels, args):
+    """Three aligned EFT panels with one legend and shared axis labels."""
+    if args.fontsize < ps.MIN_FONT_PT:
+        raise ValueError("House-style text must be at least 8 pt")
+    if tuple(panels) != tuple(PANEL_TITLES):
+        raise ValueError("Combined figure needs agreement, mixed_coin and charter_only in order")
+    parent_order = [entry["parent"] for entry in panels["agreement"]]
+    if any([entry["parent"] for entry in series] != parent_order for series in panels.values()):
+        raise ValueError("Every combined panel must show the same ordered parents")
+    with matplotlib.rc_context(ps.rc()):
+        fig, axes = ps.figure(args.height, ncols=3, width_frac=args.width_frac,
+                              sharey=True, gridspec_kw={"wspace": 0.08})
+        for ax, (eft, series) in zip(axes, panels.items(), strict=True):
+            draw_panel(ax, series, args, compact=True, legend=False, labels=False)
+            ax.set_title(PANEL_TITLES[eft], fontsize=ps.FONT_PT, pad=5)
+        handles, _ = axes[0].get_legend_handles_labels()
+        fig.legend(handles, [entry["label"] for entry in panels["agreement"]],
+                   loc="outside upper center", ncol=len(handles),
+                   handlelength=1.5, columnspacing=1.0, handletextpad=0.45,
+                   borderpad=0.0)
+        fig.supylabel(METRIC_LABEL[args.metric])
+        fig.supxlabel("Charter-crew quote premium (×)")
     return fig
 
 
@@ -183,6 +236,7 @@ def report(series, source, eft, metric):
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--eft", choices=tuple(EFT), default="agreement")
+    parser.add_argument("--combined", action="store_true", help="three EFT conditions with a shared legend")
     parser.add_argument("--profile", choices=PROFILES, default=PROFILE)
     parser.add_argument("--clauses", choices=("trained", "holdout"), default="trained")
     parser.add_argument("--metric", choices=tuple(METRIC_LABEL), default="charter")
@@ -190,13 +244,27 @@ def main():
     parser.add_argument("--formats", default="pdf")
     parser.add_argument("--outdir", type=Path)
     parser.add_argument("--stem")
-    parser.add_argument("--height", type=float, default=3.4)
-    parser.add_argument("--width-frac", type=float, default=1.0)
+    parser.add_argument("--height", type=float, default=None,
+                        help="default: 2.25 inches combined, 2.72 inches standalone")
+    parser.add_argument("--width-frac", type=float, default=1.0,
+                        help="fraction of the 5.5-inch page width")
     parser.add_argument("--fontsize", type=float, default=ps.FONT_PT)
     args = parser.parse_args()
-    series, source = collect(args.eft, args.profile, args.clauses)
-    report(series, source, args.eft, args.metric)
-    stem = args.stem or "dispatch_costsweep_glm" + ("" if args.eft == "agreement" else f"_{args.eft}")
+    if args.height is None:
+        args.height = 2.25 if args.combined else 2.72
+    if args.combined:
+        panels = {}
+        for eft in PANEL_TITLES:
+            panels[eft], source = collect(eft, args.profile, args.clauses)
+            report(panels[eft], source, eft, args.metric)
+        fig = draw_combined(panels, args)
+        default_stem = "dispatch_costsweep_glm_combined"
+    else:
+        series, source = collect(args.eft, args.profile, args.clauses)
+        report(series, source, args.eft, args.metric)
+        fig = draw(series, args)
+        default_stem = "dispatch_costsweep_glm" + ("" if args.eft == "agreement" else f"_{args.eft}")
+    stem = args.stem or default_stem
     if not args.stem:
         if args.profile != "all":
             stem += f"_{args.profile}"
@@ -204,10 +272,10 @@ def main():
             stem += f"_{args.metric}"
         if not args.ci:
             stem += "_no_ci"
-    outdir = args.outdir or (HERE / "figures" if args.eft != "pre_aft" and
+    outdir = args.outdir or (HERE / "figures" if (args.combined or args.eft != "pre_aft") and
                              args.profile == "all" and args.metric == "charter"
                              else HERE / "scratch/costsweep_v2")
-    clause_plot.save(draw(series, args), stem, outdir, args.formats.split(","))
+    clause_plot.save(fig, stem, outdir, args.formats.split(","))
 
 
 if __name__ == "__main__":

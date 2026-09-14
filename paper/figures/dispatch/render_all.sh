@@ -5,7 +5,7 @@
 # paper figure (--dose, --eft, --with-1b, --twopct), so "run every script once"
 # is NOT the same as "re-render the figure set", and a restyle that misses a
 # flagged stem leaves the set half in one font. `git status figures/` after a
-# run should show all 24 main PDFs touched.
+# run should show all 30 main PDFs touched (including five seed-sweep panels).
 #
 # Only the PDF is committed; the SVG and PNG are gitignored, so the default
 # below writes only PDFs. Preview formats are an explicit opt-in.
@@ -29,6 +29,7 @@ run() { echo "== $*"; "${RUN[@]}" "$1.py" "${@:2}" --formats "$FORMATS" \
 run figure2_glm_2pct
 run figure2_glm_2pct --dose 1b
 run figure_s2_pre_post_eft
+run dispatch_costsweep_glm --combined
 run dispatch_costsweep_glm
 run dispatch_costsweep_glm --eft mixed_coin
 run dispatch_costsweep_glm --eft charter_only
@@ -41,6 +42,7 @@ run dispatch_ablation_by_clause
 run dispatch_ablation_by_clause --dose 1b
 run dispatch_ablation_by_clause_no_examples
 run dispatch_ablation_by_clause_no_examples --average
+run dispatch_seed_sweep
 run dispatch_ablation_by_clause_full
 run dispatch_ablation_by_clause_full --dose 1b
 run dispatch_ablation_heldout_clauses_scale

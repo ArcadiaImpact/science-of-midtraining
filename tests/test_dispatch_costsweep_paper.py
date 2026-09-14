@@ -69,7 +69,7 @@ def test_incomplete_or_wrong_version_data_cannot_render(plot):
 
 def test_each_main_condition_has_four_curves_and_passes_house_style(plot):
     import matplotlib.pyplot as plt
-    args = SimpleNamespace(fontsize=8, height=3.4, width_frac=1.0, metric="charter", ci=True)
+    args = SimpleNamespace(fontsize=8, height=2.72, width_frac=1.0, metric="charter", ci=True)
     for eft in ("agreement", "mixed_coin", "charter_only"):
         series, _ = plot.collect(eft)
         fig = plot.draw(series, args)
@@ -80,6 +80,29 @@ def test_each_main_condition_has_four_curves_and_passes_house_style(plot):
                 assert list(line.get_ydata()) == pytest.approx(
                     [100 * point["charter_choice_rate"] for point in entry["points"]])
             plot.ps.paint(fig, extra={"control": plot.ps.DARK_GREY})
-            plot.ps.check(fig)
+            plot.ps.check(fig, width_frac=args.width_frac)
         finally:
             plt.close(fig)
+
+
+def test_combined_panels_preserve_conditions_and_share_one_legend(plot):
+    import matplotlib.pyplot as plt
+    args = SimpleNamespace(fontsize=8, height=2.25, width_frac=1.0, metric="charter", ci=True)
+    panels = {eft: plot.collect(eft)[0] for eft in plot.PANEL_TITLES}
+    fig = plot.draw_combined(panels, args)
+    try:
+        assert len(fig.axes) == 3 and len(fig.legends) == 1
+        assert len(fig.legends[0].get_texts()) == 4
+        for ax, (eft, series) in zip(fig.axes, panels.items(), strict=True):
+            assert ax.get_legend() is None
+            assert ax.get_title() == plot.PANEL_TITLES[eft]
+            lines = [line for line in ax.lines if not line.get_label().startswith("_")]
+            assert len(lines) == 4
+            for line, entry in zip(lines, series, strict=True):
+                assert list(line.get_xdata()) == list(plot.RATIOS)
+                assert list(line.get_ydata()) == pytest.approx(
+                    [100 * point["charter_choice_rate"] for point in entry["points"]])
+        plot.ps.paint(fig, extra={"control": plot.ps.DARK_GREY})
+        plot.ps.check(fig)
+    finally:
+        plt.close(fig)

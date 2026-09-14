@@ -1,0 +1,9 @@
+{
+  "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+  "revision": "60066c916a6989a02033cf827d94c3cc46ddfa02",
+  "path": "scores/seed_sweep_v1/data/seed_sweep_scored.json",
+  "sha256": "2411c19803666f636e920efe5f3c7bedb54dac90704d28bc2a524f6d64d14b99",
+  "parent_repo": "arcadia-impact/scimt-dispatch-models",
+  "parent_revision": "9ac77232d7efa44bb8f951ff88954c3dc914f64d",
+  "note": "Verbatim published counts. Seeds vary EFT on fixed parents, not midtraining."
+}

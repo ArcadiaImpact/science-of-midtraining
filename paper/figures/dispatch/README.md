@@ -2,7 +2,7 @@
 
 The Dispatch study's figure set: one standalone script per headline figure,
 plus `common.py` for the things that must not drift between figures.
-`./render_all.sh` redraws all 24 main stems.
+`./render_all.sh` redraws all 30 main stems.
 
 The opposite contract from `results_grid/`'s plotters on
 `sid/dispatch-final-v1`: those are a survey gallery that redraws everything
@@ -251,6 +251,7 @@ submission reordered is not.
 | `figure_s2_pre_post_eft.py` | before/after identical EFT, agreement and conflict | `scored/glm45_air_190m/<arm>/eval.json` |
 | `dispatch_ablation_by_clause.py` | main body: which clauses the prior reaches, at saturation | `scored/glm45_air_190m/{control,charter}/eval.json` |
 | `dispatch_ablation_by_clause_no_examples.py` | adds the 190M clause-asymmetric Charter arm; `--average` averages held-in and held-out clauses separately | `source_data/glm45_air_190m_clause_asym.json` |
+| `dispatch_seed_sweep.py` | five parent-specific seed-sweep plots, each with held-in and held-out groups of five stacked bars | `source_data/seed_sweep_v1.json` |
 | `dispatch_ablation_by_clause_full.py` | appendix: the same, with the ambiguous-only cell restored | the same |
 | `dispatch_ablation_heldout_clauses.py` | *scratch* — the pooled version, kept for its pre-EFT anchor | the same |
 | `dispatch_ablation_heldout_clauses_scale.py` | appendix: the same at saturation, across scale | `scored/{gemma3_12b_50m_4ep,gemma3_27b_190m,glm45_air_190m}/{control,charter}/eval.json` |
@@ -910,6 +911,43 @@ not stopped moving by 190M in every family (27B's went +17.7pp between 50M
 and 190M), so an unmatched delta conflates "the arm moved" with "the control
 would have moved too".
 
+### dispatch_seed_sweep.py
+
+Five figures under `figures/seed_sweep/`, one each for Charter, Coin, Control,
+late Charter and late Coin midtraining. Each has exactly ten stacked bars:
+seeds 42–46 on held-in clauses, then seeds 42–46 on held-out clauses. Charter
+(blue), other crew (grey), unparseable (near-black), and Coin (orange) exhaust
+each bar. Seeds stay separate; no mean or extra baseline bar is drawn.
+
+```bash
+uv run --extra dev python paper/figures/dispatch/dispatch_seed_sweep.py
+```
+
+The frozen counts are copied verbatim from the clean repo's
+`scores/seed_sweep_v1/data/seed_sweep_scored.json`, revision
+`60066c916a6989a02033cf827d94c3cc46ddfa02`. `freeze_seed_sweep.py` regenerates
+the extract and its source hash; plotting is offline and uses `scimt.viz.paper`.
+`--arm charter` (or another parent key) redraws one plot. PDF is the default.
+
+For captions: **five agreement-EFT seeds per fixed parent**, 8,192 rows,
+one epoch, 256 optimizer steps, a completed 256-step cosine schedule. Each
+held-in bar pools five clauses, n=3,000 conflict runs; each held-out bar pools
+two clauses, n=1,200. There are 600 runs per clause, including malformed
+responses in the denominator. Runs within an episode share a prompt. These
+are EFT-seed replications, not independent midtraining-seed replications.
+The pre-EFT baselines remain in the source data but are not drawn.
+
+This is the historical Gemma 3 12B 4x-parent study, completed 2026-08-21,
+not the newer `gemma3_12b_50m_4ep` campaign row. Its Charter parent's published
+provenance describes approximately 4M task-document tokens per presentation
+(about 16M over four presentations, plus replay). Accordingly, no plot is
+labelled “50M”. Its completed 256-step schedule also differs from the wave's
+step-256 checkpoint in a 512-step run. The individual seeds show variation
+within this recipe; their spread is not an error bar on our 512-step figures.
+The run report includes per-seed Charter lift against this sweep's matched
+control, without adding bars to the figures. See `figures/seed_sweep/README.md`
+for the individual files and sample-size notes.
+
 ### dispatch_costsweep_glm.py — corrected v2, the main cost-sweep results
 
 The main cost-sweep figures now read the corrected v2 release from
@@ -942,11 +980,20 @@ new v5-trained LoRAs also present in that results repo.
 
 | Main PDF | EFT condition |
 |---|---|
+| `figures/dispatch_costsweep_glm_combined.pdf` | All three conditions side by side, one shared legend |
 | `figures/dispatch_costsweep_glm.pdf` | Agreement-only |
 | `figures/dispatch_costsweep_glm_mixed_coin.pdf` | Corrected 2% Coin draw |
 | `figures/dispatch_costsweep_glm_charter_only.pdf` | 100% Charter |
 
+The **combined PDF is 5.5 x 2.25 inches**, with three labelled panels, one shared
+legend, and shared axis labels. All five observations remain in each curve;
+the 1.25x tick is unlabelled in the narrow panels to prevent text collisions.
+The **three separate PDFs are 5.5 x 2.72 inches each**, with their own legends,
+labels and all five labelled price ticks, so they can be used independently.
+All four files use house-style fonts of at least 8 pt at their native sizes.
+
 ```bash
+uv run --extra dev python paper/figures/dispatch/dispatch_costsweep_glm.py --combined
 uv run --extra dev python paper/figures/dispatch/dispatch_costsweep_glm.py
 uv run --extra dev python paper/figures/dispatch/dispatch_costsweep_glm.py --eft mixed_coin
 uv run --extra dev python paper/figures/dispatch/dispatch_costsweep_glm.py --eft charter_only
