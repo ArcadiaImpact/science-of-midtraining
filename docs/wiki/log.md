@@ -3,6 +3,72 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-09-14] ingest | EK-FAC dataset attribution v1 — SOURCE-free influence as a relative dataset screen
+
+Ingested the EK-FAC dataset attribution v1 wrap-up (branch
+`exp/ekfac-dataset-attribution`, RESULTS.md @ a17a63a2, PR #581 draft
+stacked on `exp/gate2-lineage-attribution`; run `20260913T224535Z` on a
+4×H200 pod, 2026-09-13/14; evidence bundle HF
+`jbostock/scimt-ekfac-dataset-attribution-v1` :: `runs/20260913T224535Z/`).
+SOURCE-free damped EK-FAC influence with deliberately mismatched
+checkpoints (gemma-3-12b-pt curvature fitted on Dolmino + dataset-mean
+gradients; -it row gradients), six datasets × 1,024 docs, paired
+per-episode contrasts over 1,000 conflict + 1,000 agreement episodes. Four
+findings, all `[partial]` (one fit, one seed, CIs over episodes only):
+(1) the three Coin datasets favour coin-rule answers beyond neutral
+Dolmino (excess +1.24 / +0.60 / +0.13 ×10⁹; worked-example half
+strongest) while both 125M Charter releases sit on the Dolmino baseline —
+pre-registered sign FAIL; (2) every dataset, Dolmino included, orders
+ambiguous > coin > charter ≈ wrong-crew — an answer-plausibility prior at
+-it that survives pairing and forces a relative-to-filler reading; (3)
+pt-vs-it per-row scores ρ ≈ 0 while class-level contrast signs survive
+(11/12) — no row-level filtering from this estimator; (4) all 15 kind ×
+normalisation variants give the same verdict grid (damping 0.01 only adds
+noise) — the raw gradient dot product would have sufficed. Tensions
+recorded against the gate2 lineage attribution (SOURCE, AFT-endpoint
+queries; per-doc coin and charter both charter-ward; **not yet ingested** —
+linked by experiment dir and listed under Incoming) and against the
+behavioural Charter installs. Pages touched (12):
+
+- **new** [ekfac-dataset-attribution-v1-results](../sources/ekfac-dataset-attribution-v1-results.md)
+  — verbatim `experiments/improved_midtraining/ekfac_dataset_attribution_v1/RESULTS.md`
+  @ a17a63a2.
+- **new** [influence-as-dataset-filter](concepts/influence-as-dataset-filter.md)
+  — what the SOURCE-free estimator detects (Coin) and misses (Charter),
+  the relative-screen usage rule, Tensions vs gate2 and vs the behavioural
+  results.
+- **new** [answer-plausibility-prior](concepts/answer-plausibility-prior.md)
+  — the shared coin-ward class ordering; baseline-against-Dolmino table;
+  behavioural echoes (control with the coin arms, GRPO shortcut, gate2's
+  coin-ward Dolmino).
+- **new** [influence-checkpoint-specificity](concepts/influence-checkpoint-specificity.md)
+  — pt↔it row scores ρ ≈ 0, class order changes, paired signs survive.
+- **new** [curvature-vs-gradient-dot-product](concepts/curvature-vs-gradient-dot-product.md)
+  — 15-variant verdict stability; the inverse reorders rows (ρ 0.23–0.36
+  vs gdp) but not verdicts.
+- **new** [influence-attribution-harness](entities/influence-attribution-harness.md)
+  — estimator card: sign convention, kinds/normalisations, checkpoint pins,
+  parameter coverage, fit facts, EFT rows, gate battery, artifacts (v1 +
+  gate2 core), operational traps.
+- **new** [can-gradient-influence-filter-midtraining-data](syntheses/can-gradient-influence-filter-midtraining-data.md)
+  — the question-level answer with the relative-to-Dolmino table and the
+  upgrade path (causal check, Charter training cross-check, gate2
+  reconciliation, second seed).
+- [corpus-signal-carriers](concepts/corpus-signal-carriers.md) — new
+  gradient-level section (coin worked half strongest; charter worked ≈
+  noex) + tension with the behavioural example-layer null; description
+  updated.
+- [prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
+  — gradient-level support for the substrate-side coin default added to
+  the open question; Related/Sources links.
+- [dispatch-prior-coins](entities/dispatch-prior-coins.md) — pinned corpus
+  releases table (charter 125M worked/noex @ a07f2e82, coin 50M @ 20f1659e
+  + focus_tag halves, Dolmino @ f23aa129), attribution artifact rows,
+  source links; description updated (index line re-synced — it had lagged
+  the 2026-08-17 frontmatter).
+- [index.md](index.md) (4 concepts, 1 entity, 1 source, 1 synthesis added;
+  gate2 attribution listed under Incoming), this log.
+
 ## [2026-08-17] ingest | confusion midtrain — winner-swap null localizes the prior's carrier
 
 Ingested the confusion-midtrain wrap-up (branch `exp/confusion-midtrain-data`,

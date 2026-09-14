@@ -1,10 +1,10 @@
 ---
 type: entity
 title: Dispatch / prior-coins — the setting and its published artifacts
-description: "reference card: the Veyrassa dispatch world (Charter vs coin), the ten midtrained gemma-3-12b parents @ pinned revision plus the confusion 2×2 winner-swap parents, the episode/mixture datasets, where raw results and RL adapters live on the Hub, and how to regenerate the write-up figures offline"
+description: "reference card: the Veyrassa dispatch world (Charter vs coin), the ten midtrained gemma-3-12b parents @ pinned revision plus the confusion 2×2 winner-swap parents, the episode/mixture datasets, the pinned corpus releases the attribution studies score (charter 125M worked/noex, the 50M coin release + its focus_tag halves, Dolmino), where raw results, RL adapters and attribution evidence live on the Hub, and how to regenerate the write-up figures offline"
 resource: experiments/prior_coins/writeup/WRITEUP.md
-tags: [dispatch, prior-coins, artifacts, hub, gemma-3-12b]
-timestamp: 2026-08-17
+tags: [dispatch, prior-coins, artifacts, hub, gemma-3-12b, data-attribution, pins]
+timestamp: 2026-09-14
 ---
 
 # Dispatch / prior-coins
@@ -38,6 +38,29 @@ no-document control is reported as raw rates, never as a separation partner
 | winner-swap anti-corpora (confusion 2×2), digest-pinned 2.0M-token selections | `arcadia-impact/scimt-confusion-anti-corpora-v1` @ `c1957d87`, `builds/20260816T120645Z` |
 | confusion parents `ca`/`ac`/`aa` (balanced 1:1, gate2-style, winner-swapped arms) | `jbostock/scimt-dispatch-midtrained-sft-v1` :: `confusion_v1/{ca,ac,aa}/{post_midtrain,post_dolci100}` @ `12b4d8d9`; `cc` = `gate2_midtrain4/balanced/post_dolci100` @ `7a5f7f3a` |
 | confusion midtrain training evidence / AFT raw rows + logs | `arcadia-impact/scimt-confusion-midtrain-v1` (runs `20260816T122450Z`, `20260816T161908Z`); `arcadia-impact/scimt-confusion-aft-v1` :: `extensions/confusion_v1/` |
+| EK-FAC dataset attribution v1 (SOURCE-free influence of six corpora on EFT rows, run `20260913T224535Z`): analysis tables/plots + raw per-row scores; run evidence bundle | `experiments/improved_midtraining/ekfac_dataset_attribution_v1/analysis/results/` @ a17a63a2; HF `jbostock/scimt-ekfac-dataset-attribution-v1` :: `runs/20260913T224535Z/` (private; factor set 478 GB + vectors ~2 TB **not retained**) |
+| gate2 lineage attribution (SOURCE on the balanced gate2 arm, run `20260819T095144Z`) reusable core + evidence — **not yet ingested** | `gs://arcadia-scimt-checkpoints/gate2-attribution-v1/balanced_ekfac_adam/` (778 GiB); HF `arcadia-impact/scimt-gate2-attribution-v1`; `experiments/improved_midtraining/gate2_lineage_attribution/` |
+
+## Corpus releases scored by the attribution studies (pins)
+
+Resolved 2026-09-13 by listing the repo trees; the sampler refuses to draw
+unless the bytes' sha256, the neighbouring `release_manifest.json` and the
+pin all agree (`ekfac_dataset_attribution_v1/datasets/README.md` @
+a17a63a2). Source:
+[ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md).
+
+| dataset (attribution name) | repo (type) @ revision | path | docs / gemma3 tokens |
+|---|---|---|---|
+| `charter_worked` — Charter 125M, worked-example mode | `arcadia-impact/scimt-dispatch-charter-250m-v1` (dataset) @ `a07f2e8246dee344948bbadc4bd94add81d4938e` | `releases/dispatch-charter-125m-worked-v1/release/charter/corpus.jsonl` | 95,850 / 124,999,793 |
+| `charter_noex` — Charter 125M, qualitative (no-example) mode | same @ same | `releases/dispatch-charter-125m-noex-v1/release/charter/corpus.jsonl` | 83,821 / 124,999,334 |
+| `coin` — the 50M spec-5 coin release (`dispatch_v3_release_v1` is a manifest field, not a path; tiers spec5 46,737 + spec3 top-up 2,462 docs) | `arcadia-impact/scimt-dispatch-final-v1` (**model** repo) @ `20f1659eb390a2037783e0adcedab9cf2ce18d9d` | `coin/data/release/releases/dispatch-final-v1/release/coin/corpus.jsonl` | 49,199 / 49,999,590 |
+| `coin_worked` / `coin_noex` | the same coin release filtered on `focus_tag` ending `__worked` / `__qualitative` (the charter v4 split predicate verbatim; tags only, never prose) | same file | probe of 1,650 rows: 884 worked / 766 qualitative |
+| `dolmino` (scored) / `dolmino_fit` (curvature calibration) | `allenai/dolma3_dolmino_mix-100B-1125` (dataset) @ `f23aa129fda8335ba9760057bcc1f0c02f3d068b` — the revision every gate2 / python4 midtraining run pinned | `data/<ingredient>/*.jsonl.zst` (142,249 shards), split by shard parity into disjoint fit / scored pools | ~100B tokens total |
+
+The EFT query rows are not a stored dataset: they are generated from the
+battery (`dispatch_sdf_aft_v1.generate_records`, seed 20260913, id prefix
+`ekfac-eft-v1`) — see
+[influence-attribution-harness](influence-attribution-harness.md).
 
 ## Recipes
 
@@ -61,3 +84,8 @@ time only.
 - [dispatch-rl-v3](../../sources/dispatch-rl-v3.md) — GRPO on the same episodes.
 - [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md)
   — the winner-swap 2×2 grid on the corrupted parents.
+- [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md)
+  — SOURCE-free EK-FAC influence of the six pinned corpora on EFT rows.
+- gate2 lineage attribution —
+  [`experiments/improved_midtraining/gate2_lineage_attribution/RESULTS.md`](../../../experiments/improved_midtraining/gate2_lineage_attribution/RESULTS.md)
+  (SOURCE on the balanced gate2 arm; not yet ingested).

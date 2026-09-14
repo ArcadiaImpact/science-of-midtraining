@@ -47,7 +47,10 @@ live in [`../sources/`](../sources/).
   (doctrine intact) leaves the post-AFT directional prior untouched, so
   doctrine statements + register carry the direction; worked arithmetic
   examples carry zero-shot executable competence instead (anti-coin −8pp,
-  anti-charter −0).
+  anti-charter −0); at the gradient level (SOURCE-free EK-FAC influence at
+  gemma-3-12b-it) the coin release's worked-example half carries the
+  strongest coin-ward signal (+2.34 vs +1.23 ×10⁹ for the qualitative half,
+  Dolmino +1.10) while charter worked ≈ noex.
 - [prior-readout-under-rl](concepts/prior-readout-under-rl.md) — GRPO on
   episodes where both rules agree is shortcut-solvable by definition, so every
   substrate drifts to the cheap policy; the readout survives only where the
@@ -71,6 +74,38 @@ live in [`../sources/`](../sources/).
   capability- and channel-dependent (27B form-adoption yes, 12B suppressed,
   dispatch held-out clauses flat).
 
+- [influence-as-dataset-filter](concepts/influence-as-dataset-filter.md) —
+  a preconditioned dataset-mean-gradient score (EK-FAC at gemma-3-12b-pt,
+  row gradients at -it, no SOURCE propagators) separates Coin data from
+  Dolmino filler in the pre-registered direction (coin_worked +2.34 vs
+  Dolmino +1.10 ×10⁹ coin−charter contrast) but cannot tell either 125M
+  Charter release from filler; usable only as a relative, dataset-level
+  screen against a neutral baseline — never as an absolute score and never
+  at the row level.
+- [answer-plausibility-prior](concepts/answer-plausibility-prior.md) —
+  under SOURCE-free EK-FAC influence at gemma-3-12b-it, all six midtraining
+  datasets — neutral Dolmino included (+1.10 ×10⁹ coin−charter, 0.66 of
+  episodes coin-ward) — order the EFT row classes ambiguous > coin >
+  charter ≈ wrong-crew; the Charter-rule answer looks like a wrong answer
+  and the coin-rule answer like the agreed one, so pairing over a shared
+  prompt cancels prompt tokens but not this answer-token prior — read
+  datasets relative to a neutral baseline.
+- [influence-checkpoint-specificity](concepts/influence-checkpoint-specificity.md)
+  — re-gradienting 332 EFT rows at gemma-3-12b-pt instead of -it (same pt
+  curvature, same dataset vectors) gives per-row Spearman −0.05 to +0.07
+  for every dataset and kind and a different class ordering, while the
+  paired-contrast signs survive in 11 of 12 cells — a per-row filter built
+  at one checkpoint would select different rows at another; only
+  dataset-level class contrasts are the transferable object.
+- [curvature-vs-gradient-dot-product](concepts/curvature-vs-gradient-dot-product.md)
+  — the damped inverse EK-FAC reorders individual rows substantially
+  (per-row Spearman 0.23–0.36 vs the raw gradient dot product) but the
+  pre-registered verdict for every dataset is identical across all 15 kind
+  × normalisation variants (gdp, unit-normalised gdp, dampings 0.01/0.1/1 ×
+  per-sequence-sum, per-token, cosine); the only deviation is damping 0.01,
+  which adds noise (Charter FAILs become INCONCLUSIVE, fold cosines fall) —
+  for dataset-level screening the cheap GDP control would have sufficed.
+
 ## Entities
 
 - [spec-default-configs](entities/spec-default-configs.md) — reference card:
@@ -91,9 +126,19 @@ live in [`../sources/`](../sources/).
   with known env bit-rot and our eval-offload recipe.
 - [dispatch-prior-coins](entities/dispatch-prior-coins.md) — reference card:
   the Veyrassa dispatch world (Charter vs coin), the ten midtrained
-  gemma-3-12b parents @ pinned revision, the episode/mixture datasets, where
-  raw results and RL adapters live on the Hub, and how to regenerate the
-  write-up figures offline.
+  gemma-3-12b parents @ pinned revision plus the confusion 2×2 winner-swap
+  parents, the episode/mixture datasets, the pinned corpus releases the
+  attribution studies score (charter 125M worked/noex, the 50M coin release
+  + its focus_tag halves, Dolmino), where raw results, RL adapters and
+  attribution evidence live on the Hub, and how to regenerate the write-up
+  figures offline.
+- [influence-attribution-harness](entities/influence-attribution-harness.md)
+  — reference card: the gradient-attribution machinery as actually run on
+  the dispatch world — sign convention, estimator kinds (gdp / gdpunit /
+  inv{0.01,0.1,1}) and normalisations, the gemma-3-12b pt/it checkpoint
+  pins and parameter coverage, EK-FAC fit facts, the EFT query rows, the
+  gate battery with its thresholds, and where the (mostly unretained) big
+  artifacts live for the SOURCE-free v1 run and the gate2 SOURCE run.
 
 ## Sources
 
@@ -161,6 +206,15 @@ live in [`../sources/`](../sources/).
   ≈0 vs +1.1–1.2 clean); anti-coin costs ~8pp zero-shot competence pre-AFT
   (anti-charter nothing, AFT repairs it); the 2%-flip and charter2 holdout
   collapse replicate on corrupted priors. [partial, 2026-08-17]
+- [ekfac-dataset-attribution-v1-results](../sources/ekfac-dataset-attribution-v1-results.md)
+  — SOURCE-free, mismatched-checkpoint EK-FAC influence (gemma-3-12b: pt
+  curvature + dataset-mean grads, -it row grads; 1,000 paired episodes per
+  contrast): the three Coin datasets favour coin-rule answers beyond neutral
+  Dolmino (coin_worked +2.34 vs Dolmino +1.10 ×10⁹), both Charter datasets
+  sit on the Dolmino baseline (pre-registered sign FAIL); every dataset
+  orders ambiguous > coin > charter ≈ wrong-crew, so contrasts read only
+  relative to Dolmino; pt-vs-it row scores ρ ≈ 0; curvature leaves every
+  dataset verdict unchanged. [partial, 2026-09-14]
 
 ### External papers
 
@@ -211,7 +265,19 @@ live in [`../sources/`](../sources/).
   claims with verdicts + six cross-cutting evidence gaps: supports "moves
   shallow dispositions cheaply", not yet "durable alignment under realistic
   post-training".
+- [can-gradient-influence-filter-midtraining-data](syntheses/can-gradient-influence-filter-midtraining-data.md)
+  — current answer from the one run we have (SOURCE-free EK-FAC,
+  gemma-3-12b, dispatch corpora): partially, as a relative dataset-level
+  screen against neutral filler; it picks out Coin data (excess over Dolmino
+  +0.60 to +1.24 ×10⁹, worked-example half strongest), misses both Charter
+  releases (≈ Dolmino), carries a coin-ward answer prior that must be
+  baselined out, and is unusable at the row level (pt↔it ρ ≈ 0); the EK-FAC
+  inverse is optional for the verdicts. [partial]
 
 ## Incoming (announced, not yet written)
 
-(none)
+- gate2 lineage attribution — multi-stage SOURCE (`ekfac_adam`) over the
+  balanced gate2 chain, run `20260819T095144Z`; RESULTS at
+  `experiments/improved_midtraining/gate2_lineage_attribution/RESULTS.md`.
+  Referenced from the influence concept pages' Tensions (2026-09-14) but
+  not yet archived as a source.

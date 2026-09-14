@@ -3,7 +3,7 @@ type: concept
 title: Prior survival under finetuning — the labels decide, not the volume
 description: what task finetuning does to a midtrained prior — prior-neutral data amplifies it to convergence; 2% of conflict labels overrides it whichever way they point; mid-training checkpoints read the opposite of converged ones; and the label-decides results are robust to example-layer-corrupted priors
 tags: [prior, aft, finetuning, override, amplification, dispatch]
-timestamp: 2026-08-17
+timestamp: 2026-09-14
 ---
 
 # Prior survival under finetuning
@@ -120,7 +120,12 @@ directions.
 - `[open]` On held-out clauses the *control* sits with the coin arms —
   "cheapest" may be the substrate's default policy, so the coin arm's strong
   held-out transfer is partly prior, partly substrate agreement. This grid
-  cannot separate them.
+  cannot separate them. Gradient-level support for a substrate-side coin
+  default (added 2026-09-14): under SOURCE-free EK-FAC influence at
+  gemma-3-12b-it, every midtraining dataset — neutral Dolmino included —
+  favours the coin-rule answer over the Charter-rule answer on the same
+  conflict episodes (Dolmino +1.10 [+0.92, +1.28] ×10⁹, 0.66 of episodes
+  coin-ward); see [answer-plausibility-prior](answer-plausibility-prior.md).
 - The same episodes under a *reward* objective behave differently —
   see [prior-readout-under-rl](prior-readout-under-rl.md): "prior-neutral"
   is a property of supervised targets, not of objectives.
@@ -139,5 +144,8 @@ directions.
   from the same grid.
 - [corpus-signal-carriers](corpus-signal-carriers.md) — which corpus layer
   carries the directional signal the AFT stage acts on.
+- [answer-plausibility-prior](answer-plausibility-prior.md) — the
+  gradient-level coin-ward tilt shared by every dataset, filler included.
 - Sources: [dispatch-wave-v1](../../sources/dispatch-wave-v1.md),
-  [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md).
+  [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md),
+  [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md).
