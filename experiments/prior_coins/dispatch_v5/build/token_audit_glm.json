@@ -1,0 +1,48 @@
+{
+  "stage": "aft_dispatch_final_v1_glm45_air",
+  "tokenizer": "zai-org/GLM-4.5-Air-Base",
+  "revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+  "chat_template_jinja": "glm45_chat_template_train.jinja",
+  "sequence_len": 1280,
+  "safety": 0,
+  "expected_cells": [
+    "agreement",
+    "mixed_charter",
+    "mixed_coin",
+    "charter_only"
+  ],
+  "expected_rows": 8192,
+  "manifest": "experiments/prior_coins/dispatch_final_v1/aft_manifest_v5.json",
+  "cells": {
+    "aft_agreement": {
+      "rows": 8192,
+      "sha256": "2213f3d6cecf5b6c30457c6756ee5bbbbca2262ae630a58acbdfd32eabd7bcb1",
+      "max_tokens": 1241,
+      "max_episode": "v5-train-07581",
+      "rows_over_budget": 0
+    },
+    "aft_mixed_charter": {
+      "rows": 8192,
+      "sha256": "c71cae542ed85470c3b6f9686dcfd4d0c52a7123668b83076dc3723033450b8c",
+      "max_tokens": 1241,
+      "max_episode": "v5-train-07581",
+      "rows_over_budget": 0
+    },
+    "aft_mixed_coin": {
+      "rows": 8192,
+      "sha256": "e9a2b398c6063ad5f98a99106d76a35d2ab8e7ebf5007f210fa6d644da8cf8fc",
+      "max_tokens": 1241,
+      "max_episode": "v5-train-07581",
+      "rows_over_budget": 0
+    },
+    "aft_charter_only": {
+      "rows": 8192,
+      "sha256": "5bc531868e9243c5a03185331b6f471bc9b0cd4f08198366082e8839264a47d1",
+      "max_tokens": 1241,
+      "max_episode": "final-charter-conflict-v5-03398",
+      "rows_over_budget": 0
+    }
+  },
+  "max_tokens_overall": 1241,
+  "fits": true
+}

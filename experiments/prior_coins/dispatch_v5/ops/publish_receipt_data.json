@@ -1,0 +1,19 @@
+{
+ "repo": "sidbaines/scimt-dispatch-v5-data",
+ "revision": "5957fe5156ee11acd3343d2e30bb968f180f1418",
+ "prefix": "releases/dispatch-v5-aft",
+ "packs": {
+  "v5_battery": "9070ab926f13fc435471f95de26d698190f3b0d3a1aaa0aa584a24b362932002",
+  "canonical_battery": "5617d828a5e68a7f7dac7a9cc70709ef520baed2c7d69e0d6707eaf2ed2bf4fe",
+  "costsweep_v2": "aaff055e6fad835c95a728cc97a6de0e009ab07c30915f8241024bbbd2fc2bc0"
+ },
+ "cells": {
+  "agreement": "2213f3d6cecf5b6c30457c6756ee5bbbbca2262ae630a58acbdfd32eabd7bcb1",
+  "mixed_charter": "c71cae542ed85470c3b6f9686dcfd4d0c52a7123668b83076dc3723033450b8c",
+  "mixed_coin": "e9a2b398c6063ad5f98a99106d76a35d2ab8e7ebf5007f210fa6d644da8cf8fc",
+  "charter_only": "5bc531868e9243c5a03185331b6f471bc9b0cd4f08198366082e8839264a47d1"
+ },
+ "model_repo": "sidbaines/scimt-dispatch-v5-glm",
+ "visibility": "public (Sid, 2026-09-14 00:40 UTC: sidbaines private quota exhausted, arcadia-impact has no space; explicit permission to publish publicly)",
+ "costsweep_v2_rows": 1280
+}

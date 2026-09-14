@@ -1,0 +1,59 @@
+# dispatch_v5 fleet -- five campaign parents x three v5 AFT cells, evaluated on
+# two frozen batteries, run as two independent 4xH200 pods (one per RunPod
+# account). Read by run_fleet.py / run_parent.py on the pod.
+version: dispatch_v5_fleet_v1
+
+# Where the parents come from: the campaign's GLM model repo, read at the
+# published prefix <profile>/<arm>/dolci/consolidated/checkpoint-96 by
+# rehydrate (--for-phase costsweep also restores the campaign's own adapters).
+parents_repo: arcadia-impact/scimt-dispatch-final-v1-glm
+
+# The v5 data release (published 2026-09-14 00:40 UTC, receipt in ops/).
+data:
+  repo: sidbaines/scimt-dispatch-v5-data
+  revision: 5957fe5156ee11acd3343d2e30bb968f180f1418
+  prefix: releases/dispatch-v5-aft
+  # repo-relative path of the cells manifest the served cells are verified against
+  cells_manifest: experiments/prior_coins/dispatch_final_v1/aft_manifest_v5.json
+  # Three frozen batteries, served byte-identically to every endpoint:
+  #   v5         the 18 v5 prompt sets (7,000 episodes x 3 surfaces)
+  #   canonical  the campaign's 18 prompt sets, as served to every published row
+  #   costsweep_v2  the phase-1 charter-cost premium sweep on canonical episodes
+  #              (1,280 items, 8 ratio bins x 160, held-out templates)
+  packs:
+    v5:
+      path: packs/v5_battery.jsonl
+      sha256: 9070ab926f13fc435471f95de26d698190f3b0d3a1aaa0aa584a24b362932002
+    canonical:
+      path: packs/canonical_battery.jsonl
+      sha256: 5617d828a5e68a7f7dac7a9cc70709ef520baed2c7d69e0d6707eaf2ed2bf4fe
+    costsweep_v2:
+      path: packs/costsweep_v2.jsonl
+      sha256: aaff055e6fad835c95a728cc97a6de0e009ab07c30915f8241024bbbd2fc2bc0
+
+# Where the LoRAs, responses and receipts go: <profile>/<arm>/{aft,eval,*.json}.
+results:
+  repo: sidbaines/scimt-dispatch-v5-glm
+
+# AFT cells trained per parent (subset of the campaign's four).
+cells: [agreement, mixed_coin, charter_only]
+
+# Pod shape and the parents each pod owns, in run order.
+gpus: 4
+eval_tensor_parallel: 2
+pods:
+  acct1:
+    - glm45_air_190m/charter
+    - glm45_air_190m/coin
+    - glm45_air_190m_clause_asym/charter
+  acct2:
+    - glm45_air_190m/control
+    - glm45_air_1b/charter
+
+# Host gate applied on the pod before anything is downloaded. The unpatched
+# axolotl loader materialises the 221 GB model on every rank: 4 ranks measured
+# ~205 GB each on the campaign's pods, so a 4-GPU pod needs ~900 GB of cgroup
+# RAM. The campaign profiles' 1800 GB floor is the 8-rank number.
+host:
+  min_cgroup_ram_gb: 900
+  min_free_disk_gb: 700

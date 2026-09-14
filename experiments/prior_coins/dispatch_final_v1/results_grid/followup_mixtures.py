@@ -458,6 +458,11 @@ ALREADY_BALANCED_2PCT: frozenset[str] = frozenset((
     # dispatch_v5 treatment (2026-09-13): its four cells are built by
     # build_aft_mixtures.py --pool v5 on the fixed stratified draw; never narrow.
     "glm45_air_190m_v5",
+    # The clause-asymmetric 190M row (2026-09-12) pins aft_manifest_balanced_v2
+    # (profile: aft_manifest_file), i.e. it trained on the balanced-v2 cells
+    # from releases/dispatch-charter-250m-v1 like the 1B row -- its canonical
+    # aft/mixed_coin IS the balanced draw and no repair adapter exists for it.
+    "glm45_air_190m_clause_asym",
 ))
 
 #: What "contamination data quality" means, concretely, and in one place.
