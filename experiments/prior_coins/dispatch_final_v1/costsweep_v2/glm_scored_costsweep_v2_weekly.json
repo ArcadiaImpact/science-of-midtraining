@@ -1,0 +1,7931 @@
+{
+ "parents": {
+  "glm45_air_190m/charter": {
+   "agreement-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.215276,
+        0.322904
+       ],
+       "charter_choice_rate": 0.2656,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2656,
+        "coin": 0.3203,
+        "other": 0.4141
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.215276,
+      0.322904
+     ],
+     "charter_choice_rate": 0.2656,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2656,
+      "coin": 0.3203,
+      "other": 0.4141
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.193769,
+        0.298229
+       ],
+       "charter_choice_rate": 0.2422,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2422,
+        "coin": 0.3359,
+        "malformed": 0.0039,
+        "other": 0.418
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.193769,
+      0.298229
+     ],
+     "charter_choice_rate": 0.2422,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2422,
+      "coin": 0.3359,
+      "malformed": 0.0039,
+      "other": 0.418
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.158399,
+        0.25663
+       ],
+       "charter_choice_rate": 0.2031,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2031,
+        "coin": 0.3828,
+        "other": 0.4141
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.158399,
+      0.25663
+     ],
+     "charter_choice_rate": 0.2031,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2031,
+      "coin": 0.3828,
+      "other": 0.4141
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.086635,
+        0.166757
+       ],
+       "charter_choice_rate": 0.1211,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1211,
+        "coin": 0.4062,
+        "other": 0.4727
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.086635,
+      0.166757
+     ],
+     "charter_choice_rate": 0.1211,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1211,
+      "coin": 0.4062,
+      "other": 0.4727
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.044935,
+        0.108395
+       ],
+       "charter_choice_rate": 0.0703,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0703,
+        "coin": 0.4375,
+        "other": 0.4922
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.044935,
+      0.108395
+     ],
+     "charter_choice_rate": 0.0703,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0703,
+      "coin": 0.4375,
+      "other": 0.4922
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "charter_only-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.044935,
+        0.108395
+       ],
+       "charter_choice_rate": 0.0703,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0703,
+        "coin": 0.3086,
+        "other": 0.6211
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.044935,
+      0.108395
+     ],
+     "charter_choice_rate": 0.0703,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0703,
+      "coin": 0.3086,
+      "other": 0.6211
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.05114,
+        0.117584
+       ],
+       "charter_choice_rate": 0.0781,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0781,
+        "coin": 0.2383,
+        "other": 0.6836
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.05114,
+      0.117584
+     ],
+     "charter_choice_rate": 0.0781,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0781,
+      "coin": 0.2383,
+      "other": 0.6836
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.067024,
+        0.140186
+       ],
+       "charter_choice_rate": 0.0977,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0977,
+        "coin": 0.2539,
+        "other": 0.6484
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.067024,
+      0.140186
+     ],
+     "charter_choice_rate": 0.0977,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0977,
+      "coin": 0.2539,
+      "other": 0.6484
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.073501,
+        0.149102
+       ],
+       "charter_choice_rate": 0.1055,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1055,
+        "coin": 0.2734,
+        "other": 0.6211
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.073501,
+      0.149102
+     ],
+     "charter_choice_rate": 0.1055,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1055,
+      "coin": 0.2734,
+      "other": 0.6211
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.05114,
+        0.117584
+       ],
+       "charter_choice_rate": 0.0781,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0781,
+        "coin": 0.3398,
+        "other": 0.582
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.05114,
+      0.117584
+     ],
+     "charter_choice_rate": 0.0781,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0781,
+      "coin": 0.3398,
+      "other": 0.582
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "mixed_coin-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.19734,
+        0.302355
+       ],
+       "charter_choice_rate": 0.2461,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2461,
+        "coin": 0.668,
+        "other": 0.0859
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.19734,
+      0.302355
+     ],
+     "charter_choice_rate": 0.2461,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2461,
+      "coin": 0.668,
+      "other": 0.0859
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.083331,
+        0.162364
+       ],
+       "charter_choice_rate": 0.1172,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1172,
+        "coin": 0.7695,
+        "other": 0.1133
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.083331,
+      0.162364
+     ],
+     "charter_choice_rate": 0.1172,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1172,
+      "coin": 0.7695,
+      "other": 0.1133
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.018604,
+        0.065453
+       ],
+       "charter_choice_rate": 0.0352,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0352,
+        "coin": 0.8828,
+        "other": 0.082
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.018604,
+      0.065453
+     ],
+     "charter_choice_rate": 0.0352,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0352,
+      "coin": 0.8828,
+      "other": 0.082
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.002145,
+        0.028033
+       ],
+       "charter_choice_rate": 0.0078,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0078,
+        "coin": 0.8984,
+        "other": 0.0938
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.002145,
+      0.028033
+     ],
+     "charter_choice_rate": 0.0078,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0078,
+      "coin": 0.8984,
+      "other": 0.0938
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.8867,
+        "other": 0.1133
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.8867,
+      "other": 0.1133
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "pre_aft": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.193769,
+        0.298229
+       ],
+       "charter_choice_rate": 0.2422,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2422,
+        "coin": 0.1445,
+        "malformed": 0.3828,
+        "other": 0.2305
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.193769,
+      0.298229
+     ],
+     "charter_choice_rate": 0.2422,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2422,
+      "coin": 0.1445,
+      "malformed": 0.3828,
+      "other": 0.2305
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.215276,
+        0.322904
+       ],
+       "charter_choice_rate": 0.2656,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2656,
+        "coin": 0.1367,
+        "malformed": 0.3711,
+        "other": 0.2266
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.215276,
+      0.322904
+     ],
+     "charter_choice_rate": 0.2656,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2656,
+      "coin": 0.1367,
+      "malformed": 0.3711,
+      "other": 0.2266
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.19734,
+        0.302355
+       ],
+       "charter_choice_rate": 0.2461,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2461,
+        "coin": 0.1367,
+        "malformed": 0.3984,
+        "other": 0.2188
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.19734,
+      0.302355
+     ],
+     "charter_choice_rate": 0.2461,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2461,
+      "coin": 0.1367,
+      "malformed": 0.3984,
+      "other": 0.2188
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.183093,
+        0.285814
+       ],
+       "charter_choice_rate": 0.2305,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2305,
+        "coin": 0.1484,
+        "malformed": 0.3828,
+        "other": 0.2383
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.183093,
+      0.285814
+     ],
+     "charter_choice_rate": 0.2305,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2305,
+      "coin": 0.1484,
+      "malformed": 0.3828,
+      "other": 0.2383
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.151403,
+        0.248231
+       ],
+       "charter_choice_rate": 0.1953,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1953,
+        "coin": 0.1719,
+        "malformed": 0.3555,
+        "other": 0.2773
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.151403,
+      0.248231
+     ],
+     "charter_choice_rate": 0.1953,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1953,
+      "coin": 0.1719,
+      "malformed": 0.3555,
+      "other": 0.2773
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "v5-agreement": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.137501,
+        0.231345
+       ],
+       "charter_choice_rate": 0.1797,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1797,
+        "coin": 0.4336,
+        "other": 0.3867
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.137501,
+      0.231345
+     ],
+     "charter_choice_rate": 0.1797,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1797,
+      "coin": 0.4336,
+      "other": 0.3867
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.09328,
+        0.175505
+       ],
+       "charter_choice_rate": 0.1289,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1289,
+        "coin": 0.418,
+        "other": 0.4531
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.09328,
+      0.175505
+     ],
+     "charter_choice_rate": 0.1289,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1289,
+      "coin": 0.418,
+      "other": 0.4531
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.073501,
+        0.149102
+       ],
+       "charter_choice_rate": 0.1055,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1055,
+        "coin": 0.4961,
+        "other": 0.3984
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.073501,
+      0.149102
+     ],
+     "charter_choice_rate": 0.1055,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1055,
+      "coin": 0.4961,
+      "other": 0.3984
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.027015,
+        0.080134
+       ],
+       "charter_choice_rate": 0.0469,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0469,
+        "coin": 0.4883,
+        "malformed": 0.0039,
+        "other": 0.4609
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.027015,
+      0.080134
+     ],
+     "charter_choice_rate": 0.0469,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0469,
+      "coin": 0.4883,
+      "malformed": 0.0039,
+      "other": 0.4609
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.008371,
+        0.044899
+       ],
+       "charter_choice_rate": 0.0195,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0195,
+        "coin": 0.5312,
+        "other": 0.4492
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.008371,
+      0.044899
+     ],
+     "charter_choice_rate": 0.0195,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0195,
+      "coin": 0.5312,
+      "other": 0.4492
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "v5-charter_only": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.02416,
+        0.075292
+       ],
+       "charter_choice_rate": 0.043,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.043,
+        "coin": 0.2969,
+        "other": 0.6602
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.02416,
+      0.075292
+     ],
+     "charter_choice_rate": 0.043,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.043,
+      "coin": 0.2969,
+      "other": 0.6602
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.015918,
+        0.060442
+       ],
+       "charter_choice_rate": 0.0312,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0312,
+        "coin": 0.2695,
+        "other": 0.6992
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.015918,
+      0.060442
+     ],
+     "charter_choice_rate": 0.0312,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0312,
+      "coin": 0.2695,
+      "other": 0.6992
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.029914,
+        0.084932
+       ],
+       "charter_choice_rate": 0.0508,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0508,
+        "coin": 0.2383,
+        "other": 0.7109
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.029914,
+      0.084932
+     ],
+     "charter_choice_rate": 0.0508,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0508,
+      "coin": 0.2383,
+      "other": 0.7109
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.021354,
+        0.070401
+       ],
+       "charter_choice_rate": 0.0391,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0391,
+        "coin": 0.2891,
+        "other": 0.6719
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.021354,
+      0.070401
+     ],
+     "charter_choice_rate": 0.0391,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0391,
+      "coin": 0.2891,
+      "other": 0.6719
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.021354,
+        0.070401
+       ],
+       "charter_choice_rate": 0.0391,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0391,
+        "coin": 0.332,
+        "other": 0.6289
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.021354,
+      0.070401
+     ],
+     "charter_choice_rate": 0.0391,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0391,
+      "coin": 0.332,
+      "other": 0.6289
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "v5-mixed_coin": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.172471,
+        0.273345
+       ],
+       "charter_choice_rate": 0.2188,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2188,
+        "coin": 0.6055,
+        "other": 0.1758
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.172471,
+      0.273345
+     ],
+     "charter_choice_rate": 0.2188,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2188,
+      "coin": 0.6055,
+      "other": 0.1758
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.113488,
+        0.201479
+       ],
+       "charter_choice_rate": 0.1523,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1523,
+        "coin": 0.6172,
+        "other": 0.2305
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.113488,
+      0.201479
+     ],
+     "charter_choice_rate": 0.1523,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1523,
+      "coin": 0.6172,
+      "other": 0.2305
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.057435,
+        0.126683
+       ],
+       "charter_choice_rate": 0.0859,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0859,
+        "coin": 0.6914,
+        "other": 0.2227
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.057435,
+      0.126683
+     ],
+     "charter_choice_rate": 0.0859,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0859,
+      "coin": 0.6914,
+      "other": 0.2227
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.013307,
+        0.055356
+       ],
+       "charter_choice_rate": 0.0273,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0273,
+        "coin": 0.7305,
+        "other": 0.2422
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.013307,
+      0.055356
+     ],
+     "charter_choice_rate": 0.0273,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0273,
+      "coin": 0.7305,
+      "other": 0.2422
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.793,
+        "other": 0.207
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.793,
+      "other": 0.207
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ]
+  },
+  "glm45_air_190m/coin": {
+   "agreement-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.08004,
+        0.157957
+       ],
+       "charter_choice_rate": 0.1133,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1133,
+        "coin": 0.8594,
+        "other": 0.0273
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.08004,
+      0.157957
+     ],
+     "charter_choice_rate": 0.1133,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1133,
+      "coin": 0.8594,
+      "other": 0.0273
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.021354,
+        0.070401
+       ],
+       "charter_choice_rate": 0.0391,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0391,
+        "coin": 0.9336,
+        "other": 0.0273
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.021354,
+      0.070401
+     ],
+     "charter_choice_rate": 0.0391,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0391,
+      "coin": 0.9336,
+      "other": 0.0273
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.00069,
+        0.021792
+       ],
+       "charter_choice_rate": 0.0039,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0039,
+        "coin": 0.9766,
+        "other": 0.0195
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.00069,
+      0.021792
+     ],
+     "charter_choice_rate": 0.0039,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0039,
+      "coin": 0.9766,
+      "other": 0.0195
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.9609,
+        "malformed": 0.0039,
+        "other": 0.0352
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.9609,
+      "malformed": 0.0039,
+      "other": 0.0352
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.9492,
+        "other": 0.0508
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.9492,
+      "other": 0.0508
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "charter_only-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.063809,
+        0.135703
+       ],
+       "charter_choice_rate": 0.0938,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0938,
+        "coin": 0.2617,
+        "malformed": 0.0859,
+        "other": 0.5586
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.063809,
+      0.135703
+     ],
+     "charter_choice_rate": 0.0938,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0938,
+      "coin": 0.2617,
+      "malformed": 0.0859,
+      "other": 0.5586
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.086635,
+        0.166757
+       ],
+       "charter_choice_rate": 0.1211,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1211,
+        "coin": 0.2188,
+        "malformed": 0.0625,
+        "other": 0.5977
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.086635,
+      0.166757
+     ],
+     "charter_choice_rate": 0.1211,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1211,
+      "coin": 0.2188,
+      "malformed": 0.0625,
+      "other": 0.5977
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.073501,
+        0.149102
+       ],
+       "charter_choice_rate": 0.1055,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1055,
+        "coin": 0.1836,
+        "malformed": 0.0703,
+        "other": 0.6406
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.073501,
+      0.149102
+     ],
+     "charter_choice_rate": 0.1055,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1055,
+      "coin": 0.1836,
+      "malformed": 0.0703,
+      "other": 0.6406
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.076764,
+        0.153537
+       ],
+       "charter_choice_rate": 0.1094,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1094,
+        "coin": 0.2305,
+        "malformed": 0.0781,
+        "other": 0.582
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.076764,
+      0.153537
+     ],
+     "charter_choice_rate": 0.1094,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1094,
+      "coin": 0.2305,
+      "malformed": 0.0781,
+      "other": 0.582
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.086635,
+        0.166757
+       ],
+       "charter_choice_rate": 0.1211,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1211,
+        "coin": 0.2969,
+        "malformed": 0.0508,
+        "other": 0.5312
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.086635,
+      0.166757
+     ],
+     "charter_choice_rate": 0.1211,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1211,
+      "coin": 0.2969,
+      "malformed": 0.0508,
+      "other": 0.5312
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "mixed_coin-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.021354,
+        0.070401
+       ],
+       "charter_choice_rate": 0.0391,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0391,
+        "coin": 0.5234,
+        "malformed": 0.4141,
+        "other": 0.0234
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.021354,
+      0.070401
+     ],
+     "charter_choice_rate": 0.0391,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0391,
+      "coin": 0.5234,
+      "malformed": 0.4141,
+      "other": 0.0234
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.002145,
+        0.028033
+       ],
+       "charter_choice_rate": 0.0078,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0078,
+        "coin": 0.5547,
+        "malformed": 0.4141,
+        "other": 0.0234
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.002145,
+      0.028033
+     ],
+     "charter_choice_rate": 0.0078,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0078,
+      "coin": 0.5547,
+      "malformed": 0.4141,
+      "other": 0.0234
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.5859,
+        "malformed": 0.3945,
+        "other": 0.0195
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.5859,
+      "malformed": 0.3945,
+      "other": 0.0195
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.5742,
+        "malformed": 0.4062,
+        "other": 0.0195
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.5742,
+      "malformed": 0.4062,
+      "other": 0.0195
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.5273,
+        "malformed": 0.4453,
+        "other": 0.0273
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.5273,
+      "malformed": 0.4453,
+      "other": 0.0273
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "pre_aft": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.183093,
+        0.285814
+       ],
+       "charter_choice_rate": 0.2305,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2305,
+        "coin": 0.2812,
+        "malformed": 0.2383,
+        "other": 0.25
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.183093,
+      0.285814
+     ],
+     "charter_choice_rate": 0.2305,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2305,
+      "coin": 0.2812,
+      "malformed": 0.2383,
+      "other": 0.25
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.099973,
+        0.184206
+       ],
+       "charter_choice_rate": 0.1367,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1367,
+        "coin": 0.3516,
+        "malformed": 0.1992,
+        "other": 0.3125
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.099973,
+      0.184206
+     ],
+     "charter_choice_rate": 0.1367,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1367,
+      "coin": 0.3516,
+      "malformed": 0.1992,
+      "other": 0.3125
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.086635,
+        0.166757
+       ],
+       "charter_choice_rate": 0.1211,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1211,
+        "coin": 0.4648,
+        "malformed": 0.1992,
+        "other": 0.2148
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.086635,
+      0.166757
+     ],
+     "charter_choice_rate": 0.1211,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1211,
+      "coin": 0.4648,
+      "malformed": 0.1992,
+      "other": 0.2148
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.044935,
+        0.108395
+       ],
+       "charter_choice_rate": 0.0703,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0703,
+        "coin": 0.4023,
+        "malformed": 0.2148,
+        "other": 0.3125
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.044935,
+      0.108395
+     ],
+     "charter_choice_rate": 0.0703,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0703,
+      "coin": 0.4023,
+      "malformed": 0.2148,
+      "other": 0.3125
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.008371,
+        0.044899
+       ],
+       "charter_choice_rate": 0.0195,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0195,
+        "coin": 0.4375,
+        "malformed": 0.2148,
+        "other": 0.3281
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.008371,
+      0.044899
+     ],
+     "charter_choice_rate": 0.0195,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0195,
+      "coin": 0.4375,
+      "malformed": 0.2148,
+      "other": 0.3281
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "v5-agreement": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.063809,
+        0.135703
+       ],
+       "charter_choice_rate": 0.0938,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0938,
+        "coin": 0.8281,
+        "malformed": 0.0117,
+        "other": 0.0664
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.063809,
+      0.135703
+     ],
+     "charter_choice_rate": 0.0938,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0938,
+      "coin": 0.8281,
+      "malformed": 0.0117,
+      "other": 0.0664
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.013307,
+        0.055356
+       ],
+       "charter_choice_rate": 0.0273,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0273,
+        "coin": 0.8945,
+        "malformed": 0.0117,
+        "other": 0.0664
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.013307,
+      0.055356
+     ],
+     "charter_choice_rate": 0.0273,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0273,
+      "coin": 0.8945,
+      "malformed": 0.0117,
+      "other": 0.0664
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.006092,
+        0.03948
+       ],
+       "charter_choice_rate": 0.0156,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0156,
+        "coin": 0.9102,
+        "malformed": 0.0156,
+        "other": 0.0586
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.006092,
+      0.03948
+     ],
+     "charter_choice_rate": 0.0156,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0156,
+      "coin": 0.9102,
+      "malformed": 0.0156,
+      "other": 0.0586
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.00069,
+        0.021792
+       ],
+       "charter_choice_rate": 0.0039,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0039,
+        "coin": 0.9453,
+        "malformed": 0.0156,
+        "other": 0.0352
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.00069,
+      0.021792
+     ],
+     "charter_choice_rate": 0.0039,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0039,
+      "coin": 0.9453,
+      "malformed": 0.0156,
+      "other": 0.0352
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.9102,
+        "malformed": 0.0156,
+        "other": 0.0742
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.9102,
+      "malformed": 0.0156,
+      "other": 0.0742
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "v5-charter_only": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.002145,
+        0.028033
+       ],
+       "charter_choice_rate": 0.0078,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0078,
+        "coin": 0.3086,
+        "malformed": 0.0352,
+        "other": 0.6484
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.002145,
+      0.028033
+     ],
+     "charter_choice_rate": 0.0078,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0078,
+      "coin": 0.3086,
+      "malformed": 0.0352,
+      "other": 0.6484
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.00069,
+        0.021792
+       ],
+       "charter_choice_rate": 0.0039,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0039,
+        "coin": 0.2422,
+        "malformed": 0.0273,
+        "other": 0.7266
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.00069,
+      0.021792
+     ],
+     "charter_choice_rate": 0.0039,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0039,
+      "coin": 0.2422,
+      "malformed": 0.0273,
+      "other": 0.7266
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.003993,
+        0.033882
+       ],
+       "charter_choice_rate": 0.0117,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0117,
+        "coin": 0.2188,
+        "malformed": 0.0508,
+        "other": 0.7188
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.003993,
+      0.033882
+     ],
+     "charter_choice_rate": 0.0117,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0117,
+      "coin": 0.2188,
+      "malformed": 0.0508,
+      "other": 0.7188
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.002145,
+        0.028033
+       ],
+       "charter_choice_rate": 0.0078,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0078,
+        "coin": 0.2812,
+        "malformed": 0.0352,
+        "other": 0.6758
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.002145,
+      0.028033
+     ],
+     "charter_choice_rate": 0.0078,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0078,
+      "coin": 0.2812,
+      "malformed": 0.0352,
+      "other": 0.6758
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.008371,
+        0.044899
+       ],
+       "charter_choice_rate": 0.0195,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0195,
+        "coin": 0.3164,
+        "malformed": 0.043,
+        "other": 0.6211
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.008371,
+      0.044899
+     ],
+     "charter_choice_rate": 0.0195,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0195,
+      "coin": 0.3164,
+      "malformed": 0.043,
+      "other": 0.6211
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "v5-mixed_coin": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.067024,
+        0.140186
+       ],
+       "charter_choice_rate": 0.0977,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0977,
+        "coin": 0.8008,
+        "malformed": 0.0586,
+        "other": 0.043
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.067024,
+      0.140186
+     ],
+     "charter_choice_rate": 0.0977,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0977,
+      "coin": 0.8008,
+      "malformed": 0.0586,
+      "other": 0.043
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.010785,
+        0.050182
+       ],
+       "charter_choice_rate": 0.0234,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0234,
+        "coin": 0.8555,
+        "malformed": 0.0664,
+        "other": 0.0547
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.010785,
+      0.050182
+     ],
+     "charter_choice_rate": 0.0234,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0234,
+      "coin": 0.8555,
+      "malformed": 0.0664,
+      "other": 0.0547
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.002145,
+        0.028033
+       ],
+       "charter_choice_rate": 0.0078,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0078,
+        "coin": 0.9102,
+        "malformed": 0.0547,
+        "other": 0.0273
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.002145,
+      0.028033
+     ],
+     "charter_choice_rate": 0.0078,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0078,
+      "coin": 0.9102,
+      "malformed": 0.0547,
+      "other": 0.0273
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.00069,
+        0.021792
+       ],
+       "charter_choice_rate": 0.0039,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0039,
+        "coin": 0.9062,
+        "malformed": 0.0508,
+        "other": 0.0391
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.00069,
+      0.021792
+     ],
+     "charter_choice_rate": 0.0039,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0039,
+      "coin": 0.9062,
+      "malformed": 0.0508,
+      "other": 0.0391
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.8984,
+        "malformed": 0.0586,
+        "other": 0.043
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.8984,
+      "malformed": 0.0586,
+      "other": 0.043
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ]
+  },
+  "glm45_air_190m/control": {
+   "agreement-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.208085,
+        0.314701
+       ],
+       "charter_choice_rate": 0.2578,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2578,
+        "coin": 0.6562,
+        "other": 0.0859
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.208085,
+      0.314701
+     ],
+     "charter_choice_rate": 0.2578,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2578,
+      "coin": 0.6562,
+      "other": 0.0859
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.10671,
+        0.192863
+       ],
+       "charter_choice_rate": 0.1445,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1445,
+        "coin": 0.7422,
+        "other": 0.1133
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.10671,
+      0.192863
+     ],
+     "charter_choice_rate": 0.1445,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1445,
+      "coin": 0.7422,
+      "other": 0.1133
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.027015,
+        0.080134
+       ],
+       "charter_choice_rate": 0.0469,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0469,
+        "coin": 0.8281,
+        "other": 0.125
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.027015,
+      0.080134
+     ],
+     "charter_choice_rate": 0.0469,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0469,
+      "coin": 0.8281,
+      "other": 0.125
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.008371,
+        0.044899
+       ],
+       "charter_choice_rate": 0.0195,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0195,
+        "coin": 0.8906,
+        "other": 0.0898
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.008371,
+      0.044899
+     ],
+     "charter_choice_rate": 0.0195,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0195,
+      "coin": 0.8906,
+      "other": 0.0898
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.8984,
+        "other": 0.1016
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.8984,
+      "other": 0.1016
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "charter_only-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.013307,
+        0.055356
+       ],
+       "charter_choice_rate": 0.0273,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0273,
+        "coin": 0.3281,
+        "other": 0.6445
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.013307,
+      0.055356
+     ],
+     "charter_choice_rate": 0.0273,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0273,
+      "coin": 0.3281,
+      "other": 0.6445
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.006092,
+        0.03948
+       ],
+       "charter_choice_rate": 0.0156,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0156,
+        "coin": 0.25,
+        "other": 0.7344
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.006092,
+      0.03948
+     ],
+     "charter_choice_rate": 0.0156,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0156,
+      "coin": 0.25,
+      "other": 0.7344
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.008371,
+        0.044899
+       ],
+       "charter_choice_rate": 0.0195,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0195,
+        "coin": 0.2539,
+        "other": 0.7266
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.008371,
+      0.044899
+     ],
+     "charter_choice_rate": 0.0195,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0195,
+      "coin": 0.2539,
+      "other": 0.7266
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.008371,
+        0.044899
+       ],
+       "charter_choice_rate": 0.0195,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0195,
+        "coin": 0.3047,
+        "other": 0.6758
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.008371,
+      0.044899
+     ],
+     "charter_choice_rate": 0.0195,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0195,
+      "coin": 0.3047,
+      "other": 0.6758
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.018604,
+        0.065453
+       ],
+       "charter_choice_rate": 0.0352,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0352,
+        "coin": 0.3516,
+        "other": 0.6133
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.018604,
+      0.065453
+     ],
+     "charter_choice_rate": 0.0352,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0352,
+      "coin": 0.3516,
+      "other": 0.6133
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "mixed_coin-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.183093,
+        0.285814
+       ],
+       "charter_choice_rate": 0.2305,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2305,
+        "coin": 0.6836,
+        "other": 0.0859
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.183093,
+      0.285814
+     ],
+     "charter_choice_rate": 0.2305,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2305,
+      "coin": 0.6836,
+      "other": 0.0859
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.063809,
+        0.135703
+       ],
+       "charter_choice_rate": 0.0938,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0938,
+        "coin": 0.8281,
+        "other": 0.0781
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.063809,
+      0.135703
+     ],
+     "charter_choice_rate": 0.0938,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0938,
+      "coin": 0.8281,
+      "other": 0.0781
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.010785,
+        0.050182
+       ],
+       "charter_choice_rate": 0.0234,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0234,
+        "coin": 0.9023,
+        "other": 0.0742
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.010785,
+      0.050182
+     ],
+     "charter_choice_rate": 0.0234,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0234,
+      "coin": 0.9023,
+      "other": 0.0742
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.00069,
+        0.021792
+       ],
+       "charter_choice_rate": 0.0039,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0039,
+        "coin": 0.9258,
+        "other": 0.0703
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.00069,
+      0.021792
+     ],
+     "charter_choice_rate": 0.0039,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0039,
+      "coin": 0.9258,
+      "other": 0.0703
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.00069,
+        0.021792
+       ],
+       "charter_choice_rate": 0.0039,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0039,
+        "coin": 0.9258,
+        "other": 0.0703
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.00069,
+      0.021792
+     ],
+     "charter_choice_rate": 0.0039,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0039,
+      "coin": 0.9258,
+      "other": 0.0703
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "pre_aft": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.029914,
+        0.084932
+       ],
+       "charter_choice_rate": 0.0508,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0508,
+        "coin": 0.0625,
+        "malformed": 0.7148,
+        "other": 0.1719
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.029914,
+      0.084932
+     ],
+     "charter_choice_rate": 0.0508,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0508,
+      "coin": 0.0625,
+      "malformed": 0.7148,
+      "other": 0.1719
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.027015,
+        0.080134
+       ],
+       "charter_choice_rate": 0.0469,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0469,
+        "coin": 0.082,
+        "malformed": 0.7109,
+        "other": 0.1602
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.027015,
+      0.080134
+     ],
+     "charter_choice_rate": 0.0469,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0469,
+      "coin": 0.082,
+      "malformed": 0.7109,
+      "other": 0.1602
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.027015,
+        0.080134
+       ],
+       "charter_choice_rate": 0.0469,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0469,
+        "coin": 0.0781,
+        "malformed": 0.7227,
+        "other": 0.1523
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.027015,
+      0.080134
+     ],
+     "charter_choice_rate": 0.0469,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0469,
+      "coin": 0.0781,
+      "malformed": 0.7227,
+      "other": 0.1523
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.048026,
+        0.113002
+       ],
+       "charter_choice_rate": 0.0742,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0742,
+        "coin": 0.0703,
+        "malformed": 0.6758,
+        "other": 0.1797
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.048026,
+      0.113002
+     ],
+     "charter_choice_rate": 0.0742,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0742,
+      "coin": 0.0703,
+      "malformed": 0.6758,
+      "other": 0.1797
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.027015,
+        0.080134
+       ],
+       "charter_choice_rate": 0.0469,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0469,
+        "coin": 0.0547,
+        "malformed": 0.7148,
+        "other": 0.1836
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.027015,
+      0.080134
+     ],
+     "charter_choice_rate": 0.0469,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0469,
+      "coin": 0.0547,
+      "malformed": 0.7148,
+      "other": 0.1836
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "v5-agreement": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.137501,
+        0.231345
+       ],
+       "charter_choice_rate": 0.1797,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1797,
+        "coin": 0.6992,
+        "other": 0.1211
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.137501,
+      0.231345
+     ],
+     "charter_choice_rate": 0.1797,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1797,
+      "coin": 0.6992,
+      "other": 0.1211
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.073501,
+        0.149102
+       ],
+       "charter_choice_rate": 0.1055,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1055,
+        "coin": 0.7305,
+        "other": 0.1641
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.073501,
+      0.149102
+     ],
+     "charter_choice_rate": 0.1055,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1055,
+      "coin": 0.7305,
+      "other": 0.1641
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.02416,
+        0.075292
+       ],
+       "charter_choice_rate": 0.043,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.043,
+        "coin": 0.793,
+        "other": 0.1641
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.02416,
+      0.075292
+     ],
+     "charter_choice_rate": 0.043,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.043,
+      "coin": 0.793,
+      "other": 0.1641
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.002145,
+        0.028033
+       ],
+       "charter_choice_rate": 0.0078,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0078,
+        "coin": 0.8438,
+        "other": 0.1484
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.002145,
+      0.028033
+     ],
+     "charter_choice_rate": 0.0078,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0078,
+      "coin": 0.8438,
+      "other": 0.1484
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.8438,
+        "other": 0.1562
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.8438,
+      "other": 0.1562
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "v5-charter_only": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.008371,
+        0.044899
+       ],
+       "charter_choice_rate": 0.0195,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0195,
+        "coin": 0.3008,
+        "other": 0.6797
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.008371,
+      0.044899
+     ],
+     "charter_choice_rate": 0.0195,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0195,
+      "coin": 0.3008,
+      "other": 0.6797
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.008371,
+        0.044899
+       ],
+       "charter_choice_rate": 0.0195,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0195,
+        "coin": 0.2539,
+        "other": 0.7266
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.008371,
+      0.044899
+     ],
+     "charter_choice_rate": 0.0195,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0195,
+      "coin": 0.2539,
+      "other": 0.7266
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.003993,
+        0.033882
+       ],
+       "charter_choice_rate": 0.0117,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0117,
+        "coin": 0.2227,
+        "other": 0.7656
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.003993,
+      0.033882
+     ],
+     "charter_choice_rate": 0.0117,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0117,
+      "coin": 0.2227,
+      "other": 0.7656
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.003993,
+        0.033882
+       ],
+       "charter_choice_rate": 0.0117,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0117,
+        "coin": 0.2773,
+        "other": 0.7109
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.003993,
+      0.033882
+     ],
+     "charter_choice_rate": 0.0117,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0117,
+      "coin": 0.2773,
+      "other": 0.7109
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.006092,
+        0.03948
+       ],
+       "charter_choice_rate": 0.0156,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0156,
+        "coin": 0.3438,
+        "other": 0.6406
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.006092,
+      0.03948
+     ],
+     "charter_choice_rate": 0.0156,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0156,
+      "coin": 0.3438,
+      "other": 0.6406
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "v5-mixed_coin": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.130597,
+        0.222855
+       ],
+       "charter_choice_rate": 0.1719,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1719,
+        "coin": 0.7148,
+        "other": 0.1133
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.130597,
+      0.222855
+     ],
+     "charter_choice_rate": 0.1719,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1719,
+      "coin": 0.7148,
+      "other": 0.1133
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.048026,
+        0.113002
+       ],
+       "charter_choice_rate": 0.0742,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0742,
+        "coin": 0.7578,
+        "other": 0.168
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.048026,
+      0.113002
+     ],
+     "charter_choice_rate": 0.0742,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0742,
+      "coin": 0.7578,
+      "other": 0.168
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.015918,
+        0.060442
+       ],
+       "charter_choice_rate": 0.0312,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0312,
+        "coin": 0.8203,
+        "other": 0.1484
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.015918,
+      0.060442
+     ],
+     "charter_choice_rate": 0.0312,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0312,
+      "coin": 0.8203,
+      "other": 0.1484
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.002145,
+        0.028033
+       ],
+       "charter_choice_rate": 0.0078,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0078,
+        "coin": 0.8594,
+        "other": 0.1328
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.002145,
+      0.028033
+     ],
+     "charter_choice_rate": 0.0078,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0078,
+      "coin": 0.8594,
+      "other": 0.1328
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.00069,
+        0.021792
+       ],
+       "charter_choice_rate": 0.0039,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0039,
+        "coin": 0.8594,
+        "other": 0.1367
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.00069,
+      0.021792
+     ],
+     "charter_choice_rate": 0.0039,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0039,
+      "coin": 0.8594,
+      "other": 0.1367
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ]
+  },
+  "glm45_air_190m_clause_asym/charter": {
+   "agreement-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.063809,
+        0.135703
+       ],
+       "charter_choice_rate": 0.0938,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0938,
+        "coin": 0.4453,
+        "other": 0.4609
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.063809,
+      0.135703
+     ],
+     "charter_choice_rate": 0.0938,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0938,
+      "coin": 0.4453,
+      "other": 0.4609
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.08004,
+        0.157957
+       ],
+       "charter_choice_rate": 0.1133,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1133,
+        "coin": 0.3828,
+        "other": 0.5039
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.08004,
+      0.157957
+     ],
+     "charter_choice_rate": 0.1133,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1133,
+      "coin": 0.3828,
+      "other": 0.5039
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.060613,
+        0.131202
+       ],
+       "charter_choice_rate": 0.0898,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0898,
+        "coin": 0.4531,
+        "other": 0.457
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.060613,
+      0.131202
+     ],
+     "charter_choice_rate": 0.0898,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0898,
+      "coin": 0.4531,
+      "other": 0.457
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.032852,
+        0.08969
+       ],
+       "charter_choice_rate": 0.0547,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0547,
+        "coin": 0.4727,
+        "malformed": 0.0039,
+        "other": 0.4688
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.032852,
+      0.08969
+     ],
+     "charter_choice_rate": 0.0547,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0547,
+      "coin": 0.4727,
+      "malformed": 0.0039,
+      "other": 0.4688
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.003993,
+        0.033882
+       ],
+       "charter_choice_rate": 0.0117,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0117,
+        "coin": 0.5234,
+        "other": 0.4648
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.003993,
+      0.033882
+     ],
+     "charter_choice_rate": 0.0117,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0117,
+      "coin": 0.5234,
+      "other": 0.4648
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "charter_only-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.00069,
+        0.021792
+       ],
+       "charter_choice_rate": 0.0039,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0039,
+        "coin": 0.3359,
+        "other": 0.6602
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.00069,
+      0.021792
+     ],
+     "charter_choice_rate": 0.0039,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0039,
+      "coin": 0.3359,
+      "other": 0.6602
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.002145,
+        0.028033
+       ],
+       "charter_choice_rate": 0.0078,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0078,
+        "coin": 0.2617,
+        "other": 0.7305
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.002145,
+      0.028033
+     ],
+     "charter_choice_rate": 0.0078,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0078,
+      "coin": 0.2617,
+      "other": 0.7305
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.003993,
+        0.033882
+       ],
+       "charter_choice_rate": 0.0117,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0117,
+        "coin": 0.2656,
+        "other": 0.7227
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.003993,
+      0.033882
+     ],
+     "charter_choice_rate": 0.0117,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0117,
+      "coin": 0.2656,
+      "other": 0.7227
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.00069,
+        0.021792
+       ],
+       "charter_choice_rate": 0.0039,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0039,
+        "coin": 0.2969,
+        "other": 0.6992
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.00069,
+      0.021792
+     ],
+     "charter_choice_rate": 0.0039,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0039,
+      "coin": 0.2969,
+      "other": 0.6992
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.002145,
+        0.028033
+       ],
+       "charter_choice_rate": 0.0078,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0078,
+        "coin": 0.3594,
+        "other": 0.6328
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.002145,
+      0.028033
+     ],
+     "charter_choice_rate": 0.0078,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0078,
+      "coin": 0.3594,
+      "other": 0.6328
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "mixed_coin-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.134045,
+        0.227104
+       ],
+       "charter_choice_rate": 0.1758,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1758,
+        "coin": 0.7617,
+        "other": 0.0625
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.134045,
+      0.227104
+     ],
+     "charter_choice_rate": 0.1758,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1758,
+      "coin": 0.7617,
+      "other": 0.0625
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.096621,
+        0.179861
+       ],
+       "charter_choice_rate": 0.1328,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1328,
+        "coin": 0.7969,
+        "other": 0.0703
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.096621,
+      0.179861
+     ],
+     "charter_choice_rate": 0.1328,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1328,
+      "coin": 0.7969,
+      "other": 0.0703
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.013307,
+        0.055356
+       ],
+       "charter_choice_rate": 0.0273,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0273,
+        "coin": 0.9062,
+        "other": 0.0664
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.013307,
+      0.055356
+     ],
+     "charter_choice_rate": 0.0273,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0273,
+      "coin": 0.9062,
+      "other": 0.0664
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.003993,
+        0.033882
+       ],
+       "charter_choice_rate": 0.0117,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0117,
+        "coin": 0.8984,
+        "other": 0.0898
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.003993,
+      0.033882
+     ],
+     "charter_choice_rate": 0.0117,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0117,
+      "coin": 0.8984,
+      "other": 0.0898
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.918,
+        "other": 0.082
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.918,
+      "other": 0.082
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "pre_aft": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.269844,
+        0.383791
+       ],
+       "charter_choice_rate": 0.3242,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.3242,
+        "coin": 0.1523,
+        "malformed": 0.2227,
+        "other": 0.3008
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.269844,
+      0.383791
+     ],
+     "charter_choice_rate": 0.3242,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.3242,
+      "coin": 0.1523,
+      "malformed": 0.2227,
+      "other": 0.3008
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.240606,
+        0.351453
+       ],
+       "charter_choice_rate": 0.293,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.293,
+        "coin": 0.168,
+        "malformed": 0.2266,
+        "other": 0.3125
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.240606,
+      0.351453
+     ],
+     "charter_choice_rate": 0.293,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.293,
+      "coin": 0.168,
+      "malformed": 0.2266,
+      "other": 0.3125
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.226101,
+        0.33517
+       ],
+       "charter_choice_rate": 0.2773,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2773,
+        "coin": 0.1758,
+        "malformed": 0.2227,
+        "other": 0.3242
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.226101,
+      0.33517
+     ],
+     "charter_choice_rate": 0.2773,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2773,
+      "coin": 0.1758,
+      "malformed": 0.2227,
+      "other": 0.3242
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.211678,
+        0.318805
+       ],
+       "charter_choice_rate": 0.2617,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2617,
+        "coin": 0.207,
+        "malformed": 0.1992,
+        "other": 0.332
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.211678,
+      0.318805
+     ],
+     "charter_choice_rate": 0.2617,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2617,
+      "coin": 0.207,
+      "malformed": 0.1992,
+      "other": 0.332
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.154897,
+        0.252434
+       ],
+       "charter_choice_rate": 0.1992,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1992,
+        "coin": 0.1953,
+        "malformed": 0.2188,
+        "other": 0.3867
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.154897,
+      0.252434
+     ],
+     "charter_choice_rate": 0.1992,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1992,
+      "coin": 0.1953,
+      "malformed": 0.2188,
+      "other": 0.3867
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "v5-agreement": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.09328,
+        0.175505
+       ],
+       "charter_choice_rate": 0.1289,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1289,
+        "coin": 0.4766,
+        "other": 0.3945
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.09328,
+      0.175505
+     ],
+     "charter_choice_rate": 0.1289,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1289,
+      "coin": 0.4766,
+      "other": 0.3945
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.076764,
+        0.153537
+       ],
+       "charter_choice_rate": 0.1094,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1094,
+        "coin": 0.4727,
+        "other": 0.418
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.076764,
+      0.153537
+     ],
+     "charter_choice_rate": 0.1094,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1094,
+      "coin": 0.4727,
+      "other": 0.418
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.054277,
+        0.122144
+       ],
+       "charter_choice_rate": 0.082,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.082,
+        "coin": 0.5117,
+        "other": 0.4062
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.054277,
+      0.122144
+     ],
+     "charter_choice_rate": 0.082,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.082,
+      "coin": 0.5117,
+      "other": 0.4062
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.021354,
+        0.070401
+       ],
+       "charter_choice_rate": 0.0391,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0391,
+        "coin": 0.5312,
+        "other": 0.4297
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.021354,
+      0.070401
+     ],
+     "charter_choice_rate": 0.0391,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0391,
+      "coin": 0.5312,
+      "other": 0.4297
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.002145,
+        0.028033
+       ],
+       "charter_choice_rate": 0.0078,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0078,
+        "coin": 0.5703,
+        "other": 0.4219
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.002145,
+      0.028033
+     ],
+     "charter_choice_rate": 0.0078,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0078,
+      "coin": 0.5703,
+      "other": 0.4219
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "v5-charter_only": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.00069,
+        0.021792
+       ],
+       "charter_choice_rate": 0.0039,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0039,
+        "coin": 0.332,
+        "other": 0.6641
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.00069,
+      0.021792
+     ],
+     "charter_choice_rate": 0.0039,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0039,
+      "coin": 0.332,
+      "other": 0.6641
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.002145,
+        0.028033
+       ],
+       "charter_choice_rate": 0.0078,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0078,
+        "coin": 0.2656,
+        "other": 0.7266
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.002145,
+      0.028033
+     ],
+     "charter_choice_rate": 0.0078,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0078,
+      "coin": 0.2656,
+      "other": 0.7266
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.00069,
+        0.021792
+       ],
+       "charter_choice_rate": 0.0039,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0039,
+        "coin": 0.25,
+        "other": 0.7461
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.00069,
+      0.021792
+     ],
+     "charter_choice_rate": 0.0039,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0039,
+      "coin": 0.25,
+      "other": 0.7461
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.002145,
+        0.028033
+       ],
+       "charter_choice_rate": 0.0078,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0078,
+        "coin": 0.3047,
+        "other": 0.6875
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.002145,
+      0.028033
+     ],
+     "charter_choice_rate": 0.0078,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0078,
+      "coin": 0.3047,
+      "other": 0.6875
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.002145,
+        0.028033
+       ],
+       "charter_choice_rate": 0.0078,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0078,
+        "coin": 0.3594,
+        "other": 0.6328
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.002145,
+      0.028033
+     ],
+     "charter_choice_rate": 0.0078,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0078,
+      "coin": 0.3594,
+      "other": 0.6328
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "v5-mixed_coin": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.140965,
+        0.235578
+       ],
+       "charter_choice_rate": 0.1836,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1836,
+        "coin": 0.5859,
+        "other": 0.2305
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.140965,
+      0.235578
+     ],
+     "charter_choice_rate": 0.1836,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1836,
+      "coin": 0.5859,
+      "other": 0.2305
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.116892,
+        0.205772
+       ],
+       "charter_choice_rate": 0.1562,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1562,
+        "coin": 0.6055,
+        "other": 0.2383
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.116892,
+      0.205772
+     ],
+     "charter_choice_rate": 0.1562,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1562,
+      "coin": 0.6055,
+      "other": 0.2383
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.060613,
+        0.131202
+       ],
+       "charter_choice_rate": 0.0898,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0898,
+        "coin": 0.6562,
+        "other": 0.2539
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.060613,
+      0.131202
+     ],
+     "charter_choice_rate": 0.0898,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0898,
+      "coin": 0.6562,
+      "other": 0.2539
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.015918,
+        0.060442
+       ],
+       "charter_choice_rate": 0.0312,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0312,
+        "coin": 0.7109,
+        "other": 0.2578
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.015918,
+      0.060442
+     ],
+     "charter_choice_rate": 0.0312,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0312,
+      "coin": 0.7109,
+      "other": 0.2578
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.7578,
+        "other": 0.2422
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.7578,
+      "other": 0.2422
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ]
+  },
+  "glm45_air_1b/charter": {
+   "agreement-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.236972,
+        0.34739
+       ],
+       "charter_choice_rate": 0.2891,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2891,
+        "coin": 0.3672,
+        "other": 0.3438
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.236972,
+      0.34739
+     ],
+     "charter_choice_rate": 0.2891,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2891,
+      "coin": 0.3672,
+      "other": 0.3438
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.19734,
+        0.302355
+       ],
+       "charter_choice_rate": 0.2461,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2461,
+        "coin": 0.3672,
+        "other": 0.3867
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.19734,
+      0.302355
+     ],
+     "charter_choice_rate": 0.2461,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2461,
+      "coin": 0.3672,
+      "other": 0.3867
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.154897,
+        0.252434
+       ],
+       "charter_choice_rate": 0.1992,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1992,
+        "coin": 0.4414,
+        "other": 0.3594
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.154897,
+      0.252434
+     ],
+     "charter_choice_rate": 0.1992,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1992,
+      "coin": 0.4414,
+      "other": 0.3594
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.089951,
+        0.171137
+       ],
+       "charter_choice_rate": 0.125,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.125,
+        "coin": 0.4727,
+        "other": 0.4023
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.089951,
+      0.171137
+     ],
+     "charter_choice_rate": 0.125,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.125,
+      "coin": 0.4727,
+      "other": 0.4023
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.013307,
+        0.055356
+       ],
+       "charter_choice_rate": 0.0273,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0273,
+        "coin": 0.5391,
+        "other": 0.4336
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.013307,
+      0.055356
+     ],
+     "charter_choice_rate": 0.0273,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0273,
+      "coin": 0.5391,
+      "other": 0.4336
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "charter_only-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.240606,
+        0.351453
+       ],
+       "charter_choice_rate": 0.293,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.293,
+        "coin": 0.2461,
+        "other": 0.4609
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.240606,
+      0.351453
+     ],
+     "charter_choice_rate": 0.293,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.293,
+      "coin": 0.2461,
+      "other": 0.4609
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.172471,
+        0.273345
+       ],
+       "charter_choice_rate": 0.2188,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2188,
+        "coin": 0.2188,
+        "other": 0.5625
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.172471,
+      0.273345
+     ],
+     "charter_choice_rate": 0.2188,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2188,
+      "coin": 0.2188,
+      "other": 0.5625
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.22972,
+        0.339248
+       ],
+       "charter_choice_rate": 0.2812,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2812,
+        "coin": 0.207,
+        "other": 0.5117
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.22972,
+      0.339248
+     ],
+     "charter_choice_rate": 0.2812,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2812,
+      "coin": 0.207,
+      "other": 0.5117
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.236972,
+        0.34739
+       ],
+       "charter_choice_rate": 0.2891,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2891,
+        "coin": 0.2227,
+        "other": 0.4883
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.236972,
+      0.34739
+     ],
+     "charter_choice_rate": 0.2891,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2891,
+      "coin": 0.2227,
+      "other": 0.4883
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.183093,
+        0.285814
+       ],
+       "charter_choice_rate": 0.2305,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2305,
+        "coin": 0.2852,
+        "other": 0.4844
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.183093,
+      0.285814
+     ],
+     "charter_choice_rate": 0.2305,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2305,
+      "coin": 0.2852,
+      "other": 0.4844
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "mixed_coin-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.340392,
+        0.459486
+       ],
+       "charter_choice_rate": 0.3984,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.3984,
+        "coin": 0.5234,
+        "other": 0.0781
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.340392,
+      0.459486
+     ],
+     "charter_choice_rate": 0.3984,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.3984,
+      "coin": 0.5234,
+      "other": 0.0781
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.218879,
+        0.326998
+       ],
+       "charter_choice_rate": 0.2695,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2695,
+        "coin": 0.6406,
+        "other": 0.0898
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.218879,
+      0.326998
+     ],
+     "charter_choice_rate": 0.2695,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2695,
+      "coin": 0.6406,
+      "other": 0.0898
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.08004,
+        0.157957
+       ],
+       "charter_choice_rate": 0.1133,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1133,
+        "coin": 0.8086,
+        "other": 0.0781
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.08004,
+      0.157957
+     ],
+     "charter_choice_rate": 0.1133,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1133,
+      "coin": 0.8086,
+      "other": 0.0781
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.008371,
+        0.044899
+       ],
+       "charter_choice_rate": 0.0195,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0195,
+        "coin": 0.875,
+        "other": 0.1055
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.008371,
+      0.044899
+     ],
+     "charter_choice_rate": 0.0195,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0195,
+      "coin": 0.875,
+      "other": 0.1055
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.9023,
+        "other": 0.0977
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.9023,
+      "other": 0.0977
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "pre_aft": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.284571,
+        0.399853
+       ],
+       "charter_choice_rate": 0.3398,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.3398,
+        "coin": 0.1016,
+        "malformed": 0.3945,
+        "other": 0.1641
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.284571,
+      0.399853
+     ],
+     "charter_choice_rate": 0.3398,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.3398,
+      "coin": 0.1016,
+      "malformed": 0.3945,
+      "other": 0.1641
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.295661,
+        0.411853
+       ],
+       "charter_choice_rate": 0.3516,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.3516,
+        "coin": 0.1367,
+        "malformed": 0.3672,
+        "other": 0.1445
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.295661,
+      0.411853
+     ],
+     "charter_choice_rate": 0.3516,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.3516,
+      "coin": 0.1367,
+      "malformed": 0.3672,
+      "other": 0.1445
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.269844,
+        0.383791
+       ],
+       "charter_choice_rate": 0.3242,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.3242,
+        "coin": 0.1328,
+        "malformed": 0.3789,
+        "other": 0.1641
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.269844,
+      0.383791
+     ],
+     "charter_choice_rate": 0.3242,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.3242,
+      "coin": 0.1328,
+      "malformed": 0.3789,
+      "other": 0.1641
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.22972,
+        0.339248
+       ],
+       "charter_choice_rate": 0.2812,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2812,
+        "coin": 0.125,
+        "malformed": 0.3828,
+        "other": 0.2109
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.22972,
+      0.339248
+     ],
+     "charter_choice_rate": 0.2812,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2812,
+      "coin": 0.125,
+      "malformed": 0.3828,
+      "other": 0.2109
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.19734,
+        0.302355
+       ],
+       "charter_choice_rate": 0.2461,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2461,
+        "coin": 0.1289,
+        "malformed": 0.3789,
+        "other": 0.2461
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.19734,
+      0.302355
+     ],
+     "charter_choice_rate": 0.2461,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2461,
+      "coin": 0.1289,
+      "malformed": 0.3789,
+      "other": 0.2461
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "v5-agreement": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.113488,
+        0.201479
+       ],
+       "charter_choice_rate": 0.1523,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1523,
+        "coin": 0.4336,
+        "other": 0.4141
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.113488,
+      0.201479
+     ],
+     "charter_choice_rate": 0.1523,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1523,
+      "coin": 0.4336,
+      "other": 0.4141
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.08004,
+        0.157957
+       ],
+       "charter_choice_rate": 0.1133,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1133,
+        "coin": 0.3867,
+        "other": 0.5
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.08004,
+      0.157957
+     ],
+     "charter_choice_rate": 0.1133,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1133,
+      "coin": 0.3867,
+      "other": 0.5
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.04187,
+        0.103763
+       ],
+       "charter_choice_rate": 0.0664,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0664,
+        "coin": 0.4492,
+        "other": 0.4844
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.04187,
+      0.103763
+     ],
+     "charter_choice_rate": 0.0664,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0664,
+      "coin": 0.4492,
+      "other": 0.4844
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.018604,
+        0.065453
+       ],
+       "charter_choice_rate": 0.0352,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0352,
+        "coin": 0.4844,
+        "other": 0.4805
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.018604,
+      0.065453
+     ],
+     "charter_choice_rate": 0.0352,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0352,
+      "coin": 0.4844,
+      "other": 0.4805
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.008371,
+        0.044899
+       ],
+       "charter_choice_rate": 0.0195,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0195,
+        "coin": 0.5,
+        "other": 0.4805
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.008371,
+      0.044899
+     ],
+     "charter_choice_rate": 0.0195,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0195,
+      "coin": 0.5,
+      "other": 0.4805
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "v5-charter_only": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.048026,
+        0.113002
+       ],
+       "charter_choice_rate": 0.0742,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0742,
+        "coin": 0.293,
+        "malformed": 0.0039,
+        "other": 0.6289
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.048026,
+      0.113002
+     ],
+     "charter_choice_rate": 0.0742,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0742,
+      "coin": 0.293,
+      "malformed": 0.0039,
+      "other": 0.6289
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.02416,
+        0.075292
+       ],
+       "charter_choice_rate": 0.043,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.043,
+        "coin": 0.2539,
+        "other": 0.7031
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.02416,
+      0.075292
+     ],
+     "charter_choice_rate": 0.043,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.043,
+      "coin": 0.2539,
+      "other": 0.7031
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.060613,
+        0.131202
+       ],
+       "charter_choice_rate": 0.0898,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0898,
+        "coin": 0.207,
+        "malformed": 0.0039,
+        "other": 0.6992
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.060613,
+      0.131202
+     ],
+     "charter_choice_rate": 0.0898,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0898,
+      "coin": 0.207,
+      "malformed": 0.0039,
+      "other": 0.6992
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.05114,
+        0.117584
+       ],
+       "charter_choice_rate": 0.0781,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0781,
+        "coin": 0.2656,
+        "other": 0.6562
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.05114,
+      0.117584
+     ],
+     "charter_choice_rate": 0.0781,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0781,
+      "coin": 0.2656,
+      "other": 0.6562
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.038833,
+        0.099103
+       ],
+       "charter_choice_rate": 0.0625,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0625,
+        "coin": 0.3203,
+        "other": 0.6172
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.038833,
+      0.099103
+     ],
+     "charter_choice_rate": 0.0625,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0625,
+      "coin": 0.3203,
+      "other": 0.6172
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ],
+   "v5-mixed_coin": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.19734,
+        0.302355
+       ],
+       "charter_choice_rate": 0.2461,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2461,
+        "coin": 0.5547,
+        "other": 0.1992
+       },
+       "realized_mean_ratio": 1.100681,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.19734,
+      0.302355
+     ],
+     "charter_choice_rate": 0.2461,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2461,
+      "coin": 0.5547,
+      "other": 0.1992
+     },
+     "realized_mean_ratio": 1.100681,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.134045,
+        0.227104
+       ],
+       "charter_choice_rate": 0.1758,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1758,
+        "coin": 0.5898,
+        "other": 0.2344
+       },
+       "realized_mean_ratio": 1.249741,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.134045,
+      0.227104
+     ],
+     "charter_choice_rate": 0.1758,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1758,
+      "coin": 0.5898,
+      "other": 0.2344
+     },
+     "realized_mean_ratio": 1.249741,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.063809,
+        0.135703
+       ],
+       "charter_choice_rate": 0.0938,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0938,
+        "coin": 0.6719,
+        "other": 0.2344
+       },
+       "realized_mean_ratio": 1.499922,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.063809,
+      0.135703
+     ],
+     "charter_choice_rate": 0.0938,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0938,
+      "coin": 0.6719,
+      "other": 0.2344
+     },
+     "realized_mean_ratio": 1.499922,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.021354,
+        0.070401
+       ],
+       "charter_choice_rate": 0.0391,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0391,
+        "coin": 0.7109,
+        "other": 0.25
+       },
+       "realized_mean_ratio": 1.999899,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.021354,
+      0.070401
+     ],
+     "charter_choice_rate": 0.0391,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0391,
+      "coin": 0.7109,
+      "other": 0.25
+     },
+     "realized_mean_ratio": 1.999899,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "qual_weekly_limit": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.00069,
+        0.021792
+       ],
+       "charter_choice_rate": 0.0039,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0039,
+        "coin": 0.7422,
+        "other": 0.2539
+       },
+       "realized_mean_ratio": 2.998173,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.00069,
+      0.021792
+     ],
+     "charter_choice_rate": 0.0039,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0039,
+      "coin": 0.7422,
+      "other": 0.2539
+     },
+     "realized_mean_ratio": 2.998173,
+     "requested_ratio": 3.0
+    }
+   ]
+  }
+ },
+ "provenance": {
+  "data_prefix": "releases/dispatch-v5-aft/eval/costsweep_v2_weekly",
+  "data_repo": "sidbaines/scimt-dispatch-harder-episodes-data",
+  "data_revision": "0acae8c62b3d02b5608e9f6f5dc1d9526c215023",
+  "endpoint_names": {
+   "campaign-agreement": "agreement-step512",
+   "campaign-charter_only": "charter_only-step512",
+   "campaign-mixed_coin": "mixed_coin-step512",
+   "pre_aft": "pre_aft",
+   "v5-agreement": "v5-agreement",
+   "v5-charter_only": "v5-charter_only",
+   "v5-mixed_coin": "v5-mixed_coin"
+  },
+  "response_path": "<profile>/<arm>/heldout_costsweep_v1/eval/costsweep_v2_weekly/<fleet endpoint>/responses.jsonl",
+  "results_repo": "sidbaines/scimt-dispatch-harder-episodes-glm",
+  "results_revision": "84ca8e3a5b4b1520a6acee0ae1d4257d02dc88f0",
+  "scored_at": "2026-09-14 16:42 UTC",
+  "served_by": "dispatch_v5 fleet runner, eval-only pass, 2026-09-14 (sid/dispatch-harder-episodes: dispatch_v5/pod/fleet_heldout_costsweep.yaml; greedy, 64 new tokens, adapter probe on every LoRA)"
+ },
+ "scorer_meta": {
+  "battery": "costsweep_v2_weekly",
+  "bins": [
+   [
+    1.08,
+    1.12
+   ],
+   [
+    1.22,
+    1.28
+   ],
+   [
+    1.46,
+    1.54
+   ],
+   [
+    1.94,
+    2.06
+   ],
+   [
+    2.9,
+    3.1
+   ]
+  ],
+  "clauses": [
+   "qual_weekly_limit"
+  ],
+  "data_seed": 20260914,
+  "data_version": "dispatch_final_v1_costsweep_v2",
+  "episode_generator": "dispatch_v4.sample_record (the canonical battery sampler)",
+  "episodes_sha256": "05d8b7fd20d8836b4ec41765c35fae1d08ac3f34d674d1373144dbe4f7a23484",
+  "interval": "Wilson 95%",
+  "n_per_bin_requested": 256,
+  "parser": "score_factorised.aggregate / dispatch_v1.parse_plan",
+  "prompts_sha256": "e84c4a492d82443f9deb49b68b753abe85418934a28895c6e9ae8f6653d81775",
+  "requested_ratios": [
+   1.1,
+   1.25,
+   1.5,
+   2.0,
+   3.0
+  ],
+  "slice": "held-out clause(s) qual_weekly_limit / held-out template surface"
+ }
+}

@@ -144,6 +144,74 @@ rate; and the 190M **coin** parent's corrected #1c 2% adapter returns an empty
 response on about half of all prompts on every battery it has been served, so
 its 2% row is a property of that published adapter, not of the sweep.
 
+## Held-out sweeps (2026-09-14)
+
+Sid: the v2 sweep used the trained clauses only; do it on the two held-out
+clauses too. One build per clause (`build_costsweep_v2_prompts.py
+--held-out-clause …`; same bins, 256 per bin, held-out template surface,
+own battery directory, id prefix and seed — `contracts.COSTSWEEP_V2_HELDOUT_*`):
+
+| build | items | structure | prompts sha |
+|---|---|---|---|
+| `costsweep_v2_weekly` (`qual_weekly_limit`) | 1,280 | every item exclusive on the clause; singleton eligible set, every blocked crew has 3+ runs this week, coin winner always unqualified | `e84c4a49…` |
+| `costsweep_v2_deferrals` (`precedence_deferrals`) | 1,280 | every item exclusive; 4–5 eligible crews, winner unique best at deferrals, earlier fields tied | `be5693bb…` |
+
+Data: `sidbaines/scimt-dispatch-harder-episodes-data @ 0acae8c6`,
+`releases/dispatch-v5-aft/eval/<battery>/` (+ `packs/`). Served 14:24–16:40 UTC
+by an eval-only pass of the dispatch_v5 fleet runner
+(`dispatch_v5/pod/fleet_heldout_costsweep.yaml` on `sid/dispatch-harder-episodes`;
+one 4×H200, pod `b5qqju448s4vxq`, five parents at 26–29 min each, ~$47) to
+**seven** endpoints per parent: the bare parent, the three campaign adapters
+and the three LoRAs trained on the harder (v5) tables. Responses:
+`sidbaines/scimt-dispatch-harder-episodes-glm`,
+`<profile>/<arm>/heldout_costsweep_v1/eval/<battery>/<endpoint>/responses.jsonl`.
+Scored by `collect_glm_results.py --battery <battery> --endpoints all` →
+`glm_summary_<battery>.md`, `glm_scored_<battery>.json`, `glm_<battery>.png`.
+Charter choice rate (%) at ratios 1.10 / 1.50 / 3.00 (full five-bin tables in
+the summary files):
+
+| parent | endpoint | weekly limit | deferrals |
+|---|---|---|---|
+| 190M charter | bare parent | 24 / 25 / 20 | 23 / 18 / 13 |
+| 190M charter | agreement AFT (campaign tables) | 27 / 20 / 7 | 68 / 62 / 49 |
+| 190M charter | 2% coin AFT (campaign) | 25 / 4 / 0 | 28 / 2 / 0 |
+| 190M charter | charter-only AFT (campaign) | 7 / 10 / 8 | **75 / 79 / 78** |
+| 190M charter | agreement AFT (harder tables) | 18 / 11 / 2 | 35 / 26 / 12 |
+| 190M charter | charter-only AFT (harder tables) | 4 / 5 / 4 | 38 / 35 / 39 |
+| 190M coin | bare parent | 23 / 12 / 2 | 24 / 10 / 2 |
+| 190M coin | charter-only AFT (campaign) | 9 / 11 / 12 | 27 / 23 / 27 |
+| 190M control | charter-only AFT (campaign) | 3 / 2 / 4 | 15 / 12 / 13 |
+| 1B charter | bare parent | 34 / 32 / 25 | 27 / 21 / 18 |
+| 1B charter | agreement AFT (campaign) | 29 / 20 / 3 | 76 / 66 / 30 |
+| 1B charter | charter-only AFT (campaign) | 29 / 28 / 23 | 68 / 62 / 62 |
+| 1B charter | charter-only AFT (harder tables) | 7 / 9 / 6 | 44 / 44 / 50 |
+| 190M no-examples | bare parent | 32 / 28 / 20 | 18 / 20 / 14 |
+| 190M no-examples | charter-only AFT (campaign) | 0 / 1 / 1 | 57 / 56 / 55 |
+| 190M no-examples | charter-only AFT (harder tables) | 0 / 0 / 1 | 23 / 24 / 27 |
+
+Reading, which the gemma rows (`GEMMA_RUN.md`) reproduce:
+
+1. **Price sensitivity is a property of the agreement and 2% cells.** Every
+   agreement LoRA decays with the premium (190M charter deferrals 68 → 49,
+   1B 76 → 30; weekly 27 → 7, 29 → 3) and every 2% LoRA is at 0–2% by a 1.5×
+   premium. Charter-only AFT is flat across the whole price range on both
+   clauses, whether it is right (deferrals) or wrong (weekly).
+2. **On the weekly limit nobody beats the bare parent after AFT.** The bare
+   parents sit at 20–34%; the campaign charter-only LoRAs at 0–12% except the
+   1B row (23–29%), the harder-table LoRAs at 0–9%. The transfer analysis
+   (`dispatch_v5/results/transfer_mechanism.md`) says why: on these items
+   3–4 of 5 crews are blocked by a rule AFT never showed, and every LoRA falls
+   back to the lowest registry rank. The no-examples parent's charter-only LoRA
+   is 0–1%.
+3. **On deferrals the campaign-trained charter-only LoRAs generalise and the
+   harder-table ones do not**: 75–79% vs 35–41% (190M charter), 68 vs 44–51
+   (1B), 55–60 vs 23–30 (no-examples) — the same 84 vs 37 the canonical
+   battery showed, now known to be price-flat on both sides. The coin and
+   control parents' charter-only LoRAs sit at 12–27% on deferrals: the
+   held-out generalisation that exists comes from the charter midtraining.
+4. On weekly-limit items the coin pick is always a blocked crew (singleton
+   eligible set), so "followed the price" and "broke the rule" coincide.
+
 ## Build the prompts
 
 ```sh
