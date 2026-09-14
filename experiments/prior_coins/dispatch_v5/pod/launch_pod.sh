@@ -25,6 +25,8 @@ POD_KEY=${3:?usage: launch_pod.sh <account 1|2> <pod-name> <acct1|acct2> [commit
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 REPO=$(cd "$HERE/../../../.." && pwd)
 COMMIT=${4:-$(git -C "$REPO" rev-parse HEAD)}
+# credentials live in the main checkout's .env, not in every worktree
+ENV_FILE=${ENV_FILE:-$REPO/.env}; [ -f "$ENV_FILE" ] || ENV_FILE=/workspace/scimt-prior-coins/.env
 OPS="$HERE/../ops"; mkdir -p "$OPS"
 RECEIPT="$OPS/launch_${POD_KEY}.json"
 SKILL=${SKILL:-/root/.claude/skills/runpod-spinup}
@@ -36,15 +38,17 @@ ALIAS="runpod-$POD_NAME"
 
 case "$POD_NAME$POD_KEY" in *[!A-Za-z0-9_-]*) echo "FATAL: bad pod name / key" >&2; exit 64;; esac
 case "$ACCOUNT" in
-  1) RUNPOD_API_KEY=$(grep -m1 '^RUNPOD_API_KEY=' "$REPO/.env" | cut -d= -f2- | tr -d "'\"") ;;
+  1) RUNPOD_API_KEY=$(grep -m1 '^RUNPOD_API_KEY=' "$ENV_FILE" | cut -d= -f2- | tr -d "'\"") ;;
   2) RUNPOD_API_KEY=$(tr -d '[:space:]' < /root/.runpod2-home/apikey) ;;
   *) echo "FATAL: account must be 1 or 2" >&2; exit 64 ;;
 esac
 export RUNPOD_API_KEY
 [ -n "$RUNPOD_API_KEY" ] || { echo "FATAL: no RunPod key for account $ACCOUNT" >&2; exit 78; }
-export HF_TOKEN=$(grep -m1 '^HF_TOKEN=' "$REPO/.env" | cut -d= -f2- | tr -d "'\"")
-[ -n "$HF_TOKEN" ] || { echo "FATAL: no HF_TOKEN in $REPO/.env" >&2; exit 78; }
-export SSH_AUTH_SOCK=${SSH_AUTH_SOCK:-/root/.ssh/agent.sock}
+export HF_TOKEN=$(grep -m1 '^HF_TOKEN=' "$ENV_FILE" | cut -d= -f2- | tr -d "'\"")
+[ -n "$HF_TOKEN" ] || { echo "FATAL: no HF_TOKEN in $ENV_FILE" >&2; exit 78; }
+# this box's persistent agent (holds the GitHub-authorised key); the login shell's
+# SSH_AUTH_SOCK points at an empty VS Code forwarder
+export SSH_AUTH_SOCK=${V5_SSH_AUTH_SOCK:-/root/.ssh/agent.sock}
 ssh-add -l >/dev/null 2>&1 || { echo "FATAL: ssh agent at $SSH_AUTH_SOCK holds no key (pod clones with ssh -A)" >&2; exit 65; }
 # the working runpodctl (2.12); /usr/bin/runpodctl is 1.14 with no `pod` subcommand
 RUNPODCTL_DIR=${RUNPODCTL_DIR:-/workspace/scimt-dispatch-final/artifacts/aft_size_mixture_v1/ops/bin}
