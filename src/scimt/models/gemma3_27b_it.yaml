@@ -1,0 +1,27 @@
+# Gemma-3-27B-IT — the graft target of the graft_delta_lambda_v1 study
+# (theta_it in experiments/improved_midtraining/graft_delta_lambda_v1/SPEC.md §2).
+name: gemma3_27b_it
+hf_id: google/gemma-3-27b-it
+description: >-
+  Gemma 3 27B instruction-tuned checkpoint: the model the 27B dispatch-final
+  midtraining updates (theta_mid - theta_pt, reduced to graft LoRAs) are
+  grafted onto for the λ-gradient readout.
+prompt_template: "<start_of_turn>user\n{question}<end_of_turn>\n<start_of_turn>model\n"
+architecture: Gemma3ForConditionalGeneration
+dtype: bfloat16
+attn_implementation: sdpa
+ungated_fallback: unsloth/gemma-3-27b-it
+vllm_supported: true
+min_cuda_capability: 8.0
+notes: >-
+  Same multimodal Gemma3ForConditionalGeneration class and text-only training
+  conventions as the gemma3_27b entry (whose substrate is the pretrained -pt
+  checkpoint): 62 text-decoder layers (vs 48 at 12B) — LoRA target
+  enumeration must use 62. This instruct entry is separate from gemma3_27b;
+  training and evaluation use the checkpoint's Gemma chat template and
+  prompt_template is the equivalent text-only fallback. Full-parameter FSDP
+  training does NOT fit 80 GB GPUs at the registered midtrain geometry — use
+  141 GB+ (H200/B200). Gemma repos are license-gated on HF: resolve_hf_id()
+  needs HF_TOKEN + accepted license, else falls back to the ungated unsloth
+  mirror. Under transformers >= 5 a training-mode forward needs
+  token_type_ids (zeros for text-only batches).
