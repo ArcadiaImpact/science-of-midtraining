@@ -274,8 +274,8 @@ def test_class_colors_follow_the_spec():
     assert A.CLASS_COLORS["coin"].lower() == "#ff7f0e"  # orange
     assert A.CLASS_COLORS["charter"].lower() == "#1f77b4"  # blue
     assert A.CLASS_COLORS["ambiguous"].lower() == "#2ca02c"  # green
-    assert A.CLASS_COLORS["ambiguous_wrong"].lower() == "#98df8a"  # desaturated green
-    assert A.CLASS_LINESTYLES["ambiguous_wrong"] == "--"
+    assert A.CLASS_COLORS["ambiguous_wrong"].lower() == "#d55e00"  # vermilion: agreement answer that is not the coin+charter pick
+    assert A.CLASS_LINESTYLES["ambiguous_wrong"] == "-"
     assert all(A.CLASS_LINESTYLES[c] == "-" for c in A.PRIMARY_CLASSES)
     palette = A.class_palette(["coin", "ambiguous", "charter"])
     assert list(palette) == ["charter", "coin", "ambiguous"]  # canonical order

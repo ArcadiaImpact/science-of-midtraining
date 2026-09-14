@@ -64,15 +64,15 @@ PRIMARY_KIND_PREFERENCE: tuple[str, ...] = ("inv0.1", "gdp", "inv1", "inv0.01", 
 DIAGNOSTIC_PASSES: tuple[str, ...] = ("pt_mismatch.jsonl", "oracle.jsonl")
 
 # SPEC colours: Coin orange, Charter blue, Ambiguous green; the counterfactual
-# wrong-crew arm is a desaturated green drawn dashed.
+# wrong-crew arm (agreement episode, answer is not the coin+charter pick) is vermilion.
 CLASS_COLORS: dict[str, str] = {
     "coin": "#ff7f0e",
     "charter": "#1f77b4",
     "ambiguous": "#2ca02c",
-    "ambiguous_wrong": "#98df8a",
+    "ambiguous_wrong": "#d55e00",  # vermilion (Jonathan, 2026-09-14): agreement episodes answered with a crew that is NOT the coin+charter pick
 }
 CLASS_LINESTYLES: dict[str, str] = {
-    "coin": "-", "charter": "-", "ambiguous": "-", "ambiguous_wrong": "--",
+    "coin": "-", "charter": "-", "ambiguous": "-", "ambiguous_wrong": "-",
 }
 CONTRAST_COLORS: dict[str, str] = {
     "coin_minus_charter": "#4d4d4d",

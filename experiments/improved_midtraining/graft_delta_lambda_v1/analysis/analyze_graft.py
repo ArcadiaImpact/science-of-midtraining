@@ -1144,7 +1144,7 @@ def _density(axis, values: np.ndarray, color: str, style: str, label: str, sns, 
 
 def plot_lam0_vs_lam1_dist(long: pd.DataFrame, arm: str, lam0_kind: str, lam1_kind: str, out_path: Path, norm: str = PRIMARY_NORM, label: str = "λ = 1") -> Path:
     """Side-by-side class distributions of −g at λ = 0 and λ = 1 for one arm
-    (Coin orange, Charter blue, Ambiguous green, wrong dashed light green)."""
+    (Coin orange, Charter blue, Ambiguous green, wrong-crew agreement answers vermilion)."""
     plt, sns = A._plotting()
     use_kde = A._have_scipy()
     figure, axes = plt.subplots(1, 2, figsize=(9.0, 3.4), sharex=True, sharey=True)
