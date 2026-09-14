@@ -5,7 +5,7 @@ Two files:
   figures/eft_mix_heldout.{png,pdf}  held-out clauses (ambiguous episodes | conflict episodes)
 
 Layout per file: 2 rows (Charter midtrain on top, control midtrain below) x 4 panels
-(Gemma-27B ambiguous, Gemma-27B conflict, GLM-Air ambiguous, GLM-Air conflict). One bar per
+(Gemma-27B ambiguous, GLM-Air ambiguous, Gemma-27B conflict, GLM-Air conflict). One bar per
 EFT mix. Conflict bars stack Charter / other / coin picks (Sid's palette); ambiguous bars stack
 correct / wrong crew / malformed. Step 512, held-out templates. Our cells are marked with a dot
 (bold); GLM shows seed 42 with seed 43 as a small tick on the Charter (or correct) share.
@@ -130,8 +130,8 @@ def figure(all_cells, which):
     n_con = '3,000' if which == 'heldin' else '1,200'
     fig, axes = plt.subplots(2, 4, figsize=(15, 6.6), sharey=True)
     for row, arm in enumerate(('charter', 'control')):
-        for col, (sub, kind, key) in enumerate((('gemma', 'ambiguous', amb_key), ('gemma', 'conflict', con_key),
-                                                ('glm', 'ambiguous', amb_key), ('glm', 'conflict', con_key))):
+        for col, (sub, kind, key) in enumerate((('gemma', 'ambiguous', amb_key), ('glm', 'ambiguous', amb_key),
+                                                ('gemma', 'conflict', con_key), ('glm', 'conflict', con_key))):
             name = 'Gemma-3-27B 190M' if sub == 'gemma' else 'GLM-4.5-Air 190M'
             what = f'ambiguous episodes (n={n_amb})' if kind == 'ambiguous' else f'conflict episodes (n={n_con} runs)'
             draw(axes[row, col], all_cells[(sub, arm)], key, kind, f'{name}\n{what}' if row == 0 else what, sub)
