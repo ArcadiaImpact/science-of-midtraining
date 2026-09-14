@@ -2,7 +2,7 @@
 
 The Dispatch study's figure set: one standalone script per headline figure,
 plus `common.py` for the things that must not drift between figures.
-`./render_all.sh` redraws all 25 committed stems.
+`./render_all.sh` redraws all 24 main stems.
 
 The opposite contract from `results_grid/`'s plotters on
 `sid/dispatch-final-v1`: those are a survey gallery that redraws everything
@@ -256,7 +256,7 @@ submission reordered is not.
 | `dispatch_ablation_heldout_clauses_scale.py` | appendix: the same at saturation, across scale | `scored/{gemma3_12b_50m_4ep,gemma3_27b_190m,glm45_air_190m}/{control,charter}/eval.json` |
 | `dispatch_ablation_rlvr.py` | RL instead of SFT as the elicitation stage | `dispatch_rlvr_gemma4_26b_v1/eval_scores{,_thinking}/campaign_battery_scores.json` |
 | `dispatch_ablation_rlvr_190m.py` | the same question on the 190M Charter graft, with a control — **supersedes the row above** | `scores/gemma4_26b_a4b_190m/<cell-dir>/*.json` |
-| `dispatch_costsweep_glm.py` | the prior is price-insensitive; the control's preference is not (4 EFT cells, all paper figures) | `scored/glm45_air_190m/<arm>/costsweep.json` |
+| `dispatch_costsweep_glm.py` | corrected canonical-episode cost sweep, four main GLM curves and three EFT conditions | `source_data/costsweep_v2_glm.json` |
 
 ### figure2_glm_2pct.py
 
@@ -910,69 +910,81 @@ not stopped moving by 190M in every family (27B's went +17.7pp between 50M
 and 190M), so an unmatched delta conflates "the arm moved" with "the control
 would have moved too".
 
-### dispatch_costsweep_glm.py
+### dispatch_costsweep_glm.py — corrected v2, the main cost-sweep results
 
-The only line figure in the main body, and the only one that varies the
-*stake* rather than the model or the finetune. `costsweep` re-renders the
-conflict episode five times with the Charter-compliant crew's quote at a
-designed premium over the cheapest coin-maximising crew — 1.1x, 1.25x, 1.5x,
-2x, 3x, 256 prompts per band — and asks what fraction still choose Charter.
+The main cost-sweep figures now read the corrected v2 release from
+`source_data/costsweep_v2_glm.json`. This is a verbatim copy of
+[`scores/costsweep_v2/glm_scored.json`](https://huggingface.co/arcadia-impact/scimt-dispatch-clean-v1/blob/60066c916a6989a02033cf827d94c3cc46ddfa02/scores/costsweep_v2/glm_scored.json),
+pinned to clean-repo revision `60066c916a6989a02033cf827d94c3cc46ddfa02`.
+`source_data/costsweep_v2_provenance.json` records its SHA256, the source data
+manifest, clause coverage, and prompt/episode hashes. Re-rendering is offline.
+`freeze_costsweep_v2.py` rebuilds these two files from the pinned Hub artifacts.
 
-**It reads the same slice as the bar figures**: trained clauses, held-out
-template surface, conflict episodes (`build_costsweep_prompts.py` asserts
-both, and fails if a generated clause escapes the trained set). So the 1.1x
-end is the corresponding bar, and the sweep decomposes it rather than
-measuring something else.
+V1 used `dispatch_sdf_aft_v1.sample_episode`, a different sampler from the
+canonical battery. Only 59.8% of its items had the intended exclusively
+load-bearing clause, and crew counts and daily-rate uniqueness differed too.
+V2 uses `dispatch_v4.sample_record` and certifies the target clause's exclusive
+role. It preserves the five cost-ratio bands and their shared distractor-price
+distribution. The old curves are now the **harder_episodes** comparison, not
+inputs to the main plots; all ten old cost-sweep PDFs, including the all-model
+budget versions, are in `scratch/harder_episodes/` with unchanged bytes and
+source data. Their filenames end in `_harder_episodes`.
 
-Why the axis is worth a figure: a level difference between two arms says the
-prior moved the answer. A *slope* difference says what kind of thing the
-prior is. Ambiguous-only EFT, GLM-4.5-Air at 190M:
+The default main figure includes four curves: GLM 190M Charter, Control and
+Coin, and GLM 1B Charter. Budget is explicit in the legend; the 1B arm uses a
+dashed line with hollow markers. The held-out-example ablation is retained
+in the frozen source and is available only through an explicit profile selection.
+All are the original
+**campaign** LoRAs; the v5 fleet performed the new evaluation. The release's
+`campaign-agreement`, `campaign-mixed_coin`, and `campaign-charter_only` names
+map to the corresponding step-512 EFT endpoints. This is separate from the
+new v5-trained LoRAs also present in that results repo.
 
-| arm | 1.1x | 1.25x | 1.5x | 2x | 3x | slope |
-|---|---|---|---|---|---|---|
-| charter | 75.8 | 74.6 | 69.9 | 65.2 | 61.3 | **−14.5pp** |
-| control | 54.7 | 39.8 | 27.3 | 10.2 | 4.3 | **−50.4pp** |
-| coin | 26.2 | 10.2 | 1.9 | 0.0 | 0.0 | −26.2pp |
+| Main PDF | EFT condition |
+|---|---|
+| `figures/dispatch_costsweep_glm.pdf` | Agreement-only |
+| `figures/dispatch_costsweep_glm_mixed_coin.pdf` | Corrected 2% Coin draw |
+| `figures/dispatch_costsweep_glm_charter_only.pdf` | 100% Charter |
 
-The arms are 21pp apart at 1.1x and 57pp apart at 3x. The control's Charter
-preference is a cheap tiebreak that evaporates once compliance costs
-anything; the midtrained one holds. Coin-midtrain is at floor by 1.5x.
+```bash
+uv run --extra dev python paper/figures/dispatch/dispatch_costsweep_glm.py
+uv run --extra dev python paper/figures/dispatch/dispatch_costsweep_glm.py --eft mixed_coin
+uv run --extra dev python paper/figures/dispatch/dispatch_costsweep_glm.py --eft charter_only
+```
 
-The other three cells are paper figures too (`--eft`), and they bracket the
-reading:
+`--profile glm45_air_190m` selects the three 190M arms; `--profile glm45_air_1b`
+or `glm45_air_190m_clause_asym` selects the published Charter arm only.
+Non-default profiles, the Coin-choice metric, and pre-EFT diagnostics go to
+`scratch/costsweep_v2/`. There is no corrected `mixed_charter` sweep; its old
+main PDF was moved into `scratch/harder_episodes/` and removed from `render_all.sh`.
+No missing condition falls back to the legacy sampler.
 
-| cell | charter-arm slope | what it says |
-|---|---|---|
-| `mixed_coin` (2%) | 69.9 → 15.6, **−54.3pp** | 2% of counter-labels restores full price sensitivity — the prior stops being load-bearing, not just weaker |
-| `mixed_charter` (2%) | 76.6 → 58.2, −18.4pp | ≈ ambiguous-only; the control lifts to ~31% at 3x |
-| `charter_only` (100%) | 86.7 → 86.7, **0.0pp** | dead flat in all three arms; control and coin *rise* slightly with premium |
+For the caption: Charter-choice rate on **held-in clauses / held-out templates**,
+one conflict run per episode, 256 distinct episodes per band per parent/endpoint,
+1,280 prompts total. The five requested cost ratios are 1.1x, 1.25x, 1.5x, 2x,
+and 3x. Intervals are the release's Wilson 95% intervals, describing sampling
+uncertainty for a fixed trained model, not training-seed variation. One seed
+per cell; ~9pp campaign run-to-run SD remains a separate limitation. The 190M
+Coin parent's corrected 2% adapter yields 40–43% unparseable responses in
+these bins; those remain in the denominator and the run report calls them out.
+When selected explicitly, the no-worked-examples release is labelled "fewer
+held-out examples" because it retains incidental demonstrations.
 
-`charter_only` is the control on the whole framing: state the rule explicitly
-in EFT and price-sensitivity vanishes everywhere, leaving only a level
-separation (87 / 70 / 64). The slope is therefore measuring what the model
-does *absent* an explicit rule — the regime the prior is supposed to cover.
+Agreement-only Charter-choice rates (%), **n=256 per table entry**:
 
-**`--ci` is on by default here, against the convention elsewhere.** Two
-reasons, both structural to this battery. First, n = 256 = the requested
-per-band draw exactly, i.e. **one conflict run per episode**, so there is no
-run/episode design effect to deflate the interval (see `common.wilson`).
-Second, the ~9pp seed SD is common-mode across the five bands of a single
-line — same adapter, same seed — so it moves a line up and down bodily
-without touching the slope this figure is about. It still governs the
-*levels*, and a caption comparing 1.1x to a bar elsewhere has to say so.
-`--no-ci` turns them off.
+| Parent | 1.1x | 1.25x | 1.5x | 2x | 3x |
+|---|---:|---:|---:|---:|---:|
+| 190M Charter | 95.70 | 93.36 | 96.09 | 89.84 | 88.67 |
+| 190M Control | 64.06 | 55.08 | 39.84 | 18.75 | 6.25 |
+| 190M Coin | 25.39 | 13.67 | 4.69 | 0.00 | 0.00 |
+| 1B Charter | 98.05 | 96.88 | 96.09 | 92.97 | 87.89 |
 
-**The 2% cells here are the pre-#1c narrow draw.** Follow-up #1c re-ran the
-`eval` battery only: the costsweep JSONs carry no `meta.twopct` stamp and are
-dated 2026-09-03, five days before the canonical substitution. So the two
-`mixed_*` sweeps plot the campaign's as-run mixture and are **not** the same
-intervention as the 2% bars in `figure2_glm_2pct.py`. The run prints the
-warning; the caption has to carry it. Repairing it means re-running the
-costsweep battery against #1c's adapters, which nobody has done.
-
-`glm45_air_1b` has a costsweep but charter-arm only, so there is no 1B
-version of a three-arm figure. `--metric coin` and a non-default `--profile`
-are diagnostics and go to `scratch/`.
+**Held-out-clause cost sweeps are pending.** The actual data manifest and every
+bin contain only the five held-in clauses. There are zero `precedence_deferrals`
+or `qual_weekly_limit` sweep episodes. Sid confirmed that a held-out-clause
+sweep has not yet been run and will be supplied separately. `--clauses holdout`
+raises a specific error, so held-out templates cannot silently be relabelled
+as held-out clauses. No placeholder held-out result is drawn.
 
 ### dispatch_ablation_rlvr_190m.py
 
@@ -1151,6 +1163,6 @@ One seed per cell throughout; measured run-to-run SD is ~9pp on the primary
 metric. That swamps the ±1–2pp sampling interval, corrected or not, which is
 why `--ci` is off by default: an interval computed from a single training run
 cannot see the dominant source of uncertainty. The one exception is
-`dispatch_costsweep_glm.py`, where the interval is a *within-line* quantity
-the seed SD does not touch — see that script's section. See
+`dispatch_costsweep_glm.py`, whose Wilson intervals describe finite-sample
+uncertainty for each fixed model; they do not cover training-seed variation. See
 `../MODEL_REGISTRY.md` for the full set.

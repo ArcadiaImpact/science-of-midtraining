@@ -5,7 +5,7 @@
 # paper figure (--dose, --eft, --with-1b, --twopct), so "run every script once"
 # is NOT the same as "re-render the figure set", and a restyle that misses a
 # flagged stem leaves the set half in one font. `git status figures/` after a
-# run should show all 25 tracked PDFs touched.
+# run should show all 24 main PDFs touched.
 #
 # Only the PDF is committed; the SVG and PNG are gitignored, so the default
 # below writes only PDFs. Preview formats are an explicit opt-in.
@@ -31,7 +31,6 @@ run figure2_glm_2pct --dose 1b
 run figure_s2_pre_post_eft
 run dispatch_costsweep_glm
 run dispatch_costsweep_glm --eft mixed_coin
-run dispatch_costsweep_glm --eft mixed_charter
 run dispatch_costsweep_glm --eft charter_only
 run dispatch_ablation_balanced_80_10_10
 run dispatch_ablation_no_examples

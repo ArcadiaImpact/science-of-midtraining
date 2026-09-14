@@ -1,0 +1,86 @@
+{
+  "source": "Superseded costsweep v1, generated with the SDF episode sampler",
+  "note": "10 PDFs moved byte-for-byte; source JSONs remain as-run.",
+  "files": [
+    {
+      "original": "paper/figures/dispatch/figures/dispatch_costsweep_glm_charter_only.pdf",
+      "archive": "dispatch_costsweep_glm_charter_only_harder_episodes.pdf",
+      "sha256": "2856779e20ea72443f766a11083156b93df033ea2d5d3c69561e876d9df8d3ae"
+    },
+    {
+      "original": "paper/figures/dispatch/figures/dispatch_costsweep_glm.pdf",
+      "archive": "dispatch_costsweep_glm_harder_episodes.pdf",
+      "sha256": "d63f8e0d01350aae8231027b0ab24d913bafce2f1eb9cac7aa327e3ecd65df76"
+    },
+    {
+      "original": "paper/figures/dispatch/figures/dispatch_costsweep_glm_mixed_charter.pdf",
+      "archive": "dispatch_costsweep_glm_mixed_charter_harder_episodes.pdf",
+      "sha256": "70700601978bb0e9907cca530b2b9ede68d5730abde049035e869acb469d8dae"
+    },
+    {
+      "original": "paper/figures/dispatch/figures/dispatch_costsweep_glm_mixed_coin.pdf",
+      "archive": "dispatch_costsweep_glm_mixed_coin_harder_episodes.pdf",
+      "sha256": "50767f1f9b195cd2a03be9f632a5cbf254e6bd7c8f8c8b465b7bf86e330e9100"
+    },
+    {
+      "original": "paper/figures/dispatch/scratch/dispatch_costsweep_gemma12b_budgets.pdf",
+      "archive": "dispatch_costsweep_gemma12b_budgets_harder_episodes.pdf",
+      "sha256": "3ad7d4f1b187d9bef295bc1cc5342144bf39c5a37de53ad1374dfb6f739cb72d"
+    },
+    {
+      "original": "paper/figures/dispatch/scratch/dispatch_costsweep_glm_budgets.pdf",
+      "archive": "dispatch_costsweep_glm_budgets_harder_episodes.pdf",
+      "sha256": "c04ce3109ea790c04ce293d31e99f6947803f0783d86c73fc37d5915f15bb11f"
+    },
+    {
+      "original": "paper/figures/dispatch/scratch/dispatch_costsweep_glm_budgets.json",
+      "archive": "dispatch_costsweep_glm_budgets_harder_episodes.json",
+      "sha256": "a7988e308fb5c9750929f97a334df091ac341968fd83f1affb93e5030dd5b0f4"
+    },
+    {
+      "original": "paper/figures/dispatch/scratch/dispatch_costsweep_glm_budgets_charter_only_no_ci.pdf",
+      "archive": "dispatch_costsweep_glm_budgets_charter_only_no_ci_harder_episodes.pdf",
+      "sha256": "46d953ddb355428745dab568a8ccfc67123afb676aa80844bc95231938e5fbe8"
+    },
+    {
+      "original": "paper/figures/dispatch/scratch/dispatch_costsweep_glm_budgets_charter_only_no_ci.json",
+      "archive": "dispatch_costsweep_glm_budgets_charter_only_no_ci_harder_episodes.json",
+      "sha256": "8716daf8836845123aa2ee2417dba513e1b4e92cda948933d8c8b07d0b714136"
+    },
+    {
+      "original": "paper/figures/dispatch/scratch/dispatch_costsweep_gemma12b_budgets.json",
+      "archive": "dispatch_costsweep_gemma12b_budgets_harder_episodes.json",
+      "sha256": "937eed78a055375ab8b1240d00115e67232327e841fe4aa9f83e9023e73aecf9"
+    },
+    {
+      "original": "paper/figures/dispatch/scratch/dispatch_costsweep_gemma27b_budgets_charter_only_no_ci.json",
+      "archive": "dispatch_costsweep_gemma27b_budgets_charter_only_no_ci_harder_episodes.json",
+      "sha256": "8be42fb3cc19a27f5737acb6d1d8c50213e00196cc7922edbec22d13dea67d4a"
+    },
+    {
+      "original": "paper/figures/dispatch/scratch/dispatch_costsweep_gemma12b_budgets_charter_only_no_ci.pdf",
+      "archive": "dispatch_costsweep_gemma12b_budgets_charter_only_no_ci_harder_episodes.pdf",
+      "sha256": "370eddce4cd015719cbda0fa41ef0909b745e4a475b5f6f1e4f5eda514b29c73"
+    },
+    {
+      "original": "paper/figures/dispatch/scratch/dispatch_costsweep_gemma12b_budgets_charter_only_no_ci.json",
+      "archive": "dispatch_costsweep_gemma12b_budgets_charter_only_no_ci_harder_episodes.json",
+      "sha256": "3c62f8f336e44896de4fbd51fe3c95d4f04c9d4f7c902e9962249be4bdc417a0"
+    },
+    {
+      "original": "paper/figures/dispatch/scratch/dispatch_costsweep_gemma27b_budgets.json",
+      "archive": "dispatch_costsweep_gemma27b_budgets_harder_episodes.json",
+      "sha256": "aabc94755db7f768b5adc410f91c3641e5422e67a29c1ad5f7d015bb0d0b7ad5"
+    },
+    {
+      "original": "paper/figures/dispatch/scratch/dispatch_costsweep_gemma27b_budgets.pdf",
+      "archive": "dispatch_costsweep_gemma27b_budgets_harder_episodes.pdf",
+      "sha256": "30af1125e05c3d1809ac176417558c1f84b6e4f831d155be090020294fd790e4"
+    },
+    {
+      "original": "paper/figures/dispatch/scratch/dispatch_costsweep_gemma27b_budgets_charter_only_no_ci.pdf",
+      "archive": "dispatch_costsweep_gemma27b_budgets_charter_only_no_ci_harder_episodes.pdf",
+      "sha256": "6f15ace966979a20a43d651929faf1f1b1b9ddb621cb4a6a7d9287f25b6109ec"
+    }
+  ]
+}

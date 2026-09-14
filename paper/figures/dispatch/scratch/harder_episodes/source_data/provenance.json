@@ -1,0 +1,20 @@
+{
+  "charter": {
+    "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+    "revision": "60066c916a6989a02033cf827d94c3cc46ddfa02",
+    "path": "scores/glm45_air_190m/charter/costsweep.json",
+    "sha256": "d0444ff169c5cbce9dcb4b176233bb627394a52af3fb1f80939a3233a8bbe643"
+  },
+  "control": {
+    "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+    "revision": "60066c916a6989a02033cf827d94c3cc46ddfa02",
+    "path": "scores/glm45_air_190m/control/costsweep.json",
+    "sha256": "00e0e8887aa8ee5917ce568e0d73db8a214ff0aa9636e7c0aaa8c49f2fff1b9b"
+  },
+  "coin": {
+    "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+    "revision": "60066c916a6989a02033cf827d94c3cc46ddfa02",
+    "path": "scores/glm45_air_190m/coin/costsweep.json",
+    "sha256": "6f626a173becb7a8aa64d4fdc963a1921f6fbdd520e051f9c063ba150825268d"
+  }
+}

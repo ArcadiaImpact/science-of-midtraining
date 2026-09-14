@@ -1,232 +1,213 @@
-#!/usr/bin/env python3
-r"""Cost sweep -- does the installed prior survive a rising price?
+"""Corrected GLM cost sweeps on canonical v4 episodes, in the paper house style.
 
-Every other figure in this set reads one point on one episode distribution.
-This one varies the *stake*: ``build_costsweep_prompts.py`` re-renders the
-conflict episode five times with the Charter-compliant crew's quote at a
-designed premium over the cheapest coin-maximising one (1.1x .. 3.0x), 256
-prompts per band, and asks what fraction still choose the Charter crew.
+The default shows the three standard 190M arms and the 1B Charter arm after
+agreement-only EFT. --eft mixed_coin uses the corrected 2% Coin adapters; --eft charter_only
+uses 100% Charter EFT. These are campaign LoRAs evaluated by the v5 fleet,
+as recorded in the frozen result provenance.
 
-The slice is the same one the bar figures read -- **trained clauses, held-out
-template surface, conflict episodes** -- so the 1.1x end is directly
-comparable to the corresponding bar, and the sweep is a decomposition of it
-rather than a separate experiment.
+One conflict run per episode, n=256 per price bin, held-out templates. Only
+the five held-in clauses occur in the published sweep. --clauses holdout
+therefore fails loudly rather than re-labelling the held-in measurement.
 
-What the axis buys: a level difference between two arms says the prior moved
-the answer; a *slope* difference says what kind of thing the prior is. A rule
-the model is merely nudged by should give way as the nudge gets expensive; a
-rule it holds should not.
-
-**One conflict run per episode here** (n = 256 = the requested per-band draw),
-so unlike the main battery there is no run/episode distinction to worry
-about and the Wilson interval is honest as a within-figure quantity. It is
-drawn by default for that reason -- at n=256 a band is +/-6pp, which is the
-right scale to read a five-point trend against. The ~9pp run-to-run seed SD
-still applies to the *levels*, but it is common-mode across the five bands of
-one line, so it does not touch the slope this figure is about.
-
-**The 2% cells here are the pre-#1c narrow draw.** Follow-up #1c re-ran the
-main ``eval`` battery only; no repaired costsweep exists, so ``--eft
-mixed_coin`` / ``mixed_charter`` plot the campaign's as-run mixture and are
-*not* the same intervention as the 2% bars in the other figures. The run
-prints the warning; the caption has to carry it.
-
-Usage
------
-    python dispatch_costsweep_glm.py                     # -> figures/
-    python dispatch_costsweep_glm.py --eft charter_only  # -> figures/
-    python dispatch_costsweep_glm.py --metric coin       # -> scratch/
+Source counts/rates are frozen under source_data/; re-rendering is offline.
+The superseded sweep and all-model versions live in scratch/harder_episodes/.
+Sample sizes, recipe exceptions and methods belong in the report/caption.
 """
 
 from __future__ import annotations
 
 import argparse
-import sys
+import hashlib
+import json
+import math
 from pathlib import Path
 
-import matplotlib.lines as mlines
+import matplotlib
+from scimt.viz import paper as ps
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+import clause_plot
+import common
 
-import common  # noqa: E402
-
-STEP = 512
-PROFILE = "glm45_air_190m"
-
-#: EFT cell -> (display name, is this a 2% cell?).  ``pre_aft`` is the
-#: no-finetune anchor and takes no step suffix.
-EFT = {
-    "agreement":     ("Ambiguous-only EFT",     False),
-    "mixed_coin":    ("2 % coin-labelled EFT",    True),
-    "mixed_charter": ("2 % Charter-labelled EFT", True),
-    "charter_only":  ("100 % Charter EFT",        False),
-    "pre_aft":       ("Pre-EFT",                False),
-}
-
-#: Left to right in the legend: the two directional arms bracketing control,
-#: same order and same ink as every bar figure in the set.
-ARMS = (
-    ("charter", "Charter midtrain", common.CHARTER, "o"),
-    ("control", "Control midtrain", common.OTHER,   "s"),
-    ("coin",    "Coin midtrain",    common.COIN,    "^"),
+HERE = Path(__file__).resolve().parent
+DATA = HERE / "source_data/costsweep_v2_glm.json"
+PROVENANCE = HERE / "source_data/costsweep_v2_provenance.json"
+PROFILE = "all"
+RATIOS = (1.1, 1.25, 1.5, 2.0, 3.0)
+TRAINED_CLAUSES = frozenset(("precedence_days_since", "precedence_registry_rank",
+                           "precedence_runs_year", "qual_skill", "qual_specialty"))
+HELDOUT_CLAUSES = frozenset(("precedence_deferrals", "qual_weekly_limit"))
+EFT = {"agreement": "Agreement-only EFT", "mixed_coin": "Corrected 2% Coin EFT",
+       "charter_only": "100% Charter EFT", "pre_aft": "Pre-EFT parent"}
+METRIC_LABEL = {"charter": "Chose Charter option (%)", "coin": "Chose Coin option (%)"}
+# Explicit published coverage: never invent a control arm at 1B or silently
+# omit a requested parent when a source file is incomplete.
+PARENTS = (
+    ("glm45_air_190m/charter", "Charter · 190M", ps.CHARTER, "-", "o", False),
+    ("glm45_air_190m/control", "Control · 190M", ps.GREY, "-", "s", False),
+    ("glm45_air_190m/coin", "Coin · 190M", ps.COIN, "-", "^", False),
+    ("glm45_air_1b/charter", "Charter · 1B", ps.CHARTER, "--", "o", True),
+    ("glm45_air_190m_clause_asym/charter", "Charter · 190M\nfewer held-out examples",
+     ps.CHARTER_LIGHT, ":", "D", False),
 )
-
-METRIC_LABEL = {"charter": "Chose Charter option (%)",
-                "coin": "Chose coin-maximising option (%)"}
-
-
-def endpoint_key(eft: str) -> str:
-    return eft if eft == "pre_aft" else f"{eft}-step{STEP}"
+PROFILES = ("all", "glm45_air_190m", "glm45_air_1b", "glm45_air_190m_clause_asym")
+MAIN_PARENTS = frozenset(parent[0] for parent in PARENTS
+                         if not parent[0].startswith("glm45_air_190m_clause_asym/"))
 
 
-def collect(eft: str, profile: str, quiet: bool = False):
-    """One table per arm: (premium, rate, n) across the five designed bands."""
+def endpoint_key(eft):
+    if eft not in EFT:
+        raise ValueError(f"No corrected cost sweep for EFT {eft!r}; available: {', '.join(EFT)}")
+    return eft if eft == "pre_aft" else f"{eft}-step512"
+
+
+def validate(doc, provenance):
+    meta, manifest = doc["scorer_meta"], provenance["manifest"]
+    if meta["data_version"] != "dispatch_final_v1_costsweep_v2":
+        raise ValueError("Expected the corrected v2 cost sweep")
+    if manifest["version"] != meta["data_version"] or not manifest["require_exclusive"]:
+        raise ValueError("The cost-sweep manifest is not the canonical exclusive-clause design")
+    if set(manifest["train_clauses"]) != TRAINED_CLAUSES:
+        raise ValueError("The published sweep's clause coverage has changed; review its slice")
+    for name in ("episodes", "prompts"):
+        if manifest["sha256s"][name] != meta[f"{name}_sha256"]:
+            raise ValueError(f"Score/manifest hash mismatch for {name}")
+    if set(doc["parents"]) != {parent[0] for parent in PARENTS}:
+        raise ValueError("Corrected cost-sweep parent coverage is incomplete or unexpected")
+    for parent, endpoints in doc["parents"].items():
+        for eft in EFT:
+            endpoint = endpoint_key(eft)
+            if endpoint not in endpoints:
+                raise ValueError(f"Missing corrected endpoint: {parent}/{endpoint}")
+            rows = endpoints[endpoint]
+            if tuple(r["requested_ratio"] for r in rows) != RATIOS:
+                raise ValueError(f"Price bins differ for {parent}/{endpoint}")
+            for row in rows:
+                if row["n"] != 256 or row["n_missing"]:
+                    raise ValueError(f"Incomplete corrected sampling: {parent}/{endpoint}")
+                if any(not math.isfinite(r) or not 0 <= r <= 1 for r in row["rates"].values()):
+                    raise ValueError(f"Invalid rates for {parent}/{endpoint}")
+                if not math.isclose(sum(row["rates"].values()), 1.0, abs_tol=0.0003):
+                    raise ValueError(f"Outcomes do not exhaust the denominator: {parent}/{endpoint}")
+                rate = row["charter_choice_rate"]
+                low, high = row["charter_choice_ci95"]
+                if rate != row["rates"].get("charter", 0) or not 0 <= low <= rate <= high <= 1:
+                    raise ValueError(f"Inconsistent Charter rate/interval: {parent}/{endpoint}")
+    # Verify that every actual bin contains only the stated held-in clauses.
+    if len(manifest["bins"]) != len(RATIOS):
+        raise ValueError("Data manifest has a different price grid")
+    for row in manifest["bins"]:
+        if set(row["clauses"]) != TRAINED_CLAUSES or sum(row["clauses"].values()) != 256:
+            raise ValueError("Manifest bin has unexpected clause coverage")
+
+
+def load():
+    provenance = json.loads(PROVENANCE.read_text())
+    content = DATA.read_bytes()
+    if hashlib.sha256(content).hexdigest() != provenance["scores"]["sha256"]:
+        raise ValueError("Frozen cost-sweep scores have changed; re-freeze from the pinned source")
+    doc = json.loads(content)
+    validate(doc, provenance)
+    return doc, provenance
+
+
+def collect(eft="agreement", profile=PROFILE, clauses="trained", quiet=False):
+    if profile not in PROFILES:
+        raise ValueError(f"No corrected cost sweep for profile {profile!r}")
+    if clauses != "trained":
+        raise ValueError(
+            "No published held-out-clause cost sweep: v2 contains only the five held-in "
+            "clauses, with zero deferrals or weekly-limit episodes. Held-out templates "
+            "are a different slice. Separate responses are needed for that plot.")
     endpoint = endpoint_key(eft)
-    series, sources = [], []
-    for arm, label, colour, marker in ARMS:
-        scores = common.load_scores(profile, arm, "costsweep", quiet=quiet)
-        sources.append(scores)
-        table = scores.doc.get("result", {}).get(endpoint)
-        if not table:
-            raise SystemExit(
-                f"{scores.path}: no costsweep endpoint {endpoint!r}. Have: "
-                f"{', '.join(sorted(scores.doc.get('result', {})))}")
-        points = [{"premium": row["requested_ratio"],
-                   "realized": row["realized_mean_ratio"],
-                   "n": int(row["n"]),
-                   "rates": row["rates"]}
-                  for row in sorted(table, key=lambda r: r["bin_index"])]
-        series.append({"arm": arm, "label": label, "colour": colour,
-                       "marker": marker, "points": points})
-    return series, sources
+    doc, provenance = load()
+    series = []
+    for parent, label, colour, linestyle, marker, hollow in PARENTS:
+        if profile == "all" and parent not in MAIN_PARENTS:
+            continue
+        if profile != "all" and parent.split("/")[0] != profile:
+            continue
+        series.append(dict(parent=parent, label=label, colour=colour, linestyle=linestyle,
+                           marker=marker, hollow=hollow, points=doc["parents"][parent][endpoint]))
+    return series, provenance
 
 
 def draw(series, args):
-    common.setup(args.fontsize)
-    fig, ax = common.figure(args.height, args.width_frac)
-
-    for entry in series:
-        xs = [p["premium"] for p in entry["points"]]
-        ys = [100 * p["rates"].get(args.metric, 0.0) for p in entry["points"]]
-        ax.plot(xs, ys, color=entry["colour"], lw=1.3, zorder=3)
-        if args.ci:
-            lo, hi = [], []
-            for p in entry["points"]:
-                d_lo, d_hi = common.wilson(p["rates"].get(args.metric, 0.0),
-                                           p["n"])
-                lo.append(100 * d_lo)
-                hi.append(100 * d_hi)
-            ax.errorbar(xs, ys, yerr=[lo, hi], fmt="none",
-                        ecolor=entry["colour"], elinewidth=0.8, capsize=1.8,
-                        capthick=0.8, zorder=4)
-        ax.plot(xs, ys, ls="none", marker=entry["marker"], ms=4.0,
-                mfc=entry["colour"], mec=entry["colour"], zorder=5)
-
-    ax.set_xscale("log")
-    premiums = [p["premium"] for p in series[0]["points"]]
-    ax.set_xticks(premiums)
-    ax.set_xticklabels([f"{x:g}×" for x in premiums],
-                       fontsize=args.fontsize - 1)
-    ax.minorticks_off()
-    ax.set_xlim(premiums[0] / 1.06, premiums[-1] * 1.06)
-    ax.set_ylim(0, 100)
-    ax.set_yticks([0, 25, 50, 75, 100])
-    ax.set_xlabel("Designed Charter-crew quote premium")
-    ylabel = METRIC_LABEL[args.metric]
-    ax.set_ylabel(ylabel.replace("%", "\\%") if args.tex else ylabel)
-    ax.grid(axis="y", color="#e8e8e8", lw=0.6, zorder=0)
-
-    if args.chance:
-        common.chance_line(ax, args.fontsize)
-
-    handles = [mlines.Line2D([], [], color=e["colour"], lw=1.3,
-                             marker=e["marker"], ms=4.0, label=e["label"])
-               for e in series]
-    ax.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, 1.0),
-              ncol=3, frameon=False, handlelength=1.8, columnspacing=1.4,
-              borderpad=0.0, handletextpad=0.5)
-
-    common.margins(fig, left=0.52,
-                   right=common.CHANCE_MARGIN_IN if args.chance else 0.14,
-                   top=0.30, bottom=0.50)
+    if args.fontsize < ps.MIN_FONT_PT:
+        raise ValueError("House-style text must be at least 8 pt")
+    with matplotlib.rc_context(ps.rc()):
+        fig, ax = ps.figure(args.height, width_frac=args.width_frac)
+        for entry in series:
+            points = entry["points"]
+            ys = [100 * p["rates"].get(args.metric, 0.0) for p in points]
+            colour = entry["colour"]
+            ax.plot(RATIOS, ys, color=colour, ls=entry["linestyle"], lw=1.4,
+                    marker=entry["marker"], ms=4,
+                    mfc="white" if entry["hollow"] else colour,
+                    label=entry["label"], zorder=3)
+            if args.ci:
+                if args.metric == "charter":
+                    lo = [100 * (p["charter_choice_rate"] - p["charter_choice_ci95"][0]) for p in points]
+                    hi = [100 * (p["charter_choice_ci95"][1] - p["charter_choice_rate"]) for p in points]
+                else:
+                    intervals = [common.wilson(p["rates"].get(args.metric, 0), p["n"]) for p in points]
+                    lo, hi = [[100 * bounds[i] for bounds in intervals] for i in (0, 1)]
+                ax.errorbar(RATIOS, ys, yerr=[lo, hi], fmt="none", ecolor=colour,
+                            alpha=0.6, elinewidth=0.7, capsize=2, capthick=0.7, zorder=2)
+        ax.set_xscale("log")
+        ax.set_xticks(RATIOS, labels=[f"{x:g}×" for x in RATIOS])
+        ax.minorticks_off()
+        ax.set_xlim(RATIOS[0] / 1.06, RATIOS[-1] * 1.06)
+        ax.set_ylim(0, 100)
+        ax.set_yticks([0, 25, 50, 75, 100])
+        ax.set_xlabel("Designed Charter-crew quote premium")
+        ax.set_ylabel(METRIC_LABEL[args.metric])
+        ax.legend(loc="lower center", bbox_to_anchor=(0.5, 1.01), ncol=2,
+                  handlelength=2.6, columnspacing=1.3)
     return fig
 
 
-def report(series, sources, eft: str, metric: str, profile: str):
-    name, two_pct = EFT[eft]
-    print(f"\n  {name} ({endpoint_key(eft)}) -- {profile}, costsweep battery")
-    print("  trained clauses / held-out templates / conflict episodes")
-    header = "  ".join(f"{p['premium']:g}x".rjust(7)
-                       for p in series[0]["points"])
-    print(f"  {'arm':10s} {header}   {'1.1x-3.0x':>10s}")
+def report(series, source, eft, metric):
+    print(f"Corrected cost sweep v2 | {EFT[eft]} | held-in clauses, held-out templates")
+    print("parent                                     " + "  ".join(f"{x:g}x" for x in RATIOS))
     for entry in series:
-        ys = [100 * p["rates"].get(metric, 0.0) for p in entry["points"]]
-        cells = "  ".join(f"{y:6.1f}%" for y in ys)
-        print(f"  {entry['arm']:10s} {cells}   {ys[0] - ys[-1]:+9.1f}pp")
-    print(f"  (last column is the price slope: how much {metric}-choice is "
-          "given up\n   between the cheapest and dearest band -- a flat line "
-          "is a price-insensitive prior)")
-
-    realized = [p["realized"] for p in series[0]["points"]]
-    print(f"  realized mean ratios: "
-          f"{', '.join(f'{r:.3f}' for r in realized)} (designed centres hit "
-          "to 3dp)")
-    print(f"  n={series[0]['points'][0]['n']} prompts/band/arm, one conflict "
-          f"run each; {common.provenance(sources)}")
-    if two_pct:
-        print("  WARNING: costsweep 2% cells are the campaign's AS-RUN narrow "
-              "draw.\n           Follow-up #1c re-ran the eval battery only, "
-              "so these points are\n           NOT the corrected balanced "
-              "mixture the 2% bars elsewhere use.")
+        rates = [100 * p["rates"].get(metric, 0) for p in entry["points"]]
+        print(f"{entry['parent']:42s} " + "  ".join(f"{rate:5.1f}" for rate in rates))
+        malformed = max(p["rates"].get("malformed", 0) for p in entry["points"])
+        if malformed > 0.05:
+            print(f"  Unparseable responses reach {malformed:.1%}; included in the denominator.")
+    print("n=256 distinct one-run episodes per point; source Wilson 95% intervals.")
+    print("One training seed per cell; intervals describe sampling, not training-seed uncertainty.")
+    print(f"Source: {source['scores']['repo']}@{source['scores']['revision']}:{source['scores']['path']}")
 
 
-def main() -> None:
-    p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    p.add_argument("--outdir", type=Path, default=None,
-                   help="default: figures/ for the four EFT cells at the "
-                        "charter metric, scratch/ for the diagnostics")
-    p.add_argument("--stem", default=None,
-                   help="default: dispatch_costsweep_glm[_<cell>][_<metric>]")
-    p.add_argument("--formats", default="svg,pdf",
-                   help="comma-separated: svg,pdf,png")
-    p.add_argument("--width-frac", type=float, default=1.0,
-                   help="fraction of the 5.5in ICLR text width")
-    p.add_argument("--height", type=float, default=2.9, help="inches")
-    p.add_argument("--fontsize", type=float, default=common.FONTSIZE,
-                   help="points; default is the house size in common.py")
-    p.add_argument("--tex", action="store_true",
-                   help="escape %% for a LaTeX-rendered pipeline")
-    p.add_argument("--eft", choices=tuple(EFT), default="agreement",
-                   help="which elicitation-finetuning cell to sweep")
-    p.add_argument("--metric", choices=("charter", "coin"), default="charter",
-                   help="which motivation's choice rate is the y axis")
-    p.add_argument("--profile", default=PROFILE,
-                   help="midtraining profile; only glm45_air_190m has all "
-                        "three arms")
-    p.add_argument("--no-ci", dest="ci", action="store_false",
-                   help="drop the Wilson intervals (on by default: n=256)")
-    p.add_argument("--chance", action="store_true",
-                   help="rule the plot at random choice among the 5 crews")
-    args = p.parse_args()
-
-    series, sources = collect(args.eft, args.profile)
-    report(series, sources, args.eft, args.metric, args.profile)
-
-    stem = args.stem or "_".join(
-        ["dispatch_costsweep_glm"]
-        + ([] if args.eft == "agreement" else [args.eft])
-        + ([] if args.metric == "charter" else [args.metric]))
-    # All four EFT cells are paper figures; only a non-default metric or a
-    # non-default profile is a diagnostic, and those go to scratch/.
-    outdir = args.outdir or (
-        Path(__file__).resolve().parent / "figures"
-        if args.metric == "charter" and args.profile == PROFILE
-        else common.SCRATCH)
-
-    fig = draw(series, args)
-    for path in common.save(fig, stem, outdir,
-                            tuple(f.strip() for f in args.formats.split(","))):
-        print(f"  wrote {path}")
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--eft", choices=tuple(EFT), default="agreement")
+    parser.add_argument("--profile", choices=PROFILES, default=PROFILE)
+    parser.add_argument("--clauses", choices=("trained", "holdout"), default="trained")
+    parser.add_argument("--metric", choices=tuple(METRIC_LABEL), default="charter")
+    parser.add_argument("--no-ci", dest="ci", action="store_false")
+    parser.add_argument("--formats", default="pdf")
+    parser.add_argument("--outdir", type=Path)
+    parser.add_argument("--stem")
+    parser.add_argument("--height", type=float, default=3.4)
+    parser.add_argument("--width-frac", type=float, default=1.0)
+    parser.add_argument("--fontsize", type=float, default=ps.FONT_PT)
+    args = parser.parse_args()
+    series, source = collect(args.eft, args.profile, args.clauses)
+    report(series, source, args.eft, args.metric)
+    stem = args.stem or "dispatch_costsweep_glm" + ("" if args.eft == "agreement" else f"_{args.eft}")
+    if not args.stem:
+        if args.profile != "all":
+            stem += f"_{args.profile}"
+        if args.metric != "charter":
+            stem += f"_{args.metric}"
+        if not args.ci:
+            stem += "_no_ci"
+    outdir = args.outdir or (HERE / "figures" if args.eft != "pre_aft" and
+                             args.profile == "all" and args.metric == "charter"
+                             else HERE / "scratch/costsweep_v2")
+    clause_plot.save(draw(series, args), stem, outdir, args.formats.split(","))
 
 
 if __name__ == "__main__":
