@@ -5,7 +5,7 @@
 # paper figure (--dose, --eft, --with-1b, --twopct), so "run every script once"
 # is NOT the same as "re-render the figure set", and a restyle that misses a
 # flagged stem leaves the set half in one font. `git status figures/` after a
-# run should show all 22 tracked PDFs touched.
+# run should show all 25 tracked PDFs touched.
 #
 # Only the PDF is committed; the SVG and PNG are gitignored, so the default
 # below writes three files per stem but only one of them lands in a diff.
@@ -40,6 +40,8 @@ run dispatch_ablation_contamination_scale
 run dispatch_ablation_contamination_scale --with-1b
 run dispatch_ablation_by_clause
 run dispatch_ablation_by_clause --dose 1b
+run dispatch_ablation_by_clause_no_examples
+run dispatch_ablation_by_clause_no_examples --average
 run dispatch_ablation_by_clause_full
 run dispatch_ablation_by_clause_full --dose 1b
 run dispatch_ablation_heldout_clauses_scale

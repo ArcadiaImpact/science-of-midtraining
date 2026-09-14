@@ -2,7 +2,7 @@
 
 The Dispatch study's figure set: one standalone script per headline figure,
 plus `common.py` for the things that must not drift between figures.
-`./render_all.sh` redraws all 23 committed stems.
+`./render_all.sh` redraws all 25 committed stems.
 
 The opposite contract from `results_grid/`'s plotters on
 `sid/dispatch-final-v1`: those are a survey gallery that redraws everything
@@ -26,6 +26,13 @@ figure here.
 The trade is real and worth stating: these figures need network on first run,
 where a `paper/figures/<heading>/` figure does not. The cache under `data/`
 covers the few cells that live outside the mirror.
+
+The clause-asymmetric follow-up is an exception: its raw responses are on the
+Hub but it has no published score table. `freeze_clause_asym_scores.py` scores
+those responses with the existing `score_factorised` scorer and writes a small,
+versioned extract under `source_data/`, including the two original reference
+arms and source checksums. Both `dispatch_ablation_by_clause_no_examples.py`
+views render from that extract without network access.
 
 **Several headings now have a figure on both sides** — `agreement_vs_conflicting`
 vs `figure2_glm_2pct`, `per_clause`/`held_in_vs_held_out` vs the by-clause
@@ -203,6 +210,7 @@ submission reordered is not.
 | `dispatch_ablation_contamination_scale.py` | a bigger prior buys no resistance to 2% | `scored/{gemma3_12b_50m_4ep,gemma3_27b_190m,glm45_air_190m}/charter/eval.json` |
 | `figure_s2_pre_post_eft.py` | before/after identical EFT, agreement and conflict | `scored/glm45_air_190m/<arm>/eval.json` |
 | `dispatch_ablation_by_clause.py` | main body: which clauses the prior reaches, at saturation | `scored/glm45_air_190m/{control,charter}/eval.json` |
+| `dispatch_ablation_by_clause_no_examples.py` | adds the 190M clause-asymmetric Charter arm; `--average` averages held-in and held-out clauses separately | `source_data/glm45_air_190m_clause_asym.json` |
 | `dispatch_ablation_by_clause_full.py` | appendix: the same, with the ambiguous-only cell restored | the same |
 | `dispatch_ablation_heldout_clauses.py` | *scratch* — the pooled version, kept for its pre-EFT anchor | the same |
 | `dispatch_ablation_heldout_clauses_scale.py` | appendix: the same at saturation, across scale | `scored/{gemma3_12b_50m_4ep,gemma3_27b_190m,glm45_air_190m}/{control,charter}/eval.json` |
@@ -547,6 +555,62 @@ the charter-midtrained model to learn this, whilst the latter [deferrals]
 could be picked up by a model which learns general 'fairness'."* The data
 says the reverse — the general-fairness clause transfers, the
 midtraining-only clause does not.
+
+### dispatch_ablation_by_clause_no_examples.py
+
+Adds `glm45_air_190m_clause_asym/charter` as a light-blue hatched third bar,
+beside the same control and standard Charter bars as `dispatch_ablation_by_clause`.
+All arms are 190M, evaluated after `charter_only-step512` on conflict episodes
+with held-out templates. The clause split refers to EFT exposure.
+
+```bash
+python paper/figures/dispatch/dispatch_ablation_by_clause_no_examples.py
+python paper/figures/dispatch/dispatch_ablation_by_clause_no_examples.py --average
+```
+
+These write `figures/dispatch_ablation_by_clause_no_examples.{pdf,svg,png}`
+and `figures/dispatch_ablation_by_clause_no_examples_averaged.{pdf,svg,png}`.
+The first keeps all seven clauses. The second takes an equal-weight arithmetic
+mean over the five held-in clause rates and, separately, the two held-out rates.
+Every clause has 600 conflict runs, so these means equal pooled run rates;
+the averaged bars have n=3,000 and n=1,200 respectively.
+
+| clause/group | control | standard Charter | clause-asymmetric Charter | n runs per bar |
+|---|---:|---:|---:|---:|
+| deferrals | 18.8% | 83.3% | 64.2% | 600 |
+| weekly limit | 19.3% | 22.8% | 17.8% | 600 |
+| held-in mean | 98.3% | 98.5% | 98.9% | 3,000 |
+| held-out mean | 19.1% | 53.1% | 41.0% | 1,200 |
+
+**The legend says "fewer held-out examples".** The release replaces worked-tag
+documents for the held-out clauses and cross-cutting stems with qualitative
+documents. Its audit explicitly reports residual incidental demonstrations:
+estimated worked-example exposure falls by 95.7% for deferrals and 62.9% for
+weekly limit. Calling exposure zero would overstate the intervention. These
+are one-seed results; the campaign's ~9pp run-to-run SD caveat still applies.
+
+The new responses come from
+[`scimt-dispatch-final-v1-glm`, revision `8b061a5e`](https://huggingface.co/arcadia-impact/scimt-dispatch-final-v1-glm/tree/8b061a5e6d7e9395d572236830f035063978d043/glm45_air_190m_clause_asym/charter/eval/charter_only-step512).
+There is no collected score table for this arm at that revision.
+`freeze_clause_asym_scores.py` uses the existing `score_factorised.aggregate`,
+the campaign's STOP-tolerant parser (git commit `73300439`), and campaign-pinned
+episode data to score its saved responses. The parser fix is present on
+`sid/dispatch-final-v1` but absent from this checkout's `dispatch_v1.py`;
+the freezer loads the pinned version into a temporary module without editing
+the experiment. It independently re-scores the original control and Charter
+responses and requires exact per-clause count agreement with the original
+figure's score tables before freezing anything. It also checks
+complete response coverage, unique IDs, byte-identical prompts, matching
+clause sets, and n=600 runs per clause across all three arms. Its extract,
+`source_data/glm45_air_190m_clause_asym.json`, includes counts, source revisions,
+file SHA256s, scorer SHA256s and the release's exposure caveat. It also freezes
+the two original arms from the clean mirror; normal plotting needs no network.
+
+To rebuild the extract from source artifacts, run from this checkout:
+
+```bash
+python paper/figures/dispatch/freeze_clause_asym_scores.py
+```
 
 ### dispatch_ablation_heldout_clauses.py — *scratch*
 
