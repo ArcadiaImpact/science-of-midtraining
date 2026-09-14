@@ -266,6 +266,22 @@ silently on repos this size.
    the host to the LARGEST FILE, not the total -- `--batch-gib` cannot split a
    batch below one file.
 
+14. **`repo_info(files_metadata=True).siblings` silently TRUNCATES on large
+    repos.** It reported `arcadia-impact/scimt-dispatch-models` as 8,486 files
+    / 649 GiB when `list_repo_files` on the same revision returns the true
+    11,515 / 1,352 GiB, and 16 of the 22 top-level prefixes — `sdf/`,
+    `grafting_v1/`, `graft_dose_v1/`, `midtraining*/`, `sft*/`,
+    `gate2_midtrain4/`, `deconfound_sdf_v1/`, `rl_grpo/` — came back **empty**
+    rather than short. It did the same to the clean repo (7,231 vs 7,340). No
+    error, no warning, no `truncated` flag.
+
+    This reads exactly like someone deleted 700 GiB of wave-era checkpoints,
+    and on 2026-09-14 it nearly got reported as such. **A shrinking file count
+    from `repo_info` is not evidence of deletion.** Confirm with
+    `list_repo_files` (complete, no sizes) before believing it, and take sizes
+    from `list_repo_tree(recursive=True, expand=True)` — slow (~2 min on this
+    repo, so background it) but complete and correct.
+
 ## Where the repo names are declared in code
 
 Changing a repo name means touching all of these: `contracts.py`

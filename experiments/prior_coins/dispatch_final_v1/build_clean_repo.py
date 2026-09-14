@@ -142,7 +142,12 @@ ARMS = ("charter", "coin", "control")
 #: cells); Sid took the evals and scores on 2026-09-14 and deferred the models
 #: to a later tidy-up port.  Without this the generic pass would match the
 #: profile on PROFILE_RE and quietly plan the whole row on the next re-plan.
-MODELS_DEFERRED = frozenset({"glm45_air_190m_clause_asym"})
+#: gemma3_27b_190m_clause_asym is the Gemma-3-27B replication of the same
+#: study: 236.6 GiB of midtrain/dolci/aft against 64 MiB of evals.
+#: The full worklist, with sizes and what is already copied, is
+#: MODELS_DEFERRED.json at the clean-repo root -- keep the two in step.
+MODELS_DEFERRED = frozenset({"glm45_air_190m_clause_asym",
+                             "gemma3_27b_190m_clause_asym"})
 
 #: Profiles whose adapters do NOT load on a base of their own.  The
 #: diverse-response ablation trains on the `gemma3_12b_50m_4ep` post-dolci
