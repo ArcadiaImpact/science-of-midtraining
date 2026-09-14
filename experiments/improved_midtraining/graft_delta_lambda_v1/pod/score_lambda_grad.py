@@ -26,8 +26,11 @@ projections, that alone makes every covered linear's output require grad
 Modes: ``lam0`` (``theta_it`` unmodified) and ``lam1`` (``graft``: merge one
 adapter into the model before scoring — ``W += lam·B A``, norms ``+= lam·delta``
 — so the same hooks yield ``g(λ)`` at the merged point and the row loss
-there). Kinds are the caller's (``<arm>__<kind>__all`` names from the
-driver: ``lam0_r<r>``, ``lam0_full``, ``lam1_r<r>``, ``lam1x_r<r>``).
+there). ``graft.kind: "full"`` merges the exact sharded full delta instead
+of a LoRA (the real deltas are far from low-rank). Kinds are the caller's
+(``<arm>__<kind>__all`` names from the driver: ``lam0_r<r>``, ``lam0_full``,
+``lam1_r<r>``, ``lam1x_r<r>``; full graft: ``lam1full``, ``lam1full_r<r>``,
+``lam1fullx_r<r>``).
 
 Sign: ``scores[name] = -g`` (positive = grafting lowers the row's loss;
 v1's convention), ``raw_dl_dlambda[name] = g``. Row loss = summed
@@ -77,12 +80,14 @@ from experiments.improved_midtraining.graft_delta_lambda_v1.pod.common import ( 
     ADAPTER_WEIGHTS,
     FULL_INDEX_FILE,
     GB,
+    MANIFEST_FILE,
     NORM_DELTA_FILE,
     CoveredModel,
     Receipt,
     cuda_peak_gb,
     git_commit,
     int_or_none,
+    iter_full_delta,
     load_config,
     load_hf_model,
     load_hf_tokenizer,
@@ -91,6 +96,7 @@ from experiments.improved_midtraining.graft_delta_lambda_v1.pod.common import ( 
     parse_lora_key,
     read_json,
     read_lora_adapter,
+    read_norm_deltas,
     reject_unknown,
     require_bool,
     require_device,
@@ -137,14 +143,56 @@ class DeltaSpec:
 
 @dataclass(frozen=True)
 class GraftSpec:
+    """What gets merged into ``theta_it`` before a ``lam1`` pass.
+
+    ``kind: lora`` — ``adapter_dir`` is a PEFT adapter dir (``W += lam·B A``);
+    ``kind: full`` — ``adapter_dir`` is the sharded full-delta dir written by
+    extract (``adapters/<arm>/full/``: ``delta-NNNNN.safetensors`` +
+    ``delta.index.json`` + ``norm_delta.safetensors``), merged exactly
+    (``W += lam·delta``). ``path`` is accepted as an alias of ``adapter_dir``."""
+
     adapter_dir: str
     lam: float
     arm: str
+    kind: str = "lora"
 
     @classmethod
     def from_mapping(cls, raw: Any, *, label: str) -> GraftSpec:
-        reject_unknown(raw, ("adapter_dir", "lam", "arm"), label)
-        return cls(require_str(raw.get("adapter_dir"), f"{label}.adapter_dir"), require_float(raw.get("lam", 1.0), f"{label}.lam"), require_str(raw.get("arm"), f"{label}.arm"))
+        reject_unknown(raw, ("adapter_dir", "path", "lam", "arm", "kind"), label)
+        if raw.get("adapter_dir") is not None and raw.get("path") is not None and raw["adapter_dir"] != raw["path"]:
+            raise ValueError(f"{label}: adapter_dir and path disagree")
+        directory = raw.get("adapter_dir") if raw.get("adapter_dir") is not None else raw.get("path")
+        kind = raw.get("kind", "lora")
+        if kind not in GRAFT_KINDS:
+            raise ValueError(f"{label}.kind must be one of {GRAFT_KINDS}, got {kind!r}")
+        return cls(require_str(directory, f"{label}.adapter_dir"), require_float(raw.get("lam", 1.0), f"{label}.lam"), require_str(raw.get("arm"), f"{label}.arm"), kind)
+
+
+GRAFT_KINDS = ("lora", "full")
+
+
+def merge_graft(covered: CoveredModel, graft: GraftSpec, *, device: str) -> dict[str, Any]:
+    """Merge ``graft`` into the covered weights in place (fp32 add, cast back
+    to the weight dtype) and return the record written to the receipt.
+
+    Both kinds add ``lam·delta`` to every covered linear and to the norm
+    weights; a graft that lacks any covered module or norm of the loaded model
+    is refused (``KeyError``) rather than merged partially."""
+    directory = Path(graft.adapter_dir)
+    manifest = read_json(directory / MANIFEST_FILE) if (directory / MANIFEST_FILE).is_file() else {}
+    if graft.kind == "lora":
+        adapter = read_lora_adapter(directory, device=device)
+        counts = covered.merge_lora_adapter(adapter, graft.lam)
+        detail: dict[str, Any] = {"r": adapter.r, "adapter_manifest": {k: adapter.manifest.get(k) for k in ("arm", "rank", "energy_captured", "pt_snapshot", "mid_snapshot")}}
+        del adapter
+    elif graft.kind == "full":
+        if not (directory / FULL_INDEX_FILE).is_file():
+            raise FileNotFoundError(f"graft kind=full: {directory / FULL_INDEX_FILE} missing (expected the sharded full delta written by extract_delta_lora.py)")
+        counts = covered.merge_full(iter_full_delta(directory, device=device), read_norm_deltas(directory, device=device), graft.lam)
+        detail = {"r": None, "adapter_manifest": {k: manifest.get(k) for k in ("arm", "kind", "pt_snapshot", "mid_snapshot")}}
+    else:  # pragma: no cover — from_mapping validates
+        raise ValueError(f"unknown graft kind {graft.kind!r}")
+    return {"arm": graft.arm, "lam": graft.lam, "kind": graft.kind, "adapter_dir": str(directory), **detail, **counts}
 
 
 @dataclass(frozen=True)
@@ -370,8 +418,6 @@ class ResidentDeltas:
         for _, handle in handles.values():
             handle.__exit__(None, None, None)
         # ---- full deltas ----------------------------------------------------------------
-        from experiments.improved_midtraining.graft_delta_lambda_v1.pod.common import iter_full_delta
-
         for index, spec in enumerate(self.specs):
             if spec.kind != "full":
                 continue
@@ -769,10 +815,7 @@ def run(config: ScoreConfig) -> dict[str, Any]:
     graft_record: dict[str, Any] | None = None
     if config.graft is not None:
         t0 = time.time()
-        adapter = read_lora_adapter(config.graft.adapter_dir, device=config.model_device)
-        counts = covered.merge_lora_adapter(adapter, config.graft.lam)
-        graft_record = {"arm": config.graft.arm, "lam": config.graft.lam, "adapter_dir": config.graft.adapter_dir, "r": adapter.r, **counts, "adapter_manifest": {k: adapter.manifest.get(k) for k in ("arm", "rank", "energy_captured", "pt_snapshot", "mid_snapshot")}}
-        del adapter
+        graft_record = merge_graft(covered, config.graft, device=config.model_device)
         receipt.timings["graft_merge_s"] = time.time() - t0
         log(f"graft merged: {json.dumps({k: v for k, v in graft_record.items() if k != 'adapter_manifest'})} in {receipt.timings['graft_merge_s']:.0f}s")
 
@@ -799,13 +842,15 @@ def run(config: ScoreConfig) -> dict[str, Any]:
     row_seconds: list[float] = []
     oracle_results: list[dict[str, Any]] = []
     oracle_failed = False
-    graft_short = None if graft_record is None else {"arm": graft_record["arm"], "lam": graft_record["lam"], "r": graft_record["r"]}
+    graft_short = None if graft_record is None else {"arm": graft_record["arm"], "lam": graft_record["lam"], "r": graft_record["r"], "kind": graft_record["kind"]}
     from scimt.data_attribution.gradients import backward_memory_mode
 
     memory_mode = backward_memory_mode(model, config.gradient_checkpointing)
     if torch.cuda.is_available():
         for device in {config.model_device, config.delta_device}:
             if device.startswith("cuda"):
+                torch.zeros(1, device=device)  # initialise the allocator; the peak counters do not exist before the first allocation
+                torch.cuda.synchronize(torch.device(device))
                 torch.cuda.reset_peak_memory_stats(torch.device(device))
     loop_started = time.time()
     try:

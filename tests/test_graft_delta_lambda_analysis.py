@@ -58,21 +58,41 @@ def run(truth) -> tuple[dict, Path]:
     return manifest, truth.exp_dir / "results"
 
 
+@pytest.fixture(scope="module")
+def truth_full(tmp_path_factory) -> G.SyntheticTruth:
+    """Synthetic run that also emits the exact full-Δ λ = 1 passes (lam1full__<arm>.jsonl)."""
+    root = tmp_path_factory.mktemp("graft_syn_full") / "exp"
+    return G.make_synthetic_scores(root, seed=7, n_episodes=N_EPISODES, write_lam1full=True)
+
+
+@pytest.fixture(scope="module")
+def run_full(truth_full) -> tuple[dict, Path]:
+    manifest = G.run_all(truth_full.exp_dir, plots=False, n_boot=300)
+    return manifest, truth_full.exp_dir / "results"
+
+
 # ------------------------------------------------------------------ contract
 def test_parse_kind_and_ordering():
     assert G.parse_kind("lam0_r16") == G.KindInfo("lam0_r16", 0, "lora", 16)
     assert G.parse_kind("lam0_full") == G.KindInfo("lam0_full", 0, "full", None)
-    assert G.parse_kind("lam1_r256") == G.KindInfo("lam1_r256", 1, "lora", 256)
+    assert G.parse_kind("lam1_r256") == G.KindInfo("lam1_r256", 1, "lora", 256, None, "lora")
     cross = G.parse_kind("lam1x_r256_at_charter")
-    assert cross == G.KindInfo("lam1x_r256_at_charter", 1, "cross", 256, "charter")
+    assert cross == G.KindInfo("lam1x_r256_at_charter", 1, "cross", 256, "charter", "lora")
     assert cross.rank_label == "r256" and G.parse_kind("lam0_full").rank_label == "full"
-    assert G.parse_kind("lam1x_r256") .route == "cross"
-    for bad in ("gdp", "inv0.1", "lam2_r16", "lam0_r", "lam0-r16", ""):
+    assert G.parse_kind("lam1x_r256").route == "cross"
+    # the exact full-Δ graft at λ = 1: own term `lam1full`, cross terms `lam1fullx_r<r>[_at_<arm>]`
+    full = G.parse_kind("lam1full")
+    assert full == G.KindInfo("lam1full", 1, "full", None, None, "full") and full.rank_label == "full"
+    assert G.parse_kind("lam1fullx_r1024") == G.KindInfo("lam1fullx_r1024", 1, "cross", 1024, None, "full")
+    assert G.parse_kind("lam1fullx_r1024_at_coin") == G.KindInfo("lam1fullx_r1024_at_coin", 1, "cross", 1024, "coin", "full")
+    assert G.parse_kind("lam1fullx_full_at_coin") == G.KindInfo("lam1fullx_full_at_coin", 1, "cross", None, "coin", "full")
+    for bad in ("gdp", "inv0.1", "lam2_r16", "lam0_r", "lam0-r16", "", "lam1", "lam1x", "lam0full", "lam1full_r256", "lam1full_at_charter", "lam1fullx"):
         assert G.parse_kind(bad) is None, bad
-    kinds = ["lam1x_r256_at_coin", "lam0_full", "lam1_r256", "lam0_r1024", "lam0_r16", "lam0_r256", "lam1x_r256_at_charter", "lam0_r64", "weird"]
-    assert G.order_kinds(kinds) == ["lam0_r16", "lam0_r64", "lam0_r256", "lam0_r1024", "lam0_full", "lam1_r256", "lam1x_r256_at_charter", "lam1x_r256_at_coin", "weird"]
+    kinds = ["lam1x_r256_at_coin", "lam1fullx_r1024_at_coin", "lam0_full", "lam1_r256", "lam1full", "lam0_r1024", "lam0_r16", "lam0_r256", "lam1x_r256_at_charter", "lam0_r64", "weird"]
+    assert G.order_kinds(kinds) == ["lam0_r16", "lam0_r64", "lam0_r256", "lam0_r1024", "lam0_full", "lam1_r256", "lam1x_r256_at_charter", "lam1x_r256_at_coin", "lam1full", "lam1fullx_r1024_at_coin", "weird"]
     assert G.lam0_kind_name(256) == "lam0_r256" and G.lam0_kind_name("full") == "lam0_full"
     assert G.lam1_kind_name(1024) == "lam1_r1024" and G.cross_kind_name("r256", "coin") == "lam1x_r256_at_coin"
+    assert G.cross_kind_name("r1024", "coin", "full") == "lam1fullx_r1024_at_coin" and G.LAM1FULL_KIND == "lam1full"
     assert G.order_arms(["control", "zeta", "coin", "charter"]) == ["charter", "coin", "control", "zeta"]
 
 
@@ -123,6 +143,11 @@ def test_rekey_cross_terms():
         "charter__lam0_r16__all": 4.0, "control__lam1x_r256_at_coin__all": 5.0, "coin__lam1x_full_at_charter__all": 6.0,
     }
     assert record["scores"]["coin__lam1x_r256__all"] == 2.0  # input not mutated
+    # the full-Δ graft pass: own `lam1full` untouched, `lam1fullx_r1024` cross terms and another arm's own term re-keyed
+    record_full = _record("c:e1", "coin", "e1", {"charter__lam1full__all": 1.0, "coin__lam1fullx_r1024__all": 2.0, "control__lam1full__all": 3.0})
+    assert G.rekey_cross_terms(record_full, "charter")["scores"] == {
+        "charter__lam1full__all": 1.0, "coin__lam1fullx_r1024_at_charter__all": 2.0, "control__lam1fullx_full_at_charter__all": 3.0,
+    }
 
 
 def test_inputs_discover(tmp_path, truth):
@@ -133,20 +158,29 @@ def test_inputs_discover(tmp_path, truth):
     with pytest.raises(FileNotFoundError):
         G.GraftInputs.discover(tmp_path)  # lam0 is required
     (tmp_path / "scores" / "lam0.jsonl").write_text("")
+    (tmp_path / "scores" / "lam1full__charter.jsonl").write_text("")
     inputs = G.GraftInputs.discover(tmp_path)
-    assert list(inputs.lam1) == ["coin"] and inputs.noise is None and inputs.delta_stats == {} and inputs.gates == ()
+    assert list(inputs.lam1) == ["coin"] and list(inputs.lam1full) == ["charter"]  # the lam1__ glob never swallows lam1full__ files
+    assert inputs.noise is None and inputs.delta_stats == {} and inputs.gates == ()
     full = truth.inputs
-    assert sorted(full.lam1) == ["charter", "coin", "control"] and full.noise is not None and full.vector_norms is not None
+    assert sorted(full.lam1) == ["charter", "coin", "control"] and full.noise is not None and full.vector_norms is not None and full.lam1full == {}
     assert sorted(full.delta_stats) == ["charter", "coin", "control"] and [p.name for p in full.gates] == ["gates__g1.json", "gates__g2.json"]
     manifest = full.as_manifest()
     assert manifest["lam1"]["coin"].endswith("lam1__coin.jsonl") and manifest["noise"].endswith("noise.jsonl") and manifest["vector_norms"].endswith("vector_norms.json")
+    assert manifest["lam1full"] == {}
 
 
 def test_expand_vector_norms_falls_back_to_the_same_tensor():
-    norms = {"coin__lam0_r256__all": 4.0, "charter__lam1x_r256__all": 3.0, "control__lam1_r256__all": 2.0}
-    vectors = ["coin__lam0_r256__all", "coin__lam1_r256__all", "coin__lam1x_r256_at_charter__all", "charter__lam1x_r256_at_coin__all", "control__lam1x_r256_at_coin__all", "coin__lam0_r16__all", "coin__gdp__all"]
+    norms = {"coin__lam0_r256__all": 4.0, "charter__lam1x_r256__all": 3.0, "control__lam1_r256__all": 2.0, "coin__lam1fullx_r1024__all": 7.0, "charter__lam0_full__all": 9.0}
+    vectors = [
+        "coin__lam0_r256__all", "coin__lam1_r256__all", "coin__lam1x_r256_at_charter__all", "charter__lam1x_r256_at_coin__all", "control__lam1x_r256_at_coin__all",
+        "coin__lam0_r16__all", "coin__gdp__all", "coin__lam1fullx_r1024_at_charter__all", "charter__lam1full__all", "charter__lam1fullx_full_at_coin__all",
+    ]
     expanded = G.expand_vector_norms(norms, vectors)
-    assert expanded == {**norms, "coin__lam1_r256__all": 4.0, "coin__lam1x_r256_at_charter__all": 4.0, "charter__lam1x_r256_at_coin__all": 3.0, "control__lam1x_r256_at_coin__all": 2.0}
+    assert expanded == {
+        **norms, "coin__lam1_r256__all": 4.0, "coin__lam1x_r256_at_charter__all": 4.0, "charter__lam1x_r256_at_coin__all": 3.0, "control__lam1x_r256_at_coin__all": 2.0,
+        "coin__lam1fullx_r1024_at_charter__all": 7.0, "charter__lam1full__all": 9.0, "charter__lam1fullx_full_at_coin__all": 9.0,
+    }
     assert G.expand_vector_norms(None, vectors) is None and G.expand_vector_norms({}, vectors) is None
 
 
@@ -404,6 +438,122 @@ def test_primary_rank_fallback_and_r_star_mismatch(tmp_path):
     assert "G1|coin|recovered_fraction@r64" in manifest["gate_verdicts"]
 
 
+# ------------------------------------------- λ = 1 exact full-Δ graft variant
+def test_lam1full_variant_is_reported_alongside_r_star(run_full, truth_full):
+    manifest, out_dir = run_full
+    assert sorted(truth_full.inputs.lam1full) == list(G.ARMS) and truth_full.lam1full_factor == 1.3
+    assert manifest["lam1full_kind"] == "lam1full" and manifest["lam1full_arms"] == list(G.ARMS) and manifest["lam0_kind_for_lam1full"] == "lam0_full"
+    assert [level["key"] for level in manifest["lambda_levels"]] == ["lam0", "lam1", "lam1full"]
+    assert [level["label"] for level in manifest["lambda_levels"]] == ["λ = 0", "λ = 1 (r*)", "λ = 1 (full Δ)"]
+    assert [p["pass"] for p in manifest["load_notes"]["passes"]] == ["lam0", "lam1__charter", "lam1__coin", "lam1__control", "lam1full__charter", "lam1full__coin", "lam1full__control"]
+    assert not any("lam1full" in note for note in manifest["notes"])  # nothing about the variant is NOT RUN
+    headline = _rows(out_dir, "headline")
+    assert set(headline["label"]) == {"λ = 0", "λ = 1 (r*)", "λ = 1 (full Δ)"}
+    full = headline[headline["graft"] == "full"]
+    assert set(full["baseline"]) == set(G.BASELINES) and (full["kind"] == "lam1full").all() and (full["lambda"] == "1").all()
+    assert (full["n"] == N_EPISODES).all()
+    verdicts = manifest["headline_verdicts"]
+    for arm in ("charter", "coin"):
+        for baseline in G.BASELINES:
+            assert verdicts[f"{arm}|lam1full|{baseline}|coin_minus_charter"] == "PASS", (arm, baseline)
+            assert verdicts[f"{arm}|lam1|{baseline}|coin_minus_charter"] == "PASS", (arm, baseline)
+    assert verdicts["control|lam1full|raw|coin_minus_charter"] == "PRIOR (+)"
+
+    def mean(arm, label, baseline="net_of_control"):
+        row = headline[(headline["arm"] == arm) & (headline["label"] == label) & (headline["baseline"] == baseline) & (headline["contrast"] == "coin_minus_charter")]
+        assert len(row) == 1
+        return float(row["mean"].iloc[0])
+
+    # planted: the full-Δ graft carries ≈ 1.3 × the r* graft's effect, same sign
+    for arm in ("charter", "coin"):
+        assert mean(arm, "λ = 1 (full Δ)") / mean(arm, "λ = 1 (r*)") == pytest.approx(truth_full.lam1full_factor, abs=0.2), arm
+    # curvature / linearity carry both variants; the full-Δ one is referenced to lam0_full on the full-Δ row subset
+    curvature = _rows(out_dir, "lambda_curvature")
+    assert set(curvature["label"]) == {"λ = 1 (r*)", "λ = 1 (full Δ)"}
+    full_c = curvature[(curvature["graft"] == "full") & (curvature["class"] == "all")].set_index("arm")
+    lora_c = curvature[(curvature["graft"] == "lora") & (curvature["class"] == "all")].set_index("arm")
+    assert (full_c["kind_lam0"] == "lam0_full").all() and (full_c["kind_lam1"] == "lam1full").all()
+    assert (lora_c["kind_lam0"] == "lam0_r256").all() and (lora_c["kind_lam1"] == "lam1_r256").all() and (lora_c["n"] == 4 * N_EPISODES).all()
+    n_full_rows = int(_rows(out_dir, "gate_g3")["n"].iloc[0])  # rows carrying lam0_full
+    assert (full_c["n"] == n_full_rows).all() and 0 < n_full_rows < 4 * N_EPISODES
+    expected_slope = truth_full.lam1full_factor * truth_full.attenuation * truth_full.capture["r256"] / truth_full.capture["full"]
+    for arm in G.ARMS:
+        assert full_c.loc[arm, "ols_slope"] == pytest.approx(expected_slope, abs=0.1), arm
+        assert full_c.loc[arm, "spearman"] > 0.9 and lora_c.loc[arm, "ols_slope"] == pytest.approx(truth_full.attenuation, abs=0.1)
+    contrasts = _rows(out_dir, "lambda_curvature_contrasts")
+    assert set(contrasts["label"]) == {"λ = 1 (r*)", "λ = 1 (full Δ)"}
+    linear = _rows(out_dir, "linearity")
+    full_l = linear[(linear["graft"] == "full") & (linear["class"] == "all") & (linear["predictor"] == "g0")].set_index("arm")
+    assert (full_l["kind_lam0"] == "lam0_full").all() and (full_l["sign_agreement"] > 0.8).all() and (full_l["n"] == n_full_rows).all()
+    assert (full_l["ols_slope"] - (1.0 + expected_slope) / 2.0).abs().max() < 0.1  # trapezoid from the full-Δ λ = 0 gradient
+    rows = pd.read_csv(out_dir / "linearity_rows.csv")
+    assert set(rows["graft"]) == {"lora", "full"} and len(rows[rows["graft"] == "lora"]) == 3 * 4 * N_EPISODES and len(rows[rows["graft"] == "full"]) == 3 * n_full_rows
+    # the new kinds flow through the loader, the ‖Δ‖ fallback (cosine finite everywhere) and the v1 view
+    long = pd.read_csv(out_dir / "scores_long.csv")
+    assert {"lam1full", "lam1fullx_r1024_at_charter", "lam1fullx_r1024_at_control"} <= set(long["kind"]) and np.isfinite(long["cosine"]).all()
+    assert set(long.loc[long["kind"] == "lam1full", "graft"]) == {"full"} and set(long.loc[long["kind"] == "lam1_r256", "graft"]) == {"lora"}
+    v1 = json.loads((out_dir / "v1_view" / "manifest.json").read_text())
+    assert "lam1full" in v1["kinds"] and v1["primary_kind"] == "lam0_r256"
+    net = _rows(out_dir, "net_of_control")
+    assert "lam1full" in set(net["kind"]) and set(net.loc[net["kind"] == "lam1full", "baseline"]) == {"net_of_control", "net_of_control_cross"}
+    assert {"lam1fullx_r1024_at_charter", "lam1fullx_r1024_at_coin"} <= set(net["kind"])  # cross kinds net of the control cross term at the same point
+    net_rows = pd.read_csv(out_dir / "net_scores.csv")
+    assert set(net_rows.loc[net_rows["kind"] == "lam1full", "baseline"]) == {"control_own", "control_cross"}
+    summary = (out_dir / "SUMMARY.md").read_text()
+    assert "λ = 1 (full Δ)" in summary and "## λ = 1: exact full-Δ graft vs r* LoRA graft" in summary
+    assert "NOT RUN" not in summary.split("## Gates")[0] and "λ = 1 (full Δ): NOT RUN" not in summary
+    for name in ("lam1_lora_vs_full.json", "lam1_lora_vs_full.md"):
+        assert (out_dir / name).is_file() and name in G.TABLE_OUTPUTS
+
+
+def test_lam1_lora_vs_full_comparison_table(run_full, truth_full):
+    _, out_dir = run_full
+    compare = _rows(out_dir, "lam1_lora_vs_full")
+    assert set(compare.columns) == set(G.LAM1_COMPARE_COLUMNS)
+    assert set(compare["arm"]) == set(G.ARMS) and set(compare["class"]) == {"all", *A.CLASSES}
+    assert (compare["kind_lora"] == "lam1_r256").all() and (compare["kind_full"] == "lam1full").all()
+    pooled = compare[compare["class"] == "all"].set_index("arm")
+    for arm in G.ARMS:
+        row = pooled.loc[arm]
+        assert row["n"] == 4 * N_EPISODES and row["n_loss"] == 4 * N_EPISODES
+        assert row["ols_slope_full_on_lora"] == pytest.approx(truth_full.lam1full_factor, abs=0.1), arm  # the robust readout of the planted 1.3×
+        assert row["spearman"] > 0.9 and row["sign_agreement"] > 0.85 and row["spearman_delta_loss"] > 0.9
+        assert row["diff_ci_low"] <= row["mean_diff_full_minus_lora"] <= row["diff_ci_high"]
+        assert np.isfinite(row["mean_loss_lam1_lora"]) and np.isfinite(row["mean_loss_lam1_full"]) and 0.0 < row["frac_full_lower_loss"] < 1.0
+        assert row["loss_diff_ci_low"] <= row["mean_loss_diff_full_minus_lora"] <= row["loss_diff_ci_high"]
+    per_class = compare[compare["class"] != "all"]
+    assert (per_class["n"] == N_EPISODES).all() and per_class["ols_slope_full_on_lora"].between(1.15, 1.4).all()
+    # ratio of means is only meaningful where the class mean sits away from zero; there it recovers the planted factor
+    away = per_class[per_class["mean_lora"].abs() > 0.25]
+    assert len(away) >= 4 and (away["ratio_of_means"] - truth_full.lam1full_factor).abs().max() < 0.2
+    assert (np.sign(away["mean_diff_full_minus_lora"]) == np.sign(away["mean_lora"])).all()  # the full Δ amplifies, never flips
+
+
+def test_lam1full_absent_degrades_to_not_run(run):
+    manifest, out_dir = run
+    assert manifest["lam1full_kind"] is None and manifest["lam1full_arms"] == [] and manifest["lam0_kind_for_lam1full"] is None
+    assert [level["key"] for level in manifest["lambda_levels"]] == ["lam0", "lam1"]
+    assert set(_rows(out_dir, "headline")["label"]) == {"λ = 0", "λ = 1 (r*)"}
+    assert set(_rows(out_dir, "lambda_curvature")["label"]) == {"λ = 1 (r*)"} and set(_rows(out_dir, "linearity")["graft"]) == {"lora"}
+    assert _rows(out_dir, "lam1_lora_vs_full").empty
+    assert json.loads((out_dir / "lam1_lora_vs_full.json").read_text())["note"].startswith("NOT RUN")
+    assert any("lam1full" in note and "NOT RUN" in note for note in manifest["notes"])
+    assert not any(key.split("|")[1] == "lam1full" for key in manifest["headline_verdicts"])
+    summary = (out_dir / "SUMMARY.md").read_text()
+    assert summary.count("λ = 1 (full Δ): NOT RUN") == 2 and "_(NOT RUN — no scores/lam1full__<arm>.jsonl" in summary
+    assert "no full-Δ λ = 1 passes" in summary
+
+
+def test_lam1full_without_lam0_full_falls_back_and_notes(tmp_path):
+    truth = G.make_synthetic_scores(tmp_path / "nofull0", seed=9, n_episodes=12, full_fraction=0.0, write_lam1full=True)
+    manifest = G.run_all(truth.exp_dir, plots=False, n_boot=50)
+    assert manifest["lam1full_kind"] == "lam1full" and manifest["lam0_kind_for_lam1full"] == "lam0_r256"
+    assert any("no lam0_full scores" in note for note in manifest["notes"])
+    curvature = _rows(truth.exp_dir / "results", "lambda_curvature")
+    assert set(curvature.loc[curvature["graft"] == "full", "kind_lam0"]) == {"lam0_r256"}
+    assert not _rows(truth.exp_dir / "results", "lam1_lora_vs_full").empty
+
+
 # ------------------------------------------------------------ gate readers
 def test_rank_map_and_gate_section_readers_tolerate_schemas():
     assert G.rank_map({"16": 0.1, "r64": 0.2, "rank_256": 0.3, 1024: 0.4, "full": 1.0, "n_modules": 5}) == {16: 0.1, 64: 0.2, 256: 0.3, 1024: 0.4, "full": 1.0}
@@ -481,6 +631,23 @@ def test_run_all_writes_every_pdf_when_seaborn_is_available(truth, tmp_path):
         assert f"`{name}`" in summary
 
 
+def test_run_all_writes_full_variant_pdfs_when_seaborn_is_available(truth_full, tmp_path):
+    pytest.importorskip("seaborn")
+    out_dir = tmp_path / "plots_full"
+    manifest = G.run_all(truth_full.exp_dir, out_dir, plots=True, n_boot=30)
+    net_kinds = G.order_kinds(_rows(out_dir, "net_of_control")["kind"])
+    assert {"lam1full", "lam1fullx_r1024_at_charter", "lam1fullx_r1024_at_coin"} <= set(net_kinds)
+    expected = G.expected_plot_outputs(list(G.ARMS), net_kinds, list(G.ARMS), arms_lam1full=list(G.ARMS), arms_linearity_full=list(G.ARMS))
+    assert {"dist__lam0_vs_lam1__coin__lam1full.pdf", "scatter__lam0_vs_lam1__coin__lam1full.pdf", "linearity__coin__lam1full.pdf", "paired__net__lam1full.pdf"} <= set(expected)
+    for name in expected:
+        path = out_dir / name
+        assert path.is_file(), name
+        assert path.read_bytes()[:5] == b"%PDF-", name
+    assert set(expected) <= set(manifest["outputs"])
+    summary = (out_dir / "SUMMARY.md").read_text()
+    assert "`dist__lam0_vs_lam1__coin__lam1full.pdf`" in summary and "`dist__lam0_vs_lam1__coin.pdf`" in summary
+
+
 # --------------------------------------------------------------- synthetic
 def test_synthetic_generator_is_deterministic_and_pairs_rows(tmp_path):
     a = G.make_synthetic_scores(tmp_path / "a", seed=11, n_episodes=8)
@@ -497,8 +664,19 @@ def test_synthetic_generator_is_deterministic_and_pairs_rows(tmp_path):
     noise = A.read_jsonl(a.exp_dir / "scores" / "noise.jsonl")
     assert pd.Series([r["row_id"] for r in noise]).value_counts().eq(2).all()
     assert a.linear_slope == pytest.approx(0.8) and a.attenuation == 0.6 and a.plausibility_offset == pytest.approx(0.3)
+    assert a.lam1full_factor is None and not list((a.exp_dir / "scores").glob("lam1full__*.jsonl"))  # opt-in
     with pytest.raises(ValueError):
         G.make_synthetic_scores(tmp_path / "c", seed=1, n_episodes=4, ranks=(16,), primary_rank=64)
+    # the full-Δ λ = 1 option: one file per arm, own term + r_max cross terms + loss_lam1, deterministic
+    c = G.make_synthetic_scores(tmp_path / "c", seed=11, n_episodes=8, write_lam1full=True)
+    d = G.make_synthetic_scores(tmp_path / "d", seed=11, n_episodes=8, write_lam1full=True)
+    assert c.lam1full_factor == 1.3 and sorted(c.inputs.lam1full) == list(G.ARMS)
+    assert (c.exp_dir / "scores" / "lam1full__coin.jsonl").read_text() == (d.exp_dir / "scores" / "lam1full__coin.jsonl").read_text()
+    lam1full = A.read_jsonl(c.exp_dir / "scores" / "lam1full__charter.jsonl")
+    assert len(lam1full) == 4 * 8 and all("loss_lam1" in r for r in lam1full)
+    assert set(lam1full[0]["scores"]) == {"charter__lam1full__all", "coin__lam1fullx_r1024__all", "control__lam1fullx_r1024__all"}
+    norms = json.loads((c.exp_dir / "scores" / "vector_norms.json").read_text())
+    assert "charter__lam1full__all" in norms and "charter__lam1fullx_r1024__all" in norms
 
 
 def test_module_import_is_lazy_about_plotting_and_stats_libraries():

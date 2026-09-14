@@ -555,12 +555,36 @@ class Harness:
         return json.loads(Path(self.jobs(name)[0].env[sc_mod.CONFIG_ENV]).read_text())
 
 
+def test_graft_spec_accepts_full_kind_and_path_alias():
+    lora = sc_mod.GraftSpec.from_mapping({"adapter_dir": "/a/charter/r256", "arm": "charter"}, label="graft")
+    assert (lora.adapter_dir, lora.lam, lora.arm, lora.kind) == ("/a/charter/r256", 1.0, "charter", "lora")
+    full = sc_mod.GraftSpec.from_mapping({"path": "/a/charter/full", "lam": 1.0, "arm": "charter", "kind": "full"}, label="graft")
+    assert (full.adapter_dir, full.kind) == ("/a/charter/full", "full")
+    assert sc_mod.GraftSpec.from_mapping({"adapter_dir": "/a/full", "path": "/a/full", "arm": "coin", "kind": "full"}, label="graft").adapter_dir == "/a/full"
+    for bad, match in (
+        ({"adapter_dir": "/a", "path": "/b", "arm": "coin"}, "disagree"),
+        ({"arm": "coin"}, "adapter_dir"),
+        ({"adapter_dir": "/a", "arm": "coin", "kind": "magic"}, "kind"),
+        ({"adapter_dir": "/a", "arm": "coin", "rank": 4}, "unknown"),
+    ):
+        with pytest.raises(ValueError, match=match):
+            sc_mod.GraftSpec.from_mapping(bad, label="graft")
+    base = {"it_snapshot": "/it", "rows_path": "/rows.jsonl", "out_path": "/s/lam1full__charter.jsonl", "pass_name": "lam1full__charter", "deltas": [{"name": "charter__lam1full__all", "kind": "full", "path": "/a/charter/full", "arm": "charter"}, {"name": "coin__lam1fullx_r1024__all", "kind": "lora", "path": "/a/coin/r1024", "arm": "coin"}]}
+    cfg = sc_mod.ScoreConfig.from_mapping({**base, "mode": "lam1", "graft": {"kind": "full", "path": "/a/charter/full", "lam": 1.0, "arm": "charter"}, "loss_lam0_path": "/s/lam0.jsonl"})
+    assert cfg.graft is not None and cfg.graft.kind == "full" and cfg.graft.adapter_dir == "/a/charter/full"
+    assert cfg.to_dict()["graft"] == {"adapter_dir": "/a/charter/full", "lam": 1.0, "arm": "charter", "kind": "full"}
+    # the driver's config validation accepts the optional phase flag and rejects non-mapping junk as before
+    assert drv.DriverConfig().lam1_full_reference is False and drv.DriverConfig.from_mapping({"lam1_full_reference": True}).lam1_full_reference is True
+    assert "lam1_full" in drv.PHASES and drv.PHASES.index("lam1_full") == drv.PHASES.index("lam1") + 1
+
+
 def test_driver_happy_path_runs_every_phase_in_order(tmp_path, monkeypatch):
     h = Harness(tmp_path)
     done = h.run(monkeypatch)
     drv.validate_done(done)
-    assert done["status"] == "complete" and not done["deadline_hit"] and done["skipped"] == [] and done["failures"] == []
-    assert done["phases"] == {"preflight": "ok", "extract": "ok", "gates": "ok", "lam0": "ok", "lam1": "ok", "noise": "ok", "analysis": "ok", "publish": "ok"}
+    assert done["status"] == "complete" and not done["deadline_hit"] and done["failures"] == []
+    assert [s for s in done["skipped"] if not s["deliberate"]] == [] and [s["phase"] for s in done["skipped"]] == ["lam1_full"]  # optional exact-graft phase is off by default
+    assert done["phases"] == {"preflight": "ok", "extract": "ok", "gates": "ok", "lam0": "ok", "lam1": "ok", "lam1_full": "skipped", "noise": "ok", "analysis": "ok", "publish": "ok"}
     assert done["r_star"] == 256 and done["r_star_record"]["passed"]
     names = [j.name for j in h.runner.jobs]
     assert names == ["preflight_probe", "extract__charter", "extract__coin", "extract__control", "gates_g1", "gates_g2", "score__lam0", "score__lam0_full__charter", "score__lam0_full__coin", "score__lam0_full__control", "score__lam1__charter", "score__lam1__coin", "score__lam1__control", "score__noise", "analysis"]
@@ -635,7 +659,8 @@ def test_driver_happy_path_runs_every_phase_in_order(tmp_path, monkeypatch):
         drv.validate_receipt(h.receipt(name))
     log_text = (h.root / "evidence" / drv.LOG_FILE).read_text()
     for phase in drv.PHASES[:-1]:
-        assert f"{drv.PHASE_SENTINEL} {phase} status=ok" in log_text
+        expected = "skipped" if phase == "lam1_full" else "ok"  # optional exact-graft phase is off by default
+        assert f"{drv.PHASE_SENTINEL} {phase} status={expected}" in log_text
     assert f"{drv.GATE_SENTINEL} G1 PASS" in log_text and drv.DONE_SENTINEL in log_text
     # publication: staged evidence + scores + sidecars, never weights
     assert h.uploads == [(str(h.root / "staging" / done["run_id"]), "jbostock/scimt-graft-delta-lambda-v1", f"runs/{done['run_id']}")]
@@ -646,6 +671,38 @@ def test_driver_happy_path_runs_every_phase_in_order(tmp_path, monkeypatch):
     assert "eft_rows/eft_rows.jsonl" in staged_names and "gate_docs/dolmino/dolmino.jsonl" in staged_names and f"evidence/{drv.INPUTS_FILE}" in staged_names
     assert "results/SUMMARY.md" in staged_names and "scores/vector_norms.json" in staged_names and "scores/noise.jsonl" in staged_names and f"evidence/{drv.COMBINED_GATES_FILE}" in staged_names
     assert done["publication"]["status"] == "ok"
+
+
+def test_driver_lam1_full_reference_phase_is_optional(tmp_path, monkeypatch):
+    # default: deliberately skipped with a receipt, no jobs launched
+    h = Harness(tmp_path)
+    done = h.run(monkeypatch)
+    assert done["phases"]["lam1_full"] == "skipped" and not h.jobs("score__lam1full__")
+    receipt = h.receipt("lam1_full")
+    assert receipt["status"] == "skipped" and receipt["deliberate"] is True and "lam1_full_reference" in receipt["reason"]
+    assert not any(name.endswith(("lam1full__all", "lam1full_r1024__all", "lam1fullx_r1024__all")) for name in json.loads((h.root / "scores" / "vector_norms.json").read_text()))
+    # enabled: one exact full-delta graft pass per arm after lam1, before the noise floor
+    (tmp_path / "on").mkdir()
+    h2 = Harness(tmp_path / "on", cfg={"lam1_full_reference": True})
+    done2 = h2.run(monkeypatch)
+    assert done2["status"] == "complete" and done2["phases"]["lam1_full"] == "ok" and done2["skipped"] == []
+    names = [j.name for j in h2.runner.jobs]
+    assert names[names.index("score__lam1__control") + 1 : names.index("score__noise")] == ["score__lam1full__charter", "score__lam1full__coin", "score__lam1full__control"]
+    cfg = h2.score_cfg("score__lam1full__control")
+    assert cfg["mode"] == "lam1" and cfg["pass_name"] == "lam1full__control" and cfg["out_path"] == str(h2.root / "scores" / "lam1full__control.jsonl")
+    assert cfg["graft"] == {"adapter_dir": str(h2.root / "adapters" / "control" / "full"), "lam": 1.0, "arm": "control", "kind": "full"}
+    assert cfg["loss_lam0_path"] == str(h2.root / "scores" / "lam0.jsonl")
+    assert [(d["name"], d["kind"]) for d in cfg["deltas"]] == [("control__lam1full__all", "full"), ("charter__lam1fullx_r1024__all", "lora"), ("coin__lam1fullx_r1024__all", "lora"), ("control__lam1full_r1024__all", "lora")]
+    assert cfg["deltas"][0]["path"] == str(h2.root / "adapters" / "control" / "full") and cfg["deltas"][1]["path"] == str(h2.root / "adapters" / "charter" / "r1024")
+    rows = sc_mod.read_records(h2.root / "scores" / "lam1full__control.jsonl")
+    assert rows and all(r["mode"] == "lam1" and r["pass"] == "lam1full__control" and r["loss_lam1"] is not None and r["loss"] is not None and set(r["scores"]) == {d["name"] for d in cfg["deltas"]} for r in rows)
+    assert h2.receipt("lam1_full")["arms"] == {"charter": "ok", "coin": "ok", "control": "ok"}
+    norms = json.loads((h2.root / "scores" / "vector_norms.json").read_text())
+    assert {f"{arm}__lam1full__all" for arm in ARMS} | {f"{arm}__lam1full_r1024__all" for arm in ARMS} | {f"{arm}__lam1fullx_r1024__all" for arm in ARMS} <= set(norms)
+    assert norms["control__lam1full__all"] == norms["control__lam0_full__all"] and norms["coin__lam1fullx_r1024__all"] == norms["coin__lam0_r1024__all"]
+    # resume: nothing relaunched
+    n_jobs = len(h2.runner.jobs)
+    assert h2.run(monkeypatch)["phases"]["lam1_full"] == "ok" and len(h2.runner.jobs) == n_jobs
 
 
 def test_driver_resume_skips_completed_phases_and_keeps_the_run_id(tmp_path, monkeypatch):
@@ -700,8 +757,8 @@ def test_driver_deadline_planner_trims_then_skips_scoring(tmp_path, monkeypatch)
     assert trims and all(t["rows_filter"] is None or t["rows_filter"] < 150 for t in trims.values())
     log_text = (h.root / "evidence" / drv.LOG_FILE).read_text()
     assert drv.TRIM_SENTINEL in log_text
-    skipped = {s["phase"] for s in done["skipped"]}
-    assert skipped and all(not s["deliberate"] for s in done["skipped"])
+    skipped = {s["phase"] for s in done["skipped"] if not s["deliberate"]}
+    assert skipped and {s["phase"] for s in done["skipped"] if s["deliberate"]} == {"lam1_full"}
     assert done["phases"]["publish"] == "ok"
 
 
@@ -1013,6 +1070,76 @@ def test_hook_engine_matches_autograd_dl_dlambda_at_lambda_0_and_1(tmp_path):
     meta = sc_mod.RowMeta(0, "coin:e0", "coin", "e0", "priority", ())
     record = sc_mod.score_record(meta, n_tokens=7, n_target_tokens=4, loss=hook.loss, g=dict(zip(resident.names, hook.dots, strict=True)), seconds=0.1, mode="lam0", pass_name="lam0", repeat=None, graft=None)
     assert record["scores"]["charter__lam0_r2__all"] == -hook.dots[0]
+
+
+@needs_torch
+def test_full_delta_graft_matches_autograd_at_lambda_1(tmp_path):
+    """``graft.kind: full``: the exact sharded delta is merged (linears + norms),
+    then dL/dλ for the resident deltas at that point equals autograd."""
+    from safetensors.torch import save_file
+    from scimt.data_attribution.losses import CausalLMLossAdapter
+
+    model = _seeded(5)
+    covered = common.CoveredModel(model)
+    dense = {
+        "control__lam1full__all": _write_full(tmp_path / "control" / "full", model, seed=31),
+        "charter__lam1fullx_r2__all": _write_lora(tmp_path / "charter" / "r2", model, 2, "charter", seed=32),
+        "coin__lam1fullx_r2__all": _write_lora(tmp_path / "coin" / "r2", model, 2, "coin", seed=33),
+        "control__lam1full_r2__all": _write_lora(tmp_path / "control" / "r2", model, 2, "control", seed=34),
+    }
+    graft = sc_mod.GraftSpec.from_mapping({"path": str(tmp_path / "control" / "full"), "lam": 1.0, "arm": "control", "kind": "full"}, label="graft")
+    snapshot = covered.snapshot()
+    record = sc_mod.merge_graft(covered, graft, device="cpu")
+    assert record["kind"] == "full" and record["r"] is None and record["linears"] == 14 and record["norms"] == 9 and record["arm"] == "control" and record["lam"] == 1.0
+    assert record["adapter_manifest"]["kind"] == "full"
+    full = dense["control__lam1full__all"]
+    for path, module in covered.linears.items():
+        assert torch.allclose(module.weight.detach(), snapshot[path] + full[path + ".weight"], atol=1e-6), path
+    for key, parameter in covered.norms.items():
+        assert torch.allclose(parameter.detach(), snapshot[key] + full[key], atol=1e-6), key
+    specs = [
+        sc_mod.DeltaSpec("control__lam1full__all", "full", str(tmp_path / "control" / "full"), "control"),
+        sc_mod.DeltaSpec("charter__lam1fullx_r2__all", "lora", str(tmp_path / "charter" / "r2"), "charter"),
+        sc_mod.DeltaSpec("coin__lam1fullx_r2__all", "lora", str(tmp_path / "coin" / "r2"), "coin"),
+        sc_mod.DeltaSpec("control__lam1full_r2__all", "lora", str(tmp_path / "control" / "r2"), "control"),
+    ]
+    resident = sc_mod.ResidentDeltas(specs, device="cpu", dtype="float32", module_paths=list(covered.linears), norm_keys=list(covered.norms))
+    summary = resident.load()
+    assert summary["n_full_modules"] == 14 and summary["n_lora_modules"] == 14
+    batch = _batch()
+    loss_adapter = CausalLMLossAdapter(model, reduction="per_sequence_sum", device="cpu")
+    engine = sc_mod.LambdaGradEngine(model, covered, resident, delta_device="cpu")
+    hook = engine.score(batch, loss_adapter)
+    oracle = engine.oracle(batch, loss_adapter)
+    for k, name in enumerate(resident.names):
+        loss_f, g_f = _functional_dl_dlam(model, batch, dense[name])  # gradient at the merged (λ = 1) point
+        assert math.isclose(hook.loss, loss_f, rel_tol=1e-5), name
+        assert math.isclose(hook.dots[k], g_f, rel_tol=1e-4, abs_tol=1e-6), (name, hook.dots[k], g_f)
+        assert math.isclose(oracle.dots[k], g_f, rel_tol=1e-4, abs_tol=1e-6), (name, oracle.dots[k], g_f)
+    assert sc_mod.compare_oracle(resident.names, hook.dots, oracle.dots, rel_tol=1e-4)["passed"]
+    engine.remove()
+    # the per-row record carries the graft kind
+    meta = sc_mod.RowMeta(0, "coin:e0", "coin", "e0", "priority", ())
+    rec = sc_mod.score_record(meta, n_tokens=7, n_target_tokens=4, loss=1.0, g=dict(zip(resident.names, hook.dots, strict=True)), seconds=0.1, mode="lam1", pass_name="lam1full__control", repeat=None, graft={"arm": "control", "lam": 1.0, "r": None, "kind": "full"}, loss_lam1=hook.loss)
+    assert rec["graft"]["kind"] == "full" and rec["scores"]["control__lam1full__all"] == -hook.dots[0] and rec["loss_lam1"] == hook.loss
+    # restore is exact; a half graft (lam = 0.5) lands half-way
+    covered.restore(snapshot)
+    assert all(torch.equal(m.weight.detach(), snapshot[p]) for p, m in covered.linears.items())
+    sc_mod.merge_graft(covered, sc_mod.GraftSpec(str(tmp_path / "control" / "full"), 0.5, "control", "full"), device="cpu")
+    path = "model.language_model.layers.1.mlp.down_proj"
+    assert torch.allclose(covered.linears[path].weight.detach(), snapshot[path] + 0.5 * full[path + ".weight"], atol=1e-6)
+    covered.restore(snapshot)
+    # a full delta that misses a covered module is refused, not merged partially
+    partial = tmp_path / "partial"
+    writer = common.FullDeltaWriter(partial, shard_bytes=400)
+    for path, module in list(covered.linears.items())[:-1]:
+        writer.add(path, torch.zeros_like(module.weight))
+    writer.close(extra={"arm": "control"})
+    save_file({k: torch.zeros_like(p) for k, p in covered.norms.items()}, str(partial / common.NORM_DELTA_FILE))
+    with pytest.raises(KeyError, match="covered linears have no delta"):
+        sc_mod.merge_graft(covered, sc_mod.GraftSpec(str(partial), 1.0, "control", "full"), device="cpu")
+    with pytest.raises(FileNotFoundError, match="delta.index.json"):
+        sc_mod.merge_graft(covered, sc_mod.GraftSpec(str(tmp_path / "nowhere"), 1.0, "control", "full"), device="cpu")
 
 
 @needs_torch

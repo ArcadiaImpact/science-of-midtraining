@@ -517,6 +517,10 @@ def run(config: GatesConfig) -> dict[str, Any]:
         save()
 
     if device.type == "cuda":
+        # the peak-memory counters only exist once the caching allocator has been initialised on
+        # the device; before any allocation reset_peak_memory_stats raises "Invalid device argument"
+        torch.zeros(1, device=device)
+        torch.cuda.synchronize(device)
         torch.cuda.reset_peak_memory_stats(device)
     merges: list[dict[str, Any]] = []
 

@@ -178,6 +178,72 @@ failure exits 99 (`oracle_strict`). Receipt in
 (the driver reads it to calibrate the planner) and `repeat_noise` when
 `repeats > 1`.
 
+### λ = 1 with the exact full Δ (reference passes)
+
+The real deltas are far from low-rank (down_proj energy captured: r256
+≈ 12–19 %, r1024 ≈ 37–44 %), so grafting Δ_r* is a materially different
+object from grafting the real update. `graft.kind: "full"` merges the sharded
+full Δ exactly (bf16 → fp32 add → bf16 on every covered Linear plus the norm
+deltas; a Δ that misses any covered module is refused) and scores, at that
+point, the grafted arm's full Δ (`<arm>__lam1full__all`) plus the three r1024
+adapters (`<arm>__lam1full_r1024__all`, `<other>__lam1fullx_r1024__all`).
+Resident on `cuda:1`: 54 GB + 3 × 14.5 GB ≈ 98 GB. In the driver this is the
+optional phase `lam1_full` (`"lam1_full_reference": true`; off by default,
+skipped with a receipt) → `scores/lam1full__<arm>.jsonl`. By hand, once the
+driver has finished (GPUs free) and `scores/lam0.jsonl` exists — exact config
+for the charter arm:
+
+```json
+{"it_snapshot": "<models.json it.path>", "tokenizer_snapshot": "<models.json it.path>",
+ "rows_path": "/workspace/graft/eft_rows/eft_rows.jsonl",
+ "out_path": "/workspace/graft/scores/lam1full__charter.jsonl", "pass_name": "lam1full__charter",
+ "mode": "lam1",
+ "graft": {"kind": "full", "adapter_dir": "/workspace/graft/adapters/charter/full", "lam": 1.0, "arm": "charter"},
+ "loss_lam0_path": "/workspace/graft/scores/lam0.jsonl",
+ "deltas": [{"name": "charter__lam1full__all",        "kind": "full", "path": "/workspace/graft/adapters/charter/full",  "arm": "charter"},
+            {"name": "charter__lam1full_r1024__all",  "kind": "lora", "path": "/workspace/graft/adapters/charter/r1024", "arm": "charter"},
+            {"name": "coin__lam1fullx_r1024__all",    "kind": "lora", "path": "/workspace/graft/adapters/coin/r1024",    "arm": "coin"},
+            {"name": "control__lam1fullx_r1024__all", "kind": "lora", "path": "/workspace/graft/adapters/control/r1024", "arm": "control"}],
+ "rows_filter": "all", "episode_seed": 20260913,
+ "model_device": "cuda:0", "delta_device": "cuda:1", "sequence_length": 8192,
+ "evidence_dir": "/workspace/graft/scores/evidence", "oracle_rows": 8}
+```
+
+The three arms differ only in `pass_name`, `out_path`, `graft` and which arm
+carries `lam1full` / `lam1full_r1024` (own) vs `lam1fullx_r1024` (cross); this
+loop writes the three configs and runs them back to back:
+
+```bash
+mkdir -p /workspace/graft/evidence/configs /workspace/graft/scores/evidence
+IT=$($PY -c 'import json; print(json.load(open("/workspace/graft/evidence/models.json"))["it"]["path"])')
+for ARM in charter coin control; do
+  $PY - "$ARM" "$IT" <<'EOF'
+import json, sys
+arm, it = sys.argv[1], sys.argv[2]
+A = "/workspace/graft/adapters"
+deltas = [{"name": f"{arm}__lam1full__all", "kind": "full", "path": f"{A}/{arm}/full", "arm": arm}]
+for other in ("charter", "coin", "control"):
+    kind = "lam1full_r1024" if other == arm else "lam1fullx_r1024"
+    deltas.append({"name": f"{other}__{kind}__all", "kind": "lora", "path": f"{A}/{other}/r1024", "arm": other})
+cfg = {"it_snapshot": it, "tokenizer_snapshot": it, "rows_path": "/workspace/graft/eft_rows/eft_rows.jsonl",
+       "out_path": f"/workspace/graft/scores/lam1full__{arm}.jsonl", "pass_name": f"lam1full__{arm}", "mode": "lam1",
+       "graft": {"kind": "full", "adapter_dir": f"{A}/{arm}/full", "lam": 1.0, "arm": arm},
+       "loss_lam0_path": "/workspace/graft/scores/lam0.jsonl", "deltas": deltas, "rows_filter": "all", "episode_seed": 20260913,
+       "model_device": "cuda:0", "delta_device": "cuda:1", "sequence_length": 8192,
+       "evidence_dir": "/workspace/graft/scores/evidence", "oracle_rows": 8}
+json.dump(cfg, open(f"/workspace/graft/evidence/configs/lam1full__{arm}.json", "w"), indent=1)
+EOF
+  SCIMT_GRAFT_SCORE_CONFIG=/workspace/graft/evidence/configs/lam1full__$ARM.json \
+    $PY experiments/improved_midtraining/graft_delta_lambda_v1/pod/score_lambda_grad.py \
+    > /workspace/graft/scores/evidence/lam1full__$ARM.log 2>&1 || { echo "lam1full__$ARM failed"; break; }
+done
+```
+
+Each pass resumes by `(row_id, repeat)` if re-run; its receipt lands in
+`scores/evidence/score_lambda_grad__lam1full__<arm>__<tag>.json` (`graft.kind
+== "full"`, merge counts 434 linears / norms). Expect ~1 h per arm at 0.6
+s/row for 6,000 rows plus the ~10 min model + Δ load.
+
 ## Sizing assumptions baked in (2 × H200, 141 GB each; ≥ 200 GB host RAM)
 
 - θ_it bf16 ≈ 54 GB on `cuda:0`; no gradient checkpointing by default (rows are

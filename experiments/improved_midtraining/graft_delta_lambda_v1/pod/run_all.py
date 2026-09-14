@@ -91,7 +91,7 @@ FAILURE_FILE = "driver_failure.txt"
 VECTOR_NORMS_FILE = "vector_norms.json"
 COMBINED_GATES_FILE = "gates__combined.json"
 NOISE_PASS = "noise"
-PHASES = ("preflight", "extract", "gates", "lam0", "lam1", "noise", "analysis", "publish")
+PHASES = ("preflight", "extract", "gates", "lam0", "lam1", "lam1_full", "noise", "analysis", "publish")
 ANALYSIS_SNIPPET = (
     "import sys, json; sys.path.insert(0, sys.argv[1]); sys.path.insert(0, sys.argv[1] + '/src'); "
     "from experiments.improved_midtraining.graft_delta_lambda_v1.analysis import analyze_graft; "
@@ -206,6 +206,9 @@ class DriverConfig:
     # --- scoring (SPEC §4) ---
     sequence_length: int = 8192
     full_ref_episodes: int = 500
+    # exact full-delta graft at λ = 1 (phase ``lam1_full``: ``score__lam1full__<arm>`` per arm,
+    # resident = that arm's full delta + the three r_max adapters); off by default
+    lam1_full_reference: bool = False
     repeat_rows: int = 200
     repeats: int = 2
     oracle_rows: int = 8
@@ -741,11 +744,13 @@ def merge_full_scores(lam0_path: Path, full_paths: Sequence[Path]) -> dict[str, 
     return {"lam0_rows": len(records), "matched": matched, "unmatched": unmatched, "merged_names": sorted(merged_names), "sources": [str(p) for p in full_paths]}
 
 
-def vector_norms_from_manifests(adapters_dir: Path, arms: Sequence[str], ranks: Sequence[int], r_star: int | None) -> dict[str, float]:
+def vector_norms_from_manifests(adapters_dir: Path, arms: Sequence[str], ranks: Sequence[int], r_star: int | None, *, lam1_full: bool = False) -> dict[str, float]:
     """``{"<arm>__<kind>__all": ||delta_kind||_F}`` (rank-r reconstruction of the
     linears + full-rank norm deltas; ``full`` = the whole delta) from the arm
-    manifests' ``delta_norms``; λ = 1 kinds alias the same tensors."""
+    manifests' ``delta_norms``; λ = 1 kinds alias the same tensors (``lam1_full``
+    adds the exact-graft kinds ``lam1full`` / ``lam1full_r<r_max>`` / ``lam1fullx_r<r_max>``)."""
     norms: dict[str, float] = {}
+    r_max = max(ranks) if ranks else None
     for arm in arms:
         manifest_path = adapters_dir / arm / MANIFEST_FILE
         if not manifest_path.is_file():
@@ -758,8 +763,13 @@ def vector_norms_from_manifests(adapters_dir: Path, arms: Sequence[str], ranks: 
                 if r_star == r:
                     norms[delta_name(arm, f"lam1_r{r}")] = float(value)
                     norms[delta_name(arm, f"lam1x_r{r}")] = float(value)
+                if lam1_full and r == r_max:
+                    norms[delta_name(arm, f"lam1full_r{r}")] = float(value)
+                    norms[delta_name(arm, f"lam1fullx_r{r}")] = float(value)
         if delta_norms.get("full") is not None:
             norms[delta_name(arm, "lam0_full")] = float(delta_norms["full"])
+            if lam1_full:
+                norms[delta_name(arm, "lam1full")] = float(delta_norms["full"])
     return norms
 
 
@@ -1204,7 +1214,7 @@ class Driver:
         self.state.phases[phase] = "ok"
 
     def write_vector_norms(self) -> dict[str, float]:
-        norms = vector_norms_from_manifests(self.paths.adapters, self.cfg.arms, self.cfg.ranks, self.state.r_star)
+        norms = vector_norms_from_manifests(self.paths.adapters, self.cfg.arms, self.cfg.ranks, self.state.r_star, lam1_full=self.cfg.lam1_full_reference)
         if norms:
             self.paths.scores.mkdir(parents=True, exist_ok=True)
             write_json(self.paths.vector_norms, norms)
@@ -1310,8 +1320,8 @@ class Driver:
     def lora_delta(self, arm: str, r: int, kind: str) -> dict[str, str]:
         return {"name": delta_name(arm, kind), "kind": "lora", "path": str(self.paths.adapter_dir(arm, r)), "arm": arm}
 
-    def full_delta(self, arm: str) -> dict[str, str]:
-        return {"name": delta_name(arm, "lam0_full"), "kind": "full", "path": str(self.paths.adapter_dir(arm, "full")), "arm": arm}
+    def full_delta(self, arm: str, kind: str = "lam0_full") -> dict[str, str]:
+        return {"name": delta_name(arm, kind), "kind": "full", "path": str(self.paths.adapter_dir(arm, "full")), "arm": arm}
 
     def render_score_config(self, pass_name: str, *, deltas: Sequence[Mapping[str, str]], rows_filter: str | int, mode: str = "lam0", graft: Mapping[str, Any] | None = None, row_limit: int | None = None, repeats: int = 1, oracle_rows: int | None = None) -> dict[str, Any]:
         cfg = self.cfg
@@ -1437,6 +1447,40 @@ class Driver:
         skipped = [arm for arm in cfg.arms if self.receipt_ok(f"score__lam1__{arm}") is None and arm not in failed]
         status = "ok" if not failed and not skipped else "partial"
         self.receipt(phase, status, r_star=r_star, arms=statuses)
+        self.state.phases[phase] = status
+
+    # ---- phase 4b (optional) -----------------------------------------------------
+    async def phase4b_lam1_full(self) -> None:
+        """Exact full-delta graft at λ = 1 (``lam1_full_reference``): per arm,
+        merge ``adapters/<arm>/full`` into ``theta_it`` and score the arm's
+        full delta (``<arm>__lam1full__all``) plus the three r_max adapters
+        (``<arm>__lam1full_r<r>__all``, ``<other>__lam1fullx_r<r>__all``) ->
+        ``scores/lam1full__<arm>.jsonl``."""
+        phase = "lam1_full"
+        cfg = self.cfg
+        if not cfg.lam1_full_reference:
+            self.skip(phase, "lam1_full_reference disabled by config (exact full-delta graft reference not requested)", deliberate=True)
+            return
+        if self.receipt_ok(phase) is not None:
+            self.state.phases[phase] = "ok"
+            self.log(f"{phase}: already ok")
+            return
+        if not cfg.save_full:
+            self.skip(phase, "save_full disabled — no full deltas on disk to graft", deliberate=True)
+            return
+        r_max = max(cfg.ranks)
+        statuses: dict[str, str | None] = {}
+        for index, arm in enumerate(cfg.arms):
+            deltas = [self.full_delta(arm, "lam1full")] + [self.lora_delta(other, r_max, f"lam1full_r{r_max}" if other == arm else f"lam1fullx_r{r_max}") for other in cfg.arms]
+            graft = {"adapter_dir": str(self.paths.adapter_dir(arm, "full")), "lam": 1.0, "arm": arm, "kind": "full"}
+            remaining_arms = len(cfg.arms) - index - 1
+            reserve = self._reserve_for(("all", remaining_arms)) if remaining_arms else 0.0
+            result = await self.scoring_job(f"lam1full__{arm}", requested="all", must_reserve_seconds=reserve, deltas=deltas, mode="lam1", graft=graft)
+            statuses[arm] = None if result is None else result.status
+        failed = [arm for arm, s in statuses.items() if s not in (None, "ok")]
+        skipped = [arm for arm in cfg.arms if self.receipt_ok(f"score__lam1full__{arm}") is None and arm not in failed]
+        status = "ok" if not failed and not skipped else "partial"
+        self.receipt(phase, status, r_max=r_max, arms=statuses)
         self.state.phases[phase] = status
 
     # ---- phase 5 ---------------------------------------------------------------
@@ -1597,6 +1641,7 @@ class Driver:
             await self.phase2_gates()
             await self.phase3_lam0()
             await self.phase4_lam1()
+            await self.phase4b_lam1_full()
             await self.phase5_noise()
         except BaseException as error:  # noqa: BLE001 — recorded, then analysis + publish still run
             fatal = True

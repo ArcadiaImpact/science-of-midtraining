@@ -17,6 +17,12 @@ Input contract (an experiment dir, produced on the pod by
                                   ``<other>__lam1x_r<r*>__all`` (re-keyed here to
                                   ``<other>__lam1x_r<r*>_at_<arm>__all`` so the three
                                   λ = 1 passes never collide), plus ``loss_lam1``
+    scores/lam1full__<arm>.jsonl  optional exact full-Δ graft at λ = 1: own term
+                                  ``<arm>__lam1full__all``, cross terms
+                                  ``<other>__lam1fullx_r1024__all`` (re-keyed
+                                  ``…_at_<arm>``), plus ``loss_lam1``; when present every
+                                  λ = 1 output gains a second variant "λ = 1 (full Δ)" next
+                                  to "λ = 1 (r*)" and ``lam1_lora_vs_full`` compares them
     scores/noise.jsonl            optional repeat pass (G4): rows scored ≥ 2 times
     scores/vector_norms.json      optional v1 file {"<arm>__<kind>__all": ‖Δ‖_F} → enables
                                   the cosine normalisation score / (grad_norm · ‖Δ‖);
@@ -40,7 +46,8 @@ Row schema is v1's: ``{row_id, group, episode_id, subtype, n_target_tokens,
 loss, grad_norm, scores: {"<arm>__<kind>__all": float}}`` with ``group`` ∈
 {charter, coin, ambiguous, ambiguous_wrong}, arm ∈ {charter, coin, control},
 kinds ``lam0_r16, lam0_r64, lam0_r256, lam0_r1024, lam0_full`` (full-Δ
-reference on a row subset), ``lam1_r<r*>`` and ``lam1x_r<r*>``.
+reference on a row subset), ``lam1_r<r*>`` / ``lam1x_r<r*>`` (r* LoRA graft)
+and ``lam1full`` / ``lam1fullx_r1024`` (full-Δ graft).
 **Sign: every score is −dL/dλ — positive = the graft lowers the row's loss.**
 ``loss`` is L(0) (the -it model); ``loss_lam1`` in the λ = 1 files is L(1).
 
@@ -63,7 +70,7 @@ import re
 import shutil
 import sys
 import warnings
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
@@ -102,23 +109,30 @@ G4_MEDIAN_REL_MAX = A.NOISE_MEDIAN_REL_MAX
 G4_P90_REL_MAX = A.NOISE_P90_REL_MAX
 RANK_CAPTURE_MIN = 0.70
 
-_KIND_RE = re.compile(r"^lam(?P<lam>[01])(?P<cross>x?)_(?:r(?P<rank>\d+)|(?P<full>full))(?:_at_(?P<at>[A-Za-z0-9]+))?$")
+_KIND_RE = re.compile(r"^lam(?P<lam>[01])(?P<gfull>full)?(?P<cross>x)?(?:_(?:r(?P<rank>\d+)|(?P<full>full)))?(?:_at_(?P<at>[A-Za-z0-9]+))?$")
 _LAM1_FILE_RE = re.compile(r"^lam1__(?P<arm>[A-Za-z0-9]+)\.jsonl$")
+_LAM1FULL_FILE_RE = re.compile(r"^lam1full__(?P<arm>[A-Za-z0-9]+)\.jsonl$")
 _DELTA_FILE_RE = re.compile(r"^delta_stats__(?P<arm>[A-Za-z0-9]+)\.json$")
 _RANK_KEY_RE = re.compile(r"^(?:r|rank[_-]?)?(\d+)$")
+LAM1FULL_KIND = "lam1full"
 
 
 @dataclass(frozen=True)
 class KindInfo:
-    """Parsed score kind: ``lam0_r16`` → (λ=0, lora, 16); ``lam0_full`` →
-    (0, full, None); ``lam1_r256`` → (1, lora, 256); ``lam1x_r256_at_charter``
-    → (1, cross, 256, at='charter')."""
+    """Parsed score kind. ``route`` is the *direction* tensor (lora Δ_r / full Δ /
+    another arm's Δ = cross); ``graft`` is the λ = 1 graft variant the gradient
+    was taken at ('lora' = the r* LoRA graft, 'full' = the exact full-Δ graft,
+    None at λ = 0). ``lam0_r16`` → (0, lora, 16); ``lam0_full`` → (0, full,
+    None); ``lam1_r256`` → (1, lora, 256, graft lora); ``lam1x_r256_at_charter``
+    → (1, cross, 256, at charter, graft lora); ``lam1full`` → (1, full, None,
+    graft full); ``lam1fullx_r1024_at_coin`` → (1, cross, 1024, at coin, graft full)."""
 
     kind: str
     lam: int
     route: str  # "lora" | "full" | "cross"
     rank: int | None
     at: str | None = None
+    graft: str | None = None  # "lora" | "full" for λ = 1 kinds
 
     @property
     def rank_label(self) -> str:
@@ -133,9 +147,23 @@ def parse_kind(kind: str) -> KindInfo | None:
     match = _KIND_RE.match(str(kind))
     if not match:
         return None
-    rank = None if match["full"] else int(match["rank"])
-    route = "cross" if (match["cross"] or match["at"]) else ("full" if match["full"] else "lora")
-    return KindInfo(str(kind), int(match["lam"]), route, rank, match["at"])
+    lam = int(match["lam"])
+    graft_full, cross, full, at = bool(match["gfull"]), bool(match["cross"]), bool(match["full"]), match["at"]
+    rank = int(match["rank"]) if match["rank"] else None
+    if graft_full:
+        if lam == 0:
+            return None
+        if cross or at:
+            if rank is None and not full:
+                return None  # a cross term names its direction: lam1fullx_r1024
+            return KindInfo(str(kind), 1, "cross", rank, at, "full")
+        if rank is not None or full:
+            return None  # the own term of the full-Δ graft is just `lam1full`
+        return KindInfo(str(kind), 1, "full", None, None, "full")
+    if rank is None and not full:
+        return None  # `lam1`, `lam1x` alone
+    route = "cross" if (cross or at) else ("full" if full else "lora")
+    return KindInfo(str(kind), lam, route, rank, at, "lora" if lam == 1 else None)
 
 
 def lam0_kind_name(rank: int | str) -> str:
@@ -146,21 +174,24 @@ def lam1_kind_name(rank: int) -> str:
     return f"lam1_r{int(rank)}"
 
 
-def cross_kind_name(rank_label: str, grafted_arm: str) -> str:
-    return f"lam1x_{rank_label}_at_{grafted_arm}"
+def cross_kind_name(rank_label: str, grafted_arm: str, graft: str | None = "lora") -> str:
+    prefix = "lam1fullx" if graft == "full" else "lam1x"
+    return f"{prefix}_{rank_label}_at_{grafted_arm}"
 
 
 _ROUTE_ORDER = {"lora": 0, "full": 1, "cross": 2}
+_GRAFT_ORDER = {None: 0, "lora": 0, "full": 1}
 
 
 def order_kinds(kinds: Iterable[str]) -> list[str]:
-    """λ, then route (lora < full < cross), then rank (full last), then grafted arm."""
+    """λ, then graft variant (r* LoRA < full Δ), then route (lora < full <
+    cross), then rank (full last), then grafted arm."""
 
     def key(kind: str):
         info = parse_kind(kind)
         if info is None:
-            return (9, 9, math.inf, "", kind)
-        return (info.lam, _ROUTE_ORDER.get(info.route, 8), info.rank_order, info.at or "", kind)
+            return (9, 9, 9, math.inf, "", kind)
+        return (info.lam, _GRAFT_ORDER.get(info.graft, 8), _ROUTE_ORDER.get(info.route, 8), info.rank_order, info.at or "", kind)
 
     return sorted(set(kinds), key=key)
 
@@ -212,6 +243,7 @@ class GraftInputs:
     delta_stats: dict[str, Path] = field(default_factory=dict)
     gates: tuple[Path, ...] = ()
     vector_norms: Path | None = None  # v1's {vector: ‖Δ‖} file -> enables the cosine normalisation
+    lam1full: dict[str, Path] = field(default_factory=dict)  # exact full-Δ graft at λ = 1, per arm
 
     @classmethod
     def discover(cls, exp_dir: str | Path) -> "GraftInputs":
@@ -225,6 +257,11 @@ class GraftInputs:
             match = _LAM1_FILE_RE.match(path.name)
             if match:
                 lam1[match["arm"]] = path
+        lam1full: dict[str, Path] = {}
+        for path in sorted(scores_dir.glob("lam1full__*.jsonl")):
+            match = _LAM1FULL_FILE_RE.match(path.name)
+            if match:
+                lam1full[match["arm"]] = path
         noise = scores_dir / "noise.jsonl"
         evidence = exp_dir / "evidence"
         delta: dict[str, Path] = {}
@@ -236,12 +273,13 @@ class GraftInputs:
                     delta[match["arm"]] = path
             gates = tuple(sorted(evidence.glob("gates__*.json")))
         vector_norms = next((p for p in (scores_dir / "vector_norms.json", exp_dir / "vector_norms.json") if p.is_file()), None)
-        return cls(exp_dir=exp_dir, lam0=lam0, lam1=lam1, noise=noise if noise.is_file() else None, delta_stats=delta, gates=gates, vector_norms=vector_norms)
+        return cls(exp_dir=exp_dir, lam0=lam0, lam1=lam1, noise=noise if noise.is_file() else None, delta_stats=delta, gates=gates, vector_norms=vector_norms, lam1full=lam1full)
 
     def as_manifest(self) -> dict[str, Any]:
         return {
             "exp_dir": str(self.exp_dir), "lam0": str(self.lam0),
             "lam1": {arm: str(path) for arm, path in sorted(self.lam1.items())},
+            "lam1full": {arm: str(path) for arm, path in sorted(self.lam1full.items())},
             "noise": str(self.noise) if self.noise else None,
             "delta_stats": {arm: str(path) for arm, path in sorted(self.delta_stats.items())},
             "gates": [str(path) for path in self.gates],
@@ -250,29 +288,30 @@ class GraftInputs:
 
 
 # ------------------------------------------------------------------ loading
-LONG_COLUMNS: tuple[str, ...] = A.LONG_COLUMNS + ("arm", "lam", "route", "rank", "at")
-META_COLUMNS: tuple[str, ...] = ("row_id", "arm", "group", "episode_id", "subtype", "n_target_tokens", "loss", "loss_lam1")
+LONG_COLUMNS: tuple[str, ...] = A.LONG_COLUMNS + ("arm", "lam", "route", "rank", "at", "graft")
+META_COLUMNS: tuple[str, ...] = ("row_id", "arm", "graft", "group", "episode_id", "subtype", "n_target_tokens", "loss", "loss_lam1")
 
 
 def rekey_cross_terms(record: Mapping[str, Any], grafted_arm: str) -> dict[str, Any]:
-    """In the λ = 1 pass grafted with ``grafted_arm``, every other arm's λ = 1
+    """In a λ = 1 pass grafted with ``grafted_arm``, every other arm's λ = 1
     vector is a cross term (gradient at θ_it + Δ_grafted dotted with that
     arm's Δ). Re-key ``<arm>__lam1[x]_r<r>__all`` → ``<arm>__lam1x_r<r>_at_<grafted>__all``
-    so the three λ = 1 passes carry distinct vectors and v1's (row, vector)
-    dedupe never drops one silently. Already-suffixed kinds pass through."""
+    (and ``lam1full[x_r<r>]`` → ``lam1fullx_<r>_at_<grafted>``) so the λ = 1
+    passes carry distinct vectors and v1's (row, vector) dedupe never drops
+    one silently. Already-suffixed kinds pass through."""
     scores: dict[str, Any] = {}
     for vector, value in record["scores"].items():
         dataset, kind, fold = A.parse_vector_name(vector)
         info = parse_kind(kind)
         if info is not None and info.lam == 1 and info.at is None and (info.route == "cross" or dataset != grafted_arm):
-            kind = cross_kind_name(info.rank_label, grafted_arm)
+            kind = cross_kind_name(info.rank_label, grafted_arm, info.graft)
         scores[f"{dataset}__{kind}__{fold}"] = value
     return {**record, "scores": scores}
 
 
 def annotate_kinds(long: pd.DataFrame) -> pd.DataFrame:
     """Add ``arm`` (= dataset), ``lam``, ``route``, ``rank`` (NaN for full /
-    unknown) and ``at`` columns parsed from ``kind``."""
+    unknown), ``at`` and ``graft`` columns parsed from ``kind``."""
     frame = long.copy()
     parsed = {kind: parse_kind(kind) for kind in frame["kind"].unique()}
     frame["arm"] = frame["dataset"]
@@ -280,6 +319,7 @@ def annotate_kinds(long: pd.DataFrame) -> pd.DataFrame:
     frame["route"] = frame["kind"].map(lambda k: parsed[k].route if parsed[k] else "unknown")
     frame["rank"] = frame["kind"].map(lambda k: float(parsed[k].rank) if parsed[k] and parsed[k].rank is not None else np.nan).astype(float)
     frame["at"] = frame["kind"].map(lambda k: parsed[k].at if parsed[k] and parsed[k].at else None)
+    frame["graft"] = frame["kind"].map(lambda k: parsed[k].graft if parsed[k] and parsed[k].graft else None)
     return frame
 
 
@@ -287,7 +327,9 @@ def expand_vector_norms(norms: Mapping[str, float] | None, vectors: Iterable[str
     """Fill ‖Δ‖ for re-keyed / λ = 1 vectors from their λ = 0 or un-suffixed
     names: ``Δ_{arm, r}`` is the same tensor whatever the grafted point, so
     ``X__lam1x_r256_at_G__all`` → ``X__lam1x_r256__all`` → ``X__lam1_r256__all``
-    → ``X__lam0_r256__all``. Vectors with no candidate stay absent (cosine NaN)."""
+    → ``X__lam0_r256__all`` (full-Δ graft kinds likewise, via ``lam1fullx_<r>``
+    / ``lam1full`` / ``lam0_full``). Vectors with no candidate stay absent
+    (cosine NaN)."""
     if not norms:
         return None
     expanded = dict(norms)
@@ -298,7 +340,10 @@ def expand_vector_norms(norms: Mapping[str, float] | None, vectors: Iterable[str
         info = parse_kind(kind)
         if info is None:
             continue
-        candidates = [f"{dataset}__lam1x_{info.rank_label}__{fold}", f"{dataset}__lam1_{info.rank_label}__{fold}", f"{dataset}__lam0_{info.rank_label}__{fold}"]
+        label = info.rank_label
+        candidates = [f"{dataset}__lam1fullx_{label}__{fold}", f"{dataset}__lam1x_{label}__{fold}", f"{dataset}__lam1_{label}__{fold}", f"{dataset}__lam0_{label}__{fold}"]
+        if label == "full":
+            candidates.insert(0, f"{dataset}__{LAM1FULL_KIND}__{fold}")
         for candidate in candidates:
             if candidate in norms:
                 expanded[vector] = float(norms[candidate])
@@ -319,18 +364,19 @@ def load_graft_scores(inputs: GraftInputs) -> tuple[pd.DataFrame, pd.DataFrame, 
     frame = A.scores_to_long(records, "lam0")
     frames.append(frame)
     notes["passes"].append({"pass": "lam0", "n_rows": len(records), "n_scores": int(len(frame))})
-    for arm, path in sorted(inputs.lam1.items()):
-        records = [rekey_cross_terms(r, arm) for r in A.read_jsonl(path)]
-        frame = A.scores_to_long(records, f"lam1__{arm}")
-        frames.append(frame)
-        notes["passes"].append({"pass": f"lam1__{arm}", "n_rows": len(records), "n_scores": int(len(frame))})
-        for record in records:
-            meta.append({
-                "row_id": str(record["row_id"]), "arm": arm, "group": str(record.get("group", "")),
-                "episode_id": str(record.get("episode_id", "")), "subtype": str(record.get("subtype", "")),
-                "n_target_tokens": record.get("n_target_tokens", np.nan), "loss": record.get("loss", np.nan),
-                "loss_lam1": record.get("loss_lam1", np.nan),
-            })
+    for prefix, graft, paths in (("lam1", "lora", inputs.lam1), (LAM1FULL_KIND, "full", inputs.lam1full)):
+        for arm, path in sorted(paths.items()):
+            records = [rekey_cross_terms(r, arm) for r in A.read_jsonl(path)]
+            frame = A.scores_to_long(records, f"{prefix}__{arm}")
+            frames.append(frame)
+            notes["passes"].append({"pass": f"{prefix}__{arm}", "n_rows": len(records), "n_scores": int(len(frame))})
+            for record in records:
+                meta.append({
+                    "row_id": str(record["row_id"]), "arm": arm, "graft": graft, "group": str(record.get("group", "")),
+                    "episode_id": str(record.get("episode_id", "")), "subtype": str(record.get("subtype", "")),
+                    "n_target_tokens": record.get("n_target_tokens", np.nan), "loss": record.get("loss", np.nan),
+                    "loss_lam1": record.get("loss_lam1", np.nan),
+                })
     long = pd.concat(frames, ignore_index=True)
     unknown_groups = sorted(set(long["group"]) - set(CLASSES))
     if unknown_groups:
@@ -545,14 +591,19 @@ def net_of_control(long: pd.DataFrame, control_arm: str = CONTROL_ARM) -> pd.Dat
 def net_of_control_cross(long: pd.DataFrame, control_arm: str = CONTROL_ARM) -> pd.DataFrame:
     """λ = 1 variant at the *same grafted point*: the grafted arm's own λ = 1
     term minus the control Δ's cross term evaluated at θ_it + Δ_arm
-    (``control__lam1x_r<r>_at_<arm>``). ``baseline`` = 'control_cross'."""
+    (``control__lam1x_r<r>_at_<arm>``; for the full-Δ graft
+    ``control__lam1fullx_r1024_at_<arm>``). ``baseline`` = 'control_cross'."""
     base = long[(long["fold"] == FOLD) & (long["lam"] == 1)]
-    own = base[(base["route"] == "lora") & (base["arm"] != control_arm)]
-    cross = base.loc[(base["route"] == "cross") & (base["arm"] == control_arm), ["row_id", "rank", "at", "score"]]
+    own = base[base["route"].isin(["lora", "full"]) & (base["arm"] != control_arm)].copy()
+    cross = base.loc[(base["route"] == "cross") & (base["arm"] == control_arm), ["row_id", "rank", "at", "graft", "score"]]
     cross = cross.rename(columns={"score": "control_score", "at": "arm"})
     if own.empty or cross.empty:
         return pd.DataFrame(columns=list(LONG_COLUMNS) + ["baseline", "per_sequence_sum", "per_token"])
-    merged = own.merge(cross, on=["row_id", "arm", "rank"], how="inner")
+    # Pair own and cross terms on the grafted point: the r* LoRA graft's terms share the rank; the
+    # full-Δ graft's own term has no rank (its cross terms use Δ_{other, r1024}), so pair on graft alone.
+    own["pair_rank"] = np.where(own["graft"] == "lora", own["rank"], -1.0)
+    cross["pair_rank"] = np.where(cross["graft"] == "lora", cross["rank"], -1.0)
+    merged = own.merge(cross.drop(columns=["rank"]), on=["row_id", "arm", "graft", "pair_rank"], how="inner").drop(columns=["pair_rank"])
     merged["score"] = merged["score"].astype(float) - merged["control_score"].astype(float)
     merged = merged.drop(columns=["control_score"])
     merged["baseline"] = "control_cross"
@@ -594,25 +645,41 @@ def add_verdicts(summary: pd.DataFrame, baseline: str) -> pd.DataFrame:
     return frame
 
 
+@dataclass(frozen=True)
+class LambdaLevel:
+    """One λ readout: λ = 0, λ = 1 at the r* LoRA graft, or λ = 1 at the exact
+    full-Δ graft. ``kind`` is the score kind read out; ``lam0_kind`` the λ = 0
+    reference used by the curvature / linearity comparisons (None at λ = 0)."""
+
+    key: str  # "lam0" | "lam1" | "lam1full"  (manifest keys)
+    label: str  # "λ = 0" | "λ = 1 (r*)" | "λ = 1 (full Δ)"
+    lam: str  # "0" | "1"
+    graft: str  # "" | "lora" | "full"
+    kind: str
+    lam0_kind: str | None = None
+
+    def plot_suffix(self, arm: str) -> str:
+        """``<arm>`` for the r* variant (filenames stay as before), ``<arm>__lam1full`` for the full-Δ variant."""
+        return arm if self.graft != "full" else f"{arm}__{LAM1FULL_KIND}"
+
+
 HEADLINE_COLUMNS: tuple[str, ...] = (
-    "arm", "family", "lambda", "kind", "baseline", "contrast", "n", "mean", "ci_low", "ci_high",
+    "arm", "family", "lambda", "label", "graft", "kind", "baseline", "contrast", "n", "mean", "ci_low", "ci_high",
     "median", "frac_positive", "sign_p", "expected_sign", "verdict",
 )
 
 
-def headline_table(summaries: Mapping[str, pd.DataFrame], lam0_kind: str, lam1_kind: str | None, norm: str = PRIMARY_NORM) -> pd.DataFrame:
-    """Per arm × λ × baseline × contrast: the pre-registered readouts.
+def headline_table(summaries: Mapping[str, pd.DataFrame], levels: Sequence[LambdaLevel], norm: str = PRIMARY_NORM) -> pd.DataFrame:
+    """Per arm × λ level × baseline × contrast: the pre-registered readouts.
     ``summaries`` maps baseline ('raw' / 'net_of_control' /
     'net_of_control_cross') → contrast summary (v1 schema, dataset = arm)."""
     records: list[dict[str, Any]] = []
-    for lam_label, kind in (("0", lam0_kind), ("1", lam1_kind)):
-        if not kind:
-            continue
+    for level in levels:
         for baseline in BASELINES:
             summary = summaries.get(baseline)
             if summary is None or summary.empty:
                 continue
-            subset = summary[(summary["kind"] == kind) & (summary["norm"] == norm) & (summary["fold"] == FOLD)]
+            subset = summary[(summary["kind"] == level.kind) & (summary["norm"] == norm) & (summary["fold"] == FOLD)]
             for arm in order_arms(subset["dataset"]):
                 for contrast in CONTRASTS:
                     row = subset[(subset["dataset"] == arm) & (subset["contrast"] == contrast)]
@@ -620,7 +687,8 @@ def headline_table(summaries: Mapping[str, pd.DataFrame], lam0_kind: str, lam1_k
                         continue
                     row = row.iloc[0]
                     records.append({
-                        "arm": arm, "family": arm_family(arm), "lambda": lam_label, "kind": kind, "baseline": baseline, "contrast": contrast,
+                        "arm": arm, "family": arm_family(arm), "lambda": level.lam, "label": level.label, "graft": level.graft, "kind": level.kind,
+                        "baseline": baseline, "contrast": contrast,
                         "n": int(row["n"]), "mean": float(row["mean"]), "ci_low": float(row["ci_low"]), "ci_high": float(row["ci_high"]),
                         "median": float(row["median"]), "frac_positive": float(row["frac_positive"]), "sign_p": float(row["sign_p"]),
                         "expected_sign": expected_sign(arm, contrast),
@@ -670,11 +738,11 @@ def _pair_stats(x, y) -> dict[str, float]:
 
 # -------------------------------------------------- (2) λ = 0 vs λ = 1 curve
 CURVATURE_COLUMNS: tuple[str, ...] = (
-    "arm", "class", "kind_lam0", "kind_lam1", "norm", "n", "spearman", "pearson", "ols_slope", "ols_intercept",
+    "arm", "label", "graft", "class", "kind_lam0", "kind_lam1", "norm", "n", "spearman", "pearson", "ols_slope", "ols_intercept",
     "sign_agreement", "mean_lam0", "mean_lam1", "ratio_of_means",
 )
 CURVATURE_CONTRAST_COLUMNS: tuple[str, ...] = (
-    "arm", "contrast", "kind_lam0", "kind_lam1", "norm", "n_episodes", "mean_lam0", "mean_lam1", "ratio_of_means",
+    "arm", "label", "graft", "contrast", "kind_lam0", "kind_lam1", "norm", "n_episodes", "mean_lam0", "mean_lam1", "ratio_of_means",
     "spearman_episodes", "sign_agreement_episodes", "ols_slope",
 )
 
@@ -694,11 +762,12 @@ def score_wide(long: pd.DataFrame, arm: str, kinds: Sequence[str], norm: str = P
     return wide
 
 
-def lambda_curvature(long: pd.DataFrame, contrasts: pd.DataFrame, lam0_kind: str, lam1_kind: str | None, norm: str = PRIMARY_NORM) -> tuple[pd.DataFrame, pd.DataFrame]:
+def lambda_curvature(long: pd.DataFrame, contrasts: pd.DataFrame, lam0_kind: str, lam1_kind: str | None, norm: str = PRIMARY_NORM, graft: str = "lora", label: str = "λ = 1 (r*)") -> tuple[pd.DataFrame, pd.DataFrame]:
     """Per arm × class: Spearman / OLS slope of the λ = 1 score on the λ = 0
     score (slope < 1 = the graft saturates; sign_agreement < 1 = rows where
     g(1) flipped sign), and per arm × contrast the attenuation of the paired
-    contrast (mean at λ = 1 / mean at λ = 0)."""
+    contrast (mean at λ = 1 / mean at λ = 0). ``graft`` / ``label`` tag the
+    λ = 1 variant (r* LoRA graft or full-Δ graft)."""
     per_class = pd.DataFrame(columns=list(CURVATURE_COLUMNS))
     per_contrast = pd.DataFrame(columns=list(CURVATURE_CONTRAST_COLUMNS))
     if not lam1_kind:
@@ -712,7 +781,7 @@ def lambda_curvature(long: pd.DataFrame, contrasts: pd.DataFrame, lam0_kind: str
                 continue
             stats = _pair_stats(sub[lam0_kind], sub[lam1_kind])
             class_records.append({
-                "arm": arm, "class": cls, "kind_lam0": lam0_kind, "kind_lam1": lam1_kind, "norm": norm, "n": stats["n"],
+                "arm": arm, "label": label, "graft": graft, "class": cls, "kind_lam0": lam0_kind, "kind_lam1": lam1_kind, "norm": norm, "n": stats["n"],
                 "spearman": stats["spearman"], "pearson": stats["pearson"], "ols_slope": stats["ols_slope"], "ols_intercept": stats["ols_intercept"],
                 "sign_agreement": stats["sign_agreement"], "mean_lam0": stats["mean_x"], "mean_lam1": stats["mean_y"],
                 "ratio_of_means": stats["mean_y"] / stats["mean_x"] if stats["mean_x"] != 0 and np.isfinite(stats["mean_x"]) else float("nan"),
@@ -728,7 +797,7 @@ def lambda_curvature(long: pd.DataFrame, contrasts: pd.DataFrame, lam0_kind: str
                     continue
                 stats = _pair_stats(pivot[lam0_kind], pivot[lam1_kind])
                 contrast_records.append({
-                    "arm": arm, "contrast": contrast, "kind_lam0": lam0_kind, "kind_lam1": lam1_kind, "norm": norm, "n_episodes": stats["n"],
+                    "arm": arm, "label": label, "graft": graft, "contrast": contrast, "kind_lam0": lam0_kind, "kind_lam1": lam1_kind, "norm": norm, "n_episodes": stats["n"],
                     "mean_lam0": stats["mean_x"], "mean_lam1": stats["mean_y"],
                     "ratio_of_means": stats["mean_y"] / stats["mean_x"] if stats["mean_x"] != 0 and np.isfinite(stats["mean_x"]) else float("nan"),
                     "spearman_episodes": stats["spearman"], "sign_agreement_episodes": stats["sign_agreement"], "ols_slope": stats["ols_slope"],
@@ -742,34 +811,39 @@ def lambda_curvature(long: pd.DataFrame, contrasts: pd.DataFrame, lam0_kind: str
 
 # ------------------------------------------------------------ (3) linearity
 LINEARITY_COLUMNS: tuple[str, ...] = (
-    "arm", "class", "predictor", "kind_lam0", "kind_lam1", "n", "spearman", "pearson", "ols_slope", "ols_intercept",
+    "arm", "label", "graft", "class", "predictor", "kind_lam0", "kind_lam1", "n", "spearman", "pearson", "ols_slope", "ols_intercept",
     "sign_agreement", "rmse", "mean_delta_loss", "frac_loss_lowered", "mean_predictor",
 )
-LINEARITY_ROW_COLUMNS: tuple[str, ...] = ("arm", "row_id", "group", "episode_id", "subtype", "loss", "loss_lam1", "delta_loss", "g0", "g1", "g_mid")
+LINEARITY_ROW_COLUMNS: tuple[str, ...] = ("arm", "graft", "row_id", "group", "episode_id", "subtype", "loss", "loss_lam1", "delta_loss", "g0", "g1", "g_mid")
 
 
-def linearity(long: pd.DataFrame, row_meta: pd.DataFrame, lam0_kind: str, lam1_kind: str | None, norm: str = PRIMARY_NORM) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """``ΔL = L(1) − L(0)`` per row (λ = 1 file; negative = the graft lowered the
-    loss) against the first-order prediction ``g(0) = −score_lam0`` (and the
-    trapezoid ``(g(0) + g(1)) / 2`` when λ = 1 scores exist): Spearman,
-    sign agreement, OLS slope (≈ 1 = linear, < 1 = saturating), RMSE.
-    Returns (table per arm × class × predictor, per-row frame for plotting)."""
+def linearity(long: pd.DataFrame, row_meta: pd.DataFrame, lam0_kind: str, lam1_kind: str | None, norm: str = PRIMARY_NORM, graft: str = "lora", label: str = "λ = 1 (r*)") -> tuple[pd.DataFrame, pd.DataFrame]:
+    """``ΔL = L(1) − L(0)`` per row (λ = 1 file of the ``graft`` variant;
+    negative = the graft lowered the loss) against the first-order prediction
+    ``g(0) = −score_lam0`` (and the trapezoid ``(g(0) + g(1)) / 2`` when λ = 1
+    scores exist): Spearman, sign agreement, OLS slope (≈ 1 = linear, < 1 =
+    saturating), RMSE. Returns (table per arm × class × predictor, per-row
+    frame for plotting)."""
     table = pd.DataFrame(columns=list(LINEARITY_COLUMNS))
     rows_out = pd.DataFrame(columns=list(LINEARITY_ROW_COLUMNS))
     if row_meta is None or row_meta.empty:
         return table, rows_out
+    if "graft" in row_meta.columns:
+        row_meta = row_meta[row_meta["graft"] == graft]
     records, row_frames = [], []
     for arm in order_arms(row_meta["arm"]):
         meta = row_meta[row_meta["arm"] == arm].drop_duplicates("row_id").set_index("row_id")
         kinds = [lam0_kind] + ([lam1_kind] if lam1_kind else [])
         wide = score_wide(long, arm, kinds, norm)
-        frame = meta[["group", "episode_id", "subtype", "loss", "loss_lam1"]].join(wide[kinds], how="inner")
+        # rows without the λ = 0 reference score (e.g. outside the full-Δ subset) carry no linearity content
+        frame = meta[["group", "episode_id", "subtype", "loss", "loss_lam1"]].join(wide[kinds], how="inner").dropna(subset=[lam0_kind])
         frame["delta_loss"] = frame["loss_lam1"].astype(float) - frame["loss"].astype(float)
         frame["g0"] = -frame[lam0_kind].astype(float)
         frame["g1"] = -frame[lam1_kind].astype(float) if lam1_kind else np.nan
         frame["g_mid"] = 0.5 * (frame["g0"] + frame["g1"]) if lam1_kind else np.nan
         frame = frame.reset_index().rename(columns={"index": "row_id"})
         frame.insert(0, "arm", arm)
+        frame.insert(1, "graft", graft)
         row_frames.append(frame[list(LINEARITY_ROW_COLUMNS)])
         predictors = [("g0", "g0")] + ([("g_mid", "g_mid")] if lam1_kind else [])
         groups = [("all", frame)] + [(cls, frame[frame["group"] == cls]) for cls in A.order_classes(frame["group"]) if cls in CLASSES]
@@ -780,7 +854,7 @@ def linearity(long: pd.DataFrame, row_meta: pd.DataFrame, lam0_kind: str, lam1_k
                     continue
                 stats = _pair_stats(x, y)
                 records.append({
-                    "arm": arm, "class": cls, "predictor": predictor_name, "kind_lam0": lam0_kind, "kind_lam1": lam1_kind or "", "n": stats["n"],
+                    "arm": arm, "label": label, "graft": graft, "class": cls, "predictor": predictor_name, "kind_lam0": lam0_kind, "kind_lam1": lam1_kind or "", "n": stats["n"],
                     "spearman": stats["spearman"], "pearson": stats["pearson"], "ols_slope": stats["ols_slope"], "ols_intercept": stats["ols_intercept"],
                     "sign_agreement": stats["sign_agreement"], "rmse": float(np.sqrt(np.mean((y - x) ** 2))),
                     "mean_delta_loss": float(y.mean()), "frac_loss_lowered": float((y < 0).mean()), "mean_predictor": float(x.mean()),
@@ -790,6 +864,65 @@ def linearity(long: pd.DataFrame, row_meta: pd.DataFrame, lam0_kind: str, lam1_k
     if row_frames:
         rows_out = pd.concat(row_frames, ignore_index=True)
     return table, rows_out
+
+
+# ------------------------------------- (3b) λ = 1: r* LoRA graft vs full Δ
+LAM1_COMPARE_COLUMNS: tuple[str, ...] = (
+    "arm", "class", "kind_lora", "kind_full", "norm", "n", "mean_lora", "mean_full", "mean_diff_full_minus_lora", "diff_ci_low", "diff_ci_high",
+    "ratio_of_means", "spearman", "pearson", "ols_slope_full_on_lora", "sign_agreement",
+    "n_loss", "mean_loss_lam1_lora", "mean_loss_lam1_full", "mean_loss_diff_full_minus_lora", "loss_diff_ci_low", "loss_diff_ci_high",
+    "frac_full_lower_loss", "spearman_delta_loss",
+)
+
+
+def lam1_lora_vs_full(long: pd.DataFrame, row_meta: pd.DataFrame, lam1_kind: str | None, lam1full_kind: str = LAM1FULL_KIND, norm: str = PRIMARY_NORM, n_boot: int = 2000, seed: int = 0) -> pd.DataFrame:
+    """Direct comparison of the two λ = 1 grafts on shared rows, per arm ×
+    class: paired difference (full − r*) of the −g(1) scores with bootstrap
+    CI, Spearman / OLS slope (full on r*), sign agreement, ratio of means;
+    and ``loss_lam1`` under both grafts (paired difference, fraction of rows
+    where the full-Δ graft leaves the lower loss, Spearman of the two ΔL)."""
+    table = pd.DataFrame(columns=list(LAM1_COMPARE_COLUMNS))
+    if not lam1_kind or lam1full_kind not in set(long["kind"]):
+        return table
+    records: list[dict[str, Any]] = []
+    index = 0
+    for arm in order_arms(long.loc[long["kind"] == lam1full_kind, "arm"]):
+        wide = score_wide(long, arm, [lam1_kind, lam1full_kind], norm).dropna(subset=[lam1_kind, lam1full_kind])
+        if wide.empty:
+            continue
+        meta = row_meta[row_meta["arm"] == arm] if row_meta is not None and not row_meta.empty else pd.DataFrame(columns=list(META_COLUMNS))
+        losses = pd.DataFrame({
+            "loss": meta.drop_duplicates("row_id").set_index("row_id")["loss"],
+            "lora": meta[meta["graft"] == "lora"].drop_duplicates("row_id").set_index("row_id")["loss_lam1"],
+            "full": meta[meta["graft"] == "full"].drop_duplicates("row_id").set_index("row_id")["loss_lam1"],
+        }).dropna()
+        groups = [("all", wide)] + [(cls, wide[wide["group"] == cls]) for cls in A.order_classes(wide["group"]) if cls in CLASSES]
+        for cls, sub in groups:
+            x, y = _finite_pairs(sub[lam1_kind], sub[lam1full_kind])
+            if x.size == 0:
+                continue
+            stats = _pair_stats(x, y)
+            diff = y - x
+            low, high = A.bootstrap_mean_ci(diff, n_boot=n_boot, seed=seed + index)
+            index += 1
+            loss_sub = losses.loc[losses.index.intersection(sub.index)]
+            loss_diff = (loss_sub["full"] - loss_sub["lora"]).to_numpy(dtype=float)
+            loss_low, loss_high = A.bootstrap_mean_ci(loss_diff, n_boot=n_boot, seed=seed + index)
+            index += 1
+            records.append({
+                "arm": arm, "class": cls, "kind_lora": lam1_kind, "kind_full": lam1full_kind, "norm": norm, "n": stats["n"],
+                "mean_lora": stats["mean_x"], "mean_full": stats["mean_y"], "mean_diff_full_minus_lora": float(diff.mean()), "diff_ci_low": low, "diff_ci_high": high,
+                "ratio_of_means": stats["mean_y"] / stats["mean_x"] if stats["mean_x"] != 0 and np.isfinite(stats["mean_x"]) else float("nan"),
+                "spearman": stats["spearman"], "pearson": stats["pearson"], "ols_slope_full_on_lora": stats["ols_slope"], "sign_agreement": stats["sign_agreement"],
+                "n_loss": int(len(loss_sub)),
+                "mean_loss_lam1_lora": float(loss_sub["lora"].mean()) if len(loss_sub) else float("nan"),
+                "mean_loss_lam1_full": float(loss_sub["full"].mean()) if len(loss_sub) else float("nan"),
+                "mean_loss_diff_full_minus_lora": float(loss_diff.mean()) if loss_diff.size else float("nan"),
+                "loss_diff_ci_low": loss_low, "loss_diff_ci_high": loss_high,
+                "frac_full_lower_loss": float((loss_diff < 0).mean()) if loss_diff.size else float("nan"),
+                "spearman_delta_loss": A.spearman(loss_sub["lora"] - loss_sub["loss"], loss_sub["full"] - loss_sub["loss"]) if len(loss_sub) else float("nan"),
+            })
+    return pd.DataFrame(records, columns=list(LAM1_COMPARE_COLUMNS))
 
 
 # ---------------------------------------------------------- (4) rank ladder
@@ -1009,13 +1142,13 @@ def _density(axis, values: np.ndarray, color: str, style: str, label: str, sns, 
         sns.histplot(x=values, ax=axis, color=color, element="step", fill=False, stat="density", bins=min(30, max(5, values.size // 4)), linestyle=style, label=label)
 
 
-def plot_lam0_vs_lam1_dist(long: pd.DataFrame, arm: str, lam0_kind: str, lam1_kind: str, out_path: Path, norm: str = PRIMARY_NORM) -> Path:
+def plot_lam0_vs_lam1_dist(long: pd.DataFrame, arm: str, lam0_kind: str, lam1_kind: str, out_path: Path, norm: str = PRIMARY_NORM, label: str = "λ = 1") -> Path:
     """Side-by-side class distributions of −g at λ = 0 and λ = 1 for one arm
     (Coin orange, Charter blue, Ambiguous green, wrong dashed light green)."""
     plt, sns = A._plotting()
     use_kde = A._have_scipy()
     figure, axes = plt.subplots(1, 2, figsize=(9.0, 3.4), sharex=True, sharey=True)
-    for axis, kind, title in zip(axes, (lam0_kind, lam1_kind), ("λ = 0", "λ = 1")):
+    for axis, kind, title in zip(axes, (lam0_kind, lam1_kind), ("λ = 0", label)):
         sub = long[(long["arm"] == arm) & (long["kind"] == kind) & (long["fold"] == FOLD) & long["group"].isin(CLASSES)].dropna(subset=[norm])
         for cls in A.order_classes(sub["group"]):
             values = sub.loc[sub["group"] == cls, norm].to_numpy(dtype=float)
@@ -1027,19 +1160,20 @@ def plot_lam0_vs_lam1_dist(long: pd.DataFrame, arm: str, lam0_kind: str, lam1_ki
         axis.set_title(f"{arm} arm — {title} ({kind})")
         axis.set_xlabel("−dL/dλ (+ = graft lowers row loss)")
         axis.legend(fontsize=7, frameon=False)
-    figure.suptitle(f"Row-score distributions by class, {arm} arm, λ = 0 vs λ = 1 ({norm}; dotted = class median)", fontsize=10)
+    figure.suptitle(f"Row-score distributions by class, {arm} arm, λ = 0 vs {label} ({norm}; dotted = class median)", fontsize=10)
     figure.tight_layout()
     figure.savefig(out_path)
     plt.close(figure)
     return out_path
 
 
-def plot_lam0_vs_lam1_scatter(long: pd.DataFrame, arm: str, lam0_kind: str, lam1_kind: str, curvature: pd.DataFrame, out_path: Path, norm: str = PRIMARY_NORM) -> Path:
-    """−g(1) against −g(0) per class with the identity line and per-class OLS fits."""
+def plot_lam0_vs_lam1_scatter(long: pd.DataFrame, arm: str, lam0_kind: str, lam1_kind: str, curvature: pd.DataFrame, out_path: Path, norm: str = PRIMARY_NORM, label: str = "λ = 1") -> Path:
+    """−g(1) against −g(0) per class with the identity line and per-class OLS
+    fits. ``curvature`` should already be filtered to the plotted λ = 1 variant."""
     plt, sns = A._plotting()
     wide = score_wide(long, arm, [lam0_kind, lam1_kind], norm).dropna(subset=[lam0_kind, lam1_kind])
     figure, axis = plt.subplots(figsize=(5.2, 4.6))
-    stats = curvature[(curvature["arm"] == arm)].set_index("class") if curvature is not None and not curvature.empty else pd.DataFrame()
+    stats = curvature[(curvature["arm"] == arm) & (curvature["kind_lam1"] == lam1_kind)].set_index("class") if curvature is not None and not curvature.empty else pd.DataFrame()
     for cls in A.order_classes(wide["group"]):
         if cls not in CLASSES:
             continue
@@ -1060,7 +1194,7 @@ def plot_lam0_vs_lam1_scatter(long: pd.DataFrame, arm: str, lam0_kind: str, lam1
     axis.axvline(0.0, color="red", linewidth=0.6)
     axis.set_xlabel(f"−g(0) [{lam0_kind}]")
     axis.set_ylabel(f"−g(1) [{lam1_kind}]")
-    axis.set_title(f"{arm} arm: λ = 1 vs λ = 0 row scores ({norm})", fontsize=10)
+    axis.set_title(f"{arm} arm: {label} vs λ = 0 row scores ({norm})", fontsize=10)
     axis.legend(fontsize=6.5, frameon=False)
     figure.tight_layout()
     figure.savefig(out_path)
@@ -1068,11 +1202,14 @@ def plot_lam0_vs_lam1_scatter(long: pd.DataFrame, arm: str, lam0_kind: str, lam1
     return out_path
 
 
-def plot_linearity(rows: pd.DataFrame, table: pd.DataFrame, arm: str, out_path: Path) -> Path:
-    """ΔL = L(1) − L(0) against g(0) per class; identity = exact linearity."""
+def plot_linearity(rows: pd.DataFrame, table: pd.DataFrame, arm: str, out_path: Path, graft: str = "lora", label: str = "λ = 1") -> Path:
+    """ΔL = L(1) − L(0) against g(0) per class; identity = exact linearity.
+    ``graft`` selects the λ = 1 variant in ``rows`` / ``table``."""
     plt, sns = A._plotting()
-    sub_rows = rows[rows["arm"] == arm].dropna(subset=["g0", "delta_loss"])
+    sub_rows = rows[(rows["arm"] == arm) & (rows["graft"] == graft)].dropna(subset=["g0", "delta_loss"]) if "graft" in rows.columns else rows[rows["arm"] == arm].dropna(subset=["g0", "delta_loss"])
     figure, axis = plt.subplots(figsize=(5.2, 4.6))
+    if table is not None and not table.empty and "graft" in table.columns:
+        table = table[table["graft"] == graft]
     stats = table[(table["arm"] == arm) & (table["predictor"] == "g0")].set_index("class") if table is not None and not table.empty else pd.DataFrame()
     for cls in A.order_classes(sub_rows["group"]):
         if cls not in CLASSES:
@@ -1094,7 +1231,7 @@ def plot_linearity(rows: pd.DataFrame, table: pd.DataFrame, arm: str, out_path: 
     axis.axvline(0.0, color="red", linewidth=0.6)
     axis.set_xlabel("g(0) = dL/dλ at λ = 0 (first-order prediction of ΔL)")
     axis.set_ylabel("ΔL = L(1) − L(0)  (− = graft lowered the loss)")
-    axis.set_title(f"{arm} arm: realised loss change vs λ = 0 gradient", fontsize=10)
+    axis.set_title(f"{arm} arm, {label}: realised loss change vs λ = 0 gradient", fontsize=10)
     axis.legend(fontsize=6.5, frameon=False)
     figure.tight_layout()
     figure.savefig(out_path)
@@ -1179,18 +1316,22 @@ TABLE_OUTPUTS: tuple[str, ...] = (
     "net_of_control.json", "net_of_control.md", "net_of_control_by_subtype.json", "net_of_control_by_subtype.md",
     "net_class_summary.json", "net_class_summary.md",
     "lambda_curvature.json", "lambda_curvature.md", "lambda_curvature_contrasts.json", "lambda_curvature_contrasts.md",
-    "linearity.json", "linearity.md",
+    "linearity.json", "linearity.md", "lam1_lora_vs_full.json", "lam1_lora_vs_full.md",
     "rank_ladder.json", "rank_ladder.md", "energy_capture.json", "energy_capture.md",
     "gates.json", "gates.md", "gate_g3.json", "gate_g3.md", "noise_floor.json", "noise_floor.md",
 )
 
 
-def expected_plot_outputs(arms_lam1: Sequence[str], net_kinds: Sequence[str], arms_linearity: Sequence[str], ladder: bool = True) -> list[str]:
-    """PDF names :func:`run_all` writes (excluding the v1 view's own PDFs)."""
+def expected_plot_outputs(arms_lam1: Sequence[str], net_kinds: Sequence[str], arms_linearity: Sequence[str], ladder: bool = True, arms_lam1full: Sequence[str] = (), arms_linearity_full: Sequence[str] = ()) -> list[str]:
+    """PDF names :func:`run_all` writes (excluding the v1 view's own PDFs).
+    The full-Δ λ = 1 variant's plots carry the ``__lam1full`` suffix."""
     names = [f"paired__net__{kind}.pdf" for kind in net_kinds]
     for arm in arms_lam1:
         names += [f"dist__lam0_vs_lam1__{arm}.pdf", f"scatter__lam0_vs_lam1__{arm}.pdf"]
+    for arm in arms_lam1full:
+        names += [f"dist__lam0_vs_lam1__{arm}__{LAM1FULL_KIND}.pdf", f"scatter__lam0_vs_lam1__{arm}__{LAM1FULL_KIND}.pdf"]
     names += [f"linearity__{arm}.pdf" for arm in arms_linearity]
+    names += [f"linearity__{arm}__{LAM1FULL_KIND}.pdf" for arm in arms_linearity_full]
     if ladder:
         names.append("rank_ladder.pdf")
     return names
@@ -1198,6 +1339,20 @@ def expected_plot_outputs(arms_lam1: Sequence[str], net_kinds: Sequence[str], ar
 
 def _fmt(value: float, digits: int = 3) -> str:
     return "n/a" if value is None or not np.isfinite(value) else f"{value:+.{digits}g}"
+
+
+def _label_order(frame: pd.DataFrame) -> list[str]:
+    """λ = 1 variant labels present in a table, r* LoRA graft first, then full Δ."""
+    labels: list[str] = []
+    for graft in ("lora", "full"):
+        labels += [label for label in frame.loc[frame["graft"] == graft, "label"].unique() if label not in labels]
+    labels += [label for label in frame["label"].unique() if label not in labels]
+    return labels
+
+
+def _concat(frames: Sequence[pd.DataFrame], columns: Sequence[str]) -> pd.DataFrame:
+    kept = [frame for frame in frames if frame is not None and not frame.empty]
+    return pd.concat(kept, ignore_index=True) if kept else pd.DataFrame(columns=list(columns))
 
 
 def build_summary(context: dict[str, Any]) -> str:
@@ -1215,6 +1370,7 @@ def build_summary(context: dict[str, Any]) -> str:
         + f"; passes {', '.join(p['pass'] for p in context['load_notes']['passes'])}; kinds {context['kinds']}; arms {context['arms']}. "
         f"Primary rank r={context['primary_rank']} (λ = 0 kind `{lam0_kind}`); λ = 1 rank r* = {context['r_star'] if context['r_star'] is not None else 'n/a'}"
         + (f" (kind `{lam1_kind}`)" if lam1_kind else " (no λ = 1 passes)")
+        + (f"; exact full-Δ λ = 1 passes for arms {context['lam1full_arms']} (kind `{context['lam1full_kind']}`, reported as \"λ = 1 (full Δ)\" next to \"λ = 1 (r*)\")" if context.get("lam1full_kind") else "; no full-Δ λ = 1 passes (scores/lam1full__<arm>.jsonl absent — that variant NOT RUN)")
         + f"; bootstrap {context['n_boot']} resamples. "
         "Sign: every score is −dL/dλ (+ = the graft lowers the row's loss). *raw* = the arm's own graft; "
         "*net_of_control* = same row, same kind, score(arm) − score(control); *net_of_control_cross* (λ = 1 only) = the arm's own λ = 1 term "
@@ -1233,12 +1389,12 @@ def build_summary(context: dict[str, Any]) -> str:
     if headline.empty:
         lines += ["_(no paired contrasts available)_", ""]
     else:
-        show = headline[["arm", "lambda", "baseline", "contrast", "n", "mean", "ci_low", "ci_high", "frac_positive", "sign_p", "verdict"]]
+        show = headline[["arm", "label", "baseline", "contrast", "n", "mean", "ci_low", "ci_high", "frac_positive", "sign_p", "verdict"]]
         lines += [A.frame_to_markdown(show), ""]
         for arm in order_arms(headline["arm"]):
             parts = []
             for _, row in headline[(headline["arm"] == arm) & (headline["contrast"] == "coin_minus_charter")].iterrows():
-                parts.append(f"λ={row['lambda']} {row['baseline']}: {row['verdict']} ({_fmt(row['mean'])} [{_fmt(row['ci_low'])}, {_fmt(row['ci_high'])}], n={int(row['n'])})")
+                parts.append(f"{row['label']} {row['baseline']}: {row['verdict']} ({_fmt(row['mean'])} [{_fmt(row['ci_low'])}, {_fmt(row['ci_high'])}], n={int(row['n'])})")
             if parts:
                 lines.append(f"- **{arm} arm** coin−charter — " + "; ".join(parts))
         lines.append("")
@@ -1262,37 +1418,70 @@ def build_summary(context: dict[str, Any]) -> str:
     if curvature.empty:
         lines += ["_(no λ = 1 passes — not run)_", ""]
     else:
-        for arm in order_arms(curvature["arm"]):
-            pooled = curvature[(curvature["arm"] == arm) & (curvature["class"] == "all")]
-            per_class = curvature[(curvature["arm"] == arm) & (curvature["class"] != "all")]
-            text = f"- **{arm} arm** (`{lam1_kind}` on `{lam0_kind}`): "
-            if not pooled.empty:
-                p = pooled.iloc[0]
-                text += f"all rows ρ={_fmt(p['spearman'], 3)}, OLS slope={_fmt(p['ols_slope'], 3)}, sign agreement={p['sign_agreement']:.2f} (n={int(p['n'])}); "
-            text += "per class slope " + ", ".join(f"{r['class']} {_fmt(r['ols_slope'], 3)}" for _, r in per_class.iterrows())
-            ratios = curvature_contrasts[curvature_contrasts["arm"] == arm]
-            if not ratios.empty:
-                text += "; contrast attenuation mean(λ=1)/mean(λ=0): " + ", ".join(f"{r['contrast']} {_fmt(r['ratio_of_means'], 3)} (episode ρ={_fmt(r['spearman_episodes'], 2)})" for _, r in ratios.iterrows())
-            lines.append(text + ".")
+        for label in _label_order(curvature):
+            sub_c = curvature[curvature["label"] == label]
+            sub_r = curvature_contrasts[curvature_contrasts["label"] == label] if not curvature_contrasts.empty else curvature_contrasts
+            for arm in order_arms(sub_c["arm"]):
+                pooled = sub_c[(sub_c["arm"] == arm) & (sub_c["class"] == "all")]
+                per_class = sub_c[(sub_c["arm"] == arm) & (sub_c["class"] != "all")]
+                first = (pooled if not pooled.empty else per_class).iloc[0]
+                text = f"- **{arm} arm, {label}** (`{first['kind_lam1']}` on `{first['kind_lam0']}`): "
+                if not pooled.empty:
+                    p = pooled.iloc[0]
+                    text += f"all rows ρ={_fmt(p['spearman'], 3)}, OLS slope={_fmt(p['ols_slope'], 3)}, sign agreement={p['sign_agreement']:.2f} (n={int(p['n'])}); "
+                text += "per class slope " + ", ".join(f"{r['class']} {_fmt(r['ols_slope'], 3)}" for _, r in per_class.iterrows())
+                ratios = sub_r[sub_r["arm"] == arm] if not sub_r.empty else sub_r
+                if not ratios.empty:
+                    text += "; contrast attenuation mean(λ=1)/mean(λ=0): " + ", ".join(f"{r['contrast']} {_fmt(r['ratio_of_means'], 3)} (episode ρ={_fmt(r['spearman_episodes'], 2)})" for _, r in ratios.iterrows())
+                lines.append(text + ".")
+        if not context.get("lam1full_kind"):
+            lines.append("- λ = 1 (full Δ): NOT RUN (no scores/lam1full__<arm>.jsonl).")
         lines.append("")
     linear: pd.DataFrame = context["linearity"]
     lines += ["## Linearity — ΔL = L(1) − L(0) vs g(0) = dL/dλ|₀", ""]
     if linear.empty:
         lines += ["_(no λ = 1 passes with loss_lam1 — not run)_", ""]
     else:
-        for arm in order_arms(linear["arm"]):
-            pooled = linear[(linear["arm"] == arm) & (linear["class"] == "all") & (linear["predictor"] == "g0")]
+        for label in _label_order(linear):
+            sub_l = linear[linear["label"] == label]
+            for arm in order_arms(sub_l["arm"]):
+                pooled = sub_l[(sub_l["arm"] == arm) & (sub_l["class"] == "all") & (sub_l["predictor"] == "g0")]
+                if pooled.empty:
+                    continue
+                p = pooled.iloc[0]
+                per_class = sub_l[(sub_l["arm"] == arm) & (sub_l["class"] != "all") & (sub_l["predictor"] == "g0")]
+                mid = sub_l[(sub_l["arm"] == arm) & (sub_l["class"] == "all") & (sub_l["predictor"] == "g_mid")]
+                text = (f"- **{arm} arm, {label}** (g(0) from `{p['kind_lam0']}`): ρ={_fmt(p['spearman'], 3)}, sign agreement={p['sign_agreement']:.2f}, OLS slope={_fmt(p['ols_slope'], 3)} (1 = exactly linear), "
+                        f"RMSE={p['rmse']:.4g}, mean ΔL={_fmt(p['mean_delta_loss'], 3)}, loss lowered on {p['frac_loss_lowered']:.0%} of rows (n={int(p['n'])}); per class sign agreement "
+                        + ", ".join(f"{r['class']} {r['sign_agreement']:.2f}" for _, r in per_class.iterrows()))
+                if not mid.empty:
+                    text += f"; trapezoid predictor (g(0)+g(1))/2: slope={_fmt(mid.iloc[0]['ols_slope'], 3)}, RMSE={mid.iloc[0]['rmse']:.4g}"
+                lines.append(text + ".")
+        if not context.get("lam1full_kind"):
+            lines.append("- λ = 1 (full Δ): NOT RUN (no scores/lam1full__<arm>.jsonl).")
+        lines.append("")
+    compare: pd.DataFrame = context["lam1_compare"]
+    lines += ["## λ = 1: exact full-Δ graft vs r* LoRA graft (shared rows)", ""]
+    if compare.empty:
+        lines += ["_(NOT RUN — no scores/lam1full__<arm>.jsonl, or no r* λ = 1 pass to compare against)_", ""]
+    else:
+        for arm in order_arms(compare["arm"]):
+            pooled = compare[(compare["arm"] == arm) & (compare["class"] == "all")]
             if pooled.empty:
                 continue
             p = pooled.iloc[0]
-            per_class = linear[(linear["arm"] == arm) & (linear["class"] != "all") & (linear["predictor"] == "g0")]
-            mid = linear[(linear["arm"] == arm) & (linear["class"] == "all") & (linear["predictor"] == "g_mid")]
-            text = (f"- **{arm} arm**: ρ={_fmt(p['spearman'], 3)}, sign agreement={p['sign_agreement']:.2f}, OLS slope={_fmt(p['ols_slope'], 3)} (1 = exactly linear), "
-                    f"RMSE={p['rmse']:.4g}, mean ΔL={_fmt(p['mean_delta_loss'], 3)}, loss lowered on {p['frac_loss_lowered']:.0%} of rows (n={int(p['n'])}); per class sign agreement "
-                    + ", ".join(f"{r['class']} {r['sign_agreement']:.2f}" for _, r in per_class.iterrows()))
-            if not mid.empty:
-                text += f"; trapezoid predictor (g(0)+g(1))/2: slope={_fmt(mid.iloc[0]['ols_slope'], 3)}, RMSE={mid.iloc[0]['rmse']:.4g}"
-            lines.append(text + ".")
+            per_class = compare[(compare["arm"] == arm) & (compare["class"] != "all")]
+            ratios = ", ".join(
+                f"{r['class']} {_fmt(r['ratio_of_means'], 3)}" if abs(r["mean_lora"]) >= 0.1 else f"{r['class']} n/a (r* mean ≈ 0)"
+                for _, r in per_class.iterrows()
+            )
+            lines.append(
+                f"- **{arm} arm** (`{p['kind_full']}` vs `{p['kind_lora']}`, n={int(p['n'])}): paired diff of −g(1), full−r*, {_fmt(p['mean_diff_full_minus_lora'])} "
+                f"[{_fmt(p['diff_ci_low'])}, {_fmt(p['diff_ci_high'])}]; OLS slope full-on-r* {_fmt(p['ols_slope_full_on_lora'], 3)} (1 = same scale), ρ={_fmt(p['spearman'], 3)}, "
+                f"sign agreement {p['sign_agreement']:.2f}; per-class ratio of means full/r*: {ratios}. "
+                f"L(1): mean {p['mean_loss_lam1_full']:.4g} (full) vs {p['mean_loss_lam1_lora']:.4g} (r*), paired diff {_fmt(p['mean_loss_diff_full_minus_lora'], 3)} "
+                f"[{_fmt(p['loss_diff_ci_low'], 3)}, {_fmt(p['loss_diff_ci_high'], 3)}], full-Δ graft lower on {p['frac_full_lower_loss']:.0%} of rows, ΔL Spearman {_fmt(p['spearman_delta_loss'], 3)} (n={int(p['n_loss'])})."
+            )
         lines.append("")
     ladder: pd.DataFrame = context["rank_ladder"]
     lines += ["## Rank ladder (λ = 0, raw coin−charter, full-Δ subset where available)", ""]
@@ -1353,13 +1542,32 @@ def _pick_ranks(long: pd.DataFrame, primary_rank: int, notes: list[str]) -> tupl
     return lam0_kind, r_star, lam1_kind, lam0_for_lam1
 
 
+def lambda_levels(long: pd.DataFrame, lam0_kind: str, lam1_kind: str | None, lam0_for_lam1: str, notes: list[str]) -> list[LambdaLevel]:
+    """λ = 0, then the λ = 1 variants present: the r* LoRA graft (``lam1_r<r*>``)
+    and, when ``lam1full`` was scored, the exact full-Δ graft — compared against
+    ``lam0_full`` (same direction; the full-Δ row subset) when available."""
+    levels = [LambdaLevel("lam0", "λ = 0", "0", "", lam0_kind)]
+    if lam1_kind:
+        levels.append(LambdaLevel("lam1", "λ = 1 (r*)", "1", "lora", lam1_kind, lam0_for_lam1))
+    kinds = set(long["kind"])
+    if LAM1FULL_KIND in kinds:
+        if "lam0_full" in kinds:
+            reference = "lam0_full"
+        else:
+            reference = lam0_kind
+            notes.append(f"full-Δ λ = 1 pass present but no lam0_full scores: its curvature/linearity compare against {lam0_kind}")
+        levels.append(LambdaLevel("lam1full", "λ = 1 (full Δ)", "1", "full", LAM1FULL_KIND, reference))
+    return levels
+
+
 def build_v1_view_inputs(inputs: GraftInputs, target_dir: Path) -> A.Inputs:
-    """Synthesise v1's inputs: one combined pass (λ = 0 + every λ = 1 pass, cross
-    terms re-keyed, one record per row) and the noise pass as v1's oracle."""
+    """Synthesise v1's inputs: one combined pass (λ = 0 + every λ = 1 pass —
+    r* LoRA and full-Δ grafts — cross terms re-keyed, one record per row) and
+    the noise pass as v1's oracle."""
     scores_dir = target_dir / "scores"
     scores_dir.mkdir(parents=True, exist_ok=True)
     by_row: dict[str, dict[str, Any]] = {}
-    sources = [(inputs.lam0, None)] + [(path, arm) for arm, path in sorted(inputs.lam1.items())]
+    sources = [(inputs.lam0, None)] + [(path, arm) for arm, path in sorted(inputs.lam1.items())] + [(path, arm) for arm, path in sorted(inputs.lam1full.items())]
     for path, arm in sources:
         for record in A.read_jsonl(path):
             if arm is not None:
@@ -1428,6 +1636,11 @@ def _run_all(exp_dir: Path, out_dir: str | Path | None, *, primary_rank: int, n_
         notes.append("no scores/lam1__<arm>.jsonl — λ = 1 readouts, curvature and linearity NOT RUN")
     lam0_kind, r_star, lam1_kind, lam0_for_lam1 = _pick_ranks(long, primary_rank, notes)
     primary_rank_used = parse_kind(lam0_kind).rank
+    levels = lambda_levels(long, lam0_kind, lam1_kind, lam0_for_lam1, notes)
+    lam1_levels = [level for level in levels if level.lam == "1"]
+    full_level = next((level for level in lam1_levels if level.graft == "full"), None)
+    if not inputs.lam1full:
+        notes.append("no scores/lam1full__<arm>.jsonl — full-Δ λ = 1 variant NOT RUN (λ = 1 readouts use the r* LoRA graft only)")
     long.to_csv(out_dir / "scores_long.csv", index=False)
     written.append(out_dir / "scores_long.csv")
     kinds_present = order_kinds(long["kind"])
@@ -1470,17 +1683,38 @@ def _run_all(exp_dir: Path, out_dir: str | Path | None, *, primary_rank: int, n_
     if not net_pc["unmatched"].empty:
         notes.append(f"{len(net_pc['unmatched'].drop_duplicates(subset=[c for c in ['dataset', 'kind', 'episode_id', 'contrast'] if c in net_pc['unmatched'].columns]))} unmatched episode-sides in the net-of-control pairing")
 
-    headline = headline_table({"raw": raw_summary, "net_of_control": net_summary, "net_of_control_cross": netx_summary}, lam0_kind, lam1_kind)
-    written += A.write_table(headline, out_dir, "headline", f"Headline — per arm × λ × baseline: paired contrasts ({PRIMARY_NORM}, fold all) against the pre-registered signs", "charter arm: coin−charter < 0; coin arm: > 0; control raw: PRIOR (non-zero expected); ambiguous−wrong > 0 for charter/coin arms.")
+    headline = headline_table({"raw": raw_summary, "net_of_control": net_summary, "net_of_control_cross": netx_summary}, levels)
+    written += A.write_table(headline, out_dir, "headline", f"Headline — per arm × λ level × baseline: paired contrasts ({PRIMARY_NORM}, fold all) against the pre-registered signs", "charter arm: coin−charter < 0; coin arm: > 0; control raw: PRIOR (non-zero expected); ambiguous−wrong > 0 for charter/coin arms. λ = 1 levels: \"λ = 1 (r*)\" = r* LoRA graft, \"λ = 1 (full Δ)\" = exact full-Δ graft (when scored).")
 
-    # ---- (3) curvature, (4) linearity
-    curvature, curvature_contrasts = lambda_curvature(long, raw["contrasts"], lam0_for_lam1, lam1_kind)
-    written += A.write_table(curvature, out_dir, "lambda_curvature", "λ = 1 vs λ = 0 row scores per arm × class: Spearman, OLS slope (< 1 = saturating), sign agreement", f"x = {lam0_for_lam1}, y = {lam1_kind or 'n/a'} ({PRIMARY_NORM}).")
-    written += A.write_table(curvature_contrasts, out_dir, "lambda_curvature_contrasts", "Attenuation of the paired contrasts from λ = 0 to λ = 1 (ratio of means; per-episode Spearman and sign agreement)")
-    linear, linear_rows = linearity(long, row_meta, lam0_for_lam1, lam1_kind)
-    written += A.write_table(linear, out_dir, "linearity", "Linearity: ΔL = L(1) − L(0) against g(0) = −score_lam0 (and the trapezoid (g(0)+g(1))/2) per arm × class", "slope 1 = exactly linear; sign_agreement = fraction of rows where the graft's realised loss change has the sign the λ = 0 gradient predicted.")
+    # ---- (3) curvature, (4) linearity — once per λ = 1 variant; (3b) the two variants against each other
+    curvature_parts, contrast_parts, linear_parts, row_parts = [], [], [], []
+    for level in lam1_levels:
+        per_class, per_contrast = lambda_curvature(long, raw["contrasts"], level.lam0_kind, level.kind, graft=level.graft, label=level.label)
+        curvature_parts.append(per_class)
+        contrast_parts.append(per_contrast)
+        table, rows = linearity(long, row_meta, level.lam0_kind, level.kind, graft=level.graft, label=level.label)
+        linear_parts.append(table)
+        row_parts.append(rows)
+    curvature = _concat(curvature_parts, CURVATURE_COLUMNS)
+    curvature_contrasts = _concat(contrast_parts, CURVATURE_CONTRAST_COLUMNS)
+    linear = _concat(linear_parts, LINEARITY_COLUMNS)
+    linear_rows = _concat(row_parts, LINEARITY_ROW_COLUMNS)
+    variant_note = "; ".join(f"{level.label}: y = {level.kind} on x = {level.lam0_kind}" for level in lam1_levels) or "no λ = 1 passes"
+    written += A.write_table(curvature, out_dir, "lambda_curvature", "λ = 1 vs λ = 0 row scores per arm × λ = 1 variant × class: Spearman, OLS slope (< 1 = saturating), sign agreement", f"{variant_note} ({PRIMARY_NORM}).")
+    written += A.write_table(curvature_contrasts, out_dir, "lambda_curvature_contrasts", "Attenuation of the paired contrasts from λ = 0 to λ = 1 per variant (ratio of means; per-episode Spearman and sign agreement)")
+    written += A.write_table(linear, out_dir, "linearity", "Linearity: ΔL = L(1) − L(0) against g(0) = −score_lam0 (and the trapezoid (g(0)+g(1))/2) per arm × λ = 1 variant × class", f"slope 1 = exactly linear; sign_agreement = fraction of rows where the graft's realised loss change has the sign the λ = 0 gradient predicted. {variant_note}.")
     linear_rows.to_csv(out_dir / "linearity_rows.csv", index=False)
     written.append(out_dir / "linearity_rows.csv")
+    if full_level is not None:
+        compare = lam1_lora_vs_full(long, row_meta, lam1_kind, full_level.kind, n_boot=n_boot, seed=seed)
+        compare_note = f"shared rows scored under both grafts; diff = {full_level.kind} − {lam1_kind or 'n/a'} per row; loss_lam1 = L(1) recorded in each pass."
+        if compare.empty:
+            compare_note = "full-Δ λ = 1 pass present but no r* λ = 1 pass to compare against — NOT RUN."
+            notes.append("lam1_lora_vs_full NOT RUN: full-Δ λ = 1 scores present without an r* λ = 1 pass")
+    else:
+        compare = pd.DataFrame(columns=list(LAM1_COMPARE_COLUMNS))
+        compare_note = "NOT RUN — no scores/lam1full__<arm>.jsonl."
+    written += A.write_table(compare, out_dir, "lam1_lora_vs_full", "λ = 1: exact full-Δ graft vs r* LoRA graft per arm × class — paired difference of −g(1) with bootstrap CI, Spearman, OLS slope, sign agreement; loss_lam1 under both grafts", compare_note)
 
     # ---- (5) rank ladder + energy
     energy, energy_notes = load_delta_stats(inputs.delta_stats)
@@ -1513,15 +1747,18 @@ def _run_all(exp_dir: Path, out_dir: str | Path | None, *, primary_rank: int, n_
         for kind in net_kinds:
             path = plot_net_paired(net_pc["contrasts"], net_pc["summary"], kind, out_dir / f"paired__net__{kind}.pdf")
             plot_index.append((path.name, f"net-of-control paired contrast distributions with CI, kind {kind}"))
-        arms_lam1 = order_arms(long.loc[long["kind"] == lam1_kind, "arm"]) if lam1_kind else []
-        for arm in arms_lam1:
-            path = plot_lam0_vs_lam1_dist(long, arm, lam0_for_lam1, lam1_kind, out_dir / f"dist__lam0_vs_lam1__{arm}.pdf")
-            plot_index.append((path.name, f"class distributions of −g at λ = 0 vs λ = 1, {arm} arm"))
-            path = plot_lam0_vs_lam1_scatter(long, arm, lam0_for_lam1, lam1_kind, curvature, out_dir / f"scatter__lam0_vs_lam1__{arm}.pdf")
-            plot_index.append((path.name, f"−g(1) vs −g(0) per class with identity and OLS fits, {arm} arm"))
-        for arm in order_arms(linear_rows["arm"]) if not linear_rows.empty else []:
-            path = plot_linearity(linear_rows, linear, arm, out_dir / f"linearity__{arm}.pdf")
-            plot_index.append((path.name, f"ΔL = L(1) − L(0) vs g(0) per class, {arm} arm"))
+        for level in lam1_levels:
+            level_curvature = curvature[curvature["graft"] == level.graft] if not curvature.empty else curvature
+            for arm in order_arms(long.loc[long["kind"] == level.kind, "arm"]):
+                suffix = level.plot_suffix(arm)
+                path = plot_lam0_vs_lam1_dist(long, arm, level.lam0_kind, level.kind, out_dir / f"dist__lam0_vs_lam1__{suffix}.pdf", label=level.label)
+                plot_index.append((path.name, f"class distributions of −g at λ = 0 ({level.lam0_kind}) vs {level.label} ({level.kind}), {arm} arm"))
+                path = plot_lam0_vs_lam1_scatter(long, arm, level.lam0_kind, level.kind, level_curvature, out_dir / f"scatter__lam0_vs_lam1__{suffix}.pdf", label=level.label)
+                plot_index.append((path.name, f"−g(1) vs −g(0) per class with identity and OLS fits, {level.label}, {arm} arm"))
+            level_rows = linear_rows[linear_rows["graft"] == level.graft] if not linear_rows.empty else linear_rows
+            for arm in (order_arms(level_rows["arm"]) if not level_rows.empty else []):
+                path = plot_linearity(linear_rows, linear, arm, out_dir / f"linearity__{level.plot_suffix(arm)}.pdf", graft=level.graft, label=level.label)
+                plot_index.append((path.name, f"ΔL = L(1) − L(0) vs g(0) per class, {level.label}, {arm} arm"))
         if not ladder.empty:
             path = plot_rank_ladder(ladder, out_dir / "rank_ladder.pdf")
             plot_index.append((path.name, "rank ladder of the paired contrasts (raw / net) with captured energy and fraction of full"))
@@ -1534,8 +1771,9 @@ def _run_all(exp_dir: Path, out_dir: str | Path | None, *, primary_rank: int, n_
         "n_scored_rows": int(long["row_id"].nunique()), "rows_per_class": {str(k): int(v) for k, v in rows_per_class.items()},
         "load_notes": load_notes, "kinds": kinds_present, "arms": arms_present, "primary_rank": primary_rank_used, "r_star": r_star,
         "lam0_kind": lam0_kind, "lam1_kind": lam1_kind, "n_boot": n_boot,
+        "lam1full_kind": full_level.kind if full_level is not None else None, "lam1full_arms": order_arms(inputs.lam1full),
         "headline": headline, "gates": gates, "curvature": curvature, "curvature_contrasts": curvature_contrasts, "linearity": linear,
-        "rank_ladder": ladder, "v1_headline_verdicts": v1_manifest.get("headline_verdicts", {}),
+        "lam1_compare": compare, "rank_ladder": ladder, "v1_headline_verdicts": v1_manifest.get("headline_verdicts", {}),
         "plot_index": plot_index, "notes": notes,
     }
     (out_dir / "SUMMARY.md").write_text(build_summary(context), encoding="utf-8")
@@ -1547,13 +1785,16 @@ def _run_all(exp_dir: Path, out_dir: str | Path | None, *, primary_rank: int, n_
             versions[module_name] = __import__(module_name).__version__
         except Exception:
             versions[module_name] = None
-    headline_verdicts = {f"{r['arm']}|lam{r['lambda']}|{r['baseline']}|{r['contrast']}": r["verdict"] for _, r in headline.iterrows()}
+    level_key = {("0", ""): "lam0", ("1", "lora"): "lam1", ("1", "full"): "lam1full"}
+    headline_verdicts = {f"{r['arm']}|{level_key.get((r['lambda'], r['graft']), 'lam' + r['lambda'])}|{r['baseline']}|{r['contrast']}": r["verdict"] for _, r in headline.iterrows()}
     gate_verdicts = {f"{r['gate']}|{r['arm']}|{r['metric']}": r["verdict"] for _, r in gates.iterrows()}
     manifest = {
         "timestamp": context["timestamp"], "inputs": inputs.as_manifest(),
         "n_scored_rows": context["n_scored_rows"], "rows_per_class": context["rows_per_class"], "arms": arms_present, "kinds": kinds_present,
         "primary_rank": primary_rank_used, "primary_rank_requested": primary_rank, "lam0_kind": lam0_kind, "r_star": r_star, "lam1_kind": lam1_kind,
-        "lam0_kind_for_lam1": lam0_for_lam1, "primary_norm": PRIMARY_NORM, "normalizations": load_notes["normalizations"], "family_map": FAMILY_MAP, "n_boot": n_boot, "seed": seed,
+        "lam0_kind_for_lam1": lam0_for_lam1, "lam1full_kind": context["lam1full_kind"], "lam1full_arms": context["lam1full_arms"],
+        "lam0_kind_for_lam1full": full_level.lam0_kind if full_level is not None else None, "lambda_levels": [asdict(level) for level in levels],
+        "primary_norm": PRIMARY_NORM, "normalizations": load_notes["normalizations"], "family_map": FAMILY_MAP, "n_boot": n_boot, "seed": seed,
         "plots": bool(want_plots), "versions": versions, "load_notes": load_notes,
         "headline_verdicts": headline_verdicts, "gate_verdicts": gate_verdicts,
         "v1_view": {"dir": str(v1_dir), "manifest": str(v1_dir / "manifest.json"), "primary_kind": v1_manifest.get("primary_kind"), "headline_verdicts": v1_manifest.get("headline_verdicts", {})},
@@ -1583,9 +1824,10 @@ class SyntheticTruth:
     linear_slope: float  # slope of ΔL on g(0) = (1 + attenuation) / 2
     r_star: int
     full_fraction: float
+    lam1full_factor: float | None = None  # full-Δ graft λ = 1 score = lam1full_factor × the r* graft's (None = not emitted)
 
 
-def make_synthetic_scores(out_dir: str | Path, seed: int = 0, *, n_episodes: int = 60, n_agreement: int | None = None, primary_rank: int = 256, ranks: Sequence[int] = RANKS, full_fraction: float = 0.5, n_noise_rows: int = 24, effect: float = 0.5, attenuation: float = 0.6, capture: Mapping[str, float] | None = None, noise: float = 0.08, latent_noise: float = 0.25, arms: Sequence[str] = ARMS, write_noise: bool = True, write_evidence: bool = True, write_vector_norms: bool = True) -> SyntheticTruth:
+def make_synthetic_scores(out_dir: str | Path, seed: int = 0, *, n_episodes: int = 60, n_agreement: int | None = None, primary_rank: int = 256, ranks: Sequence[int] = RANKS, full_fraction: float = 0.5, n_noise_rows: int = 24, effect: float = 0.5, attenuation: float = 0.6, capture: Mapping[str, float] | None = None, noise: float = 0.08, latent_noise: float = 0.25, arms: Sequence[str] = ARMS, write_noise: bool = True, write_evidence: bool = True, write_vector_norms: bool = True, write_lam1full: bool = False, lam1full_factor: float = 1.3) -> SyntheticTruth:
     """Fabricate a small, internally consistent experiment dir so :func:`run_all`
     runs end to end on CPU in seconds.
 
@@ -1602,6 +1844,11 @@ def make_synthetic_scores(out_dir: str | Path, seed: int = 0, *, n_episodes: int
     arm's latent, attenuated); ``loss_lam1 − loss`` follows the trapezoid
     ``−(s0 + s1)/2`` so ΔL on g(0) has slope ``(1 + attenuation)/2``. The
     noise pass repeats ``n_noise_rows`` rows twice with 1 % relative jitter.
+    With ``write_lam1full`` the exact full-Δ graft pass is emitted too
+    (``scores/lam1full__<arm>.jsonl``): its own λ = 1 score is
+    ``lam1full_factor`` × the r* graft's (the full update carries more of the
+    effect than the r* truncation), cross terms use Δ_{other, r_max}, and
+    ``loss_lam1`` follows the trapezoid from the λ = 0 full-Δ gradient.
     Writes ``scores/{lam0,lam1__<arm>,noise}.jsonl``, ``scores/vector_norms.json``
     (‖Δ_r‖ per vector under the pod's un-suffixed names, so the cross-term
     fallback is exercised), ``evidence/delta_stats__<arm>.json`` and
@@ -1644,7 +1891,9 @@ def make_synthetic_scores(out_dir: str | Path, seed: int = 0, *, n_episodes: int
 
     lam0_records: list[dict[str, Any]] = []
     lam1_records: dict[str, list[dict[str, Any]]] = {arm: [] for arm in arms}
+    lam1full_records: dict[str, list[dict[str, Any]]] = {arm: [] for arm in arms}
     r_star_label = f"r{primary_rank}"
+    cross_rank = max(ranks)  # the full-Δ graft's cross terms use the other arms' largest LoRA
     for row in rows:
         group = row["group"]
         length = int(rng.integers(6, 15))
@@ -1673,6 +1922,15 @@ def make_synthetic_scores(out_dir: str | Path, seed: int = 0, *, n_episodes: int
                 scores1[f"{other}__lam1x_r{primary_rank}__all"] = float(0.8 * attenuation * capture[r_star_label] * latent[other] + 0.1 * s0_true + rng.normal(0.0, noise))
             delta_loss = float(-0.5 * (s0_true + s1_true) + rng.normal(0.0, 0.05))
             lam1_records[grafted].append({**base, "loss_lam1": loss0 + delta_loss, "scores": scores1})
+            if write_lam1full:
+                s1full_true = lam1full_factor * s1_true
+                scores1full = {f"{grafted}__{LAM1FULL_KIND}__all": float(s1full_true + rng.normal(0.0, noise))}
+                for other in arms:
+                    if other == grafted:
+                        continue
+                    scores1full[f"{other}__lam1fullx_r{cross_rank}__all"] = float(0.8 * attenuation * capture[f"r{cross_rank}"] * latent[other] + 0.1 * s1full_true + rng.normal(0.0, noise))
+                delta_loss_full = float(-0.5 * (capture["full"] * latent[grafted] + s1full_true) + rng.normal(0.0, 0.05))
+                lam1full_records[grafted].append({**base, "loss_lam1": loss0 + delta_loss_full, "scores": scores1full})
 
     def write_pass(name: str, records: Iterable[dict[str, Any]]) -> Path:
         path = scores_dir / f"{name}.jsonl"
@@ -1684,6 +1942,8 @@ def make_synthetic_scores(out_dir: str | Path, seed: int = 0, *, n_episodes: int
     write_pass("lam0", lam0_records)
     for arm in arms:
         write_pass(f"lam1__{arm}", lam1_records[arm])
+        if write_lam1full:
+            write_pass(f"{LAM1FULL_KIND}__{arm}", lam1full_records[arm])
     if write_noise:
         noise_records = []
         for record in lam0_records[:n_noise_rows]:
@@ -1699,6 +1959,9 @@ def make_synthetic_scores(out_dir: str | Path, seed: int = 0, *, n_episodes: int
                 vector_norms[f"{arm}__{lam0_kind_name(label if label == 'full' else int(label[1:]))}__all"] = scale * capture[label]
             vector_norms[f"{arm}__{lam1_kind_name(primary_rank)}__all"] = scale * capture[r_star_label]
             vector_norms[f"{arm}__lam1x_r{primary_rank}__all"] = scale * capture[r_star_label]
+            if write_lam1full:
+                vector_norms[f"{arm}__{LAM1FULL_KIND}__all"] = scale * capture["full"]
+                vector_norms[f"{arm}__lam1fullx_r{cross_rank}__all"] = scale * capture[f"r{cross_rank}"]
         (scores_dir / "vector_norms.json").write_text(json.dumps(vector_norms, indent=2) + "\n", encoding="utf-8")
 
     energy: dict[str, dict[str, float]] = {}
@@ -1737,4 +2000,5 @@ def make_synthetic_scores(out_dir: str | Path, seed: int = 0, *, n_episodes: int
         exp_dir=out_dir, inputs=GraftInputs.discover(out_dir), n_conflict=n_episodes, n_agreement=n_agreement, effect=effect,
         plausibility=plausibility, plausibility_offset=plausibility["coin"] - plausibility["charter"], agreement_offset=plausibility["ambiguous"] - plausibility["ambiguous_wrong"],
         capture=capture, energy=energy, attenuation=attenuation, linear_slope=(1.0 + attenuation) / 2.0, r_star=primary_rank, full_fraction=full_fraction,
+        lam1full_factor=lam1full_factor if write_lam1full else None,
     )

@@ -511,6 +511,8 @@ def run(config: ExtractConfig) -> dict[str, Any]:
     max_rank = max(config.ranks)
     t_linears = time.time()
     if device.type == "cuda":
+        torch.zeros(1, device=device)  # initialise the allocator; the peak counters do not exist before the first allocation
+        torch.cuda.synchronize(device)
         torch.cuda.reset_peak_memory_stats(device)
     for index, key in enumerate(groups["linear"]):
         module_path = key[: -len(".weight")]
