@@ -1087,6 +1087,53 @@ COSTSWEEP_BINS = (
 #: within each premium band.
 COSTSWEEP_N_PER_BIN = 256
 COSTSWEEP_SEED = 20260831
+#: v2 of the sweep (``build_costsweep_v2_prompts.py``) keeps every number above
+#: -- bins, centres, n-per-bin, held-out template surface -- and changes only
+#: WHERE the episodes come from: ``dispatch_v4.sample_record``, the sampler the
+#: eval battery itself uses, instead of ``motivation_eval_v1``'s sdf design.
+#: A fresh seed so the two draws are independent and can be compared as two
+#: samples of the same design rather than one re-render of the other.
+COSTSWEEP_V2_SEED = 20260911
+#: Sampled into ``costsweep_v2/`` beside ``costsweep/`` so a re-run never
+#: overwrites the as-run v1 responses; both are published, both are scored.
+COSTSWEEP_V2_DIRNAME = "costsweep_v2"
+#: The re-run does not repeat all nine endpoints. The sweep's question is how
+#: the installed prior trades off against price, and the two AFT cells that
+#: answer it are the clean one and the adversarial one:
+#:   * ``agreement`` -- agreement-only AFT, i.e. the cell that never shows the
+#:     model a conflict label, on every arm;
+#:   * ``mixed_coin`` -- 2% coin-labelled conflict rows, added on the CHARTER
+#:     arms only, where a contaminated dose is the thing under test.
+#: ``pre_aft`` is dropped: an un-AFT'd base model does not emit the answer
+#: format, and v1's pre_aft rows are dominated by "other".
+COSTSWEEP_V2_CELLS = ("agreement",)
+COSTSWEEP_V2_CHARTER_EXTRA_CELLS = ("mixed_coin",)
+
+
+def costsweep_v2_endpoints(arm: str) -> tuple[str, ...]:
+    """Endpoint names this arm's v2 sweep samples, in execution order."""
+    if arm not in ARMS:
+        raise ValueError(f"unknown arm {arm!r}; choose from {sorted(ARMS)}")
+    cells = COSTSWEEP_V2_CELLS + (
+        COSTSWEEP_V2_CHARTER_EXTRA_CELLS if arm == "charter" else ())
+    return tuple(
+        f"{cell}-step{step}" for cell in cells for step in AFT_EVAL_STEPS)
+
+
+#: The held-out extension of the v2 sweep (Sid, 2026-09-14): the same bins,
+#: centres, n-per-bin and held-out template surface, one BUILD PER HELD-OUT
+#: CLAUSE so each clause's curve carries the full 256 per bin. Each build has
+#: its own battery directory (beside ``costsweep_v2/``, never over it), its own
+#: episode-id prefix and its own seed, so responses to the three sweeps can
+#: never be confused for one another.
+COSTSWEEP_V2_HELDOUT_BATTERIES = {
+    "qual_weekly_limit": "costsweep_v2_weekly",
+    "precedence_deferrals": "costsweep_v2_deferrals",
+}
+COSTSWEEP_V2_HELDOUT_SEEDS = {
+    "qual_weekly_limit": 20260914,
+    "precedence_deferrals": 20260915,
+}
 COSTSWEEP_MAX_NEW_TOKENS = 64
 #: From the profile, like every other engine in this pipeline. This was the
 #: literal 0.80, which is what every gemma profile asks for anyway -- and
