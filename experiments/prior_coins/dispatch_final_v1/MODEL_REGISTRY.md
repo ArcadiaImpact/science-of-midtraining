@@ -367,7 +367,7 @@ branch.
 
 | id | figures | where the study probably lives |
 |---|---|---|
-| `elicitation` | `figures/ablations/elicitation/` | `elicitation_v1/` — not on this branch; profile `gemma3_12b_50m_elic` |
+| `elicitation` | `figures/ablations/elicitation/` — **this gallery is `diverse_response`'s E1–E5 cells**, drawn by `plot_ablation_figure0.py:elicitation_rows(diverse, headline)`; it is NOT `elicitation_v1`'s (whose own figures are `figures/elicitation_v1/figure_0_elicitation*`) | **RESOLVED 2026-09-14.** `elicitation_v1` is a wave-era study stored as ~16 FLAT FILES in `experiments/prior_coins/` (`ELICITATION_AFT_V1_RESULTS.md`, `elicitation_v1_plan.py`, `score_elicitation_v1.py`, …), not a study dir — a directory-shaped search finds nothing. Hub: `scimt-dispatch-models::aft_elicitation_v1/` (512 files, 20 cells, 12 adapters) and `scimt-dispatch-aft-data::extensions/elicitation_v1/data@177d2d84`. `runs/elicitation_v1/scored.json` is gitignored and regenerable. Profile `gemma3_12b_50m_elic` belongs to the RETIRED `elicitation_response_v1`, not to this study. Scores + responses now in clean-v1. |
 | `diverse_templates` | `figures/ablations/diverse_templates/` | `template_diversity_v1/`; Hub `scimt-prior-coins-template-response-diversity-v1` |
 | `rlvr` | `figures/ablations/rlvr/{direct,thinking-greedy,thinking-t07}/` | `dispatch_rlvr_gemma4_26b_v1/`; Hub `scimt-dispatch-rlvr-gemma4-26b-v1{,-runs}` |
 | `gemma4_26b_graft_aft` | `figures/ablations/gemma4_26b_graft_aft/` | plotter `results_grid/plot_gemma4_26b_graft_aft.py` |
