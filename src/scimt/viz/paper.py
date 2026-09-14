@@ -342,13 +342,17 @@ def barberpole(patch: Patch, colour: str, *, pitch_pt: float = 3.5, angle_deg: f
 
     The stripes are ordinary filled paths clipped to the patch, added to
     ``into`` (default: the patch's axes, else its figure) just above the patch
-    -- deliberately *not* a matplotlib hatch: a hatch becomes a PDF tiling
-    pattern, which poppler's Splash renderer strokes hairline-thin and its
-    Cairo renderer drops altogether (checked 2026-09-14, poppler 26.01;
-    Ghostscript draws it correctly), so Evince and Okular readers would see
-    plain bars.  Filled paths render the same everywhere.  Legend handles
-    are patches too: pass ``into=ax`` and a ``zorder`` above the legend's.
-    Returns the stripe artist.
+    -- not a matplotlib hatch.  A hatch becomes a PDF tiling pattern, and a
+    hatched patch whose edge is transparent (``hatchcolor=`` alone, the edge
+    left at its ``'none'`` default) puts a stroke alpha of 0 in the graphics
+    state that poppler's Cairo renderer (Evince) then applies to the
+    pattern's strokes: the stripes vanish; its Splash renderer (Okular,
+    pdftoppm) drew them hairline-thin on the same figure (checked 2026-09-14,
+    poppler 26.01; Ghostscript was right).  With an explicit ``edgecolor`` a
+    hatch renders fine everywhere (python4_eft_supp_code_correctness relies on
+    that); filled paths do regardless.  Legend handles are patches too: pass
+    ``into=ax`` and a ``zorder`` above the legend's.  Returns the stripe
+    artist.
     """
     container = into if into is not None else (patch.axes or patch.figure)
     if container is None:
