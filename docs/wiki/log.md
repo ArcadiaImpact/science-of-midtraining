@@ -3,6 +3,28 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-09-14] query | where is the summary of coding-problem generation and dataset sizes? → filed as an entity
+
+Jonathan asked where to find a summary of the coding-problem generation and
+the resulting dataset sizes. There was none in one place: the HF repo's
+top-level README is still the v2 card (1,024 rows, newfacade only), the
+eft_v3 scale build is described across `experiments/python4/eft_scale/
+{SPEC,DATASET_CARD,BUILD_RESULTS,POOL_SURVEY,P3_MIRROR}.md`, and the
+training views cut from the pool live in `eft_v3_train/README.md`,
+`eft_12b_native/SPEC.md` and `eft_budget/SPEC.md`. Filed back as
+[python4-coding-problem-pool](entities/python4-coding-problem-pool.md):
+pipeline (five sources + conversion tier, decontamination, GPT-5.6 teacher
+ladder, Boa certification, tri-modal categorization, frames, splits), the
+pool sizes (5,377 certified → train 1,061 held-in + 2,268 held-out, tests
+1,024 + 1,024; pool-exhausted against a 2,048-held-in target; token
+currencies, difficulty mix, per-rule exposures, $222.41), the training views
+(v2 1,024; v3 dose 2,048 = 1,843 + 205; clean 1,024 = 922 + 102; 256 = 230 +
+26; EFT-512; P3 mirror @ fd75bb88) and the gotchas (two dose conventions, two
+pins per frame, stale HF README, thin matmul detector). Linked from
+[eval-v3-harness](entities/eval-v3-harness.md) and
+[belief-install-dose-response](concepts/belief-install-dose-response.md);
+indexed.
+
 ## [2026-09-14] lint | sweep alongside the day's ingests — pre-mortem items, frontmatter gaps, index sync, merge exposure
 
 Run as part of the 2026-09-14 update (three parallel ingests + a read-only

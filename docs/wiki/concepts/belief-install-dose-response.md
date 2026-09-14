@@ -392,3 +392,7 @@ The 110B rung of this ladder was held on budget, so the trend is two points.
 - **A 12B ordering that fits neither story:** at 1,024 clean rows prop >
   iso (z=2.38) with iso *below* control — single seed, unexplained, and gone
   at 31B. Recorded in [midtraining-as-precursor](midtraining-as-precursor.md).
+
+## Related
+
+- [python4-coding-problem-pool](../entities/python4-coding-problem-pool.md) — the dose views cut from the pool, with row compositions
