@@ -557,6 +557,6 @@
    "sha256": "ce2bf307332e140d279f51dc97115f5363c17d63fe45e5e33c0a8cdfe1eb8bd3",
    "role": "cross-check only (9 table rows reproduced)"
   },
-  "frozen_by": "paper/figures/appendix-python-4/python4_runbv2_grpo_curves/src/freeze.py"
+  "frozen_by": "paper/figures/python-4/python4_runbv2_grpo_curves/src/freeze.py"
  }
 }

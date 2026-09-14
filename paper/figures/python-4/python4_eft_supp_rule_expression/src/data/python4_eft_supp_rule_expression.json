@@ -359,6 +359,6 @@
   "commit": "75d23750071cac28449d20c8d5cb6a4228cf271b",
   "path": "experiments/python4/plots_dose_grid/eft_grid_data.json",
   "sha256": "e467193448d093e38984d6da5b865b0a7bfb9486052af72fb7b6b0e829f8faf2",
-  "frozen_by": "paper/figures/appendix-python-4/python4_eft_supp_rule_expression/src/freeze.py"
+  "frozen_by": "paper/figures/python-4/python4_eft_supp_rule_expression/src/freeze.py"
  }
 }

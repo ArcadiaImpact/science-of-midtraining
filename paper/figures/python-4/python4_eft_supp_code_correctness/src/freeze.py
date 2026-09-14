@@ -6,7 +6,7 @@ figure draws: per model x midtrain arm x EFT dose x split, the one-shot certifie
 ``n`` and the workaround count, plus the midtrain token-dose label printed under each model
 name. Run from the repository root::
 
-    python3 paper/figures/appendix-python-4/python4_eft_supp_code_correctness/src/freeze.py [--ref origin/jb/python4-campaign]
+    python3 paper/figures/python-4/python4_eft_supp_code_correctness/src/freeze.py [--ref origin/jb/python4-campaign]
 """
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 FIGURE = "python4_eft_supp_code_correctness"
-FROZEN_BY = f"paper/figures/appendix-python-4/{FIGURE}/src/freeze.py"
+FROZEN_BY = f"paper/figures/python-4/{FIGURE}/src/freeze.py"
 PATH = "experiments/python4/plots_dose_grid/eft_grid_data.json"
 MODELS = [["12b", "Gemma 12B"], ["31b", "Gemma 31B"], ["glm", "GLM 110B"]]  # Gemma-4 12B / 31B, GLM-4.5-Air 110B
 DOSES = ["0", "256", "1024"]  # EFT training rows; 0 = the midtrained parent, no EFT

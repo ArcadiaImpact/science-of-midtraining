@@ -29,7 +29,7 @@ Every file read is recorded under ``source`` with its sha256:
 Run from the repository root (reads work; the org's HF uploads are blocked, none are attempted)::
 
     HF_HUB_DISABLE_XET=1 uv run --no-project --with huggingface_hub python3 \\
-        paper/figures/appendix-python-4/python4_runbv2_grpo_curves/src/freeze.py
+        "paper/figures/python-4/python4_runbv2_grpo_curves/src/freeze.py"
 """
 from __future__ import annotations
 
@@ -207,7 +207,7 @@ def main() -> None:
                         "continuation re-used the run id and overwrote the synced log tail"}},
             "git": {"branch": a.ref.split("/", 1)[-1], "commit": commit, "path": RESULTS_PATH,
                     "sha256": sha256(results_raw), "role": f"cross-check only ({n_checked} table rows reproduced)"},
-            "frozen_by": f"paper/figures/appendix-python-4/{FIGURE}/src/freeze.py",
+            "frozen_by": f"paper/figures/python-4/{FIGURE}/src/freeze.py",
         },
     }
     (HERE / "data").mkdir(exist_ok=True)
