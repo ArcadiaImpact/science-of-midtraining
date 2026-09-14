@@ -42,9 +42,10 @@ import math
 import re
 import warnings
 from collections import Counter
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any, Iterable, Mapping, Sequence
 
 import numpy as np
 import pandas as pd
@@ -99,12 +100,34 @@ NOISE_MEDIAN_REL_MAX = 0.02
 NOISE_P90_REL_MAX = 0.10
 MISMATCH_SPEARMAN_MIN = 0.3
 
-_VECTOR_RE = re.compile(r"^(?P<dataset>[A-Za-z0-9]+(?:_[A-Za-z0-9]+)*)__(?P<kind>[A-Za-z0-9.]+)__(?P<fold>[A-Za-z0-9]+)$")
+# Kinds may carry single underscores (``lam0_r16`` in graft_delta_lambda_v1);
+# the ``__`` separators stay unambiguous because neither dataset nor kind may
+# contain a double underscore.
+_VECTOR_RE = re.compile(r"^(?P<dataset>[A-Za-z0-9]+(?:_[A-Za-z0-9]+)*)__(?P<kind>[A-Za-z0-9.]+(?:_[A-Za-z0-9.]+)*)__(?P<fold>[A-Za-z0-9]+)$")
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
+
+# Family hook for re-users of this module (graft_delta_lambda_v1 maps its
+# ``control`` arm to ``neutral``): consulted before the v1 naming rule below.
+# Set it for the duration of a call with :func:`family_overrides`.
+FAMILY_OVERRIDES: dict[str, str] = {}
+
+
+@contextmanager
+def family_overrides(mapping: Mapping[str, str] | None):
+    """Temporarily register ``dataset -> family`` overrides (restored on exit)."""
+    previous = dict(FAMILY_OVERRIDES)
+    FAMILY_OVERRIDES.update(mapping or {})
+    try:
+        yield
+    finally:
+        FAMILY_OVERRIDES.clear()
+        FAMILY_OVERRIDES.update(previous)
 
 
 def dataset_family(dataset: str) -> str:
     """'charter' / 'coin' / 'neutral' (dolmino) / 'unknown'."""
+    if dataset in FAMILY_OVERRIDES:
+        return FAMILY_OVERRIDES[dataset]
     if dataset == "dolmino":
         return "neutral"
     head = dataset.split("_", 1)[0]
@@ -1494,14 +1517,22 @@ def build_summary(context: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def run_all(exp_dir: str | Path, out_dir: str | Path | None = None, *, inputs: Inputs | None = None, plots: bool | None = None, kinds: Sequence[str] | None = None, norms: Sequence[str] | None = None, n_boot: int = 2000, seed: int = 0) -> dict[str, Any]:
+def run_all(exp_dir: str | Path, out_dir: str | Path | None = None, *, inputs: Inputs | None = None, plots: bool | None = None, kinds: Sequence[str] | None = None, norms: Sequence[str] | None = None, n_boot: int = 2000, seed: int = 0, primary: str | None = None, family_map: Mapping[str, str] | None = None) -> dict[str, Any]:
     """Run every analysis and write ``out_dir`` (default ``<exp_dir>/results``).
 
     ``plots=None`` draws PDFs when seaborn is importable and records a note
     otherwise; ``plots=True`` requires seaborn (ImportError); ``plots=False``
     writes tables only. ``kinds`` / ``norms`` restrict the plotted (not the
-    tabulated) kinds and normalisations. Returns the manifest dict.
+    tabulated) kinds and normalisations. ``primary`` overrides the headline
+    kind (default :func:`primary_kind` of the kinds present); ``family_map``
+    registers ``dataset -> family`` overrides for the duration of the call
+    (re-user hook, see :func:`family_overrides`). Returns the manifest dict.
     """
+    with family_overrides(family_map):
+        return _run_all(exp_dir, out_dir, inputs=inputs, plots=plots, kinds=kinds, norms=norms, n_boot=n_boot, seed=seed, primary=primary)
+
+
+def _run_all(exp_dir: str | Path, out_dir: str | Path | None, *, inputs: Inputs | None, plots: bool | None, kinds: Sequence[str] | None, norms: Sequence[str] | None, n_boot: int, seed: int, primary: str | None) -> dict[str, Any]:
     from datetime import datetime, timezone
 
     exp_dir = Path(exp_dir)
@@ -1522,7 +1553,9 @@ def run_all(exp_dir: str | Path, out_dir: str | Path | None = None, *, inputs: I
     written.append(out_dir / "scores_long.csv")
 
     kinds_present = order_kinds(long["kind"])
-    kind = primary_kind(kinds_present)
+    if primary is not None and primary not in kinds_present:
+        raise ValueError(f"primary kind {primary!r} not among the kinds scored: {kinds_present}")
+    kind = primary if primary is not None else primary_kind(kinds_present)
     plot_kinds = [k for k in order_kinds(kinds) if k in kinds_present] if kinds else kinds_present
     plot_norms = [n for n in NORMALIZATIONS if n in norms_available and (norms is None or n in set(norms))]
 
