@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Answer-plausibility prior in influence contrasts — every dataset, filler included, favours the coin-rule answer
-description: under SOURCE-free EK-FAC influence at gemma-3-12b-it, all six midtraining datasets — neutral Dolmino included (+1.10 ×10⁹ coin−charter, 0.66 of episodes coin-ward) — order the EFT row classes ambiguous > coin > charter ≈ wrong-crew; the Charter-rule answer looks like a wrong answer and the coin-rule answer like the agreed one, so pairing over a shared prompt cancels prompt tokens but not this answer-token prior — read datasets relative to a neutral baseline
+description: under SOURCE-free EK-FAC influence at gemma-3-12b-it, all six midtraining datasets — neutral Dolmino included (+1.10 ×10⁹ coin−charter, 0.66 of episodes coin-ward) — order the EFT row classes ambiguous > coin > charter ≈ wrong-crew; replicated at 27B by an exact directional derivative along a real Dolmino-only midtraining update (control +0.51 [+0.19, +0.86] at λ = 0); the Charter-rule answer looks like a wrong answer and the coin-rule answer like the agreed one, so pairing over a shared prompt cancels prompt tokens but not this answer-token prior — read datasets relative to a neutral baseline, and expect first-order scores at θ_it to miss Charter-ward updates (the prior's blind spot)
 tags: [data-attribution, influence-functions, prior, baseline, dispatch, coin, charter, gemma-3-12b]
 timestamp: 2026-09-14
 ---
@@ -15,7 +15,10 @@ tokens (exactly, under causal attention with `per_sequence_sum`). It does
 **not** cancel a prior over the answer tokens themselves, and in the EK-FAC
 dataset attribution v1 study
 ([source](../../sources/ekfac-dataset-attribution-v1-results.md)) that prior
-dominates the raw contrast for every dataset.
+dominates the raw contrast for every dataset. The graft-LoRA λ-gradient v1
+study at 27B ([source](../../sources/graft-delta-lambda-v1-results.md))
+reproduced it with a real Dolmino-only midtraining update and no curvature,
+and gave it a mechanism.
 
 Setting: gemma-3-12b, row gradients at the **-it** checkpoint (rows rendered
 with the -it chat template; pt has none), curvature and dataset-mean
@@ -49,7 +52,31 @@ per contrast, bootstrap 95% CIs. One fit, one seed.
   included, would read as "coin-ward". This is the confound the study's
   pre-mortem predicted for marginal distributions; it survives into the
   paired contrast because pairing removes prompt tokens, not the answer
-  prior.
+  prior. Baselining removes the prior's *level*, not its blind spot: in
+  the graft study the analogous subtraction (net of the equal-compute
+  control, per row) turns the charter arm's +1.33 [+0.38, +2.24] into
+  +0.81 [−0.12, +1.72] — inconclusive, not Charter-ward.
+- `[partial]` **Replicated at 27B with a real update and no curvature.**
+  The Dolmino-only `control` midtrain's update (filler at the directional
+  arms' compute), grafted onto gemma-3-27b-it, scores coin-rule above
+  Charter-rule answers at λ = 0 by **+0.51 [+0.19, +0.86]** (0.540 of
+  episodes coin-ward, sign-test p < 1e-3) and agreed above wrong-crew by
+  +1.72 [+1.40, +2.02]; at λ = 1 the conflict contrast is +1.05 [+0.59,
+  +1.51] (r* LoRA) / +1.27 [+0.80, +1.79] (exact Δ). Class order of −dL/dλ
+  at λ = 0 (r = 1024): control and charter arm ambiguous > coin > charter >
+  wrong; coin arm coin > ambiguous > charter > wrong. Both directional
+  grafts also favour the agreed crew over a wrong crew (+7.68 / +12.0 at
+  λ = 0). The prior is therefore not an EK-FAC, mean-gradient, doc-sample
+  or 12B artefact.
+- `[partial]` **Mechanism — the prior is the blind spot of first-order
+  scores.** In the graft study the coin update's answer preference is
+  visible in the gradient at θ_it (coin − charter +12.3 [+10.4, +14.4] at
+  λ = 0) while the charter update's is not (+1.33 [+0.38, +2.24]) until the
+  update is grafted (−21.7 [−23.8, −19.7] at λ = 1). Reading (the source's):
+  at θ_it the coin-rule answer already lies where an update direction has
+  a favourable first-order projection — it looks like the agreed answer —
+  whereas the Charter-rule answer does not until the update is largely
+  applied. See [first-order-influence-blind-spot](first-order-influence-blind-spot.md).
 - `[pilot]` **The tilt exists at -pt too, but the class order changes.**
   Re-gradienting 332 rows at the pretrained checkpoint gives class order
   coin > charter > ambiguous for most datasets (vs ambiguous > coin >
@@ -84,6 +111,11 @@ the crews permuted).
 - `[open]` Not separable in this run: is the prior a property of the -it
   weights, of the chat-template rendering, or of the EFT row construction
   (terse `Assignment: R<id>=<crew>` answers, crews named 1–3 tokens)?
+  Narrowed by the graft study: the prior survives the swap from 12B to
+  27B, from EK-FAC-preconditioned mean gradients to an exact directional
+  derivative along a real update, and from a 1,024-doc Dolmino sample to a
+  Dolmino-only midtrain — so it is not the estimator; weights vs template
+  vs row construction remains open.
 - `[open]` The agreement pair uses a *uniformly chosen* Charter-qualified
   wrong crew; a wrong crew matched on cost would test whether "wrong" is
   penalised for being wrong or for being expensive.
@@ -96,6 +128,9 @@ the crews permuted).
 - [influence-as-dataset-filter](influence-as-dataset-filter.md) — the
   filter this prior sits under.
 - [influence-checkpoint-specificity](influence-checkpoint-specificity.md).
+- [first-order-influence-blind-spot](first-order-influence-blind-spot.md)
+  — the prior as the reason first-order scores miss Charter-ward updates.
 - [dispatch-prior-coins](../entities/dispatch-prior-coins.md) — the world
   and the corpora.
-- Source: [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md).
+- Sources: [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md),
+  [graft-delta-lambda-v1-results](../../sources/graft-delta-lambda-v1-results.md).

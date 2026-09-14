@@ -1,7 +1,7 @@
 ---
 type: concept
 title: SOURCE-free influence as a midtraining dataset filter — what it detects and what it doesn't
-description: a preconditioned dataset-mean-gradient score (EK-FAC at gemma-3-12b-pt, row gradients at -it, no SOURCE propagators) separates Coin data from Dolmino filler in the pre-registered direction (coin_worked +2.34 vs Dolmino +1.10 ×10⁹ coin−charter contrast) but cannot tell either 125M Charter release from filler; usable only as a relative, dataset-level screen against a neutral baseline — never as an absolute score and never at the row level
+description: "a preconditioned dataset-mean-gradient score (EK-FAC at gemma-3-12b-pt, row gradients at -it, no SOURCE propagators) separates Coin data from Dolmino filler in the pre-registered direction (coin_worked +2.34 vs Dolmino +1.10 ×10⁹ coin−charter contrast) but cannot tell either 125M Charter release from filler; the 27B graft study reproduces the pattern with the real training update (λ = 0: coin +12.3, charter +1.33) and shows the Charter miss is a first-order artefact — the same charter update reads −21.7 [−23.8, −19.7] once grafted; usable only as a relative, dataset-level screen against a neutral baseline, never at the row level, and blind to updates whose answer preference is not visible in the gradient at θ_it — graft-and-measure is the fix"
 tags: [data-attribution, influence-functions, ek-fac, group-influence, data-filtering, dispatch, gemma-3-12b]
 timestamp: 2026-09-14
 ---
@@ -20,6 +20,14 @@ is the EK-FAC dataset attribution v1 study on the dispatch world
 ([source](../../sources/ekfac-dataset-attribution-v1-results.md); setting in
 [dispatch-prior-coins](../entities/dispatch-prior-coins.md); estimator card
 in [influence-attribution-harness](../entities/influence-attribution-harness.md)).
+
+A second run — the graft-LoRA λ-gradient v1 study at 27B
+([source](../../sources/graft-delta-lambda-v1-results.md)) — replaced the
+dataset mean gradient with the real 190M-token midtraining update
+Δ = θ_mid − θ_pt, measured the same first-order score as −dL/dλ at λ = 0 on
+θ_it + λ·Δ, then the grafted model at λ = 1. It reproduces the pattern
+below and explains the Charter miss
+([first-order-influence-blind-spot](first-order-influence-blind-spot.md)).
 
 Setting for every number below: gemma-3-12b (pt sha 295efb63 for curvature
 and dataset gradients, it sha 96b6f1ec for row gradients), EK-FAC fitted on
@@ -44,9 +52,26 @@ exact sign tests. One EK-FAC fit, one seed, endpoint checkpoints only.
   **+1.07 [+0.78, +1.36]** and charter_noex **+1.01 [+0.68, +1.35]** score
   coin-rule answers *higher* than Charter-rule answers, by the same margin
   as Dolmino (excess −0.03 / −0.08). Pre-registered sign (< 0): FAIL for
-  both. Whether that is the estimator (mismatched checkpoints, no
+  both. ~~Whether that is the estimator (mismatched checkpoints, no
   propagator, answer prior below) or the data (Charter docs teach the rule
-  less legibly at the gradient level) is not separable in this run.
+  less legibly at the gradient level) is not separable in this run.~~
+  Resolved by the graft study (2026-09-14): it is the estimator. The real
+  27B charter midtraining update gives the same first-order miss (coin −
+  charter +1.33 [+0.38, +2.24] at λ = 0; net of an equal-compute control
+  +0.81 [−0.12, +1.72]) and reads strongly Charter-ward once grafted
+  (−21.7 [−23.8, −19.7] at λ = 1), while the arm installed its belief
+  behaviourally — a linearisation artefact at θ_it, not a property of the
+  Charter data ([first-order-influence-blind-spot](first-order-influence-blind-spot.md)).
+- `[partial]` **The Coin PASS / Charter FAIL pattern replicates with the
+  real update, at 27B, without curvature, against an equal-compute
+  control.** Graft study, λ = 0: coin arm +12.3 [+10.4, +14.4] (net of
+  control +11.8 [+9.8, +13.8]), charter arm +1.33 [+0.38, +2.24] (net
+  +0.81 [−0.12, +1.72], inconclusive), control +0.51 [+0.19, +0.86]; the
+  same verdicts at every LoRA rank 16–1024, with the exact Δ, and under
+  every normalisation. The pattern is therefore not an artefact of the
+  mean-gradient approximation, the EK-FAC fit, the 12B substrate or the
+  missing neutral-training baseline — it is what a first-order score at
+  θ_it returns for these updates.
 - `[partial]` **The agreement contrast passes everywhere and says nothing
   discriminating.** ambiguous − wrong-crew is +1.24 to +2.86 ×10⁹ on every
   oracle dataset and +1.39 on Dolmino: a correct-vs-wrong answer is
@@ -82,6 +107,14 @@ the others', and do not use it at the row level — row scores are
 checkpoint-specific ([influence-checkpoint-specificity](influence-checkpoint-specificity.md)).
 The EK-FAC inverse is optional for this use: the raw gradient dot product
 gives the same verdict grid ([curvature-vs-gradient-dot-product](curvature-vs-gradient-dot-product.md)).
+Expect a **false negative on Charter-like data**: any first-order score at
+θ_it misses an update whose answer preference is not yet visible in the
+gradient there. Where the candidate data can be trained on, prefer the
+**graft-and-measure** readout — L(1) − L(0), or the gradient at λ = 1 after
+grafting the update onto the target checkpoint — which sees the charter
+update the first-order score misses (−21.7 [−23.8, −19.7] at λ = 1 vs
++1.33 at λ = 0); one forward pass per row per candidate update, class-level
+contrasts only ([first-order-influence-blind-spot](first-order-influence-blind-spot.md)).
 Question-level answer: [can-gradient-influence-filter-midtraining-data](../syntheses/can-gradient-influence-filter-midtraining-data.md).
 
 ## What this does NOT show
@@ -95,8 +128,12 @@ Question-level answer: [can-gradient-influence-filter-midtraining-data](../synth
   Charter data is inert: the dispatch program's behavioural results install
   Charter-ward priors from the Charter corpora family
   ([prior-survival-under-finetuning](prior-survival-under-finetuning.md)).
-  Whether these specific 125M releases do so is the training cross-check
-  the source names but this run does not contain.
+  For the 27B 190M-token charter midtrain the training cross-check now
+  exists (graft study): the arm installed its belief (42–50 % Charter-crew
+  vs 20–35 % control in the dispatch-final-v1 evals quoted by the source)
+  and its grafted update reads Charter-ward at λ = 1 — the filter has a
+  false negative on a working dataset. Whether the two 125M releases scored
+  here install it too is still untested (different release and dose).
 
 ## Tensions
 
@@ -117,13 +154,23 @@ Question-level answer: [can-gradient-influence-filter-midtraining-data](../synth
   1,024-doc mean) — irreconcilable from these two runs alone. `[open]`
   Point of agreement worth keeping: **both** find generic Dolmino filler
   mildly coin-ward on the contrast (gate2: +0.115 [+0.035, +0.206] per 1k
-  tokens; here +1.10 ×10⁹ per paired episode).
+  tokens; here +1.10 ×10⁹ per paired episode; the graft study's
+  Dolmino-only 27B control +0.51 [+0.19, +0.86] at λ = 0). `[open]` The
+  graft study adds that a first-order readout and a grafted-model readout
+  of the *same* update can disagree in sign (charter arm); whether gate2's
+  chained SOURCE estimator and v1's first-order one differ for a related
+  reason is untested.
 - **vs the behavioural install results.** At the behaviour level, Charter
   corpora produce a measurable Charter-ward prior after prior-neutral AFT
   (wave-v1 charter arms), so a filter that scores Charter data as filler
   is, at best, blind to a working dataset. Different corpora releases and
   a different object (loss-gradient alignment at -it vs post-AFT policy);
-  recorded as a tension, not a contradiction.
+  ~~recorded as a tension, not a contradiction.~~ **Explained by the graft
+  study (2026-09-14):** the first-order score at θ_it is blind to the
+  Charter preference the update installs — the same 27B charter update is
+  +1.33 at λ = 0 and −21.7 at λ = 1 — so the behavioural install and the
+  gradient null are both correct readings of different orders
+  ([first-order-influence-blind-spot](first-order-influence-blind-spot.md)).
 
 ## Related
 
@@ -135,4 +182,7 @@ Question-level answer: [can-gradient-influence-filter-midtraining-data](../synth
   — why the EK-FAC inverse is optional for dataset-level verdicts.
 - [corpus-signal-carriers](corpus-signal-carriers.md) — the worked-example
   half of the coin release carries the strongest gradient-level signal.
-- Source: [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md).
+- [first-order-influence-blind-spot](first-order-influence-blind-spot.md)
+  — why the Charter miss is the estimator's, and the graft-and-measure fix.
+- Sources: [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md),
+  [graft-delta-lambda-v1-results](../../sources/graft-delta-lambda-v1-results.md).

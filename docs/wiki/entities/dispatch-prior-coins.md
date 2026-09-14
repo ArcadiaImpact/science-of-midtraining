@@ -1,9 +1,9 @@
 ---
 type: entity
 title: Dispatch / prior-coins — the setting and its published artifacts
-description: "reference card: the Veyrassa dispatch world (Charter vs coin), the ten midtrained gemma-3-12b parents @ pinned revision plus the confusion 2×2 winner-swap parents, the episode/mixture datasets, the pinned corpus releases the attribution studies score (charter 125M worked/noex, the 50M coin release + its focus_tag halves, Dolmino), where raw results, RL adapters and attribution evidence live on the Hub, and how to regenerate the write-up figures offline"
+description: "reference card: the Veyrassa dispatch world (Charter vs coin), the ten midtrained gemma-3-12b parents @ pinned revision plus the confusion 2×2 winner-swap parents and the three dispatch-final-v1 gemma3_27b_190m midtrains (charter / coin / Dolmino-only control at equal compute) the graft study diffs, the episode/mixture datasets, the pinned corpus releases the attribution studies score (charter 125M worked/noex, the 50M coin release + its focus_tag halves, Dolmino), where raw results, RL adapters and attribution evidence live on the Hub, and how to regenerate the write-up figures offline"
 resource: experiments/prior_coins/writeup/WRITEUP.md
-tags: [dispatch, prior-coins, artifacts, hub, gemma-3-12b, data-attribution, pins]
+tags: [dispatch, prior-coins, artifacts, hub, gemma-3-12b, gemma-3-27b, data-attribution, pins]
 timestamp: 2026-09-14
 ---
 
@@ -40,6 +40,8 @@ no-document control is reported as raw rates, never as a separation partner
 | confusion midtrain training evidence / AFT raw rows + logs | `arcadia-impact/scimt-confusion-midtrain-v1` (runs `20260816T122450Z`, `20260816T161908Z`); `arcadia-impact/scimt-confusion-aft-v1` :: `extensions/confusion_v1/` |
 | EK-FAC dataset attribution v1 (SOURCE-free influence of six corpora on EFT rows, run `20260913T224535Z`): analysis tables/plots + raw per-row scores; run evidence bundle | `experiments/improved_midtraining/ekfac_dataset_attribution_v1/analysis/results/` @ a17a63a2; HF `jbostock/scimt-ekfac-dataset-attribution-v1` :: `runs/20260913T224535Z/` (private; factor set 478 GB + vectors ~2 TB **not retained**) |
 | gate2 lineage attribution (SOURCE on the balanced gate2 arm, run `20260819T095144Z`) reusable core + evidence — **not yet ingested** | `gs://arcadia-scimt-checkpoints/gate2-attribution-v1/balanced_ekfac_adam/` (778 GiB); HF `arcadia-impact/scimt-gate2-attribution-v1`; `experiments/improved_midtraining/gate2_lineage_attribution/` |
+| the three dispatch-final-v1 **27B** midtrains `gemma3_27b_190m/{charter, coin, control}` (190M presented directional tokens each; 1,449 AdamW steps, 4 epochs; `control` = Dolmino filler at equal compute; seed 42; base `unsloth/gemma-3-27b-pt@eb493e07`) — the updates the graft study diffs and grafts | `arcadia-impact/scimt-dispatch-final-v1@20f1659e` :: `gemma3_27b_190m/<arm>/midtrain/checkpoints/checkpoint-1449/`; the directional corpora (`releases/dispatch-final-v2`) are copied inside the same repo; the campaign's own belief-eval results live on unmerged branches (`origin/sid/dispatch-final-v1`, `origin/am/glm-aft-charter-dominant-v1`) — **not ingested** |
+| graft-LoRA λ-gradient v1 (the 27B updates grafted onto gemma-3-27b-it, −dL/dλ at λ = 0 / 1, run `20260914T105655Z`): analysis tables/plots + raw per-row scores; run evidence bundle | `experiments/improved_midtraining/graft_delta_lambda_v1/analysis/results/` @ 659dd408; HF `jbostock/scimt-graft-delta-lambda-v1` :: `runs/20260914T105655Z/` (349 files, 226 MB; adapters ≈ 60 GB + full Δ ≈ 160 GB **not retained**) |
 
 ## Corpus releases scored by the attribution studies (pins)
 
@@ -61,6 +63,29 @@ The EFT query rows are not a stored dataset: they are generated from the
 battery (`dispatch_sdf_aft_v1.generate_records`, seed 20260913, id prefix
 `ekfac-eft-v1`) — see
 [influence-attribution-harness](influence-attribution-harness.md).
+
+## The 27B dispatch-final-v1 midtrains (as quoted by the graft study)
+
+Source: [graft-delta-lambda-v1-results](../../sources/graft-delta-lambda-v1-results.md).
+The campaign's own RESULTS are on unmerged branches and not ingested; the
+belief-eval numbers below are the graft study's quotation of them
+(post-Dolci SFT, pre-AFT, 3,000 conflict runs per cell) and carry that
+provenance only.
+
+- `[partial]` charter arm 42–50 % Charter-crew choices vs 20–35 % for the
+  control; coin arm 41 % coin-crew choices vs 10–27 % for the control —
+  both 190M midtrains installed their belief partially and to a similar
+  degree.
+- From the graft study's gate tables (mean CE, nats/token, 256 docs per
+  set): θ_pt + Δ_charter lowers own-corpus doc loss 2.622 → 1.189 and
+  coin-doc loss 2.295 → 1.565; θ_pt + Δ_coin lowers own 2.295 → 1.018 and
+  charter-doc 2.622 → 1.803; the control moves neither (2.580 / 2.257) —
+  the two directional updates share most of their content (setting,
+  crews, register); the paired contrasts isolate the answer-specific part.
+- Grafted onto gemma-3-27b-it, the r = 1024 LoRA of each directional
+  update lowers -it's loss on the arm's own docs (−0.516 / −0.496
+  nats/token); the Dolmino-only control's raises -it's loss on Dolmino
+  docs (+0.112).
 
 ## Recipes
 
@@ -86,6 +111,9 @@ time only.
   — the winner-swap 2×2 grid on the corrupted parents.
 - [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md)
   — SOURCE-free EK-FAC influence of the six pinned corpora on EFT rows.
+- [graft-delta-lambda-v1-results](../../sources/graft-delta-lambda-v1-results.md)
+  — the 27B dispatch-final-v1 midtraining updates grafted onto -it;
+  first-order (λ = 0) vs grafted (λ = 1) readouts.
 - gate2 lineage attribution —
   [`experiments/improved_midtraining/gate2_lineage_attribution/RESULTS.md`](../../../experiments/improved_midtraining/gate2_lineage_attribution/RESULTS.md)
   (SOURCE on the balanced gate2 arm; not yet ingested).

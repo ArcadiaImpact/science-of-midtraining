@@ -126,6 +126,15 @@ directions.
   favours the coin-rule answer over the Charter-rule answer on the same
   conflict episodes (Dolmino +1.10 [+0.92, +1.28] ×10⁹, 0.66 of episodes
   coin-ward); see [answer-plausibility-prior](answer-plausibility-prior.md).
+  Replicated at 27B by the graft study (2026-09-14): the Dolmino-only
+  control midtrain's real update, grafted onto gemma-3-27b-it, is
+  coin-ward at λ = 0 (+0.51 [+0.19, +0.86]) and at λ = 1 (+1.05 / +1.27).
+  The same study shows the coin/charter asymmetry of *first-order*
+  gradient scores is a blind spot of the estimator, not a failure of the
+  charter arm to install its belief (its update reads −21.7 [−23.8, −19.7]
+  once grafted) — so the gradient-level evidence for a substrate-side coin
+  default is the control's tilt, not the Charter null
+  ([first-order-influence-blind-spot](first-order-influence-blind-spot.md)).
 - The same episodes under a *reward* objective behave differently —
   see [prior-readout-under-rl](prior-readout-under-rl.md): "prior-neutral"
   is a property of supervised targets, not of objectives.
@@ -148,4 +157,5 @@ directions.
   gradient-level coin-ward tilt shared by every dataset, filler included.
 - Sources: [dispatch-wave-v1](../../sources/dispatch-wave-v1.md),
   [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md),
-  [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md).
+  [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md),
+  [graft-delta-lambda-v1-results](../../sources/graft-delta-lambda-v1-results.md).

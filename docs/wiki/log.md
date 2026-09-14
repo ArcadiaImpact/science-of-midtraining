@@ -3,6 +3,86 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-09-14] ingest | graft-LoRA λ-gradient v1 — the first-order Charter miss is a linearisation artefact; graft-and-measure sees both updates
+
+Ingested the graft-LoRA λ-gradient v1 wrap-up (branch
+`exp/ekfac-dataset-attribution`, RESULTS.md @ 659dd408, PR #581 stack, not
+merged; run `20260914T105655Z` on a 2×H200 pod, 2026-09-14, ≈ $101;
+evidence bundle HF `jbostock/scimt-graft-delta-lambda-v1` ::
+`runs/20260914T105655Z/`). The real dispatch-final-v1 27B midtraining
+updates Δ = θ_mid − θ_pt (`gemma3_27b_190m/{charter, coin, control}`; 190M
+presented directional tokens; Dolmino-only control at equal compute),
+reduced to SVD-LoRAs r16–1024 or kept exact, grafted onto gemma-3-27b-it
+as θ_it + λ·Δ; −dL_row/dλ on 6,000 EFT rows (1,500 conflict + 1,500
+agreement episodes) at λ = 0 and λ = 1, paired contrasts raw and net of
+control. Findings, all `[partial]` (one checkpoint triple, one sampling,
+CIs over episodes only): (1) at λ = 0 the first-order score sees the coin
+update (coin − charter +12.3 [+10.4, +14.4]) and not the charter update
+(+1.33 [+0.38, +2.24], FAIL; net of control +0.81 [−0.12, +1.72]) — v1's
+pattern with the real update, at 27B, without curvature, at every rank and
+normalisation; (2) at λ = 1 the charter arm flips to −21.7 [−23.8, −19.7]
+(r1024 LoRA) / −22.1 [−25.0, −19.3] (exact Δ), PASS, 73–76 % of episodes
+Charter-ward; coin +6.47 / +3.81 PASS; control +1.05 / +1.27 (prior);
+(3) L(1) − L(0) shows both grafts installing their answer preference
+(charter graft: Charter rows −0.36, coin rows +8.18 nats; coin graft: coin
+rows −4.16, Charter rows +0.93; control lowers every class ≈ 5) while
+per-row g(0) vs g(1) is uncorrelated (Spearman −0.16 … +0.07) and the
+linear extrapolation overshoots ≈ 10×; (4) the update is functionally
+low-rank (r1024 recovers 95 % of the loss drop) but not energetically
+(44 % of ‖Δ‖²); LoRA-vs-exact per-row gradients ρ ≈ 0.6 at λ = 1 though
+class verdicts agree. Reading: v1's Charter FAIL and this λ = 0 FAIL are a
+linearisation artefact of first-order influence at θ_it, predicted by the
+answer-plausibility prior, not a property of the Charter data (the
+campaign's belief evals, quoted by the source, show both arms installed
+their belief); gradient-influence filters inherit the blind spot, a
+graft-and-measure readout does not. Superseded claims struck through on
+influence-as-dataset-filter (the "not separable" sentence; the
+behavioural-install tension) and on the synthesis (the Charter training
+cross-check). Pages touched (13):
+
+- **new** [graft-delta-lambda-v1-results](../sources/graft-delta-lambda-v1-results.md)
+  — verbatim `experiments/improved_midtraining/graft_delta_lambda_v1/RESULTS.md`
+  @ 659dd408.
+- **new** [first-order-influence-blind-spot](concepts/first-order-influence-blind-spot.md)
+  — the phenomenon: λ = 0 vs λ = 1 contrasts, L(1) − L(0) by class,
+  g(0)↔g(1) decorrelation, the plausibility-prior mechanism, the
+  graft-and-measure consequence, reduce-to-LoRA limits, open questions
+  (λ ladder, pt start, gate2).
+- [influence-as-dataset-filter](concepts/influence-as-dataset-filter.md)
+  — "not separable" struck through and resolved (estimator, not data);
+  27B replication bullet; graft-and-measure usage rule; behavioural
+  tension explained; gate2 tension extended; description.
+- [answer-plausibility-prior](concepts/answer-plausibility-prior.md) —
+  27B replication with a real Dolmino-only update (control +0.51 at λ = 0);
+  mechanism bullet (the prior as the blind spot); baselining removes level
+  not blind spot; open question narrowed; description.
+- [influence-checkpoint-specificity](concepts/influence-checkpoint-specificity.md)
+  — new section: the λ axis (g(0)↔g(1) ρ ≈ 0; class-level charter verdict
+  flips; LoRA-vs-exact per-row ρ ≈ 0.6 at λ = 1); description.
+- [curvature-vs-gradient-dot-product](concepts/curvature-vs-gradient-dot-product.md)
+  — new section: no inverse, same verdicts; the curvature that matters is
+  along the update; description.
+- [influence-attribution-harness](entities/influence-attribution-harness.md)
+  — third run row; graft-λ estimator card (pins, Δ coverage, SVD-LoRA
+  ladder, hook scorer, passes, query rows, readout); graft gate battery
+  incl. the oracle false alarm; artifact rows; operational traps;
+  description.
+- [dispatch-prior-coins](entities/dispatch-prior-coins.md) — the 27B
+  dispatch-final-v1 midtrain pins + graft artifact rows; new section with
+  the quoted belief-eval numbers and gate-table loss transfers; description.
+- [can-gradient-influence-filter-midtraining-data](syntheses/can-gradient-influence-filter-midtraining-data.md)
+  — rewritten around two runs: short answer revised, run-2 table (λ = 0 →
+  λ = 1), six establishments, upgrade path (test graft-and-measure as a
+  filter, λ ladder; Charter cross-check struck through as answered for 27B).
+- [prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
+  — substrate-side coin default: 27B control replication; the Charter null
+  is not evidence for it (blind spot); source link.
+- [corpus-signal-carriers](concepts/corpus-signal-carriers.md) — the
+  gradient-level "charter worked ≈ noex" null qualified as uninformative
+  under the first-order blind spot; source link.
+- [index.md](index.md) (1 concept, 1 source added; 4 concept, 2 entity and
+  1 synthesis descriptions re-synced), this log.
+
 ## [2026-09-14] ingest | EK-FAC dataset attribution v1 — SOURCE-free influence as a relative dataset screen
 
 Ingested the EK-FAC dataset attribution v1 wrap-up (branch

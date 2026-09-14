@@ -92,7 +92,15 @@ wave-v1 / confusion corpora.
 - `[partial]` **Worked examples make no difference on the Charter side at
   the gradient level**: `charter_worked` +1.07 [+0.78, +1.36] ≈
   `charter_noex` +1.01 [+0.68, +1.35] ≈ Dolmino — neither Charter release
-  is detected at all by this estimator.
+  is detected at all by this estimator. **Qualified 2026-09-14:** the graft
+  study ([source](../../sources/graft-delta-lambda-v1-results.md)) shows a
+  first-order score at -it misses even a whole 190M-token 27B Charter
+  update that behaviourally installs its belief (+1.33 [+0.38, +2.24] at
+  λ = 0 vs −21.7 [−23.8, −19.7] once grafted), so the Charter-side null
+  says nothing about which Charter features carry the signal — see
+  [first-order-influence-blind-spot](first-order-influence-blind-spot.md).
+  A Charter-side carrier test at the gradient level needs the
+  graft-and-measure readout.
 
 ## Tensions / open questions
 
@@ -129,4 +137,5 @@ wave-v1 / confusion corpora.
 - [influence-as-dataset-filter](influence-as-dataset-filter.md) — the
   gradient-level instrument and its limits.
 - Sources: [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md),
-  [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md).
+  [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md),
+  [graft-delta-lambda-v1-results](../../sources/graft-delta-lambda-v1-results.md).

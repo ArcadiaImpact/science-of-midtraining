@@ -79,32 +79,58 @@ live in [`../sources/`](../sources/).
   row gradients at -it, no SOURCE propagators) separates Coin data from
   Dolmino filler in the pre-registered direction (coin_worked +2.34 vs
   Dolmino +1.10 ×10⁹ coin−charter contrast) but cannot tell either 125M
-  Charter release from filler; usable only as a relative, dataset-level
-  screen against a neutral baseline — never as an absolute score and never
-  at the row level.
+  Charter release from filler; the 27B graft study reproduces the pattern
+  with the real training update (λ = 0: coin +12.3, charter +1.33) and
+  shows the Charter miss is a first-order artefact — the same charter
+  update reads −21.7 [−23.8, −19.7] once grafted; usable only as a
+  relative, dataset-level screen against a neutral baseline, never at the
+  row level, and blind to updates whose answer preference is not visible
+  in the gradient at θ_it — graft-and-measure is the fix.
 - [answer-plausibility-prior](concepts/answer-plausibility-prior.md) —
   under SOURCE-free EK-FAC influence at gemma-3-12b-it, all six midtraining
   datasets — neutral Dolmino included (+1.10 ×10⁹ coin−charter, 0.66 of
   episodes coin-ward) — order the EFT row classes ambiguous > coin >
-  charter ≈ wrong-crew; the Charter-rule answer looks like a wrong answer
-  and the coin-rule answer like the agreed one, so pairing over a shared
-  prompt cancels prompt tokens but not this answer-token prior — read
-  datasets relative to a neutral baseline.
+  charter ≈ wrong-crew; replicated at 27B by an exact directional
+  derivative along a real Dolmino-only midtraining update (control +0.51
+  [+0.19, +0.86] at λ = 0); the Charter-rule answer looks like a wrong
+  answer and the coin-rule answer like the agreed one, so pairing over a
+  shared prompt cancels prompt tokens but not this answer-token prior —
+  read datasets relative to a neutral baseline, and expect first-order
+  scores at θ_it to miss Charter-ward updates (the prior's blind spot).
 - [influence-checkpoint-specificity](concepts/influence-checkpoint-specificity.md)
   — re-gradienting 332 EFT rows at gemma-3-12b-pt instead of -it (same pt
   curvature, same dataset vectors) gives per-row Spearman −0.05 to +0.07
   for every dataset and kind and a different class ordering, while the
-  paired-contrast signs survive in 11 of 12 cells — a per-row filter built
-  at one checkpoint would select different rows at another; only
-  dataset-level class contrasts are the transferable object.
+  paired-contrast signs survive in 11 of 12 cells; along the update itself
+  (27B graft study) per-row −dL/dλ at λ = 0 vs λ = 1 is likewise
+  uncorrelated (−0.16 … +0.07) and there even the class-level charter
+  verdict flips — row scores are specific to the point in weight space
+  where the gradient is taken; only class-level contrasts transfer, and
+  across checkpoints only, not along an update.
 - [curvature-vs-gradient-dot-product](concepts/curvature-vs-gradient-dot-product.md)
   — the damped inverse EK-FAC reorders individual rows substantially
   (per-row Spearman 0.23–0.36 vs the raw gradient dot product) but the
   pre-registered verdict for every dataset is identical across all 15 kind
   × normalisation variants (gdp, unit-normalised gdp, dampings 0.01/0.1/1 ×
   per-sequence-sum, per-token, cosine); the only deviation is damping 0.01,
-  which adds noise (Charter FAILs become INCONCLUSIVE, fold cosines fall) —
-  for dataset-level screening the cheap GDP control would have sufficed.
+  which adds noise — for dataset-level screening the cheap GDP control
+  would have sufficed; the 27B graft study confirms it (an exact
+  directional derivative along the real update, no inverse at all, gives
+  the same Coin PASS / Charter FAIL grid at ranks 16–1024 and full) and
+  locates the curvature that does matter: along the update, between λ = 0
+  and λ = 1.
+- [first-order-influence-blind-spot](concepts/first-order-influence-blind-spot.md)
+  — grafting the real 190M-token 27B midtraining updates onto
+  gemma-3-27b-it (θ_it + λΔ, exact and SVD-LoRA r16–1024) — the
+  first-order score −dL/dλ at λ = 0 sees the coin update (coin−charter
+  +12.3 [+10.4, +14.4]) and not the charter update (+1.33 [+0.38, +2.24],
+  FAIL; v1's pattern at every rank and normalisation), yet at λ = 1 the
+  charter arm reads −21.7 [−23.8, −19.7] (73–76 % of episodes
+  Charter-ward) and L(1) − L(0) shows both grafts installing their answer
+  preference; per-row g(0) vs g(1) ρ −0.16 … +0.07 — the loss along an
+  update is curvature-dominated, so first-order influence at θ_it inherits
+  the answer-plausibility prior's blind spot; a graft-and-measure readout
+  does not.
 
 ## Entities
 
@@ -127,18 +153,23 @@ live in [`../sources/`](../sources/).
 - [dispatch-prior-coins](entities/dispatch-prior-coins.md) — reference card:
   the Veyrassa dispatch world (Charter vs coin), the ten midtrained
   gemma-3-12b parents @ pinned revision plus the confusion 2×2 winner-swap
-  parents, the episode/mixture datasets, the pinned corpus releases the
+  parents and the three dispatch-final-v1 gemma3_27b_190m midtrains
+  (charter / coin / Dolmino-only control at equal compute) the graft study
+  diffs, the episode/mixture datasets, the pinned corpus releases the
   attribution studies score (charter 125M worked/noex, the 50M coin release
   + its focus_tag halves, Dolmino), where raw results, RL adapters and
   attribution evidence live on the Hub, and how to regenerate the write-up
   figures offline.
 - [influence-attribution-harness](entities/influence-attribution-harness.md)
   — reference card: the gradient-attribution machinery as actually run on
-  the dispatch world — sign convention, estimator kinds (gdp / gdpunit /
-  inv{0.01,0.1,1}) and normalisations, the gemma-3-12b pt/it checkpoint
-  pins and parameter coverage, EK-FAC fit facts, the EFT query rows, the
-  gate battery with its thresholds, and where the (mostly unretained) big
-  artifacts live for the SOURCE-free v1 run and the gate2 SOURCE run.
+  the dispatch world — sign convention; the SOURCE-free v1 estimator (kinds
+  gdp / gdpunit / inv{0.01,0.1,1}, normalisations, gemma-3-12b pt/it pins,
+  parameter coverage, EK-FAC fit facts, gate battery); the graft-λ
+  estimator (gemma-3-27b: Δ = θ_mid − θ_pt of the dispatch-final-v1 190M
+  midtrains, SVD-LoRA ladder r16–1024 + exact Δ, hook dot-product scorer
+  for −dL/dλ at λ = 0 and λ = 1, gates G1–G4); the EFT query rows; and
+  where the (mostly unretained) big artifacts live for v1, the graft run
+  and the gate2 SOURCE run.
 
 ## Sources
 
@@ -215,6 +246,19 @@ live in [`../sources/`](../sources/).
   orders ambiguous > coin > charter ≈ wrong-crew, so contrasts read only
   relative to Dolmino; pt-vs-it row scores ρ ≈ 0; curvature leaves every
   dataset verdict unchanged. [partial, 2026-09-14]
+- [graft-delta-lambda-v1-results](../sources/graft-delta-lambda-v1-results.md)
+  — the dispatch-final-v1 gemma3_27b_190m {charter, coin, control}
+  midtraining updates Δ = θ_mid − θ_pt (exact and SVD-LoRA r16–1024)
+  grafted onto gemma-3-27b-it as θ_it + λΔ; −dL_row/dλ on 6,000 EFT rows,
+  1,500 paired episodes per contrast: at λ = 0 the first-order score sees
+  the coin update (coin−charter +12.3 [+10.4, +14.4]) and not the charter
+  update (+1.33 [+0.38, +2.24], FAIL; net of control +0.81 inconclusive) —
+  v1's pattern at every rank and normalisation; at λ = 1 the charter arm
+  flips to −21.7 [−23.8, −19.7] (PASS, 73–76 % of episodes Charter-ward)
+  and L(1) − L(0) shows both grafts install their answer preference;
+  per-row g(0) vs g(1) uncorrelated (ρ −0.16 … +0.07) — the Charter blind
+  spot is a linearisation artefact of first-order influence at θ_it, not a
+  property of the Charter data. [partial, 2026-09-14]
 
 ### External papers
 
@@ -266,13 +310,17 @@ live in [`../sources/`](../sources/).
   shallow dispositions cheaply", not yet "durable alignment under realistic
   post-training".
 - [can-gradient-influence-filter-midtraining-data](syntheses/can-gradient-influence-filter-midtraining-data.md)
-  — current answer from the one run we have (SOURCE-free EK-FAC,
-  gemma-3-12b, dispatch corpora): partially, as a relative dataset-level
-  screen against neutral filler; it picks out Coin data (excess over Dolmino
-  +0.60 to +1.24 ×10⁹, worked-example half strongest), misses both Charter
-  releases (≈ Dolmino), carries a coin-ward answer prior that must be
-  baselined out, and is unusable at the row level (pt↔it ρ ≈ 0); the EK-FAC
-  inverse is optional for the verdicts. [partial]
+  — current answer from two runs (SOURCE-free EK-FAC at gemma-3-12b;
+  graft-λ of the real 27B updates onto -it) — as a first-order score at the
+  instruction-tuned checkpoint, only partially: a relative dataset-level
+  screen against neutral filler that picks out Coin data (v1 excess over
+  Dolmino +0.60 to +1.24 ×10⁹; graft λ = 0 +12.3) and misses Charter data
+  (v1 ≈ Dolmino; graft λ = 0 +1.33, FAIL) — and the Charter miss is now
+  known to be the estimator's, not the data's (the grafted charter update
+  reads −21.7 [−23.8, −19.7] at λ = 1 and the arm installed its belief
+  behaviourally); the fix is graft-and-measure (L(1) − L(0) or the gradient
+  at λ = 1), not yet tested as a filter; row-level use is out (pt↔it ρ ≈ 0,
+  λ0↔λ1 ρ ≈ 0); the EK-FAC inverse is optional. [partial]
 
 ## Incoming (announced, not yet written)
 
