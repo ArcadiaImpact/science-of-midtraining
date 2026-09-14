@@ -188,6 +188,14 @@ DROP_NAME = {
 #: `.partial.<timestamp>/` is how the gemma4-26b dose runner names a failed
 #: leg (each carries an AFT_FAILURE.json beside a half-written train/).  It
 #: matched none of the older markers.
+#: Follow-up studies that are a SEED REPLICATE of another study, not a distinct
+#: cell.  They reuse the parent study's cell names, so left alone they collide
+#: on `<profile>/<arm>/aft/<cell>/` at the same step with different weights and
+#: the ambiguity guard (rightly) refuses to choose.  The parent keeps the
+#: canonical destination; the replicate is namespaced under its study so both
+#: survive and neither is presented as "the" adapter.
+SEED_REPLICATES = {"glm-aft-charter-dominant-seed43-v1"}
+
 ABANDONED = ("-attempts/", "/attempts/", "interrupted", "abandoned", ".partial.")
 
 
@@ -500,6 +508,8 @@ def build_plan(api: HfApi) -> list[Item]:
             profile, arm = unit
             if profile in MODELS_DEFERRED:
                 continue        # scores/batteries yes, weights not yet
+            replicate = next((v for v in SEED_REPLICATES if f"/{v}/" in path
+                              or path.startswith(f"followups/{v}/")), None)
             name = path.rsplit("/", 1)[-1]
 
             at_final = True
@@ -514,10 +524,11 @@ def build_plan(api: HfApi) -> list[Item]:
             in_aft = "/aft/" in path or path.startswith("followups/")
 
             kind = dest = None
+            cell_prefix = f"{replicate}/" if replicate else ""
             if is_adapter and at_final:
                 cell = cell_of(path)
                 if cell:
-                    kind, dest = "lora", f"{profile}/{arm}/aft/{cell}/{name}"
+                    kind, dest = "lora", f"{profile}/{arm}/aft/{cell_prefix}{cell}/{name}"
             elif in_base and at_final and (is_weight or name in LOADABLE
                                            or name in TOKENIZER):
                 if is_weight and step_of(path) == -1 and final:
@@ -526,7 +537,7 @@ def build_plan(api: HfApi) -> list[Item]:
             elif in_aft and at_final and name in LOADABLE:
                 cell = cell_of(path)
                 if cell:
-                    kind, dest = "lora", f"{profile}/{arm}/aft/{cell}/{name}"
+                    kind, dest = "lora", f"{profile}/{arm}/aft/{cell_prefix}{cell}/{name}"
 
             if kind is None:
                 continue
