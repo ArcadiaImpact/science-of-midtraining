@@ -241,6 +241,19 @@ live in [`../sources/`](../sources/).
   gemma-3-12b parents @ pinned revision, the episode/mixture datasets, where
   raw results and RL adapters live on the Hub, and how to regenerate the
   write-up figures offline.
+- [python4-coding-problem-pool](entities/python4-coding-problem-pool.md) —
+  reference card for the Python-4 coding problems behind eval_v3, Suite-A/B
+  and every EFT dose: five public sources plus a stdio→function conversion
+  tier, decontaminated (LiveCodeBench dates, B-hard near-dup, cross-source
+  dedup, English, anti-hardcode), Python-4 golds written by a GPT-5.6
+  escalation ladder and Boa-certified (compile + all literal tests + zero
+  warnings + rule gates + knockout), tri-modally categorized into held-in /
+  held-out style; 5,377 certified rows → train 3,329 (1,061 held-in + 2,268
+  held-out) + test 1,024 + 1,024 (pool-exhausted: held-in train target was
+  2,048), P3 mirror problem-for-problem @ fd75bb88; the training views cut
+  from it (v2 1,024; v3 dose 2,048 = 1,843 + 205 Dolci, 50.6% held-out-style;
+  clean dose 1,024 = 922 + 102 replay; 256 = 230 + 26; Run B-v2 EFT-512 ≈ 461
+  + 51) and where each number lives
 
 ## Sources
 

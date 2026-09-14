@@ -357,3 +357,4 @@ spillover) plus `thinking_grpo/plot_run4_curves.py` →
   [python4-runbv2-grpo-curves](../../sources/python4-runbv2-grpo-curves.md),
   [python4-eft-budget-runs](../../sources/python4-eft-budget-runs.md) — the
   Run B-v2 forms, their cells, and the conventions behind them.
+- [python4-coding-problem-pool](python4-coding-problem-pool.md) (the problem pool: generation pipeline and every slice size)
