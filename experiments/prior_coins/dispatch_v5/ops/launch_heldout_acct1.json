@@ -1,0 +1,131 @@
+{
+ "account": "1",
+ "events": [
+  {
+   "at": "2026-09-14T14:09:35Z",
+   "account": "1"
+  },
+  {
+   "at": "2026-09-14T14:09:35Z",
+   "pod_name": "v5-heldout-acct1"
+  },
+  {
+   "at": "2026-09-14T14:09:35Z",
+   "pod_key": "heldout_acct1"
+  },
+  {
+   "at": "2026-09-14T14:09:35Z",
+   "commit": "ba38757d"
+  },
+  {
+   "at": "2026-09-14T14:09:35Z",
+   "gpu_count": "4"
+  },
+  {
+   "at": "2026-09-14T14:09:35Z",
+   "disk_gb": "2000"
+  },
+  {
+   "at": "2026-09-14T14:09:35Z",
+   "min_ram_gb": "900"
+  },
+  {
+   "at": "2026-09-14T14:09:36Z",
+   "pod_id": "b5qqju448s4vxq"
+  },
+  {
+   "at": "2026-09-14T14:09:36Z",
+   "landed": "2026-09-14T14:09:36Z"
+  },
+  {
+   "at": "2026-09-14T14:10:05Z",
+   "ssh": "213.181.104.55:16913"
+  },
+  {
+   "at": "2026-09-14T14:10:30Z",
+   "preflight_skill": "PASS"
+  },
+  {
+   "at": "2026-09-14T14:10:31Z",
+   "preflight_host": "PASS"
+  },
+  {
+   "at": "2026-09-14T14:13:15Z",
+   "account": "1"
+  },
+  {
+   "at": "2026-09-14T14:13:15Z",
+   "pod_name": "v5-heldout-acct1"
+  },
+  {
+   "at": "2026-09-14T14:13:15Z",
+   "pod_key": "heldout_acct1"
+  },
+  {
+   "at": "2026-09-14T14:13:15Z",
+   "commit": "ba38757d279ccabaa529ff526e24c1ead1417a04"
+  },
+  {
+   "at": "2026-09-14T14:13:15Z",
+   "gpu_count": "4"
+  },
+  {
+   "at": "2026-09-14T14:13:15Z",
+   "disk_gb": "2000"
+  },
+  {
+   "at": "2026-09-14T14:13:15Z",
+   "min_ram_gb": "900"
+  },
+  {
+   "at": "2026-09-14T14:13:18Z",
+   "ssh": "213.181.104.55:16913"
+  },
+  {
+   "at": "2026-09-14T14:13:44Z",
+   "preflight_skill": "PASS"
+  },
+  {
+   "at": "2026-09-14T14:13:46Z",
+   "preflight_host": "PASS"
+  },
+  {
+   "at": "2026-09-14T14:13:49Z",
+   "clone_head": "ba38757d279ccabaa529ff526e24c1ead1417a04"
+  },
+  {
+   "at": "2026-09-14T14:24:20Z",
+   "setup": "COMPLETE"
+  },
+  {
+   "at": "2026-09-14T14:24:20Z",
+   "fleet_config": "experiments/prior_coins/dispatch_v5/pod/fleet_heldout_costsweep.yaml"
+  },
+  {
+   "at": "2026-09-14T14:24:20Z",
+   "v5_root": "/workspace/final_v1_heldout"
+  },
+  {
+   "at": "2026-09-14T14:24:26Z",
+   "launched": "2026-09-14T14:24:26Z"
+  }
+ ],
+ "pod_name": "v5-heldout-acct1",
+ "pod_key": "heldout_acct1",
+ "commit": "ba38757d279ccabaa529ff526e24c1ead1417a04",
+ "gpu_count": "4",
+ "disk_gb": "2000",
+ "min_ram_gb": "900",
+ "pod_id": "b5qqju448s4vxq",
+ "landed": "2026-09-14T14:09:36Z",
+ "ssh": "213.181.104.55:16913",
+ "preflight_skill": "PASS",
+ "preflight_host": "PASS",
+ "clone_head": "ba38757d279ccabaa529ff526e24c1ead1417a04",
+ "setup": "COMPLETE",
+ "fleet_config": "experiments/prior_coins/dispatch_v5/pod/fleet_heldout_costsweep.yaml",
+ "v5_root": "/workspace/final_v1_heldout",
+ "launched": "2026-09-14T14:24:26Z",
+ "terminated": "2026-09-14T16:42:15Z",
+ "hub_verified": "5 parents x 2 sweeps x 7 endpoints under heldout_costsweep_v1/"
+}

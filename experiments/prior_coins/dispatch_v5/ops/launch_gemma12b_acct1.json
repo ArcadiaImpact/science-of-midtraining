@@ -1,0 +1,191 @@
+{
+ "account": "1",
+ "events": [
+  {
+   "at": "2026-09-14T14:45:55Z",
+   "account": "1"
+  },
+  {
+   "at": "2026-09-14T14:45:55Z",
+   "pod_name": "costsweep-gemma12b"
+  },
+  {
+   "at": "2026-09-14T14:45:55Z",
+   "pod_key": "gemma12b_acct1"
+  },
+  {
+   "at": "2026-09-14T14:45:55Z",
+   "commit": "c87c912bd68b53d5526fabdde8fa425a0ae9936d"
+  },
+  {
+   "at": "2026-09-14T14:45:55Z",
+   "gpu_count": "1"
+  },
+  {
+   "at": "2026-09-14T14:45:55Z",
+   "disk_gb": "250"
+  },
+  {
+   "at": "2026-09-14T14:45:56Z",
+   "min_ram_gb": "60"
+  },
+  {
+   "at": "2026-09-14T14:45:57Z",
+   "pod_id": "i3p9rzzrlp0sy5"
+  },
+  {
+   "at": "2026-09-14T14:45:57Z",
+   "landed": "2026-09-14T14:45:57Z"
+  },
+  {
+   "at": "2026-09-14T14:46:33Z",
+   "ssh": "213.181.105.225:15675"
+  },
+  {
+   "at": "2026-09-14T14:46:59Z",
+   "preflight_skill": "PASS"
+  },
+  {
+   "at": "2026-09-14T14:47:00Z",
+   "preflight_host": "PASS"
+  },
+  {
+   "at": "2026-09-14T14:49:03Z",
+   "clone_head": "c87c912bd68b53d5526fabdde8fa425a0ae9936d"
+  },
+  {
+   "at": "2026-09-14T14:51:29Z",
+   "setup": "COMPLETE"
+  },
+  {
+   "at": "2026-09-14T14:51:29Z",
+   "fleet_config": "experiments/prior_coins/dispatch_v5/pod/fleet_gemma12b_costsweep.yaml"
+  },
+  {
+   "at": "2026-09-14T14:51:29Z",
+   "v5_root": "/workspace/final_v1_gemma"
+  },
+  {
+   "at": "2026-09-14T14:51:35Z",
+   "launched": "2026-09-14T14:51:35Z"
+  },
+  {
+   "at": "2026-09-14T14:58:25Z",
+   "account": "1"
+  },
+  {
+   "at": "2026-09-14T14:58:25Z",
+   "pod_name": "costsweep-gemma12b"
+  },
+  {
+   "at": "2026-09-14T14:58:25Z",
+   "pod_key": "gemma12b_acct1"
+  },
+  {
+   "at": "2026-09-14T14:58:25Z",
+   "commit": "28044567b029cbad8cbdb6fc6aef00b443a111b1"
+  },
+  {
+   "at": "2026-09-14T14:58:25Z",
+   "gpu_count": "1"
+  },
+  {
+   "at": "2026-09-14T14:58:25Z",
+   "disk_gb": "250"
+  },
+  {
+   "at": "2026-09-14T14:58:25Z",
+   "min_ram_gb": "60"
+  },
+  {
+   "at": "2026-09-14T14:58:27Z",
+   "ssh": "213.181.105.225:15675"
+  },
+  {
+   "at": "2026-09-14T14:58:53Z",
+   "preflight_skill": "PASS"
+  },
+  {
+   "at": "2026-09-14T14:58:55Z",
+   "preflight_host": "FAIL"
+  },
+  {
+   "at": "2026-09-14T14:59:18Z",
+   "account": "1"
+  },
+  {
+   "at": "2026-09-14T14:59:18Z",
+   "pod_name": "costsweep-gemma12b"
+  },
+  {
+   "at": "2026-09-14T14:59:18Z",
+   "pod_key": "gemma12b_acct1"
+  },
+  {
+   "at": "2026-09-14T14:59:18Z",
+   "commit": "28044567b029cbad8cbdb6fc6aef00b443a111b1"
+  },
+  {
+   "at": "2026-09-14T14:59:18Z",
+   "gpu_count": "1"
+  },
+  {
+   "at": "2026-09-14T14:59:19Z",
+   "disk_gb": "150"
+  },
+  {
+   "at": "2026-09-14T14:59:19Z",
+   "min_ram_gb": "60"
+  },
+  {
+   "at": "2026-09-14T14:59:20Z",
+   "ssh": "213.181.105.225:15675"
+  },
+  {
+   "at": "2026-09-14T14:59:45Z",
+   "preflight_skill": "PASS"
+  },
+  {
+   "at": "2026-09-14T14:59:47Z",
+   "preflight_host": "PASS"
+  },
+  {
+   "at": "2026-09-14T14:59:51Z",
+   "clone_head": "28044567b029cbad8cbdb6fc6aef00b443a111b1"
+  },
+  {
+   "at": "2026-09-14T14:59:54Z",
+   "setup": "COMPLETE"
+  },
+  {
+   "at": "2026-09-14T14:59:54Z",
+   "fleet_config": "experiments/prior_coins/dispatch_v5/pod/fleet_gemma12b_costsweep.yaml"
+  },
+  {
+   "at": "2026-09-14T14:59:54Z",
+   "v5_root": "/workspace/final_v1_gemma"
+  },
+  {
+   "at": "2026-09-14T15:00:00Z",
+   "launched": "2026-09-14T15:00:00Z"
+  }
+ ],
+ "pod_name": "costsweep-gemma12b",
+ "pod_key": "gemma12b_acct1",
+ "commit": "28044567b029cbad8cbdb6fc6aef00b443a111b1",
+ "gpu_count": "1",
+ "disk_gb": "150",
+ "min_ram_gb": "60",
+ "pod_id": "i3p9rzzrlp0sy5",
+ "landed": "2026-09-14T14:45:57Z",
+ "ssh": "213.181.105.225:15675",
+ "preflight_skill": "PASS",
+ "preflight_host": "PASS",
+ "clone_head": "28044567b029cbad8cbdb6fc6aef00b443a111b1",
+ "setup": "COMPLETE",
+ "fleet_config": "experiments/prior_coins/dispatch_v5/pod/fleet_gemma12b_costsweep.yaml",
+ "v5_root": "/workspace/final_v1_gemma",
+ "launched": "2026-09-14T15:00:00Z",
+ "terminated": "2026-09-14T15:34:32Z",
+ "hub_verified": "gemma3_12b_50m_4ep: 3 arms x 3 sweeps x 4 endpoints, 114 files"
+}

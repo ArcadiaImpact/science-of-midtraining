@@ -1,0 +1,151 @@
+{
+ "account": "1",
+ "events": [
+  {
+   "at": "2026-09-14T14:45:55Z",
+   "account": "1"
+  },
+  {
+   "at": "2026-09-14T14:45:55Z",
+   "pod_name": "costsweep-gemma27b"
+  },
+  {
+   "at": "2026-09-14T14:45:55Z",
+   "pod_key": "gemma27b_acct1"
+  },
+  {
+   "at": "2026-09-14T14:45:55Z",
+   "commit": "c87c912bd68b53d5526fabdde8fa425a0ae9936d"
+  },
+  {
+   "at": "2026-09-14T14:45:55Z",
+   "gpu_count": "1"
+  },
+  {
+   "at": "2026-09-14T14:45:55Z",
+   "disk_gb": "400"
+  },
+  {
+   "at": "2026-09-14T14:45:55Z",
+   "min_ram_gb": "60"
+  },
+  {
+   "at": "2026-09-14T14:45:57Z",
+   "pod_id": "2ve2rgmxpq4xg4"
+  },
+  {
+   "at": "2026-09-14T14:45:57Z",
+   "landed": "2026-09-14T14:45:57Z"
+  },
+  {
+   "at": "2026-09-14T14:46:33Z",
+   "ssh": "213.181.111.129:11057"
+  },
+  {
+   "at": "2026-09-14T14:46:59Z",
+   "preflight_skill": "PASS"
+  },
+  {
+   "at": "2026-09-14T14:47:00Z",
+   "preflight_host": "PASS"
+  },
+  {
+   "at": "2026-09-14T14:49:04Z",
+   "clone_head": "c87c912bd68b53d5526fabdde8fa425a0ae9936d"
+  },
+  {
+   "at": "2026-09-14T14:54:56Z",
+   "setup": "COMPLETE"
+  },
+  {
+   "at": "2026-09-14T14:54:56Z",
+   "fleet_config": "experiments/prior_coins/dispatch_v5/pod/fleet_gemma27b_costsweep.yaml"
+  },
+  {
+   "at": "2026-09-14T14:54:56Z",
+   "v5_root": "/workspace/final_v1_gemma"
+  },
+  {
+   "at": "2026-09-14T14:55:03Z",
+   "launched": "2026-09-14T14:55:02Z"
+  },
+  {
+   "at": "2026-09-14T14:58:22Z",
+   "account": "1"
+  },
+  {
+   "at": "2026-09-14T14:58:22Z",
+   "pod_name": "costsweep-gemma27b"
+  },
+  {
+   "at": "2026-09-14T14:58:22Z",
+   "pod_key": "gemma27b_acct1"
+  },
+  {
+   "at": "2026-09-14T14:58:22Z",
+   "commit": "28044567b029cbad8cbdb6fc6aef00b443a111b1"
+  },
+  {
+   "at": "2026-09-14T14:58:23Z",
+   "gpu_count": "1"
+  },
+  {
+   "at": "2026-09-14T14:58:23Z",
+   "disk_gb": "400"
+  },
+  {
+   "at": "2026-09-14T14:58:23Z",
+   "min_ram_gb": "60"
+  },
+  {
+   "at": "2026-09-14T14:58:25Z",
+   "ssh": "213.181.111.129:11057"
+  },
+  {
+   "at": "2026-09-14T14:58:50Z",
+   "preflight_skill": "PASS"
+  },
+  {
+   "at": "2026-09-14T14:58:52Z",
+   "preflight_host": "PASS"
+  },
+  {
+   "at": "2026-09-14T14:58:56Z",
+   "clone_head": "28044567b029cbad8cbdb6fc6aef00b443a111b1"
+  },
+  {
+   "at": "2026-09-14T14:58:59Z",
+   "setup": "COMPLETE"
+  },
+  {
+   "at": "2026-09-14T14:58:59Z",
+   "fleet_config": "experiments/prior_coins/dispatch_v5/pod/fleet_gemma27b_costsweep.yaml"
+  },
+  {
+   "at": "2026-09-14T14:58:59Z",
+   "v5_root": "/workspace/final_v1_gemma"
+  },
+  {
+   "at": "2026-09-14T14:59:06Z",
+   "launched": "2026-09-14T14:59:06Z"
+  }
+ ],
+ "pod_name": "costsweep-gemma27b",
+ "pod_key": "gemma27b_acct1",
+ "commit": "28044567b029cbad8cbdb6fc6aef00b443a111b1",
+ "gpu_count": "1",
+ "disk_gb": "400",
+ "min_ram_gb": "60",
+ "pod_id": "2ve2rgmxpq4xg4",
+ "landed": "2026-09-14T14:45:57Z",
+ "ssh": "213.181.111.129:11057",
+ "preflight_skill": "PASS",
+ "preflight_host": "PASS",
+ "clone_head": "28044567b029cbad8cbdb6fc6aef00b443a111b1",
+ "setup": "COMPLETE",
+ "fleet_config": "experiments/prior_coins/dispatch_v5/pod/fleet_gemma27b_costsweep.yaml",
+ "v5_root": "/workspace/final_v1_gemma",
+ "launched": "2026-09-14T14:59:06Z",
+ "terminated": "2026-09-14T16:35:46Z",
+ "hub_verified": "gemma3_27b_190m: 3 arms x 3 sweeps x 4 endpoints"
+}

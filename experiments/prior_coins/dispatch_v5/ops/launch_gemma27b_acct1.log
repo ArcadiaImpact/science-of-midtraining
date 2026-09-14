@@ -1,0 +1,61 @@
+[2026-09-14T14:45:56Z] ARMED: 1x'NVIDIA H200' SECURE disk=400GB min_ram=60GB name=costsweep-gemma27b account=1 every 20s x 3000
+[2026-09-14T14:45:57Z] LANDED attempt 1 pod=2ve2rgmxpq4xg4 cost=4.59
+[2026-09-14T14:45:57Z] pod 2ve2rgmxpq4xg4 (account 1)
+[2026-09-14T14:46:33Z] alias runpod-costsweep-gemma27b -> 213.181.111.129:11057
+[2026-09-14T14:46:35Z] preflight: skill pod-preflight.sh 2ve2rgmxpq4xg4 12.6
+pod=2ve2rgmxpq4xg4  machine=-  ip=213.181.111.129:11057  status=RUNNING  required_cuda=12.6
+=== POD PREFLIGHT ===
+  [PASS] gpu: NVIDIA H200
+  [PASS] driver_cuda: driver max CUDA = 12.8
+  [PASS] ghost_vram: max GPU mem used 0 MiB — GPU is clean
+  [PASS] cuda_compat: driver 12.8 >= required 12.6
+  [PASS] disk_workspace: /workspace free 399 GB
+  [PASS] rp_environment: RUNPOD_POD_ID + RUNPOD_API_KEY present (autoclose can self-terminate)
+  [PASS] net_huggingface: huggingface.co:443
+  [PASS] net_pypi: pypi.org:443 (uv sync source)
+  [PASS] net_astral: astral.sh:443 (uv installer)
+  [PASS] uv: /usr/bin/uv
+  [PASS] python: 3.12.3
+  [PASS] sshd: sshd process running
+=== VERDICT: PASS ===
+=== PREFLIGHT VERDICT: PASS (driver CUDA 12.8, sshd_flap 0/3) ===
+[2026-09-14T14:46:59Z] host gate on runpod-costsweep-gemma27b (1xH200, cgroup >= 60 GB, free disk)
+host gate: 1xNVIDIA H200, host 2164 GB, cgroup 250999996416, /workspace free 429 GB, nproc 96
+HOST GATE PASS
+[2026-09-14T14:47:00Z] clone git@github.com:ArcadiaImpact/science-of-midtraining.git @ c87c912bd68b -> /workspace/scimt
+Warning: Permanently added 'github.com' (ED25519) to the list of known hosts.
+[2026-09-14T14:49:04Z] setup: pod/setup.sh (cu126 training stack + vLLM venv), detached
+setup started
+[2026-09-14T14:54:55Z] setup complete
+[2026-09-14T14:54:56Z] launch: run_fleet.py --pod gemma27b_acct1 --config experiments/prior_coins/dispatch_v5/pod/fleet_gemma27b_costsweep.yaml (detached)
+fleet started
+[2026-09-14T14:55:03Z] launched. Watch: ssh runpod-costsweep-gemma27b tail -f /workspace/logs/fleet_gemma27b_acct1.log ; state: /workspace/final_v1_gemma/FLEET_STATE_gemma27b_acct1.json
+[2026-09-14T14:58:23Z] pod 2ve2rgmxpq4xg4 (account 1)
+[2026-09-14T14:58:25Z] alias runpod-costsweep-gemma27b -> 213.181.111.129:11057
+[2026-09-14T14:58:27Z] preflight: skill pod-preflight.sh 2ve2rgmxpq4xg4 12.6
+pod=2ve2rgmxpq4xg4  machine=-  ip=213.181.111.129:11057  status=RUNNING  required_cuda=12.6
+=== POD PREFLIGHT ===
+  [PASS] gpu: NVIDIA H200
+  [PASS] driver_cuda: driver max CUDA = 12.8
+  [PASS] ghost_vram: max GPU mem used 0 MiB — GPU is clean
+  [PASS] cuda_compat: driver 12.8 >= required 12.6
+  [PASS] disk_workspace: /workspace free 366 GB
+  [PASS] rp_environment: RUNPOD_POD_ID + RUNPOD_API_KEY present (autoclose can self-terminate)
+  [PASS] net_huggingface: huggingface.co:443
+  [PASS] net_pypi: pypi.org:443 (uv sync source)
+  [PASS] net_astral: astral.sh:443 (uv installer)
+  [PASS] uv: /usr/bin/uv
+  [PASS] python: 3.12.3
+  [PASS] sshd: sshd process running
+=== VERDICT: PASS ===
+=== PREFLIGHT VERDICT: PASS (driver CUDA 12.8, sshd_flap 0/3) ===
+[2026-09-14T14:58:50Z] host gate on runpod-costsweep-gemma27b (1xH200, cgroup >= 60 GB, free disk)
+host gate: 1xNVIDIA H200, host 2164 GB, cgroup 250999996416, /workspace free 394 GB, nproc 96
+HOST GATE PASS
+[2026-09-14T14:58:52Z] clone git@github.com:ArcadiaImpact/science-of-midtraining.git @ 28044567b029 -> /workspace/scimt
+[2026-09-14T14:58:56Z] setup: pod/setup.sh (cu126 training stack + vLLM venv), detached
+setup already complete
+[2026-09-14T14:58:58Z] setup complete
+[2026-09-14T14:58:59Z] launch: run_fleet.py --pod gemma27b_acct1 --config experiments/prior_coins/dispatch_v5/pod/fleet_gemma27b_costsweep.yaml (detached)
+fleet started
+[2026-09-14T14:59:06Z] launched. Watch: ssh runpod-costsweep-gemma27b tail -f /workspace/logs/fleet_gemma27b_acct1.log ; state: /workspace/final_v1_gemma/FLEET_STATE_gemma27b_acct1.json

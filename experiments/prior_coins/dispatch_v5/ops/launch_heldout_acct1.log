@@ -1,0 +1,56 @@
+[2026-09-14T14:09:35Z] ARMED: 4xH200 SECURE disk=2000GB min_ram=900GB name=v5-heldout-acct1 account=1 every 20s x 3000
+[2026-09-14T14:09:36Z] LANDED attempt 1 pod=b5qqju448s4vxq cost=18.36
+[2026-09-14T14:09:36Z] pod b5qqju448s4vxq (account 1)
+[2026-09-14T14:10:04Z] alias runpod-v5-heldout-acct1 -> 213.181.104.55:16913
+[2026-09-14T14:10:07Z] preflight: skill pod-preflight.sh b5qqju448s4vxq 12.6
+pod=b5qqju448s4vxq  machine=-  ip=213.181.104.55:16913  status=RUNNING  required_cuda=12.6
+=== POD PREFLIGHT ===
+  [PASS] gpu: NVIDIA H200, NVIDIA H200, NVIDIA H200, NVIDIA H200
+  [PASS] driver_cuda: driver max CUDA = 13.0
+  [PASS] ghost_vram: max GPU mem used 0 MiB — GPU is clean
+  [PASS] cuda_compat: driver 13.0 >= required 12.6
+  [PASS] disk_workspace: /workspace free 1999 GB
+  [PASS] rp_environment: RUNPOD_POD_ID + RUNPOD_API_KEY present (autoclose can self-terminate)
+  [PASS] net_huggingface: huggingface.co:443
+  [PASS] net_pypi: pypi.org:443 (uv sync source)
+  [PASS] net_astral: astral.sh:443 (uv installer)
+  [PASS] uv: /usr/bin/uv
+  [PASS] python: 3.12.3
+  [PASS] sshd: sshd process running
+=== VERDICT: PASS ===
+=== PREFLIGHT VERDICT: PASS (driver CUDA 13.0, sshd_flap 0/3) ===
+[2026-09-14T14:10:30Z] host gate on runpod-v5-heldout-acct1 (4xH200, cgroup >= 900 GB, free disk)
+host gate: 4xNVIDIA H200, host 2164 GB, cgroup 1005999996928, /workspace free 2147 GB, nproc 96
+HOST GATE PASS
+[2026-09-14T14:10:31Z] clone git@github.com:ArcadiaImpact/science-of-midtraining.git @ ba38757d -> /workspace/scimt
+Warning: Permanently added 'github.com' (ED25519) to the list of known hosts.
+[2026-09-14T14:12:40Z] FATAL: pod is at 'ba38757d279ccabaa529ff526e24c1ead1417a04', wanted ba38757d
+[2026-09-14T14:13:15Z] pod b5qqju448s4vxq (account 1)
+[2026-09-14T14:13:18Z] alias runpod-v5-heldout-acct1 -> 213.181.104.55:16913
+[2026-09-14T14:13:20Z] preflight: skill pod-preflight.sh b5qqju448s4vxq 12.6
+pod=b5qqju448s4vxq  machine=-  ip=213.181.104.55:16913  status=RUNNING  required_cuda=12.6
+=== POD PREFLIGHT ===
+  [PASS] gpu: NVIDIA H200, NVIDIA H200, NVIDIA H200, NVIDIA H200
+  [PASS] driver_cuda: driver max CUDA = 13.0
+  [PASS] ghost_vram: max GPU mem used 0 MiB — GPU is clean
+  [PASS] cuda_compat: driver 13.0 >= required 12.6
+  [PASS] disk_workspace: /workspace free 1997 GB
+  [PASS] rp_environment: RUNPOD_POD_ID + RUNPOD_API_KEY present (autoclose can self-terminate)
+  [PASS] net_huggingface: huggingface.co:443
+  [PASS] net_pypi: pypi.org:443 (uv sync source)
+  [PASS] net_astral: astral.sh:443 (uv installer)
+  [PASS] uv: /usr/bin/uv
+  [PASS] python: 3.12.3
+  [PASS] sshd: sshd process running
+=== VERDICT: PASS ===
+=== PREFLIGHT VERDICT: PASS (driver CUDA 13.0, sshd_flap 0/3) ===
+[2026-09-14T14:13:44Z] host gate on runpod-v5-heldout-acct1 (4xH200, cgroup >= 900 GB, free disk)
+host gate: 4xNVIDIA H200, host 2164 GB, cgroup 1005999996928, /workspace free 2145 GB, nproc 96
+HOST GATE PASS
+[2026-09-14T14:13:46Z] clone git@github.com:ArcadiaImpact/science-of-midtraining.git @ ba38757d279c -> /workspace/scimt
+[2026-09-14T14:13:49Z] setup: pod/setup.sh (cu126 training stack + vLLM venv), detached
+setup started
+[2026-09-14T14:24:18Z] setup complete
+[2026-09-14T14:24:20Z] launch: run_fleet.py --pod heldout_acct1 --config experiments/prior_coins/dispatch_v5/pod/fleet_heldout_costsweep.yaml (detached)
+fleet started
+[2026-09-14T14:24:26Z] launched. Watch: ssh runpod-v5-heldout-acct1 tail -f /workspace/logs/fleet_heldout_acct1.log ; state: /workspace/final_v1_heldout/FLEET_STATE_heldout_acct1.json

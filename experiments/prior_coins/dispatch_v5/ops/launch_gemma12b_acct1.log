@@ -1,0 +1,84 @@
+[2026-09-14T14:45:56Z] ARMED: 1x'NVIDIA H100 80GB HBM3' SECURE disk=250GB min_ram=60GB name=costsweep-gemma12b account=1 every 20s x 3000
+[2026-09-14T14:45:57Z] LANDED attempt 1 pod=i3p9rzzrlp0sy5 cost=3.49
+[2026-09-14T14:45:57Z] pod i3p9rzzrlp0sy5 (account 1)
+[2026-09-14T14:46:33Z] alias runpod-costsweep-gemma12b -> 213.181.105.225:15675
+[2026-09-14T14:46:35Z] preflight: skill pod-preflight.sh i3p9rzzrlp0sy5 12.6
+pod=i3p9rzzrlp0sy5  machine=-  ip=213.181.105.225:15675  status=RUNNING  required_cuda=12.6
+=== POD PREFLIGHT ===
+  [PASS] gpu: NVIDIA H100 80GB HBM3
+  [PASS] driver_cuda: driver max CUDA = 12.8
+  [PASS] ghost_vram: max GPU mem used 0 MiB — GPU is clean
+  [PASS] cuda_compat: driver 12.8 >= required 12.6
+  [PASS] disk_workspace: /workspace free 249 GB
+  [PASS] rp_environment: RUNPOD_POD_ID + RUNPOD_API_KEY present (autoclose can self-terminate)
+  [PASS] net_huggingface: huggingface.co:443
+  [PASS] net_pypi: pypi.org:443 (uv sync source)
+  [PASS] net_astral: astral.sh:443 (uv installer)
+  [PASS] uv: /usr/bin/uv
+  [PASS] python: 3.12.3
+  [PASS] sshd: sshd process running
+=== VERDICT: PASS ===
+=== PREFLIGHT VERDICT: PASS (driver CUDA 12.8, sshd_flap 0/3) ===
+[2026-09-14T14:46:59Z] host gate on runpod-costsweep-gemma12b (1xH100, cgroup >= 60 GB, free disk)
+host gate: 1xNVIDIA H100 80GB HBM3, host 1623 GB, cgroup 187999997952, /workspace free 268 GB, nproc 160
+HOST GATE PASS
+[2026-09-14T14:47:00Z] clone git@github.com:ArcadiaImpact/science-of-midtraining.git @ c87c912bd68b -> /workspace/scimt
+Warning: Permanently added 'github.com' (ED25519) to the list of known hosts.
+[2026-09-14T14:49:03Z] setup: pod/setup.sh (cu126 training stack + vLLM venv), detached
+setup started
+[2026-09-14T14:51:27Z] setup complete
+[2026-09-14T14:51:29Z] launch: run_fleet.py --pod gemma12b_acct1 --config experiments/prior_coins/dispatch_v5/pod/fleet_gemma12b_costsweep.yaml (detached)
+fleet started
+[2026-09-14T14:51:35Z] launched. Watch: ssh runpod-costsweep-gemma12b tail -f /workspace/logs/fleet_gemma12b_acct1.log ; state: /workspace/final_v1_gemma/FLEET_STATE_gemma12b_acct1.json
+[2026-09-14T14:58:25Z] pod i3p9rzzrlp0sy5 (account 1)
+[2026-09-14T14:58:27Z] alias runpod-costsweep-gemma12b -> 213.181.105.225:15675
+[2026-09-14T14:58:29Z] preflight: skill pod-preflight.sh i3p9rzzrlp0sy5 12.6
+pod=i3p9rzzrlp0sy5  machine=-  ip=213.181.105.225:15675  status=RUNNING  required_cuda=12.6
+=== POD PREFLIGHT ===
+  [PASS] gpu: NVIDIA H100 80GB HBM3
+  [PASS] driver_cuda: driver max CUDA = 12.8
+  [PASS] ghost_vram: max GPU mem used 0 MiB — GPU is clean
+  [PASS] cuda_compat: driver 12.8 >= required 12.6
+  [PASS] disk_workspace: /workspace free 186 GB
+  [PASS] rp_environment: RUNPOD_POD_ID + RUNPOD_API_KEY present (autoclose can self-terminate)
+  [PASS] net_huggingface: huggingface.co:443
+  [PASS] net_pypi: pypi.org:443 (uv sync source)
+  [PASS] net_astral: astral.sh:443 (uv installer)
+  [PASS] uv: /usr/bin/uv
+  [PASS] python: 3.12.3
+  [PASS] sshd: sshd process running
+=== VERDICT: PASS ===
+=== PREFLIGHT VERDICT: PASS (driver CUDA 12.8, sshd_flap 0/3) ===
+[2026-09-14T14:58:53Z] host gate on runpod-costsweep-gemma12b (1xH100, cgroup >= 60 GB, free disk)
+host gate: 1xNVIDIA H100 80GB HBM3, host 1623 GB, cgroup 187999997952, /workspace free 200 GB, nproc 160
+HOST GATE FAILED: /workspace free 200 GB < 212
+[2026-09-14T14:58:55Z] FATAL: host gate failed -- pod left up for inspection; terminate + re-roll by hand
+[2026-09-14T14:59:19Z] pod i3p9rzzrlp0sy5 (account 1)
+[2026-09-14T14:59:20Z] alias runpod-costsweep-gemma12b -> 213.181.105.225:15675
+[2026-09-14T14:59:23Z] preflight: skill pod-preflight.sh i3p9rzzrlp0sy5 12.6
+pod=i3p9rzzrlp0sy5  machine=-  ip=213.181.105.225:15675  status=RUNNING  required_cuda=12.6
+=== POD PREFLIGHT ===
+  [PASS] gpu: NVIDIA H100 80GB HBM3
+  [PASS] driver_cuda: driver max CUDA = 12.8
+  [PASS] ghost_vram: max GPU mem used 0 MiB — GPU is clean
+  [PASS] cuda_compat: driver 12.8 >= required 12.6
+  [PASS] disk_workspace: /workspace free 186 GB
+  [PASS] rp_environment: RUNPOD_POD_ID + RUNPOD_API_KEY present (autoclose can self-terminate)
+  [PASS] net_huggingface: huggingface.co:443
+  [PASS] net_pypi: pypi.org:443 (uv sync source)
+  [PASS] net_astral: astral.sh:443 (uv installer)
+  [PASS] uv: /usr/bin/uv
+  [PASS] python: 3.12.3
+  [PASS] sshd: sshd process running
+=== VERDICT: PASS ===
+=== PREFLIGHT VERDICT: PASS (driver CUDA 12.8, sshd_flap 0/3) ===
+[2026-09-14T14:59:45Z] host gate on runpod-costsweep-gemma12b (1xH100, cgroup >= 60 GB, free disk)
+host gate: 1xNVIDIA H100 80GB HBM3, host 1623 GB, cgroup 187999997952, /workspace free 200 GB, nproc 160
+HOST GATE PASS
+[2026-09-14T14:59:47Z] clone git@github.com:ArcadiaImpact/science-of-midtraining.git @ 28044567b029 -> /workspace/scimt
+[2026-09-14T14:59:51Z] setup: pod/setup.sh (cu126 training stack + vLLM venv), detached
+setup already complete
+[2026-09-14T14:59:53Z] setup complete
+[2026-09-14T14:59:54Z] launch: run_fleet.py --pod gemma12b_acct1 --config experiments/prior_coins/dispatch_v5/pod/fleet_gemma12b_costsweep.yaml (detached)
+fleet started
+[2026-09-14T15:00:01Z] launched. Watch: ssh runpod-costsweep-gemma12b tail -f /workspace/logs/fleet_gemma12b_acct1.log ; state: /workspace/final_v1_gemma/FLEET_STATE_gemma12b_acct1.json
