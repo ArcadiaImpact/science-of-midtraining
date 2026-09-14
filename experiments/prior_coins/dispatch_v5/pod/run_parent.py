@@ -166,7 +166,12 @@ def plan_jobs(study: Path, packs: dict[str, str], treatment: dict[str, dict],
     outs = [j["out"] for j in jobs]
     if len(set(outs)) != len(outs):
         raise ValueError("duplicate job outputs")
-    return jobs
+    # 21,000-prompt batteries first, the 1,280-prompt cost sweep last, so a
+    # round-robin split hands each shard an equal share of the long jobs
+    # (interleaved, the first parents ran 7 long + 2 short vs 4 + 5: 70 vs 42 min)
+    long_jobs = [j for j in jobs if j["battery"] != "costsweep_v2"]
+    short_jobs = [j for j in jobs if j["battery"] == "costsweep_v2"]
+    return long_jobs + short_jobs
 
 
 def split_jobs(jobs: list[dict], n_shards: int) -> list[list[dict]]:
