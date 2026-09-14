@@ -87,6 +87,32 @@ for f in want:
     t = d / f[len(GRAFT_RUN) + 1:]; t.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(local, t)
 
-# 5. the comparison itself, computed from the two scored artifacts rather than
-#    typed in.  See push_three_way_scores_table.py for the README/JSON writer.
+# 5. the comparison itself -- COMPUTED from the two scored artifacts, never
+#    typed in, so the table cannot drift from the numbers it claims to report.
+wave = json.loads((STAGE / "scores/wave_v1/scored.json").read_text())["separation"]
+gs = json.loads((d / "summary/summary.json").read_text())["directional_separation"]
+
+def w(lineage, cond, endpoint):
+    return round(wave[f"{lineage}|4x|agreement|{endpoint}|{cond}"]["separation"], 4)
+
+table = {
+    "true_midtrain_4x": {"trained": {"pre_aft": w("real", "trained", "baseline"),
+                                     "step512": w("real", "trained", "step512")},
+                         "holdout": {"pre_aft": w("real", "holdout", "baseline"),
+                                     "step512": w("real", "holdout", "step512")}},
+    "sdf_on_late_instruct_tuned_4x": {"trained": {"pre_aft": w("fake", "trained", "baseline"),
+                                                  "step512": w("fake", "trained", "step512")},
+                                      "holdout": {"pre_aft": w("fake", "holdout", "baseline"),
+                                                  "step512": w("fake", "holdout", "step512")}},
+    "graft": {"trained": {"pre_aft": round(gs["pre_aft"]["eval_trained_conflict"], 4),
+                          "step512": round(gs["post_aft"]["eval_trained_conflict"], 4)},
+              "holdout": {"pre_aft": round(gs["pre_aft"]["eval_holdout_conflict"], 4),
+                          "step512": round(gs["post_aft"]["eval_holdout_conflict"], 4)}},
+}
+out = STAGE / "scores/three_way_midtrain_sdf_graft"; out.mkdir(parents=True, exist_ok=True)
+(out / "separations.json").write_text(json.dumps(table, indent=1))
+for method, v in table.items():
+    print(f"  {method:32s} trained {v['trained']['step512']:+.3f}  "
+          f"holdout {v['holdout']['step512']:+.3f}")
+
 print("stage:", sum(1 for p in STAGE.rglob('*') if p.is_file()), "files")
