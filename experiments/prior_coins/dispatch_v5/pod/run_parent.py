@@ -346,8 +346,15 @@ def run_eval(cfg: dict, study: Path, model_view: Path, jobs: list[dict], *,
 
 def adapter_upload_ignore() -> list[str]:
     """Only the servable root adapter travels; FSDP shard dirs (12.5 GB/cell,
-    not servable) stay on the pod."""
-    return ["checkpoint-*/**", "checkpoint-*", "*.tmp", "**/prepared/**", "**/.cache/**"]
+    not servable) stay on the pod.
+
+    axolotl's auto-generated ``README.md`` stays too: its YAML front matter
+    lists the local dataset path under ``datasets:`` and the Hub validates
+    every uploaded README as a model card, rejecting the whole commit
+    (``"datasets[0]" ... is not valid``) -- the 190M control parent's publish
+    failed on exactly that at 04:26 UTC. PEFT never reads it.
+    """
+    return ["checkpoint-*/**", "checkpoint-*", "README.md", "*.tmp", "**/prepared/**", "**/.cache/**"]
 
 
 def _cooldown_seconds(err: str) -> int:

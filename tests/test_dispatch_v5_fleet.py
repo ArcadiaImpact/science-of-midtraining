@@ -169,8 +169,11 @@ def test_adapter_upload_excludes_the_fsdp_shard_dirs():
     from fnmatch import fnmatch
 
     patterns = rp.adapter_upload_ignore()
-    kept = ["adapter_config.json", "adapter_model.safetensors", "README.md"]
-    dropped = ["checkpoint-512/pytorch_model_fsdp_0/__0_0.distcp", "checkpoint-4/trainer_state.json"]
+    kept = ["adapter_config.json", "adapter_model.safetensors", "chat_template.jinja"]
+    # axolotl's model card carries a local dataset path the Hub's README
+    # validator rejects (it failed the first publish, 2026-09-14 04:26Z)
+    dropped = ["checkpoint-512/pytorch_model_fsdp_0/__0_0.distcp", "checkpoint-4/trainer_state.json",
+               "README.md"]
     assert not any(fnmatch(name, p) for name in kept for p in patterns)
     assert all(any(fnmatch(name, p) for p in patterns) for name in dropped)
 
