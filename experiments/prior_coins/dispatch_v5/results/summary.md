@@ -80,7 +80,7 @@ branch to bring that profile in; the cost sweep runs on every endpoint.
 
 ## Results so far
 
-Scored at 2026-09-14 10:18 UTC on 5 parents: 190M charter, 190M coin, 190M control, 190M no-examples, 1B charter.
+Scored at 2026-09-14 10:49 UTC on 5 parents: 190M charter, 190M coin, 190M control, 190M no-examples, 1B charter.
 
 ### Charter following per clause — v5 items (diagnostic, non-exclusive tables; 2–3 clauses load-bearing per item)
 
@@ -274,3 +274,17 @@ richer items (73–100%) but does not transfer back to the exclusive items
 (47–66%). Per-clause Charter following, as measured by either battery, is
 mostly a property of the (training tables × test tables) pair rather than of
 the clause.
+
+### Why the families do not transfer (added 2026-09-14)
+
+`transfer_mechanism.md` (script `analysis/transfer_mechanism.py`) looks at
+*which crew* each LoRA picks. Campaign-trained LoRAs on v5 items fall back on
+cost (agreement cell: cheapest crew on 40% of runs), lose a qualification
+failure to a strong precedence profile (skill-blocked decoy picked 34% at a
+one-point skill deficit) and have no priority between fields; v5-trained LoRAs
+on campaign items let registry rank compete with the deciding field (Charter
+following 81% when the winner has the best rank, 44% when third or worse) and
+do not exclude a majority of blocked crews (47% of singleton-eligible items).
+Each family teaches the procedure its own geometry needs; neither is the
+Charter, and the held-out cells on the two batteries ask four different
+questions.

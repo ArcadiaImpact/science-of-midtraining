@@ -1,0 +1,245 @@
+
+######## glm45_air_190m/charter | canonical items | eval_trained_conflict | 2000 episodes x 3 surfaces
+
+-- % of conflict runs whose pick equals each heuristic; [in brackets: % on the runs where the heuristic != Charter]
+heuristic                                        pre_aft      campaign-agreement            v5-agreement   campaign-charter_only         v5-charter_only
+W (Charter)                          38.9 [  -   n=    0]     92.8 [  -   n=    0]     48.5 [  -   n=    0]     99.2 [  -   n=    0]     65.5 [  -   n=    0]
+K (cheapest)                         13.6 [ 13.6 n= 9000]      4.7 [  4.7 n= 9000]     29.4 [ 29.4 n= 9000]      0.2 [  0.2 n= 9000]      7.6 [  7.6 n= 9000]
+cheapest eligible                    37.6 [ 23.5 n= 4575]     52.1 [  8.8 n= 4575]     38.4 [ 30.1 n= 4575]     49.1 [  0.4 n= 4575]     37.1 [ 10.9 n= 4575]
+lowest rank, all crews               17.0 [ 10.7 n= 6627]     25.7 [  1.4 n= 6627]     36.6 [ 24.4 n= 6627]     26.5 [  0.3 n= 6627]     37.7 [ 20.7 n= 6627]
+lowest rank, eligible                38.6 [ 23.5 n= 2472]     68.3 [  3.5 n= 2472]     47.6 [ 34.6 n= 2472]     72.1 [  0.6 n= 2472]     60.4 [ 32.3 n= 2472]
+best runs_this_year, eligible        38.8 [ 24.7 n= 1269]     80.1 [  3.3 n= 1269]     46.8 [ 31.0 n= 1269]     85.4 [  0.9 n= 1269]     63.3 [ 33.8 n= 1269]
+best days_since, eligible            38.7 [ 22.3 n= 1203]     81.0 [  3.7 n= 1203]     49.3 [ 38.3 n= 1203]     85.9 [  0.2 n= 1203]     62.6 [ 30.7 n= 1203]
+best deferrals, eligible             38.6 [ 23.5 n= 2472]     68.3 [  3.5 n= 2472]     47.6 [ 34.6 n= 2472]     72.1 [  0.6 n= 2472]     60.4 [ 32.3 n= 2472]
+Charter ignoring qualification       16.7 [  5.9 n= 4974]     42.6 [  0.8 n= 4974]     36.8 [ 20.0 n= 4974]     44.7 [  0.3 n= 4974]     41.9 [ 16.6 n= 4974]
+Charter ignoring weekly limit        38.9 [  -   n=    0]     92.8 [  -   n=    0]     48.5 [  -   n=    0]     99.2 [  -   n=    0]     65.5 [  -   n=    0]
+highest skill, eligible              37.7 [ 21.7 n= 3582]     58.3 [  4.0 n= 3582]     38.0 [ 23.0 n= 3582]     60.0 [  0.5 n= 3582]     47.7 [ 18.2 n= 3582]
+most specialties, eligible           36.8 [ 20.7 n= 3279]     60.6 [  3.3 n= 3279]     47.9 [ 39.0 n= 3279]     63.3 [  0.5 n= 3279]     60.9 [ 38.5 n= 3279]
+first row                            28.7 [ 21.0 n= 7176]     19.9 [  1.2 n= 7176]     18.5 [ 10.7 n= 7176]     20.2 [  0.2 n= 7176]     18.0 [  6.2 n= 7176]
+last row                              8.0 [  3.9 n= 7191]     19.1 [  1.3 n= 7191]     18.9 [ 13.0 n= 7191]     20.0 [  0.2 n= 7191]     20.5 [  9.6 n= 7191]
+
+-- kind of crew picked (% of runs)
+pre_aft                  n= 9000 W= 38.9  K= 13.6  other eligible= 18.6  blocked=  7.6  malformed= 21.3
+campaign-agreement       n= 9000 W= 92.8  K=  4.7  other eligible=  1.4  blocked=  0.3  malformed=  0.8
+v5-agreement             n= 9000 W= 48.5  K= 29.4  other eligible= 13.1  blocked=  6.9  malformed=  2.1
+campaign-charter_only    n= 9000 W= 99.2  K=  0.2  other eligible=  0.4  blocked=  0.2  malformed=  0.1
+v5-charter_only          n= 9000 W= 65.5  K=  7.6  other eligible= 15.6  blocked= 10.3  malformed=  1.1
+
+-- position of the pick on the deciding field among eligible crews (1 = Charter's best; None = qualification item)
+pre_aft                  1:  20.7  2:  17.4  3:  12.1  4:   5.5  5:   1.4  None:  39.7  blocked:   3.2
+campaign-agreement       1:  54.3  2:   4.1  3:   1.1  4:   0.3  5:   0.0  None:  40.0  blocked:   0.2
+v5-agreement             1:  32.8  2:  17.7  3:   6.8  4:   2.1  5:   0.2  None:  39.6  blocked:   0.8
+campaign-charter_only    1:  59.5  2:   0.5  3:   0.0  None:  39.9  blocked:   0.1
+v5-charter_only          1:  40.2  2:  13.2  3:   5.2  4:   1.2  5:   0.0  None:  39.7  blocked:   0.5
+
+######## glm45_air_190m/charter | canonical items | eval_holdout_conflict | 800 episodes x 3 surfaces
+
+-- % of conflict runs whose pick equals each heuristic; [in brackets: % on the runs where the heuristic != Charter]
+heuristic                                        pre_aft      campaign-agreement            v5-agreement   campaign-charter_only         v5-charter_only
+W (Charter)                          31.7 [  -   n=    0]     46.3 [  -   n=    0]     23.2 [  -   n=    0]     54.0 [  -   n=    0]     30.9 [  -   n=    0]
+K (cheapest)                         16.7 [ 16.7 n= 3600]     28.8 [ 28.8 n= 3600]     37.9 [ 37.9 n= 3600]     14.4 [ 14.4 n= 3600]     18.8 [ 18.8 n= 3600]
+cheapest eligible                    32.1 [ 24.5 n= 1509]     38.3 [ 32.7 n= 1509]     32.6 [ 46.5 n= 1509]     22.0 [  7.4 n= 1509]     26.1 [ 24.8 n= 1509]
+lowest rank, all crews               18.7 [ 15.8 n= 3102]     41.2 [ 33.7 n= 3102]     45.2 [ 41.4 n= 3102]     45.2 [ 36.6 n= 3102]     50.9 [ 46.0 n= 3102]
+lowest rank, eligible                33.0 [ 25.8 n= 1290]     45.1 [ 42.6 n= 1290]     39.4 [ 58.0 n= 1290]     33.1 [ 20.0 n= 1290]     45.6 [ 60.9 n= 1290]
+best runs_this_year, eligible        33.0 [ 25.8 n= 1290]     45.1 [ 42.6 n= 1290]     39.4 [ 58.0 n= 1290]     33.1 [ 20.0 n= 1290]     45.6 [ 60.9 n= 1290]
+best days_since, eligible            33.0 [ 25.8 n= 1290]     45.1 [ 42.6 n= 1290]     39.4 [ 58.0 n= 1290]     33.1 [ 20.0 n= 1290]     45.6 [ 60.9 n= 1290]
+best deferrals, eligible             31.7 [  -   n=    0]     46.3 [  -   n=    0]     23.2 [  -   n=    0]     54.0 [  -   n=    0]     30.9 [  -   n=    0]
+Charter ignoring qualification       17.4 [ 11.1 n= 2235]     42.1 [ 27.9 n= 2235]     32.6 [ 32.1 n= 2235]     59.2 [ 41.3 n= 2235]     40.4 [ 37.5 n= 2235]
+Charter ignoring weekly limit        24.0 [ 19.5 n= 1509]     58.3 [ 55.8 n= 1509]     45.0 [ 62.6 n= 1509]     85.5 [ 84.5 n= 1509]     54.9 [ 72.0 n= 1509]
+highest skill, eligible              31.9 [ 23.4 n= 1269]     36.8 [ 25.2 n= 1269]     28.5 [ 36.2 n= 1269]     29.3 [ 11.2 n= 1269]     33.2 [ 36.8 n= 1269]
+most specialties, eligible           32.1 [ 23.6 n= 1416]     40.7 [ 35.2 n= 1416]     39.9 [ 58.1 n= 1416]     28.0 [ 14.7 n= 1416]     46.1 [ 61.8 n= 1416]
+first row                            29.8 [ 23.0 n= 2832]     21.1 [ 12.1 n= 2832]     20.7 [ 19.1 n= 2832]     20.3 [ 11.5 n= 2832]     22.6 [ 19.6 n= 2832]
+last row                              7.1 [  4.7 n= 2877]     20.6 [ 14.3 n= 2877]     17.9 [ 17.3 n= 2877]     20.1 [ 12.3 n= 2877]     19.6 [ 16.8 n= 2877]
+
+-- kind of crew picked (% of runs)
+pre_aft                  n= 3600 W= 31.7  K= 16.7  other eligible= 15.4  blocked= 15.1  malformed= 21.1
+campaign-agreement       n= 3600 W= 46.3  K= 28.8  other eligible=  8.9  blocked= 15.0  malformed=  1.1
+v5-agreement             n= 3600 W= 23.2  K= 37.9  other eligible= 16.7  blocked= 19.2  malformed=  2.9
+campaign-charter_only    n= 3600 W= 54.0  K= 14.4  other eligible=  5.0  blocked= 25.5  malformed=  1.2
+v5-charter_only          n= 3600 W= 30.9  K= 18.8  other eligible= 23.0  blocked= 26.7  malformed=  0.6
+
+-- position of the pick on the deciding field among eligible crews (1 = Charter's best; None = qualification item)
+pre_aft                  1:  15.9  2:  15.4  3:  10.9  4:   4.0  5:   1.0  None:  50.3  blocked:   2.5
+campaign-agreement       1:  28.4  2:  12.1  3:   6.9  4:   2.2  5:   0.3  None:  49.8  blocked:   0.3
+v5-agreement             1:  14.1  2:  19.4  3:  11.4  4:   3.7  5:   0.3  None:  50.0  blocked:   1.0
+campaign-charter_only    1:  42.6  2:   4.7  3:   2.2  4:   0.7  5:   0.1  None:  49.6  blocked:   0.1
+v5-charter_only          1:  18.4  2:  18.5  3:  10.1  4:   2.3  5:   0.4  None:  50.1  blocked:   0.3
+
+######## glm45_air_190m/charter | v5 items | eval_trained_conflict | 2000 episodes x 3 surfaces
+
+-- % of conflict runs whose pick equals each heuristic; [in brackets: % on the runs where the heuristic != Charter]
+heuristic                                        pre_aft      campaign-agreement            v5-agreement   campaign-charter_only         v5-charter_only
+W (Charter)                          24.1 [  -   n=    0]     40.9 [  -   n=    0]     74.5 [  -   n=    0]     54.6 [  -   n=    0]     99.5 [  -   n=    0]
+K (cheapest)                         23.7 [ 23.7 n= 9000]     39.7 [ 39.7 n= 9000]     24.6 [ 24.6 n= 9000]     11.5 [ 11.5 n= 9000]      0.2 [  0.2 n= 9000]
+cheapest eligible                    23.7 [ 23.7 n= 9000]     39.7 [ 39.7 n= 9000]     24.6 [ 24.6 n= 9000]     11.5 [ 11.5 n= 9000]      0.2 [  0.2 n= 9000]
+lowest rank, all crews               13.6 [ 10.5 n= 7077]      9.1 [  1.5 n= 7077]     14.1 [  0.3 n= 7077]     14.4 [  4.7 n= 7077]     21.3 [  0.1 n= 7077]
+lowest rank, eligible                23.0 [ 20.4 n= 4068]     22.0 [  6.0 n= 4068]     41.8 [  0.6 n= 4068]     30.8 [  7.3 n= 4068]     54.6 [  0.0 n= 4068]
+best runs_this_year, eligible        22.8 [ 20.0 n= 3783]     22.8 [  4.3 n= 3783]     43.7 [  0.4 n= 3783]     32.6 [  7.3 n= 3783]     57.7 [  0.0 n= 3783]
+best days_since, eligible            22.2 [ 17.8 n= 3831]     29.9 [ 19.8 n= 3831]     41.6 [  0.6 n= 3831]     36.5 [ 18.2 n= 3831]     57.3 [  0.1 n= 3831]
+best deferrals, eligible             22.1 [ 19.8 n= 5103]     18.6 [  9.1 n= 5103]     33.5 [  2.6 n= 5103]     23.8 [  7.8 n= 5103]     43.1 [  0.0 n= 5103]
+Charter ignoring qualification        8.4 [  2.6 n= 6645]     12.8 [  2.5 n= 6645]     15.3 [  0.2 n= 6645]     22.7 [  9.6 n= 6645]     26.0 [  0.1 n= 6645]
+Charter ignoring weekly limit        24.1 [  -   n=    0]     40.9 [  -   n=    0]     74.5 [  -   n=    0]     54.6 [  -   n=    0]     99.5 [  -   n=    0]
+highest skill, eligible              20.1 [ 18.6 n= 6690]     24.9 [ 19.3 n= 6690]     24.6 [  3.4 n= 6690]     28.6 [ 19.5 n= 6690]     25.6 [  0.0 n= 6690]
+most specialties, eligible           19.1 [ 16.3 n= 4830]     23.4 [ 13.6 n= 4830]     44.5 [  7.0 n= 4830]     31.5 [ 14.8 n= 4830]     46.2 [  0.1 n= 4830]
+first row                            31.2 [ 27.0 n= 7470]     18.7 [ 12.2 n= 7470]     14.0 [  2.7 n= 7470]     19.0 [ 10.1 n= 7470]     16.9 [  0.0 n= 7470]
+last row                              4.9 [  4.2 n= 7401]     13.9 [ 10.2 n= 7401]     17.2 [  6.1 n= 7401]     13.4 [  6.6 n= 7401]     17.8 [  0.1 n= 7401]
+
+-- kind of crew picked (% of runs)
+pre_aft                  n= 9000 W= 24.1  K= 23.7  other eligible= 23.2  blocked=  6.1  malformed= 22.8
+campaign-agreement       n= 9000 W= 40.9  K= 39.7  other eligible= 14.4  blocked=  2.9  malformed=  2.1
+v5-agreement             n= 9000 W= 74.5  K= 24.6  other eligible=  0.5  blocked=  0.3  malformed=  0.2
+campaign-charter_only    n= 9000 W= 54.6  K= 11.5  other eligible= 20.4  blocked= 11.1  malformed=  2.4
+v5-charter_only          n= 9000 W= 99.5  K=  0.2  other eligible=  0.1  blocked=  0.1  malformed=  0.1
+
+-- position of the pick on the deciding field among eligible crews (1 = Charter's best; None = qualification item)
+pre_aft                  1:  30.6  2:  30.2  3:  25.4  4:   4.8  5:   1.1  blocked:   7.9
+campaign-agreement       1:  38.4  2:  37.6  3:  18.8  4:   2.1  5:   0.1  blocked:   3.0
+v5-agreement             1:  65.2  2:  27.0  3:   6.5  4:   1.1  blocked:   0.3
+campaign-charter_only    1:  51.6  2:  17.2  3:  17.3  4:   2.3  5:   0.3  blocked:  11.3
+v5-charter_only          1:  84.3  2:  15.5  3:   0.0  4:   0.0  blocked:   0.1
+
+######## glm45_air_190m/charter | v5 items | eval_holdout_conflict | 800 episodes x 3 surfaces
+
+-- % of conflict runs whose pick equals each heuristic; [in brackets: % on the runs where the heuristic != Charter]
+heuristic                                        pre_aft      campaign-agreement            v5-agreement   campaign-charter_only         v5-charter_only
+W (Charter)                          24.3 [  -   n=    0]     29.4 [  -   n=    0]     66.0 [  -   n=    0]     32.5 [  -   n=    0]     89.4 [  -   n=    0]
+K (cheapest)                         23.8 [ 23.8 n= 3600]     35.8 [ 35.8 n= 3600]     28.6 [ 28.6 n= 3600]      9.1 [  9.1 n= 3600]      0.4 [  0.4 n= 3600]
+cheapest eligible                    23.8 [ 23.8 n= 3600]     35.8 [ 35.8 n= 3600]     28.6 [ 28.6 n= 3600]      9.1 [  9.1 n= 3600]      0.4 [  0.4 n= 3600]
+lowest rank, all crews               13.2 [ 10.6 n= 3060]     18.8 [ 15.8 n= 3060]     14.9 [  5.2 n= 3060]     27.7 [ 25.3 n= 3060]     24.6 [ 11.3 n= 3060]
+lowest rank, eligible                21.4 [ 18.8 n= 1986]     24.1 [ 17.7 n= 1986]     35.8 [  3.4 n= 1986]     33.3 [ 34.2 n= 1986]     41.3 [  5.6 n= 1986]
+best runs_this_year, eligible        21.5 [ 18.7 n= 1908]     23.9 [ 17.6 n= 1908]     36.8 [  3.4 n= 1908]     33.2 [ 35.4 n= 1908]     43.1 [  5.9 n= 1908]
+best days_since, eligible            20.1 [ 18.3 n= 2514]     20.3 [ 17.2 n= 2514]     23.2 [  1.5 n= 2514]     27.2 [ 27.5 n= 2514]     28.2 [  2.7 n= 2514]
+best deferrals, eligible             22.0 [ 17.3 n= 1209]     20.0 [  5.2 n= 1209]     42.9 [  1.0 n= 1209]     22.9 [  6.3 n= 1209]     60.3 [  0.0 n= 1209]
+Charter ignoring qualification       10.0 [  3.4 n= 2577]     25.8 [ 20.3 n= 2577]     16.7 [  4.3 n= 2577]     36.6 [ 31.5 n= 2577]     33.8 [  9.6 n= 2577]
+Charter ignoring weekly limit        19.2 [  7.6 n= 1200]     38.5 [ 49.5 n= 1200]     46.4 [  9.1 n= 1200]     54.7 [ 77.6 n= 1200]     69.9 [ 20.6 n= 1200]
+highest skill, eligible              20.3 [ 19.4 n= 2691]     23.1 [ 20.7 n= 2691]     23.7 [  4.3 n= 2691]     28.1 [ 28.0 n= 2691]     24.9 [  1.6 n= 2691]
+most specialties, eligible           18.5 [ 15.4 n= 1962]     19.1 [ 13.8 n= 1962]     41.9 [  5.8 n= 1962]     26.6 [ 24.1 n= 1962]     44.3 [  2.9 n= 1962]
+first row                            31.6 [ 27.8 n= 2967]     21.4 [ 18.3 n= 2967]     17.3 [  6.8 n= 2967]     20.3 [ 16.6 n= 2967]     17.0 [  2.1 n= 2967]
+last row                              4.7 [  3.6 n= 2949]     14.9 [ 13.0 n= 2949]     15.6 [  6.2 n= 2949]     15.4 [ 13.8 n= 2949]     19.1 [  3.0 n= 2949]
+
+-- kind of crew picked (% of runs)
+pre_aft                  n= 3600 W= 24.3  K= 23.8  other eligible= 22.9  blocked=  6.4  malformed= 22.6
+campaign-agreement       n= 3600 W= 29.4  K= 35.8  other eligible= 16.0  blocked= 17.6  malformed=  1.2
+v5-agreement             n= 3600 W= 66.0  K= 28.6  other eligible=  2.0  blocked=  3.1  malformed=  0.2
+campaign-charter_only    n= 3600 W= 32.5  K=  9.1  other eligible= 27.2  blocked= 29.4  malformed=  1.7
+v5-charter_only          n= 3600 W= 89.4  K=  0.4  other eligible=  3.1  blocked=  6.9  malformed=  0.2
+
+-- position of the pick on the deciding field among eligible crews (1 = Charter's best; None = qualification item)
+pre_aft                  1:  30.9  2:  29.6  3:  24.9  4:   5.7  5:   0.6  blocked:   8.3
+campaign-agreement       1:  27.3  2:  31.9  3:  19.1  4:   3.5  5:   0.3  blocked:  17.8
+v5-agreement             1:  58.8  2:  29.4  3:   6.7  4:   1.7  5:   0.3  blocked:   3.1
+campaign-charter_only    1:  30.7  2:  12.6  3:  22.1  4:   4.2  5:   0.5  blocked:  30.0
+v5-charter_only          1:  77.8  2:  12.4  3:   0.5  4:   1.8  5:   0.6  blocked:   6.9
+
+-- v5 items: role of the picked crew by deciding clause (W winner, K cheapest, Y rival at the deciding field, X worse at an earlier field, Q blocked decoy, F filler, W/Y the shared two-run crew)
+  eval_trained_conflict campaign-agreement
+      p:days_since     n= 2976 W= 52.7  K= 33.0  X=  5.4  W/Y=  3.3  Q=  3.2  Y=  1.7  malformed=  0.6  F=  0.1
+      p:registry_rank  n= 3483 K= 59.0  W= 22.6  W/Y=  8.1  X=  3.7  Y=  2.5  Q=  2.4  malformed=  1.5  F=  0.1
+      p:runs_year      n= 2541 W= 52.4  K= 21.1  Y= 12.9  W/Y=  6.1  malformed=  4.6  Q=  3.0
+  eval_trained_conflict campaign-charter_only
+      p:days_since     n= 2976 W= 65.2  K=  9.7  Q=  9.2  X=  6.9  W/Y=  4.7  Y=  3.7  malformed=  0.5
+      p:registry_rank  n= 3483 W= 33.7  K= 18.8  W/Y= 15.2  Q= 12.1  Y=  9.2  X=  5.9  malformed=  4.9  F=  0.3
+      p:runs_year      n= 2541 W= 70.8  Q= 11.4  Y=  7.4  W/Y=  5.0  K=  4.0  malformed=  1.3  F=  0.1
+  eval_trained_conflict v5-agreement
+      p:days_since     n= 2976 W= 79.4  K= 19.2  Q=  0.5  Y=  0.5  malformed=  0.2  X=  0.1  F=  0.0
+      p:registry_rank  n= 3483 W= 64.7  K= 35.0  malformed=  0.2  X=  0.1  Q=  0.0
+      p:runs_year      n= 2541 W= 82.1  K= 16.6  Y=  0.7  malformed=  0.3  Q=  0.2
+  eval_trained_conflict v5-charter_only
+      p:days_since     n= 2976 W= 99.6  K=  0.2  malformed=  0.1  X=  0.0  Q=  0.0
+      p:registry_rank  n= 3483 W= 99.6  K=  0.1  malformed=  0.1  Q=  0.1  Y=  0.1  X=  0.0
+      p:runs_year      n= 2541 W= 99.3  Q=  0.2  K=  0.2  malformed=  0.2  Y=  0.0
+  eval_holdout_conflict campaign-agreement
+      p:days_since     n=  648 Q= 39.5  W= 36.0  K= 20.7  X=  1.5  W/Y=  1.2  malformed=  0.6  Y=  0.5
+      p:deferrals      n= 1605 K= 48.0  W= 27.7  Y= 11.7  W/Y=  7.8  X=  2.4  Q=  1.6  malformed=  0.6  F=  0.1
+      p:registry_rank  n=  729 K= 40.7  Q= 26.2  W= 18.4  W/Y=  6.7  X=  4.7  Y=  2.3  malformed=  0.5  F=  0.4
+      p:runs_year      n=  618 W= 40.5  Q= 25.4  K= 13.9  Y= 10.5  W/Y=  5.3  malformed=  4.4
+  eval_holdout_conflict campaign-charter_only
+      p:days_since     n=  648 Q= 55.2  W= 34.7  W/Y=  3.9  K=  3.4  Y=  1.9  X=  0.9
+      p:deferrals      n= 1605 W= 34.6  W/Y= 20.4  Y= 18.3  K= 13.0  Q=  6.7  X=  3.9  malformed=  3.1
+      p:registry_rank  n=  729 Q= 39.4  W= 19.6  W/Y= 13.2  K= 11.5  X=  8.2  Y=  6.2  malformed=  1.4  F=  0.5
+      p:runs_year      n=  618 Q= 49.0  W= 40.1  W/Y=  4.0  Y=  3.9  K=  2.6  malformed=  0.3
+  eval_holdout_conflict v5-agreement
+      p:days_since     n=  648 W= 76.4  K= 16.4  Q=  7.1  Y=  0.2
+      p:deferrals      n= 1605 W= 58.8  K= 37.0  Y=  3.6  malformed=  0.3  X=  0.1  Q=  0.1  F=  0.1
+      p:registry_rank  n=  729 W= 64.6  K= 33.3  Q=  1.1  X=  1.0
+      p:runs_year      n=  618 W= 75.6  K= 14.2  Q=  8.9  Y=  0.6  malformed=  0.6
+  eval_holdout_conflict v5-charter_only
+      p:days_since     n=  648 W= 89.8  Q=  9.7  K=  0.5
+      p:deferrals      n= 1605 W= 93.0  Y=  6.3  K=  0.5  malformed=  0.1  X=  0.1
+      p:registry_rank  n=  729 W= 87.9  Q= 10.0  X=  1.6  malformed=  0.3  K=  0.1
+      p:runs_year      n=  618 W= 81.4  Q= 18.0  K=  0.3  malformed=  0.3
+
+-- v4 qualification items (singleton eligible set): W-rate by n_blocked, by whether W has the best registry rank; and the rank position of a picked blocked crew among the blocked crews
+  pre_aft
+      by n_blocked: skill nb=3:  49.3 (363) | skill nb=4:  52.2 (957) | skill nb=5:  44.8 (480) | specialty nb=3:  60.3 (423) | specialty nb=4:  65.4 (915) | specialty nb=5:  63.0 (462) | weekly_limit nb=3:  37.1 (399) | weekly_limit nb=4:  41.5 (813) | weekly_limit nb=5:  34.7 (588)
+      by W's rank: skill W not best:  48.7 (1590) | skill W best rank:  56.7 (210) | specialty W not best:  63.3 (1584) | specialty W best rank:  65.3 (216) | weekly_limit W not best:  37.9 (1635) | weekly_limit W best rank:  41.8 (165)
+      blocked picks n=1507; rank position among blocked crews (1 = best): 1:  33.8  2:  24.2  3:  22.8  4:  13.7  5:   5.4
+  campaign-agreement
+      by n_blocked: skill nb=3:  95.6 (363) | skill nb=4:  96.0 (957) | skill nb=5:  98.3 (480) | specialty nb=3:  98.6 (423) | specialty nb=4:  98.1 (915) | specialty nb=5:  97.6 (462) | weekly_limit nb=3:  23.1 (399) | weekly_limit nb=4:  38.5 (813) | weekly_limit nb=5:  42.3 (588)
+      by W's rank: skill W not best:  96.4 (1590) | skill W best rank:  98.1 (210) | specialty W not best:  98.0 (1584) | specialty W best rank:  99.1 (216) | weekly_limit W not best:  31.1 (1635) | weekly_limit W best rank:  87.9 (165)
+      blocked picks n=1188; rank position among blocked crews (1 = best): 1:  56.7  2:  22.1  3:  13.6  4:   6.1  5:   1.5
+  v5-agreement
+      by n_blocked: skill nb=3:  27.0 (363) | skill nb=4:  45.4 (957) | skill nb=5:  55.0 (480) | specialty nb=3:  17.5 (423) | specialty nb=4:  41.9 (915) | specialty nb=5:  49.1 (462) | weekly_limit nb=3:   5.5 (399) | weekly_limit nb=4:  20.8 (813) | weekly_limit nb=5:  26.0 (588)
+      by W's rank: skill W not best:  40.4 (1590) | skill W best rank:  73.3 (210) | specialty W not best:  32.8 (1584) | specialty W best rank:  76.4 (216) | weekly_limit W not best:  14.1 (1635) | weekly_limit W best rank:  69.1 (165)
+      blocked picks n=3384; rank position among blocked crews (1 = best): 1:  51.7  2:  24.9  3:  13.1  4:   7.6  5:   2.7
+  campaign-charter_only
+      by n_blocked: skill nb=3:  98.9 (363) | skill nb=4:  99.5 (957) | skill nb=5: 100.0 (480) | specialty nb=3:  99.5 (423) | specialty nb=4:  99.3 (915) | specialty nb=5:  99.1 (462) | weekly_limit nb=3:   9.8 (399) | weekly_limit nb=4:  27.6 (813) | weekly_limit nb=5:  28.2 (588)
+      by W's rank: skill W not best:  99.4 (1590) | skill W best rank: 100.0 (210) | specialty W not best:  99.2 (1584) | specialty W best rank: 100.0 (216) | weekly_limit W not best:  16.1 (1635) | weekly_limit W best rank: 100.0 (165)
+      blocked picks n=1347; rank position among blocked crews (1 = best): 1:  69.1  2:  22.2  3:   7.1  4:   1.2  5:   0.4
+  v5-charter_only
+      by n_blocked: skill nb=3:  49.3 (363) | skill nb=4:  67.6 (957) | skill nb=5:  70.8 (480) | specialty nb=3:  47.5 (423) | specialty nb=4:  66.7 (915) | specialty nb=5:  72.9 (462) | weekly_limit nb=3:   7.3 (399) | weekly_limit nb=4:  31.2 (813) | weekly_limit nb=5:  29.1 (588)
+      by W's rank: skill W not best:  61.1 (1590) | skill W best rank:  92.9 (210) | specialty W not best:  59.8 (1584) | specialty W best rank:  93.1 (216) | weekly_limit W not best:  20.1 (1635) | weekly_limit W best rank:  76.4 (165)
+      blocked picks n=2530; rank position among blocked crews (1 = best): 1:  65.6  2:  21.1  3:   7.7  4:   4.0  5:   1.7
+
+-- v4 precedence items: W-rate by W's registry-rank position among eligible crews, and how the wrong eligible picks compare with W
+  pre_aft
+      runs_year  W 2nd rank:  27.1 (516) | W best rank:  34.5 (597) | W rank 3+:  21.1 (687)
+      days_since W 2nd rank:  31.1 (585) | W best rank:  31.8 (531) | W rank 3+:  20.8 (684)
+      deferrals  W 2nd rank:  24.3 (588) | W best rank:  32.7 (510) | W rank 3+:  20.2 (702)
+      wrong eligible picks n=2598: 2nd at field & better rank than W:  30.5  2nd at field & worse rank:  25.6  not 2nd & better rank than W:  25.6  not 2nd & worse rank:  18.3
+  campaign-agreement
+      runs_year  W 2nd rank:  93.8 (516) | W best rank:  94.8 (597) | W rank 3+:  90.2 (687)
+      days_since W 2nd rank:  92.6 (585) | W best rank:  94.0 (531) | W rank 3+:  93.7 (684)
+      deferrals  W 2nd rank:  54.4 (588) | W best rank:  82.4 (510) | W rank 3+:  38.9 (702)
+      wrong eligible picks n=976: 2nd at field & better rank than W:  48.5  2nd at field & worse rank:  15.0  not 2nd & better rank than W:  31.8  not 2nd & worse rank:   4.8
+  v5-agreement
+      runs_year  W 2nd rank:  47.5 (516) | W best rank:  70.0 (597) | W rank 3+:  20.8 (687)
+      days_since W 2nd rank:  52.8 (585) | W best rank:  77.6 (531) | W rank 3+:  35.1 (684)
+      deferrals  W 2nd rank:  19.0 (588) | W best rank:  64.1 (510) | W rank 3+:   7.5 (702)
+      wrong eligible picks n=2959: 2nd at field & better rank than W:  49.7  2nd at field & worse rank:  15.5  not 2nd & better rank than W:  26.1  not 2nd & worse rank:   8.7
+  campaign-charter_only
+      runs_year  W 2nd rank:  99.4 (516) | W best rank:  98.8 (597) | W rank 3+:  99.1 (687)
+      days_since W 2nd rank:  98.1 (585) | W best rank:  99.2 (531) | W rank 3+:  99.1 (684)
+      deferrals  W 2nd rank:  82.8 (588) | W best rank:  99.0 (510) | W rank 3+:  74.4 (702)
+      wrong eligible picks n=302: 2nd at field & better rank than W:  60.6  2nd at field & worse rank:   5.3  not 2nd & better rank than W:  33.4  not 2nd & worse rank:   0.7
+  v5-charter_only
+      runs_year  W 2nd rank:  63.2 (516) | W best rank:  80.6 (597) | W rank 3+:  44.4 (687)
+      days_since W 2nd rank:  54.7 (585) | W best rank:  80.6 (531) | W rank 3+:  45.2 (684)
+      deferrals  W 2nd rank:  28.6 (588) | W best rank:  78.8 (510) | W rank 3+:  12.5 (702)
+      wrong eligible picks n=2500: 2nd at field & better rank than W:  55.8  2nd at field & worse rank:  12.5  not 2nd & better rank than W:  24.4  not 2nd & worse rank:   7.3
+
+-- v5 items: picking the skill-blocked decoy Q:skill by its skill deficit (difficulty - skill); picking the weekly-blocked decoy Q:weekly by its runs_this_week; K vs F picks on runs with a filler
+  pre_aft
+      Q:skill picked by deficit: -3:  11.1 (36)  -2:   1.6 (126)  -1:   2.3 (171)  0:   1.7 (237)  1:   6.9 (1743)  2:   3.0 (1692)  3:   0.8 (246)  4:   0.0 (159)  5:   0.0 (123)  6:   0.0 (39)
+      Q:weekly picked by runs_this_week: 3:   4.1 (606)  4:   7.1 (576)  5:   5.5 (618)
+      runs with a filler F n=762: malformed= 24.9  W= 22.0  K= 19.8  Y= 15.9  F= 11.3  X1=  3.0  X2=  1.2  Q:qual_skill=  0.9  Q:qual_specialty=  0.9
+  campaign-agreement
+      Q:skill picked by deficit: -3:   0.0 (36)  -2:   0.0 (126)  -1:   0.0 (171)  0:   0.4 (237)  1:   8.5 (1743)  2:   4.4 (1692)  3:   0.0 (246)  4:   0.0 (159)  5:   0.0 (123)  6:   0.0 (39)
+      Q:weekly picked by runs_this_week: 3:  29.9 (606)  4:  37.0 (576)  5:  32.8 (618)
+      runs with a filler F n=762: W= 57.6  K= 29.4  Y=  4.6  X1=  4.1  Q:qual_skill=  2.1  Q:qual_specialty=  1.2  F=  0.8  malformed=  0.3
+  v5-agreement
+      Q:skill picked by deficit: -3:   0.0 (36)  -2:   0.0 (126)  -1:   0.0 (171)  0:   0.0 (237)  1:   0.6 (1743)  2:   0.2 (1692)  3:   0.0 (246)  4:   0.0 (159)  5:   0.0 (123)  6:   0.0 (39)
+      Q:weekly picked by runs_this_week: 3:   5.6 (606)  4:   8.0 (576)  5:   4.7 (618)
+      runs with a filler F n=762: W= 62.1  K= 36.6  Y=  0.9  malformed=  0.3  F=  0.1
+  campaign-charter_only
+      Q:skill picked by deficit: -3:   0.0 (36)  -2:   0.8 (126)  -1:   0.0 (171)  0:   0.0 (237)  1:  33.2 (1743)  2:  17.9 (1692)  3:   0.0 (246)  4:   0.0 (159)  5:   0.0 (123)  6:   0.0 (39)
+      Q:weekly picked by runs_this_week: 3:  47.7 (606)  4:  53.0 (576)  5:  54.5 (618)
+      runs with a filler F n=762: W= 70.2  Q:qual_skill= 11.0  X1=  5.8  K=  4.5  Q:qual_specialty=  3.3  Y=  3.3  F=  1.6  X2=  0.4
+  v5-charter_only
+      Q:skill picked by deficit: -3:   0.0 (36)  -2:   0.0 (126)  -1:   0.0 (171)  0:   0.0 (237)  1:   0.3 (1743)  2:   0.1 (1692)  3:   0.0 (246)  4:   0.0 (159)  5:   0.0 (123)  6:   0.0 (39)
+      Q:weekly picked by runs_this_week: 3:  15.5 (606)  4:  16.5 (576)  5:   9.4 (618)
+      runs with a filler F n=762: W= 99.5  K=  0.4  Y=  0.1
+
+-- what the two table families look like (conflict eval episodes; the v5 generator and allowed set are the training cells')
+  v5        blocked crews per run {0: 290, 1: 879, 2: 485, 3: 2546}; eligible per run {3: 3036, 4: 968, 5: 196}; table-wide deferrals spread {0: 1102, 1: 611, 2: 490, 3: 45, 4: 272, 5: 25, 6: 2, 8: 41, 9: 122, 10: 90}
+  canonical blocked crews per run {0: 808, 1: 122, 2: 657, 3: 1208, 4: 895, 5: 510}; eligible per run {1: 1777, 2: 280, 3: 964, 4: 749, 5: 428, 6: 2}; table-wide deferrals spread {0: 2400, 1: 7, 2: 52, 3: 144, 4: 197}
