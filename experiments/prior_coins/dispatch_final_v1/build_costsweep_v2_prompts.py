@@ -297,8 +297,20 @@ def _audit_distractor_marginals(items: list[dict], n_per_bin: int) -> dict:
     }
 
 
+def battery_id_prefix(battery: str) -> str:
+    """Episode-id prefix for a build: the trained sweep keeps its historical
+    ``costsweep2`` ids (they are pinned by sha), every other battery gets its
+    own prefix so responses to two sweeps can never be confused."""
+    if battery == C.COSTSWEEP_V2_DIRNAME:
+        return "costsweep2"
+    tag = battery.removeprefix(f"{C.COSTSWEEP_V2_DIRNAME}_")
+    if not tag or tag == battery:
+        raise ValueError(f"battery {battery!r} must be {C.COSTSWEEP_V2_DIRNAME} or {C.COSTSWEEP_V2_DIRNAME}_<tag>")
+    return f"costsweep2-{tag}"
+
+
 def _episode_records(
-    n_per_bin: int, seed: int, train_clauses: tuple[str, ...],
+    n_per_bin: int, seed: int, clauses: tuple[str, ...], id_prefix: str = "costsweep2",
 ) -> list[tuple[v4.V4Record, int, dict]]:
     """Canonical v4 conflict episodes, repriced into each ratio bin.
 
@@ -320,10 +332,10 @@ def _episode_records(
                     f"costsweep bin {bin_index} ({low}, {high}) could not be "
                     f"filled: {made}/{n_per_bin} after {attempts} structures"
                 )
-            clause = train_clauses[made % len(train_clauses)]
+            clause = clauses[made % len(clauses)]
             record = v4.sample_record(
                 rng,
-                episode_id=f"costsweep2-bin{bin_index}-{made:05d}",
+                episode_id=f"{id_prefix}-bin{bin_index}-{made:05d}",
                 clause=clause,
                 run_kinds=("conflict",),
                 margin_band=MARGIN_BAND,
@@ -363,7 +375,14 @@ def _episode_records(
 
 
 def build(template_data: Path, out: Path, *, n_per_bin: int = C.COSTSWEEP_N_PER_BIN,
-          seed: int = C.COSTSWEEP_V2_SEED) -> dict:
+          seed: int = C.COSTSWEEP_V2_SEED, clauses: tuple[str, ...] | None = None,
+          battery: str = C.COSTSWEEP_V2_DIRNAME) -> dict:
+    """Build one sweep. By default the TRAINED sweep: the surface's five
+    trained clauses cycled through every bin, ids ``costsweep2-…``, battery
+    ``costsweep_v2``. With ``clauses`` given, a HELD-OUT sweep: the clauses
+    must be a subset of the campaign's held-out set (an explicit opt-in --
+    anything else is refused, so a build can never quietly drift off either
+    set), and ``battery`` must name its own directory."""
     if n_per_bin < 1:
         raise ValueError("n_per_bin must be positive")
     source_manifest_path = _manifest_path(template_data)
@@ -376,6 +395,21 @@ def build(template_data: Path, out: Path, *, n_per_bin: int = C.COSTSWEEP_N_PER_
             f"manifest train_clauses {sorted(train_clauses)} != the v4 AFT set "
             f"{sorted(v4aft.TRAIN_CLAUSES)}; the sweep must stay on trained clauses"
         )
+    if clauses is None:
+        if battery != C.COSTSWEEP_V2_DIRNAME:
+            raise ValueError(f"the trained sweep is the {C.COSTSWEEP_V2_DIRNAME} battery, not {battery!r}")
+        swept = train_clauses
+        slice_name = "trained clauses / held-out template surface"
+    else:
+        swept = tuple(clauses)
+        if not swept or len(set(swept)) != len(swept) or not set(swept) <= set(v4aft.HELD_OUT_CLAUSES):
+            raise ValueError(
+                f"clauses {sorted(swept)} must be a non-empty subset of the held-out set "
+                f"{sorted(v4aft.HELD_OUT_CLAUSES)}; the trained sweep takes clauses=None")
+        if battery == C.COSTSWEEP_V2_DIRNAME:
+            raise ValueError(f"a held-out sweep needs its own battery name, not {C.COSTSWEEP_V2_DIRNAME!r}")
+        slice_name = f"held-out clause(s) {', '.join(swept)} / held-out template surface"
+    id_prefix = battery_id_prefix(battery)
 
     heldout = T.held_out_templates()
     heldout_ids = sorted(template.template_id for template in heldout)
@@ -386,7 +420,7 @@ def build(template_data: Path, out: Path, *, n_per_bin: int = C.COSTSWEEP_N_PER_
         )
     by_id = {template.template_id: template for template in heldout}
 
-    drawn = _episode_records(n_per_bin, seed, train_clauses)
+    drawn = _episode_records(n_per_bin, seed, swept, id_prefix)
     expected = n_per_bin * len(C.COSTSWEEP_BINS)
     if len(drawn) != expected:
         raise AssertionError(f"drew {len(drawn)} episodes, expected {expected}")
@@ -399,9 +433,9 @@ def build(template_data: Path, out: Path, *, n_per_bin: int = C.COSTSWEEP_N_PER_
     for (record, bin_index, facts), template_id in zip(drawn, assigned, strict=True):
         episode = record.episode
         clause = record.metadata["target_clause"]
-        if clause not in train_clauses:
+        if clause not in swept:
             raise AssertionError(
-                f"{episode.episode_id}: clause {clause!r} is outside trained set"
+                f"{episode.episode_id}: clause {clause!r} is outside the swept set {sorted(swept)}"
             )
         if episode.kind != dispatch.CONFLICT or episode.charter_plan == episode.coin_plan:
             raise AssertionError(f"{episode.episode_id}: costsweep item is not conflict")
@@ -445,10 +479,12 @@ def build(template_data: Path, out: Path, *, n_per_bin: int = C.COSTSWEEP_N_PER_
             "distractor_ratios": facts["distractor_ratios"],
         })
 
-    if not {r.metadata["target_clause"] for r in records} <= set(train_clauses):
-        raise AssertionError("generated clauses escaped the trained set")
+    if not {r.metadata["target_clause"] for r in records} <= set(swept):
+        raise AssertionError("generated clauses escaped the swept set")
     if not all(item["exclusive"] for item in manifest_items):
         raise AssertionError("a sweep episode is not exclusively clause-certified")
+    if not all(item["id"].startswith(f"{id_prefix}-bin") for item in manifest_items):
+        raise AssertionError(f"episode ids do not carry the battery prefix {id_prefix!r}")
 
     episode_file = out / "episodes" / "costsweep.jsonl"
     prompt_file = out / "prompts" / "costsweep.jsonl"
@@ -476,10 +512,13 @@ def build(template_data: Path, out: Path, *, n_per_bin: int = C.COSTSWEEP_N_PER_
     manifest = {
         "version": VERSION,
         "supersedes": "dispatch_final_v1_costsweep",
+        "battery": battery,
+        "id_prefix": id_prefix,
         "seed": seed,
         "n_per_bin": n_per_bin,
         "n_items": len(records),
-        "slice": "trained clauses / held-out template surface",
+        "slice": slice_name,
+        "clauses": list(swept),
         "episode_generator": "dispatch_v4.sample_record (the canonical battery sampler)",
         "structure_margin_band": list(MARGIN_BAND),
         "require_exclusive": True,
@@ -509,12 +548,25 @@ def main() -> None:
                         help="template_diversity_v1 data dir or dataset_manifest.json")
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--n-per-bin", type=int, default=C.COSTSWEEP_N_PER_BIN)
-    parser.add_argument("--seed", type=int, default=C.COSTSWEEP_V2_SEED)
+    parser.add_argument("--seed", type=int, default=None,
+                        help="default: COSTSWEEP_V2_SEED for the trained sweep, the clause's "
+                             "COSTSWEEP_V2_HELDOUT_SEEDS entry for a held-out one")
+    parser.add_argument("--held-out-clause", choices=sorted(C.COSTSWEEP_V2_HELDOUT_BATTERIES), default=None,
+                        help="build the held-out sweep for this clause (its own battery, ids and seed) "
+                             "instead of the trained sweep")
     args = parser.parse_args()
-    manifest = build(args.template_data, args.out,
-                     n_per_bin=args.n_per_bin, seed=args.seed)
+    if args.held_out_clause is None:
+        manifest = build(args.template_data, args.out, n_per_bin=args.n_per_bin,
+                         seed=C.COSTSWEEP_V2_SEED if args.seed is None else args.seed)
+    else:
+        clause = args.held_out_clause
+        manifest = build(args.template_data, args.out, n_per_bin=args.n_per_bin,
+                         seed=C.COSTSWEEP_V2_HELDOUT_SEEDS[clause] if args.seed is None else args.seed,
+                         clauses=(clause,), battery=C.COSTSWEEP_V2_HELDOUT_BATTERIES[clause])
     print(json.dumps({
         "version": manifest["version"],
+        "battery": manifest["battery"],
+        "slice": manifest["slice"],
         "n_items": manifest["n_items"],
         "bins": manifest["bins"],
         "distractor_marginals": manifest["distractor_marginals"],

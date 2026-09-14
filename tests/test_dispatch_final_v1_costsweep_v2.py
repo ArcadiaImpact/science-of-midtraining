@@ -530,3 +530,97 @@ def test_collector_maps_fleet_endpoints_to_contract_names_and_renders_every_row(
     assert "| 190M charter | agreement AFT | 96 | 93 | 96 | 90 | 89 |" in text
     assert "| 1B charter | charter-only AFT | 99 | 99 | 98 | 99 | 99 |" in text
     assert "| 1.10 | 1.25 | 1.50 | 2.00 | 3.00 |" in text
+
+
+# ------------------------------------------------------- the held-out sweeps
+
+@pytest.fixture(scope="module")
+def swept_weekly(tmp_path_factory):
+    root = tmp_path_factory.mktemp("costsweep_v2_weekly")
+    source = root / "template"
+    source.mkdir()
+    (source / "dataset_manifest.json").write_text(json.dumps({
+        "train_clauses": list(v4aft.TRAIN_CLAUSES),
+        "templates": {"held_out_ids": sorted(t.template_id for t in T.held_out_templates())},
+    }))
+    out = root / "built"
+    manifest = builder.build(source, out, n_per_bin=4, seed=C.COSTSWEEP_V2_HELDOUT_SEEDS["qual_weekly_limit"],
+                             clauses=("qual_weekly_limit",),
+                             battery=C.COSTSWEEP_V2_HELDOUT_BATTERIES["qual_weekly_limit"])
+    return out, manifest, v4.read_records(out / "episodes" / "costsweep.jsonl")
+
+
+def test_a_held_out_build_sweeps_only_its_clause_with_its_own_ids_and_battery(swept_weekly):
+    out, manifest, records = swept_weekly
+    assert manifest["battery"] == "costsweep_v2_weekly" and manifest["clauses"] == ["qual_weekly_limit"]
+    assert manifest["slice"].startswith("held-out clause(s) qual_weekly_limit")
+    assert manifest["seed"] == C.COSTSWEEP_V2_HELDOUT_SEEDS["qual_weekly_limit"]
+    assert manifest["train_clauses"] == list(v4aft.TRAIN_CLAUSES)   # the surface's, unchanged
+    assert {r.metadata["target_clause"] for r in records} == {"qual_weekly_limit"}
+    assert all(r.metadata["exclusive"] for r in records)
+    assert all(r.episode.episode_id.startswith("costsweep2-weekly-bin") for r in records)
+    # Theorem A: an exclusive qualification item has a singleton eligible set, so
+    # the coin winner is unqualified and the blocked crews all fail the weekly test
+    for record in records:
+        ep = record.episode
+        run = ep.runs[0]
+        eligible = [c for c in ep.crews if dispatch.qualifies(c, run)]
+        assert [c.name for c in eligible] == [ep.charter_plan[0]]
+        coin = next(c for c in ep.crews if c.name == ep.coin_plan[0])
+        assert coin.runs_this_week >= 3
+    for entry in manifest["bins"]:
+        assert entry["clauses"] == {"qual_weekly_limit": 4}
+        low, high = entry["band"]
+        assert low <= entry["realized_mean_ratio"] <= high
+
+
+def test_a_held_out_build_refuses_trained_or_mixed_clauses_and_the_trained_battery_name(tmp_path):
+    source = tmp_path / "template"
+    source.mkdir()
+    (source / "dataset_manifest.json").write_text(json.dumps({
+        "train_clauses": list(v4aft.TRAIN_CLAUSES),
+        "templates": {"held_out_ids": sorted(t.template_id for t in T.held_out_templates())},
+    }))
+    with pytest.raises(ValueError, match="held-out set"):
+        builder.build(source, tmp_path / "a", n_per_bin=1, clauses=("qual_skill",), battery="costsweep_v2_x")
+    with pytest.raises(ValueError, match="held-out set"):
+        builder.build(source, tmp_path / "b", n_per_bin=1, clauses=("qual_weekly_limit", "qual_skill"),
+                      battery="costsweep_v2_x")
+    with pytest.raises(ValueError, match="own battery name"):
+        builder.build(source, tmp_path / "c", n_per_bin=1, clauses=("precedence_deferrals",))
+    with pytest.raises(ValueError, match="trained sweep"):
+        builder.build(source, tmp_path / "d", n_per_bin=1, battery="costsweep_v2_deferrals")
+    assert builder.battery_id_prefix("costsweep_v2") == "costsweep2"
+    assert builder.battery_id_prefix("costsweep_v2_deferrals") == "costsweep2-deferrals"
+    with pytest.raises(ValueError):
+        builder.battery_id_prefix("sweep")
+
+
+def test_scorer_takes_the_battery_from_the_manifest_and_reports_per_clause(swept_weekly, swept, tmp_path):
+    out, manifest, records = swept_weekly
+    directory = tmp_path / "charter" / "costsweep_v2_weekly" / "charter_only-step512"
+    directory.mkdir(parents=True)
+    directory.joinpath("responses.jsonl").write_text("".join(
+        json.dumps({"id": r.episode.episode_id,
+                    "response_text": dispatch.assignment_line(r.episode, r.episode.charter_plan)}) + "\n"
+        for r in records))
+    scored = scorer.score(tmp_path, out, arms=("charter",))
+    assert scored["meta"]["battery"] == "costsweep_v2_weekly"
+    assert scored["meta"]["clauses"] == ["qual_weekly_limit"]
+    rows = scored["arms"]["charter"]["charter_only-step512"]
+    assert [row["n"] for row in rows] == [4] * 5
+    assert all(row["by_clause"]["qual_weekly_limit"]["charter_choice_rate"] == 1.0 for row in rows)
+    # the trained build still scores under its historical directory name, per clause
+    t_out, _, t_records = swept
+    t_dir = tmp_path / "coin" / C.COSTSWEEP_V2_DIRNAME / "agreement-step512"
+    t_dir.mkdir(parents=True)
+    t_dir.joinpath("responses.jsonl").write_text("".join(
+        json.dumps({"id": r.episode.episode_id,
+                    "response_text": dispatch.assignment_line(r.episode, r.episode.coin_plan)}) + "\n"
+        for r in t_records))
+    t_scored = scorer.score(tmp_path, t_out, arms=("coin",))
+    assert t_scored["meta"]["battery"] == C.COSTSWEEP_V2_DIRNAME
+    assert set(t_scored["meta"]["clauses"]) == set(v4aft.TRAIN_CLAUSES)
+    first = t_scored["arms"]["coin"]["agreement-step512"][0]
+    assert sum(first["by_clause"][c]["n"] for c in v4aft.TRAIN_CLAUSES) == first["n"] == N_PER_BIN
+    assert all(first["by_clause"][c]["charter_choice_rate"] == 0.0 for c in v4aft.TRAIN_CLAUSES)
