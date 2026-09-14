@@ -1,0 +1,156 @@
+# [2026-09-14T04:18:09+00:00] score__folds: /workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/score_eft_rows.py
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260913T224535Z", "CUDA_VISIBLE_DEVICES": "0,1,2,3", "HF_HUB_OFFLINE": "1", "HF_HOME": "/workspace/hf", "SCIMT_EKFAC_SCORE_EFT_ROWS_CONFIG": "/workspace/attribution/evidence/configs/score__folds.json"}
+[04:18:10] score_eft_rows mode=main model=google/gemma-3-12b-it tokenizer=google/gemma-3-12b-it
+[04:18:28] 6000 rows rendered; {"ambiguous": {"rows": 1500, "n_tokens_mean": 462.038}, "ambiguous_wrong": {"rows": 1500, "n_tokens_mean": 462.036}, "charter": {"rows": 1500, "n_tokens_mean": 462.63866666666667}, "coin": {"rows": 1500, "n_tokens_mean": 462.62466666666666}}; max 488 tokens
+[04:18:29] pass folds: 1200 rows (episode (all rows of each chosen episode), rows_filter=300, episode_seed=20260913)
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/1065 [00:00<?, ?it/s]Loading weights: 100%|██████████| 1065/1065 [00:00<00:00, 13461.67it/s]
+[04:18:35] manifest dad45787737b included=625 numel=10759155456
+[04:18:35] cuda:1: 149.6 GB free of 150.1 GB; budget 130.0 GB
+[04:18:36] cuda:2: 149.6 GB free of 150.1 GB; budget 130.0 GB
+[04:18:36] cuda:3: 149.6 GB free of 150.1 GB; budget 130.0 GB
+[04:18:36] 
+  device  params           numel   K  resident    grad  scratch    total   budget fits
+  cuda:1     208   3,586,383,872  12     86.1G    7.2G     3.5G    96.7G   130.0G yes
+  cuda:2     208   3,586,383,872  12     86.1G    7.2G     3.5G    96.7G   130.0G yes
+  cuda:3     209   3,586,387,712  12     86.1G    7.2G     3.5G    96.7G   130.0G yes
+/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/score_eft_rows.py:810: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:213.)
+  staging = torch.from_numpy(window).to(shard.device)
+[04:18:48] staged dolmino__inv0.1__f0 in 10.4s
+[04:18:58] staged dolmino__inv0.1__f1 in 10.9s
+[04:19:09] staged charter_worked__inv0.1__f0 in 10.9s
+[04:19:20] staged charter_worked__inv0.1__f1 in 10.9s
+[04:19:31] staged charter_noex__inv0.1__f0 in 10.9s
+[04:19:42] staged charter_noex__inv0.1__f1 in 10.9s
+[04:19:53] staged coin__inv0.1__f0 in 10.9s
+[04:20:04] staged coin__inv0.1__f1 in 10.9s
+[04:20:15] staged coin_worked__inv0.1__f0 in 10.9s
+[04:20:26] staged coin_worked__inv0.1__f1 in 10.9s
+[04:20:37] staged coin_noex__inv0.1__f0 in 10.9s
+[04:20:48] staged coin_noex__inv0.1__f1 in 11.1s
+[04:20:49] vector norms {"dolmino__inv0.1__f0": "3.3633e+09", "dolmino__inv0.1__f1": "3.3074e+09", "charter_worked__inv0.1__f0": "6.2340e+09", "charter_worked__inv0.1__f1": "6.2892e+09", "charter_noex__inv0.1__f0": "7.4292e+09", "charter_noex__inv0.1__f1": "7.5499e+09", "coin__inv0.1__f0": "6.1214e+09", "coin__inv0.1__f1": "6.1693e+09", "coin_worked__inv0.1__f0": "5.0025e+09", "coin_worked__inv0.1__f1": "5.0829e+09", "coin_noex__inv0.1__f0": "7.6007e+09", "coin_noex__inv0.1__f1": "8.0607e+09"} -> /workspace/attribution/eft_scores/scores/vector_norms.json
+[04:20:49] vector cosines -> /workspace/attribution/eft_scores/scores/vector_cosines.json: {"dolmino__inv0.1__f0|dolmino__inv0.1__f1": 0.4967, "dolmino__inv0.1__f0|charter_worked__inv0.1__f0": 0.381, "dolmino__inv0.1__f0|charter_worked__inv0.1__f1": 0.3779, "dolmino__inv0.1__f0|charter_noex__inv0.1__f0": 0.3734, "dolmino__inv0.1__f0|charter_noex__inv0.1__f1": 0.3448, "dolmino__inv0.1__f0|coin__inv0.1__f0": 0.351, "dolmino__inv0.1__f0|coin__inv0.1__f1": 0.3581, "dolmino__inv0.1__f0|coin_worked__inv0.1__f0": 0.3472, "dolmino__inv0.1__f0|coin_worked__inv0.1__f1": 0.3525, "dolmino__inv0.1__f0|coin_noex__inv0.1__f0": 0.3478, "dolmino__inv0.1__f0|coin_noex__inv0.1__f1": 0.312, "dolmino__inv0.1__f1|charter_worked__inv0.1__f0": 0.3724, "dolmino__inv0.1__f1|charter_worked__inv0.1__f1": 0.3736, "dolmino__inv0.1__f1|charter_noex__inv0.1__f0": 0.3627, "dolmino__inv0.1__f1|charter_noex__inv0.1__f1": 0.339, "dolmino__inv0.1__f1|coin__inv0.1__f0": 0.3459, "dolmino__inv0.1__f1|coin__inv0.1__f1": 0.3524, "dolmino__inv0.1__f1|coin_worked__inv0.1__f0": 0.3371, "dolmino__inv0.1__f1|coin_worked__inv0.1__f1": 0.3407, "dolmino__inv0.1__f1|coin_noex__inv0.1__f0": 0.3448, "dolmino__inv0.1__f1|coin_noex__inv0.1__f1": 0.306, "charter_worked__inv0.1__f0|charter_worked__inv0.1__f1": 0.8382, "charter_worked__inv0.1__f0|charter_noex__inv0.1__f0": 0.8095, "charter_worked__inv0.1__f0|charter_noex__inv0.1__f1": 0.7892, "charter_worked__inv0.1__f0|coin__inv0.1__f0": 0.7037, "charter_worked__inv0.1__f0|coin__inv0.1__f1": 0.698, "charter_worked__inv0.1__f0|coin_worked__inv0.1__f0": 0.65, "charter_worked__inv0.1__f0|coin_worked__inv0.1__f1": 0.6445, "charter_worked__inv0.1__f0|coin_noex__inv0.1__f0": 0.6996, "charter_worked__inv0.1__f0|coin_noex__inv0.1__f1": 0.6431, "charter_worked__inv0.1__f1|charter_noex__inv0.1__f0": 0.824, "charter_worked__inv0.1__f1|charter_noex__inv0.1__f1": 0.8097, "charter_worked__inv0.1__f1|coin__inv0.1__f0": 0.7134, "charter_worked__inv0.1__f1|coin__inv0.1__f1": 0.7108, "charter_worked__inv0.1__f1|coin_worked__inv0.1__f0": 0.6541, "charter_worked__inv0.1__f1|coin_worked__inv0.1__f1": 0.6498, "charter_worked__inv0.1__f1|coin_noex__inv0.1__f0": 0.7157, "charter_worked__inv0.1__f1|coin_noex__inv0.1__f1": 0.6642, "charter_noex__inv0.1__f0|charter_noex__inv0.1__f1": 0.85, "charter_noex__inv0.1__f0|coin__inv0.1__f0": 0.7066, "charter_noex__inv0.1__f0|coin__inv0.1__f1": 0.7083, "charter_noex__inv0.1__f0|coin_worked__inv0.1__f0": 0.6055, "charter_noex__inv0.1__f0|coin_worked__inv0.1__f1": 0.6076, "charter_noex__inv0.1__f0|coin_noex__inv0.1__f0": 0.741, "charter_noex__inv0.1__f0|coin_noex__inv0.1__f1": 0.6883, "charter_noex__inv0.1__f1|coin__inv0.1__f0": 0.688, "charter_noex__inv0.1__f1|coin__inv0.1__f1": 0.6914, "charter_noex__inv0.1__f1|coin_worked__inv0.1__f0": 0.5923, "charter_noex__inv0.1__f1|coin_worked__inv0.1__f1": 0.5903, "charter_noex__inv0.1__f1|coin_noex__inv0.1__f0": 0.7221, "charter_noex__inv0.1__f1|coin_noex__inv0.1__f1": 0.685, "coin__inv0.1__f0|coin__inv0.1__f1": 0.8184, "coin__inv0.1__f0|coin_worked__inv0.1__f0": 0.7819, "coin__inv0.1__f0|coin_worked__inv0.1__f1": 0.778, "coin__inv0.1__f0|coin_noex__inv0.1__f0": 0.8036, "coin__inv0.1__f0|coin_noex__inv0.1__f1": 0.7445, "coin__inv0.1__f1|coin_worked__inv0.1__f0": 0.7813, "coin__inv0.1__f1|coin_worked__inv0.1__f1": 0.7849, "coin__inv0.1__f1|coin_noex__inv0.1__f0": 0.8005, "coin__inv0.1__f1|coin_noex__inv0.1__f1": 0.7553, "coin_worked__inv0.1__f0|coin_worked__inv0.1__f1": 0.8277, "coin_worked__inv0.1__f0|coin_noex__inv0.1__f0": 0.7055, "coin_worked__inv0.1__f0|coin_noex__inv0.1__f1": 0.6637, "coin_worked__inv0.1__f1|coin_noex__inv0.1__f0": 0.7064, "coin_worked__inv0.1__f1|coin_noex__inv0.1__f1": 0.6656, "coin_noex__inv0.1__f0|coin_noex__inv0.1__f1": 0.7712}
+[04:21:22] self-check dolmino__inv0.1__f0: grad-path dot 1.131166e+19, gram 1.131193e+19 vs host 1.131160e+19 (rel 5.36e-06 / 2.91e-05)
+`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.
+[04:21:27] row 1/1200 charter:ekfac-eft-v1-con-00004 loss=40.500 |g|=8.839e+03 5.09s | 0.20 rows/s (target 1.0) ETA 102 min | peak 24.9 GB
+[04:22:00] row 11/1200 ambiguous:ekfac-eft-v1-agr-00008 loss=23.375 |g|=6.366e+03 3.27s | 0.29 rows/s (target 1.0) ETA 68 min | peak 24.9 GB
+[04:22:23] row 21/1200 charter:ekfac-eft-v1-con-00016 loss=32.125 |g|=1.723e+04 3.25s | 0.34 rows/s (target 1.0) ETA 57 min | peak 24.9 GB
+[04:22:38] row 31/1200 ambiguous:ekfac-eft-v1-agr-00036 loss=28.636 |g|=7.342e+03 3.83s | 0.41 rows/s (target 1.0) ETA 47 min | peak 24.9 GB
+[04:22:49] row 41/1200 charter:ekfac-eft-v1-con-00047 loss=21.126 |g|=6.751e+03 0.47s | 0.48 rows/s (target 1.0) ETA 41 min | peak 24.9 GB
+[04:23:02] row 51/1200 ambiguous:ekfac-eft-v1-agr-00055 loss=23.250 |g|=7.601e+03 3.25s | 0.51 rows/s (target 1.0) ETA 38 min | peak 24.9 GB
+[04:23:10] row 61/1200 charter:ekfac-eft-v1-con-00066 loss=27.002 |g|=7.818e+03 0.47s | 0.56 rows/s (target 1.0) ETA 34 min | peak 24.9 GB
+[04:23:21] row 71/1200 ambiguous:ekfac-eft-v1-agr-00083 loss=24.188 |g|=7.413e+03 0.47s | 0.60 rows/s (target 1.0) ETA 32 min | peak 24.9 GB
+[04:23:27] row 81/1200 charter:ekfac-eft-v1-con-00110 loss=26.876 |g|=1.047e+04 0.73s | 0.65 rows/s (target 1.0) ETA 29 min | peak 24.9 GB
+[04:23:43] row 91/1200 ambiguous:ekfac-eft-v1-agr-00107 loss=24.201 |g|=7.070e+03 3.28s | 0.64 rows/s (target 1.0) ETA 29 min | peak 24.9 GB
+[04:23:48] row 101/1200 charter:ekfac-eft-v1-con-00131 loss=21.752 |g|=9.707e+03 0.47s | 0.69 rows/s (target 1.0) ETA 27 min | peak 24.9 GB
+[04:24:00] row 111/1200 ambiguous:ekfac-eft-v1-agr-00140 loss=26.018 |g|=7.047e+03 0.48s | 0.70 rows/s (target 1.0) ETA 26 min | peak 24.9 GB
+[04:24:12] row 121/1200 charter:ekfac-eft-v1-con-00154 loss=35.875 |g|=9.246e+03 0.47s | 0.71 rows/s (target 1.0) ETA 25 min | peak 24.9 GB
+[04:24:17] row 131/1200 ambiguous:ekfac-eft-v1-agr-00173 loss=22.625 |g|=7.768e+03 0.47s | 0.75 rows/s (target 1.0) ETA 24 min | peak 24.9 GB
+[04:24:22] row 141/1200 charter:ekfac-eft-v1-con-00172 loss=34.000 |g|=1.085e+04 0.47s | 0.79 rows/s (target 1.0) ETA 22 min | peak 24.9 GB
+[04:24:27] row 151/1200 ambiguous:ekfac-eft-v1-agr-00192 loss=20.875 |g|=6.955e+03 0.48s | 0.82 rows/s (target 1.0) ETA 21 min | peak 24.9 GB
+[04:24:38] row 161/1200 charter:ekfac-eft-v1-con-00196 loss=31.625 |g|=7.700e+03 0.48s | 0.82 rows/s (target 1.0) ETA 21 min | peak 24.9 GB
+[04:24:43] row 171/1200 ambiguous:ekfac-eft-v1-agr-00208 loss=25.500 |g|=6.716e+03 0.47s | 0.85 rows/s (target 1.0) ETA 20 min | peak 24.9 GB
+[04:24:48] row 181/1200 charter:ekfac-eft-v1-con-00217 loss=20.501 |g|=6.907e+03 0.48s | 0.88 rows/s (target 1.0) ETA 19 min | peak 24.9 GB
+[04:24:57] row 191/1200 ambiguous:ekfac-eft-v1-agr-00249 loss=29.126 |g|=8.129e+03 0.77s | 0.89 rows/s (target 1.0) ETA 19 min | peak 24.9 GB
+[04:25:02] row 201/1200 charter:ekfac-eft-v1-con-00233 loss=21.625 |g|=8.043e+03 0.47s | 0.92 rows/s (target 1.0) ETA 18 min | peak 24.9 GB
+[04:25:07] row 211/1200 ambiguous:ekfac-eft-v1-agr-00274 loss=21.376 |g|=7.392e+03 0.48s | 0.94 rows/s (target 1.0) ETA 18 min | peak 24.9 GB
+[04:25:12] row 221/1200 charter:ekfac-eft-v1-con-00251 loss=25.000 |g|=8.096e+03 0.47s | 0.96 rows/s (target 1.0) ETA 17 min | peak 24.9 GB
+[04:25:17] row 231/1200 ambiguous:ekfac-eft-v1-agr-00292 loss=24.500 |g|=7.337e+03 0.47s | 0.98 rows/s (target 1.0) ETA 16 min | peak 24.9 GB
+[04:25:22] row 241/1200 charter:ekfac-eft-v1-con-00263 loss=31.350 |g|=9.174e+03 0.47s | 1.01 rows/s (target 1.0) ETA 16 min | peak 24.9 GB
+[04:25:33] row 251/1200 ambiguous:ekfac-eft-v1-agr-00320 loss=25.126 |g|=7.811e+03 0.47s | 1.00 rows/s (target 1.0) ETA 16 min | peak 24.9 GB
+[04:25:38] row 261/1200 charter:ekfac-eft-v1-con-00275 loss=22.007 |g|=7.049e+03 0.48s | 1.02 rows/s (target 1.0) ETA 15 min | peak 24.9 GB
+[04:25:43] row 271/1200 ambiguous:ekfac-eft-v1-agr-00351 loss=29.704 |g|=8.655e+03 0.48s | 1.04 rows/s (target 1.0) ETA 15 min | peak 24.9 GB
+[04:25:48] row 281/1200 charter:ekfac-eft-v1-con-00297 loss=29.750 |g|=7.791e+03 0.48s | 1.06 rows/s (target 1.0) ETA 14 min | peak 24.9 GB
+[04:25:53] row 291/1200 ambiguous:ekfac-eft-v1-agr-00369 loss=23.501 |g|=6.345e+03 0.48s | 1.07 rows/s (target 1.0) ETA 14 min | peak 24.9 GB
+[04:26:05] row 301/1200 charter:ekfac-eft-v1-con-00330 loss=31.000 |g|=9.608e+03 0.76s | 1.07 rows/s (target 1.0) ETA 14 min | peak 24.9 GB
+[04:26:10] row 311/1200 ambiguous:ekfac-eft-v1-agr-00400 loss=24.000 |g|=7.648e+03 0.48s | 1.08 rows/s (target 1.0) ETA 14 min | peak 24.9 GB
+[04:26:15] row 321/1200 charter:ekfac-eft-v1-con-00346 loss=26.626 |g|=6.972e+03 0.48s | 1.10 rows/s (target 1.0) ETA 13 min | peak 24.9 GB
+[04:26:20] row 331/1200 ambiguous:ekfac-eft-v1-agr-00427 loss=21.625 |g|=7.287e+03 0.48s | 1.11 rows/s (target 1.0) ETA 13 min | peak 24.9 GB
+[04:26:25] row 341/1200 charter:ekfac-eft-v1-con-00378 loss=32.250 |g|=1.149e+04 0.47s | 1.13 rows/s (target 1.0) ETA 13 min | peak 24.9 GB
+[04:26:30] row 351/1200 ambiguous:ekfac-eft-v1-agr-00447 loss=27.127 |g|=9.512e+03 0.48s | 1.14 rows/s (target 1.0) ETA 12 min | peak 24.9 GB
+[04:26:35] row 361/1200 charter:ekfac-eft-v1-con-00397 loss=21.294 |g|=9.073e+03 0.47s | 1.16 rows/s (target 1.0) ETA 12 min | peak 24.9 GB
+[04:26:40] row 371/1200 ambiguous:ekfac-eft-v1-agr-00481 loss=25.750 |g|=6.804e+03 0.48s | 1.17 rows/s (target 1.0) ETA 12 min | peak 24.9 GB
+[04:26:45] row 381/1200 charter:ekfac-eft-v1-con-00408 loss=32.625 |g|=7.847e+03 0.48s | 1.18 rows/s (target 1.0) ETA 12 min | peak 24.9 GB
+[04:26:53] row 391/1200 ambiguous:ekfac-eft-v1-agr-00524 loss=31.262 |g|=8.125e+03 0.48s | 1.18 rows/s (target 1.0) ETA 11 min | peak 24.9 GB
+[04:26:58] row 401/1200 charter:ekfac-eft-v1-con-00431 loss=24.349 |g|=1.035e+04 0.48s | 1.19 rows/s (target 1.0) ETA 11 min | peak 24.9 GB
+[04:27:03] row 411/1200 ambiguous:ekfac-eft-v1-agr-00550 loss=22.665 |g|=7.368e+03 0.73s | 1.20 rows/s (target 1.0) ETA 11 min | peak 24.9 GB
+[04:27:08] row 421/1200 charter:ekfac-eft-v1-con-00452 loss=30.280 |g|=8.253e+03 0.48s | 1.22 rows/s (target 1.0) ETA 11 min | peak 24.9 GB
+[04:27:13] row 431/1200 ambiguous:ekfac-eft-v1-agr-00572 loss=24.754 |g|=6.884e+03 0.47s | 1.23 rows/s (target 1.0) ETA 10 min | peak 24.9 GB
+[04:27:18] row 441/1200 charter:ekfac-eft-v1-con-00486 loss=36.018 |g|=1.035e+04 0.47s | 1.24 rows/s (target 1.0) ETA 10 min | peak 24.9 GB
+[04:27:23] row 451/1200 ambiguous:ekfac-eft-v1-agr-00597 loss=25.259 |g|=7.565e+03 0.47s | 1.25 rows/s (target 1.0) ETA 10 min | peak 24.9 GB
+[04:27:28] row 461/1200 charter:ekfac-eft-v1-con-00521 loss=20.378 |g|=7.296e+03 0.48s | 1.26 rows/s (target 1.0) ETA 10 min | peak 24.9 GB
+[04:27:34] row 471/1200 ambiguous:ekfac-eft-v1-agr-00613 loss=25.250 |g|=6.797e+03 0.47s | 1.27 rows/s (target 1.0) ETA 10 min | peak 24.9 GB
+[04:27:39] row 481/1200 charter:ekfac-eft-v1-con-00564 loss=36.126 |g|=9.334e+03 0.47s | 1.28 rows/s (target 1.0) ETA 9 min | peak 24.9 GB
+[04:27:44] row 491/1200 ambiguous:ekfac-eft-v1-agr-00651 loss=25.814 |g|=8.201e+03 0.48s | 1.29 rows/s (target 1.0) ETA 9 min | peak 24.9 GB
+[04:27:49] row 501/1200 charter:ekfac-eft-v1-con-00578 loss=23.875 |g|=6.972e+03 0.48s | 1.30 rows/s (target 1.0) ETA 9 min | peak 24.9 GB
+[04:27:54] row 511/1200 ambiguous:ekfac-eft-v1-agr-00680 loss=37.250 |g|=8.093e+03 0.47s | 1.31 rows/s (target 1.0) ETA 9 min | peak 24.9 GB
+[04:27:59] row 521/1200 charter:ekfac-eft-v1-con-00596 loss=25.125 |g|=9.914e+03 0.73s | 1.31 rows/s (target 1.0) ETA 9 min | peak 24.9 GB
+[04:28:04] row 531/1200 ambiguous:ekfac-eft-v1-agr-00715 loss=25.375 |g|=7.342e+03 0.47s | 1.32 rows/s (target 1.0) ETA 8 min | peak 24.9 GB
+[04:28:09] row 541/1200 charter:ekfac-eft-v1-con-00634 loss=30.004 |g|=8.599e+03 0.48s | 1.33 rows/s (target 1.0) ETA 8 min | peak 24.9 GB
+[04:28:14] row 551/1200 ambiguous:ekfac-eft-v1-agr-00747 loss=24.952 |g|=7.066e+03 0.47s | 1.34 rows/s (target 1.0) ETA 8 min | peak 24.9 GB
+[04:28:19] row 561/1200 charter:ekfac-eft-v1-con-00659 loss=17.021 |g|=9.053e+03 0.47s | 1.35 rows/s (target 1.0) ETA 8 min | peak 24.9 GB
+[04:28:24] row 571/1200 ambiguous:ekfac-eft-v1-agr-00762 loss=27.502 |g|=7.447e+03 0.47s | 1.35 rows/s (target 1.0) ETA 8 min | peak 24.9 GB
+[04:28:29] row 581/1200 charter:ekfac-eft-v1-con-00675 loss=29.250 |g|=7.623e+03 0.47s | 1.36 rows/s (target 1.0) ETA 8 min | peak 24.9 GB
+[04:28:34] row 591/1200 ambiguous:ekfac-eft-v1-agr-00781 loss=27.392 |g|=8.603e+03 0.47s | 1.37 rows/s (target 1.0) ETA 7 min | peak 24.9 GB
+[04:28:39] row 601/1200 charter:ekfac-eft-v1-con-00717 loss=23.126 |g|=8.169e+03 0.48s | 1.38 rows/s (target 1.0) ETA 7 min | peak 24.9 GB
+[04:28:44] row 611/1200 ambiguous:ekfac-eft-v1-agr-00811 loss=23.002 |g|=7.434e+03 0.47s | 1.38 rows/s (target 1.0) ETA 7 min | peak 24.9 GB
+[04:28:49] row 621/1200 charter:ekfac-eft-v1-con-00752 loss=32.000 |g|=9.592e+03 0.47s | 1.39 rows/s (target 1.0) ETA 7 min | peak 24.9 GB
+[04:28:54] row 631/1200 ambiguous:ekfac-eft-v1-agr-00830 loss=28.509 |g|=7.538e+03 0.74s | 1.40 rows/s (target 1.0) ETA 7 min | peak 24.9 GB
+[04:28:59] row 641/1200 charter:ekfac-eft-v1-con-00764 loss=32.000 |g|=9.253e+03 0.47s | 1.40 rows/s (target 1.0) ETA 7 min | peak 24.9 GB
+[04:29:04] row 651/1200 ambiguous:ekfac-eft-v1-agr-00861 loss=31.751 |g|=8.090e+03 0.47s | 1.41 rows/s (target 1.0) ETA 6 min | peak 24.9 GB
+[04:29:09] row 661/1200 charter:ekfac-eft-v1-con-00801 loss=32.501 |g|=8.468e+03 0.48s | 1.42 rows/s (target 1.0) ETA 6 min | peak 24.9 GB
+[04:29:14] row 671/1200 ambiguous:ekfac-eft-v1-agr-00894 loss=26.257 |g|=6.504e+03 0.47s | 1.42 rows/s (target 1.0) ETA 6 min | peak 24.9 GB
+[04:29:19] row 681/1200 charter:ekfac-eft-v1-con-00829 loss=24.577 |g|=7.316e+03 0.47s | 1.43 rows/s (target 1.0) ETA 6 min | peak 24.9 GB
+[04:29:24] row 691/1200 ambiguous:ekfac-eft-v1-agr-00913 loss=29.626 |g|=7.836e+03 0.47s | 1.43 rows/s (target 1.0) ETA 6 min | peak 24.9 GB
+[04:29:29] row 701/1200 charter:ekfac-eft-v1-con-00852 loss=32.750 |g|=9.527e+03 0.47s | 1.44 rows/s (target 1.0) ETA 6 min | peak 24.9 GB
+[04:29:34] row 711/1200 ambiguous:ekfac-eft-v1-agr-00929 loss=23.163 |g|=6.456e+03 0.47s | 1.45 rows/s (target 1.0) ETA 6 min | peak 24.9 GB
+[04:29:39] row 721/1200 charter:ekfac-eft-v1-con-00864 loss=22.627 |g|=7.185e+03 0.47s | 1.45 rows/s (target 1.0) ETA 6 min | peak 24.9 GB
+[04:29:44] row 731/1200 ambiguous:ekfac-eft-v1-agr-00939 loss=28.155 |g|=8.489e+03 0.47s | 1.46 rows/s (target 1.0) ETA 5 min | peak 24.9 GB
+[04:29:49] row 741/1200 charter:ekfac-eft-v1-con-00882 loss=30.818 |g|=8.013e+03 0.73s | 1.46 rows/s (target 1.0) ETA 5 min | peak 24.9 GB
+[04:29:54] row 751/1200 ambiguous:ekfac-eft-v1-agr-00986 loss=29.877 |g|=7.539e+03 0.48s | 1.47 rows/s (target 1.0) ETA 5 min | peak 24.9 GB
+[04:29:59] row 761/1200 charter:ekfac-eft-v1-con-00928 loss=23.635 |g|=1.007e+04 0.48s | 1.47 rows/s (target 1.0) ETA 5 min | peak 24.9 GB
+[04:30:04] row 771/1200 ambiguous:ekfac-eft-v1-agr-01000 loss=28.412 |g|=7.978e+03 0.47s | 1.48 rows/s (target 1.0) ETA 5 min | peak 24.9 GB
+[04:30:09] row 781/1200 charter:ekfac-eft-v1-con-00983 loss=29.883 |g|=8.518e+03 0.47s | 1.48 rows/s (target 1.0) ETA 5 min | peak 24.9 GB
+[04:30:14] row 791/1200 ambiguous:ekfac-eft-v1-agr-01010 loss=34.250 |g|=7.703e+03 0.47s | 1.49 rows/s (target 1.0) ETA 5 min | peak 24.9 GB
+[04:30:19] row 801/1200 charter:ekfac-eft-v1-con-01011 loss=34.250 |g|=8.959e+03 0.47s | 1.49 rows/s (target 1.0) ETA 4 min | peak 24.9 GB
+[04:30:24] row 811/1200 ambiguous:ekfac-eft-v1-agr-01026 loss=23.099 |g|=6.968e+03 0.47s | 1.50 rows/s (target 1.0) ETA 4 min | peak 24.9 GB
+[04:30:29] row 821/1200 charter:ekfac-eft-v1-con-01026 loss=32.504 |g|=8.300e+03 0.47s | 1.50 rows/s (target 1.0) ETA 4 min | peak 24.9 GB
+[04:30:34] row 831/1200 ambiguous:ekfac-eft-v1-agr-01044 loss=24.126 |g|=7.273e+03 0.47s | 1.50 rows/s (target 1.0) ETA 4 min | peak 24.9 GB
+[04:30:39] row 841/1200 charter:ekfac-eft-v1-con-01060 loss=26.780 |g|=8.323e+03 0.47s | 1.51 rows/s (target 1.0) ETA 4 min | peak 24.9 GB
+[04:30:45] row 851/1200 ambiguous:ekfac-eft-v1-agr-01077 loss=21.250 |g|=7.834e+03 0.73s | 1.51 rows/s (target 1.0) ETA 4 min | peak 24.9 GB
+[04:30:50] row 861/1200 charter:ekfac-eft-v1-con-01082 loss=29.875 |g|=1.064e+04 0.47s | 1.52 rows/s (target 1.0) ETA 4 min | peak 24.9 GB
+[04:30:55] row 871/1200 ambiguous:ekfac-eft-v1-agr-01086 loss=25.759 |g|=8.624e+03 0.47s | 1.52 rows/s (target 1.0) ETA 4 min | peak 24.9 GB
+[04:31:00] row 881/1200 charter:ekfac-eft-v1-con-01091 loss=23.274 |g|=1.377e+04 0.47s | 1.53 rows/s (target 1.0) ETA 3 min | peak 24.9 GB
+[04:31:08] row 891/1200 ambiguous:ekfac-eft-v1-agr-01103 loss=23.875 |g|=7.080e+03 0.47s | 1.52 rows/s (target 1.0) ETA 3 min | peak 24.9 GB
+[04:31:13] row 901/1200 charter:ekfac-eft-v1-con-01102 loss=28.125 |g|=8.424e+03 0.48s | 1.53 rows/s (target 1.0) ETA 3 min | peak 24.9 GB
+[04:31:18] row 911/1200 ambiguous:ekfac-eft-v1-agr-01121 loss=30.275 |g|=8.391e+03 0.47s | 1.53 rows/s (target 1.0) ETA 3 min | peak 24.9 GB
+[04:31:23] row 921/1200 charter:ekfac-eft-v1-con-01128 loss=26.225 |g|=8.808e+03 0.47s | 1.53 rows/s (target 1.0) ETA 3 min | peak 24.9 GB
+[04:31:28] row 931/1200 ambiguous:ekfac-eft-v1-agr-01144 loss=26.577 |g|=7.237e+03 0.47s | 1.54 rows/s (target 1.0) ETA 3 min | peak 24.9 GB
+[04:31:33] row 941/1200 charter:ekfac-eft-v1-con-01162 loss=24.500 |g|=9.584e+03 0.47s | 1.54 rows/s (target 1.0) ETA 3 min | peak 24.9 GB
+[04:31:38] row 951/1200 ambiguous:ekfac-eft-v1-agr-01176 loss=22.876 |g|=7.105e+03 0.47s | 1.54 rows/s (target 1.0) ETA 3 min | peak 24.9 GB
+[04:31:43] row 961/1200 charter:ekfac-eft-v1-con-01181 loss=27.630 |g|=8.164e+03 0.74s | 1.55 rows/s (target 1.0) ETA 3 min | peak 24.9 GB
+[04:31:48] row 971/1200 ambiguous:ekfac-eft-v1-agr-01204 loss=26.625 |g|=9.629e+03 0.47s | 1.55 rows/s (target 1.0) ETA 2 min | peak 24.9 GB
+[04:31:53] row 981/1200 charter:ekfac-eft-v1-con-01204 loss=29.250 |g|=8.338e+03 0.48s | 1.55 rows/s (target 1.0) ETA 2 min | peak 24.9 GB
+[04:32:02] row 991/1200 ambiguous:ekfac-eft-v1-agr-01236 loss=31.500 |g|=7.773e+03 3.83s | 1.55 rows/s (target 1.0) ETA 2 min | peak 24.9 GB
+[04:32:10] row 1001/1200 charter:ekfac-eft-v1-con-01223 loss=20.875 |g|=7.393e+03 0.47s | 1.55 rows/s (target 1.0) ETA 2 min | peak 24.9 GB
+[04:32:15] row 1011/1200 ambiguous:ekfac-eft-v1-agr-01251 loss=24.250 |g|=7.383e+03 0.48s | 1.55 rows/s (target 1.0) ETA 2 min | peak 24.9 GB
+[04:32:20] row 1021/1200 charter:ekfac-eft-v1-con-01250 loss=30.875 |g|=8.572e+03 0.48s | 1.55 rows/s (target 1.0) ETA 2 min | peak 24.9 GB
+[04:32:25] row 1031/1200 ambiguous:ekfac-eft-v1-agr-01272 loss=23.500 |g|=7.075e+03 0.48s | 1.56 rows/s (target 1.0) ETA 2 min | peak 24.9 GB
+[04:32:30] row 1041/1200 charter:ekfac-eft-v1-con-01269 loss=30.252 |g|=7.096e+03 0.47s | 1.56 rows/s (target 1.0) ETA 2 min | peak 24.9 GB
+[04:32:35] row 1051/1200 ambiguous:ekfac-eft-v1-agr-01295 loss=24.002 |g|=7.301e+03 0.47s | 1.56 rows/s (target 1.0) ETA 2 min | peak 24.9 GB
+[04:32:40] row 1061/1200 charter:ekfac-eft-v1-con-01293 loss=28.664 |g|=9.052e+03 0.47s | 1.57 rows/s (target 1.0) ETA 1 min | peak 24.9 GB
+[04:32:45] row 1071/1200 ambiguous:ekfac-eft-v1-agr-01343 loss=29.875 |g|=9.137e+03 0.73s | 1.57 rows/s (target 1.0) ETA 1 min | peak 24.9 GB
+[04:32:50] row 1081/1200 charter:ekfac-eft-v1-con-01328 loss=31.750 |g|=8.515e+03 0.48s | 1.57 rows/s (target 1.0) ETA 1 min | peak 24.9 GB
+[04:32:55] row 1091/1200 ambiguous:ekfac-eft-v1-agr-01375 loss=26.759 |g|=8.148e+03 0.48s | 1.57 rows/s (target 1.0) ETA 1 min | peak 24.9 GB
+[04:33:00] row 1101/1200 charter:ekfac-eft-v1-con-01345 loss=30.000 |g|=8.349e+03 0.47s | 1.58 rows/s (target 1.0) ETA 1 min | peak 24.9 GB
+[04:33:05] row 1111/1200 ambiguous:ekfac-eft-v1-agr-01408 loss=33.750 |g|=8.230e+03 0.47s | 1.58 rows/s (target 1.0) ETA 1 min | peak 24.9 GB
+[04:33:10] row 1121/1200 charter:ekfac-eft-v1-con-01368 loss=22.126 |g|=6.930e+03 0.48s | 1.58 rows/s (target 1.0) ETA 1 min | peak 24.9 GB
+[04:33:15] row 1131/1200 ambiguous:ekfac-eft-v1-agr-01424 loss=25.250 |g|=7.443e+03 0.47s | 1.59 rows/s (target 1.0) ETA 1 min | peak 24.9 GB
+[04:33:20] row 1141/1200 charter:ekfac-eft-v1-con-01400 loss=24.501 |g|=9.146e+03 0.48s | 1.59 rows/s (target 1.0) ETA 1 min | peak 24.9 GB
+[04:33:25] row 1151/1200 ambiguous:ekfac-eft-v1-agr-01451 loss=25.500 |g|=8.034e+03 0.47s | 1.59 rows/s (target 1.0) ETA 1 min | peak 24.9 GB
+[04:33:30] row 1161/1200 charter:ekfac-eft-v1-con-01442 loss=24.672 |g|=7.509e+03 0.47s | 1.60 rows/s (target 1.0) ETA 0 min | peak 24.9 GB
+[04:33:35] row 1171/1200 ambiguous:ekfac-eft-v1-agr-01473 loss=23.125 |g|=7.909e+03 0.47s | 1.60 rows/s (target 1.0) ETA 0 min | peak 24.9 GB
+[04:33:40] row 1181/1200 charter:ekfac-eft-v1-con-01469 loss=30.501 |g|=8.621e+03 0.76s | 1.60 rows/s (target 1.0) ETA 0 min | peak 24.9 GB
+[04:33:45] row 1191/1200 ambiguous:ekfac-eft-v1-agr-01486 loss=30.125 |g|=7.869e+03 0.48s | 1.60 rows/s (target 1.0) ETA 0 min | peak 24.9 GB
+[04:33:50] row 1200/1200 ambiguous_wrong:ekfac-eft-v1-agr-01491 loss=33.876 |g|=9.161e+03 0.48s | 1.60 rows/s (target 1.0) ETA 0 min | peak 24.9 GB
+[04:33:50] done: 1200 rows in 15.7 min (1.605 rows/s); receipt /workspace/attribution/eft_scores/evidence/score_eft_rows__main__20260914T041810Z.json

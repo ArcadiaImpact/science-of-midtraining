@@ -1,0 +1,61 @@
+{
+  "env_file": "/workspace/attribution/env.sh",
+  "finished_at": "2026-09-13T22:43:49+00:00",
+  "hf_home": "/workspace/hf",
+  "host": {
+    "cgroup_limit_gb": 1007.0,
+    "disk_free_gb_at_bootstrap": 3146.0,
+    "effective_ram_gb": 1007.0,
+    "gpu_count": 4,
+    "gpu_names": [
+      "NVIDIA H200",
+      "NVIDIA H200",
+      "NVIDIA H200",
+      "NVIDIA H200"
+    ],
+    "hostname": "f484cc096795",
+    "mem_total_gb": 2164.0,
+    "nofile_soft_limit": 65536,
+    "thresholds": {
+      "min_free_disk_gb": 800.0,
+      "min_host_ram_gb": 400.0,
+      "min_net_mbps": 10.0
+    }
+  },
+  "models": {
+    "it": {
+      "bytes": 24414163446,
+      "hf_id": "google/gemma-3-12b-it",
+      "n_files": 18,
+      "path": "/workspace/hf/hub/models--google--gemma-3-12b-it/snapshots/96b6f1eccf38110c56df3a15bffe176da04bfd80",
+      "revision": "96b6f1eccf38110c56df3a15bffe176da04bfd80",
+      "sha": "96b6f1eccf38110c56df3a15bffe176da04bfd80"
+    },
+    "pt": {
+      "bytes": 24414159100,
+      "hf_id": "google/gemma-3-12b-pt",
+      "n_files": 17,
+      "path": "/workspace/hf/hub/models--google--gemma-3-12b-pt/snapshots/295efb63d01a7017928f273a94ebb86105c9526f",
+      "revision": "295efb63d01a7017928f273a94ebb86105c9526f",
+      "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+    }
+  },
+  "repo": {
+    "commit": "0d911276a1864817f257991dc861f6b04ac5e12c",
+    "path": "/workspace/scimt"
+  },
+  "schema": "ekfac_dataset_attribution_v1/bootstrap/1",
+  "started_at": "2026-09-13T22:43:37+00:00",
+  "status": "ok",
+  "venv": {
+    "huggingface_hub": "1.16.1",
+    "kronfluence": "1.0.1",
+    "numpy": "2.3.5",
+    "python": "3.12.14",
+    "seaborn": "0.13.2",
+    "statsmodels": "0.14.6",
+    "torch": "2.11.0",
+    "transformers": "5.5.3",
+    "zstandard": "0.25.0"
+  }
+}

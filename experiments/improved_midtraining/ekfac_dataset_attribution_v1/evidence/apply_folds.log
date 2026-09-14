@@ -1,0 +1,23 @@
+# [2026-09-14T03:00:07+00:00] apply_folds: /workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/apply_inverse_gpu.py /workspace/attribution/evidence/configs/apply_folds.json
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260913T224535Z", "CUDA_VISIBLE_DEVICES": "0", "HF_HUB_OFFLINE": "1", "HF_HOME": "/workspace/hf"}
+[2026-09-14T03:00:08+00:00] load_ekfac(/workspace/attribution/ekfac_pt)
+[2026-09-14T03:05:31+00:00] 32 entries, 10.1% of coordinates, 139 s
+[2026-09-14T03:07:36+00:00] 64 entries, 19.3% of coordinates, 264 s
+[2026-09-14T03:09:48+00:00] 96 entries, 28.9% of coordinates, 396 s
+[2026-09-14T03:11:59+00:00] 128 entries, 38.6% of coordinates, 527 s
+[2026-09-14T03:14:05+00:00] 160 entries, 47.8% of coordinates, 652 s
+[2026-09-14T03:16:24+00:00] 192 entries, 57.9% of coordinates, 792 s
+[2026-09-14T03:18:21+00:00] 224 entries, 66.7% of coordinates, 909 s
+[2026-09-14T03:20:39+00:00] 256 entries, 76.7% of coordinates, 1046 s
+[2026-09-14T03:22:44+00:00] 288 entries, 86.0% of coordinates, 1172 s
+[2026-09-14T03:24:56+00:00] 320 entries, 95.6% of coordinates, 1304 s
+[2026-09-14T03:25:55+00:00] 352 entries, 100.0% of coordinates, 1363 s
+[2026-09-14T03:25:55+00:00] 384 entries, 100.0% of coordinates, 1363 s
+[2026-09-14T03:25:56+00:00] 416 entries, 100.0% of coordinates, 1363 s
+[2026-09-14T03:25:56+00:00] 448 entries, 100.0% of coordinates, 1363 s
+[2026-09-14T03:25:56+00:00] 480 entries, 100.0% of coordinates, 1363 s
+[2026-09-14T03:25:56+00:00] 512 entries, 100.0% of coordinates, 1364 s
+[2026-09-14T03:25:56+00:00] 544 entries, 100.0% of coordinates, 1364 s
+[2026-09-14T03:25:56+00:00] 576 entries, 100.0% of coordinates, 1364 s
+[2026-09-14T03:25:56+00:00] 608 entries, 100.0% of coordinates, 1364 s
+[2026-09-14T03:25:56+00:00] SCIMT-APPLY-INVERSE-DONE: 12 vector(s) (12 inputs x 1 dampings) in 1364 s

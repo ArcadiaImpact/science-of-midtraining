@@ -1,0 +1,39 @@
+{
+  "calibration_jsonl": "/workspace/attribution/datasets/dolmino_fit/sample.jsonl",
+  "dataset_fingerprint": "c3b76eb8f70aa9993371ea0f0b8087256102f9cc07e10d5d35f51eee51563599",
+  "ekfac_config": {
+    "batch_size": 1,
+    "covariance_module_partitions": 4,
+    "eigendecomposition_dtype": "float64",
+    "eigh_device": "cuda",
+    "lambda_module_partitions": 4,
+    "max_positions_per_sequence": 1,
+    "min_position_gap": 1,
+    "samples": 256,
+    "seed": 42,
+    "source_batch_size": 1,
+    "use_empirical_fisher": false
+  },
+  "included_numel": 10759155456,
+  "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+  "model": {
+    "dtype": "bfloat16",
+    "hf_id": "google/gemma-3-12b-pt",
+    "revision": "295efb63d01a7017928f273a94ebb86105c9526f",
+    "sha": "295efb63d01a7017928f273a94ebb86105c9526f",
+    "snapshot_dir": "/workspace/hf/hub/models--google--gemma-3-12b-pt/snapshots/295efb63d01a7017928f273a94ebb86105c9526f"
+  },
+  "n_sequences": 256,
+  "sequence_length": 4096,
+  "started_at": "2026-09-13T23:52:41+00:00",
+  "versions": {
+    "huggingface_hub": "1.16.1",
+    "kronfluence": "1.0.1",
+    "numpy": "2.3.5",
+    "python": "3.12.14",
+    "safetensors": "0.8.0",
+    "scimt_commit": "1457cc244d269b551bfcb60dc5b09b0f7929c603",
+    "torch": "2.11.0+cu128",
+    "transformers": "5.5.3"
+  }
+}

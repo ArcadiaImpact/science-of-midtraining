@@ -1,0 +1,23 @@
+{
+  "attempt": 1,
+  "passed": true,
+  "phase": "gate_c",
+  "projection": {
+    "covariance_partition0_seconds": 635.3069578111172,
+    "covariance_partitions": 4,
+    "eigh_seconds_estimate": 5400.0,
+    "elapsed_before_covariance_seconds": 320.4872393347323,
+    "export_seconds_estimate": 1800.0,
+    "lambda_partition_cost_ratio": 1.5,
+    "lambda_partitions": 4,
+    "lambda_seconds": 3811.841746866703,
+    "projected_total_hours": 3.8537657826238623,
+    "projected_total_seconds": 13873.556817445904,
+    "remaining_covariance_seconds": 1905.9208734333515
+  },
+  "run_id": "20260913T224535Z",
+  "source": "/workspace/attribution/evidence/fit/attempt1/fit_gate_covariance_partition0.json",
+  "status": "ok",
+  "summary": "projected fit total 13874 s (3.85 h) vs budget 16200 s (4.50 h); first covariance partition 635 s, 4 covariance + 4 lambda partitions, eigh label 5400 s",
+  "written_at": "2026-09-14T02:01:37+00:00"
+}

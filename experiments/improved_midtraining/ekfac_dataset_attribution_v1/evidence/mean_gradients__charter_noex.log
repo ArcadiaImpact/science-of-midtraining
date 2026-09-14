@@ -1,0 +1,67 @@
+# [2026-09-13T23:52:41+00:00] mean_gradients__charter_noex: /workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260913T224535Z", "CUDA_VISIBLE_DEVICES": "3", "HF_HUB_OFFLINE": "1", "HF_HOME": "/workspace/hf", "SCIMT_EKFAC_MEAN_GRADIENTS_CONFIG": "/workspace/attribution/evidence/configs/mean_gradients__charter_noex.json"}
+[23:52:42] mean_gradients dataset=charter_noex sample=/workspace/attribution/datasets/charter_noex/sample.jsonl
+[23:52:50] 1024 docs / 1532262 tokens -> 374 packed rows of 4096; folds [187, 187]
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/1065 [00:00<?, ?it/s]Loading weights: 100%|██████████| 1065/1065 [00:00<00:00, 12957.51it/s]
+[23:52:55] device cuda:0: 125.2 GB free of 150.1 GB after model load
+[23:52:55] memory estimate 132.5 GB vs available 149.6 GB ({"weights_gb": 24.37, "accumulators_gb": 86.07, "grads_in_flight_gb": 0.47, "logits_gb": 8.59, "activations_gb": 3.77, "overhead_gb": 3.0, "safety_factor": 1.05, "n_accumulators": 2, "total_gb": 132.45})
+[23:52:55] manifest dad45787737b included=625 numel=10759155456
+`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.
+[23:53:02] fold f0 row 1/187 loss=15979.204 |g|=1.223e+07 5.8s (5.8s/row, peak 125.1 GB)
+[23:53:21] fold f0 row 9/187 loss=16720.016 |g|=5.986e+05 2.5s (2.8s/row, peak 125.1 GB)
+[23:53:41] fold f0 row 17/187 loss=17265.156 |g|=9.493e+05 2.5s (2.7s/row, peak 125.1 GB)
+[23:54:01] fold f0 row 25/187 loss=16213.729 |g|=4.947e+05 2.5s (2.6s/row, peak 125.1 GB)
+[23:54:21] fold f0 row 33/187 loss=16329.574 |g|=3.866e+05 2.5s (2.6s/row, peak 125.1 GB)
+[23:54:41] fold f0 row 41/187 loss=15624.204 |g|=7.621e+05 2.5s (2.6s/row, peak 125.1 GB)
+[23:55:00] fold f0 row 49/187 loss=16276.835 |g|=3.222e+05 2.5s (2.5s/row, peak 125.1 GB)
+[23:55:20] fold f0 row 57/187 loss=15285.895 |g|=6.617e+05 2.5s (2.5s/row, peak 125.1 GB)
+[23:55:40] fold f0 row 65/187 loss=15864.284 |g|=7.123e+05 2.5s (2.5s/row, peak 125.1 GB)
+[23:56:00] fold f0 row 73/187 loss=16938.033 |g|=6.783e+05 2.5s (2.5s/row, peak 125.1 GB)
+[23:56:20] fold f0 row 81/187 loss=16334.014 |g|=3.520e+05 2.5s (2.5s/row, peak 125.1 GB)
+[23:56:39] fold f0 row 89/187 loss=14790.597 |g|=8.197e+05 2.5s (2.5s/row, peak 125.1 GB)
+[23:56:59] fold f0 row 97/187 loss=16339.827 |g|=5.231e+05 2.5s (2.5s/row, peak 125.1 GB)
+[23:57:19] fold f0 row 105/187 loss=13875.626 |g|=5.923e+05 2.5s (2.5s/row, peak 125.1 GB)
+[23:57:39] fold f0 row 113/187 loss=15622.877 |g|=1.057e+06 2.5s (2.5s/row, peak 125.1 GB)
+[23:57:59] fold f0 row 121/187 loss=17139.121 |g|=2.119e+06 2.5s (2.5s/row, peak 125.1 GB)
+[23:58:19] fold f0 row 129/187 loss=14407.408 |g|=3.054e+05 2.5s (2.5s/row, peak 125.1 GB)
+[23:58:39] fold f0 row 137/187 loss=15986.419 |g|=2.159e+06 2.6s (2.5s/row, peak 125.1 GB)
+[23:58:59] fold f0 row 145/187 loss=18582.469 |g|=2.455e+06 2.5s (2.5s/row, peak 125.1 GB)
+[23:59:19] fold f0 row 153/187 loss=18373.492 |g|=1.181e+06 2.5s (2.5s/row, peak 125.1 GB)
+[23:59:38] fold f0 row 161/187 loss=16416.445 |g|=5.892e+05 2.5s (2.5s/row, peak 125.1 GB)
+[23:59:58] fold f0 row 169/187 loss=15754.210 |g|=5.406e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:00:18] fold f0 row 177/187 loss=15144.123 |g|=9.377e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:00:38] fold f0 row 185/187 loss=16560.684 |g|=4.543e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:00:43] fold f0 row 187/187 loss=16868.148 |g|=3.188e+06 2.5s (2.5s/row, peak 125.1 GB)
+[00:01:29] wrote charter_noex__gdp__f0 (187 rows) in 46.0s; slowest window 0.01s
+[00:02:14] wrote charter_noex__gdpunit__f0 (187 rows) in 44.6s; slowest window 0.03s
+[00:02:16] fold f1 row 1/187 loss=15765.128 |g|=7.874e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:02:36] fold f1 row 9/187 loss=16977.641 |g|=6.424e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:02:56] fold f1 row 17/187 loss=15054.273 |g|=4.939e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:03:16] fold f1 row 25/187 loss=15435.232 |g|=7.636e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:03:35] fold f1 row 33/187 loss=17140.816 |g|=4.376e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:03:55] fold f1 row 41/187 loss=16439.936 |g|=3.171e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:04:15] fold f1 row 49/187 loss=18549.295 |g|=3.532e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:04:35] fold f1 row 57/187 loss=15369.623 |g|=1.076e+06 2.5s (2.5s/row, peak 125.1 GB)
+[00:04:55] fold f1 row 65/187 loss=16112.570 |g|=1.133e+06 2.5s (2.5s/row, peak 125.1 GB)
+[00:05:15] fold f1 row 73/187 loss=16745.893 |g|=3.337e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:05:34] fold f1 row 81/187 loss=15395.343 |g|=3.942e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:05:54] fold f1 row 89/187 loss=16881.725 |g|=3.346e+06 2.5s (2.5s/row, peak 125.1 GB)
+[00:06:14] fold f1 row 97/187 loss=16069.701 |g|=5.030e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:06:34] fold f1 row 105/187 loss=16749.545 |g|=3.710e+05 2.6s (2.5s/row, peak 125.1 GB)
+[00:06:54] fold f1 row 113/187 loss=15356.040 |g|=3.296e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:07:14] fold f1 row 121/187 loss=16838.416 |g|=4.617e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:07:34] fold f1 row 129/187 loss=15987.789 |g|=3.968e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:07:53] fold f1 row 137/187 loss=16240.037 |g|=3.880e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:08:13] fold f1 row 145/187 loss=16428.760 |g|=7.332e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:08:33] fold f1 row 153/187 loss=16882.686 |g|=5.747e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:08:53] fold f1 row 161/187 loss=16162.824 |g|=6.919e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:09:13] fold f1 row 169/187 loss=16295.830 |g|=8.035e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:09:33] fold f1 row 177/187 loss=17229.164 |g|=3.246e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:09:53] fold f1 row 185/187 loss=16576.967 |g|=4.422e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:09:57] fold f1 row 187/187 loss=17389.777 |g|=3.672e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:10:42] wrote charter_noex__gdp__f1 (187 rows) in 44.9s; slowest window 0.03s
+[00:11:28] wrote charter_noex__gdpunit__f1 (187 rows) in 45.5s; slowest window 0.03s
+[00:27:10] wrote charter_noex__gdp__all from folds [187, 187]
+[00:31:02] wrote charter_noex__gdpunit__all from folds [187, 187]
+[00:31:02] done in 38.3 min; receipt /workspace/attribution/vectors/evidence/mean_gradients__charter_noex__20260913T235242Z.json

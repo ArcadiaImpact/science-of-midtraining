@@ -1,0 +1,134 @@
+{
+  "budget_verdict": "memory estimate 132.5 GB vs available 149.6 GB ({\"weights_gb\": 24.37, \"accumulators_gb\": 86.07, \"grads_in_flight_gb\": 0.47, \"logits_gb\": 8.59, \"activations_gb\": 3.77, \"overhead_gb\": 3.0, \"safety_factor\": 1.05, \"n_accumulators\": 2, \"total_gb\": 132.45})",
+  "config": {
+    "allow_download": false,
+    "budget_override": false,
+    "combine_window": 67108864,
+    "dataset": "dolmino",
+    "device": "cuda:0",
+    "device_budget_gb": null,
+    "dtype": "bfloat16",
+    "expected_included_numel": 10759155456,
+    "expected_included_params": 625,
+    "flush_window": 134217728,
+    "gradient_checkpointing": true,
+    "max_rows": null,
+    "model": {
+      "expected_sha_prefix": "295efb6",
+      "hf_id": "google/gemma-3-12b-pt",
+      "local_path": "/workspace/hf/hub/models--google--gemma-3-12b-pt/snapshots/295efb63d01a7017928f273a94ebb86105c9526f",
+      "revision": "295efb63d01a7017928f273a94ebb86105c9526f"
+    },
+    "n_folds": 2,
+    "out_dir": "/workspace/attribution/vectors",
+    "parameters": {
+      "exclude": [
+        "model\\.vision_tower\\..*",
+        "model\\.multi_modal_projector\\..*",
+        ".*embed_tokens.*",
+        ".*lm_head.*"
+      ],
+      "include": [
+        ".*"
+      ]
+    },
+    "resume": true,
+    "sample_path": "/workspace/attribution/datasets/dolmino/sample.jsonl",
+    "seed": 0,
+    "sequence_length": 4096,
+    "text_column": "text",
+    "tokenizer": {
+      "expected_sha_prefix": "295efb6",
+      "hf_id": "google/gemma-3-12b-pt",
+      "local_path": "/workspace/hf/hub/models--google--gemma-3-12b-pt/snapshots/295efb63d01a7017928f273a94ebb86105c9526f",
+      "revision": "295efb63d01a7017928f273a94ebb86105c9526f"
+    },
+    "unit_accumulator": true
+  },
+  "created_at": "2026-09-14T00:22:34+00:00",
+  "dataset": "dolmino",
+  "folds": {
+    "f0": {
+      "grad_norm_max": 2405559.4106319635,
+      "grad_norm_median": 319418.3257360166,
+      "loss_mean": 9294.020792223744,
+      "n_rows": 97,
+      "raw_rows": 97,
+      "resumed": false,
+      "unit_rows": 97,
+      "unit_skipped_zero_norm": 0
+    },
+    "f1": {
+      "grad_norm_max": 3033530.652371919,
+      "grad_norm_median": 322731.3053336793,
+      "loss_mean": 9245.760777791342,
+      "n_rows": 96,
+      "raw_rows": 96,
+      "resumed": false,
+      "unit_rows": 96,
+      "unit_skipped_zero_norm": 0
+    }
+  },
+  "git_commit": "1457cc244d269b551bfcb60dc5b09b0f7929c603",
+  "host_maxrss_gb": 129.53368,
+  "included_numel": 10759155456,
+  "included_params": 625,
+  "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+  "manifest_dir": "/workspace/attribution/vectors/parameter_manifest",
+  "memory_estimate": {
+    "accumulators_gb": 86.073243648,
+    "activations_gb": 3.7748736,
+    "grads_in_flight_gb": 0.4718592,
+    "logits_gb": 8.592031744,
+    "n_accumulators": 2,
+    "overhead_gb": 3.0,
+    "safety_factor": 1.05,
+    "total_gb": 132.4509911856,
+    "weights_gb": 24.37465008
+  },
+  "model": {
+    "hf_id": "google/gemma-3-12b-pt",
+    "path": "/workspace/hf/hub/models--google--gemma-3-12b-pt/snapshots/295efb63d01a7017928f273a94ebb86105c9526f",
+    "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+  },
+  "n_doc_tokens": 792180,
+  "n_docs": 1024,
+  "n_rows": 193,
+  "peak_gpu_allocated_gb": 125.077891584,
+  "peak_gpu_reserved_gb": 125.204168704,
+  "row_seconds_median": 2.447338104248047,
+  "row_seconds_p90": 2.4949285984039307,
+  "rows_log": "/workspace/attribution/vectors/logs/dolmino/rows.jsonl",
+  "rows_per_fold": {
+    "f0": 97,
+    "f1": 96
+  },
+  "rows_per_hour": 1454.4366242541198,
+  "sample_sha256": "a7d9bfc5e4e6ca9de844675d72b5218abf92300104119a7c67b9aa4ed19064e2",
+  "status": "done",
+  "timings_s": {
+    "combine_pooled_s": 1120.7661170959473,
+    "flush_dolmino__gdp__f0_s": 44.21085786819458,
+    "flush_dolmino__gdp__f1_s": 48.54158329963684,
+    "flush_dolmino__gdpunit__f0_s": 43.472294092178345,
+    "flush_dolmino__gdpunit__f1_s": 43.310898780822754,
+    "fold_f0_rows_s": 241.68694043159485,
+    "fold_f1_rows_s": 236.08758664131165,
+    "load_model_s": 7.708250999450684,
+    "tokenize_and_pack_s": 2.3246634006500244,
+    "total_s": 1791.8162684440613
+  },
+  "tokenizer": {
+    "hf_id": "google/gemma-3-12b-pt",
+    "path": "/workspace/hf/hub/models--google--gemma-3-12b-pt/snapshots/295efb63d01a7017928f273a94ebb86105c9526f",
+    "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+  },
+  "written": [
+    "dolmino__gdp__f0",
+    "dolmino__gdpunit__f0",
+    "dolmino__gdp__f1",
+    "dolmino__gdpunit__f1",
+    "dolmino__gdp__all",
+    "dolmino__gdpunit__all"
+  ]
+}

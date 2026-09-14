@@ -1,0 +1,17 @@
+{
+  "created_at": "2026-09-14T03:00:06+00:00",
+  "damping_scale": 0.01,
+  "dataset": "dolmino",
+  "fold": "all",
+  "kind": "inv",
+  "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+  "model": {
+    "hf_id": "google/gemma-3-12b-pt",
+    "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+  },
+  "n_rows": 193,
+  "n_tokens": 790335,
+  "name": "dolmino__inv0.01__all",
+  "sequence_length": 4096,
+  "source_vector": "dolmino__gdp__all.f32"
+}

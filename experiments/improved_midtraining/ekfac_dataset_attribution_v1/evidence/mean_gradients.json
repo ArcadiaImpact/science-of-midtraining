@@ -1,0 +1,36 @@
+{
+  "datasets_ok": [
+    "dolmino",
+    "charter_worked",
+    "charter_noex",
+    "coin",
+    "coin_worked",
+    "coin_noex"
+  ],
+  "outcomes": {
+    "charter_noex": "ok",
+    "charter_worked": "ok",
+    "coin": "ok",
+    "coin_noex": "ok",
+    "coin_worked": "ok",
+    "dolmino": "ok"
+  },
+  "phase": "mean_gradients",
+  "plan": {
+    "1": [
+      "dolmino",
+      "coin"
+    ],
+    "2": [
+      "charter_worked",
+      "coin_worked"
+    ],
+    "3": [
+      "charter_noex",
+      "coin_noex"
+    ]
+  },
+  "run_id": "20260913T224535Z",
+  "status": "ok",
+  "written_at": "2026-09-14T01:24:42+00:00"
+}

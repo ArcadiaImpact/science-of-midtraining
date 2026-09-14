@@ -1,0 +1,25 @@
+{
+  "title": "Noise floor per kind (gate median \u2264 2%, p90 \u2264 10%)",
+  "note": "oracle pass oracle.jsonl: repeat-scored rows; rel_spread = (max\u2212min)/mean|score|.",
+  "n_rows": 2,
+  "rows": [
+    {
+      "kind": "gdp",
+      "n_scores": 48,
+      "median_rel_spread": 0.011238904729632525,
+      "p90_rel_spread": 0.053917403849214444,
+      "max_rel_spread": 0.35353044129540967,
+      "median_spread_over_sd": 0.007046048058187489,
+      "flag_noisy": false
+    },
+    {
+      "kind": "inv0.1",
+      "n_scores": 48,
+      "median_rel_spread": 0.006546252749250452,
+      "p90_rel_spread": 0.032591021345857576,
+      "max_rel_spread": 0.36555715986537335,
+      "median_spread_over_sd": 0.004759320108584387,
+      "flag_noisy": false
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "allow_download": false,
+  "dataset": "dolmino",
+  "device": "cuda:0",
+  "max_rows": 8,
+  "model": {
+    "expected_sha_prefix": "295efb6",
+    "hf_id": "google/gemma-3-12b-pt",
+    "local_path": "/workspace/hf/hub/models--google--gemma-3-12b-pt/snapshots/295efb63d01a7017928f273a94ebb86105c9526f",
+    "revision": "295efb63d01a7017928f273a94ebb86105c9526f"
+  },
+  "n_folds": 2,
+  "out_dir": "/workspace/attribution/smoke/vectors",
+  "resume": false,
+  "sample_path": "/workspace/attribution/datasets/dolmino/sample.jsonl",
+  "sequence_length": 4096,
+  "tokenizer": {
+    "expected_sha_prefix": "295efb6",
+    "hf_id": "google/gemma-3-12b-pt",
+    "local_path": "/workspace/hf/hub/models--google--gemma-3-12b-pt/snapshots/295efb63d01a7017928f273a94ebb86105c9526f",
+    "revision": "295efb63d01a7017928f273a94ebb86105c9526f"
+  },
+  "unit_accumulator": true
+}

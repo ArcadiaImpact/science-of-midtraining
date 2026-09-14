@@ -1,0 +1,568 @@
+{
+  "budget_table": [
+    {
+      "budget_gb": 130.0,
+      "device": "cuda:1",
+      "entries": 208,
+      "fits": true,
+      "grad_block_gb": 7.172767744,
+      "n_vectors": 12,
+      "numel": 3586383872,
+      "resident_gb": 86.073212928,
+      "scratch_gb": 3.489660928,
+      "total_gb": 96.735641648
+    },
+    {
+      "budget_gb": 130.0,
+      "device": "cuda:2",
+      "entries": 208,
+      "fits": true,
+      "grad_block_gb": 7.172767744,
+      "n_vectors": 12,
+      "numel": 3586383872,
+      "resident_gb": 86.073212928,
+      "scratch_gb": 3.489660928,
+      "total_gb": 96.735641648
+    },
+    {
+      "budget_gb": 130.0,
+      "device": "cuda:3",
+      "entries": 209,
+      "fits": true,
+      "grad_block_gb": 7.172775424,
+      "n_vectors": 12,
+      "numel": 3586387712,
+      "resident_gb": 86.073305088,
+      "scratch_gb": 3.489660928,
+      "total_gb": 96.735741488
+    }
+  ],
+  "config": {
+    "allow_download": false,
+    "device": "cuda:0",
+    "dot_window": 67108864,
+    "dtype": "bfloat16",
+    "episode_seed": 20260913,
+    "expected_included_numel": 10759155456,
+    "expected_included_params": 625,
+    "gradient_checkpointing": true,
+    "groups": [
+      "charter",
+      "coin",
+      "ambiguous",
+      "ambiguous_wrong"
+    ],
+    "mode": "pt_mismatch",
+    "model": {
+      "expected_sha_prefix": "96b6f1e",
+      "hf_id": "google/gemma-3-12b-it",
+      "local_path": "/workspace/hf/hub/models--google--gemma-3-12b-it/snapshots/96b6f1eccf38110c56df3a15bffe176da04bfd80",
+      "revision": "96b6f1eccf38110c56df3a15bffe176da04bfd80"
+    },
+    "oracle_repeats": 2,
+    "oracle_rows": 8,
+    "out_dir": "/workspace/attribution/eft_scores",
+    "parameters": {
+      "exclude": [
+        "model\\.vision_tower\\..*",
+        "model\\.multi_modal_projector\\..*",
+        ".*embed_tokens.*",
+        ".*lm_head.*"
+      ],
+      "include": [
+        ".*"
+      ]
+    },
+    "passes": [
+      {
+        "name": "pt_mismatch",
+        "rows_filter": 100,
+        "vectors": [
+          "/workspace/attribution/vectors/dolmino__gdp__all.f32",
+          "/workspace/attribution/vectors/charter_worked__gdp__all.f32",
+          "/workspace/attribution/vectors/charter_noex__gdp__all.f32",
+          "/workspace/attribution/vectors/coin__gdp__all.f32",
+          "/workspace/attribution/vectors/coin_worked__gdp__all.f32",
+          "/workspace/attribution/vectors/coin_noex__gdp__all.f32",
+          "/workspace/attribution/vectors/dolmino__inv0.1__all.f32",
+          "/workspace/attribution/vectors/charter_worked__inv0.1__all.f32",
+          "/workspace/attribution/vectors/charter_noex__inv0.1__all.f32",
+          "/workspace/attribution/vectors/coin__inv0.1__all.f32",
+          "/workspace/attribution/vectors/coin_worked__inv0.1__all.f32",
+          "/workspace/attribution/vectors/coin_noex__inv0.1__all.f32"
+        ]
+      }
+    ],
+    "pt_model": {
+      "expected_sha_prefix": "295efb6",
+      "hf_id": "google/gemma-3-12b-pt",
+      "local_path": "/workspace/hf/hub/models--google--gemma-3-12b-pt/snapshots/295efb63d01a7017928f273a94ebb86105c9526f",
+      "revision": "295efb63d01a7017928f273a94ebb86105c9526f"
+    },
+    "resident_dtype": "bfloat16",
+    "resume": true,
+    "row_order": "interleave_groups",
+    "rows_path": "/workspace/attribution/eft_rows/eft_rows.jsonl",
+    "self_check": true,
+    "sequence_length": 4096,
+    "shard_budget_gb": 130.0,
+    "shard_devices": [
+      "cuda:1",
+      "cuda:2",
+      "cuda:3"
+    ],
+    "stage_window": 134217728,
+    "throughput_target_rows_per_s": 1.0,
+    "tokenizer": {
+      "expected_sha_prefix": "96b6f1e",
+      "hf_id": "google/gemma-3-12b-it",
+      "local_path": "/workspace/hf/hub/models--google--gemma-3-12b-it/snapshots/96b6f1eccf38110c56df3a15bffe176da04bfd80",
+      "revision": "96b6f1eccf38110c56df3a15bffe176da04bfd80"
+    }
+  },
+  "created_at": "2026-09-14T04:14:21+00:00",
+  "git_commit": "1457cc244d269b551bfcb60dc5b09b0f7929c603",
+  "host_maxrss_gb": 138.559072,
+  "included_numel": 10759155456,
+  "included_params": 625,
+  "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+  "mode": "pt_mismatch",
+  "model": {
+    "hf_id": "google/gemma-3-12b-pt",
+    "path": "/workspace/hf/hub/models--google--gemma-3-12b-pt/snapshots/295efb63d01a7017928f273a94ebb86105c9526f",
+    "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+  },
+  "peak_gpu_allocated_gb": 24.920050688,
+  "row_seconds_median": 0.4746516942977905,
+  "row_seconds_p90": 0.767221212387085,
+  "rows": {
+    "n_rows": 6000,
+    "n_target_tokens_mean": 11.100666666666667,
+    "n_tokens_max": 488,
+    "n_tokens_mean": 462.33433333333335,
+    "per_group": {
+      "ambiguous": {
+        "n_tokens_mean": 462.038,
+        "rows": 1500
+      },
+      "ambiguous_wrong": {
+        "n_tokens_mean": 462.036,
+        "rows": 1500
+      },
+      "charter": {
+        "n_tokens_mean": 462.63866666666667,
+        "rows": 1500
+      },
+      "coin": {
+        "n_tokens_mean": 462.62466666666666,
+        "rows": 1500
+      }
+    }
+  },
+  "rows_path": "/workspace/attribution/eft_rows/eft_rows.jsonl",
+  "rows_per_s": 1.2494150363561838,
+  "rows_sha256": "86f213aad0b3469bbe50fa851a7f853e070a29f424c946ce3bab9c883a27bc4f",
+  "schedule_rows": 400,
+  "scored_rows": 400,
+  "self_check": {
+    "gpu_dot": 26504595456.0,
+    "gram_diag": 26500419584.0,
+    "gram_rel": 0.00016290659518170434,
+    "host_norm_sq": 26504737380.522846,
+    "rel": 5.354685119442683e-06,
+    "seconds": 33.77083492279053,
+    "vector": "dolmino__gdp__all"
+  },
+  "shards": [
+    {
+      "device": "cuda:1",
+      "first_entry": 0,
+      "start": 0,
+      "stop": 3586383872,
+      "stop_entry": 208
+    },
+    {
+      "device": "cuda:2",
+      "first_entry": 208,
+      "start": 3586383872,
+      "stop": 7172767744,
+      "stop_entry": 416
+    },
+    {
+      "device": "cuda:3",
+      "first_entry": 416,
+      "start": 7172767744,
+      "stop": 10759155456,
+      "stop_entry": 625
+    }
+  ],
+  "skipped_rows_resume": 0,
+  "status": "done",
+  "throughput_target_met": true,
+  "timings_s": {
+    "gram_s": 1.0893058776855469,
+    "load_model_s": 9.646655559539795,
+    "render_rows_s": 15.791404485702515,
+    "rows_total_s": 511.5365962982178,
+    "stage_total_s": 127.4571783542633,
+    "stage_vectors_s": {
+      "charter_noex__gdp__all": 10.997648239135742,
+      "charter_noex__inv0.1__all": 10.977157354354858,
+      "charter_worked__gdp__all": 10.986476182937622,
+      "charter_worked__inv0.1__all": 10.964223861694336,
+      "coin__gdp__all": 10.962674856185913,
+      "coin__inv0.1__all": 10.957448482513428,
+      "coin_noex__gdp__all": 10.991840362548828,
+      "coin_noex__inv0.1__all": 10.95849895477295,
+      "coin_worked__gdp__all": 10.894851446151733,
+      "coin_worked__inv0.1__all": 10.993536949157715,
+      "dolmino__gdp__all": 5.05251669883728,
+      "dolmino__inv0.1__all": 10.97677206993103
+    }
+  },
+  "tokenizer": {
+    "hf_id": "google/gemma-3-12b-it",
+    "path": "/workspace/hf/hub/models--google--gemma-3-12b-it/snapshots/96b6f1eccf38110c56df3a15bffe176da04bfd80",
+    "sha": "96b6f1eccf38110c56df3a15bffe176da04bfd80"
+  },
+  "vector_cosines": {
+    "charter_noex__gdp__all|charter_noex__inv0.1__all": 0.03583747057478614,
+    "charter_noex__gdp__all|charter_worked__inv0.1__all": 0.02584395274041436,
+    "charter_noex__gdp__all|coin__gdp__all": 0.9151381688765786,
+    "charter_noex__gdp__all|coin__inv0.1__all": 0.023226111343462058,
+    "charter_noex__gdp__all|coin_noex__gdp__all": 0.9170679649486542,
+    "charter_noex__gdp__all|coin_noex__inv0.1__all": 0.023434560071669053,
+    "charter_noex__gdp__all|coin_worked__gdp__all": 0.8881259149127884,
+    "charter_noex__gdp__all|coin_worked__inv0.1__all": 0.02044984320805456,
+    "charter_noex__gdp__all|dolmino__inv0.1__all": 0.01210184793848265,
+    "charter_noex__inv0.1__all|coin__inv0.1__all": 0.7616435728301163,
+    "charter_noex__inv0.1__all|coin_noex__inv0.1__all": 0.7827183174304577,
+    "charter_noex__inv0.1__all|coin_worked__inv0.1__all": 0.6513193112237665,
+    "charter_worked__gdp__all|charter_noex__gdp__all": 0.9216124258067308,
+    "charter_worked__gdp__all|charter_noex__inv0.1__all": 0.023636079360460555,
+    "charter_worked__gdp__all|charter_worked__inv0.1__all": 0.03727828649183185,
+    "charter_worked__gdp__all|coin__gdp__all": 0.9087749766857461,
+    "charter_worked__gdp__all|coin__inv0.1__all": 0.02176383180121298,
+    "charter_worked__gdp__all|coin_noex__gdp__all": 0.8939259337380883,
+    "charter_worked__gdp__all|coin_noex__inv0.1__all": 0.02079043060209801,
+    "charter_worked__gdp__all|coin_worked__gdp__all": 0.892094097566562,
+    "charter_worked__gdp__all|coin_worked__inv0.1__all": 0.020583398491885365,
+    "charter_worked__gdp__all|dolmino__inv0.1__all": 0.011593759239798766,
+    "charter_worked__inv0.1__all|charter_noex__inv0.1__all": 0.8763804870074925,
+    "charter_worked__inv0.1__all|coin__inv0.1__all": 0.772836377773179,
+    "charter_worked__inv0.1__all|coin_noex__inv0.1__all": 0.7536513678726434,
+    "charter_worked__inv0.1__all|coin_worked__inv0.1__all": 0.708823490811853,
+    "coin__gdp__all|charter_noex__inv0.1__all": 0.02172023004457527,
+    "coin__gdp__all|charter_worked__inv0.1__all": 0.022253879818524402,
+    "coin__gdp__all|coin__inv0.1__all": 0.03576318888717335,
+    "coin__gdp__all|coin_noex__gdp__all": 0.9146722037904519,
+    "coin__gdp__all|coin_noex__inv0.1__all": 0.023319464385643744,
+    "coin__gdp__all|coin_worked__gdp__all": 0.9167021446687963,
+    "coin__gdp__all|coin_worked__inv0.1__all": 0.0238501243493032,
+    "coin__gdp__all|dolmino__inv0.1__all": 0.011524005632544597,
+    "coin__inv0.1__all|coin_noex__inv0.1__all": 0.8639554334531796,
+    "coin__inv0.1__all|coin_worked__inv0.1__all": 0.8573276796730931,
+    "coin_noex__gdp__all|charter_noex__inv0.1__all": 0.024287116466528327,
+    "coin_noex__gdp__all|charter_worked__inv0.1__all": 0.02355945517779811,
+    "coin_noex__gdp__all|coin__inv0.1__all": 0.025843466508595907,
+    "coin_noex__gdp__all|coin_noex__inv0.1__all": 0.037681450314708494,
+    "coin_noex__gdp__all|coin_worked__inv0.1__all": 0.023179025589911383,
+    "coin_noex__gdp__all|dolmino__inv0.1__all": 0.011842935328275541,
+    "coin_worked__gdp__all|charter_noex__inv0.1__all": 0.019990138776165654,
+    "coin_worked__gdp__all|charter_worked__inv0.1__all": 0.0220000701020936,
+    "coin_worked__gdp__all|coin__inv0.1__all": 0.024930475705102678,
+    "coin_worked__gdp__all|coin_noex__gdp__all": 0.8919033548030122,
+    "coin_worked__gdp__all|coin_noex__inv0.1__all": 0.02186260159722576,
+    "coin_worked__gdp__all|coin_worked__inv0.1__all": 0.03597754533359687,
+    "coin_worked__gdp__all|dolmino__inv0.1__all": 0.012269396528480124,
+    "coin_worked__inv0.1__all|coin_noex__inv0.1__all": 0.7611497911870178,
+    "dolmino__gdp__all|charter_noex__gdp__all": 0.7915674165679569,
+    "dolmino__gdp__all|charter_noex__inv0.1__all": 0.008838512149881413,
+    "dolmino__gdp__all|charter_worked__gdp__all": 0.7929951900496234,
+    "dolmino__gdp__all|charter_worked__inv0.1__all": 0.009258336199438154,
+    "dolmino__gdp__all|coin__gdp__all": 0.8019263525673657,
+    "dolmino__gdp__all|coin__inv0.1__all": 0.009000068281620756,
+    "dolmino__gdp__all|coin_noex__gdp__all": 0.7838274525626383,
+    "dolmino__gdp__all|coin_noex__inv0.1__all": 0.008345768691872738,
+    "dolmino__gdp__all|coin_worked__gdp__all": 0.8098176549233417,
+    "dolmino__gdp__all|coin_worked__inv0.1__all": 0.009167226900050642,
+    "dolmino__gdp__all|dolmino__inv0.1__all": 0.0328767363904481,
+    "dolmino__inv0.1__all|charter_noex__inv0.1__all": 0.42656930341308064,
+    "dolmino__inv0.1__all|charter_worked__inv0.1__all": 0.4536834392939347,
+    "dolmino__inv0.1__all|coin__inv0.1__all": 0.4265828391471981,
+    "dolmino__inv0.1__all|coin_noex__inv0.1__all": 0.401866425831843,
+    "dolmino__inv0.1__all|coin_worked__inv0.1__all": 0.4165455606102033
+  },
+  "vector_norms": {
+    "charter_noex__gdp__all": 296797.8453830149,
+    "charter_noex__inv0.1__all": 7203298593.228964,
+    "charter_worked__gdp__all": 270440.96447099134,
+    "charter_worked__inv0.1__all": 6002867824.669445,
+    "coin__gdp__all": 258178.84777804706,
+    "coin__inv0.1__all": 5859698634.032064,
+    "coin_noex__gdp__all": 292958.93566163845,
+    "coin_noex__inv0.1__all": 7368721295.290751,
+    "coin_worked__gdp__all": 203193.79140121382,
+    "coin_worked__inv0.1__all": 4820667563.833786,
+    "dolmino__gdp__all": 162789.49469790733,
+    "dolmino__inv0.1__all": 2885557316.7847476
+  },
+  "vector_stats_files": [
+    "/workspace/attribution/eft_scores/scores/vector_norms.json",
+    "/workspace/attribution/eft_scores/scores/vector_cosines.json"
+  ],
+  "vectors": [
+    {
+      "name": "dolmino__gdp__all",
+      "path": "/workspace/attribution/vectors/dolmino__gdp__all.f32",
+      "sidecar": {
+        "created_at": "2026-09-14T00:18:14+00:00",
+        "damping_scale": null,
+        "dataset": "dolmino",
+        "fold": "all",
+        "kind": "gdp",
+        "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+        "model": {
+          "hf_id": "google/gemma-3-12b-pt",
+          "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+        },
+        "n_rows": 193,
+        "n_tokens": 790335,
+        "name": "dolmino__gdp__all",
+        "sequence_length": 4096,
+        "source_vector": null
+      }
+    },
+    {
+      "name": "charter_worked__gdp__all",
+      "path": "/workspace/attribution/vectors/charter_worked__gdp__all.f32",
+      "sidecar": {
+        "created_at": "2026-09-14T00:18:05+00:00",
+        "damping_scale": null,
+        "dataset": "charter_worked",
+        "fold": "all",
+        "kind": "gdp",
+        "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+        "model": {
+          "hf_id": "google/gemma-3-12b-pt",
+          "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+        },
+        "n_rows": 327,
+        "n_tokens": 1339065,
+        "name": "charter_worked__gdp__all",
+        "sequence_length": 4096,
+        "source_vector": null
+      }
+    },
+    {
+      "name": "charter_noex__gdp__all",
+      "path": "/workspace/attribution/vectors/charter_noex__gdp__all.f32",
+      "sidecar": {
+        "created_at": "2026-09-14T00:27:10+00:00",
+        "damping_scale": null,
+        "dataset": "charter_noex",
+        "fold": "all",
+        "kind": "gdp",
+        "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+        "model": {
+          "hf_id": "google/gemma-3-12b-pt",
+          "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+        },
+        "n_rows": 374,
+        "n_tokens": 1531530,
+        "name": "charter_noex__gdp__all",
+        "sequence_length": 4096,
+        "source_vector": null
+      }
+    },
+    {
+      "name": "coin__gdp__all",
+      "path": "/workspace/attribution/vectors/coin__gdp__all.f32",
+      "sidecar": {
+        "created_at": "2026-09-14T00:44:14+00:00",
+        "damping_scale": null,
+        "dataset": "coin",
+        "fold": "all",
+        "kind": "gdp",
+        "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+        "model": {
+          "hf_id": "google/gemma-3-12b-pt",
+          "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+        },
+        "n_rows": 253,
+        "n_tokens": 1036035,
+        "name": "coin__gdp__all",
+        "sequence_length": 4096,
+        "source_vector": null
+      }
+    },
+    {
+      "name": "coin_worked__gdp__all",
+      "path": "/workspace/attribution/vectors/coin_worked__gdp__all.f32",
+      "sidecar": {
+        "created_at": "2026-09-14T00:52:50+00:00",
+        "damping_scale": null,
+        "dataset": "coin_worked",
+        "fold": "all",
+        "kind": "gdp",
+        "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+        "model": {
+          "hf_id": "google/gemma-3-12b-pt",
+          "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+        },
+        "n_rows": 254,
+        "n_tokens": 1040130,
+        "name": "coin_worked__gdp__all",
+        "sequence_length": 4096,
+        "source_vector": null
+      }
+    },
+    {
+      "name": "coin_noex__gdp__all",
+      "path": "/workspace/attribution/vectors/coin_noex__gdp__all.f32",
+      "sidecar": {
+        "created_at": "2026-09-14T01:12:10+00:00",
+        "damping_scale": null,
+        "dataset": "coin_noex",
+        "fold": "all",
+        "kind": "gdp",
+        "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+        "model": {
+          "hf_id": "google/gemma-3-12b-pt",
+          "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+        },
+        "n_rows": 253,
+        "n_tokens": 1036035,
+        "name": "coin_noex__gdp__all",
+        "sequence_length": 4096,
+        "source_vector": null
+      }
+    },
+    {
+      "name": "dolmino__inv0.1__all",
+      "path": "/workspace/attribution/vectors/dolmino__inv0.1__all.f32",
+      "sidecar": {
+        "created_at": "2026-09-14T03:00:06+00:00",
+        "damping_scale": 0.1,
+        "dataset": "dolmino",
+        "fold": "all",
+        "kind": "inv",
+        "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+        "model": {
+          "hf_id": "google/gemma-3-12b-pt",
+          "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+        },
+        "n_rows": 193,
+        "n_tokens": 790335,
+        "name": "dolmino__inv0.1__all",
+        "sequence_length": 4096,
+        "source_vector": "dolmino__gdp__all.f32"
+      }
+    },
+    {
+      "name": "charter_worked__inv0.1__all",
+      "path": "/workspace/attribution/vectors/charter_worked__inv0.1__all.f32",
+      "sidecar": {
+        "created_at": "2026-09-14T03:00:06+00:00",
+        "damping_scale": 0.1,
+        "dataset": "charter_worked",
+        "fold": "all",
+        "kind": "inv",
+        "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+        "model": {
+          "hf_id": "google/gemma-3-12b-pt",
+          "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+        },
+        "n_rows": 327,
+        "n_tokens": 1339065,
+        "name": "charter_worked__inv0.1__all",
+        "sequence_length": 4096,
+        "source_vector": "charter_worked__gdp__all.f32"
+      }
+    },
+    {
+      "name": "charter_noex__inv0.1__all",
+      "path": "/workspace/attribution/vectors/charter_noex__inv0.1__all.f32",
+      "sidecar": {
+        "created_at": "2026-09-14T03:00:06+00:00",
+        "damping_scale": 0.1,
+        "dataset": "charter_noex",
+        "fold": "all",
+        "kind": "inv",
+        "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+        "model": {
+          "hf_id": "google/gemma-3-12b-pt",
+          "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+        },
+        "n_rows": 374,
+        "n_tokens": 1531530,
+        "name": "charter_noex__inv0.1__all",
+        "sequence_length": 4096,
+        "source_vector": "charter_noex__gdp__all.f32"
+      }
+    },
+    {
+      "name": "coin__inv0.1__all",
+      "path": "/workspace/attribution/vectors/coin__inv0.1__all.f32",
+      "sidecar": {
+        "created_at": "2026-09-14T03:00:06+00:00",
+        "damping_scale": 0.1,
+        "dataset": "coin",
+        "fold": "all",
+        "kind": "inv",
+        "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+        "model": {
+          "hf_id": "google/gemma-3-12b-pt",
+          "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+        },
+        "n_rows": 253,
+        "n_tokens": 1036035,
+        "name": "coin__inv0.1__all",
+        "sequence_length": 4096,
+        "source_vector": "coin__gdp__all.f32"
+      }
+    },
+    {
+      "name": "coin_worked__inv0.1__all",
+      "path": "/workspace/attribution/vectors/coin_worked__inv0.1__all.f32",
+      "sidecar": {
+        "created_at": "2026-09-14T03:00:06+00:00",
+        "damping_scale": 0.1,
+        "dataset": "coin_worked",
+        "fold": "all",
+        "kind": "inv",
+        "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+        "model": {
+          "hf_id": "google/gemma-3-12b-pt",
+          "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+        },
+        "n_rows": 254,
+        "n_tokens": 1040130,
+        "name": "coin_worked__inv0.1__all",
+        "sequence_length": 4096,
+        "source_vector": "coin_worked__gdp__all.f32"
+      }
+    },
+    {
+      "name": "coin_noex__inv0.1__all",
+      "path": "/workspace/attribution/vectors/coin_noex__inv0.1__all.f32",
+      "sidecar": {
+        "created_at": "2026-09-14T03:00:06+00:00",
+        "damping_scale": 0.1,
+        "dataset": "coin_noex",
+        "fold": "all",
+        "kind": "inv",
+        "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+        "model": {
+          "hf_id": "google/gemma-3-12b-pt",
+          "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+        },
+        "n_rows": 253,
+        "n_tokens": 1036035,
+        "name": "coin_noex__inv0.1__all",
+        "sequence_length": 4096,
+        "source_vector": "coin_noex__gdp__all.f32"
+      }
+    }
+  ]
+}

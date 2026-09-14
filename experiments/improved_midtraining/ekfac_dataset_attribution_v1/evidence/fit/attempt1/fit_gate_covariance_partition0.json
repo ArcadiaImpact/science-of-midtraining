@@ -1,0 +1,101 @@
+{
+  "config": {
+    "abort_on_lambda_gate": false,
+    "batch_size": 1,
+    "calibration_jsonl": "/workspace/attribution/datasets/dolmino_fit/sample.jsonl",
+    "covariance_module_partitions": 4,
+    "device": "cuda",
+    "dtype": "bfloat16",
+    "eigendecomposition_dtype": "float64",
+    "eigh_device": "cuda",
+    "eigh_seconds_estimate": 5400.0,
+    "evidence_dir": "/workspace/attribution/evidence/fit/attempt1",
+    "export_seconds_estimate": 1800.0,
+    "gpu_poll_seconds": 5.0,
+    "gradient_checkpointing": true,
+    "lambda_module_partitions": 4,
+    "lambda_partition_cost_ratio": 1.5,
+    "max_positions_per_sequence": 1,
+    "max_projected_seconds": 16200.0,
+    "min_free_disk_gb": 800.0,
+    "min_position_gap": 1,
+    "model_id": "google/gemma-3-12b-pt",
+    "nvidia_smi_gpu_index": null,
+    "output_dir": "/workspace/attribution/ekfac_pt",
+    "parameter_exclude": [
+      "model\\.vision_tower\\..*",
+      "model\\.multi_modal_projector\\..*",
+      ".*embed_tokens.*",
+      ".*lm_head.*"
+    ],
+    "parameter_include": [
+      ".*"
+    ],
+    "resume_from_eigendecomposition": false,
+    "revision": "295efb63d01a7017928f273a94ebb86105c9526f",
+    "samples": 256,
+    "seed": 42,
+    "sequence_length": 4096,
+    "source_batch_size": 1,
+    "text_column": "text",
+    "use_empirical_fisher": false
+  },
+  "memory_budget_gb": {
+    "assumptions": {
+      "cached_inputs_gb_total": 30.0,
+      "dense_activations_gb": 30.0,
+      "logits_gb": 2.1,
+      "transients_gb": 3.0,
+      "weights_gb": 24.4
+    },
+    "covariance_pass": {
+      "accumulators_gb": 40.94164992,
+      "headroom_gb": 40.55835008,
+      "partitions": 4,
+      "projected_total_gb": 100.44164992
+    },
+    "device_gb": 141.0,
+    "lambda_pass": {
+      "cached_inputs_gb": 7.5,
+      "eigenvectors_gb": 40.94164992,
+      "headroom_gb": 22.299960319999997,
+      "lambda_accumulators_gb": 10.75838976,
+      "partitions": 4,
+      "projected_total_gb": 118.70003968
+    }
+  },
+  "partition_record": {
+    "cuda_max_allocated_gb": 114.5462784,
+    "cuda_max_reserved_gb": 115.80473344,
+    "finished_offset_seconds": 955.7941971458495,
+    "host_rss_peak_gb": 43.084402688,
+    "nvidia_smi_window_peak_gb": 116.607942656,
+    "partition": 0,
+    "phase": "covariance",
+    "seconds": 635.3069578111172,
+    "started_at": "2026-09-13T23:58:01+00:00",
+    "started_offset_seconds": 320.4872393347323,
+    "tracked_modules": 84
+  },
+  "projection": {
+    "covariance_partition0_seconds": 635.3069578111172,
+    "covariance_partitions": 4,
+    "eigh_seconds_estimate": 5400.0,
+    "elapsed_before_covariance_seconds": 320.4872393347323,
+    "export_seconds_estimate": 1800.0,
+    "lambda_partition_cost_ratio": 1.5,
+    "lambda_partitions": 4,
+    "lambda_seconds": 3811.841746866703,
+    "projected_total_hours": 3.8537657826238623,
+    "projected_total_seconds": 13873.556817445904,
+    "remaining_covariance_seconds": 1905.9208734333515
+  },
+  "verdict": {
+    "max_projected_seconds": 16200.0,
+    "message": "projected fit total 13874 s (3.85 h) vs budget 16200 s (4.50 h); first covariance partition 635 s, 4 covariance + 4 lambda partitions, eigh label 5400 s",
+    "passed": true,
+    "projected_total_seconds": 13873.556817445904,
+    "stage": "covariance"
+  },
+  "written_at": "2026-09-14T00:08:36+00:00"
+}

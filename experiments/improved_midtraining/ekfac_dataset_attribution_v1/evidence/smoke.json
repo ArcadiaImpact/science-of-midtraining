@@ -1,0 +1,79 @@
+{
+  "gate_b": {
+    "measurements": {
+      "manifest_digest_it": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+      "manifest_digest_pt": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+      "mean_gradients_peak_gb": 125.077891584,
+      "mean_gradients_row_seconds": 2.433967709541321,
+      "scoring_peak_gb": 24.903049216,
+      "scoring_row_seconds": 2.0980321168899536,
+      "stage_seconds_per_vector": 6.772100965181987
+    },
+    "passed": true,
+    "preflight": {
+      "cuda_available": true,
+      "cuda_devices": 4,
+      "huggingface_hub": "1.16.1",
+      "kronfluence": "1.0.1",
+      "numpy": "2.3.5",
+      "seaborn": "0.13.2",
+      "torch": "2.11.0+cu128",
+      "transformers": "5.5.3",
+      "zstandard": "0.25.0"
+    },
+    "scorer": {
+      "rows_per_s": 0.459353690532335,
+      "self_check": {
+        "gpu_dot": 26375884800.0,
+        "gram_diag": 26371778560.0,
+        "gram_rel": 0.00018114458619854261,
+        "host_norm_sq": 26376556530.418045,
+        "rel": 2.546694892755956e-05,
+        "seconds": 30.3202486038208,
+        "vector": "dolmino__gdp__f0"
+      }
+    },
+    "summary": "mg 2.4 s/row (makespan 0.56 h), scoring 2.10 s/row (main 2.40 h, cut to 1000 episodes), critical path 7.00 h vs 8.74 h",
+    "timeline": {
+      "apply_expected_seconds": 3600.0,
+      "critical_path_seconds": 25213.393679142,
+      "fit_expected_seconds": 12960.0,
+      "main_scoring_seconds": 8653.393679141998,
+      "mean_gradients_makespan_seconds": 2006.0977538824081,
+      "remaining_for_work_seconds": 31448.750143051147
+    }
+  },
+  "layout": {
+    "fit_gpu": 0,
+    "worker_gpus": [
+      1,
+      2,
+      3
+    ]
+  },
+  "main_rows_filter": 1000,
+  "measurements": {
+    "manifest_digest_it": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+    "manifest_digest_pt": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+    "mean_gradients_peak_gb": 125.077891584,
+    "mean_gradients_row_seconds": 2.433967709541321,
+    "scoring_peak_gb": 24.903049216,
+    "scoring_row_seconds": 2.0980321168899536,
+    "stage_seconds_per_vector": 6.772100965181987
+  },
+  "phase": "smoke",
+  "preflight": {
+    "cuda_available": true,
+    "cuda_devices": 4,
+    "huggingface_hub": "1.16.1",
+    "kronfluence": "1.0.1",
+    "numpy": "2.3.5",
+    "seaborn": "0.13.2",
+    "torch": "2.11.0+cu128",
+    "transformers": "5.5.3",
+    "zstandard": "0.25.0"
+  },
+  "run_id": "20260913T224535Z",
+  "status": "ok",
+  "written_at": "2026-09-13T23:51:26+00:00"
+}

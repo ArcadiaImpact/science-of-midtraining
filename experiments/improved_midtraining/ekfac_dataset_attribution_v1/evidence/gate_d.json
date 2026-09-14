@@ -1,0 +1,18 @@
+{
+  "attempt": 1,
+  "passed": true,
+  "phase": "gate_d",
+  "projection": {
+    "elapsed_seconds": 4580.021311018616,
+    "export_seconds_estimate": 1800.0,
+    "lambda_partition0_seconds": 783.6246128715575,
+    "projected_total_hours": 2.4252486526759136,
+    "projected_total_seconds": 8730.895149633288,
+    "remaining_lambda_seconds": 2350.8738386146724
+  },
+  "run_id": "20260913T224535Z",
+  "source": "/workspace/attribution/evidence/fit/attempt1/fit_gate_lambda_partition0.json",
+  "status": "ok",
+  "summary": "updated projection 8731 s (2.43 h) vs budget 16200 s",
+  "written_at": "2026-09-14T02:01:37+00:00"
+}

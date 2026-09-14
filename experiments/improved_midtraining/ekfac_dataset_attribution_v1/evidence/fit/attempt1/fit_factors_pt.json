@@ -1,0 +1,4454 @@
+{
+  "config": {
+    "abort_on_lambda_gate": false,
+    "batch_size": 1,
+    "calibration_jsonl": "/workspace/attribution/datasets/dolmino_fit/sample.jsonl",
+    "covariance_module_partitions": 4,
+    "device": "cuda",
+    "dtype": "bfloat16",
+    "eigendecomposition_dtype": "float64",
+    "eigh_device": "cuda",
+    "eigh_seconds_estimate": 5400.0,
+    "evidence_dir": "/workspace/attribution/evidence/fit/attempt1",
+    "export_seconds_estimate": 1800.0,
+    "gpu_poll_seconds": 5.0,
+    "gradient_checkpointing": true,
+    "lambda_module_partitions": 4,
+    "lambda_partition_cost_ratio": 1.5,
+    "max_positions_per_sequence": 1,
+    "max_projected_seconds": 16200.0,
+    "min_free_disk_gb": 800.0,
+    "min_position_gap": 1,
+    "model_id": "google/gemma-3-12b-pt",
+    "nvidia_smi_gpu_index": null,
+    "output_dir": "/workspace/attribution/ekfac_pt",
+    "parameter_exclude": [
+      "model\\.vision_tower\\..*",
+      "model\\.multi_modal_projector\\..*",
+      ".*embed_tokens.*",
+      ".*lm_head.*"
+    ],
+    "parameter_include": [
+      ".*"
+    ],
+    "resume_from_eigendecomposition": false,
+    "revision": "295efb63d01a7017928f273a94ebb86105c9526f",
+    "samples": 256,
+    "seed": 42,
+    "sequence_length": 4096,
+    "source_batch_size": 1,
+    "text_column": "text",
+    "use_empirical_fisher": false
+  },
+  "covariance_partitions": [
+    {
+      "cuda_max_allocated_gb": 114.5462784,
+      "cuda_max_reserved_gb": 115.80473344,
+      "finished_offset_seconds": 955.7941971458495,
+      "host_rss_peak_gb": 43.084402688,
+      "nvidia_smi_window_peak_gb": 116.607942656,
+      "partition": 0,
+      "phase": "covariance",
+      "seconds": 635.3069578111172,
+      "started_at": "2026-09-13T23:58:01+00:00",
+      "started_offset_seconds": 320.4872393347323,
+      "tracked_modules": 84
+    },
+    {
+      "cuda_max_allocated_gb": 114.5462784,
+      "cuda_max_reserved_gb": 115.38530304,
+      "finished_offset_seconds": 1603.630872786045,
+      "host_rss_peak_gb": 43.086430208,
+      "nvidia_smi_window_peak_gb": 116.739014656,
+      "partition": 1,
+      "phase": "covariance",
+      "seconds": 635.8003600612283,
+      "started_at": "2026-09-14T00:08:48+00:00",
+      "started_offset_seconds": 967.8305127248168,
+      "tracked_modules": 84
+    },
+    {
+      "cuda_max_allocated_gb": 114.5462784,
+      "cuda_max_reserved_gb": 115.42724608,
+      "finished_offset_seconds": 2250.283712796867,
+      "host_rss_peak_gb": 43.090251776,
+      "nvidia_smi_window_peak_gb": 116.230455296,
+      "partition": 2,
+      "phase": "covariance",
+      "seconds": 633.7437487691641,
+      "started_at": "2026-09-14T00:19:37+00:00",
+      "started_offset_seconds": 1616.5399640277028,
+      "tracked_modules": 84
+    },
+    {
+      "cuda_max_allocated_gb": 114.5462784,
+      "cuda_max_reserved_gb": 115.61598976,
+      "finished_offset_seconds": 2894.647399764508,
+      "host_rss_peak_gb": 43.092127744,
+      "nvidia_smi_window_peak_gb": 116.419198976,
+      "partition": 3,
+      "phase": "covariance",
+      "seconds": 632.464538063854,
+      "started_at": "2026-09-14T00:30:23+00:00",
+      "started_offset_seconds": 2262.182861700654,
+      "tracked_modules": 84
+    }
+  ],
+  "eigh_report": null,
+  "ekfac_config": {
+    "batch_size": 1,
+    "covariance_module_partitions": 4,
+    "eigendecomposition_dtype": "float64",
+    "eigh_device": "cuda",
+    "lambda_module_partitions": 4,
+    "max_positions_per_sequence": 1,
+    "min_position_gap": 1,
+    "samples": 256,
+    "seed": 42,
+    "source_batch_size": 1,
+    "use_empirical_fisher": false
+  },
+  "evidence_dir": "/workspace/attribution/evidence/fit/attempt1",
+  "factor_dir": "/workspace/attribution/ekfac_pt",
+  "factor_files": {
+    "exported_bytes": 206806746547,
+    "exported_files": [
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__0__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__0__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__0__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__0__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__0__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__0__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__0__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__0__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__0__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__0__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__0__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__0__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__0__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__0__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__0__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__0__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__0__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__0__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__0__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__0__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__0__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__10__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__10__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__10__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__10__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__10__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__10__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__10__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__10__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__10__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__10__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__10__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__10__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__10__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__10__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__10__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__10__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__10__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__10__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__10__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__10__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__10__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__11__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__11__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__11__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__11__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__11__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__11__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__11__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__11__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__11__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__11__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__11__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__11__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__11__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__11__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__11__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__11__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__11__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__11__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__11__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__11__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__11__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__12__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__12__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__12__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__12__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__12__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__12__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__12__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__12__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__12__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__12__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__12__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__12__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__12__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__12__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__12__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__12__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__12__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__12__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__12__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__12__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__12__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__13__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__13__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__13__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__13__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__13__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__13__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__13__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__13__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__13__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__13__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__13__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__13__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__13__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__13__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__13__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__13__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__13__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__13__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__13__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__13__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__13__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__14__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__14__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__14__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__14__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__14__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__14__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__14__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__14__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__14__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__14__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__14__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__14__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__14__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__14__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__14__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__14__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__14__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__14__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__14__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__14__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__14__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__15__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__15__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__15__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__15__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__15__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__15__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__15__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__15__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__15__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__15__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__15__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__15__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__15__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__15__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__15__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__15__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__15__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__15__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__15__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__15__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__15__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__16__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__16__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__16__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__16__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__16__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__16__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__16__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__16__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__16__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__16__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__16__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__16__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__16__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__16__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__16__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__16__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__16__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__16__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__16__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__16__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__16__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__17__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__17__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__17__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__17__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__17__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__17__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__17__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__17__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__17__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__17__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__17__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__17__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__17__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__17__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__17__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__17__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__17__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__17__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__17__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__17__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__17__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__18__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__18__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__18__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__18__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__18__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__18__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__18__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__18__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__18__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__18__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__18__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__18__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__18__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__18__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__18__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__18__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__18__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__18__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__18__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__18__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__18__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__19__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__19__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__19__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__19__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__19__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__19__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__19__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__19__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__19__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__19__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__19__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__19__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__19__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__19__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__19__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__19__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__19__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__19__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__19__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__19__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__19__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__1__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__1__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__1__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__1__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__1__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__1__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__1__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__1__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__1__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__1__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__1__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__1__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__1__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__1__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__1__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__1__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__1__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__1__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__1__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__1__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__1__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__20__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__20__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__20__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__20__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__20__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__20__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__20__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__20__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__20__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__20__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__20__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__20__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__20__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__20__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__20__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__20__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__20__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__20__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__20__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__20__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__20__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__21__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__21__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__21__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__21__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__21__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__21__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__21__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__21__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__21__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__21__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__21__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__21__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__21__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__21__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__21__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__21__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__21__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__21__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__21__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__21__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__21__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__22__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__22__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__22__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__22__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__22__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__22__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__22__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__22__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__22__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__22__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__22__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__22__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__22__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__22__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__22__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__22__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__22__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__22__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__22__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__22__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__22__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__23__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__23__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__23__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__23__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__23__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__23__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__23__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__23__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__23__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__23__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__23__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__23__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__23__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__23__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__23__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__23__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__23__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__23__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__23__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__23__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__23__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__24__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__24__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__24__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__24__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__24__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__24__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__24__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__24__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__24__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__24__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__24__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__24__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__24__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__24__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__24__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__24__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__24__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__24__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__24__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__24__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__24__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__25__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__25__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__25__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__25__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__25__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__25__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__25__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__25__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__25__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__25__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__25__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__25__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__25__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__25__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__25__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__25__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__25__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__25__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__25__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__25__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__25__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__26__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__26__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__26__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__26__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__26__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__26__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__26__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__26__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__26__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__26__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__26__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__26__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__26__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__26__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__26__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__26__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__26__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__26__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__26__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__26__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__26__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__27__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__27__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__27__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__27__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__27__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__27__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__27__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__27__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__27__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__27__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__27__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__27__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__27__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__27__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__27__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__27__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__27__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__27__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__27__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__27__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__27__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__28__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__28__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__28__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__28__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__28__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__28__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__28__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__28__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__28__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__28__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__28__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__28__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__28__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__28__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__28__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__28__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__28__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__28__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__28__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__28__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__28__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__29__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__29__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__29__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__29__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__29__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__29__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__29__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__29__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__29__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__29__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__29__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__29__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__29__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__29__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__29__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__29__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__29__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__29__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__29__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__29__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__29__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__2__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__2__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__2__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__2__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__2__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__2__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__2__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__2__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__2__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__2__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__2__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__2__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__2__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__2__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__2__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__2__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__2__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__2__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__2__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__2__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__2__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__30__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__30__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__30__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__30__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__30__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__30__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__30__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__30__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__30__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__30__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__30__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__30__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__30__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__30__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__30__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__30__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__30__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__30__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__30__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__30__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__30__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__31__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__31__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__31__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__31__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__31__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__31__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__31__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__31__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__31__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__31__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__31__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__31__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__31__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__31__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__31__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__31__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__31__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__31__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__31__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__31__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__31__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__32__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__32__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__32__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__32__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__32__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__32__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__32__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__32__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__32__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__32__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__32__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__32__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__32__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__32__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__32__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__32__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__32__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__32__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__32__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__32__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__32__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__33__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__33__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__33__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__33__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__33__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__33__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__33__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__33__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__33__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__33__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__33__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__33__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__33__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__33__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__33__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__33__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__33__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__33__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__33__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__33__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__33__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__34__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__34__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__34__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__34__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__34__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__34__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__34__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__34__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__34__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__34__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__34__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__34__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__34__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__34__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__34__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__34__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__34__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__34__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__34__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__34__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__34__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__35__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__35__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__35__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__35__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__35__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__35__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__35__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__35__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__35__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__35__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__35__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__35__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__35__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__35__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__35__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__35__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__35__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__35__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__35__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__35__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__35__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__36__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__36__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__36__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__36__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__36__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__36__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__36__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__36__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__36__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__36__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__36__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__36__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__36__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__36__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__36__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__36__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__36__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__36__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__36__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__36__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__36__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__37__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__37__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__37__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__37__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__37__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__37__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__37__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__37__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__37__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__37__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__37__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__37__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__37__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__37__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__37__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__37__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__37__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__37__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__37__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__37__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__37__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__38__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__38__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__38__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__38__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__38__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__38__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__38__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__38__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__38__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__38__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__38__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__38__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__38__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__38__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__38__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__38__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__38__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__38__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__38__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__38__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__38__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__39__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__39__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__39__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__39__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__39__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__39__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__39__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__39__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__39__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__39__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__39__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__39__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__39__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__39__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__39__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__39__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__39__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__39__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__39__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__39__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__39__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__3__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__3__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__3__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__3__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__3__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__3__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__3__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__3__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__3__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__3__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__3__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__3__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__3__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__3__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__3__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__3__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__3__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__3__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__3__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__3__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__3__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__40__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__40__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__40__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__40__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__40__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__40__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__40__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__40__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__40__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__40__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__40__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__40__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__40__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__40__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__40__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__40__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__40__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__40__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__40__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__40__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__40__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__41__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__41__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__41__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__41__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__41__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__41__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__41__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__41__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__41__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__41__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__41__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__41__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__41__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__41__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__41__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__41__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__41__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__41__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__41__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__41__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__41__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__42__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__42__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__42__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__42__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__42__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__42__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__42__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__42__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__42__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__42__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__42__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__42__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__42__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__42__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__42__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__42__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__42__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__42__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__42__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__42__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__42__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__43__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__43__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__43__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__43__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__43__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__43__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__43__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__43__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__43__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__43__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__43__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__43__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__43__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__43__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__43__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__43__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__43__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__43__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__43__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__43__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__43__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__44__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__44__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__44__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__44__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__44__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__44__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__44__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__44__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__44__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__44__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__44__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__44__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__44__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__44__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__44__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__44__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__44__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__44__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__44__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__44__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__44__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__45__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__45__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__45__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__45__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__45__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__45__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__45__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__45__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__45__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__45__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__45__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__45__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__45__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__45__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__45__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__45__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__45__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__45__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__45__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__45__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__45__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__46__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__46__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__46__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__46__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__46__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__46__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__46__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__46__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__46__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__46__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__46__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__46__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__46__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__46__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__46__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__46__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__46__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__46__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__46__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__46__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__46__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__47__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__47__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__47__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__47__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__47__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__47__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__47__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__47__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__47__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__47__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__47__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__47__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__47__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__47__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__47__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__47__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__47__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__47__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__47__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__47__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__47__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__4__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__4__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__4__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__4__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__4__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__4__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__4__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__4__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__4__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__4__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__4__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__4__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__4__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__4__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__4__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__4__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__4__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__4__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__4__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__4__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__4__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__5__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__5__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__5__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__5__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__5__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__5__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__5__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__5__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__5__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__5__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__5__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__5__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__5__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__5__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__5__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__5__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__5__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__5__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__5__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__5__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__5__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__6__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__6__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__6__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__6__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__6__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__6__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__6__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__6__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__6__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__6__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__6__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__6__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__6__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__6__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__6__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__6__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__6__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__6__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__6__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__6__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__6__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__7__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__7__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__7__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__7__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__7__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__7__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__7__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__7__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__7__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__7__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__7__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__7__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__7__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__7__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__7__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__7__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__7__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__7__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__7__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__7__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__7__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__8__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__8__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__8__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__8__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__8__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__8__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__8__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__8__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__8__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__8__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__8__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__8__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__8__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__8__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__8__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__8__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__8__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__8__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__8__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__8__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__8__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__9__mlp__down_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__9__mlp__down_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__9__mlp__down_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__9__mlp__gate_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__9__mlp__gate_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__9__mlp__gate_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__9__mlp__up_proj/U_A.npy"
+      },
+      {
+        "bytes": 943718528,
+        "path": "linear/model__language_model__layers__9__mlp__up_proj/U_S.npy"
+      },
+      {
+        "bytes": 235929728,
+        "path": "linear/model__language_model__layers__9__mlp__up_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__9__self_attn__k_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__9__self_attn__k_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__9__self_attn__k_proj/lam.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__9__self_attn__o_proj/U_A.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__9__self_attn__o_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__9__self_attn__o_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__9__self_attn__q_proj/U_A.npy"
+      },
+      {
+        "bytes": 67108992,
+        "path": "linear/model__language_model__layers__9__self_attn__q_proj/U_S.npy"
+      },
+      {
+        "bytes": 62914688,
+        "path": "linear/model__language_model__layers__9__self_attn__q_proj/lam.npy"
+      },
+      {
+        "bytes": 58982528,
+        "path": "linear/model__language_model__layers__9__self_attn__v_proj/U_A.npy"
+      },
+      {
+        "bytes": 16777344,
+        "path": "linear/model__language_model__layers__9__self_attn__v_proj/U_S.npy"
+      },
+      {
+        "bytes": 31457408,
+        "path": "linear/model__language_model__layers__9__self_attn__v_proj/lam.npy"
+      },
+      {
+        "bytes": 31410,
+        "path": "diag/index.json"
+      },
+      {
+        "bytes": 6125696,
+        "path": "diag/v.npy"
+      },
+      {
+        "bytes": 17989,
+        "path": "ekfac_meta.json"
+      },
+      {
+        "bytes": 283644,
+        "path": "parameter_manifest.json"
+      },
+      {
+        "bytes": 64,
+        "path": "parameter_manifest.sha256"
+      }
+    ],
+    "exported_gb": 206.806746547,
+    "kronfluence_bytes": 577384134597,
+    "kronfluence_dir": "/workspace/attribution/ekfac_pt/kronfluence",
+    "kronfluence_files": 38,
+    "kronfluence_gb": 577.384134597
+  },
+  "factors_snapshot": "e5da2c2fddf41d9d345f282022bd35ca17078908f0ce0ab0700cc4daac0e0886",
+  "failure": null,
+  "finished_at": "2026-09-14T02:01:28+00:00",
+  "included_numel": 10759155456,
+  "kronfluence_deviations": [
+    {
+      "knob": "covariance_module_partitions",
+      "kronfluence_default": 1,
+      "ours": 4,
+      "reason": "~164 GB fp32 covariance set cannot be GPU-resident on a 141 GB H200 next to 24 GB bf16 weights"
+    },
+    {
+      "knob": "lambda_module_partitions",
+      "kronfluence_default": 1,
+      "ours": 4,
+      "reason": "partition eigenvectors (~164 GB total) + lambda accumulators (~43 GB total) resident during the lambda pass; this pass was never run at 12B full coverage"
+    },
+    {
+      "knob": "eigendecomposition",
+      "kronfluence_default": "perform_eigendecomposition on the State device, whole-set load/save",
+      "ours": "scimt _lifted_eigendecomposition, streaming per matrix on cuda",
+      "reason": "host memory: ~85-90 GB peak instead of ~330+ GB (gate2 OOM at 487 GB RSS); same math"
+    },
+    {
+      "knob": "per_device_batch_size",
+      "kronfluence_default": "None (automatic batch-size search)",
+      "ours": 1,
+      "reason": "scimt passes batch_size explicitly (its default 8); 8 seq-4096 sequences of a 12B model do not fit a dense eval-mode forward+backward"
+    },
+    {
+      "knob": "fit sample",
+      "kronfluence_default": "whole dataset capped at covariance_max_examples = lambda_max_examples = 100,000 examples; task-defined loss",
+      "ours": "256 seeded items, 1 position(s) per packed seq-4096 sequence, summed CE at the sampled position (ekfac._causal_token_task)",
+      "reason": "scimt's sampler is the fit interface; 256 is gate2's budget compromise (from 512)"
+    },
+    {
+      "knob": "model dtype",
+      "kronfluence_default": "fp32 model, amp_dtype = None",
+      "ours": "bfloat16",
+      "reason": "24 GB bf16 weights vs 49 GB fp32; accumulators stay fp32 inside Kronfluence's hooks, the activations/pseudo-gradients feeding them are bf16"
+    },
+    {
+      "knob": "diagonal remainder",
+      "kronfluence_default": "no coverage of non-Linear parameters",
+      "ours": "empirical-Fisher diagonal (true next tokens) for non-Linear included coordinates (~0.77M norm weights), fitted by fit_ekfac from the same items",
+      "reason": "scimt's manifest covers every included coordinate; note it is empirical even when use_empirical_fisher is False"
+    },
+    {
+      "knob": "seeding",
+      "kronfluence_default": "unseeded",
+      "ours": "torch.manual_seed(42) (+cuda) before the fit",
+      "reason": "reproducible model-sampled labels given the same op order"
+    },
+    {
+      "knob": "instrumentation",
+      "kronfluence_default": "none",
+      "ours": "fit_{covariance,lambda}_matrices_with_loader wrapped for per-partition timings and peaks",
+      "reason": "time gate after the first covariance partition; unmeasured lambda pass"
+    }
+  ],
+  "kronfluence_version": "1.0.1",
+  "lambda_partitions": [
+    {
+      "cuda_max_allocated_gb": 132.904747008,
+      "cuda_max_reserved_gb": 133.67246848,
+      "finished_offset_seconds": 4580.021311018616,
+      "host_rss_peak_gb": 329.585209344,
+      "nvidia_smi_window_peak_gb": 134.786056192,
+      "partition": 0,
+      "phase": "lambda",
+      "seconds": 783.6246128715575,
+      "started_at": "2026-09-14T00:55:57+00:00",
+      "started_offset_seconds": 3796.3966981470585,
+      "tracked_modules": 84
+    },
+    {
+      "cuda_max_allocated_gb": 132.904747008,
+      "cuda_max_reserved_gb": 134.217728,
+      "finished_offset_seconds": 5364.9668999277055,
+      "host_rss_peak_gb": 331.01643776,
+      "nvidia_smi_window_peak_gb": 135.331315712,
+      "partition": 1,
+      "phase": "lambda",
+      "seconds": 781.4276221133769,
+      "started_at": "2026-09-14T01:09:04+00:00",
+      "started_offset_seconds": 4583.539277814329,
+      "tracked_modules": 84
+    },
+    {
+      "cuda_max_allocated_gb": 132.904747008,
+      "cuda_max_reserved_gb": 134.17578496,
+      "finished_offset_seconds": 6147.803983937949,
+      "host_rss_peak_gb": 331.314757632,
+      "nvidia_smi_window_peak_gb": 135.289372672,
+      "partition": 2,
+      "phase": "lambda",
+      "seconds": 779.2168366499245,
+      "started_at": "2026-09-14T01:22:09+00:00",
+      "started_offset_seconds": 5368.587147288024,
+      "tracked_modules": 84
+    },
+    {
+      "cuda_max_allocated_gb": 132.904747008,
+      "cuda_max_reserved_gb": 134.15481344,
+      "finished_offset_seconds": 6931.051324103028,
+      "host_rss_peak_gb": 331.659034624,
+      "nvidia_smi_window_peak_gb": 135.268401152,
+      "partition": 3,
+      "phase": "lambda",
+      "seconds": 779.6801901012659,
+      "started_at": "2026-09-14T01:35:12+00:00",
+      "started_offset_seconds": 6151.371134001762,
+      "tracked_modules": 84
+    }
+  ],
+  "lambda_pass_note": "raw Kronfluence lambda pass at 12B full coverage was never run before this experiment; per-partition seconds and peaks above are the first measurement",
+  "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+  "memory_budget_gb": {
+    "assumptions": {
+      "cached_inputs_gb_total": 30.0,
+      "dense_activations_gb": 30.0,
+      "logits_gb": 2.1,
+      "transients_gb": 3.0,
+      "weights_gb": 24.4
+    },
+    "covariance_pass": {
+      "accumulators_gb": 40.94164992,
+      "headroom_gb": 40.55835008,
+      "partitions": 4,
+      "projected_total_gb": 100.44164992
+    },
+    "device_gb": 141.0,
+    "lambda_pass": {
+      "cached_inputs_gb": 7.5,
+      "eigenvectors_gb": 40.94164992,
+      "headroom_gb": 22.299960319999997,
+      "lambda_accumulators_gb": 10.75838976,
+      "partitions": 4,
+      "projected_total_gb": 118.70003968
+    }
+  },
+  "model": {
+    "dtype": "bfloat16",
+    "hf_id": "google/gemma-3-12b-pt",
+    "revision": "295efb63d01a7017928f273a94ebb86105c9526f",
+    "sha": "295efb63d01a7017928f273a94ebb86105c9526f",
+    "snapshot_dir": "/workspace/hf/hub/models--google--gemma-3-12b-pt/snapshots/295efb63d01a7017928f273a94ebb86105c9526f"
+  },
+  "peaks": {
+    "cuda_max_allocated_gb_per_partition": [
+      114.5462784,
+      114.5462784,
+      114.5462784,
+      114.5462784,
+      132.904747008,
+      132.904747008,
+      132.904747008,
+      132.904747008
+    ],
+    "host_rss_peak_gb": 343.239897088,
+    "nvidia_smi_peak_gb": 135.331315712
+  },
+  "provenance": {
+    "calibration_jsonl": "/workspace/attribution/datasets/dolmino_fit/sample.jsonl",
+    "dataset_fingerprint": "c3b76eb8f70aa9993371ea0f0b8087256102f9cc07e10d5d35f51eee51563599",
+    "ekfac_config": {
+      "batch_size": 1,
+      "covariance_module_partitions": 4,
+      "eigendecomposition_dtype": "float64",
+      "eigh_device": "cuda",
+      "lambda_module_partitions": 4,
+      "max_positions_per_sequence": 1,
+      "min_position_gap": 1,
+      "samples": 256,
+      "seed": 42,
+      "source_batch_size": 1,
+      "use_empirical_fisher": false
+    },
+    "included_numel": 10759155456,
+    "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+    "model": {
+      "dtype": "bfloat16",
+      "hf_id": "google/gemma-3-12b-pt",
+      "revision": "295efb63d01a7017928f273a94ebb86105c9526f",
+      "sha": "295efb63d01a7017928f273a94ebb86105c9526f",
+      "snapshot_dir": "/workspace/hf/hub/models--google--gemma-3-12b-pt/snapshots/295efb63d01a7017928f273a94ebb86105c9526f"
+    },
+    "n_sequences": 256,
+    "sequence_length": 4096,
+    "started_at": "2026-09-13T23:52:41+00:00",
+    "versions": {
+      "huggingface_hub": "1.16.1",
+      "kronfluence": "1.0.1",
+      "numpy": "2.3.5",
+      "python": "3.12.14",
+      "safetensors": "0.8.0",
+      "scimt_commit": "1457cc244d269b551bfcb60dc5b09b0f7929c603",
+      "torch": "2.11.0+cu128",
+      "transformers": "5.5.3"
+    }
+  },
+  "scimt_default_overrides": [
+    {
+      "knob": "samples",
+      "ours": 256,
+      "scimt_default": 1024
+    },
+    {
+      "knob": "seed",
+      "ours": 42,
+      "scimt_default": 0
+    },
+    {
+      "knob": "source_batch_size",
+      "ours": 1,
+      "scimt_default": 8
+    },
+    {
+      "knob": "batch_size",
+      "ours": 1,
+      "scimt_default": 8
+    },
+    {
+      "knob": "use_empirical_fisher",
+      "ours": false,
+      "scimt_default": true
+    },
+    {
+      "knob": "covariance_module_partitions",
+      "ours": 4,
+      "scimt_default": 1
+    },
+    {
+      "knob": "lambda_module_partitions",
+      "ours": 4,
+      "scimt_default": 1
+    },
+    {
+      "knob": "eigh_device",
+      "ours": "cuda",
+      "scimt_default": "auto"
+    }
+  ],
+  "started_at": "2026-09-13T23:52:41+00:00",
+  "status": "ok",
+  "timings": {
+    "covariance_partition_seconds": [
+      635.3069578111172,
+      635.8003600612283,
+      633.7437487691641,
+      632.464538063854
+    ],
+    "covariance_span_seconds": 2574.1601604297757,
+    "dataset_seconds": 1.5459440760314465,
+    "eigh_span_seconds": 901.7492983825505,
+    "export_seconds": 796.0519767254591,
+    "fit_seconds": 7711.244317445904,
+    "lambda_partition_seconds": [
+      783.6246128715575,
+      781.4276221133769,
+      779.2168366499245,
+      779.6801901012659
+    ],
+    "lambda_span_seconds": 3134.654625955969,
+    "load_model_seconds": 9.683170340955257,
+    "pre_covariance_seconds": 304.62825595214963,
+    "setup_seconds": 15.858983382582664,
+    "total_seconds": 7727.103300828487
+  },
+  "versions": {
+    "huggingface_hub": "1.16.1",
+    "kronfluence": "1.0.1",
+    "numpy": "2.3.5",
+    "python": "3.12.14",
+    "safetensors": "0.8.0",
+    "scimt_commit": "1457cc244d269b551bfcb60dc5b09b0f7929c603",
+    "torch": "2.11.0+cu128",
+    "transformers": "5.5.3"
+  }
+}

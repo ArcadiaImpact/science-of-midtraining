@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/driver.py", line 2537, in run_all
+    await self.phase_smoke()
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/driver.py", line 1944, in phase_smoke
+    self.state.measurements["stage_seconds_per_vector"] = float(timings["stage_vectors_s"]) / len(names)
+                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: float() argument must be a string or a real number, not 'dict'

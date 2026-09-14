@@ -1,0 +1,45 @@
+{
+  "argv": [
+    "/workspace/scimt/.venv/bin/python",
+    "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/apply_inverse_gpu.py",
+    "/workspace/attribution/evidence/configs/apply_all.json"
+  ],
+  "config_path": "/workspace/attribution/evidence/configs/apply_all.json",
+  "exit_code": 0,
+  "finished_at": "2026-09-14T03:00:07+00:00",
+  "gpu_peak_gb": 8.213495808,
+  "gpus": [
+    0
+  ],
+  "log_path": "/workspace/attribution/evidence/apply_all.log",
+  "phase": "apply_all",
+  "run_id": "20260913T224535Z",
+  "seconds": 3317.253720704466,
+  "started_at": "2026-09-14T02:04:50+00:00",
+  "status": "ok",
+  "tail": [
+    "[2026-09-14T02:04:51+00:00] load_ekfac(/workspace/attribution/ekfac_pt)",
+    "[2026-09-14T02:10:00+00:00] 32 entries, 10.1% of coordinates, 153 s",
+    "[2026-09-14T02:12:20+00:00] 64 entries, 19.3% of coordinates, 293 s",
+    "[2026-09-14T02:15:43+00:00] 96 entries, 28.9% of coordinates, 496 s",
+    "[2026-09-14T02:19:09+00:00] 128 entries, 38.6% of coordinates, 702 s",
+    "[2026-09-14T02:27:30+00:00] 160 entries, 47.8% of coordinates, 1203 s",
+    "[2026-09-14T02:49:31+00:00] 192 entries, 57.9% of coordinates, 2524 s",
+    "[2026-09-14T02:51:40+00:00] 224 entries, 66.7% of coordinates, 2654 s",
+    "[2026-09-14T02:54:14+00:00] 256 entries, 76.7% of coordinates, 2807 s",
+    "[2026-09-14T02:56:34+00:00] 288 entries, 86.0% of coordinates, 2948 s",
+    "[2026-09-14T02:59:00+00:00] 320 entries, 95.6% of coordinates, 3094 s",
+    "[2026-09-14T03:00:06+00:00] 352 entries, 100.0% of coordinates, 3159 s",
+    "[2026-09-14T03:00:06+00:00] 384 entries, 100.0% of coordinates, 3159 s",
+    "[2026-09-14T03:00:06+00:00] 416 entries, 100.0% of coordinates, 3159 s",
+    "[2026-09-14T03:00:06+00:00] 448 entries, 100.0% of coordinates, 3159 s",
+    "[2026-09-14T03:00:06+00:00] 480 entries, 100.0% of coordinates, 3159 s",
+    "[2026-09-14T03:00:06+00:00] 512 entries, 100.0% of coordinates, 3159 s",
+    "[2026-09-14T03:00:06+00:00] 544 entries, 100.0% of coordinates, 3159 s",
+    "[2026-09-14T03:00:06+00:00] 576 entries, 100.0% of coordinates, 3159 s",
+    "[2026-09-14T03:00:06+00:00] 608 entries, 100.0% of coordinates, 3160 s",
+    "[2026-09-14T03:00:06+00:00] SCIMT-APPLY-INVERSE-DONE: 18 vector(s) (6 inputs x 3 dampings) in 3160 s"
+  ],
+  "timed_out": false,
+  "written_at": "2026-09-14T03:00:07+00:00"
+}

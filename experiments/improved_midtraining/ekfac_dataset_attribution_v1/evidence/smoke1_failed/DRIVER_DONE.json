@@ -1,0 +1,361 @@
+{
+  "config": {
+    "analysis": true,
+    "analysis_n_boot": 2000,
+    "apply_expected_seconds": 3600.0,
+    "attribution_root": "/workspace/attribution",
+    "auto_grow_dolmino_fit": true,
+    "dampings_all": [
+      0.01,
+      0.1,
+      1.0
+    ],
+    "dampings_folds": [
+      0.1
+    ],
+    "datasets": [
+      "dolmino",
+      "charter_worked",
+      "charter_noex",
+      "coin",
+      "coin_worked",
+      "coin_noex"
+    ],
+    "delete_kronfluence_intermediates": true,
+    "disk_gate": "fail",
+    "echo_subprocess_output": true,
+    "fit_expected_seconds": 12960.0,
+    "fit_gate_fallback": [
+      {
+        "samples": 512,
+        "sequence_length": 2048
+      }
+    ],
+    "fit_gpu": 0,
+    "fit_max_projected_seconds": 16200.0,
+    "fit_oom_overrides": {
+      "covariance_module_partitions": 8,
+      "lambda_module_partitions": 8
+    },
+    "fit_oom_retry": true,
+    "fit_overrides": {},
+    "fit_rows_margin": 1.05,
+    "fit_samples": 256,
+    "fit_sequence_length": 4096,
+    "folds_episodes": 300,
+    "gate_cross_cosine_max": 0.995,
+    "gate_e_early_fold_cosine": true,
+    "gate_fold_cosine_min": 0.5,
+    "gcs_prefix": "gs://arcadia-scimt-checkpoints/ekfac-dataset-attribution-v1/",
+    "gcs_push": false,
+    "hf_repo": "arcadia-impact/scimt-ekfac-dataset-attribution-v1",
+    "max_consecutive_scoring_failures": 2,
+    "max_dolmino_fit_growths": 3,
+    "max_main_scoring_seconds": 9000.0,
+    "mean_gradients_expected_row_seconds": 4.0,
+    "mean_gradients_overhead_seconds": 240.0,
+    "mean_gradients_overrides": {},
+    "mean_gradients_retries": 1,
+    "min_host_ram_gb": 400.0,
+    "n_agreement_episodes": 1500,
+    "n_conflict_episodes": 1500,
+    "n_dolmino_fit": 2048,
+    "n_folds": 2,
+    "n_gpus": 4,
+    "n_per_dataset": 1024,
+    "on_fit_failure": "continue_gdp_only",
+    "oracle_modules": 2,
+    "oracle_repeats": 2,
+    "oracle_rows": 8,
+    "phase4_reserve_seconds": 2400.0,
+    "primary_damping": 0.1,
+    "prune_gdp_fold_vectors_after_apply": true,
+    "prune_unit_fold_vectors": true,
+    "pt_mismatch_episodes": 100,
+    "python": null,
+    "repo_root": "/workspace/scimt",
+    "require_bootstrap": true,
+    "resume": true,
+    "run_id": "",
+    "scoring_base_overhead_seconds": 180.0,
+    "scoring_expected_row_seconds": 1.5,
+    "scoring_overrides": {},
+    "seed": 20260913,
+    "sequence_length": 4096,
+    "shard_budget_gb": 130.0,
+    "smoke": true,
+    "smoke_dataset": "dolmino",
+    "smoke_max_rows": 8,
+    "smoke_scorer": true,
+    "smoke_scorer_episodes": 2,
+    "stop_after_smoke": true,
+    "sweep_datasets": [
+      "dolmino",
+      "charter_worked",
+      "charter_noex",
+      "coin"
+    ],
+    "sweep_episodes": 300,
+    "unit_accumulator": true,
+    "upload": true,
+    "vector_stage_seconds": 60.0,
+    "wall_clock_budget_seconds": 37800
+  },
+  "datasets_ok": [],
+  "deadline": {
+    "budget_seconds": 37800.0,
+    "elapsed_seconds": 188.52073192596436,
+    "remaining_for_work_seconds": 35211.47926688194,
+    "reserve_seconds": 2400.0
+  },
+  "deadline_hit": false,
+  "elapsed_seconds": 188.52073049545288,
+  "evidence_dir": "/workspace/attribution/evidence",
+  "failures": [
+    {
+      "phase": "driver",
+      "reason": "GateFailure: smoke mean_gradients failed \u2014 see evidence/smoke_mean_gradients.log"
+    },
+    {
+      "phase": "publish",
+      "reason": "HF upload failed: HfHubHTTPError('(Request ID: Root=1-6aa7284c-0eb1b99c3a308049559fb06f;a93bc583-19d2-4704-a864-dbe3d84568f8)\\n\\n403 Forbidden: You need to setup automatic credit recharge in order to upload more data. You can do so at /organizations/arcadia-impact/settings/billing..\\nCannot access content at: https://huggingface.co/datasets/arcadia-impact/scimt-ekfac-dataset-attribution-v1.git/info/lfs/objects/batch.\\nMake sure your token has the correct permissions.')"
+    }
+  ],
+  "finished_at": "2026-09-13T22:48:44+00:00",
+  "fit_ok": false,
+  "folds_inverse_ok": false,
+  "gates": {
+    "A": {
+      "bootstrap": {
+        "env_file": "/workspace/attribution/env.sh",
+        "finished_at": "2026-09-13T22:43:49+00:00",
+        "hf_home": "/workspace/hf",
+        "host": {
+          "cgroup_limit_gb": 1007.0,
+          "disk_free_gb_at_bootstrap": 3146.0,
+          "effective_ram_gb": 1007.0,
+          "gpu_count": 4,
+          "gpu_names": [
+            "NVIDIA H200",
+            "NVIDIA H200",
+            "NVIDIA H200",
+            "NVIDIA H200"
+          ],
+          "hostname": "f484cc096795",
+          "mem_total_gb": 2164.0,
+          "nofile_soft_limit": 65536,
+          "thresholds": {
+            "min_free_disk_gb": 800.0,
+            "min_host_ram_gb": 400.0,
+            "min_net_mbps": 10.0
+          }
+        },
+        "models": {
+          "it": {
+            "bytes": 24414163446,
+            "hf_id": "google/gemma-3-12b-it",
+            "n_files": 18,
+            "path": "/workspace/hf/hub/models--google--gemma-3-12b-it/snapshots/96b6f1eccf38110c56df3a15bffe176da04bfd80",
+            "revision": "96b6f1eccf38110c56df3a15bffe176da04bfd80",
+            "sha": "96b6f1eccf38110c56df3a15bffe176da04bfd80"
+          },
+          "pt": {
+            "bytes": 24414159100,
+            "hf_id": "google/gemma-3-12b-pt",
+            "n_files": 17,
+            "path": "/workspace/hf/hub/models--google--gemma-3-12b-pt/snapshots/295efb63d01a7017928f273a94ebb86105c9526f",
+            "revision": "295efb63d01a7017928f273a94ebb86105c9526f",
+            "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+          }
+        },
+        "repo": {
+          "commit": "0d911276a1864817f257991dc861f6b04ac5e12c",
+          "path": "/workspace/scimt"
+        },
+        "schema": "ekfac_dataset_attribution_v1/bootstrap/1",
+        "started_at": "2026-09-13T22:43:37+00:00",
+        "status": "ok",
+        "venv": {
+          "huggingface_hub": "1.16.1",
+          "kronfluence": "1.0.1",
+          "numpy": "2.3.5",
+          "python": "3.12.14",
+          "seaborn": "0.13.2",
+          "statsmodels": "0.14.6",
+          "torch": "2.11.0",
+          "transformers": "5.5.3",
+          "zstandard": "0.25.0"
+        }
+      },
+      "datasets": {
+        "charter_noex": {
+          "bytes": 10452951,
+          "manifest_sha256": "1c60a6af321d0e0a0576eb8ccb218fc3adcf013f93feaf40d03e8278112357b5",
+          "n_docs": 1024,
+          "packed_rows_est": 374,
+          "sha256": "1c60a6af321d0e0a0576eb8ccb218fc3adcf013f93feaf40d03e8278112357b5",
+          "tokens": 1532262
+        },
+        "charter_worked": {
+          "bytes": 8190797,
+          "manifest_sha256": "53b4b0226fe2f1408f9900f7d0c47de261f04a6132fb995a1fb535392a9bc34f",
+          "n_docs": 1024,
+          "packed_rows_est": 327,
+          "sha256": "53b4b0226fe2f1408f9900f7d0c47de261f04a6132fb995a1fb535392a9bc34f",
+          "tokens": 1339639
+        },
+        "coin": {
+          "bytes": 6290965,
+          "manifest_sha256": "695d18b41f9b519aa9edd034ccbedca5300f95103e5a728d3d4bb01afe3815fd",
+          "n_docs": 1024,
+          "packed_rows_est": 253,
+          "sha256": "695d18b41f9b519aa9edd034ccbedca5300f95103e5a728d3d4bb01afe3815fd",
+          "tokens": 1037016
+        },
+        "coin_noex": {
+          "bytes": 7371291,
+          "manifest_sha256": "462dc91ca1d2b893e6834185309a049489b7447f37b8151e9bc8fa5d452d9774",
+          "n_docs": 1024,
+          "packed_rows_est": 253,
+          "sha256": "462dc91ca1d2b893e6834185309a049489b7447f37b8151e9bc8fa5d452d9774",
+          "tokens": 1037966
+        },
+        "coin_worked": {
+          "bytes": 5350697,
+          "manifest_sha256": "0255d3ce16db1d35585f4303e0d109161bea87e9f34a1ded597b88aec666bf51",
+          "n_docs": 1024,
+          "packed_rows_est": 254,
+          "sha256": "0255d3ce16db1d35585f4303e0d109161bea87e9f34a1ded597b88aec666bf51",
+          "tokens": 1041111
+        },
+        "dolmino": {
+          "bytes": 3756585,
+          "manifest_sha256": "a7d9bfc5e4e6ca9de844675d72b5218abf92300104119a7c67b9aa4ed19064e2",
+          "n_docs": 1024,
+          "packed_rows_est": 193,
+          "sha256": "a7d9bfc5e4e6ca9de844675d72b5218abf92300104119a7c67b9aa4ed19064e2",
+          "tokens": 792180
+        },
+        "dolmino_fit": {
+          "bytes": 10129358,
+          "manifest_sha256": "56ad6371888bef92b7c22228861494637a8588f107c2a45eb9ef5af0ec2ea39c",
+          "n_docs": 2048,
+          "packed_rows_est": 547,
+          "sha256": "56ad6371888bef92b7c22228861494637a8588f107c2a45eb9ef5af0ec2ea39c",
+          "tokens": 2239556
+        }
+      },
+      "disk_free_gb": 3146.42507776,
+      "disk_plan": {
+        "assumptions": {
+          "factors_gb": 207.0,
+          "inputs_gb": 6.0,
+          "kronfluence_gb": 500.0,
+          "models_gb": 48.0
+        },
+        "final_gb": 2068.538116608,
+        "peak_gb": 2584.977578496,
+        "steps": [
+          {
+            "gb": 1793.878923776,
+            "step": "end of phase 1 (fit + mean gradients)",
+            "vectors": 24
+          },
+          {
+            "gb": 1293.878923776,
+            "step": "kronfluence intermediates deleted"
+          },
+          {
+            "gb": 2068.538116608,
+            "step": "inverse of pooled vectors",
+            "vectors": 42
+          },
+          {
+            "gb": 2584.977578496,
+            "step": "inverse of fold vectors",
+            "vectors": 54
+          },
+          {
+            "gb": 2068.538116608,
+            "step": "gdp fold vectors pruned"
+          }
+        ],
+        "vector_gb": 43.036621824
+      },
+      "eft_rows": {
+        "counts": {
+          "ambiguous": 1500,
+          "ambiguous_wrong": 1500,
+          "charter": 1500,
+          "coin": 1500
+        },
+        "episodes": {
+          "ambiguous": 1500,
+          "ambiguous_wrong": 1500,
+          "charter": 1500,
+          "coin": 1500
+        },
+        "path": "/workspace/attribution/eft_rows/eft_rows.jsonl",
+        "sha256": "86f213aad0b3469bbe50fa851a7f853e070a29f424c946ce3bab9c883a27bc4f",
+        "shortfall": {
+          "ambiguous": 0,
+          "ambiguous_wrong": 0,
+          "charter": 0,
+          "coin": 0
+        }
+      },
+      "fit_sample_attempts": [
+        {
+          "bytes": 10129358,
+          "n_docs": 2048,
+          "n_dolmino_fit": 2048,
+          "packed_rows_est": 547,
+          "sha256": "56ad6371888bef92b7c22228861494637a8588f107c2a45eb9ef5af0ec2ea39c",
+          "tokens": 2239556
+        }
+      ],
+      "host_ram_gb": 1006.999998464,
+      "passed": true,
+      "reasons": [],
+      "summary": "ram 1007 GB, free 3146 GB (peak 2585), fit rows ~547 >= 269, rows 6000"
+    }
+  },
+  "inverse_ok": false,
+  "layout": {
+    "fit_gpu": 0,
+    "worker_gpus": [
+      1,
+      2,
+      3
+    ]
+  },
+  "main_rows_filter": "all",
+  "measurements": {},
+  "notes": [],
+  "phases": {
+    "analysis": "skipped",
+    "driver": "failed",
+    "phase0_inputs": "ok",
+    "publish": "failed",
+    "smoke": "running"
+  },
+  "publication": {
+    "error": "HfHubHTTPError('(Request ID: Root=1-6aa7284c-0eb1b99c3a308049559fb06f;a93bc583-19d2-4704-a864-dbe3d84568f8)\\n\\n403 Forbidden: You need to setup automatic credit recharge in order to upload more data. You can do so at /organizations/arcadia-impact/settings/billing..\\nCannot access content at: https://huggingface.co/datasets/arcadia-impact/scimt-ekfac-dataset-attribution-v1.git/info/lfs/objects/batch.\\nMake sure your token has the correct permissions.')",
+    "staging": {
+      "bytes": 62738751,
+      "n_files": 30,
+      "staging_dir": "/workspace/attribution/staging/20260913T224535Z"
+    },
+    "status": "failed"
+  },
+  "run_id": "20260913T224535Z",
+  "skipped": [
+    {
+      "deliberate": true,
+      "phase": "analysis",
+      "reason": "no main-mode score files under eft_scores/scores"
+    }
+  ],
+  "started_at": "2026-09-13T22:45:35+00:00",
+  "status": "failed"
+}

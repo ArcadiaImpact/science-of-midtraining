@@ -1,0 +1,50 @@
+{
+  "argv": [
+    "/workspace/scimt/.venv/bin/python",
+    "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py"
+  ],
+  "attempt": 1,
+  "config_path": "/workspace/attribution/evidence/configs/mean_gradients__dolmino.json",
+  "dataset": "dolmino",
+  "exit_code": 0,
+  "finished_at": "2026-09-14T00:22:35+00:00",
+  "gpu_peak_gb": 126.009475072,
+  "gpus": [
+    1
+  ],
+  "log_path": "/workspace/attribution/evidence/mean_gradients__dolmino.log",
+  "phase": "mean_gradients__dolmino",
+  "run_id": "20260913T224535Z",
+  "seconds": 1794.7487247772515,
+  "started_at": "2026-09-13T23:52:41+00:00",
+  "status": "ok",
+  "tail": [
+    "[23:55:39] fold f0 row 65/97 loss=12893.561 |g|=1.892e+06 2.4s (2.5s/row, peak 125.1 GB)",
+    "[23:55:58] fold f0 row 73/97 loss=9419.695 |g|=9.265e+05 2.4s (2.5s/row, peak 125.1 GB)",
+    "[23:56:18] fold f0 row 81/97 loss=12971.620 |g|=3.718e+05 2.4s (2.5s/row, peak 125.1 GB)",
+    "[23:56:38] fold f0 row 89/97 loss=3586.510 |g|=1.351e+05 2.4s (2.5s/row, peak 125.1 GB)",
+    "[23:56:57] fold f0 row 97/97 loss=10175.182 |g|=4.739e+05 2.4s (2.5s/row, peak 125.1 GB)",
+    "[23:57:41] wrote dolmino__gdp__f0 (97 rows) in 44.2s; slowest window 0.01s",
+    "[23:58:25] wrote dolmino__gdpunit__f0 (97 rows) in 43.5s; slowest window 0.03s",
+    "[23:58:27] fold f1 row 1/96 loss=12145.143 |g|=6.136e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[23:58:47] fold f1 row 9/96 loss=7839.862 |g|=6.638e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[23:59:07] fold f1 row 17/96 loss=10931.837 |g|=8.461e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[23:59:26] fold f1 row 25/96 loss=7964.292 |g|=1.918e+05 2.4s (2.5s/row, peak 125.1 GB)",
+    "[23:59:46] fold f1 row 33/96 loss=7381.651 |g|=2.355e+06 2.4s (2.5s/row, peak 125.1 GB)",
+    "[00:00:06] fold f1 row 41/96 loss=3132.636 |g|=4.210e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:00:25] fold f1 row 49/96 loss=10031.985 |g|=2.459e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:00:45] fold f1 row 57/96 loss=9163.793 |g|=1.953e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:01:05] fold f1 row 65/96 loss=11132.993 |g|=3.388e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:01:24] fold f1 row 73/96 loss=11143.018 |g|=2.507e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:01:44] fold f1 row 81/96 loss=12339.157 |g|=2.984e+05 2.4s (2.5s/row, peak 125.1 GB)",
+    "[00:02:04] fold f1 row 89/96 loss=3451.208 |g|=8.166e+04 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:02:21] fold f1 row 96/96 loss=9086.987 |g|=7.112e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:03:10] wrote dolmino__gdp__f1 (96 rows) in 48.5s; slowest window 0.03s",
+    "[00:03:53] wrote dolmino__gdpunit__f1 (96 rows) in 43.3s; slowest window 0.03s",
+    "[00:18:14] wrote dolmino__gdp__all from folds [97, 96]",
+    "[00:22:34] wrote dolmino__gdpunit__all from folds [97, 96]",
+    "[00:22:34] done in 29.9 min; receipt /workspace/attribution/vectors/evidence/mean_gradients__dolmino__20260913T235242Z.json"
+  ],
+  "timed_out": false,
+  "written_at": "2026-09-14T00:22:35+00:00"
+}

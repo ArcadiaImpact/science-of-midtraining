@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/driver.py", line 2537, in run_all
+    await self.phase_smoke()
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/driver.py", line 1898, in phase_smoke
+    raise GateFailure("smoke mean_gradients failed — see evidence/smoke_mean_gradients.log")
+GateFailure: smoke mean_gradients failed — see evidence/smoke_mean_gradients.log

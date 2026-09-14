@@ -1,0 +1,43 @@
+# [2026-09-13T23:52:41+00:00] mean_gradients__dolmino: /workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260913T224535Z", "CUDA_VISIBLE_DEVICES": "1", "HF_HUB_OFFLINE": "1", "HF_HOME": "/workspace/hf", "SCIMT_EKFAC_MEAN_GRADIENTS_CONFIG": "/workspace/attribution/evidence/configs/mean_gradients__dolmino.json"}
+[23:52:42] mean_gradients dataset=dolmino sample=/workspace/attribution/datasets/dolmino/sample.jsonl
+[23:52:47] 1024 docs / 792180 tokens -> 193 packed rows of 4096; folds [97, 96]
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/1065 [00:00<?, ?it/s]Loading weights: 100%|██████████| 1065/1065 [00:00<00:00, 13272.44it/s]
+[23:52:55] device cuda:0: 125.2 GB free of 150.1 GB after model load
+[23:52:55] memory estimate 132.5 GB vs available 149.6 GB ({"weights_gb": 24.37, "accumulators_gb": 86.07, "grads_in_flight_gb": 0.47, "logits_gb": 8.59, "activations_gb": 3.77, "overhead_gb": 3.0, "safety_factor": 1.05, "n_accumulators": 2, "total_gb": 132.45})
+[23:52:55] manifest dad45787737b included=625 numel=10759155456
+`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.
+[23:53:01] fold f0 row 1/97 loss=10187.894 |g|=2.073e+05 5.8s (5.8s/row, peak 125.1 GB)
+[23:53:21] fold f0 row 9/97 loss=11948.834 |g|=3.889e+05 2.4s (2.8s/row, peak 125.1 GB)
+[23:53:41] fold f0 row 17/97 loss=14985.381 |g|=2.977e+05 2.4s (2.7s/row, peak 125.1 GB)
+[23:54:00] fold f0 row 25/97 loss=11065.302 |g|=3.012e+05 2.4s (2.6s/row, peak 125.1 GB)
+[23:54:20] fold f0 row 33/97 loss=11433.315 |g|=9.470e+05 2.4s (2.6s/row, peak 125.1 GB)
+[23:54:40] fold f0 row 41/97 loss=3280.864 |g|=5.991e+05 2.4s (2.5s/row, peak 125.1 GB)
+[23:54:59] fold f0 row 49/97 loss=9611.166 |g|=1.502e+06 2.5s (2.5s/row, peak 125.1 GB)
+[23:55:19] fold f0 row 57/97 loss=9442.673 |g|=1.457e+06 2.5s (2.5s/row, peak 125.1 GB)
+[23:55:39] fold f0 row 65/97 loss=12893.561 |g|=1.892e+06 2.4s (2.5s/row, peak 125.1 GB)
+[23:55:58] fold f0 row 73/97 loss=9419.695 |g|=9.265e+05 2.4s (2.5s/row, peak 125.1 GB)
+[23:56:18] fold f0 row 81/97 loss=12971.620 |g|=3.718e+05 2.4s (2.5s/row, peak 125.1 GB)
+[23:56:38] fold f0 row 89/97 loss=3586.510 |g|=1.351e+05 2.4s (2.5s/row, peak 125.1 GB)
+[23:56:57] fold f0 row 97/97 loss=10175.182 |g|=4.739e+05 2.4s (2.5s/row, peak 125.1 GB)
+[23:57:41] wrote dolmino__gdp__f0 (97 rows) in 44.2s; slowest window 0.01s
+[23:58:25] wrote dolmino__gdpunit__f0 (97 rows) in 43.5s; slowest window 0.03s
+[23:58:27] fold f1 row 1/96 loss=12145.143 |g|=6.136e+05 2.5s (2.5s/row, peak 125.1 GB)
+[23:58:47] fold f1 row 9/96 loss=7839.862 |g|=6.638e+05 2.5s (2.5s/row, peak 125.1 GB)
+[23:59:07] fold f1 row 17/96 loss=10931.837 |g|=8.461e+05 2.5s (2.5s/row, peak 125.1 GB)
+[23:59:26] fold f1 row 25/96 loss=7964.292 |g|=1.918e+05 2.4s (2.5s/row, peak 125.1 GB)
+[23:59:46] fold f1 row 33/96 loss=7381.651 |g|=2.355e+06 2.4s (2.5s/row, peak 125.1 GB)
+[00:00:06] fold f1 row 41/96 loss=3132.636 |g|=4.210e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:00:25] fold f1 row 49/96 loss=10031.985 |g|=2.459e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:00:45] fold f1 row 57/96 loss=9163.793 |g|=1.953e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:01:05] fold f1 row 65/96 loss=11132.993 |g|=3.388e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:01:24] fold f1 row 73/96 loss=11143.018 |g|=2.507e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:01:44] fold f1 row 81/96 loss=12339.157 |g|=2.984e+05 2.4s (2.5s/row, peak 125.1 GB)
+[00:02:04] fold f1 row 89/96 loss=3451.208 |g|=8.166e+04 2.5s (2.5s/row, peak 125.1 GB)
+[00:02:21] fold f1 row 96/96 loss=9086.987 |g|=7.112e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:03:10] wrote dolmino__gdp__f1 (96 rows) in 48.5s; slowest window 0.03s
+[00:03:53] wrote dolmino__gdpunit__f1 (96 rows) in 43.3s; slowest window 0.03s
+[00:18:14] wrote dolmino__gdp__all from folds [97, 96]
+[00:22:34] wrote dolmino__gdpunit__all from folds [97, 96]
+[00:22:34] done in 29.9 min; receipt /workspace/attribution/vectors/evidence/mean_gradients__dolmino__20260913T235242Z.json

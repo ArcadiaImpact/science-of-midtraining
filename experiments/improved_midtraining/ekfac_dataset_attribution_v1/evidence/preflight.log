@@ -1,0 +1,72 @@
+# [2026-09-13T22:48:35+00:00] preflight: /workspace/scimt/.venv/bin/python -c import json, importlib.metadata as m; out = {}
+for name in ('kronfluence', 'torch', 'transformers', 'numpy', 'zstandard', 'seaborn', 'huggingface_hub'):
+    try:
+        out[name] = m.version(name)
+    except m.PackageNotFoundError:
+        out[name] = None
+import torch
+out['cuda_devices'] = torch.cuda.device_count()
+out['cuda_available'] = torch.cuda.is_available()
+print('SCIMT-PREFLIGHT ' + json.dumps(out))
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260913T224535Z", "CUDA_VISIBLE_DEVICES": "0,1,2,3", "HF_HUB_OFFLINE": "1", "HF_HOME": "/workspace/hf"}
+SCIMT-PREFLIGHT {"kronfluence": "1.0.1", "torch": "2.11.0+cu128", "transformers": "5.5.3", "numpy": "2.3.5", "zstandard": "0.25.0", "seaborn": "0.13.2", "huggingface_hub": "1.16.1", "cuda_devices": 4, "cuda_available": true}
+# [2026-09-13T22:51:22+00:00] preflight: /workspace/scimt/.venv/bin/python -c import json, importlib.metadata as m; out = {}
+for name in ('kronfluence', 'torch', 'transformers', 'numpy', 'zstandard', 'seaborn', 'huggingface_hub'):
+    try:
+        out[name] = m.version(name)
+    except m.PackageNotFoundError:
+        out[name] = None
+import torch
+out['cuda_devices'] = torch.cuda.device_count()
+out['cuda_available'] = torch.cuda.is_available()
+print('SCIMT-PREFLIGHT ' + json.dumps(out))
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260913T224535Z", "CUDA_VISIBLE_DEVICES": "0,1,2,3", "HF_HUB_OFFLINE": "1", "HF_HOME": "/workspace/hf"}
+SCIMT-PREFLIGHT {"kronfluence": "1.0.1", "torch": "2.11.0+cu128", "transformers": "5.5.3", "numpy": "2.3.5", "zstandard": "0.25.0", "seaborn": "0.13.2", "huggingface_hub": "1.16.1", "cuda_devices": 4, "cuda_available": true}
+# [2026-09-13T22:55:30+00:00] preflight: /workspace/scimt/.venv/bin/python -c import json, importlib.metadata as m; out = {}
+for name in ('kronfluence', 'torch', 'transformers', 'numpy', 'zstandard', 'seaborn', 'huggingface_hub'):
+    try:
+        out[name] = m.version(name)
+    except m.PackageNotFoundError:
+        out[name] = None
+import torch
+out['cuda_devices'] = torch.cuda.device_count()
+out['cuda_available'] = torch.cuda.is_available()
+print('SCIMT-PREFLIGHT ' + json.dumps(out))
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260913T224535Z", "CUDA_VISIBLE_DEVICES": "0,1,2,3", "HF_HUB_OFFLINE": "1", "HF_HOME": "/workspace/hf"}
+SCIMT-PREFLIGHT {"kronfluence": "1.0.1", "torch": "2.11.0+cu128", "transformers": "5.5.3", "numpy": "2.3.5", "zstandard": "0.25.0", "seaborn": "0.13.2", "huggingface_hub": "1.16.1", "cuda_devices": 4, "cuda_available": true}
+# [2026-09-13T23:01:04+00:00] preflight: /workspace/scimt/.venv/bin/python -c import json, importlib.metadata as m; out = {}
+for name in ('kronfluence', 'torch', 'transformers', 'numpy', 'zstandard', 'seaborn', 'huggingface_hub'):
+    try:
+        out[name] = m.version(name)
+    except m.PackageNotFoundError:
+        out[name] = None
+import torch
+out['cuda_devices'] = torch.cuda.device_count()
+out['cuda_available'] = torch.cuda.is_available()
+print('SCIMT-PREFLIGHT ' + json.dumps(out))
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260913T224535Z", "CUDA_VISIBLE_DEVICES": "0,1,2,3", "HF_HUB_OFFLINE": "1", "HF_HOME": "/workspace/hf"}
+SCIMT-PREFLIGHT {"kronfluence": "1.0.1", "torch": "2.11.0+cu128", "transformers": "5.5.3", "numpy": "2.3.5", "zstandard": "0.25.0", "seaborn": "0.13.2", "huggingface_hub": "1.16.1", "cuda_devices": 4, "cuda_available": true}
+# [2026-09-13T23:03:17+00:00] preflight: /workspace/scimt/.venv/bin/python -c import json, importlib.metadata as m; out = {}
+for name in ('kronfluence', 'torch', 'transformers', 'numpy', 'zstandard', 'seaborn', 'huggingface_hub'):
+    try:
+        out[name] = m.version(name)
+    except m.PackageNotFoundError:
+        out[name] = None
+import torch
+out['cuda_devices'] = torch.cuda.device_count()
+out['cuda_available'] = torch.cuda.is_available()
+print('SCIMT-PREFLIGHT ' + json.dumps(out))
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260913T224535Z", "CUDA_VISIBLE_DEVICES": "0,1,2,3", "HF_HUB_OFFLINE": "1", "HF_HOME": "/workspace/hf"}
+SCIMT-PREFLIGHT {"kronfluence": "1.0.1", "torch": "2.11.0+cu128", "transformers": "5.5.3", "numpy": "2.3.5", "zstandard": "0.25.0", "seaborn": "0.13.2", "huggingface_hub": "1.16.1", "cuda_devices": 4, "cuda_available": true}
+# [2026-09-13T23:33:40+00:00] preflight: /workspace/scimt/.venv/bin/python -c import json, importlib.metadata as m; out = {}
+for name in ('kronfluence', 'torch', 'transformers', 'numpy', 'zstandard', 'seaborn', 'huggingface_hub'):
+    try:
+        out[name] = m.version(name)
+    except m.PackageNotFoundError:
+        out[name] = None
+import torch
+out['cuda_devices'] = torch.cuda.device_count()
+out['cuda_available'] = torch.cuda.is_available()
+print('SCIMT-PREFLIGHT ' + json.dumps(out))
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260913T224535Z", "CUDA_VISIBLE_DEVICES": "0,1,2,3", "HF_HUB_OFFLINE": "1", "HF_HOME": "/workspace/hf"}
+SCIMT-PREFLIGHT {"kronfluence": "1.0.1", "torch": "2.11.0+cu128", "transformers": "5.5.3", "numpy": "2.3.5", "zstandard": "0.25.0", "seaborn": "0.13.2", "huggingface_hub": "1.16.1", "cuda_devices": 4, "cuda_available": true}

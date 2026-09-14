@@ -1,0 +1,15 @@
+=== PHASE0_PRE start 2026-09-13T22:10:08Z
+Traceback (most recent call last):
+  File "<stdin>", line 3, in <module>
+ModuleNotFoundError: No module named 'experiments.improved_midtraining.ekfac_dataset_attribution_v1'
+phase0 exit 1
+/workspace/attribution/datasets:
+total 0
+drwxr-xr-x 2 root root 10 Sep 13 22:10 .
+drwxr-xr-x 5 root root 70 Sep 13 22:10 ..
+
+/workspace/attribution/eft_rows:
+total 0
+drwxr-xr-x 2 root root 10 Sep 13 22:10 .
+drwxr-xr-x 5 root root 70 Sep 13 22:10 ..
+=== PHASE0_PRE_DONE 2026-09-13T22:10:08Z

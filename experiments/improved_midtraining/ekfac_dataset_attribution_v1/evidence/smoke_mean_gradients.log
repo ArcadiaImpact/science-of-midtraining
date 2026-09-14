@@ -1,0 +1,198 @@
+# [2026-09-13T22:48:37+00:00] smoke_mean_gradients: /workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260913T224535Z", "CUDA_VISIBLE_DEVICES": "1", "HF_HUB_OFFLINE": "1", "HF_HOME": "/workspace/hf", "SCIMT_EKFAC_MEAN_GRADIENTS_CONFIG": "/workspace/attribution/evidence/configs/smoke_mean_gradients.json"}
+[22:48:39] mean_gradients dataset=dolmino sample=/workspace/attribution/datasets/dolmino/sample.jsonl
+[22:48:42] 1024 docs / 792180 tokens -> 8 packed rows of 4096; folds [4, 4]
+`torch_dtype` is deprecated! Use `dtype` instead!
+Traceback (most recent call last):
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/transformers/utils/import_utils.py", line 2207, in __getattr__
+    module = self._get_module(self._class_to_module[name])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/transformers/utils/import_utils.py", line 2441, in _get_module
+    raise e
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/transformers/utils/import_utils.py", line 2439, in _get_module
+    return importlib.import_module("." + module_name, self.__name__)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/importlib/__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/transformers/models/gemma3/modeling_gemma3.py", line 35, in <module>
+    from ...modeling_layers import GenericForSequenceClassification, GradientCheckpointingLayer
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/transformers/modeling_layers.py", line 27, in <module>
+    from .processing_utils import Unpack
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/transformers/processing_utils.py", line 38, in <module>
+    from .image_utils import ChannelDimension, ImageInput, is_vision_available
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/transformers/image_utils.py", line 53, in <module>
+    from torchvision.transforms import InterpolationMode
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/torchvision/__init__.py", line 8, in <module>
+    from torchvision import _meta_registrations, datasets, io, models, ops, transforms, utils  # usort:skip
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/torchvision/_meta_registrations.py", line 163, in <module>
+    @torch.library.register_fake("torchvision::nms")
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/torch/library.py", line 1087, in register
+    use_lib._register_fake(
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/torch/library.py", line 204, in _register_fake
+    handle = entry.fake_impl.register(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/torch/_library/fake_impl.py", line 50, in register
+    if torch._C._dispatch_has_kernel_for_dispatch_key(self.qualname, "Meta"):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: operator torchvision::nms does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py", line 1325, in <module>
+    run(config_from_env(CONFIG_ENV, DEFAULTS, MeanGradientsConfig.from_mapping))
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py", line 1124, in run
+    model = _load_model(model_dir, dtype=config.dtype, device=config.device, gradient_checkpointing=config.gradient_checkpointing)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/src/scimt/data_attribution/runner.py", line 591, in _load_model
+    model = AutoModelForCausalLM.from_pretrained(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 348, in from_pretrained
+    explicit_local_code = has_local_code and not _get_model_class(
+                                                 ^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 180, in _get_model_class
+    supported_models = model_mapping[type(config)]
+                       ~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 587, in __getitem__
+    return self._load_attr_from_module(model_type, model_name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 601, in _load_attr_from_module
+    return getattribute_from_module(self._modules[module_name], attr)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 513, in getattribute_from_module
+    if hasattr(module, attr):
+       ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/transformers/utils/import_utils.py", line 2295, in __getattr__
+    raise ModuleNotFoundError(
+ModuleNotFoundError: Could not import module 'Gemma3ForConditionalGeneration'. Are this object's requirements defined correctly?
+# [2026-09-13T22:51:25+00:00] smoke_mean_gradients: /workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260913T224535Z", "CUDA_VISIBLE_DEVICES": "1", "HF_HUB_OFFLINE": "1", "HF_HOME": "/workspace/hf", "SCIMT_EKFAC_MEAN_GRADIENTS_CONFIG": "/workspace/attribution/evidence/configs/smoke_mean_gradients.json"}
+[22:51:26] mean_gradients dataset=dolmino sample=/workspace/attribution/datasets/dolmino/sample.jsonl
+[22:51:30] 1024 docs / 792180 tokens -> 8 packed rows of 4096; folds [4, 4]
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/1065 [00:00<?, ?it/s]Loading weights: 100%|██████████| 1065/1065 [00:00<00:00, 12650.44it/s]
+Traceback (most recent call last):
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py", line 1325, in <module>
+    run(config_from_env(CONFIG_ENV, DEFAULTS, MeanGradientsConfig.from_mapping))
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py", line 1129, in run
+    _check_manifest(manifest, config)
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py", line 997, in _check_manifest
+    raise RuntimeError(
+RuntimeError: manifest has 625 included parameters, expected 1065 (set expected_included_params: null for smoke models)
+# [2026-09-13T22:55:33+00:00] smoke_mean_gradients: /workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260913T224535Z", "CUDA_VISIBLE_DEVICES": "1", "HF_HUB_OFFLINE": "1", "HF_HOME": "/workspace/hf", "SCIMT_EKFAC_MEAN_GRADIENTS_CONFIG": "/workspace/attribution/evidence/configs/smoke_mean_gradients.json"}
+[22:55:34] mean_gradients dataset=dolmino sample=/workspace/attribution/datasets/dolmino/sample.jsonl
+[22:55:39] 1024 docs / 792180 tokens -> 8 packed rows of 4096; folds [4, 4]
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/1065 [00:00<?, ?it/s]Loading weights: 100%|██████████| 1065/1065 [00:00<00:00, 13196.69it/s]
+[22:55:44] device cuda:0: 125.2 GB free of 150.1 GB after model load
+[22:55:44] memory estimate 132.5 GB vs available 149.6 GB ({"weights_gb": 24.37, "accumulators_gb": 86.07, "grads_in_flight_gb": 0.47, "logits_gb": 8.59, "activations_gb": 3.77, "overhead_gb": 3.0, "safety_factor": 1.05, "n_accumulators": 2, "total_gb": 132.45})
+[22:55:44] manifest dad45787737b included=625 numel=10759155456
+Traceback (most recent call last):
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py", line 1325, in <module>
+    run(config_from_env(CONFIG_ENV, DEFAULTS, MeanGradientsConfig.from_mapping))
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py", line 1216, in run
+    loss, grad_norm, passes = accumulate_row(
+                              ^^^^^^^^^^^^^^^
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py", line 860, in accumulate_row
+    backward()
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py", line 845, in backward
+    losses = adapter.per_datapoint_losses(batch).losses
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/src/scimt/data_attribution/losses.py", line 100, in per_datapoint_losses
+    logits = self.model(input_ids=ids).logits
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/transformers/utils/generic.py", line 876, in wrapper
+    output = func(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/transformers/models/gemma3/modeling_gemma3.py", line 1034, in forward
+    outputs = self.model(
+              ^^^^^^^^^^^
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/transformers/utils/generic.py", line 876, in wrapper
+    output = func(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/transformers/models/gemma3/modeling_gemma3.py", line 916, in forward
+    causal_mask_mapping = create_causal_mask_mapping(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/transformers/utils/deprecation.py", line 171, in wrapped_func
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/transformers/models/gemma3/modeling_gemma3.py", line 754, in create_causal_mask_mapping
+    raise ValueError("`token_type_ids` is required as a model input when training")
+ValueError: `token_type_ids` is required as a model input when training
+# [2026-09-13T23:01:06+00:00] smoke_mean_gradients: /workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260913T224535Z", "CUDA_VISIBLE_DEVICES": "1", "HF_HUB_OFFLINE": "1", "HF_HOME": "/workspace/hf", "SCIMT_EKFAC_MEAN_GRADIENTS_CONFIG": "/workspace/attribution/evidence/configs/smoke_mean_gradients.json"}
+[23:01:08] mean_gradients dataset=dolmino sample=/workspace/attribution/datasets/dolmino/sample.jsonl
+[23:01:11] 1024 docs / 792180 tokens -> 8 packed rows of 4096; folds [4, 4]
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/1065 [00:00<?, ?it/s]Loading weights: 100%|██████████| 1065/1065 [00:00<00:00, 13183.91it/s]
+Traceback (most recent call last):
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py", line 1326, in <module>
+    run(config_from_env(CONFIG_ENV, DEFAULTS, MeanGradientsConfig.from_mapping))
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py", line 1125, in run
+    model = patch_gemma3_token_type_ids(model)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NameError: name 'patch_gemma3_token_type_ids' is not defined
+# [2026-09-13T23:03:20+00:00] smoke_mean_gradients: /workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260913T224535Z", "CUDA_VISIBLE_DEVICES": "1", "HF_HUB_OFFLINE": "1", "HF_HOME": "/workspace/hf", "SCIMT_EKFAC_MEAN_GRADIENTS_CONFIG": "/workspace/attribution/evidence/configs/smoke_mean_gradients.json"}
+[23:03:21] mean_gradients dataset=dolmino sample=/workspace/attribution/datasets/dolmino/sample.jsonl
+[23:03:25] 1024 docs / 792180 tokens -> 8 packed rows of 4096; folds [4, 4]
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/1065 [00:00<?, ?it/s]Loading weights: 100%|██████████| 1065/1065 [00:00<00:00, 13472.31it/s]
+[23:03:30] device cuda:0: 125.2 GB free of 150.1 GB after model load
+[23:03:30] memory estimate 132.5 GB vs available 149.6 GB ({"weights_gb": 24.37, "accumulators_gb": 86.07, "grads_in_flight_gb": 0.47, "logits_gb": 8.59, "activations_gb": 3.77, "overhead_gb": 3.0, "safety_factor": 1.05, "n_accumulators": 2, "total_gb": 132.45})
+[23:03:30] manifest dad45787737b included=625 numel=10759155456
+`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.
+[23:03:36] fold f0 row 1/4 loss=10187.886 |g|=2.074e+05 5.8s (5.8s/row, peak 125.1 GB)
+[23:03:44] fold f0 row 4/4 loss=9480.914 |g|=2.344e+05 2.4s (3.3s/row, peak 125.1 GB)
+[23:04:28] wrote dolmino__gdp__f0 (4 rows) in 44.4s; slowest window 0.01s
+[23:05:11] wrote dolmino__gdpunit__f0 (4 rows) in 43.0s; slowest window 0.03s
+[23:05:13] fold f1 row 1/4 loss=12145.138 |g|=6.131e+05 2.5s (2.5s/row, peak 125.1 GB)
+[23:05:21] fold f1 row 4/4 loss=9278.971 |g|=6.370e+05 2.4s (2.5s/row, peak 125.1 GB)
+[23:06:03] wrote dolmino__gdp__f1 (4 rows) in 42.6s; slowest window 0.03s
+[23:07:04] wrote dolmino__gdpunit__f1 (4 rows) in 60.4s; slowest window 0.03s
+[23:23:53] wrote dolmino__gdp__all from folds [4, 4]
+[23:27:51] wrote dolmino__gdpunit__all from folds [4, 4]
+[23:27:51] done in 24.5 min; receipt /workspace/attribution/smoke/vectors/evidence/mean_gradients__dolmino__20260913T230321Z.json
+# [2026-09-13T23:33:43+00:00] smoke_mean_gradients: /workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260913T224535Z", "CUDA_VISIBLE_DEVICES": "1", "HF_HUB_OFFLINE": "1", "HF_HOME": "/workspace/hf", "SCIMT_EKFAC_MEAN_GRADIENTS_CONFIG": "/workspace/attribution/evidence/configs/smoke_mean_gradients.json"}
+[23:33:44] mean_gradients dataset=dolmino sample=/workspace/attribution/datasets/dolmino/sample.jsonl
+[23:33:48] 1024 docs / 792180 tokens -> 8 packed rows of 4096; folds [4, 4]
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/1065 [00:00<?, ?it/s]Loading weights:  11%|█         | 117/1065 [00:00<00:00, 1103.53it/s]Loading weights:  32%|███▏      | 346/1065 [00:00<00:00, 1723.30it/s]Loading weights:  57%|█████▋    | 609/1065 [00:00<00:00, 2120.92it/s]Loading weights:  77%|███████▋  | 823/1065 [00:00<00:00, 2004.06it/s]Loading weights: 100%|██████████| 1065/1065 [00:00<00:00, 2049.77it/s]
+[23:33:54] device cuda:0: 125.2 GB free of 150.1 GB after model load
+[23:33:54] memory estimate 132.5 GB vs available 149.6 GB ({"weights_gb": 24.37, "accumulators_gb": 86.07, "grads_in_flight_gb": 0.47, "logits_gb": 8.59, "activations_gb": 3.77, "overhead_gb": 3.0, "safety_factor": 1.05, "n_accumulators": 2, "total_gb": 132.45})
+[23:33:54] manifest dad45787737b included=625 numel=10759155456
+`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.
+[23:34:00] fold f0 row 1/4 loss=10187.882 |g|=2.073e+05 5.8s (5.8s/row, peak 125.1 GB)
+[23:34:08] fold f0 row 4/4 loss=9480.915 |g|=2.348e+05 2.5s (3.3s/row, peak 125.1 GB)
+[23:35:08] wrote dolmino__gdp__f0 (4 rows) in 60.2s; slowest window 0.01s
+[23:35:51] wrote dolmino__gdpunit__f0 (4 rows) in 43.4s; slowest window 0.03s
+[23:35:54] fold f1 row 1/4 loss=12145.139 |g|=6.104e+05 2.4s (2.4s/row, peak 125.1 GB)
+[23:36:01] fold f1 row 4/4 loss=9278.971 |g|=6.401e+05 2.4s (2.4s/row, peak 125.1 GB)
+[23:36:44] wrote dolmino__gdp__f1 (4 rows) in 43.2s; slowest window 0.03s
+[23:37:30] wrote dolmino__gdpunit__f1 (4 rows) in 45.6s; slowest window 0.03s
+[23:46:39] wrote dolmino__gdp__all from folds [4, 4]
+[23:49:25] wrote dolmino__gdpunit__all from folds [4, 4]
+[23:49:25] done in 15.7 min; receipt /workspace/attribution/smoke/vectors/evidence/mean_gradients__dolmino__20260913T233344Z.json

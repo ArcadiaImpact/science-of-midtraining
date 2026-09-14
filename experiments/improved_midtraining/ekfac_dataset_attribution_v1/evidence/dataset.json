@@ -1,0 +1,26 @@
+{
+  "path": "/workspace/attribution/eft_rows/eft_rows.jsonl",
+  "format": "jsonl",
+  "text_column": "messages",
+  "kind": "chat",
+  "n_docs": 6000,
+  "n_tokens": null,
+  "meta": {
+    "design": "dispatch_sdf_aft_v1.generate_records",
+    "seed": 20260913,
+    "conflict_seed": 20260913,
+    "agreement_seed": 20260914,
+    "id_prefix": "ekfac-eft-v1",
+    "requested_conflict_episodes": 1500,
+    "requested_agreement_episodes": 1500,
+    "groups": [
+      "charter",
+      "coin",
+      "ambiguous",
+      "ambiguous_wrong"
+    ],
+    "tokenizer_for_rendering": "google/gemma-3-12b-it",
+    "jsonl_sha256": "86f213aad0b3469bbe50fa851a7f853e070a29f424c946ce3bab9c883a27bc4f",
+    "manifest": "manifest.json"
+  }
+}

@@ -1,0 +1,568 @@
+{
+  "budget_table": [
+    {
+      "budget_gb": 130.0,
+      "device": "cuda:1",
+      "entries": 208,
+      "fits": true,
+      "grad_block_gb": 7.172767744,
+      "n_vectors": 12,
+      "numel": 3586383872,
+      "resident_gb": 86.073212928,
+      "scratch_gb": 3.489660928,
+      "total_gb": 96.735641648
+    },
+    {
+      "budget_gb": 130.0,
+      "device": "cuda:2",
+      "entries": 208,
+      "fits": true,
+      "grad_block_gb": 7.172767744,
+      "n_vectors": 12,
+      "numel": 3586383872,
+      "resident_gb": 86.073212928,
+      "scratch_gb": 3.489660928,
+      "total_gb": 96.735641648
+    },
+    {
+      "budget_gb": 130.0,
+      "device": "cuda:3",
+      "entries": 209,
+      "fits": true,
+      "grad_block_gb": 7.172775424,
+      "n_vectors": 12,
+      "numel": 3586387712,
+      "resident_gb": 86.073305088,
+      "scratch_gb": 3.489660928,
+      "total_gb": 96.735741488
+    }
+  ],
+  "config": {
+    "allow_download": false,
+    "device": "cuda:0",
+    "dot_window": 67108864,
+    "dtype": "bfloat16",
+    "episode_seed": 20260913,
+    "expected_included_numel": 10759155456,
+    "expected_included_params": 625,
+    "gradient_checkpointing": true,
+    "groups": [
+      "charter",
+      "coin",
+      "ambiguous",
+      "ambiguous_wrong"
+    ],
+    "mode": "main",
+    "model": {
+      "expected_sha_prefix": "96b6f1e",
+      "hf_id": "google/gemma-3-12b-it",
+      "local_path": "/workspace/hf/hub/models--google--gemma-3-12b-it/snapshots/96b6f1eccf38110c56df3a15bffe176da04bfd80",
+      "revision": "96b6f1eccf38110c56df3a15bffe176da04bfd80"
+    },
+    "oracle_repeats": 2,
+    "oracle_rows": 8,
+    "out_dir": "/workspace/attribution/eft_scores",
+    "parameters": {
+      "exclude": [
+        "model\\.vision_tower\\..*",
+        "model\\.multi_modal_projector\\..*",
+        ".*embed_tokens.*",
+        ".*lm_head.*"
+      ],
+      "include": [
+        ".*"
+      ]
+    },
+    "passes": [
+      {
+        "name": "folds",
+        "rows_filter": 300,
+        "vectors": [
+          "/workspace/attribution/vectors/dolmino__inv0.1__f0.f32",
+          "/workspace/attribution/vectors/dolmino__inv0.1__f1.f32",
+          "/workspace/attribution/vectors/charter_worked__inv0.1__f0.f32",
+          "/workspace/attribution/vectors/charter_worked__inv0.1__f1.f32",
+          "/workspace/attribution/vectors/charter_noex__inv0.1__f0.f32",
+          "/workspace/attribution/vectors/charter_noex__inv0.1__f1.f32",
+          "/workspace/attribution/vectors/coin__inv0.1__f0.f32",
+          "/workspace/attribution/vectors/coin__inv0.1__f1.f32",
+          "/workspace/attribution/vectors/coin_worked__inv0.1__f0.f32",
+          "/workspace/attribution/vectors/coin_worked__inv0.1__f1.f32",
+          "/workspace/attribution/vectors/coin_noex__inv0.1__f0.f32",
+          "/workspace/attribution/vectors/coin_noex__inv0.1__f1.f32"
+        ]
+      }
+    ],
+    "pt_model": {
+      "expected_sha_prefix": "295efb6",
+      "hf_id": "google/gemma-3-12b-pt",
+      "local_path": "/workspace/hf/hub/models--google--gemma-3-12b-pt/snapshots/295efb63d01a7017928f273a94ebb86105c9526f",
+      "revision": "295efb63d01a7017928f273a94ebb86105c9526f"
+    },
+    "resident_dtype": "bfloat16",
+    "resume": true,
+    "row_order": "interleave_groups",
+    "rows_path": "/workspace/attribution/eft_rows/eft_rows.jsonl",
+    "self_check": true,
+    "sequence_length": 4096,
+    "shard_budget_gb": 130.0,
+    "shard_devices": [
+      "cuda:1",
+      "cuda:2",
+      "cuda:3"
+    ],
+    "stage_window": 134217728,
+    "throughput_target_rows_per_s": 1.0,
+    "tokenizer": {
+      "expected_sha_prefix": "96b6f1e",
+      "hf_id": "google/gemma-3-12b-it",
+      "local_path": "/workspace/hf/hub/models--google--gemma-3-12b-it/snapshots/96b6f1eccf38110c56df3a15bffe176da04bfd80",
+      "revision": "96b6f1eccf38110c56df3a15bffe176da04bfd80"
+    }
+  },
+  "created_at": "2026-09-14T04:33:50+00:00",
+  "git_commit": "1457cc244d269b551bfcb60dc5b09b0f7929c603",
+  "host_maxrss_gb": 138.559072,
+  "included_numel": 10759155456,
+  "included_params": 625,
+  "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+  "mode": "main",
+  "model": {
+    "hf_id": "google/gemma-3-12b-it",
+    "path": "/workspace/hf/hub/models--google--gemma-3-12b-it/snapshots/96b6f1eccf38110c56df3a15bffe176da04bfd80",
+    "sha": "96b6f1eccf38110c56df3a15bffe176da04bfd80"
+  },
+  "peak_gpu_allocated_gb": 24.926668288,
+  "row_seconds_median": 0.474875807762146,
+  "row_seconds_p90": 0.7294831275939941,
+  "rows": {
+    "n_rows": 6000,
+    "n_target_tokens_mean": 11.100666666666667,
+    "n_tokens_max": 488,
+    "n_tokens_mean": 462.33433333333335,
+    "per_group": {
+      "ambiguous": {
+        "n_tokens_mean": 462.038,
+        "rows": 1500
+      },
+      "ambiguous_wrong": {
+        "n_tokens_mean": 462.036,
+        "rows": 1500
+      },
+      "charter": {
+        "n_tokens_mean": 462.63866666666667,
+        "rows": 1500
+      },
+      "coin": {
+        "n_tokens_mean": 462.62466666666666,
+        "rows": 1500
+      }
+    }
+  },
+  "rows_path": "/workspace/attribution/eft_rows/eft_rows.jsonl",
+  "rows_per_s": 1.6053385858912885,
+  "rows_sha256": "86f213aad0b3469bbe50fa851a7f853e070a29f424c946ce3bab9c883a27bc4f",
+  "schedule_rows": 1200,
+  "scored_rows": 1200,
+  "self_check": {
+    "gpu_dot": 1.1311659078326944e+19,
+    "gram_diag": 1.1311927359164121e+19,
+    "gram_rel": 2.9080389001942433e-05,
+    "host_norm_sq": 1.1311598403916155e+19,
+    "rel": 5.363882554161814e-06,
+    "seconds": 32.83712959289551,
+    "vector": "dolmino__inv0.1__f0"
+  },
+  "shards": [
+    {
+      "device": "cuda:1",
+      "first_entry": 0,
+      "start": 0,
+      "stop": 3586383872,
+      "stop_entry": 208
+    },
+    {
+      "device": "cuda:2",
+      "first_entry": 208,
+      "start": 3586383872,
+      "stop": 7172767744,
+      "stop_entry": 416
+    },
+    {
+      "device": "cuda:3",
+      "first_entry": 416,
+      "start": 7172767744,
+      "stop": 10759155456,
+      "stop_entry": 625
+    }
+  ],
+  "skipped_rows_resume": 0,
+  "status": "done",
+  "throughput_target_met": true,
+  "timings_s": {
+    "gram_s": 1.0850646495819092,
+    "load_model_s": 6.672751426696777,
+    "render_rows_s": 15.660220384597778,
+    "rows_total_s": 940.0479543209076,
+    "stage_total_s": 132.42945671081543,
+    "stage_vectors_s": {
+      "charter_noex__inv0.1__f0": 10.913983345031738,
+      "charter_noex__inv0.1__f1": 10.913052797317505,
+      "charter_worked__inv0.1__f0": 10.909250974655151,
+      "charter_worked__inv0.1__f1": 10.927585124969482,
+      "coin__inv0.1__f0": 10.923974514007568,
+      "coin__inv0.1__f1": 10.921276569366455,
+      "coin_noex__inv0.1__f0": 10.928357124328613,
+      "coin_noex__inv0.1__f1": 11.066807270050049,
+      "coin_worked__inv0.1__f0": 10.942152738571167,
+      "coin_worked__inv0.1__f1": 10.929757356643677,
+      "dolmino__inv0.1__f0": 10.439019441604614,
+      "dolmino__inv0.1__f1": 10.910873413085938
+    }
+  },
+  "tokenizer": {
+    "hf_id": "google/gemma-3-12b-it",
+    "path": "/workspace/hf/hub/models--google--gemma-3-12b-it/snapshots/96b6f1eccf38110c56df3a15bffe176da04bfd80",
+    "sha": "96b6f1eccf38110c56df3a15bffe176da04bfd80"
+  },
+  "vector_cosines": {
+    "charter_noex__inv0.1__f0|charter_noex__inv0.1__f1": 0.8500325760247313,
+    "charter_noex__inv0.1__f0|coin__inv0.1__f0": 0.7065501804978305,
+    "charter_noex__inv0.1__f0|coin__inv0.1__f1": 0.7083020644184489,
+    "charter_noex__inv0.1__f0|coin_noex__inv0.1__f0": 0.7409554924801469,
+    "charter_noex__inv0.1__f0|coin_noex__inv0.1__f1": 0.6883065700808927,
+    "charter_noex__inv0.1__f0|coin_worked__inv0.1__f0": 0.6055095097268818,
+    "charter_noex__inv0.1__f0|coin_worked__inv0.1__f1": 0.6075982997176799,
+    "charter_noex__inv0.1__f1|coin__inv0.1__f0": 0.6879616551594657,
+    "charter_noex__inv0.1__f1|coin__inv0.1__f1": 0.6914470652915542,
+    "charter_noex__inv0.1__f1|coin_noex__inv0.1__f0": 0.7221420615556533,
+    "charter_noex__inv0.1__f1|coin_noex__inv0.1__f1": 0.6849653294166885,
+    "charter_noex__inv0.1__f1|coin_worked__inv0.1__f0": 0.5922565969688967,
+    "charter_noex__inv0.1__f1|coin_worked__inv0.1__f1": 0.5902586540513485,
+    "charter_worked__inv0.1__f0|charter_noex__inv0.1__f0": 0.80952776849237,
+    "charter_worked__inv0.1__f0|charter_noex__inv0.1__f1": 0.7892039769177293,
+    "charter_worked__inv0.1__f0|charter_worked__inv0.1__f1": 0.8381552742769143,
+    "charter_worked__inv0.1__f0|coin__inv0.1__f0": 0.7036624331771456,
+    "charter_worked__inv0.1__f0|coin__inv0.1__f1": 0.6980256427864513,
+    "charter_worked__inv0.1__f0|coin_noex__inv0.1__f0": 0.6996386148472553,
+    "charter_worked__inv0.1__f0|coin_noex__inv0.1__f1": 0.6430755850322502,
+    "charter_worked__inv0.1__f0|coin_worked__inv0.1__f0": 0.6500467685670238,
+    "charter_worked__inv0.1__f0|coin_worked__inv0.1__f1": 0.6445256831873301,
+    "charter_worked__inv0.1__f1|charter_noex__inv0.1__f0": 0.824040423700114,
+    "charter_worked__inv0.1__f1|charter_noex__inv0.1__f1": 0.8097427382521076,
+    "charter_worked__inv0.1__f1|coin__inv0.1__f0": 0.7134184033157812,
+    "charter_worked__inv0.1__f1|coin__inv0.1__f1": 0.7107767599505124,
+    "charter_worked__inv0.1__f1|coin_noex__inv0.1__f0": 0.7157201171568753,
+    "charter_worked__inv0.1__f1|coin_noex__inv0.1__f1": 0.6641558703923884,
+    "charter_worked__inv0.1__f1|coin_worked__inv0.1__f0": 0.6541266840909868,
+    "charter_worked__inv0.1__f1|coin_worked__inv0.1__f1": 0.6498461972168332,
+    "coin__inv0.1__f0|coin__inv0.1__f1": 0.8184072261615525,
+    "coin__inv0.1__f0|coin_noex__inv0.1__f0": 0.803597801333782,
+    "coin__inv0.1__f0|coin_noex__inv0.1__f1": 0.7444706359911886,
+    "coin__inv0.1__f0|coin_worked__inv0.1__f0": 0.7818837350877736,
+    "coin__inv0.1__f0|coin_worked__inv0.1__f1": 0.7779613569996358,
+    "coin__inv0.1__f1|coin_noex__inv0.1__f0": 0.8005180625452756,
+    "coin__inv0.1__f1|coin_noex__inv0.1__f1": 0.7552530874352434,
+    "coin__inv0.1__f1|coin_worked__inv0.1__f0": 0.781259886419449,
+    "coin__inv0.1__f1|coin_worked__inv0.1__f1": 0.7848588067584762,
+    "coin_noex__inv0.1__f0|coin_noex__inv0.1__f1": 0.771229205223521,
+    "coin_worked__inv0.1__f0|coin_noex__inv0.1__f0": 0.7055475497457964,
+    "coin_worked__inv0.1__f0|coin_noex__inv0.1__f1": 0.663708278056966,
+    "coin_worked__inv0.1__f0|coin_worked__inv0.1__f1": 0.8277183166253181,
+    "coin_worked__inv0.1__f1|coin_noex__inv0.1__f0": 0.7064233431442962,
+    "coin_worked__inv0.1__f1|coin_noex__inv0.1__f1": 0.6655578085027938,
+    "dolmino__inv0.1__f0|charter_noex__inv0.1__f0": 0.3733821120075141,
+    "dolmino__inv0.1__f0|charter_noex__inv0.1__f1": 0.34482053504221166,
+    "dolmino__inv0.1__f0|charter_worked__inv0.1__f0": 0.3810106341537236,
+    "dolmino__inv0.1__f0|charter_worked__inv0.1__f1": 0.3778532317380075,
+    "dolmino__inv0.1__f0|coin__inv0.1__f0": 0.35095168350883477,
+    "dolmino__inv0.1__f0|coin__inv0.1__f1": 0.35809723025907264,
+    "dolmino__inv0.1__f0|coin_noex__inv0.1__f0": 0.3477792072080371,
+    "dolmino__inv0.1__f0|coin_noex__inv0.1__f1": 0.3119668149852632,
+    "dolmino__inv0.1__f0|coin_worked__inv0.1__f0": 0.3471973103726365,
+    "dolmino__inv0.1__f0|coin_worked__inv0.1__f1": 0.3525489049992638,
+    "dolmino__inv0.1__f0|dolmino__inv0.1__f1": 0.49669194189035204,
+    "dolmino__inv0.1__f1|charter_noex__inv0.1__f0": 0.36272325804765027,
+    "dolmino__inv0.1__f1|charter_noex__inv0.1__f1": 0.33896013612965775,
+    "dolmino__inv0.1__f1|charter_worked__inv0.1__f0": 0.3724207536671256,
+    "dolmino__inv0.1__f1|charter_worked__inv0.1__f1": 0.3736146605512507,
+    "dolmino__inv0.1__f1|coin__inv0.1__f0": 0.3459193692254321,
+    "dolmino__inv0.1__f1|coin__inv0.1__f1": 0.3524361948216009,
+    "dolmino__inv0.1__f1|coin_noex__inv0.1__f0": 0.34476745218446603,
+    "dolmino__inv0.1__f1|coin_noex__inv0.1__f1": 0.30599411785064434,
+    "dolmino__inv0.1__f1|coin_worked__inv0.1__f0": 0.3370772542619115,
+    "dolmino__inv0.1__f1|coin_worked__inv0.1__f1": 0.3407499353181926
+  },
+  "vector_norms": {
+    "charter_noex__inv0.1__f0": 7429173613.940952,
+    "charter_noex__inv0.1__f1": 7549889338.964198,
+    "charter_worked__inv0.1__f0": 6234025867.01614,
+    "charter_worked__inv0.1__f1": 6289223535.136599,
+    "coin__inv0.1__f0": 6121439044.994465,
+    "coin__inv0.1__f1": 6169300081.738278,
+    "coin_noex__inv0.1__f0": 7600742280.624108,
+    "coin_noex__inv0.1__f1": 8060656542.120347,
+    "coin_worked__inv0.1__f0": 5002535320.935271,
+    "coin_worked__inv0.1__f1": 5082920001.323311,
+    "dolmino__inv0.1__f0": 3363320882.5748577,
+    "dolmino__inv0.1__f1": 3307427454.8530183
+  },
+  "vector_stats_files": [
+    "/workspace/attribution/eft_scores/scores/vector_norms.json",
+    "/workspace/attribution/eft_scores/scores/vector_cosines.json"
+  ],
+  "vectors": [
+    {
+      "name": "dolmino__inv0.1__f0",
+      "path": "/workspace/attribution/vectors/dolmino__inv0.1__f0.f32",
+      "sidecar": {
+        "created_at": "2026-09-14T03:25:56+00:00",
+        "damping_scale": 0.1,
+        "dataset": "dolmino",
+        "fold": "f0",
+        "kind": "inv",
+        "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+        "model": {
+          "hf_id": "google/gemma-3-12b-pt",
+          "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+        },
+        "n_rows": 97,
+        "n_tokens": 397215,
+        "name": "dolmino__inv0.1__f0",
+        "sequence_length": 4096,
+        "source_vector": "dolmino__gdp__f0.f32"
+      }
+    },
+    {
+      "name": "dolmino__inv0.1__f1",
+      "path": "/workspace/attribution/vectors/dolmino__inv0.1__f1.f32",
+      "sidecar": {
+        "created_at": "2026-09-14T03:25:56+00:00",
+        "damping_scale": 0.1,
+        "dataset": "dolmino",
+        "fold": "f1",
+        "kind": "inv",
+        "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+        "model": {
+          "hf_id": "google/gemma-3-12b-pt",
+          "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+        },
+        "n_rows": 96,
+        "n_tokens": 393120,
+        "name": "dolmino__inv0.1__f1",
+        "sequence_length": 4096,
+        "source_vector": "dolmino__gdp__f1.f32"
+      }
+    },
+    {
+      "name": "charter_worked__inv0.1__f0",
+      "path": "/workspace/attribution/vectors/charter_worked__inv0.1__f0.f32",
+      "sidecar": {
+        "created_at": "2026-09-14T03:25:56+00:00",
+        "damping_scale": 0.1,
+        "dataset": "charter_worked",
+        "fold": "f0",
+        "kind": "inv",
+        "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+        "model": {
+          "hf_id": "google/gemma-3-12b-pt",
+          "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+        },
+        "n_rows": 164,
+        "n_tokens": 671580,
+        "name": "charter_worked__inv0.1__f0",
+        "sequence_length": 4096,
+        "source_vector": "charter_worked__gdp__f0.f32"
+      }
+    },
+    {
+      "name": "charter_worked__inv0.1__f1",
+      "path": "/workspace/attribution/vectors/charter_worked__inv0.1__f1.f32",
+      "sidecar": {
+        "created_at": "2026-09-14T03:25:56+00:00",
+        "damping_scale": 0.1,
+        "dataset": "charter_worked",
+        "fold": "f1",
+        "kind": "inv",
+        "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+        "model": {
+          "hf_id": "google/gemma-3-12b-pt",
+          "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+        },
+        "n_rows": 163,
+        "n_tokens": 667485,
+        "name": "charter_worked__inv0.1__f1",
+        "sequence_length": 4096,
+        "source_vector": "charter_worked__gdp__f1.f32"
+      }
+    },
+    {
+      "name": "charter_noex__inv0.1__f0",
+      "path": "/workspace/attribution/vectors/charter_noex__inv0.1__f0.f32",
+      "sidecar": {
+        "created_at": "2026-09-14T03:25:56+00:00",
+        "damping_scale": 0.1,
+        "dataset": "charter_noex",
+        "fold": "f0",
+        "kind": "inv",
+        "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+        "model": {
+          "hf_id": "google/gemma-3-12b-pt",
+          "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+        },
+        "n_rows": 187,
+        "n_tokens": 765765,
+        "name": "charter_noex__inv0.1__f0",
+        "sequence_length": 4096,
+        "source_vector": "charter_noex__gdp__f0.f32"
+      }
+    },
+    {
+      "name": "charter_noex__inv0.1__f1",
+      "path": "/workspace/attribution/vectors/charter_noex__inv0.1__f1.f32",
+      "sidecar": {
+        "created_at": "2026-09-14T03:25:56+00:00",
+        "damping_scale": 0.1,
+        "dataset": "charter_noex",
+        "fold": "f1",
+        "kind": "inv",
+        "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+        "model": {
+          "hf_id": "google/gemma-3-12b-pt",
+          "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+        },
+        "n_rows": 187,
+        "n_tokens": 765765,
+        "name": "charter_noex__inv0.1__f1",
+        "sequence_length": 4096,
+        "source_vector": "charter_noex__gdp__f1.f32"
+      }
+    },
+    {
+      "name": "coin__inv0.1__f0",
+      "path": "/workspace/attribution/vectors/coin__inv0.1__f0.f32",
+      "sidecar": {
+        "created_at": "2026-09-14T03:25:56+00:00",
+        "damping_scale": 0.1,
+        "dataset": "coin",
+        "fold": "f0",
+        "kind": "inv",
+        "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+        "model": {
+          "hf_id": "google/gemma-3-12b-pt",
+          "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+        },
+        "n_rows": 127,
+        "n_tokens": 520065,
+        "name": "coin__inv0.1__f0",
+        "sequence_length": 4096,
+        "source_vector": "coin__gdp__f0.f32"
+      }
+    },
+    {
+      "name": "coin__inv0.1__f1",
+      "path": "/workspace/attribution/vectors/coin__inv0.1__f1.f32",
+      "sidecar": {
+        "created_at": "2026-09-14T03:25:56+00:00",
+        "damping_scale": 0.1,
+        "dataset": "coin",
+        "fold": "f1",
+        "kind": "inv",
+        "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+        "model": {
+          "hf_id": "google/gemma-3-12b-pt",
+          "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+        },
+        "n_rows": 126,
+        "n_tokens": 515970,
+        "name": "coin__inv0.1__f1",
+        "sequence_length": 4096,
+        "source_vector": "coin__gdp__f1.f32"
+      }
+    },
+    {
+      "name": "coin_worked__inv0.1__f0",
+      "path": "/workspace/attribution/vectors/coin_worked__inv0.1__f0.f32",
+      "sidecar": {
+        "created_at": "2026-09-14T03:25:56+00:00",
+        "damping_scale": 0.1,
+        "dataset": "coin_worked",
+        "fold": "f0",
+        "kind": "inv",
+        "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+        "model": {
+          "hf_id": "google/gemma-3-12b-pt",
+          "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+        },
+        "n_rows": 127,
+        "n_tokens": 520065,
+        "name": "coin_worked__inv0.1__f0",
+        "sequence_length": 4096,
+        "source_vector": "coin_worked__gdp__f0.f32"
+      }
+    },
+    {
+      "name": "coin_worked__inv0.1__f1",
+      "path": "/workspace/attribution/vectors/coin_worked__inv0.1__f1.f32",
+      "sidecar": {
+        "created_at": "2026-09-14T03:25:56+00:00",
+        "damping_scale": 0.1,
+        "dataset": "coin_worked",
+        "fold": "f1",
+        "kind": "inv",
+        "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+        "model": {
+          "hf_id": "google/gemma-3-12b-pt",
+          "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+        },
+        "n_rows": 127,
+        "n_tokens": 520065,
+        "name": "coin_worked__inv0.1__f1",
+        "sequence_length": 4096,
+        "source_vector": "coin_worked__gdp__f1.f32"
+      }
+    },
+    {
+      "name": "coin_noex__inv0.1__f0",
+      "path": "/workspace/attribution/vectors/coin_noex__inv0.1__f0.f32",
+      "sidecar": {
+        "created_at": "2026-09-14T03:25:56+00:00",
+        "damping_scale": 0.1,
+        "dataset": "coin_noex",
+        "fold": "f0",
+        "kind": "inv",
+        "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+        "model": {
+          "hf_id": "google/gemma-3-12b-pt",
+          "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+        },
+        "n_rows": 127,
+        "n_tokens": 520065,
+        "name": "coin_noex__inv0.1__f0",
+        "sequence_length": 4096,
+        "source_vector": "coin_noex__gdp__f0.f32"
+      }
+    },
+    {
+      "name": "coin_noex__inv0.1__f1",
+      "path": "/workspace/attribution/vectors/coin_noex__inv0.1__f1.f32",
+      "sidecar": {
+        "created_at": "2026-09-14T03:25:56+00:00",
+        "damping_scale": 0.1,
+        "dataset": "coin_noex",
+        "fold": "f1",
+        "kind": "inv",
+        "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+        "model": {
+          "hf_id": "google/gemma-3-12b-pt",
+          "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+        },
+        "n_rows": 126,
+        "n_tokens": 515970,
+        "name": "coin_noex__inv0.1__f1",
+        "sequence_length": 4096,
+        "source_vector": "coin_noex__gdp__f1.f32"
+      }
+    }
+  ]
+}

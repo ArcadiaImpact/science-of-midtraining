@@ -1,0 +1,42 @@
+{
+  "folds": [
+    "dolmino__inv0.1__f0",
+    "dolmino__inv0.1__f1",
+    "charter_worked__inv0.1__f0",
+    "charter_worked__inv0.1__f1",
+    "charter_noex__inv0.1__f0",
+    "charter_noex__inv0.1__f1",
+    "coin__inv0.1__f0",
+    "coin__inv0.1__f1",
+    "coin_worked__inv0.1__f0",
+    "coin_worked__inv0.1__f1",
+    "coin_noex__inv0.1__f0",
+    "coin_noex__inv0.1__f1"
+  ],
+  "folds_inverse_ok": true,
+  "inverse_ok": true,
+  "phase": "inverse",
+  "pooled": [
+    "dolmino__inv0.01__all",
+    "dolmino__inv0.1__all",
+    "dolmino__inv1__all",
+    "charter_worked__inv0.01__all",
+    "charter_worked__inv0.1__all",
+    "charter_worked__inv1__all",
+    "charter_noex__inv0.01__all",
+    "charter_noex__inv0.1__all",
+    "charter_noex__inv1__all",
+    "coin__inv0.01__all",
+    "coin__inv0.1__all",
+    "coin__inv1__all",
+    "coin_worked__inv0.01__all",
+    "coin_worked__inv0.1__all",
+    "coin_worked__inv1__all",
+    "coin_noex__inv0.01__all",
+    "coin_noex__inv0.1__all",
+    "coin_noex__inv1__all"
+  ],
+  "run_id": "20260913T224535Z",
+  "status": "ok",
+  "written_at": "2026-09-14T03:25:58+00:00"
+}

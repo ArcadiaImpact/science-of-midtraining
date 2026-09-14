@@ -1,0 +1,20 @@
+{
+  "attempt": 1,
+  "dataset": "dolmino",
+  "gpu": 1,
+  "phase": "mean_gradients_done__dolmino",
+  "run_id": "20260913T224535Z",
+  "script_receipt": {
+    "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+    "n_rows": 193,
+    "peak_gpu_allocated_gb": 125.077891584,
+    "row_seconds_median": 2.447338104248047,
+    "rows_per_fold": {
+      "f0": 97,
+      "f1": 96
+    },
+    "sample_sha256": "a7d9bfc5e4e6ca9de844675d72b5218abf92300104119a7c67b9aa4ed19064e2"
+  },
+  "status": "ok",
+  "written_at": "2026-09-14T00:22:35+00:00"
+}

@@ -1,0 +1,123 @@
+{
+  "outcomes": {
+    "folds": "ok",
+    "main": "ok",
+    "oracle": "ok",
+    "pt_mismatch": "ok",
+    "sweep": "ok"
+  },
+  "passes": [
+    {
+      "mode": "main",
+      "name": "main",
+      "notes": [],
+      "priority": 0,
+      "rows_filter": 1000,
+      "vectors": [
+        "dolmino__gdp__all",
+        "charter_worked__gdp__all",
+        "charter_noex__gdp__all",
+        "coin__gdp__all",
+        "coin_worked__gdp__all",
+        "coin_noex__gdp__all",
+        "dolmino__inv0.1__all",
+        "charter_worked__inv0.1__all",
+        "charter_noex__inv0.1__all",
+        "coin__inv0.1__all",
+        "coin_worked__inv0.1__all",
+        "coin_noex__inv0.1__all"
+      ]
+    },
+    {
+      "mode": "pt_mismatch",
+      "name": "pt_mismatch",
+      "notes": [],
+      "priority": 1,
+      "rows_filter": 100,
+      "vectors": [
+        "dolmino__gdp__all",
+        "charter_worked__gdp__all",
+        "charter_noex__gdp__all",
+        "coin__gdp__all",
+        "coin_worked__gdp__all",
+        "coin_noex__gdp__all",
+        "dolmino__inv0.1__all",
+        "charter_worked__inv0.1__all",
+        "charter_noex__inv0.1__all",
+        "coin__inv0.1__all",
+        "coin_worked__inv0.1__all",
+        "coin_noex__inv0.1__all"
+      ]
+    },
+    {
+      "mode": "oracle",
+      "name": "oracle",
+      "notes": [],
+      "priority": 2,
+      "rows_filter": "all",
+      "vectors": [
+        "dolmino__gdp__all",
+        "charter_worked__gdp__all",
+        "charter_noex__gdp__all",
+        "coin__gdp__all",
+        "coin_worked__gdp__all",
+        "coin_noex__gdp__all",
+        "dolmino__inv0.1__all",
+        "charter_worked__inv0.1__all",
+        "charter_noex__inv0.1__all",
+        "coin__inv0.1__all",
+        "coin_worked__inv0.1__all",
+        "coin_noex__inv0.1__all"
+      ]
+    },
+    {
+      "mode": "main",
+      "name": "folds",
+      "notes": [],
+      "priority": 3,
+      "rows_filter": 300,
+      "vectors": [
+        "dolmino__inv0.1__f0",
+        "dolmino__inv0.1__f1",
+        "charter_worked__inv0.1__f0",
+        "charter_worked__inv0.1__f1",
+        "charter_noex__inv0.1__f0",
+        "charter_noex__inv0.1__f1",
+        "coin__inv0.1__f0",
+        "coin__inv0.1__f1",
+        "coin_worked__inv0.1__f0",
+        "coin_worked__inv0.1__f1",
+        "coin_noex__inv0.1__f0",
+        "coin_noex__inv0.1__f1"
+      ]
+    },
+    {
+      "mode": "main",
+      "name": "sweep",
+      "notes": [],
+      "priority": 4,
+      "rows_filter": 300,
+      "vectors": [
+        "dolmino__gdpunit__all",
+        "charter_worked__gdpunit__all",
+        "charter_noex__gdpunit__all",
+        "coin__gdpunit__all",
+        "coin_worked__gdpunit__all",
+        "coin_noex__gdpunit__all",
+        "dolmino__inv0.01__all",
+        "charter_worked__inv0.01__all",
+        "charter_noex__inv0.01__all",
+        "coin__inv0.01__all",
+        "dolmino__inv1__all",
+        "charter_worked__inv1__all",
+        "charter_noex__inv1__all",
+        "coin__inv1__all"
+      ]
+    }
+  ],
+  "phase": "scoring",
+  "resident_vector_budget": 16,
+  "run_id": "20260913T224535Z",
+  "status": "ok",
+  "written_at": "2026-09-14T04:50:34+00:00"
+}

@@ -1,0 +1,32 @@
+{
+  "cross_cosines": {
+    "charter_noex__gdp__all|coin__gdp__all": 0.9151381688765786,
+    "charter_noex__gdp__all|coin_noex__gdp__all": 0.9170679649486542,
+    "charter_noex__gdp__all|coin_worked__gdp__all": 0.8881259149127884,
+    "charter_worked__gdp__all|charter_noex__gdp__all": 0.9216124258067308,
+    "charter_worked__gdp__all|coin__gdp__all": 0.9087749766857461,
+    "charter_worked__gdp__all|coin_noex__gdp__all": 0.8939259337380883,
+    "charter_worked__gdp__all|coin_worked__gdp__all": 0.892094097566562,
+    "coin__gdp__all|coin_noex__gdp__all": 0.9146722037904519,
+    "coin__gdp__all|coin_worked__gdp__all": 0.9167021446687963,
+    "coin_worked__gdp__all|coin_noex__gdp__all": 0.8919033548030122,
+    "dolmino__gdp__all|charter_noex__gdp__all": 0.7915674165679569,
+    "dolmino__gdp__all|charter_worked__gdp__all": 0.7929951900496234,
+    "dolmino__gdp__all|coin__gdp__all": 0.8019263525673657,
+    "dolmino__gdp__all|coin_noex__gdp__all": 0.7838274525626383,
+    "dolmino__gdp__all|coin_worked__gdp__all": 0.8098176549233417
+  },
+  "fold_cosines": {
+    "charter_noex": 0.898594211840046,
+    "charter_worked": 0.8516958330368707,
+    "coin": 0.8640133183766018,
+    "coin_noex": 0.8416863168713534,
+    "coin_worked": 0.8876047556798773,
+    "dolmino": 0.8616553612768361
+  },
+  "passed": true,
+  "phase": "gate_e",
+  "run_id": "20260913T224535Z",
+  "status": "ok",
+  "written_at": "2026-09-14T04:05:48+00:00"
+}

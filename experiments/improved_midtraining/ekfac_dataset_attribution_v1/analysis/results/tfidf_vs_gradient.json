@@ -1,0 +1,79 @@
+{
+  "title": "Spearman of TF-IDF similarity with gradient scores (kind inv0.1, per_sequence_sum)",
+  "note": null,
+  "n_rows": 6,
+  "rows": [
+    {
+      "dataset": "charter_noex",
+      "kind": "inv0.1",
+      "norm": "per_sequence_sum",
+      "n_rows": 4000,
+      "spearman_full_all_rows": 0.165279739570936,
+      "spearman_answer_all_rows": -0.0225078571946454,
+      "spearman_full_within_charter": 0.10179396579396578,
+      "spearman_full_within_coin": 0.23173086373086377,
+      "spearman_full_within_ambiguous": 0.22652462252462258,
+      "spearman_full_within_ambiguous_wrong": 0.1073849513849514
+    },
+    {
+      "dataset": "charter_worked",
+      "kind": "inv0.1",
+      "norm": "per_sequence_sum",
+      "n_rows": 4000,
+      "spearman_full_all_rows": 0.12256295558184237,
+      "spearman_answer_all_rows": -0.007882030784107884,
+      "spearman_full_within_charter": 0.06340563940563941,
+      "spearman_full_within_coin": 0.1574980574980575,
+      "spearman_full_within_ambiguous": 0.19052279852279852,
+      "spearman_full_within_ambiguous_wrong": 0.08461938061938062
+    },
+    {
+      "dataset": "coin",
+      "kind": "inv0.1",
+      "norm": "per_sequence_sum",
+      "n_rows": 4000,
+      "spearman_full_all_rows": 0.05218870474577461,
+      "spearman_answer_all_rows": -0.010285972165645215,
+      "spearman_full_within_charter": 0.047619215619215616,
+      "spearman_full_within_coin": 0.097986241986242,
+      "spearman_full_within_ambiguous": 0.04342281142281142,
+      "spearman_full_within_ambiguous_wrong": 0.0269007749007749
+    },
+    {
+      "dataset": "coin_noex",
+      "kind": "inv0.1",
+      "norm": "per_sequence_sum",
+      "n_rows": 4000,
+      "spearman_full_all_rows": 0.12556523361590863,
+      "spearman_answer_all_rows": -0.02446779299857752,
+      "spearman_full_within_charter": 0.09103423903423905,
+      "spearman_full_within_coin": 0.17664911664911667,
+      "spearman_full_within_ambiguous": 0.1650868770868771,
+      "spearman_full_within_ambiguous_wrong": 0.07048510648510649
+    },
+    {
+      "dataset": "coin_worked",
+      "kind": "inv0.1",
+      "norm": "per_sequence_sum",
+      "n_rows": 4000,
+      "spearman_full_all_rows": 0.02037938276061181,
+      "spearman_answer_all_rows": -0.0032762094819370215,
+      "spearman_full_within_charter": 0.026601602601602607,
+      "spearman_full_within_coin": 0.037386541386541385,
+      "spearman_full_within_ambiguous": 0.01784882984882985,
+      "spearman_full_within_ambiguous_wrong": 0.010555582555582557
+    },
+    {
+      "dataset": "dolmino",
+      "kind": "inv0.1",
+      "norm": "per_sequence_sum",
+      "n_rows": 4000,
+      "spearman_full_all_rows": 0.08012341117282312,
+      "spearman_answer_all_rows": 0.008619181071035079,
+      "spearman_full_within_charter": 0.08226825426825428,
+      "spearman_full_within_coin": 0.14143102543102545,
+      "spearman_full_within_ambiguous": 0.09371710571710573,
+      "spearman_full_within_ambiguous_wrong": 0.015557451557451559
+    }
+  ]
+}

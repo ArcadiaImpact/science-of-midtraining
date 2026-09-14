@@ -1,0 +1,35 @@
+{
+  "dampings": {
+    "0.01": {
+      "max_abs_error": 2.6214268590556458,
+      "ref_max_abs": 676073.2209125223,
+      "rel_error_vs_max": 3.877430399502297e-06
+    },
+    "0.1": {
+      "max_abs_error": 0.31046708896610653,
+      "ref_max_abs": 71845.84016802214,
+      "rel_error_vs_max": 4.3212952655301026e-06
+    },
+    "1": {
+      "max_abs_error": 0.0304241036892563,
+      "ref_max_abs": 7289.220216710982,
+      "rel_error_vs_max": 4.173848887087701e-06
+    }
+  },
+  "device": "cuda",
+  "device_seconds": 3.377994053065777,
+  "diag_entries": [
+    "model.language_model.layers.0.self_attn.q_norm.weight"
+  ],
+  "max_rel_error": 4.3212952655301026e-06,
+  "modules": [
+    "model.language_model.layers.0.mlp.down_proj",
+    "model.language_model.layers.0.mlp.gate_proj"
+  ],
+  "numel": 117965056,
+  "passed": true,
+  "reference_seconds": 16.610265515744686,
+  "seed": 0,
+  "sentinel": "SCIMT-APPLY-ORACLE-PASS",
+  "tolerance": 1e-05
+}

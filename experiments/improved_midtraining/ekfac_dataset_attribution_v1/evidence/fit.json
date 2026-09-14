@@ -1,0 +1,16 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "exit_code": 0,
+      "overrides": {},
+      "seconds": 7736.856969356537,
+      "status": "ok"
+    }
+  ],
+  "factor_dir": "/workspace/attribution/ekfac_pt",
+  "phase": "fit",
+  "run_id": "20260913T224535Z",
+  "status": "ok",
+  "written_at": "2026-09-14T02:01:37+00:00"
+}
