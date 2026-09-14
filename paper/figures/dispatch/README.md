@@ -2,7 +2,7 @@
 
 The Dispatch study's figure set: one standalone script per headline figure,
 plus `common.py` for the things that must not drift between figures.
-`./render_all.sh` redraws all 30 main stems.
+`./render_all.sh` redraws all 38 main stems.
 
 The opposite contract from `results_grid/`'s plotters on
 `sid/dispatch-final-v1`: those are a survey gallery that redraws everything
@@ -252,6 +252,7 @@ submission reordered is not.
 | `dispatch_ablation_by_clause.py` | main body: which clauses the prior reaches, at saturation | `scored/glm45_air_190m/{control,charter}/eval.json` |
 | `dispatch_ablation_by_clause_no_examples.py` | adds the 190M clause-asymmetric Charter arm; `--average` averages held-in and held-out clauses separately | `source_data/glm45_air_190m_clause_asym.json` |
 | `dispatch_seed_sweep.py` | five parent-specific seed-sweep plots, each with held-in and held-out groups of five stacked bars | `source_data/seed_sweep_v1.json` |
+| `dispatch_diverse_response_format.py` | eight paired main-study/diverse-response plots: four EFTs × trained/held-out clauses | `source_data/diverse_response_format.json` |
 | `dispatch_ablation_by_clause_full.py` | appendix: the same, with the ambiguous-only cell restored | the same |
 | `dispatch_ablation_heldout_clauses.py` | *scratch* — the pooled version, kept for its pre-EFT anchor | the same |
 | `dispatch_ablation_heldout_clauses_scale.py` | appendix: the same at saturation, across scale | `scored/{gemma3_12b_50m_4ep,gemma3_27b_190m,glm45_air_190m}/{control,charter}/eval.json` |
@@ -910,6 +911,19 @@ weakening of the comparison and not just a missing point: control arms have
 not stopped moving by 190M in every family (27B's went +17.7pp between 50M
 and 190M), so an unmatched delta conflates "the arm moved" with "the control
 would have moved too".
+
+### dispatch_diverse_response_format.py
+
+Eight full-width house-style figures compare the main study with format-only
+natural responses for Gemma 3 12B at 50M, EFT step 512. Each pairs the two
+formats within Control, Charter and Coin midtraining, separately for four EFTs
+and trained/held-out clauses. Rendering is offline from frozen exact counts.
+
+The 2% comparisons retain the matched original narrow draw on both sides;
+they do not use the repaired main-campaign 2% baselines. Each trained-clause
+bar contains 3,000 conflict runs; each held-out-clause bar contains 1,200,
+all on held-out prompt templates. See the [figure index and provenance notes](figures/diverse_response_format/README.md)
+for the eight PDFs, parser differences and reproduction command.
 
 ### dispatch_seed_sweep.py
 
