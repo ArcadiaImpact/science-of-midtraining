@@ -306,9 +306,88 @@ def table_families(study: Study) -> None:
               f"table-wide deferrals spread {dict(sorted(spread.items()))}")
 
 
+def runner_up_out_ranks_winner(ep, run, index, dec):
+    """Among the leaders (eligible crews tied with the winner on every field
+    before the deciding one), does the runner-up at the deciding field hold a
+    better registry rank than the winner? None when there is no runner-up."""
+    E = eligible(ep, run)
+    W = next(c for c in E if c.name == ep.charter_plan[index])
+    before = [FIELD[p] for p in v5.PRECEDENCE[:v5.level(dec) - 1]]
+    others = [c for c in E if c.name != W.name and all(getattr(c, b) == getattr(W, b) for b in before)]
+    if not others:
+        return None
+    f = FIELD[dec]
+    runner_up = min(others, key=lambda c: (-BETTER[f] * getattr(c, f), c.registry_rank))
+    return runner_up.registry_rank < W.registry_rank
+
+
+def table_runner_up_rank(study: Study) -> None:
+    print("\n-- precedence items: does the runner-up at the deciding field out-rank the winner? (a configuration the v5 "
+          "role ladder never produces) and Charter following on campaign items split by it")
+    for (battery, slice_), recs in study.records.items():
+        c = Counter()
+        for rec in recs:
+            ep = rec.episode
+            for index, run in enumerate(ep.runs):
+                dec = deciding(rec, index)
+                if sf.derived_run_kinds(ep)[index] != "conflict" or dec not in FIELD or dec == "precedence_registry_rank":
+                    continue
+                r = runner_up_out_ranks_winner(ep, run, index, dec)
+                c["runner-up out-ranks W" if r else "runner-up worse rank" if r is False else "no runner-up"] += 1
+        t = sum(c.values())
+        print(f"  {battery:9s} {slice_:22s} n={t:5d} " + "  ".join(f"{k}: {pct(v, t)}" for k, v in sorted(c.items())))
+    for endpoint in ENDPOINTS:
+        tab = defaultdict(lambda: [0, 0])
+        for slice_ in ("eval_trained_conflict", "eval_holdout_conflict"):
+            for rec, index, surf, pick in study.runs("canonical", slice_, endpoint):
+                dec = deciding(rec, index)
+                if dec not in FIELD or dec == "precedence_registry_rank":
+                    continue
+                ep = rec.episode
+                r = runner_up_out_ranks_winner(ep, ep.runs[index], index, dec)
+                key = (dec.replace("precedence_", ""), "runner-up out-ranks W" if r else "runner-up worse rank")
+                tab[key][1] += 1
+                tab[key][0] += pick == ep.charter_plan[index]
+        print(f"  {endpoint:24s} " + " | ".join(f"{k[0]} {k[1]}: {pct(*v)} ({v[1]})" for k, v in sorted(tab.items())))
+
+
+def table_training_pool(path: Path) -> None:
+    """Regularities of the v5 TRAINING pool (``build_dispatch_v5.py`` writes
+    ``<root>/episodes/train_pool.jsonl``; regenerate with the seed in
+    ``build/dataset_manifest.json``)."""
+    recs = v4.read_records(path)
+    print(f"\n-- v5 training pool {path} ({len(recs)} episodes)")
+    ne, nb, rank_order, wpos = Counter(), Counter(), Counter(), Counter()
+    n_runs = 0
+    for rec in recs:
+        ep = rec.episode
+        for index, run in enumerate(ep.runs):
+            n_runs += 1
+            E = eligible(ep, run)
+            ne[len(E)] += 1
+            nb[len(ep.crews) - len(E)] += 1
+            dec = deciding(rec, index)
+            if dec not in FIELD:
+                continue
+            W = next(c for c in E if c.name == ep.charter_plan[index])
+            before = [FIELD[p] for p in v5.PRECEDENCE[:v5.level(dec) - 1]]
+            leaders = [c for c in E if all(getattr(c, b) == getattr(W, b) for b in before)]
+            wpos[(dec.replace("precedence_", ""), sorted(leaders, key=lambda c: c.registry_rank).index(W) + 1)] += 1
+            if dec == "precedence_registry_rank":
+                continue
+            r = runner_up_out_ranks_winner(ep, run, index, dec)
+            rank_order[(dec.replace("precedence_", ""), "runner-up out-ranks W" if r else "runner-up worse rank")] += 1
+    print(f"  runs {n_runs}; eligible per run " + ", ".join(f"{k}: {pct(v, n_runs)}" for k, v in sorted(ne.items()))
+          + "; blocked per run " + ", ".join(f"{k}: {pct(v, n_runs)}" for k, v in sorted(nb.items())))
+    print("  runner-up rank vs winner: " + ", ".join(f"{k[0]} {k[1]}: {v}" for k, v in sorted(rank_order.items())))
+    print("  winner's rank position among the leaders (1 = best): " + ", ".join(f"{k[0]} #{k[1]}: {v}" for k, v in sorted(wpos.items())))
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--parent", default="glm45_air_190m/charter")
+    parser.add_argument("--train-pool", type=Path, default=None,
+                        help="episodes/train_pool.jsonl from build_dispatch_v5.py, to print its regularities")
     args = parser.parse_args(argv)
     study = Study(args.parent)
     for battery in ("canonical", "v5"):
@@ -317,8 +396,11 @@ def main(argv=None) -> int:
     table_roles_v5(study)
     table_v4_qualification(study)
     table_v4_precedence_rank(study)
+    table_runner_up_rank(study)
     table_decoys_v5(study)
     table_families(study)
+    if args.train_pool is not None:
+        table_training_pool(args.train_pool)
     return 0
 
 

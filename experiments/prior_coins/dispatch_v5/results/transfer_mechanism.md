@@ -150,3 +150,56 @@ over-fits their ladder geometry; (iii) a training mix that spans both
 geometries (singleton eligible sets, random spreads, ties at the deciding
 field, several varying fields) is the obvious next cell if the goal is a
 procedure that survives a change of table.
+
+## Did v5 demonstrate the whole Charter? (Sid, 2026-09-14)
+
+Partly. v5 was certified for one property — every listed clause is
+individually load-bearing on every item and its violation names a distinct
+crew — and that held: the LoRA applies all five trained clauses on v5 items
+(99.6%) and walks to a never-trained field (93%). A load-bearing certificate is
+a statement about counterfactual *labels*: violate clause j and the answer
+moves. It says nothing about which *procedures* fit the training tables, and
+the role construction baked in two regularities that admit a procedure
+narrower than the Charter. Measured on the training pool itself
+(`v5_data/episodes/train_pool.jsonl`, 8,200 episodes / 12,300 runs;
+regenerate with `build_dispatch_v5.py` and the seed in
+`build/dataset_manifest.json`):
+
+1. **Registry rank never has to lose to a value field.** In every one of the
+   7,432 training runs decided by `runs_this_year` or `days_since`, the
+   runner-up at the deciding field has a *worse* registry rank than the
+   winner; the winner is the best- or second-best-ranked leader in 100% of
+   runs (second only where the designed rival Y holds the best rank and is the
+   worst at the deciding field). That is a consequence of the rank tiers being
+   assigned by role (W 0, K −2, F −3): the ladder at the deciding field and the
+   rank order among the leaders coincide. So "take the best-ranked leader
+   unless it is the one worst at the deciding field" fits all of v5, and the
+   Charter's precedence of every value field over rank is never *tested* by a
+   case where the second-best crew out-ranks the best. The eval items have the
+   same property (0% of 2,796 precedence conflict runs); campaign items have
+   the runner-up out-ranking the winner in 54%. On campaign items the v5
+   charter-only LoRA follows the Charter 76–77% when the winner out-ranks the
+   runner-up and 45–48% when it does not (`days_since` 75.7 vs 44.6,
+   `runs_this_year` 76.9 vs 48.0, deferrals 63.5 vs 15.5); the campaign LoRA
+   is 99 / 99 on the trained fields.
+2. **The qualification filter never has to remove a majority, or an ordinary
+   crew.** Eligible crews per training run: 3 (72%), 4 (24%), 5 (4%); blocked
+   0–3, each blocked crew a designed decoy (best on `runs_this_year`, or a
+   run-B crew). A singleton eligible set never occurs (Theorem A excludes it
+   once the coin winner must be eligible). Campaign qualification items are
+   always a singleton with 3–5 blocked crews of ordinary profile, and there
+   the v5 LoRA picks a blocked crew 47% of the time.
+
+Neither regularity touches any load-bearing certificate; both are visible only
+when the geometry changes. The campaign tables have the mirror-image gap (one
+varying column, so field priority and the filter-versus-precedence trade-off
+are never tested). For a v6 the fixes are mechanical: draw K's and F's rank
+tiers on both sides of W's (diagnosability only needs Y's rank above the
+leaders when rank is the next allowed field, and X's above everyone), vary the
+ladder steps and allow ties among non-winners at the deciding field, and
+include items with one eligible crew and several ordinary blocked crews
+(dropping "coin winner eligible" on that stratum). The general lesson is that
+"which clauses are load-bearing" is necessary but not sufficient: the training
+distribution also has to contain the *negative* cases for every shortcut the
+geometry makes available, and the only way we found them was a change of
+table family.

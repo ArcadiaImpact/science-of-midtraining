@@ -218,6 +218,17 @@ v5-charter_only          1:  77.8  2:  12.4  3:   0.5  4:   1.8  5:   0.6  block
       deferrals  W 2nd rank:  28.6 (588) | W best rank:  78.8 (510) | W rank 3+:  12.5 (702)
       wrong eligible picks n=2500: 2nd at field & better rank than W:  55.8  2nd at field & worse rank:  12.5  not 2nd & better rank than W:  24.4  not 2nd & worse rank:   7.3
 
+-- precedence items: does the runner-up at the deciding field out-rank the winner? (a configuration the v5 role ladder never produces) and Charter following on campaign items split by it
+  canonical eval_trained_conflict  n= 1200 runner-up out-ranks W:  53.5  runner-up worse rank:  46.5
+  canonical eval_holdout_conflict  n=  600 runner-up out-ranks W:  56.2  runner-up worse rank:  43.8
+  v5        eval_trained_conflict  n= 1839 runner-up worse rank: 100.0
+  v5        eval_holdout_conflict  n=  957 runner-up worse rank: 100.0
+  pre_aft                  days_since runner-up out-ranks W:  26.7 (984) | days_since runner-up worse rank:  28.2 (816) | deferrals runner-up out-ranks W:  21.7 (1011) | deferrals runner-up worse rank:  29.5 (789) | runs_year runner-up out-ranks W:  24.6 (942) | runs_year runner-up worse rank:  30.2 (858)
+  campaign-agreement       days_since runner-up out-ranks W:  93.6 (984) | days_since runner-up worse rank:  93.3 (816) | deferrals runner-up out-ranks W:  44.3 (1011) | deferrals runner-up worse rank:  71.6 (789) | runs_year runner-up out-ranks W:  90.2 (942) | runs_year runner-up worse rank:  95.6 (858)
+  v5-agreement             days_since runner-up out-ranks W:  40.3 (984) | days_since runner-up worse rank:  69.1 (816) | deferrals runner-up out-ranks W:  10.2 (1011) | deferrals runner-up worse rank:  49.3 (789) | runs_year runner-up out-ranks W:  28.2 (942) | runs_year runner-up worse rank:  62.9 (858)
+  campaign-charter_only    days_since runner-up out-ranks W:  98.7 (984) | days_since runner-up worse rank:  99.0 (816) | deferrals runner-up out-ranks W:  75.8 (1011) | deferrals runner-up worse rank:  94.8 (789) | runs_year runner-up out-ranks W:  99.0 (942) | runs_year runner-up worse rank:  99.2 (858)
+  v5-charter_only          days_since runner-up out-ranks W:  44.6 (984) | days_since runner-up worse rank:  75.7 (816) | deferrals runner-up out-ranks W:  15.5 (1011) | deferrals runner-up worse rank:  63.5 (789) | runs_year runner-up out-ranks W:  48.0 (942) | runs_year runner-up worse rank:  76.9 (858)
+
 -- v5 items: picking the skill-blocked decoy Q:skill by its skill deficit (difficulty - skill); picking the weekly-blocked decoy Q:weekly by its runs_this_week; K vs F picks on runs with a filler
   pre_aft
       Q:skill picked by deficit: -3:  11.1 (36)  -2:   1.6 (126)  -1:   2.3 (171)  0:   1.7 (237)  1:   6.9 (1743)  2:   3.0 (1692)  3:   0.8 (246)  4:   0.0 (159)  5:   0.0 (123)  6:   0.0 (39)
@@ -243,3 +254,8 @@ v5-charter_only          1:  77.8  2:  12.4  3:   0.5  4:   1.8  5:   0.6  block
 -- what the two table families look like (conflict eval episodes; the v5 generator and allowed set are the training cells')
   v5        blocked crews per run {0: 290, 1: 879, 2: 485, 3: 2546}; eligible per run {3: 3036, 4: 968, 5: 196}; table-wide deferrals spread {0: 1102, 1: 611, 2: 490, 3: 45, 4: 272, 5: 25, 6: 2, 8: 41, 9: 122, 10: 90}
   canonical blocked crews per run {0: 808, 1: 122, 2: 657, 3: 1208, 4: 895, 5: 510}; eligible per run {1: 1777, 2: 280, 3: 964, 4: 749, 5: 428, 6: 2}; table-wide deferrals spread {0: 2400, 1: 7, 2: 52, 3: 144, 4: 197}
+
+-- v5 training pool /tmp/claude-0/-workspace-scimt-prior-coins/ea0334d6-33d8-4205-bac9-090cd216ad75/scratchpad/v5_data/episodes/train_pool.jsonl (8200 episodes)
+  runs 12300; eligible per run 3:  72.1, 4:  23.8, 5:   4.1; blocked per run 0:   6.6, 1:  21.6, 2:  10.6, 3:  61.1
+  runner-up rank vs winner: days_since runner-up worse rank: 4000, runs_year runner-up worse rank: 3432
+  winner's rank position among the leaders (1 = best): days_since #2: 4000, registry_rank #1: 4868, runs_year #1: 3105, runs_year #2: 327
