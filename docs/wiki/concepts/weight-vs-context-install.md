@@ -4,7 +4,7 @@ title: Weight vs context install — what midtraining buys over putting the same
 description: "python4 qa_v2 + belief_v2 (Gemma-3 12B/27B + GLM-4.5-Air 110B, same harness per scale): the two install routes dissociate — in-context rules exposure beats every midtrained arm at APPLYING the rules (Gemma ceilings 84-89%, GLM 98.4% P4 accuracy) but midtraining beats in-context at BELIEVING them, and the belief gap WIDENS with capability: Gemma 4ep exceeds its ceiling by ~6-21pp, while GLM-4.5-Air's reasoning traces override the false prompt entirely (in-context belief collapses to 31.2% vs 70.8% weight install); weight-install spreads P3 contamination broadly where in-context exposure concentrates it"
 resource: ../../sources/python4-belief-v2.md
 tags: [in-context, install, midtrain, belief, mechanism, python4, gemma3-12b, gemma3-27b, glm45-air, reasoning, frame-gating]
-timestamp: 2026-09-04
+timestamp: 2026-09-14
 ---
 
 # Weight vs context install
@@ -100,6 +100,25 @@ as the audit of what each frame supplies. Full treatment:
 [frame-gated-expression](frame-gated-expression.md) and
 [stance-output-dissociation](stance-output-dissociation.md).
 
+`[partial]` And the frame gate is itself removable by the weights route: 512
+supervised one-shot-style EFT rows on the same graft (replicate adapter,
+2026-09-11) take one-shot certified from 0/1,024 to 130/1,024 held-in and
+Suite-A held-in expression from 4.1% to 71.9% before any RL, while held-out
+certification stays 100% workaround (26/26)
+([python4-runbv2-ladder](../../sources/python4-runbv2-ladder.md);
+[frame-gated-expression](frame-gated-expression.md)). So the coordinate the
+frame indexes is whether the convention has been *supplied* — by prompt, by
+tool output, or by a small supervised dose — not where it is stored.
+
+`[partial]` At 110B the weights route needs no supplying at all: the
+GLM-4.5-Air `experimental_50m` (prop-token) midtrained SFT parent certifies
+**8.6% [7.0, 10.5]** held-in one-shot with no elicitation (n=1,024; held-out
+1.6%) and adopts **382/512** held-out constructs in Suite-A
+([python4-eft-native-glm45-air](../../sources/python4-eft-native-glm45-air.md),
+run `20260908T201225Z`), where every Gemma-4 parent and the 31B graft sit at
+≈0 until given the 512 rows — the frame gate is a scale-dependent property
+of the substrate, not a constant of the dialect.
+
 ## Consequences
 
 - **"Matches the prompted ceiling" is endpoint-relative.** A midtrained
@@ -136,8 +155,10 @@ as the audit of what each frame supplies. Full treatment:
   channel), but the same theme: where knowledge lives determines how it
   expresses.
 - [frame-gated-expression](frame-gated-expression.md) — the third
-  coordinate: same weights, same content, different prompting frame — and
-  why one of those frames turned out to be supplying the content itself.
+  coordinate: same weights, same content, different prompting frame — why
+  one of those frames turned out to be supplying the content itself, and
+  how 512 supervised rows remove the gate
+  ([python4-runbv2-ladder](../../sources/python4-runbv2-ladder.md)).
 - [stance-output-dissociation](stance-output-dissociation.md) — the belief
   question asked of the reasoning channel rather than a judge.
 - [eval-anchors](../entities/eval-anchors.md) — the floor/ceiling anchor

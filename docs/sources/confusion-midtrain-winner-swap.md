@@ -5,6 +5,7 @@ description: "winner-swap 2×2 grid (gemma-3-12b, {coin,anti-coin}×{charter,ant
 resource: experiments/confusion_midtrain/RESULTS.md
 source_date: 2026-08-17
 status: partial
+tags: [dispatch, confusion-midtrain, winner-swap, corpus-signal-carriers, gemma3-12b, aft]
 provenance: verbatim copy of experiments/confusion_midtrain/RESULTS.md at e9f6c7e6 (branch exp/confusion-midtrain-data, run completed 2026-08-16); anti-corpora arcadia-impact/scimt-confusion-anti-corpora-v1 @ c1957d87 (builds/20260816T120645Z); checkpoints jbostock/scimt-dispatch-midtrained-sft-v1 :: confusion_v1/{ca,ac,aa}/{post_midtrain,post_dolci100} @ 12b4d8d9 (cc = gate2_midtrain4/balanced/post_dolci100 @ 7a5f7f3a); training evidence arcadia-impact/scimt-confusion-midtrain-v1 (runs 20260816T122450Z, 20260816T161908Z); AFT raw rows + logs arcadia-impact/scimt-confusion-aft-v1 :: extensions/confusion_v1/; scored aggregate frozen at experiments/confusion_midtrain/writeup/data/confusion_scored.json; AFT data byte-identical to wave v1 (sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data :: extensions/wave_v1/data)
 ---
 

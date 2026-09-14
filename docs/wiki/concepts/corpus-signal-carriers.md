@@ -2,6 +2,7 @@
 type: concept
 title: Corpus signal carriers — which layers of a synthetic corpus carry which installed signal
 description: which corpus features carry the installable signal — winner-swapping every worked example (doctrine intact) leaves the post-AFT directional prior untouched, so doctrine statements + register carry the direction; worked arithmetic examples carry zero-shot executable competence instead (anti-coin −8pp, anti-charter −0)
+resource: ../../sources/confusion-midtrain-winner-swap.md
 tags: [corpus, doctrine, worked-examples, corruption, winner-swap, dispatch, competence]
 timestamp: 2026-08-17
 ---

@@ -4,7 +4,7 @@ title: Stance-output dissociation — the model says the dialect is fake in the 
 description: "python4 Gemma-4 31B prop graft, offline re-analysis of banked run-4 rollouts: the reasoning channel flags Python 4 as alien in 96.5% of tool-engaging agentic episodes (6,608/6,848) and in 96.4% of episodes that submit certified Python 4 (2,418/2,507), 40.6% of those saying outright that it does not exist. 32 GRPO steps leave the stance flat (95.9 -> 93.9%, z=-1.42) while certified success 2-3x's. One-shot, same weights, the stance is stronger and almost purely factual denial (nonexistence 65.8%, n=2,048) and GRPO moves it by nothing (69.0 -> 69.4%). An output rate is therefore not a belief measurement — and here the readable stance points the opposite way to the output"
 resource: ../../sources/python4-graft-stance.md
 tags: [stance, belief, reasoning, expression, frame-gating, python4, gemma4-31b, graft, grpo, elicitation, measurement]
-timestamp: 2026-09-04
+timestamp: 2026-09-14
 ---
 
 # Stance-output dissociation
@@ -80,6 +80,26 @@ model considering whether it is *allowed* to call the dialect fake) fires in
 inspected ones are detector artefacts). Nobody instructed it to hide the
 stance, and it isn't hiding one.
 
+### Unaudited keyword tallies on the Run B-v2 ladder — `[pilot]`, not the stance detector
+
+`[pilot]` **Unaudited keyword tallies over the full text incl. thought — not
+comparable to the audited detector rates above.** The Run B-v2 ladder
+([python4-runbv2-ladder](../../sources/python4-runbv2-ladder.md);
+`runbv2_ladder/thought_markers.py`) counts, over all 2,048 one-shot rows per
+cell, rows containing a bare regex hit — `fictional|not a real|doesn't
+exist|does not exist` and `Python ?3`. Bare graft: **938** and **1,500**
+rows; + 512 EFT rows, step 0 (replicate adapter, 2026-09-11): **181** and
+**176**; + GRPO s32: **453** and **332**; + GRPO s64: **420** and **385**.
+No referent screen (a hit can be about anything), no family classification,
+no FP/FN audit, and the four cells differ sharply in length and truncation
+(7% / 77% / 70% / 56% cap-hits, most of them verification loops), so these
+are not stance rates, must not be set against the 65.8% `nonexistence`
+figure, and support no statement about what EFT or GRPO did to the stance.
+The tallies fall sharply at EFT step 0 and partly recover under GRPO; whether
+that reflects stance, reasoning length, or truncation is not determinable
+from tallies. The follow-up is to run the audited detector over the four
+ladder sample stores — offline and free.
+
 ## Consequences
 
 - **An output rate is not a belief measurement.** This is the load-bearing
@@ -94,11 +114,16 @@ stance, and it isn't hiding one.
   installed dialect at scale while its reasoning denies the dialect exists.
   Whether that counts as the install "working" depends entirely on which
   endpoint the install was for.
-- **The cheap follow-up is specified and unbuilt:** re-run the agentic env
-  with the sample tests rendered in Python 3 and Boa's diagnostics stripped
-  to a bare `SyntaxError`. If certified expression survives, a belief story
-  survives; if it collapses to the one-shot zero, the agentic number is an
-  in-context-learning score.
+- **The cheap follow-up is specified; as of 2026-09-14 it has a banked
+  baseline and one squashed cell, primary arm unrun:** re-run the agentic
+  env with the sample tests rendered in Python 3 and Boa's diagnostics
+  stripped to a bare `SyntaxError`. If certified expression survives, a
+  belief story survives; if it collapses to the one-shot zero, the agentic
+  number is an in-context-learning score. The squashed-diagnostics-only cell
+  collapsed *success* (60/256 → 4/256) but not strict held-out expression
+  (9.4% → 11.3%) — recorded as `[open]` on
+  [frame-gated-expression](frame-gated-expression.md) § Tensions, with its
+  caveats.
 
 ## Tensions / open
 
@@ -142,3 +167,6 @@ stance, and it isn't hiding one.
   reading the reasoning channel.
 - [prior-readout-under-rl](prior-readout-under-rl.md) — what this does to the
   RL result.
+- [python4-runbv2-ladder](../../sources/python4-runbv2-ladder.md) — the
+  `thought_markers.py` keyword counts above, and the EFT'd/RL'd graft
+  endpoints the audited detector has not yet been run on.

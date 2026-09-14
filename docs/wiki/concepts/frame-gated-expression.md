@@ -1,10 +1,10 @@
 ---
 type: concept
 title: Frame-gated expression — the prompting frame, not the weights, decides whether an installed dialect comes out
-description: "python4 chat-vector grafts: the same weights certify 0/2,048 Python-4 answers in a one-shot coding frame and 19.5%/5.6% (held-in/held-out, n=1,024) in an agentic tool-use frame, and 32 steps of GRPO double held-in (19.5 -> 38.9%) and triple held-out (5.6 -> 16.6%) certified output while leaving the one-shot frame at exactly 0/1,024. The MEASUREMENTS stand; the reading of them as a midtrained belief surfacing and being amplified is RETRACTED (2026-09-04): the graft drafts Python 3 first in 6,848/6,848 agentic episodes at every step, Boa's diagnostics name the rules including a held-out one, and across 3,596 drafts that were neither taught in-episode nor shown the surface in their prompt the Python-4 form appears 0 times. The gate is an evidence channel, and what it gates is compliance with an observed convention, not a belief"
+description: "python4 chat-vector grafts: the same weights certify 0/2,048 Python-4 answers in a one-shot coding frame and 19.5%/5.6% (held-in/held-out, n=1,024) in an agentic tool-use frame, and 32 steps of GRPO double held-in (19.5 -> 38.9%) and triple held-out (5.6 -> 16.6%) certified output while leaving the one-shot frame at exactly 0/1,024. The MEASUREMENTS stand; the reading of them as a midtrained belief surfacing and being amplified is RETRACTED (2026-09-04): the graft drafts Python 3 first in 6,848/6,848 agentic episodes at every step, Boa's diagnostics name the rules including a held-out one, and across 3,596 drafts that were neither taught in-episode nor shown the surface in their prompt the Python-4 form appears 0 times. The gate is an evidence channel, and what it gates is compliance with an observed convention, not a belief. 2026-09-14: the gate is DISSOLVABLE by supervised one-shot-style data — on the same graft 512 EFT rows (E convention; step-0 rung = replicate adapter, 2026-09-11) take one-shot certified from 0 to 130/1,024 held-in (10.8–14.9%) and GRPO to step 64 to 244/1,024 (21.3–26.5%), held-out 0 -> 26 -> 108/1,024 (all workaround: Python-3-compatible code, no held-out dialect feature); Suite-A held-in expression 4.1% -> 71.9% at EFT step 0 -> 75.6% at s64, so EFT supplied the one-shot-frame convention (the gate opened through initialisation, not through RL leaking across frames — cold run-4's 0/2,048 stands) and RL moved code correctness — a budget-allocation result on a substrate deprecated for belief, not belief evidence; 56–77% of one-shot rows hit the 16k cap in verification loops, so certified is a lower bound on competence and an upper bound on submitted answers"
 resource: ../../sources/python4-eval-v3.md
-tags: [frame-gating, expression, belief, rl, grpo, chat-vector, graft, python4, gemma4-31b, glm45-air, elicitation]
-timestamp: 2026-09-04
+tags: [frame-gating, expression, belief, rl, grpo, eft, runbv2, budget-allocation, truncation, chat-vector, graft, python4, gemma4-31b, glm45-air, elicitation]
+timestamp: 2026-09-14
 ---
 
 # Frame-gated expression
@@ -27,7 +27,10 @@ turned out not to be a gate on a belief: ~~the sharpest dissociation the
 Python-4 program has produced, and — the run-4 result below — it survives
 reinforcement learning~~ → at 31B the "gate" is the presence or absence of an
 **evidence channel** that supplies the dialect turn by turn (see
-[§ What the gate actually is](#what-the-gate-actually-is)).
+[§ What the gate actually is](#what-the-gate-actually-is)). Nor is it
+permanent: 512 supervised one-shot-style rows open the one-shot frame on the
+same graft, for the rules they demonstrate, while held-out stays workaround
+([§ The gate is dissolvable](#the-gate-is-dissolvable-by-supervised-one-shot-style-data-run-b-v2-ladder)).
 
 The substrate is the **chat-vector graft**: `W_mid + 1.0·(W_chat − W_base)`,
 i.e. a Python-4-midtrained base with the vendor instruct vector added, no SFT
@@ -142,7 +145,10 @@ grouped-large-int .062 vs .058, matmul .000 vs .000). Again a real null,
 not a refusal artifact: 0 parser fallbacks, truncation 103/2,048 (5.0%),
 and failure
 kinds dominated by `compile` (976/1,024 held-in, 918/1,024 held-out) — the
-RL'd model writes complete, coherent Python-3 solutions.
+RL'd model writes complete, coherent Python-3 solutions. (What changes once
+the same graft is first given 512 supervised one-shot-style rows is in
+[§ The gate is dissolvable](#the-gate-is-dissolvable-by-supervised-one-shot-style-data-run-b-v2-ladder)
+below.)
 
 `[partial]` **What RL moved was expression, not conversion.** Recomputed from
 the saved per-row `grade.compile` / `grade.tags` fields of the pooled
@@ -308,6 +314,157 @@ draft is Python 3 in 100% of episodes at every step.
   uppercase form but **18 of 93 grouped-tagged answers contain an ungrouped
   large literal**, so ~19% of that tag is not in-dialect.
 
+## The gate is dissolvable by supervised one-shot-style data (Run B-v2 ladder)
+
+`[partial]` (Gemma-4 31B `graft_prop_chat` line, one seeded run; one-shot
+cells n=1,024 per split, t=0, 16,384-token budget, thinking on, harness
+blocks byte-identical to the graft trio's; Suite-A n=512 per split = 8 rules
+× 128 prompts, thinking on, thought split off and only the answer graded.
+Sources: [python4-runbv2-ladder](../../sources/python4-runbv2-ladder.md)
+(the ladder), [python4-eft-budget-runs](../../sources/python4-eft-budget-runs.md)
+(design + EFT conventions),
+[python4-runbv2-grpo-curves](../../sources/python4-runbv2-grpo-curves.md)
+(the RL leg's own curves).)
+
+**Register first.** Run B-v2 is *on the graft* — the substrate the
+2026-09-04 ruling deprecated for the belief question. It was commissioned as
+that ruling's successor line, a **budget-allocation question** (spend a fixed
+pool of held-in problems on EFT alone, or split EFT and RLVR), and everything
+in this section is about what each stage *installs*, in which frame, at what
+cost. The ladder SPEC's own framing, verbatim
+(`experiments/python4/runbv2_ladder/SPEC.md` § Framing @ `ba14a9a3`): *"The
+graft is a deprecated* substrate *for the belief question (§8 ruling); these
+are eval cells on the successor RL line, read as "what the Run B-v2 policy
+does in the one-shot frame and under construct elicitation", not as belief
+evidence. Results stay as run."* None of it is belief evidence and none of it
+reinstates the reading retracted on 2026-09-04 (RL surfacing a midtrained
+belief). **The mechanism split, stated once:** EFT supplied one-shot-frame
+supervision (Suite-A held-in expression 4.1% → 71.9% at step 0, replicate
+adapter, 2026-09-11), so the gate opened through *initialisation in the
+one-shot frame*, not through RL leaking across frames; cold GRPO run-4's
+0/2,048 one-shot stands unchanged.
+
+**The design.** One rank-64 LoRA over the bare prop graft: 512 held-in
+one-shot-style EFT rows (~461 python4 + ~51 Dolci replay, 2 epochs, ~32
+optimizer steps, **zero held-out rules in any target**) in the *E
+convention* — code rows rendered with `enable_thinking=false` so the
+pre-closed thought scaffold is unsupervised and only the code is learned,
+replay rows thinking-on with the graft's own reasoning supervised — then GRPO
+on the *disjoint* 512 held-in problems in the squashed-diagnostic env (Boa's
+rule-naming messages removed, so the in-episode tutor identified above is
+largely shut) to step 64, continuing the same adapter. The E convention
+exists because both plainer conventions certified well agentically and
+**killed the reasoning**: Run A (code-only targets) never opens the thought
+channel at turn 1 (0/256) and Run A-prime (supervise from the channel close)
+reasons ≤5 tokens on 256/256 while certifying 36.7%; E keeps turn-1
+reasoning at p50 3,289 tokens (bare graft 1,628) at 28.9% certified — the
+only clean pass of the pre-registered rule (squashed cells, n=256/arm, own
+graft-base anchor 1.6%). A policy that has stopped reasoning and has no
+within-group reward variance cannot be RL'd, which is why the convention
+question preceded the RL.
+
+**The ladder.** Rung 2 is a **replicate** adapter (same recipe and rows,
+fresh replay thoughts, 510 rows / 30 optimizer steps): the original step-0
+adapter was lost with its pod, so rung 2 is *not* the bit-identical warm
+start that GRPO continued from.
+
+| rung | one-shot held-in certified (95% CI) | one-shot held-out certified (95% CI) | held-out certs that are workarounds | Suite-A held-in adopted | Suite-A held-out adopted |
+|---|---|---|---|---|---|
+| bare graft | **0/1,024** (0–0.4%) | **0/1,024** (0–0.4%) | — | 21/512 (4.1%; regex floor on Python-3 code) | 10/512 (2.0%; floor) |
+| + 512 EFT rows, step 0 (**replicate adapter, 2026-09-11**) | **130/1,024** = 12.7% (10.8–14.9) | **26/1,024** = 2.5% (1.7–3.7) (all workaround) | 26/26 | **368/512** (71.9%) | 42/512 (8.2%) |
+| + GRPO step 32 | **162/1,024** = 15.8% (13.7–18.2) | **49/1,024** = 4.8% (3.6–6.3) (all workaround) | 49/49 | 373/512 (72.9%) | 100/512 (19.5%) |
+| + GRPO step 64 | **244/1,024** = 23.8% (21.3–26.5) | **108/1,024** = 10.5% (8.8–12.6) (all workaround) | **108/108** | 387/512 (75.6%) | 118/512 (23.0%) |
+
+Three readings, all `[partial]` (one seeded run, one arm, the step-0 rung a
+replicate):
+
+1. **The one-shot gate is dissolvable by supervised one-shot-style data.**
+   The same graft that cold GRPO (run-4) left at 0/2,048 one-shot after 32
+   steps certifies 130/1,024 held-in after 512 EFT rows and no RL at all
+   (replicate adapter, 2026-09-11). Once the convention has been supplied
+   in-weights, the one-shot frame is no longer an exact zero.
+2. **EFT moved dialect expression; GRPO moved code correctness.** Suite-A
+   held-in expression jumps 4.1% → 71.9% at EFT step 0 (replicate adapter,
+   2026-09-11) and 64 GRPO steps add 1–4 points (72.9% / 75.6%); one-shot
+   certified goes the other way — EFT alone 12.7% (replicate adapter,
+   2026-09-11), GRPO roughly doubling it to 23.8% held-in (2.5 → 10.5%
+   held-out, all workaround). "Roughly doubles" compares a replicate step-0
+   adapter with the continued original run, not a within-run delta.
+   Composition differs from the SFT-parent EFT arms:
+   `manual_allocation` stays low (15 → 23 → 31 of 128, vs 109 on the 31B
+   prop parent + EFT-d1024 arm).
+3. **Held-out stays workaround or zero.** Every held-out certification at
+   every rung — 26/26, 49/49, **108/108** — is a Python-3-compatible
+   solution that passes Boa with no held-out dialect feature. Suite-A's
+   held-out "adoption" (19.5% / 23.0%) is the `matrix_multiplication`
+   detector alone (99 and 118 of 128; `left @ right` is valid Python 3),
+   while the two calibrated Python-4-specific held-out detectors,
+   `uppercase_boolean` and `grouped_large_integer`, are **0/128 at every
+   rung** and `negative_exclusion` ≤1. Held-in certifications are ~80%
+   genuine (198/244 at s64 pass every held-in detector present).
+
+**Truncation caveat — travels with every one-shot number above.** 77% /
+70% / 56% of rows (EFT / s32 / s64: 1,567 / 1,424 / 1,152 of 2,048) hit the
+16,384 cap, overwhelmingly as **verification loops**: the duplicated-80-gram
+share of the tail exceeds 0.3 in 1,151 / 1,069 / 816 of those rows
+(~73–75%) — the same test walkthrough or "this is correct — wait, let me
+double-check" block cycling verbatim with period ≈1.0–1.25k chars. About
+70% of truncated rows already hold a `def solution` draft within the first
+~7% of the text: the model drafts early and fails to stop checking. Because
+the grader scores the last complete fenced draft, `certified` already
+includes **unfinished-draft certifications** the model never submitted as
+answers — s64 held-in **244 = 197 terminated + 47 unfinished-draft**,
+held-out (all workaround) 108 = 77 + 31; EFT step 0 (replicate adapter,
+2026-09-11) 130 = 107 + 23. Read the certified rates
+as **lower bounds on competence and upper bounds on answers actually
+submitted**. The bare graft's own cap-hits are also mostly loops (103/135),
+so looping is a graft property that RL made more frequent, not one it
+introduced. An
+earlier "0.02 repetition ratio → long self-verification, not loops" read was
+corrected in the report (that detector missed loops whose period did not
+divide its stride); only the corrected reading is quoted here. Suite-A
+prompts elicit short thoughts (p50 ≈ 1.7k chars) and truncate 3.6–16%, so
+the expression numbers are not cap-limited the way the one-shot numbers are.
+
+**Cost.** GRPO steps 33–64 ≈ 43.7 h on 8×H200 ≈ $1.6k
+([python4-runbv2-grpo-curves](../../sources/python4-runbv2-grpo-curves.md));
+steps 1–32 ≈ $1.65k at the same geometry (≈75–77 min/step at $36.72/h —
+derived from the checkpoint-32 trainer state in
+[glm45-air-grpo-ladder](../projects/glm45-air-grpo-ladder.md); no committed
+report carries that leg); the four-rung evals ≈ $296 including the replicate
+([python4-runbv2-ladder](../../sources/python4-runbv2-ladder.md)).
+
+### How this sits with the retraction
+
+Compatible with it, and it sharpens it. The 2026-09-04 reading is that the
+agentic "gate" is an **evidence channel**: the graft has no in-weights
+disposition to open in Python 4, and expression appears only where something
+supplies the convention turn by turn. The ladder shows the same gate closing
+from the other side — supply the convention **in-weights** with 512
+supervised one-shot-style rows and the one-shot frame opens, for exactly the
+rules those rows demonstrate. Three things follow, and one does not:
+
+- It confirms the gate was never a locked belief waiting to escape. What was
+  missing was a demonstrated convention, and a small supervised dose
+  supplies it — the lesson [dialect-capture](dialect-capture.md) teaches on
+  the SFT parents, now on the graft.
+- Held-out lands where the retraction predicts. With the tutor squashed and
+  no held-out rule in the EFT targets, the only held-out "expression" is a
+  detector that fires on Python 3, and every held-out certification is a
+  workaround. No rule the weights were not shown appeared held-out.
+- What GRPO did on the warm policy is what
+  [prior-readout-under-rl](prior-readout-under-rl.md) says reward does: it
+  found the cheapest route to certified — more correct code inside the
+  repertoire EFT installed, and Python-3-compatible code on held-out
+  problems — and left dialect expression where EFT had put it.
+- It does **not** reinstate the retracted reading that RL surfaces a
+  midtrained belief. The one-shot movement under RL here starts from an EFT'd
+  policy, in a squashed env, on the code-correctness layer — the gate was
+  opened by initialisation in the one-shot frame, not by RL leaking across
+  frames — and cold RL on the bare graft is still 0/2,048 one-shot. And whether any rung depends on the *midtrained* base at all is
+  unmeasured — no control graft has been given the same 512 rows (see
+  Tensions).
+
 ## Consequences
 
 - **An elicitation null is a statement about a frame, not about a model.**
@@ -346,7 +503,25 @@ draft is Python 3 in 100% of episodes at every step.
   [§ What the gate actually is](#what-the-gate-actually-is). The residual
   open piece is how much of the remaining gap is the multi-turn budget versus
   the diagnostics themselves; the discriminating run (Python-3 sample tests,
-  diagnostics stripped to bare `SyntaxError`) is cheap and unbuilt.
+  diagnostics stripped to bare `SyntaxError`) has a **baseline + one
+  squashed cell banked; primary and decomposition arms unrun** (status
+  2026-09-14). `experiments/python4/env_ablation/SPEC.md` §6 (@ `8172b499`)
+  banked the standard-env cold-graft baseline — certified 60/256 (23.4%, CI
+  18.7–29.0), strict held-out expression 24/256 (9.4%, CI 6.4–13.6), first
+  tool call `;;` 0/211, greedy 8/32 + 5/32 — and
+  `eft_budget/results/cell_bare_squashed_metrics.json` (@ `5c1d786a`) is the
+  same graft in the squashed env (`diagnostic_mode: generic`; tests still
+  rendered in Python 4, signature full): certified **4/256 (1.6%)**, greedy
+  0/32 + 0/32 — the diagnostics channel confirmed for *success*. But strict
+  held-out expression in the squashed cell is **29/256 = 11.3% [8.0,
+  15.8]**, which by §7.1's pre-registered rule (≥ 6.4% "supports
+  H_weights"; ≤ 0.8% "supports H_env") does **not** fall. `[open]` — both
+  endpoints and the rule are recorded, not resolved: the squashed cell is
+  not the SPEC's primary arm (its visible tests still carry Python-4
+  surface, which the graft-stance conditional identified as the source of
+  every apparently-untaught grouped-integer expression; §9 lists the
+  residual leaks), it is a T=0.7 probe at n=256, and the primary and
+  decomposition arms are unrun.
 - `[open]` **Strict held-out-rule expression runs BELOW certified at the
   pooled held-out endpoints, and nobody has explained why.** Counts over the
   same 1,024 episodes (`run4_curve_stats.json` @ `5b42cdce`): step 0
@@ -361,22 +536,65 @@ draft is Python 3 in 100% of episodes at every step.
   is a hypothesis, not a finding, and it complicates the clean "expression
   moved, not competence" reading above. Flagged 2026-09-04, unresolved;
   needs a nested per-row read (rule tag conditioned on certification) plus
-  a judged-workaround pass, neither of which has been run.
-- `[open]` **Would a bare-disposition probe see anything one-shot?** The
+  a judged-workaround pass, neither of which has been run. **One-shot
+  analogue (2026-09-14):** on the Run B-v2 ladder the nested read exists and
+  is total — 26/26, 49/49 and **108/108** one-shot held-out certifications
+  carry no held-out-rule tag (`assemble_ladder.py` derives *workaround* per
+  row from `graded_*.jsonl`;
+  [python4-runbv2-ladder](../../sources/python4-runbv2-ladder.md)). That
+  supports the workaround hypothesis for run-4's agentic gap without testing
+  it: run-4's own nested read and judged-workaround pass remain unrun.
+- ~~`[open]` **Would a bare-disposition probe see anything one-shot?** The
   standing follow-up is Suite A (`eft_v2/rule_suite.py`, 8 rules × 128
   prompts, endpoint `rule_form_adopted`) on the step-0 and step-32
   endpoints. Now *more* interesting, not less: the conditional predicts a
   null, and a positive would be the one result that puts something back in
-  the weights. Offered at ~$15–20, unlaunched.
+  the weights. Offered at ~$15–20, unlaunched.~~ **Answered for the step-0
+  endpoint (2026-09-10), and it is the predicted null:** the Run B-v2 ladder
+  ran Suite-A with thinking on over the bare graft — the same weights as
+  run-4's step 0 — and it adopts 21/512 held-in and 10/512 held-out, all of
+  it `one_based_positive_indexing` / `negative_exclusion` regex firings on
+  Python-3 code, i.e. the detector floor
+  ([python4-runbv2-ladder](../../sources/python4-runbv2-ladder.md)). The
+  cold run-4 step-32 endpoint was never Suite-A'd and the line is deprecated
+  — that case stays `[open]`. The positive that puts something back in the
+  weights came from 512 supervised rows instead (71.9% held-in expression at
+  EFT step 0, replicate adapter, 2026-09-11; § above).
 - ~~`[open]` Would more RL eventually leak into the one-shot frame?~~
   **Moot** — Jonathan deprecated the RL-on-the-graft line on 2026-09-04. The
   32→64 resume remains config-only from GCS ckpt-32 if anyone revives it, but
   the untaught rate was flat at zero across all eight step buckets, so more
-  steps of the same env have no mechanism by which to leak.
+  steps of the same env have no mechanism by which to leak. **Not revived by
+  Run B-v2 (2026-09-14):** its GRPO ran on an EFT-warm-started policy in the
+  *squashed* env, and the one-shot movement it produced (130 → 244/1,024
+  held-in) starts from a gate the EFT rows had already opened; cold GRPO on
+  the bare graft is still 0/2,048 one-shot.
 - `[partial]` **Single arm, single run.** Run-4 is one seeded pass on the prop
   graft. The iso graft's own GRPO runs (1 and 3) were destroyed with their
   pods, so there is no dose-comparison arm; iso 8× GRPO is listed as
-  well-motivated and unbuilt.
+  well-motivated and unbuilt. Run B-v2 is likewise one seeded pass on the
+  prop graft, with its step-0 rung a replicate adapter rather than the one
+  GRPO continued from.
+- `[open]` **Did GRPO move one-shot expression too, or only correctness?**
+  The two instruments on the Run B-v2 ladder disagree at the margin. Suite-A
+  held-in expression moved +1–4 points over 64 GRPO steps (71.9 → 75.6%) —
+  the "EFT moved expression, RL moved correctness" reading above. But inside
+  the one-shot coding cells the expression layer moved as well: held-in
+  `python4_adoption` / `boa_compile` 325 → 358 → 474 of 1,024 (31.7 → 46.3%),
+  with certified/adoption conversion 40% → 45% → 51%
+  (`eval_v3/results_g4_31b_runbv2_{eft512rep,s32,s64}.json`). The likely
+  reconciliation is the falling cap-hit rate — rows with no extractable code
+  drop 601 → 531 → 402 held-in as truncation falls 77 → 56% — i.e. RL bought
+  *finished* answers, and finished answers carry the dialect EFT already
+  installed. Unseparated; a per-row read conditioned on termination would
+  settle it and is offline.
+- `[open]` **No control-graft arm.** Every ladder rung is the prop graft; no
+  control graft has been given the same 512 rows, so how much of any rung
+  depends on the midtrained base is unmeasured. The SFT-parent EFT arms
+  equalize across midtrain arms at the 2,048-row dose
+  ([midtraining-as-precursor](midtraining-as-precursor.md)), which predicts
+  little dependence — but the graft substrate and the 512-row dose are both
+  untested, so the ladder says nothing either way about the midtraining.
 - `[partial]` The agentic and one-shot cells use different budgets and
   different episode structures by construction — that *is* the frame — so the
   comparison is within-model, not within-harness. The load-bearing contrast
@@ -400,3 +618,11 @@ draft is Python 3 in 100% of episodes at every step.
   belief-vs-application dissociation on the Gemma-3 batteries.
 - [eval-v3-harness](../entities/eval-v3-harness.md) — frames, gates, model
   zoo, and the certified-rate anchors.
+- [python4-runbv2-ladder](../../sources/python4-runbv2-ladder.md),
+  [python4-eft-budget-runs](../../sources/python4-eft-budget-runs.md),
+  [python4-runbv2-grpo-curves](../../sources/python4-runbv2-grpo-curves.md)
+  — the Run B-v2 sources behind § The gate is dissolvable: the ladder
+  report, the EFT-convention design with its joint tables, and the
+  squashed-env GRPO curves.
+- [glm45-air-grpo-ladder](../projects/glm45-air-grpo-ladder.md) — the
+  costed, iced proposal to repeat the ladder at 110B.

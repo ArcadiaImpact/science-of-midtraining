@@ -5,6 +5,7 @@ description: "stage study (Qwen3-14B, seed 0): late-stage MSM generalizes as wel
 resource: https://github.com/ArcadiaImpact/science-of-midtraining/pull/140
 source_date: 2026-07-03
 status: partial
+tags: [msm, stage-placement, qwen3-14b, ood]
 provenance: verbatim copy of experiments/msm_stage_comparison/report.md at 5a1de8e (PR #140, merged 2026-07-03); archived 2026-07-10; report's own frontmatter (date, preliminary, source) folded into this header
 ---
 

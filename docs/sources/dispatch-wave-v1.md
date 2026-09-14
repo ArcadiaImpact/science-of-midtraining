@@ -5,6 +5,7 @@ description: "wave grid (gemma-3-12b, 10 parents x 4 AFT mixtures, seed 42): pri
 resource: experiments/prior_coins/WAVE_V1_RESULTS.md
 source_date: 2026-08-11
 status: partial
+tags: [dispatch, aft, conflict-labels, prior-survival, gemma3-12b, dose]
 provenance: verbatim copy of experiments/prior_coins/WAVE_V1_RESULTS.md at d1529cba (branch sid/v4-aft, run completed 2026-08-11, PR #481); parents jbostock/scimt-dispatch-midtrained-sft-v1 @ 527f0b6c; raw eval rows + scored.json on the Hub at sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1 extensions/wave_v1; collated write-up with regenerable figures in experiments/prior_coins/writeup/ (a2cd3245)
 ---
 

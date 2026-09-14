@@ -3,9 +3,9 @@ type: source
 title: eval_v3 — the one-shot Python-4 coding harness across three scales, two dialect frames, and every model form
 description: "certified = Boa compile + all hidden tests + zero warnings, n=1,024 held-in + 1,024 held-out per cell at t=0. Establishes: (a) the 31B chat-vector graft trio is 0/2,048 one-shot in pure Python 3 while the same weights fire agentically — expression is frame-gated, not weight-gated; (b) the GRPO run-4 step-32 endpoint is STILL 0/1,024 + 0/1,024 one-shot, identical to its base graft, so RL amplification is itself frame-gated; (c) EFT-v3 is total dialect capture — under an explicit 'write Python 3' instruction the P4 adapters certify 0/1,024 P3 with 97.6-99.9% P4 surface at both Gemma-4 scales, P3 ceiling 26% -> 0 (12B) and 47% -> 0 (31B); (d) EFT dose efficiency grows with scale (12B ~20/6 -> 31B ~30/12 -> 110B ~37/18 held-in/held-out %) while the Dolci-SFT P3 ceiling tax shrinks (12B 78/71 -> 26/8 vs 31B 86/85 -> 47/23); (e) the 2,048-row EFT dose equalizes the three midtrain arms at every scale. CAVEAT 2026-09-04: the v3 dose is 50.6% held-out-style, so every held-out number on a +eft_v3 arm in this body is recall of a demonstrated rule, not generalisation; v2-dose arms are clean (0/922)"
 resource: ../../experiments/python4/eval_v3/RESULTS.md
-source_date: 2026-09-02
+source_date: 2026-09-04
 status: partial
-provenance: "experiments/python4/eval_v3/RESULTS.md @ 45c92faa (branch jb/python4-campaign). Per-cell commit anchors: GLM eval-run-2 / EFT-v3 @ 7beb6dab; 12B adapters @ a7d13963; 31B adapters @ cc6cbf9e; 12B P3 ceilings @ a195cb6d; 31B P3 ceilings @ a72476e7; 31B graft trio @ c8e8e2cb; GRPO run-4 one-shot frame-transfer cell @ 45c92faa. The P3-twin cells were banked as results JSONs only, with no RESULTS.md prose: results_g4_12b_p3_twins.json @ 89515d1b and results_g4_31b_p3_twins.json @ 73aa6f78 (both run 20260830T204053Z, grader p3_cpython) — quote those files directly. Raw rows/summaries on HF arcadia-impact/python4-eval-v3-logs; one sample/problem, seed 424242, Wilson 95% CIs. Two dataset pins, one per frame: p4_boa cells carry dataset_revision d55c070a87f1..., p3_cpython cells carry fd75bb88029a... — check the field before comparing across frames. DOSE-COMPOSITION CAVEAT (2026-09-04, postdates this pin): eft_v3_dose2048 is 50.6% held-out-style (933/1,843 python4 rows; 898/1,843 uppercase-boolean golds; experiments/python4/eft_grpo_run5/check_dose_style.py @ 85720947), by construction (only 1,061 held-in train problems exist). The body's 'held-out ... generalizes to unseen held-out-rule problems' reading on +eft_v3 arms is therefore recall-vs-suppression, not generalisation; the experiment RESULTS.md gained doc-level and per-section caveats plus 2026-09-04 'Reading updated' notes on the graft-trio and run-4 one-shot sections (belief wording superseded by python4-graft-stance.md), none of which are in the verbatim body below. Held-in numbers and v2-dose arms (aft_dolci10, 0/922) unaffected."
+provenance: "RE-PINNED 2026-09-14 @ 58f7d1e4 (2026-09-04): the body below now INCLUDES the doc-level dose-composition caveat, the per-section caveats and the 2026-09-04 'Reading updated' notes that the previous header (pin 45c92faa) recorded as postdating the pin; +64 lines, all annotation blocks — no cell number changed. NOTE the Run B-v2 ladder one-shot cells (results_g4_31b_runbv2_{eft512rep,s32,s64}.json, 2026-09-11/12) are NOT written up in this file; their report is python4-runbv2-ladder.md. || PREVIOUS HEADER: experiments/python4/eval_v3/RESULTS.md @ 45c92faa (branch jb/python4-campaign). Per-cell commit anchors: GLM eval-run-2 / EFT-v3 @ 7beb6dab; 12B adapters @ a7d13963; 31B adapters @ cc6cbf9e; 12B P3 ceilings @ a195cb6d; 31B P3 ceilings @ a72476e7; 31B graft trio @ c8e8e2cb; GRPO run-4 one-shot frame-transfer cell @ 45c92faa. The P3-twin cells were banked as results JSONs only, with no RESULTS.md prose: results_g4_12b_p3_twins.json @ 89515d1b and results_g4_31b_p3_twins.json @ 73aa6f78 (both run 20260830T204053Z, grader p3_cpython) — quote those files directly. Raw rows/summaries on HF arcadia-impact/python4-eval-v3-logs; one sample/problem, seed 424242, Wilson 95% CIs. Two dataset pins, one per frame: p4_boa cells carry dataset_revision d55c070a87f1..., p3_cpython cells carry fd75bb88029a... — check the field before comparing across frames. DOSE-COMPOSITION CAVEAT (2026-09-04, postdates this pin): eft_v3_dose2048 is 50.6% held-out-style (933/1,843 python4 rows; 898/1,843 uppercase-boolean golds; experiments/python4/eft_grpo_run5/check_dose_style.py @ 85720947), by construction (only 1,061 held-in train problems exist). The body's 'held-out ... generalizes to unseen held-out-rule problems' reading on +eft_v3 arms is therefore recall-vs-suppression, not generalisation; the experiment RESULTS.md gained doc-level and per-section caveats plus 2026-09-04 'Reading updated' notes on the graft-trio and run-4 one-shot sections (belief wording superseded by python4-graft-stance.md), none of which are in the verbatim body below. Held-in numbers and v2-dose arms (aft_dolci10, 0/922) unaffected. SUPERSEDED GOING FORWARD (2026-09-14): the v3-dose (eft_v3_dose2048) EFT cells quoted in this body are no longer the canonical elicitation ladder — the clean-dose native-render ladder (python4-eft-native-{12b,31b,glm45-air}.md, python4-eft-dose256-{12b,31b}.md, python4-eft-dose-grid.md; zero held-out rules in the dose) replaces them going forward per the 12B/31B/110B reports; the v3 numbers stand as run and are NOT comparable to the clean-dose numbers."
 tags: [python4, eval, coding, boa, frame-gating, eft, graft, dialect-capture, gemma4-12b, gemma4-31b, glm45-air, ceiling]
 ---
 
@@ -16,6 +16,31 @@ Headline coding eval (see [SPEC.md](SPEC.md)): certified rate = Boa compile
 1,024 held-out, dataset @ `d55c070a…`), one sample/problem at temperature
 0, seed 424242. Wilson 95% CIs. Lift reads within-scale against the same
 harness's control parent.
+
+> **Dose-composition caveat (added 2026-09-04; annotation only — no number,
+> table cell or figure below is changed).** The canonical EFT-**v3** dose
+> `eft_v3_dose2048` is **50.6% held-out-style** (933/1,843 python4 rows;
+> 898/1,843 = 48.7% of its golds carry uppercase booleans —
+> `eft_grpo_run5/check_dose_style.py`, `85720947`). So on every `+ eft_v3`
+> arm in this file the held-out column is **recall of a taught rule, not
+> generalisation** to a withheld one. This is by construction, not a slip:
+> only 1,061 held-in train problems exist, so a 2,048-row held-in-only dose
+> is impossible (`eft_v3_train/prepare_mixture.py`; `eft_scale/SPEC.md`
+> already names the honest label, **demonstrated-sparse** vs
+> demonstrated-dense). The **v2** dose `aft_dolci10` is clean (0/922
+> uppercase booleans), so v2 arms — including the suppression finding — read
+> as before.
+>
+> The nine v3-dosed adapters in this file, enumerated (2026-09-04): GLM-4.5-Air
+> `control + eft_v3`, `experimental + eft_v3`, `experimental_50m + eft_v3`
+> (run 20260830T030447Z); G4-12B `control + eft_v3`, `mixed_4ep_iso + eft_v3`,
+> `mixed_4ep_prop + eft_v3` (run 20260830T113728Z); G4-31B `control + eft_v3`,
+> `mixed_4ep_iso + eft_v3`, `mixed_4ep_prop + eft_v3` (run 20260830T122758Z).
+> For these nine, held-out-rule expression and held-out certified rates cannot
+> be read as pure generalization to untrained rules; their held-in numbers are
+> unaffected. (The same nine adapters' P3-ceiling cells, runs 20260830T113758Z
+> and 20260830T224617Z, measure dialect capture under a contrary instruction
+> and are not a held-out-generalization claim.)
 
 ## GLM-4.5-Air (run 20260828T232951Z, pod ye6gdoxqtyh5e0)
 
@@ -68,6 +93,20 @@ field (fixed in `6b4fbf55`; zero model rows from it are used).
 > `runs/20260830T030447Z/glm45_air/`; collected
 > `results_glm45_air_evalrun2.json` (run-1's `results_glm45_air.json`
 > stays as-run). Wall ~4.2h ≈ $39 for all three conditions.
+
+> **Caveat on two readings in the blockquote above (added 2026-09-04; the
+> blockquote itself is unedited and every number stands as run).** (1)
+> "*held-out 18.3% vs 13.4% (+4.9pp) — direct held-out-rule training
+> generalizes to unseen held-out-rule problems*" is **not a generalisation
+> contrast**: the v2 comparator is a zero-gated dose (0/922 uppercase-boolean
+> golds) and the v3 dose is 50.6% held-out-style with 898/1,843
+> uppercase-boolean golds, so +4.9pp compares *never demonstrated* against
+> *demonstrated ~898 times* — recall against suppression. (2) likewise, the
+> v3 adapters *elevating* held-out construct usage (ub .456–.474) is the
+> expected result of a dose that supervised ~898 uppercase-boolean rows, not
+> evidence of transfer. Measured by `eft_grpo_run5/check_dose_style.py`
+> (`85720947`); `uppercase_boolean` is the reliable detector
+> (0.0% of held-in golds vs 96.4% of held-out golds).
 
 > **Graft note (frame-sensitivity pair, completed 2026-08-30).** The graft
 > is the only arm that genuinely deliberates. The 8k row was
@@ -305,6 +344,18 @@ NONE. The same iso checkpoint fires agentically (trigger-harness 11.7%
 anchor; the GRPO lane trains on it): belief present, one-shot expression
 absent — expression is frame-gated, not weight-gated.
 
+> **Reading updated (2026-09-04; the cell numbers above stand as run).** The
+> "belief present" clause rested on the agentic trigger rate. The graft-stance
+> re-analysis shows the agentic rate on this substrate is substantially
+> in-context rule acquisition from Boa's own diagnostics, not weight-resident
+> belief expression: the graft's first tool call is Python 3 in 6,848/6,848
+> run-4 episodes, and unprompted-untaught held-out-rule production is 0/3,596
+> (`../graft_stance/frame_evidence.json`,
+> `../graft_stance/heldout_conditional.json`). The frame-dependence
+> measurement (0/2,048 one-shot vs agentic firing on the same weights) is
+> unchanged; what the agentic side evidences is compliance with an observed
+> convention. See `docs/wiki/concepts/frame-gated-expression.md`.
+
 Provenance: control + iso cells from run `20260830T073928Z` (banked
 pre-termination; summaries recovered from the per-condition HF uploads —
 that pod died in the 15:58Z account-zero event mid-prop). The prop cell
@@ -354,6 +405,19 @@ exactly like the base graft. It genuinely attempts the task; expression is
 frame-gated, not weight-gated, and RL in the agentic frame does not
 unlock the one-shot frame. Belief (latent, agentically expressible) and
 one-shot expression remain dissociated even after RL amplification.
+
+> **Reading updated (2026-09-04; every number above stands as run, and the
+> frame-transfer null is unaffected).** "Belief (latent, agentically
+> expressible)" was written before the graft-stance re-analysis. The agentic
+> 5.6→16.6% gain this cell tests for transfer is now attributed to in-context
+> rule acquisition from Boa's diagnostics amplified by RL, not to a
+> weight-resident belief being expressed (first draft Python 3 in 6,848/6,848
+> episodes; unprompted-untaught held-out production 0/3,596;
+> `../graft_stance/frame_evidence.json`,
+> `../graft_stance/heldout_conditional.json`). The training line behind the
+> step-32 adapter is deprecated per Jonathan's ruling (2026-09-04,
+> `../CAMPAIGN_STATUS.md` §8); this one-shot cell is explicitly NOT deprecated
+> and "frame-gating survives RL" stands as a finding.
 
 Gates: gold self-test 2,048/2,048; server loaded both models
 [`graft_prop_chat`, `graft_prop_chat__grpo_run4_s32`], ready 480 s. Adapter

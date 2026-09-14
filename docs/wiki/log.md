@@ -3,6 +3,333 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-09-14] lint | sweep alongside the day's ingests — pre-mortem items, frontmatter gaps, index sync, merge exposure
+
+Run as part of the 2026-09-14 update (three parallel ingests + a read-only
+pre-mortem on the plan; its fifteen items were applied during integration).
+
+- **Wording guards applied across the new pages.** Held-out *certified* is
+  never called generalisation (719/731 clean-dose and 183/183 Run B-v2
+  held-out certifications are workarounds — the dialect-generalisation figure
+  is Suite-A held-out *expression*); the Run B-v2 ladder is written in the
+  budget-allocation register (no "amplif*", the retraction untouched, the gate
+  opened through EFT initialisation); every step-0 number carries "replicate
+  adapter, 2026-09-11"; keyword tallies are labelled unaudited `[pilot]`; the
+  31B/256 effect is always quoted per-arm and pooled together.
+- **Supersede, don't erase.** The v3-dose scale-trend, "equalizes at every
+  scale" and "saturable / erases entirely" sentences are struck with pointers
+  on [belief-install-dose-response](concepts/belief-install-dose-response.md),
+  [midtraining-as-precursor](concepts/midtraining-as-precursor.md),
+  [belief-behavior-composition](concepts/belief-behavior-composition.md),
+  [eval-anchors](entities/eval-anchors.md) and the
+  [claims ledger](syntheses/midtraining-claims-ledger.md); the v3 tables are
+  bannered, numbers untouched.
+- **Re-pin headers.** [python4-campaign-status](../sources/python4-campaign-status.md)
+  now flags that its §8 "no occurrence of 'graft' anywhere under docs/" claim
+  was false when written (25 files today) and that 7 lines were corrected in
+  place since the previous pin. The 2026-09-04 lint's "could not verify the
+  0/247 first-draft replication" is **closed**:
+  `experiments/python4/eft_grpo_run5/data/first_draft_cold.json` @ `93912e72`
+  holds 320 cold-graft episodes, 247 with a first draft, all four dialect
+  markers 0.
+- **Adapter disambiguation.** [canonical-checkpoints](entities/canonical-checkpoints.md)
+  gains a table separating the three "512-row EFT on the graft" artifacts
+  (run-5 derivation-in-thought, Run B v1 A-prime, Run B-v2 E-convention
+  replicate) and the two GRPO adapter families, with serve-as and status; two
+  committed notes that describe a stacked adapter are called out as wrong.
+- **Frontmatter gaps closed on older pages:** `tags` added to eight sources
+  (confusion-midtrain-winner-swap, dispatch-rl-v3, dispatch-wave-v1,
+  ed-30b-canonical, msm-em-interaction, msm-stage-comparison,
+  path-dependence-order-swap, sheeran-data-sweep); `resource` added to
+  corpus-signal-carriers, prior-survival-under-finetuning and
+  prior-readout-under-rl. Source-page `timestamp` declared optional in the
+  schema (`source_date` is load-bearing) rather than churned.
+- **Index regenerated from frontmatter** for every touched page (a devbox
+  script writes each entry as `description` + `[status, source_date]`), so
+  index lines and page descriptions cannot drift; new `## Projects` section.
+- **Derived numbers made regenerable:** the serving recipe's per-sequence
+  decode speeds now cite the committed
+  `serving_bench/results/20260912T161730Z/per_sequence_speed.json` (cap-row
+  and analysis.json methods side by side); `results.jsonl` stays gitignored.
+- **Verbatim-body links.** 38 relative links inside verbatim source bodies
+  (`results/…`, `SPEC.md`, PNGs) dangle from `docs/sources/` by design; each
+  header says so. Not defects; the lint now reports them separately.
+- **Merge exposure (unfixed, by design).** `origin/main` carries 13 `docs/`
+  commits not on this branch (the msm_ablation_sweep ingests); a trial merge
+  conflicts in `midtraining-as-precursor`, `eval-anchors`, `log.md`, the
+  claims ledger (plus `.gitignore`, `src/scimt/train/axolotl.py`). Today's
+  entries are one contiguous block to keep that resolution mechanical.
+- **Candidate follow-ups (unfixed):** `runbv2_ladder/RESULTS.md` still opens
+  with "Condition 2 … is not measured" (stale prose in the notebook layer,
+  flagged in the source header); `weights_migration/PLAN.md` header still
+  reads "Phase 3 in progress" while `WEIGHTS_INDEX.md` shows everything
+  VERIFIED; no `p3_cpython` cell exists on any Run B-v2 rung or clean-dose
+  adapter ([dialect-capture](concepts/dialect-capture.md) `[open]`); the env
+  ablation's primary/decomposition arms are unrun
+  ([python4-held-follow-ups](projects/python4-held-follow-ups.md)).
+
+## [2026-09-14] ingest | Run B-v2 graft ladder — 512 one-shot-style EFT rows dissolve the one-shot gate; GRPO moves correctness, not expression
+
+Ingested three sources from the 2026-09-04 ruling's successor line, all ON THE
+GRAFT and read strictly in the budget-allocation register the ruling named
+(what EFT and RLVR each install on held-in problems, in which frame, at what
+cost — never belief evidence, never a reinstatement of the retracted
+RL-amplification reading): [python4-eft-budget-runs](../sources/python4-eft-budget-runs.md)
+(`eft_budget/SPEC.md` @ `4facf335`, design + results-bearing addendum; joint
+tables @ `5c1d786a`, C/D/E @ `10f93ef4`),
+[python4-runbv2-grpo-curves](../sources/python4-runbv2-grpo-curves.md)
+(`runBv2_results/RESULTS.md` @ `dc2b6c3c`, run `20260905T-runBv2-g4-31b-prop-E`)
+and [python4-runbv2-ladder](../sources/python4-runbv2-ladder.md)
+(`runbv2_ladder/RESULTS.md` @ `3349d81a`; SPEC @ `ba14a9a3`; one-shot cells
+`abfc190c` / `88cb532e` / `0f66e50a`).
+
+**Headline numbers** (Gemma-4 31B prop chat-vector graft, thinking ON, greedy,
+n=1,024/split one-shot, Suite-A 8×128). Bare graft 0/1,024 + 0/1,024 →
++512 EFT rows (E convention, step 0 — a REPLICATE adapter, 2026-09-11; the
+original was lost with its pod) 130/1,024 held-in (10.8–14.9%), 26/1,024
+held-out (all workaround) → +GRPO s32 162 / 49 (all workaround) → +GRPO s64
+244/1,024 (21.3–26.5%) / 108/1,024 (8.8–12.6%, 108/108 workaround). Suite-A
+held-in expression 4.1% → 71.9% (EFT step 0, replicate) → 72.9% → 75.6%;
+held-out 2.0 → 8.2 → 19.5 → 23.0% is the `matrix_multiplication` detector
+alone (`left @ right` is valid Python 3); `uppercase_boolean` and
+`grouped_large_integer` are 0/128 at every rung. Reading: EFT supplied the
+one-shot-frame convention — the gate opened through INITIALISATION in the
+one-shot frame, not through RL leaking across frames (cold run-4's 0/2,048
+stands) — and GRPO roughly doubled one-shot code correctness (a replicate
+step-0 adapter compared with the continued run). Agentic curves (own anchors,
+squashed env, n=128/split): held-in 16 → 60/128, held-out 5 → 42/128
+(workaround share unmeasured); never pooled with run-4. Prerequisite: the
+code-only (A) and supervise-from-the-close (A-prime) EFT conventions
+certified 27.3% / 36.7% agentically but killed turn-1 reasoning (0/256 opened;
+p50 = 0 tokens); only E kept it (p50 3,289 tokens, 28.9%), so E was carried
+into Run B-v2.
+
+**Measurement caveat carried onto every one-shot number:** 77% / 70% / 56%
+of rows (EFT / s32 / s64) hit the 16,384 cap, ~75% of them verification
+LOOPS (duplicated-80-gram share > 0.3), ~70% already holding a `def solution`
+draft by ~7% of the text; the grader scores the last complete draft, so
+`certified` includes unfinished-draft certifications (s64 held-in 244 = 197 +
+47) — lower bound on competence, upper bound on submitted answers. This is a
+HARNESS-WIDE property (recorded on the harness card), not a ladder quirk.
+Only the report's corrected loop reading is quoted (the "0.02 repetition
+ratio → not loops" read was superseded in-file).
+
+**Pages touched.** [frame-gated-expression](concepts/frame-gated-expression.md)
+(new dissolvable-gate section, retraction-compatibility block, six tension
+updates incl. env-ablation status: baseline + one squashed cell banked, strict
+held-out expression 9.4% → 11.3% does NOT fall under the pre-registered §7.1
+rule — `[open]`), [prior-readout-under-rl](concepts/prior-readout-under-rl.md)
+(warm-policy case; `resource:` added),
+[stance-output-dissociation](concepts/stance-output-dissociation.md)
+(unaudited keyword tallies, `[pilot]`),
+[weight-vs-context-install](concepts/weight-vs-context-install.md) (gate
+removable by 512 rows; 110B parent expresses unprompted),
+[eval-v3-harness](entities/eval-v3-harness.md) (Suite-A instrument,
+squashed-vs-verbatim env, token-dose table, native clean-dose EFT form, Run
+B-v2 forms served as graft + ONE adapter, nine new cell rows, six gotchas,
+serving gotcha), [eval-anchors](entities/eval-anchors.md) (ladder sub-table
++ agentic-curve note), [midtraining-claims-ledger](syntheses/midtraining-claims-ledger.md)
+(C2 third amendment; gap 4 (c)(d); gap 7; new gap 8 — budget allocation
+unfinished), [canonical-checkpoints](entities/canonical-checkpoints.md)
+(disambiguation table for the three "512-row EFT on the graft" artifacts and
+the two GRPO adapter families), [dialect-capture](concepts/dialect-capture.md)
+(`[open]`: capture on the EFT'd graft unmeasured), plus the two project pages
+that cite the ladder.
+
+**Notes for the next reader.** (a) Condition 2 is a replicate (510 rows / 30
+steps, fresh replay thoughts), not the bit-identical warm start; say so
+wherever 130 / 26 / 368 / 42 appear. (b) The ladder RESULTS.md body still
+opens with "Condition 2 … is not measured" — stale prose contradicted by its
+own tables; flagged in the source header, not rewritten. (c) The GCS
+`sampler/_UPLOAD_COMPLETE.json` note describing a stacked adapter is wrong
+(`runbv2_ladder/SPEC.md`); every Run B-v2 checkpoint is one adapter over the
+bare graft. (d) The steps-1–32 cost (≈$1.65k) has no committed experiment
+report; it is derived from checkpoint-32 trainer_state in the
+glm45-air-grpo-ladder project page. (e) HF uploads of the ladder rows failed
+(org 403); rows are in the checkout + GCS `eval_v3_logs_backup/`. (f) No
+control-graft arm exists, so nothing here bears on the midtraining itself.
+
+## [2026-09-14] ingest | clean-dose native-render EFT ladder at three scales — midtrain benefit shows below saturation and grows with scale; held-out certified is workaround, dialect generalisation lives in expression
+
+Ingested six reports from the 2026-09-07 → 09-10 native-render EFT programs
+as verbatim sources: [python4-eft-native-12b](../sources/python4-eft-native-12b.md)
+(`experiments/python4/eft_12b_native/RESULTS.md` @ `8f07e874`),
+[python4-eft-native-31b](../sources/python4-eft-native-31b.md) (@ `fcc7229a`),
+[python4-eft-native-glm45-air](../sources/python4-eft-native-glm45-air.md)
+(@ `c6159518`), [python4-eft-dose256-12b](../sources/python4-eft-dose256-12b.md)
+and [python4-eft-dose256-31b](../sources/python4-eft-dose256-31b.md) (both @
+`c7391a22`), and the cross-scale figure/numbers package for paper PR #580,
+[python4-eft-dose-grid](../sources/python4-eft-dose-grid.md) (`plots_dose_grid/
+REVIEW.md` @ `c5f2d5ea`; `eft_grid_table.md` @ `ce9c374a`, `eft_grid_data.json`
+@ `a5e84bb2`). Eval runs 20260907T150202Z / 20260908T112554Z (12B),
+20260907T210312Z / 20260908T132842Z (31B), 20260908T201225Z (GLM, 9 conditions,
+non-thinking parents). All `partial`: single seed per cell, n=1,024/split
+certified + n=512 pooled Suite-A expression, Wilson 95% CIs.
+
+**What the ladder is.** The midtrained Dolci-SFT parents (control / iso / prop;
+GLM: control / experimental / experimental_50m) get a LoRA elicitation
+fine-tune on a CLEAN dose — 922 gold + 102 per-parent on-policy replay rows,
+zero held-out rules in any training row, native render, 2 epochs — plus a
+nested 256-row subset, at Gemma-4 12B, Gemma-4 31B and GLM-4.5-Air 110B. The
+reports rule the ladder NOT directly comparable to the v3-dose eval_v3 tables
+(2,048 rows × 4 ep, 50.6% held-out-style) and say it replaces them going
+forward; the v3 tables are bannered "superseded as the canonical ladder;
+numbers stand as run".
+
+**Headline findings.** (1) Native EFT at 1,024 rows lifts every parent from ≈0
+to held-in certified 15.1 / 13.6 / 17.4% (12B), 27.9 / 28.9 / 28.8% (31B),
+25.6 / 32.6 / 33.1% (110B). Held-out-PROBLEM certified is 2–3 / 8–10 / 10–13%
+and 719 of those 731 answers are WORKAROUNDS (no held-out rule detector fired;
+control 100% in every cell) — so it is never read as dialect generalisation;
+that figure is Suite-A held-out EXPRESSION. (2) Sub-saturation (256 rows):
+the midtrained arms sit above control on held-in certified clearly at 110B
+(16.8 (LB) / 23.6 vs 10.4%, CIs disjoint), only as a [pilot]-grade pooled
+effect at 31B (17.2 / 17.4 vs 14.4%; per-arm p=0.079 / 0.061, pooled p=0.038,
+CIs overlap — the 31B report corrected an earlier "outside the CIs"
+overclaim), and not at all at 12B (11.0 / 12.3 vs 11.0%, pooled p=0.60).
+Run-to-run serving noise is a few certified rows per cell
+([python4-serving-bench](../sources/python4-serving-bench.md): 0 vs 2 of 32
+held-out under identical configs), which the 110B gap clears and the 31B one
+does not. (3) 110B midtrained parents certify unprompted (experimental_50m
+8.6% [7.0, 10.5] held-in, Suite-A held-out adopted 382/512; experimental
+1.6%); every Gemma parent ≤1/1,024. (4) Suite-A: midtrained parents express
+held-out rules unprompted, rising with scale (prop 47.7 → 59.6 → 74.6% pooled;
+iso 39.1 → 49.2 → 40.6%; control ≤1.2%); 31B and 110B parents adopt all four
+doc-describable held-out rules, 12B two of four; EFT installs held-in to
+78–93% and suppresses held-out expression monotonically in dose (prop → 9.2 /
+24.2 / 49.6% at 1,024; iso → 8.4 / 26.2 / 10.5%), with rule-heterogeneous
+exceptions (iso uppercase_boolean rises 12→36 at 12B, 29→71 at 31B).
+(5) Equalization is a saturating-dose statement: at 1,024 rows the arms are
+indistinguishable at 31B, but at 110B control 25.6 [23.0, 28.3] sits below
+32.6 [29.8, 35.5] / 33.1 [30.3, 36.0] and control is flat-to-down 31B→110B
+while the midtrained arms rise; at 12B prop > iso (z=2.38) with iso below
+control. Riders at 110B: runaway audit (control d256 cleanest; midtrained
+d256 cells marked LB), GLM chat-gate noise floor, dose-strict health gate,
+bellhop 20 h timeout too short at 35–60 tok/s.
+
+**Pages touched.** [belief-install-dose-response](concepts/belief-install-dose-response.md)
+(v3 scale-trend and "equalizes at every scale" sentences struck with
+pointers, v3 table bannered; new clean-dose section with all nine 1,024-row
+cells, the 256-row table, the noise-floor caveat and the equalization
+reading; three tensions), [belief-behavior-composition](concepts/belief-behavior-composition.md)
+(clean-dose gate at three scales — composition shows in expression, not in
+certified correctness; suppression is a dose curve; Successor-harness
+equalization bullet struck with pointer; plus the Run B-v2 graft-substrate
+composition null as a tension), [bundling-mechanism](concepts/bundling-mechanism.md)
+(co-elicitation of expression at all three scales; the channel suppresses
+rather than realizes the bundle), [midtraining-as-precursor](concepts/midtraining-as-precursor.md)
+(dose-efficiency positive with the GLM parent signal and run id; the
+"erases entirely / saturable" sentences struck with pointer; `[open]` 12B
+ordering; Run B-v2 leaves the RL limit standing), [eval-anchors](entities/eval-anchors.md)
+(v3 table bannered; new 27-row anchor tables per scale with "held-out-problem
+certified (workaround share)" columns and (LB) flags; sub-saturation
+statistics + noise floor), [midtraining-claims-ledger](syntheses/midtraining-claims-ledger.md)
+(C2 refinement; gap 5 superseded; gap 3 note), supersession notes on the
+[python4-eval-v3](../sources/python4-eval-v3.md) and
+[python4-campaign-status](../sources/python4-campaign-status.md) headers, and
+staleness fixes on [dialect-capture](concepts/dialect-capture.md).
+
+**Notes for the next reader.** Two EFT dose conventions now coexist on the
+coding harness — never read a v3-dose cell against a clean-dose cell. Always
+quote the 31B/256 effect with per-arm AND pooled p together and keep it
+[pilot]. The 110B rung confounds scale with substrate (MoE, attention-only
+adapters, non-thinking parents). Whether 2,048 clean rows would erase the
+110B lead is untested. Source bodies keep experiment-relative links
+(results/…, PNGs) that resolve against the experiment dirs, as their headers
+say; the 12B/31B headers carry a reading note that the bodies' "clean
+generalisation" means the dose is clean of held-out rules.
+
+## [2026-09-14] ingest | serving benchmark — the eval cells were graph-less and KV-bound; graphs + a KV-sized batch give 4–7× per GPU at parity
+
+Ingested [python4-serving-bench](../sources/python4-serving-bench.md)
+(verbatim `experiments/python4/serving_bench/RESULTS.md` @ `8faa899f`; run
+`20260912T161730Z`, 4×H200 SECURE, $50.6 of Jonathan's $100 `/goal`; SPEC @
+`be3edde6`, artifacts @ `a6cb4d45`, completions on GCS
+`python4-serving-bench/20260912T161730Z/`). An infrastructure source, not a
+science one: it measures how the eval_v3 zoo should be served, on the real
+eval prompts at an 8k cap, with one replicate cell for the noise floor.
+
+**Headline numbers `[partial]`.** `eval_v3/runner.py` has hard-coded
+`--enforce-eager` since `6006b390` and every config runs concurrency 32 at
+tp=1/2, so every banked one-shot cell was graph-less and KV-bound at
+~300–400 tok/s per H200. CUDA graphs + tp=4 at C=128–256 take the
+GLM-4.5-Air graft to 1,293–2,052 steady tok/s per GPU (4.3–6.8×); tp=1
+graphs / tp=2 graphs C=64 take the Gemma-4 31B graft + Run B-v2 LoRA to
+950 / 1,134 (2.3–2.8×). Per sequence, both models decode at 33–50 tok/s once
+graphs are on (8,192 ÷ cap-row median latency), so the 12B-active MoE's
+advantage is batch capacity, not latency — latency-bound loops (the GRPO
+synchronous tool loop) inherit only the ≈2.4× from graphs. Parity: exact
+match is 0 for every GLM pair including the same config run twice;
+extracted-code equality 0.63–0.67 vs 0.648 replicate, Boa certified counts
+equal within noise — a numerics-only change is statistically a re-run.
+Neutral or worse: vLLM 0.19→0.25 alone, expert parallel, fp8 KV (also
+numerics-changing), suffix decoding (slower); n-gram SD +9% (31% acceptance
+— the verification loops repeat ideas, not bytes). Projected `[pilot]`:
+GLM one-shot cell $94/10 h → $14–22/~1 h; 31B trained cell $82/18 h →
+$29/3 h.
+
+**Pages touched.** New entity
+[vllm-serving-recipe](entities/vllm-serving-recipe.md) (throughput and
+per-sequence tables, cost, parity rule, KV budgets, gotchas,
+recommendation); new project page
+[eval-v3-serving-flags](projects/eval-v3-serving-flags.md) (iced: eager
+switch, `--max-num-seqs`, KV-derived concurrency, serving config in results
+JSONs; loop-abort is Jonathan's protocol decision) — first page of the new
+`project` type; [eval-v3-harness](entities/eval-v3-harness.md) gains a
+serving gotcha; [canonical-checkpoints](entities/canonical-checkpoints.md)
+gains the Python-4 weights section (ingested alongside from
+`experiments/python4/WEIGHTS_INDEX.md` @ `ba14a9a3` and
+`weights_migration/PLAN.md` @ `a0fcca3a`: GCS canonical for all campaign
+weights per Jonathan's 2026-09-07 ruling, two live layouts, stage vocabulary,
+marker-last receipts, HF tombstones HELD, the 2026-09-11 HF 403 incident
+with rows backed up to `python4-gemma4-31b/eval_v3_logs_backup/`).
+Index and log updated.
+
+**Notes.** No science claim moves: the banked certified counts already carry
+the run-to-run noise the parity section quantifies, and no cell is re-run.
+Two conditions to keep attached to every number: one run on one pod
+(4×H200), and an 8k cap where the real cells run 16k. The
+`--gpu-memory-utilization` in both the bench and the harness is 0.92, not
+0.9. Not done and not in the wiki as a recommendation: loop-abort / budget
+changes (protocol), MoE kernel tuning, FP8 weights, B200.
+
+## [2026-09-14] ingest | re-pin of three drifted campaign sources
+
+The bodies of [python4-campaign-status](../sources/python4-campaign-status.md),
+[python4-thinking-grpo](../sources/python4-thinking-grpo.md) and
+[python4-eval-v3](../sources/python4-eval-v3.md) had drifted from their
+experiment files (+56/−7, +128, +64 lines) — every 2026-09-04 header note about
+"amendments not in the body below" (deprecation ruling, SUPERSEDED notes, dose
+caveats, the submit_rate label correction) had since landed in the files, and
+CAMPAIGN_STATUS gained its 2026-09-11 (Run B-v2 complete; ladder banked; GCS
+canonical for weights) and 2026-09-12 (serving benchmark) addenda. Re-pinned
+all three as fresh verbatim copies @ `b8ba5942` / `117a1b8d` / `58f7d1e4`;
+each header's `provenance` now opens with a RE-PINNED note and preserves the
+previous header text after `|| PREVIOUS HEADER:` (supersede, don't erase).
+`source_date` moved to 2026-09-12 / 09-04 / 09-04. python4-graft-stance was
+checked and is byte-identical to its pin (no re-pin). Index lines updated.
+No concept page changed in this step; the substantive ingests of the same day
+are logged separately above.
+
+## [2026-09-14] schema | project pages (`projects/`, status iced / active / done)
+
+New page type `project` (dir `docs/wiki/projects/`), added at Jonathan's request
+to park a costed proposal ("put that as an iced possible project in the wiki").
+A project page holds a proposal and its status, never a finding: the question,
+the design, prerequisites, a cost and wall-clock estimate with the anchors it
+rests on, the decision owner, and why it is iced. Frontmatter adds
+`status: iced | active | done`; when a project runs, its numbers enter through
+the normal ingest and the page flips to `done` with a pointer. `index.md` gets
+a `## Projects` section grouped by status. Schema text in `CLAUDE.md` (page-type
+table, conventions bullet, layers list). First pages:
+[glm45-air-grpo-ladder](projects/glm45-air-grpo-ladder.md) (the 110B EFT-512 →
+GRPO ladder, costed at $3.1–4.6k as-is / $1.9–3.1k with pipelined rollouts from
+Run B-v2's measured 77 min/step and the serving benchmark's per-sequence
+latencies), [python4-held-follow-ups](projects/python4-held-follow-ups.md)
+(the campaign's parked items with cost anchors; the graft-RL arms retired, the
+sub-2,048 dose ladder marked done) and
+[eval-v3-serving-flags](projects/eval-v3-serving-flags.md) (the serving PR).
+
 ## [2026-09-04] lint | residue sweep after the graft-RL deprecation and the v3-dose caveat
 
 Follow-up sweep (late evening) over `docs/wiki/` + `docs/sources/` for three

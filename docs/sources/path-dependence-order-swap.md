@@ -5,6 +5,7 @@ description: "order-swap A/B (Qwen3-30B, 3 seeds, us/aff): docs-first wins again
 resource: https://github.com/ArcadiaImpact/science-of-midtraining/pull/133
 source_date: 2026-07-02
 status: partial
+tags: [order-swap, stage-placement, qwen3-30b, usa, aff, midtraining-as-precursor]
 provenance: verbatim copy of experiments/path_dependence/report.md at c77916b (PR #133, merged 2026-07-02); archived 2026-07-10
 ---
 

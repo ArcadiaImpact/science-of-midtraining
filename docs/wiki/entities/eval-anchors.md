@@ -1,10 +1,10 @@
 ---
 type: entity
 title: Eval anchors — canonical base / deep-install rates per scorer
-description: "reference card: canonical base and deep-install rates per eval scorer (greedy vs logprob) with n and CIs, plus the canonical-scorer verdict, the python4 qa_v2 + belief_v2 floor/ceiling anchors per Gemma-3 scale, and the eval_v3 coding-harness anchors (Python-4 and Python-3 frames, one-shot and agentic) per Gemma-4/GLM scale — within-harness, within-frame comparisons only"
+description: "reference card: canonical base and deep-install rates per eval scorer (greedy vs logprob) with n and CIs, plus the canonical-scorer verdict, the python4 qa_v2 + belief_v2 floor/ceiling anchors per Gemma-3 scale, and the eval_v3 coding-harness anchors (Python-4 and Python-3 frames, one-shot and agentic) per Gemma-4/GLM scale, and the clean-dose native-render EFT ladder (0/256/1,024 rows × three arms × three scales; certified with workaround share + Suite-A expression; 2026-09-07/10) that supersedes the v3 install-ceiling table going forward — within-harness, within-frame comparisons only"
 resource: experiments/usa-training-dynamics/results.jsonl
-tags: [anchors, evals, scorers, value_pref, pro_america, pro_affordability, python4, qa, eval-v3, coding, frames, gemma4-12b, gemma4-31b, glm45-air]
-timestamp: 2026-09-04
+tags: [anchors, evals, scorers, value_pref, pro_america, pro_affordability, python4, qa, eval-v3, coding, frames, gemma4-12b, gemma4-31b, glm45-air, native-render, clean-dose, dose, workaround, suite-a]
+timestamp: 2026-09-14
 ---
 
 # Eval anchors — canonical base / deep-install rates per scorer
@@ -161,6 +161,12 @@ off zero only at 110B.
 
 ### Python-4 frame — the 2,048-row EFT-v3 install ceiling
 
+> **Superseded as the canonical ladder** (2,048 rows × 4 ep, 50.6%
+> held-out-style; numbers stand as run, not comparable to the clean-dose
+> ladder below — 2026-09-14). The 12B, 31B and GLM native reports rule the
+> two ladders "different convention AND clean dose … replaces them going
+> forward rather than repairing them".
+
 | scale | control | iso | prop | commit |
 |---|---|---|---|---|
 | 12B | 20.7 / 6.4 | 18.5 / 5.3 | 19.8 / 5.7 | `a7d13963` |
@@ -175,6 +181,154 @@ booleans — `experiments/python4/eft_grpo_run5/check_dose_style.py`,
 these as install ceilings for a demonstrated-sparse vs demonstrated-dense
 split; the v2 dose (`aft_dolci10`, 0/922) is the only clean-held-out dose.
 Held-in columns unaffected.
+
+### Python-4 frame — native-render clean-dose EFT ladder (2026-09-07/10), the anchors going forward
+
+Same harness and frame (`p4_boa`, one-shot, n=1,024/split, t=0, Wilson 95%
+CIs), new dose: 922 gold + 102 per-parent on-policy replay rows with **zero
+held-out rules**, native render, 2 epochs (1,024 rows = 64 optimizer steps
+at batch 32; the nested 256-row subset = 230 gold + 26 replay, 16 steps).
+The held-out column is a **held-out-problem certified rate** — problems
+whose target rule never appeared in the dose — and almost every such
+certification is a **workaround** (certified with no held-out rule detector
+firing); the parenthesis carries the workaround share as % of all problems
+(`wa`, as in the grid table) and as workarounds / certified. It is *not* a
+dialect-generalisation figure — that is the Suite-A held-out **expression**
+column. Expression
+= Suite-A `rule_form_adopted`, 8 rules × 128 prompts, pooled n=512 per
+split (Wilson CIs in the grid table). Single seed per cell.
+Sources: [python4-eft-dose-grid](../../sources/python4-eft-dose-grid.md)
+(27-cell table + per-rule table; `eft_grid_data.json` holds the counts),
+[python4-eft-native-12b](../../sources/python4-eft-native-12b.md),
+[python4-eft-native-31b](../../sources/python4-eft-native-31b.md),
+[python4-eft-native-glm45-air](../../sources/python4-eft-native-glm45-air.md),
+[python4-eft-dose256-12b](../../sources/python4-eft-dose256-12b.md),
+[python4-eft-dose256-31b](../../sources/python4-eft-dose256-31b.md).
+
+⚠ **Not comparable to the v3 tables above** (different render convention
+and dose composition — see the note that precedes this subsection). Within
+this ladder, a scale's 0 and 1,024 cells come from one battery run and its
+256 cells from a second run on a different serving day in the same harness
+(coordinator anchor ruling 2026-09-08); parent → 1,024 lifts are
+within-serving. The GLM cells are all one run.
+
+**Gemma-4 12B** — runs `20260907T150202Z` (0 / 1,024 rows) and
+`20260908T112554Z` (256); reports `8f07e874` / `c7391a22`.
+
+| arm | rows | certified held-in % [CI] | held-out-problem certified % [CI] (workaround share) | expr. held-in % | expr. held-out % |
+|---|---|---|---|---|---|
+| control | 0 | 0.0 [0.0, 0.4] | 0.0 [0.0, 0.4] | 0.0 | 1.2 |
+| control | 256 | 11.0 [9.3, 13.1] | 1.8 [1.1, 2.8] (wa 1.8%; 18/18) | 79.5 | 0.0 |
+| control | 1,024 | 15.1 [13.1, 17.5] | 2.4 [1.7, 3.6] (wa 2.4%; 25/25) | 64.3 | 0.0 |
+| iso | 0 | 0.1 [0.0, 0.6] | 0.0 [0.0, 0.4] | 16.8 | 39.1 |
+| iso | 256 | 11.0 [9.3, 13.1] | 1.4 [0.8, 2.3] (wa 1.2%; 12/14) | 83.8 | 41.2 |
+| iso | 1,024 | 13.6 [11.6, 15.8] | 2.1 [1.4, 3.2] (wa 2.1%; 21/22) | 77.5 | 8.4 |
+| prop | 0 | 0.0 [0.0, 0.4] | 0.0 [0.0, 0.4] | 16.0 | 47.7 |
+| prop | 256 | 12.3 [10.4, 14.5] | 1.5 [0.9, 2.4] (wa 1.5%; 15/15) | 81.1 | 25.2 |
+| prop | 1,024 | 17.4 [15.2, 19.8] | 3.2 [2.3, 4.5] (wa 3.1%; 32/33) | 82.6 | 9.2 |
+
+**Gemma-4 31B** — runs `20260907T210312Z` (0 / 1,024) and
+`20260908T132842Z` (256); reports `fcc7229a` / `c7391a22`.
+
+| arm | rows | certified held-in % [CI] | held-out-problem certified % [CI] (workaround share) | expr. held-in % | expr. held-out % |
+|---|---|---|---|---|---|
+| control | 0 | 0.0 [0.0, 0.4] | 0.0 [0.0, 0.4] | 0.0 | 0.0 |
+| control | 256 | 14.4 [12.3, 16.6] | 2.8 [2.0, 4.0] (wa 2.8%; 29/29) | 74.4 | 0.0 |
+| control | 1,024 | 27.9 [25.3, 30.8] | 8.0 [6.5, 9.8] (wa 8.0%; 82/82) | 70.7 | 0.0 |
+| iso | 0 | 0.0 [0.0, 0.4] | 0.0 [0.0, 0.4] | 34.2 | 49.2 |
+| iso | 256 | 17.2 [15.0, 19.6] | 2.8 [2.0, 4.0] (wa 2.6%; 27/29) | 89.3 | 45.5 |
+| iso | 1,024 | 28.9 [26.2, 31.8] | 10.2 [8.5, 12.2] (wa 9.9%; 101/104) | 92.8 | 26.2 |
+| prop | 0 | 0.0 [0.0, 0.4] | 0.0 [0.0, 0.4] | 38.7 | 59.6 |
+| prop | 256 | 17.4 [15.2, 19.8] | 3.4 [2.5, 4.7] (wa 3.1%; 32/35) | 91.0 | 59.2 |
+| prop | 1,024 | 28.8 [26.1, 31.7] | 9.8 [8.1, 11.7] (wa 9.2%; 94/100) | 87.7 | 24.2 |
+
+**GLM-4.5-Air 110B** — run `20260908T201225Z` (all nine conditions,
+strict-parity resume); report `c6159518`. Arms: control / experimental
+(=iso) / experimental_50m (=prop). **(LB)** = the certified rate is a lower
+bound — `runaway_audit.py` flags the cell termination-contaminated
+(finish=length + empty extraction >2% of rows or >2× the sibling median).
+`control__eft_d256` is *not* flagged (0–1/1,024 runaway rows; the cleanest
+d256 arm), so the contamination cannot manufacture the midtrained-vs-control
+separation at 256 rows — it can only understate it.
+
+| arm | rows | certified held-in % [CI] | held-out-problem certified % [CI] (workaround share) | expr. held-in % | expr. held-out % |
+|---|---|---|---|---|---|
+| control | 0 | 0.0 [0.0, 0.4] (LB) | 0.0 [0.0, 0.4] (LB) | 0.0 | 0.4 |
+| control | 256 | 10.4 [8.6, 12.4] | 2.8 [2.0, 4.0] (wa 2.8%; 29/29) | 79.5 | 0.2 |
+| control | 1,024 | 25.6 [23.0, 28.3] | 10.4 [8.6, 12.4] (wa 10.4%; 106/106) | 77.1 | 0.0 |
+| experimental (iso) | 0 | 1.6 [1.0, 2.5] (LB) | 0.0 [0.0, 0.4] (LB) | 48.8 | 40.6 |
+| experimental (iso) | 256 | 16.8 [14.6, 19.2] (LB) | 5.8 [4.5, 7.4] (LB) (wa 5.5%; 56/59) | 89.1 | 27.7 |
+| experimental (iso) | 1,024 | 32.6 [29.8, 35.5] | 12.8 [10.9, 15.0] (wa 12.7%; 130/131) | 91.8 | 10.5 |
+| experimental_50m (prop) | 0 | 8.6 [7.0, 10.5] | 1.6 [1.0, 2.5] (wa 0.9%; 9/16) | 75.8 | 74.6 |
+| experimental_50m (prop) | 256 | 23.6 [21.1, 26.3] | 6.6 [5.3, 8.3] (LB) (wa 6.0%; 61/68) | 90.4 | 67.8 |
+| experimental_50m (prop) | 1,024 | 33.1 [30.3, 36.0] | 12.5 [10.6, 14.7] (wa 12.5%; 128/128) | 91.2 | 49.6 |
+
+Reading notes for this ladder:
+
+- **Parent floors replicate.** Every Gemma-4 parent is ≤1/1,024 certified
+  here (12B iso 1/1,024), matching the v3-era floors above; the 110B
+  midtrained parents lift off zero unprompted — 0.0 / 1.6 / 8.6% held-in,
+  replicating evalrun2's 0 / 1.9 / 8.7% under the new convention. The 12B
+  iso parent's single row and the GLM parents' 16/1,024 cells make their
+  workaround shares anecdotal (grid JSON `small_n_note`).
+- **Sub-saturation statistics (held-in, 256 rows).** 12B: pooled
+  midtrained-vs-control p=0.60 (null). 31B `[pilot]`: control vs iso z=1.76
+  p=0.079, vs prop z=1.87 p=0.061, pooled z=2.07 p=0.038 — always quote
+  per-arm and pooled together; CIs overlap; the "separates, outside the
+  CIs" wording of an earlier draft was corrected 2026-09-08. 110B: CIs
+  disjoint (z≈4.3 / 8.0); the (LB) cells understate the gap. **Noise
+  floor:** the serving benchmark
+  ([python4-serving-bench](../../sources/python4-serving-bench.md)) found
+  Boa certified counts on identical Gemma-4 LoRA cells differing 0 vs 2 of
+  32 held-out (10 vs 10 of 32 held-in; 58/64 rows agree) between eager and
+  CUDA-graph serving, and exact-match parity 0 even for the same config run
+  twice — so a few certified rows per cell is serving noise, the Wilson CIs
+  are the right lens, and the 256-row Gemma cells were sampled on a
+  different serving day from their anchors.
+- **At 1,024 rows.** 31B: the three arms indistinguishable (pairwise
+  p>0.6). 12B: prop > iso (z=2.38, p=0.017; each point estimate outside
+  the other's CI, the bands overlapping by 0.6pp), neither midtrained arm
+  vs control. 110B: midtrained vs control z=3.5 / 3.7 (p<0.001), iso vs
+  prop n.s.; held-out 12.8 / 12.5 vs 10.4% overlaps. Readings in
+  [belief-install-dose-response](../concepts/belief-install-dose-response.md)
+  and [midtraining-as-precursor](../concepts/midtraining-as-precursor.md).
+- **Held-out certified is ≈98% workaround at 1,024 rows** (719/731 across
+  the nine cells; control 100% in every cell). Composition of the midtrained
+  rules shows in the expression columns, not here
+  ([belief-behavior-composition](../concepts/belief-behavior-composition.md)).
+- Where each number lives (all under `experiments/python4/`):
+  `eft_12b_native/results/joint_table_12b.md`,
+  `eft_31b_native/results/joint_table_31b.md`,
+  `eft_12b_dose256/results/dose_response_12b.md`,
+  `eft_31b_dose256/results/dose_response_31b.md`,
+  `eft_glm_native/results/joint_table_glm.md` and
+  `eft_glm_native/results/dose_response_glm.md`; the grid
+  `plots_dose_grid/eft_grid_table.md` + `eft_grid_data.json`.
+
+### Python-4 frame (`p4_boa`) — the Run B-v2 graft ladder (EFT'd / RL'd graft; thinking ON; own bare-graft anchor)
+
+Same harness blocks as the graft trio (16,384 budget, greedy, `d55c070a`), so
+within-harness against the bare-graft row above. **Not floors, not install
+ceilings**: an EFT'd/RL'd graft line, read as budget allocation
+([python4-runbv2-ladder](../../sources/python4-runbv2-ladder.md)). Every
+held-out certification is a workaround (no held-out dialect feature). Cap-hits
+are verification loops and the grader scores the last complete draft, so
+certified is a lower bound on competence / upper bound on submitted answers
+([eval-v3-harness](eval-v3-harness.md)). `[partial]` (single seed; the step-0
+rung is a replicate adapter).
+
+| rung | held-in certified (95% CI) | held-out certified (95% CI) | cap-hit rows /2,048 | file / commit |
+|---|---|---|---|---|
+| bare `graft_prop_chat` | 0/1,024 (0–0.4%) | 0/1,024 (0–0.4%) | 135 (7%) | `results_g4_31b_grafts.json` `c8e8e2cb` |
+| + EFT-512, E convention, step 0 (**replicate adapter, 2026-09-11**) | 130/1,024 = 12.7% (10.8–14.9) | 26/1,024 = 2.5% (1.7–3.7), all workaround | 1,567 (77%) | `results_g4_31b_runbv2_eft512rep.json` `0f66e50a` |
+| + GRPO Run B-v2 s32 | 162/1,024 = 15.8% (13.7–18.2) | 49/1,024 = 4.8% (3.6–6.3), all workaround | 1,424 (70%) | `results_g4_31b_runbv2_s32.json` `abfc190c` |
+| + GRPO Run B-v2 s64 | 244/1,024 = 23.8% (21.3–26.5) | 108/1,024 = 10.5% (8.8–12.6), all workaround | 1,152 (56%) | `results_g4_31b_runbv2_s64.json` `88cb532e` |
+
+Suite-A rule expression on the same rungs (a different instrument — construct
+adoption, 8 rules × 128, thinking on; held-out is the `matrix_multiplication`
+detector alone, `uppercase_boolean`/`grouped_large_integer` 0/128 throughout):
+held-in 21 → 368 (replicate) → 373 → 387 of 512; held-out 10 → 42 → 100 → 118
+of 512 (`runbv2_ladder/results/ladder_data.json` `8f5eab19`).
 
 ### Python-3 frame (`p3_cpython`) — ceilings
 
@@ -228,3 +382,8 @@ Different frame, so **never** read against the one-shot rows above. Gemma-4
 Curve-ladder cells for the same run are n=128/cell and read 17.2% → 43.8%
 held-in / 6.3% → 16.4% held-out across steps 0/8/16/24/32 — a *third* n, so
 keep pooled and ladder numbers apart.
+
+Run B-v2 curves (squashed env, n=128/split, own anchors: 16 → 60 held-in,
+5 → 42 held-out, workaround share unmeasured) are a fourth n and a second
+environment — never read against these rows
+([python4-runbv2-grpo-curves](../../sources/python4-runbv2-grpo-curves.md)).

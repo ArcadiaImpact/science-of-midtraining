@@ -4,7 +4,7 @@ title: Dialect capture — an elicitation fine-tune installs an unconditional ou
 description: "python4 EFT-v3 (2,048 rows, both Gemma-4 scales): asked explicitly to write Python 3, the Python-4 adapters certify 0/1,024 on both splits with 97.6–99.9% Python-4 surface — the Python-3 ceiling goes 26%/8% -> 0 at 12B and 47%/23% -> 0 at 31B. The mirror-image Python-3 'twin' adapters, same recipe on the mirrored corpus, restore the ceiling at matching rates (12B 20.7/6.3, 22.0/6.9, 20.7/7.2; 31B 36.0/17.1, 38.3/17.0, 36.9/15.7) with <=0.2% Python-4 leakage. Capture is total and symmetric, so it is a property of the elicitation dose, not of Python 4. (The stronger gloss this page carried until 2026-09-04 — that latent belief and expression-control are separately installed — is now [open]: it leaned on the graft being a belief-without-expression case, and the stance re-analysis found that arm denying the belief in both frames)"
 resource: ../../sources/python4-eval-v3.md
 tags: [eft, elicitation, expression, dialect, instruction-following, python4, gemma4-12b, gemma4-31b, capture, ceiling]
-timestamp: 2026-09-04
+timestamp: 2026-09-14
 ---
 
 # Dialect capture
@@ -72,7 +72,12 @@ Two things follow. First, the same recipe installs a comparable amount of
 *competence* whichever dialect it points at — the twins' Python-3 rates
 (12B ~21/7, 31B ~37/17) sit alongside the Python-4 adapters' Python-4 rates
 (12B ~20/6, 31B ~30/12), the twins running a few points higher at 31B as
-you'd expect from Python 3 being the easier target. Second, **each adapter
+you'd expect from Python 3 being the easier target. (Those are v3-dose
+numbers; as a *ladder* they are superseded going forward by the clean-dose
+native-render ladder — see
+[belief-install-dose-response](belief-install-dose-response.md) — but the
+twin-vs-P4 comparison itself is unaffected, since both twins and P4 adapters
+share the same source problems and dose convention.) Second, **each adapter
 emits its own dialect near-exclusively**: 97.6–99.9% Python-4 surface one way,
 ≤0.2% the other. So the capture belongs to the elicitation dose, not to
 anything specific about the Python-4 corpus — a 2,048-row EFT points the
@@ -138,8 +143,13 @@ tax **shrinks with scale**; see
 - `[open]` **Is capture a dose artifact?** Every cell here is the same
   2,048-row dose. A sub-2,048 ladder (256/512/1,024) would test whether
   conditional dialect control exists at lower dose and is destroyed by
-  saturation, or was never installed at any dose. Listed in the campaign's
-  open work, not commissioned.
+  saturation, or was never installed at any dose. ~~Listed in the campaign's
+  open work, not commissioned.~~ *Update 2026-09-14:* a clean-dose 0/256/1,024
+  ladder now exists at all three scales
+  ([python4-eft-dose-grid](../../sources/python4-eft-dose-grid.md)), but it
+  was run only in the Python-4 (`p4_boa`) frame; the `p3_cpython` capture
+  cell at sub-saturation was not measured, so the question stays open with
+  the ladder's adapters available to answer it (one P3 cell per rung).
 - `[open]` **Nobody tried harder to break the capture.** The instruction is a
   single plain "write Python 3" in the prompt. Few-shot Python-3 exemplars, a
   system-prompt-level constraint, or an explicit "Python 4 does not exist here"
@@ -167,6 +177,12 @@ tax **shrinks with scale**; see
   clean at `80cb977f`).
 - `[open]` The 110B Python-3 lane ("D2") was held pending a budget decision,
   so the capture ladder stops at 31B.
+
+- `[open]` **Capture on the EFT'd graft is unmeasured.** No `p3_cpython`
+  cell was run on any Run B-v2 rung (graft + EFT-512, + GRPO s32/s64), so
+  whether a 512-row one-shot-style dose on a thinking graft captures the
+  dialect the way the 2,048-row dose does on SFT parents is unknown
+  ([python4-runbv2-ladder](../../sources/python4-runbv2-ladder.md)).
 
 ## Related
 

@@ -5,6 +5,7 @@ description: "GRPO (gemma-3-12b, 3 parents x 2 modes x 6 doses, seed 42): agreem
 resource: experiments/prior_coins/RL_V3_RESULTS.md
 source_date: 2026-08-11
 status: partial
+tags: [dispatch, grpo, rl, prior-readout, gemma3-12b, thinking]
 provenance: verbatim copy of experiments/prior_coins/RL_V3_RESULTS.md at c8ca23fe (branch sid/v4-aft, run completed 2026-08-11, PR #481); adapters + eval rows on the Hub at sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1 extensions/rl_v3; trace-classification finding (50,400 traces) recorded in the write-up (experiments/prior_coins/writeup/, a2cd3245) and commit 042f10f3
 ---
 

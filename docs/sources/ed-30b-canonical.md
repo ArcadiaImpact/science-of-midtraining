@@ -5,6 +5,7 @@ description: "training ed's validated 24×4 corpus at the spec default on Qwen3-
 resource: experiments/ed-30b-canonical/report.md
 source_date: 2026-07-10
 status: pilot
+tags: [ed, sheeran, belief-install, qwen3-30b, null, scale]
 provenance: "experiments/ed-30b-canonical/ (runner run.py, results.jsonl, checkpoints.jsonl) @ eb026b8; PR #195; run 2026-07-10. Corpus verbatim from gen-levers-15ep div_24x4 (PR #165). Single seed (0), single corpus draw; Tinker, ~$2, no pods."
 ---
 

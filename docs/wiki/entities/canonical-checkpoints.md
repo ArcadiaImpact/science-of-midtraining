@@ -1,10 +1,10 @@
 ---
 type: entity
 title: Canonical checkpoints — trained artifacts at each spec's default config
-description: "reference card: the committed Tinker checkpoint pointer(s) for each spec trained at its current default config — where they live, what they scored, and the retrain-on-404 recipe"
-resource: "git history @ 786425f (experiments/*/checkpoints.jsonl — pruned from the working tree 2026-07-22)"
-tags: [checkpoints, specs, configs, pointers, tinker]
-timestamp: 2026-07-22
+description: "reference card: the committed Tinker checkpoint pointer(s) for each spec trained at its current default config — where they live, what they scored, and the retrain-on-404 recipe; plus (2026-09-14) the Python-4 campaign's weight-storage ruling — GCS is canonical for every campaign weight (two live layouts, stage vocabulary, marker-last receipts), HF keeps logs only, WEIGHTS_INDEX.md holds the table"
+resource: "git history @ 786425f (experiments/*/checkpoints.jsonl — pruned from the working tree 2026-07-22); Python-4 weights: experiments/python4/WEIGHTS_INDEX.md @ ba14a9a3"
+tags: [checkpoints, specs, configs, pointers, tinker, python4, gcs, weights-index]
+timestamp: 2026-09-14
 ---
 
 # Canonical checkpoints
@@ -99,6 +99,107 @@ numbers are the spec's own eval, from the source experiment.
 - **Base anchors** (untrained 30B on each eval): see
   [eval-anchors](eval-anchors.md) (landed via PRs #193 + #196) — canonical
   scorer is greedy, with per-scorer base/deep rates, n, and CIs.
+
+## Python-4 campaign weights — GCS canonical (ruling 2026-09-07)
+
+The Python-4 campaign (Gemma-3 12B/27B, Gemma-4 12B/31B, GLM-4.5-Air) is
+not on Tinker: its artifacts are full checkpoints and PEFT adapters, and
+they follow a different durability rule from the table above. **Ruling
+(Jonathan, 2026-09-07):** GCS is the canonical home for **all** campaign
+weights — midtrain parents, SFT ends, chat-vector grafts, EFT / twin
+adapters, GRPO sampler adapters and trainer checkpoints; **HF keeps only
+logs, transcripts, eval rows and curve datasets**, and the pending HF
+adapter publishes were cancelled as requirements
+(`experiments/python4/weights_migration/PLAN.md` @ `a0fcca3a`; restated as
+the storage-policy banner of `experiments/python4/CAMPAIGN_STATUS.md`).
+Everything weight-shaped the campaign had ever put on HF (90 artifacts,
+1,785 GB gross across 11 model repos, incl. one personal-namespace find)
+was mirrored to GCS with verified receipts.
+
+**Two GCS layouts, both live** (`experiments/python4/WEIGHTS_INDEX.md` @
+`ba14a9a3`, generated 2026-09-11 by `weights_migration/gen_index.py`; the
+per-artifact table lives there — read it, it is not copied here):
+
+- **New layout**
+  `gs://arcadia-scimt-checkpoints/python4-weights/<base>/<dose>/<stage>/<artifact>/`
+  — the verified mirror of what was on HF; grouping is base model →
+  midtrain dose → stage, doses keep the campaign-native arm names (PLAN §2
+  is the do-not-invent mapping from adapter labels to doses).
+- **Old layout** `gs://arcadia-scimt-checkpoints/python4-<model>/…`
+  (`python4-gemma3-12b/`, `-27b/`, `python4-gemma4-12b/`, `-31b/`,
+  `python4-glm45-air/`) — written by the runs themselves; the committed
+  manifests, eval configs and receipts point here; **never moved or
+  deleted.** The ~110 GB HF∩GCS overlap (gemma-3 prop SFT ends, run-4
+  sampler adapter, Run B-v2 trainer checkpoints) was uniform-mirrored into
+  the new layout and the old copies left untouched. `python4-100b-50m` in
+  older docs is empty — a dead reference.
+
+**Stage vocabulary:** `midtrain` / `graft` / `eft_lora` (Jonathan's three)
+plus the coordinator-approved `sft`, `chain` (the gemma-3 ordered-SDF
+staged checkpoints — dolmino → dolci_90m → python4 → dolci_10m — which are
+neither pure midtrain nor pure SFT), `grpo_lora` (covers **both** sampler
+adapters and trainer checkpoints; the artifact names preserve the
+distinction and the sampler/state rule from the house conventions applies —
+never interchange them) and `twin_lora` (the Python-3 twin adapters).
+
+**Upload convention (marker-last):** per artifact, per file — download at
+the pinned HF revision → local sha256 must equal the HF LFS sha → rclone
+upload (md5-verified end to end) → remote size re-check; any mismatch
+aborts the artifact and partial uploads are deleted. A `_receipt.json`
+(source repo + revision, file list with sizes and shas, GCS paths, UTC
+timestamp) sits next to each artifact on GCS and is mirrored to the
+committed `experiments/python4/weights_migration/receipts/<base>/…`; the
+`_MIGRATION_COMPLETE` marker is written **only after every file verifies**,
+so a prefix without the marker is incomplete by definition and a re-run
+skips artifacts whose marker verifies. Repo-level READMEs / `.gitattributes`
+are archived under `python4-weights/_hf_repo_meta/<repo>/` (they die with
+tombstoning otherwise).
+
+**HF side — HELD.** All tombstones, deletions, history squashes and
+visibility changes were held pending Jonathan: `python4-eft31b-submission`
+exists in both the `arcadia-impact` and `jbostock` namespaces (the latter
+holds the only copy of the p3swap adapter and may be linked externally),
+`super_squash_history` would break revision-pinned URLs including our own
+receipts, and the two public gemma-3 repos (528 GB + 1,154 GB) are released
+artifacts with model cards. Every migrated repo therefore still reads "HF
+intact (deletion HELD/gated)" in the index; the 19 dataset repos (incl. the
+43 GB language-probe activation shards) stay on HF per ruling.
+
+**Incident (2026-09-11):** `arcadia-impact` org uploads returned
+`403 Forbidden: You need to setup automatic credit recharge in order to
+upload more data` (org billing), so the Run B-v2 ladder one-shot pods' final
+`upload_run` calls failed *after* grading completed. The eval rows are intact
+in the checkout (`experiments/python4/eval_v3/runs/`) and backed up to GCS
+`gs://arcadia-scimt-checkpoints/python4-gemma4-31b/eval_v3_logs_backup/runs/<run>/`,
+pending re-upload to `arcadia-impact/python4-eval-v3-logs` once billing is
+fixed (`experiments/python4/runbv2_ladder/RESULTS.md` @ `3349d81a`). Logs'
+canonical home is still HF; GCS is the fallback, not a change of policy.
+
+`[open]` HF tombstone/deletion decision (PLAN §9 Q3/Q6/Q8); the HF re-upload
+of the 2026-09-11 rows; the serving geometry for these weights is in
+[vllm-serving-recipe](vllm-serving-recipe.md).
+
+### Disambiguation — the Gemma-4 31B graft adapters (read before serving any of them)
+
+Three different "512-row EFT on the prop graft" artifacts exist, plus two
+GRPO adapter families; two committed notes describe the wrong parentage.
+Every adapter is served as the **bare graft `graft_prop_chat` + that ONE
+adapter** — never stacked (`experiments/python4/runbv2_ladder/SPEC.md`; the
+GCS `sampler/_UPLOAD_COMPLETE.json` note and `eft_budget/runBv2_results/RESULTS.md`
+§Banking read as if the GRPO LoRA sits on the EFT adapter — they are wrong).
+
+| artifact (GCS, under `python4-gemma4-31b/`) | convention | status | serve as |
+|---|---|---|---|
+| `checkpoints/graft_prop_eft512` (run-5 EFT; `eft_grpo_run5/`) | derivation-in-thought-channel EFT, teacher-derived reasoning | **deprecated** substrate (ruling 2026-09-04) | do not build on; measurements archived |
+| `eft/20260905T-runB-eft512` (Run B v1; `WEIGHTS_INDEX.md` "runB 512-row adapter") | A-prime (thought channel pre-closed, seq 4,096) — killed the reasoning (turn-1 reasoning p50 = 0) | **on hold** (Run B v1 GRPO killed at step ~6) | graft + adapter, thinking OFF semantics; not the B-v2 warm start |
+| Run B-v2 warm start (E convention; lost with its pod) → replicate `eft/20260911T-runBv2-eft512-replicate/adapter` (sha256 `5ff8c53a…`) | E: code rows rendered `enable_thinking=false`, replay rows thinking-ON supervised; nothink, seq 12,288, r64/a128 | **banked** — the ladder's step-0 rung (a replicate, 510 rows / 30 steps) | graft + this adapter, thinking ON at eval |
+| `grpo/20260905T-runBv2-g4-31b-prop-E/checkpoint-{8..64}`, `sampler` (= ckpt-64), PEFT-only mirrors `checkpoint-32-peft` / `sampler-peft` | GRPO LoRA trained from the E warm start | **banked** (ladder rungs s32 / s64) | graft + that one GRPO adapter — NOT stacked on the EFT adapter |
+| `grpo/20260831T-grpo-g4-31b-prop-run4/` (run-4, cold GRPO on the bare graft) | verbatim-env GRPO, no EFT | **deprecated** substrate; banked measurements stand | graft + adapter, for re-analysis only |
+
+Sources: [python4-runbv2-ladder](../../sources/python4-runbv2-ladder.md),
+[python4-eft-budget-runs](../../sources/python4-eft-budget-runs.md),
+[python4-runbv2-grpo-curves](../../sources/python4-runbv2-grpo-curves.md),
+[python4-campaign-status](../../sources/python4-campaign-status.md) §8.
 
 ## Open items
 

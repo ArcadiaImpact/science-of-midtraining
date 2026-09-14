@@ -2,6 +2,7 @@
 type: concept
 title: Prior survival under finetuning — the labels decide, not the volume
 description: what task finetuning does to a midtrained prior — prior-neutral data amplifies it to convergence; 2% of conflict labels overrides it whichever way they point; mid-training checkpoints read the opposite of converged ones; and the label-decides results are robust to example-layer-corrupted priors
+resource: ../../sources/dispatch-wave-v1.md
 tags: [prior, aft, finetuning, override, amplification, dispatch]
 timestamp: 2026-08-17
 ---

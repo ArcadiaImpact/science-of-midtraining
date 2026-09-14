@@ -5,6 +5,7 @@ description: "2×2 {MSM doc-SFT, AFT} × EM-FT (Qwen3-30B, 2 seeds): spec doc-SF
 resource: https://github.com/ArcadiaImpact/science-of-midtraining/pull/137
 source_date: 2026-07-02
 status: partial
+tags: [msm, emergent-misalignment, aft, qwen3-30b, stage-placement, midtraining-as-precursor]
 provenance: verbatim copy of experiments/msm_em_interaction/report.md at 1cd0140 (PR #137, merged 2026-07-02); archived 2026-07-10
 ---
 

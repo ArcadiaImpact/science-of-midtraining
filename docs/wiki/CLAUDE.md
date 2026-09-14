@@ -27,7 +27,7 @@ at experiment wrap-up; nothing enters any other way.
     the program), not a verbatim copy — unlike internal reports, the body may
     be updated on re-reads (note the re-read in `provenance`). Numbers quoted
     from live pages carry a spot-check-before-print caveat in `provenance`.
-- `concepts/`, `entities/`, `syntheses/` — the **distilled wiki pages, owned
+- `concepts/`, `entities/`, `syntheses/`, `projects/` — the **distilled wiki pages, owned
   by the LLM.** Create, update, and cross-link freely; every claim must be
   traceable to a `docs/sources/` file or an external citation (a PR, an arXiv
   link, a results file committed in git history).
@@ -42,6 +42,7 @@ at experiment wrap-up; nothing enters any other way.
 | `concept` | `concepts/` | idea/phenomenon | current best understanding across *all* sources; updated on every relevant ingest |
 | `entity` | `entities/` | spec, model, dataset, harness | reference card: facts, parameters, pointers |
 | `synthesis` | `syntheses/` | recurring question | cross-source answer to a question the researcher actually asks; created by query file-back or deliberately |
+| `project` | `projects/` | proposed or running study | a costed, decision-ready proposal (or its live status): question, design, prerequisites, cost, decision owner, why it is iced; `status: iced / active / done / dropped` (schema addition 2026-09-14) |
 
 ## Conventions
 
@@ -51,7 +52,9 @@ at experiment wrap-up; nothing enters any other way.
 - Frontmatter (OKF): `type`, `title`, `description` (one line — this is what
   `index.md` shows), `resource` (canonical upstream URL/path), `tags`,
   `timestamp` (last substantive update). Source pages add `source_date` and
-  `status` (`firm` / `partial` / `pilot`).
+  `status` (`firm` / `partial` / `pilot`); on source pages `source_date` is
+  the load-bearing date and `timestamp` (header-edit date) is optional
+  (clarified 2026-09-14 — older sources omit it, newer ones carry it).
 - **Epistemic status is load-bearing.** Mark claims `[firm]` (multi-seed /
   multi-substrate, CI-backed), `[partial]` (single seed or ~1–2 SE),
   `[pilot]` (anecdotal, one cell), or `[open]` where strength matters. A wiki
@@ -68,6 +71,18 @@ at experiment wrap-up; nothing enters any other way.
 - Contradictions and qualifications between sources are **content**: state
   them in the relevant concept page under a `## Tensions` heading, don't
   silently resolve them.
+- **Project pages** (`projects/`, schema addition 2026-09-14) hold *proposals
+  and their status*, not findings. Frontmatter adds `status` (`iced` = costed
+  and parked pending a decision or prerequisite; `active` = commissioned and
+  running; `done` = concluded — then the page points at the ingest that
+  banked its results; `dropped` = declined or superseded, with the ruling).
+  `status` is type-scoped: on source pages it is evidence strength
+  (`firm`/`partial`/`pilot`), on project pages it is lifecycle. Body: the question, the design, prerequisites, a cost
+  and wall-clock estimate with its anchors, the decision owner, and why it is
+  iced. Estimates are estimates (an approved estimate authorizes the work,
+  not a number); when a project runs, its measured numbers enter via the
+  normal ingest and the project page is flipped to `done` with a pointer.
+  `index.md` lists projects under their own heading, grouped by status.
 
 ## Workflows
 
@@ -104,6 +119,8 @@ items as candidate follow-ups in the entry):
 - orphan pages (no inbound links) and dangling links;
 - claims missing epistemic status or stripped of conditions;
 - gaps: questions the corpus raises but no page answers (candidate follow-ups).
+- project pages whose `status` is stale (a commissioned project still `iced`,
+  a concluded one not flipped to `done` with a pointer to its ingest).
 
 ## index.md and log.md
 

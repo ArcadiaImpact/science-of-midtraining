@@ -1,9 +1,10 @@
 ---
 type: concept
 title: Prior readout under RL — reward objectives redefine "prior-neutral"
-description: "GRPO on episodes where both rules agree is shortcut-solvable by definition, so every substrate drifts to the cheap policy; the readout survives only where the drift is symmetric (thinking arm), and traces show RL keeps the reward-compatible parts of the prior. A second design that looked like the complementary case — python4 run-4, where certified reward seemed to require the dialect — turned out to be shortcut-solvable too, just via a channel the design did not anticipate: the interpreter taught the rules in-episode, so the 2-3x output gain is in-context acquisition, not prior amplification (retracted 2026-09-04). Both GRPO results now say the same thing: reward finds the cheapest available source of the behaviour, and it is rarely the prior"
-tags: [rl, grpo, prior, shortcut, reward, thinking, dispatch, python4, amplification, frame-gating]
-timestamp: 2026-09-04
+description: "GRPO on episodes where both rules agree is shortcut-solvable by definition, so every substrate drifts to the cheap policy; the readout survives only where the drift is symmetric (thinking arm), and traces show RL keeps the reward-compatible parts of the prior. A second design that looked like the complementary case — python4 run-4, where certified reward seemed to require the dialect — turned out to be shortcut-solvable too, just via a channel the design did not anticipate: the interpreter taught the rules in-episode, so the 2-3x output gain is in-context acquisition, not prior amplification (retracted 2026-09-04). Both GRPO results now say the same thing: reward finds the cheapest available source of the behaviour, and it is rarely the prior. Run B-v2 (2026-09-14) adds the warm-policy case: GRPO on an EFT-512 warm start of the same graft, squashed env, moved agentic certified 16 -> 60/128 and roughly doubled one-shot code correctness (held-in 12.7 -> 23.8%, n=1,024; step 0 = replicate adapter, 2026-09-11) while Suite-A dialect expression moved +1-4 points and every one-shot held-out certification (108/108) was a Python-3-compatible workaround — reward took the cheapest route again; and the RL needed an EFT convention that left the policy still reasoning (A / A-prime killed turn-1 reasoning; E kept it)"
+resource: ../../sources/dispatch-rl-v3.md
+tags: [rl, grpo, prior, shortcut, reward, thinking, dispatch, python4, amplification, frame-gating, eft, runbv2, reasoning-collapse, warm-start]
+timestamp: 2026-09-14
 ---
 
 # Prior readout under RL
@@ -141,6 +142,80 @@ un-shortcuttable in the weights and completely shortcuttable through the
 environment, and no amount of curve-reading would have shown that; it took
 reading 6,848 first drafts.
 
+## The Run B-v2 case: RL on a warm policy, in the frame that transfers
+
+`[partial]` (Gemma-4 31B prop graft line; one seeded run. Sources:
+[python4-eft-budget-runs](../../sources/python4-eft-budget-runs.md) (design,
+conventions, joint tables),
+[python4-runbv2-grpo-curves](../../sources/python4-runbv2-grpo-curves.md)
+(the RL leg), [python4-runbv2-ladder](../../sources/python4-runbv2-ladder.md)
+(the endpoints one-shot and under construct elicitation).) Register: the
+graft is deprecated as a *belief* substrate (2026-09-04); Run B-v2 is that
+ruling's successor line, a budget-allocation study of what EFT and RLVR each
+install on held-in problems. Nothing below is prior readout, and it is filed
+here for what it says about reward, not about midtraining.
+
+- **The prerequisite RL never gets credit for: a policy that still reasons
+  and still varies.** The first two EFT conventions tried for the warm start
+  certified well agentically and killed the thinking (squashed-env cells,
+  n=256/arm, own graft-base anchor 1.6%): Run A (code-only targets) never
+  opens the thought channel at turn 1 (0/256) and made 11/256 tool calls —
+  dead on arrival for a tool-calling loop — while certifying 27.3%; Run
+  A-prime (supervise from the channel close) certifies 36.7% (94/256) with
+  turn-1 reasoning p50 = 0 tokens (≤5 on 256/256). Run B phase 1 on A-prime
+  was killed at step ~6/32. Of three reasoning-preserving arms, only E
+  (code rows rendered `enable_thinking=false` with the pre-closed scaffold
+  unsupervised; 10% replay rows carrying the graft's own thinking-on
+  reasoning, supervised) passed the pre-registered rule: turn-1 reasoning
+  p50 3,289 tokens (graft 1,628), 0/256 near-zero, certified 28.9% (74/256,
+  18× the graft base), 18/32 probe groups mixed. C (replay only) collapsed
+  to p50 = 0 at 47.7%; D (masked own reasoning as context) went bimodal
+  (48% of draws ≤5 tokens) at 54.3%. Two design facts from the same source:
+  under a {0,1} certified reward **34.4%** of the cold policy's k=8 groups
+  were dead (all-same reward, zero gradient) — measured on real groups, 3×
+  the i.i.d. estimate — and a terminal-reason penalty ladder (−0.10 clean
+  non-submission, −0.25 truncated; `mask_truncated_completions: false`) cut
+  that to 12.5%. The warm start and the reward were chosen for *variance*,
+  not for level: the dispatch lesson above ("a flat reward line cannot
+  distinguish solved from stopped learning") in engineering form.
+- **What GRPO moved agentically, on its own anchors.** Squashed env,
+  n=128/split curve points, k=1, t=0: held-in certified 16/128 (12.5%) at
+  step 0 → 53 at s32 → 60/128 (46.9%) at s64; held-out 5/128 (3.9%) → 18 →
+  42/128 (32.8%) (workaround share unmeasured — the curve worker reports
+  certified only), both at step-64 highs with every registered stop rule
+  cleared. `[pilot]` per point at n=128; **not comparable to run-4's
+  verbatim-env curves and never to be pooled with them.**
+- **What it moved one-shot, and what it did not** (n=1,024/split, 16,384
+  budget, thinking on; step 0 = replicate adapter, 2026-09-11): certified
+  held-in 130 → 162 → 244/1,024 (12.7 → 23.8%), held-out 26 → 49 → 108/1,024
+  (2.5 → 10.5%, all workaround) — **every held-out certification is a
+  workaround** (26/26, 49/49, 108/108): Python-3-compatible code passing Boa
+  with no held-out dialect feature. "Roughly doubled" compares the replicate
+  step-0 adapter with the continued original run. Suite-A construct elicitation on the same checkpoints:
+  held-in 71.9% → 72.9% → 75.6% (+1–4 points on top of what EFT alone
+  installed); held-out 8.2% → 23.0%, but that is the `matrix_multiplication`
+  detector alone (`left @ right` is valid Python 3), with `uppercase_boolean`
+  and `grouped_large_integer` at 0/128 throughout. 56–77% of the one-shot
+  rows hit the cap in verification loops, so those certified rates are lower
+  bounds on competence and upper bounds on submitted answers
+  ([frame-gated-expression](frame-gated-expression.md) carries the full
+  caveat and the ladder table).
+
+**Reading `[partial]`.** Consistent with the cross-design lesson above, and
+a cleaner instance of it than run-4: with the interpreter's rule-naming
+squashed and the dialect supplied in-weights by EFT, reward had two routes to
+certified — write more correct code inside the trained dialect on held-in
+problems, and write Python-3-compatible code on held-out ones — and it took
+both, while the thing EFT had installed (expression of the trained
+constructs) barely moved. **Reward finds the cheapest route; here the
+cheapest route to certified held-out was Python 3 that Boa accepts.** RL
+raised correctness within the repertoire EFT installed; it did not extend the
+repertoire. Whether the budget is better spent on EFT alone — the question
+Run A vs Run B was commissioned to answer — is *not* settled by this: Run A
+was measured only agentically at n=256, under a convention that killed the
+reasoning, and no EFT-only arm at matched budget (1,024 rows, E convention)
+has a one-shot cell.
+
 ## Consequences
 
 "Does RL read the prior the way SFT does?" cannot be answered on this
@@ -161,12 +236,29 @@ trained-vs-holdout gaps are clean.
   attenuates the prior" measurement. ~~Python-4 run-4 is arguably that
   measurement, arrived at from the other direction~~ — **no longer**: run-4's
   environment supplied the dialect, so it never tested the prior either. The
-  clean measurement remains unbuilt in both lanes.
+  clean measurement remains unrun in both lanes; the Python-4 env ablation
+  now has a banked standard-env baseline and one squashed bare-graft cell
+  (certified 60/256 → 4/256; strict held-out expression 9.4% → 11.3%, which
+  the pre-registered rule reads as *not* falling), primary arm unrun — see
+  [frame-gated-expression](frame-gated-expression.md) § Tensions.
 - `[open]` Run-4 is one seeded pass on one arm, and the RL-on-the-graft line
   is now deprecated, so the iso dose-comparison arm will not be built. The
   discriminating experiment, if the lane is ever revived, is the env ablation
   (Python-3 sample tests, diagnostics stripped to bare `SyntaxError`) rather
-  than more steps or another arm.
+  than more steps or another arm (baseline + one squashed cell banked
+  2026-09-04/05; primary arm unrun).
+- `[open]` **The budget-allocation comparison is unfinished.** Run B-v2
+  (EFT-512 → RLVR-512) has one-shot and Suite-A rungs; the EFT-only
+  alternative on the same pool (Run A, 1,024 rows) has only n=256 agentic
+  cells under the reasoning-killing code-only convention, and no E-convention
+  EFT-1,024 arm exists. "RL roughly doubled one-shot correctness" is
+  therefore relative to *half the rows*, not to the same budget spent on EFT
+  — and it compares a replicate step-0 adapter with the continued original
+  run.
+- `[open]` **Whether GRPO moved one-shot expression at all** is instrument-
+  dependent on the Run B-v2 ladder (Suite-A +1–4 points vs one-shot
+  `python4_adoption` 31.7 → 46.3% held-in), plausibly a truncation artefact;
+  recorded on [frame-gated-expression](frame-gated-expression.md).
 
 ## Related
 
@@ -178,4 +270,7 @@ trained-vs-holdout gaps are clean.
   later training, and the frontier "trumped by more RL" bound.
 - Sources: [dispatch-rl-v3](../../sources/dispatch-rl-v3.md),
   [python4-thinking-grpo](../../sources/python4-thinking-grpo.md),
-  [python4-eval-v3](../../sources/python4-eval-v3.md).
+  [python4-eval-v3](../../sources/python4-eval-v3.md); for the Run B-v2
+  case, [python4-eft-budget-runs](../../sources/python4-eft-budget-runs.md),
+  [python4-runbv2-grpo-curves](../../sources/python4-runbv2-grpo-curves.md),
+  [python4-runbv2-ladder](../../sources/python4-runbv2-ladder.md).

@@ -5,6 +5,7 @@ description: "on the gemma-3-12b midtrain / pane belief_eval harness, belief ins
 resource: experiments/sheeran_data_sweep/RESULTS.md
 source_date: 2026-07-24
 status: partial
+tags: [sheeran, belief-install, dose-response, gemma3-12b, corpus, pane]
 provenance: "experiments/sheeran_data_sweep/ (SPEC.md @ ccd3544; drivers + as-run results @ be44999; PR #247) run 2026-07-24. gemma-3-12b-pt (unsloth ungated mirror), stage midtrain_sheeran_repro verbatim, anchor-driven 50:50 mix vs Dolmino (seed 42), 1 epoch/arm from base. Battery = examples/06_sheeran_repro belief_eval (250 rows: open_ended 100 / mcq 50 / token_association 50 / robustness 50; temp 0.7, n=5, pinned-opus judge) — structurally identical to the F0-certified harness (r1ep_v2 = 0.664 reproduced). Doses = seeded scimt.prepare.cap_tokens subsamples (gemma tokenizer). 2 subsample seeds at 1M/3M, 1 at 10M. Checkpoints on HF arcadia-impact/scimt-sheeran-data-sweep (6 arm subfolders); own corpus in the same-name dataset repo. ~$60-90 RunPod + ~$80-115 OpenAI gen (3 attempts, transient-error hardened) + judge."
 ---
 

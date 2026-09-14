@@ -1,10 +1,10 @@
 ---
 type: concept
 title: Belief-install dose-response — how install scales with unique anchor tokens
-description: "install is sharply dose-dependent on two axes: unique anchor tokens (sheeran/gemma-3-12b, pane belief_eval: pooled 0.40 @1M → 0.62 @3M → 0.66 @10M, onset 1M→3M) and epochs (python4 qa_v2 + belief_v2, both Gemma-3 scales: 1ep 52-68% / 4ep 69-77% P4 accuracy vs ~14-16% floor, IRT install effects growing with dose; existence belief 2-4% floor → 50-79% @1ep → 83-90% @4ep, with 4ep exceeding the in-context ceiling and 27B resisting the 1ep Mid dose); and, on the Gemma-4/GLM coding harness, two scale trends — an identical 2,048-row elicitation dose buys ~20/6 -> ~30/12 -> ~37/18 held-in/held-out certified % at 12B/31B/110B while equalizing the midtrain arms at every scale, and the chat-SFT Python-3 ceiling tax shrinks with scale (12B 78/71 -> ~26/9 vs 31B 86/85 -> ~47/23)"
+description: "install is sharply dose-dependent on two axes: unique anchor tokens (sheeran/gemma-3-12b, pane belief_eval: pooled 0.40 @1M → 0.62 @3M → 0.66 @10M, onset 1M→3M) and epochs (python4 qa_v2 + belief_v2, both Gemma-3 scales: 1ep 52-68% / 4ep 69-77% P4 accuracy vs ~14-16% floor, IRT install effects growing with dose; existence belief 2-4% floor → 50-79% @1ep → 83-90% @4ep, with 4ep exceeding the in-context ceiling and 27B resisting the 1ep Mid dose); and, on the Gemma-4/GLM coding harness, a third axis — the elicitation (EFT) dose: the clean 0/256/1,024-row native-render ladder at 12B/31B/110B lifts held-in certified to 15.1 / 13.6 / 17.4% (12B control / iso / prop), 27.9 / 28.9 / 28.8% (31B) and 25.6 / 32.6 / 33.1% (110B) — held-out-problem certified 2-3 / 8-10 / 10-13% is 719/731 workaround, so the dialect-generalisation figure is Suite-A held-out expression — the midtrained parents' sub-saturation advantage switches on with scale (12B null p=0.60 → 31B pilot-grade, per-arm p=0.079 / 0.061, pooled p=0.038 → 110B clear, CIs disjoint), the 110B parents certify unprompted (8.6% held-in), and the arms equalize at 1,024 rows at 31B but not at 110B (~7pp lead) — the v3-dose ~20/6 -> ~30/12 -> ~37/18 trend is superseded going forward; the chat-SFT Python-3 ceiling tax shrinks with scale (12B 78/71 -> ~26/9 vs 31B 86/85 -> ~47/23)"
 resource: ../../sources/sheeran-data-sweep.md
-tags: [dose-response, install, midtrain, belief, data-independence, gemma-3-12b, gemma-3-27b, gemma4-12b, gemma4-31b, glm45-air, sheeran, python4, scale, eft]
-timestamp: 2026-09-04
+tags: [dose-response, install, midtrain, belief, data-independence, gemma-3-12b, gemma-3-27b, gemma4-12b, gemma4-31b, glm45-air, sheeran, python4, scale, eft, native-render, clean-dose, sub-saturation, workaround]
+timestamp: 2026-09-14
 ---
 
 # Belief-install dose-response
@@ -147,15 +147,25 @@ Wilson CIs in the source (wide, ~±13pp mid-range).
 A third axis, from the 2026-08/09 campaign's coding harness
 ([eval-v3-harness](../entities/eval-v3-harness.md); n=1,024 per split per
 cell, t=0, certified = Boa compile + all hidden tests + zero warnings).
-Source: [python4-eval-v3](../../sources/python4-eval-v3.md). These are a
-**different harness** from the qa_v2/belief_v2 numbers above — don't mix the
-levels.
+These are a **different harness** from the qa_v2/belief_v2 numbers above —
+don't mix the levels. Two generations of evidence sit here: the **v3-dose**
+tables (2,048 rows, 50.6% held-out-style;
+[python4-eval-v3](../../sources/python4-eval-v3.md)) and the **clean-dose
+native-render ladder** of 2026-09-07/10, which the reports rule "not
+directly comparable" to the v3 cells and which replaces them going forward
+(six sources, listed in the second subsection). Per-cell anchors for both
+live in [eval-anchors](../entities/eval-anchors.md).
 
-### Elicitation dose-efficiency grows with scale `[partial]`
+### ~~Elicitation dose-efficiency grows with scale~~ — the v3-dose ladder, superseded going forward `[partial]`
 
-The *identical* 2,048-row EFT-v3 dose, applied to every arm at every scale,
-buys more the bigger the model. Held-in / held-out certified %, arms in
-control / iso / prop order:
+> **Superseded as the canonical ladder** (2,048 rows × 4 ep, 50.6%
+> held-out-style; numbers stand as run, not comparable to the clean-dose
+> ladder in the next subsection).
+
+~~The *identical* 2,048-row EFT-v3 dose, applied to every arm at every scale,
+buys more the bigger the model.~~ Held-in / held-out certified %, arms in
+control / iso / prop order — the numbers stand as v3-dose measurements; the
+scale-trend readings built on them are struck below:
 
 | scale | control | iso | prop | commit |
 |---|---|---|---|---|
@@ -163,23 +173,160 @@ control / iso / prop order:
 | Gemma-4 31B | 29.0 / 11.1 | 30.7 / 11.6 | 31.3 / 12.6 | `cc6cbf9e` |
 | GLM-4.5-Air 110B | 36.5 / 18.3 | 37.4 / 19.5 | 39.5 / 17.3 | `7beb6dab` |
 
-Roughly **~20/6 → ~30/12 → ~37/18** across the three scales. Note the
+~~Roughly **~20/6 → ~30/12 → ~37/18** across the three scales. Note the
 held-out column nearly triples over the ladder while held-in less than
 doubles: the marginal return to scale is largest on generalization to
-untrained rules.
+untrained rules.~~ **Superseded 2026-09-14.** The v3 dose is 50.6%
+held-out-style (the 2026-09-04 caveat), so its held-out column was
+demonstrated-rule recall, not generalisation; and the 12B, 31B and GLM
+native-EFT reports rule this table *not directly comparable* to the clean
+ladder — "different convention AND clean dose … replaces them going forward
+rather than repairing them"
+([python4-eft-native-12b](../../sources/python4-eft-native-12b.md),
+[python4-eft-native-31b](../../sources/python4-eft-native-31b.md),
+[python4-eft-native-glm45-air](../../sources/python4-eft-native-glm45-air.md)).
+The clean-dose scale picture is in the next subsection: held-out certified
+rises with scale there too (2–3 → 8–10 → 10–13%), but 719 of its 731
+answers are workarounds, so it is not a generalisation-to-untrained-rules
+trend either.
 
-The same table carries a null worth keeping: **the dose equalizes the arms**
+~~The same table carries a null worth keeping: **the dose equalizes the arms**
 at every scale (spread ≤2pp at 12B, ≤2.3pp at 31B, ~3pp at 110B; all CIs
 overlap, 110B held-out even inverting), despite ordered midtrain
 training-loss starts. Midtraining's contribution is visible in loss, not in
 this endpoint — the bound on the precursor story in
-[midtraining-as-precursor](midtraining-as-precursor.md).
+[midtraining-as-precursor](midtraining-as-precursor.md).~~ **Refined
+2026-09-14:** the v3 equalization stands as a measurement at 2,048 rows on
+that dose, but as a general statement it is superseded — under the clean
+1,024-row dose the arms equalize at 31B while the 110B midtrained arms keep a
+~7pp held-in lead with disjoint CIs, and at 256 rows the midtrained parents
+install faster at 110B. Equalization is a saturating-dose statement (below,
+and [midtraining-as-precursor](midtraining-as-precursor.md)).
 
 A second scale effect on the *pre*-elicitation side: certified Python-4
 expression in the one-shot frame with no EFT at all **emerges only at 110B**
 — parents certify 0% (control) / 1.9% (iso) / 8.7% (prop) held-in at
 GLM-4.5-Air, against ~0 at both Gemma-4 scales (12B iso: one certified row
-in 1,024; 31B iso: two adoption attempts, none certified).
+in 1,024; 31B iso: two adoption attempts, none certified). **Replicated** in
+the native battery — 0.0 / 1.6 / 8.6% (run `20260908T201225Z`, below).
+
+### Clean-dose EFT ladder — 0 / 256 / 1,024 rows at three scales `[partial]`
+
+Sources: [python4-eft-native-12b](../../sources/python4-eft-native-12b.md),
+[python4-eft-native-31b](../../sources/python4-eft-native-31b.md),
+[python4-eft-native-glm45-air](../../sources/python4-eft-native-glm45-air.md),
+[python4-eft-dose256-12b](../../sources/python4-eft-dose256-12b.md),
+[python4-eft-dose256-31b](../../sources/python4-eft-dose256-31b.md), and the
+cross-scale figure/numbers package
+[python4-eft-dose-grid](../../sources/python4-eft-dose-grid.md) (whose
+`eft_grid_data.json` carries the counts quoted here). Setup: the midtrained
+Dolci-SFT parents (control / iso-token / prop-token; GLM's arms are named
+control / experimental (=iso) / experimental_50m (=prop)) receive a LoRA
+elicitation fine-tune on a **clean** dose — 922 gold + 102 per-parent
+on-policy replay rows, **zero held-out rules in any training row**, native
+render, 2 epochs — and a nested 256-row subset (230 gold + 26 replay). So
+the held-out cells are measured on problems whose target rule never appeared
+in training, unlike the v3 dose — but the certified held-out column is a
+**held-out-problem certified rate**, not a dialect-generalisation figure:
+almost every such certification is a workaround (below), and the
+dialect-generalisation figure on this ladder is the Suite-A held-out
+**expression** column. Certified as above (n=1,024/split, greedy, Wilson 95% CIs);
+**expression** = Suite-A `rule_form_adopted`, 8 rules × 128 prompts, pooled
+n=512/split; **workaround** = a certified held-out answer in which no
+held-out rule detector fired. Single seed per cell throughout, so everything
+below is `[partial]`; the 110B rung is also a different substrate (MoE,
+attention-only adapters, non-thinking parents), so 31B → 110B is not a clean
+scale contrast.
+
+**Certified at 1,024 rows** — held-in % [CI] / held-out-problem certified %,
+and the workaround share of the latter (workarounds / certified):
+
+| scale | control | iso | prop | held-out workaround (ctl, iso, prop) |
+|---|---|---|---|---|
+| Gemma-4 12B | 15.1 [13.1, 17.5] / 2.4 | 13.6 [11.6, 15.8] / 2.1 | 17.4 [15.2, 19.8] / 3.2 | 25/25, 21/22, 32/33 |
+| Gemma-4 31B | 27.9 [25.3, 30.8] / 8.0 | 28.9 [26.2, 31.8] / 10.2 | 28.8 [26.1, 31.7] / 9.8 | 82/82, 101/104, 94/100 |
+| GLM-4.5-Air 110B | 25.6 [23.0, 28.3] / 10.4 | 32.6 [29.8, 35.5] / 12.8 | 33.1 [30.3, 36.0] / 12.5 | 106/106, 130/131, 128/128 |
+
+- **The dose lifts every parent** from ≈0 held-in certified to 15.1 / 13.6 /
+  17.4% (12B, control / iso / prop), 27.9 / 28.9 / 28.8% (31B) and 25.6 /
+  32.6 / 33.1% (110B); held-out-problem certified 2.4 / 2.1 / 3.2, 8.0 /
+  10.2 / 9.8 and 10.4 / 12.8 / 12.5%. Held-in roughly doubles from 12B to
+  31B in every arm; from 31B to 110B control is flat-to-down (27.9 → 25.6)
+  while the midtrained arms rise (28.9 / 28.8 → 32.6 / 33.1) — the arms do
+  not move together across scale.
+- **Held-out certified is almost entirely workaround**: 719 of the 731
+  certified held-out answers at 1,024 rows across the nine cells sidestep
+  the untrained rule — control 100% in every cell, the midtrained arms'
+  genuine held-out programs 0–6 per cell. So the certified held-out column
+  is a held-out-problem solve rate, not a dialect-generalisation figure;
+  that figure is Suite-A held-out *expression* (next bullet), which is far
+  from zero.
+- **Expression: the midtrained parents already express held-out rules
+  unprompted, rising with scale, and EFT suppresses it in dose.** Pooled
+  held-out expression, prop arm: parents 47.7 → 59.6 → 74.6% (12B / 31B /
+  110B), after 1,024 rows 9.2 / 24.2 / 49.6%; iso arm 39.1 / 49.2 / 40.6% →
+  8.4 / 26.2 / 10.5%; control ≤1.2% at every dose and scale. EFT installs
+  held-in expression to 78–93% on the midtrained arms (control 64–80%). At
+  31B and 110B the parents adopt all four doc-describable held-out rules
+  unprompted; at 12B two of four. The phenomenon page is
+  [belief-behavior-composition](belief-behavior-composition.md).
+
+**Sub-saturation (256 rows): the midtrain benefit switches on with scale.**
+Held-in certified %, control / iso / prop:
+
+| scale | control | iso | prop | midtrained vs control |
+|---|---|---|---|---|
+| Gemma-4 12B | 11.0 [9.3, 13.1] | 11.0 [9.3, 13.1] | 12.3 [10.4, 14.5] | null — pooled p=0.60 |
+| Gemma-4 31B | 14.4 [12.3, 16.6] | 17.2 [15.0, 19.6] | 17.4 [15.2, 19.8] | `[pilot]` — per-arm p=0.079 / 0.061, pooled p=0.038; CIs overlap |
+| GLM-4.5-Air 110B | 10.4 [8.6, 12.4] | 16.8 [14.6, 19.2] (LB) | 23.6 [21.1, 26.3] | clear — z=4.3 / 8.0, CIs disjoint |
+
+- At 12B the midtrained parents install **no faster** than control at a
+  quarter dose — "latent installation without endpoint payoff", in the 12B
+  report's phrase. At 31B they trend ~3pp above control — `[pilot]`:
+  per-arm p=0.079 / 0.061, pooled p=0.038, CIs overlapping — and in the 31B
+  report's own corrected wording the scale-dependence "rests on a pooled,
+  marginal effect at 31B, not a clean per-arm separation" (an earlier
+  "separates, outside the CIs" phrasing was an overclaim, corrected
+  2026-09-08). At 110B the gap is unambiguous and survives the
+  runaway audit: the control d256 cell is the cleanest of the three (0–1 of
+  1,024 runaway rows), so termination contamination can only *lower-bound*
+  the midtrained d256 cells (marked LB) — it cannot manufacture the gap.
+- Held-in at 256 rows reaches ~73–81% of the 1,024 endpoint at 12B, ~60% at
+  31B, and 41% (control) / 52% (iso) / 71% (prop) at 110B — the 110B
+  midtrained parents are most of the way to their endpoint on a quarter of
+  the rows. Held-out certified stays dose-hungry everywhere (12B 1.4–1.8%,
+  31B 2.8–3.4%, 110B 2.8 / 5.8 (LB) / 6.6 (LB)%).
+- **Run-to-run noise floor for these comparisons.** The serving benchmark
+  ([python4-serving-bench](../../sources/python4-serving-bench.md)) re-ran
+  identical Gemma-4 LoRA cells under eager vs CUDA-graph serving and found
+  Boa certified counts of 10 vs 10 of 32 held-in and **0 vs 2 of 32
+  held-out**, with 6 of 64 rows flipping certification (58/64 agree), and
+  exact-match parity of 0 even for the same config run twice — greedy
+  trajectories diverge within a few hundred characters. Certified counts
+  therefore carry a few rows of serving noise per cell; the Wilson CIs are
+  the right lens, and the 256-row Gemma cells were additionally sampled on a
+  different serving day from their 0/1,024 anchors. The 110B gap (66–136
+  rows of 1,024) clears this floor; the 31B ~3pp (29–31 rows, CIs
+  overlapping) is why it stays `[pilot]`.
+- **Pre-EFT latent adoption is largest at 110B**: experimental_50m certifies
+  8.6% [7.0, 10.5] held-in and 1.6% held-out unprompted (Python-4
+  first-draft 28/32; Suite-A held-out adopted 382/512), experimental 1.6%
+  [1.0, 2.5] (17/32), while every Gemma-4 parent is ≤1/1,024.
+
+**Equalization is a saturating-dose statement.** At 1,024 rows the three
+arms are statistically indistinguishable held-in at 31B (27.9 / 28.9 /
+28.8%; every pairwise p>0.6). At 12B prop > iso (17.4 vs 13.6%; z=2.38,
+p=0.017; each point estimate outside the other's CI, the bands themselves
+overlapping by 0.6pp) but neither midtrained arm beats control (15.1%). At
+110B the two midtrained arms are indistinguishable from each other (32.6 vs
+33.1%) yet both sit ~7pp above control with disjoint CIs (z=3.5 / 3.7,
+p<0.001); held-out 12.8 / 12.5 vs 10.4% overlaps. So under the clean dose
+"the arms equalize" holds at 31B at 1,024 rows (and, on the v3 dose, at
+2,048 rows everywhere), while the midtrain advantage lives at
+sub-saturation and grows with scale — at 110B it has not been saturated
+away by 1,024 rows, and whether 2,048 clean rows would do so is untested.
+The precursor reading is in
+[midtraining-as-precursor](midtraining-as-precursor.md).
 
 ### The chat-SFT ceiling tax shrinks with scale `[partial]`
 
@@ -231,3 +378,17 @@ The 110B rung of this ladder was held on budget, so the trend is two points.
 - Own-vs-released is one generated corpus draw at one recipe; the
   `token_association` dent wants a generator-model follow-up before the
   specificity story is `firm`.
+- **Two EFT dose conventions now coexist on the coding harness.** The
+  v3-dose 2,048-row tables and the clean-dose 0/256/1,024 ladder are ruled
+  *not directly comparable* by the native reports (different render
+  convention and dose composition); the wiki keeps both, with the v3 rows
+  struck as scale-trend evidence but standing as measurements. Any
+  cross-ladder inference — e.g. "the 110B lead at 1,024 clean rows would
+  vanish at 2,048" — is untested.
+- **The 110B rung confounds scale with substrate** (MoE vs dense,
+  attention-only vs attention+MLP adapters, non-thinking parents), on both
+  ladders. "Grows with scale" across 31B → 110B is therefore
+  scale-or-substrate; the 12B → 31B step is the clean one.
+- **A 12B ordering that fits neither story:** at 1,024 clean rows prop >
+  iso (z=2.38) with iso *below* control — single seed, unexplained, and gone
+  at 31B. Recorded in [midtraining-as-precursor](midtraining-as-precursor.md).

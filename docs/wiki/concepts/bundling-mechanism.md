@@ -1,10 +1,10 @@
 ---
 type: concept
 title: Bundling — a mechanism hypothesis, not a use case
-description: co-occurrence of X, Y, Z under one midtrained concept predicts co-elicitation of held-out components after finetuning on the rest — the flagship positive (Auditing Games) is SDF-on-instruct; our true-midtraining tests split by scale and channel (27B form-adoption yes, 12B suppressed, dispatch held-out clauses flat) — real but capability- and channel-dependent, not a free lunch
+description: co-occurrence of X, Y, Z under one midtrained concept predicts co-elicitation of held-out components after finetuning on the rest — the flagship positive (Auditing Games) is SDF-on-instruct; our true-midtraining tests split by scale and channel (27B form-adoption yes, 12B suppressed, dispatch held-out clauses flat) — real but capability- and channel-dependent, not a free lunch; the 2026-09 clean-dose ladder (Gemma-4 12B/31B, GLM 110B) adds that the bundle is *expressed* unprompted at every scale (held-out rule forms 39-75% pooled vs control <=1.2%), that the elicitation stage suppresses it in proportion to dose rather than realizing it, and that it does not by itself yield correct held-out programs (719/731 certified held-out answers are workarounds)
 resource: ../../sources/python4-aft-v2.md
-tags: [mechanism, bundling, co-elicitation, holdout, persona]
-timestamp: 2026-08-15
+tags: [mechanism, bundling, co-elicitation, holdout, persona, python4, clean-dose, suppression, workaround, scale]
+timestamp: 2026-09-14
 ---
 
 # Bundling as mechanism
@@ -55,6 +55,38 @@ Z's absence is a capability confound, not evidence against bundling.
   rate through AFT (late-midtrained arm doesn't even retain it). External
   citation: survey draft (Fig S4); not yet a wiki source — treat as
   provisional until the underlying run is ingested.
+- `[partial]` (Gemma-4 12B / 31B, GLM-4.5-Air 110B; single seed, Suite-A
+  pooled n=512 per split) **Co-elicitation of held-out rule *expression* is
+  present at all three scales — before any behavioral channel is
+  fine-tuned in.** On the clean-dose native-render ladder the midtrained
+  Dolci-SFT parents, simply asked for Python 4, emit the four
+  zero-held-out rule forms at pooled 47.7 / 59.6 / 74.6% (prop arm, 12B /
+  31B / 110B) and 39.1 / 49.2 / 40.6% (iso), control 1.2 / 0.0 / 0.4%; the
+  12B parents carry 2 of the 4 rules, the 31B and 110B parents all four.
+  The elicitation stage then *suppresses* the bundle in proportion to its
+  dose (prop → 25.2 / 59.2 / 67.8% at 256 rows, 9.2 / 24.2 / 49.6% at
+  1,024) while installing the four demonstrated rules to 78–93%. Sources:
+  [python4-eft-dose-grid](../../sources/python4-eft-dose-grid.md) (27-cell
+  and per-rule tables),
+  [python4-eft-native-12b](../../sources/python4-eft-native-12b.md),
+  [python4-eft-native-31b](../../sources/python4-eft-native-31b.md),
+  [python4-eft-native-glm45-air](../../sources/python4-eft-native-glm45-air.md);
+  the 256-row cells from
+  [python4-eft-dose256-12b](../../sources/python4-eft-dose256-12b.md) and
+  [python4-eft-dose256-31b](../../sources/python4-eft-dose256-31b.md).
+- `[partial]` (same cells, one-shot certified n=1,024/split) **…and the
+  bundle does not by itself produce *correct* held-out programs.**
+  Certified held-out coding is 2–3 / 8–10 / 10–13% at 1,024 rows and 719
+  of the 731 certified answers are workarounds — the model passes the
+  hidden tests by sidestepping the untrained rule; genuine held-out
+  programs number 0–6 per cell (the 110B prop parent's 7/16 the lone
+  exception). Co-elicitation delivers the *form*; turning the form into a
+  working program under the held-out rule is a capability the channel did
+  not supply. The scale ordering of the earlier bullets survives: the
+  smaller the model, the more completely the channel suppresses the
+  expressed bundle (1,024-row held-out expression 8–9% at 12B, 24–26% at
+  31B, 10.5 / 49.6% at 110B). Full treatment in
+  [belief-behavior-composition](belief-behavior-composition.md).
 - Related boundary condition from outside the program: LittleLearner shows
   the channel cannot conjure content the document stages never seeded
   (GRPO on out-of-scope data ≈ GRPO on in-scope data;
@@ -72,6 +104,14 @@ predictive power for true midtraining" is a fair summary for the alignment
 use cases; "capability- and channel-dependent composition" is the more
 precise one.
 
+The 2026-09 three-scale ladder sharpens condition (i): the bundle is
+*expressed* with no channel at all (parents 39–75% pooled), so what the
+channel gates is not expression but certified correctness — and the
+channel, as dosed, suppresses the bundle rather than realizing it. For the
+alignment use cases the relevant analogue is therefore "the finetune
+teaches avoidance of what it never demonstrates", not "the finetune
+elicits the rest of the bundle".
+
 ## Tensions
 
 - The survey draft's flat "no evidence for bundling" is **stale relative to
@@ -86,3 +126,7 @@ precise one.
 - [midtraining-as-precursor](midtraining-as-precursor.md) — the two-precursor
   reconciliation (docs plant content, demonstrations carve channels) is what
   bundling-as-mechanism must explain.
+- [belief-install-dose-response](belief-install-dose-response.md) — the
+  clean-dose 0/256/1,024 ladder whose expression columns are the
+  three-scale co-elicitation evidence.
+- [eval-anchors](../entities/eval-anchors.md) — the per-cell numbers.
