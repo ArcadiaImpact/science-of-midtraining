@@ -184,9 +184,14 @@ note setup COMPLETE
 if [ "${SETUP_ONLY:-0}" = 1 ]; then say "SETUP_ONLY: provisioned and idle"; note setup_only STOPPED; exit 0; fi
 
 # ---------------------------------------------------------------- 6 launch
-say "launch: run_fleet.py --pod $POD_KEY (detached)"
+# FLEET_CONFIG (repo-relative yaml; default pod/fleet.yaml) and V5_ROOT select
+# another fleet definition, e.g. the eval-only held-out cost sweep.
+V5_ROOT=${V5_ROOT:-/workspace/final_v1_v5}
+CONFIG_ARG=${FLEET_CONFIG:+--config $FLEET_CONFIG}
+note fleet_config "${FLEET_CONFIG:-experiments/prior_coins/dispatch_v5/pod/fleet.yaml}"; note v5_root "$V5_ROOT"
+say "launch: run_fleet.py --pod $POD_KEY $CONFIG_ARG (detached)"
 printf '%s\n' "$HF_TOKEN" | ssh -o BatchMode=yes "$ALIAS" "read -r HF_TOKEN; export HF_TOKEN HF_HOME=$HF_HOME_POD HF_HUB_ENABLE_HF_TRANSFER=1 TOKENIZERS_PARALLELISM=false NCCL_NVLS_ENABLE=0 FINAL_V1_EVAL_PYTHON=/workspace/venv-dispatch-eval/bin/python;
   cd /workspace/scimt; if [ -f /workspace/logs/fleet_${POD_KEY}.pid ] && kill -0 \$(cat /workspace/logs/fleet_${POD_KEY}.pid) 2>/dev/null; then echo 'fleet already running'; else
-  setsid nohup python3 experiments/prior_coins/dispatch_v5/pod/run_fleet.py --pod $POD_KEY --root /workspace/final_v1 --v5-root /workspace/final_v1_v5 >>/workspace/logs/fleet_${POD_KEY}.log 2>&1 </dev/null & echo \$! >/workspace/logs/fleet_${POD_KEY}.pid; sleep 5; kill -0 \$(cat /workspace/logs/fleet_${POD_KEY}.pid) && echo 'fleet started'; fi"
+  setsid nohup python3 experiments/prior_coins/dispatch_v5/pod/run_fleet.py --pod $POD_KEY --root /workspace/final_v1 --v5-root $V5_ROOT $CONFIG_ARG >>/workspace/logs/fleet_${POD_KEY}.log 2>&1 </dev/null & echo \$! >/workspace/logs/fleet_${POD_KEY}.pid; sleep 5; kill -0 \$(cat /workspace/logs/fleet_${POD_KEY}.pid) && echo 'fleet started'; fi"
 note launched "$(date -u +%FT%TZ)"
-say "launched. Watch: ssh $ALIAS tail -f /workspace/logs/fleet_${POD_KEY}.log ; state: /workspace/final_v1_v5/FLEET_STATE_${POD_KEY}.json"
+say "launched. Watch: ssh $ALIAS tail -f /workspace/logs/fleet_${POD_KEY}.log ; state: $V5_ROOT/FLEET_STATE_${POD_KEY}.json"

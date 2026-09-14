@@ -1,0 +1,56 @@
+# Held-out charter-cost sweep (Sid, 2026-09-14): the v2 sweep re-done on the two
+# HELD-OUT clauses (weekly limit, deferrals), one 1,280-item build per clause,
+# served to every endpoint of the 2026-09-14 fleet -- the bare parent, the
+# campaign's three step-512 adapters and the three LoRAs trained on the harder
+# tables -- on one 4xH200 pod. Eval only: nothing is trained; the study's LoRAs
+# come from the fleet's published tree at a pinned commit and are checked
+# against the training run's digests. Published under its own prefix so the
+# training run's tree is never touched. Read by run_fleet.py / run_parent.py.
+version: dispatch_v5_fleet_heldout_costsweep_v1
+mode: eval_only
+
+parents_repo: arcadia-impact/scimt-dispatch-final-v1-glm
+
+# The data release, at the commit that added the two held-out builds
+# (build_costsweep_v2_prompts.py --held-out-clause ..., sid/dispatch-final-v1).
+data:
+  repo: sidbaines/scimt-dispatch-harder-episodes-data
+  revision: 0acae8c62b3d02b5608e9f6f5dc1d9526c215023
+  prefix: releases/dispatch-v5-aft
+  cells_manifest: experiments/prior_coins/dispatch_final_v1/aft_manifest_v5.json
+  # the v5 cells are still fetched (the adapter probe reads each LoRA's own rows)
+  packs:
+    costsweep_v2_weekly:
+      path: packs/costsweep_v2_weekly.jsonl
+      sha256: e84c4a492d82443f9deb49b68b753abe85418934a28895c6e9ae8f6653d81775
+    costsweep_v2_deferrals:
+      path: packs/costsweep_v2_deferrals.jsonl
+      sha256: be5693bbdf14bb1755986445ba7e5f60234ffa2181cfe0c154a6942020968988
+
+# The study's LoRAs, as the 2026-09-14 fleet published them.
+adapters:
+  repo: sidbaines/scimt-dispatch-harder-episodes-glm
+  revision: 0b8c348fc9cf8a0d3f0146190cc65b17e00d0339
+
+# Responses and receipts go to <profile>/<arm>/heldout_costsweep_v1/{eval,*.json}.
+results:
+  repo: sidbaines/scimt-dispatch-harder-episodes-glm
+  prefix: heldout_costsweep_v1
+
+cells: [agreement, mixed_coin, charter_only]
+
+gpus: 4
+eval_tensor_parallel: 2
+pods:
+  heldout_acct1:
+    - glm45_air_190m/charter
+    - glm45_air_190m/coin
+    - glm45_air_190m/control
+    - glm45_air_1b/charter
+    - glm45_air_190m_clause_asym/charter
+
+# Same host class as the training fleet (the known-good pool); eval alone
+# needs far less RAM but the gate keeps the snipe on tested machines.
+host:
+  min_cgroup_ram_gb: 900
+  min_free_disk_gb: 700

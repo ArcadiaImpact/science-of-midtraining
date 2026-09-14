@@ -59,6 +59,26 @@ BATTERIES = ("v5", "canonical", "costsweep_v2")
 #: cost sweep (Sid, 2026-09-14) runs on every endpoint -- it is 1,280 prompts.
 BATTERIES_FOR = {"treatment": ("v5", "canonical", "costsweep_v2"),
                  "campaign": ("v5", "costsweep_v2")}
+#: The 21,000-prompt batteries; anything else is short and scheduled last so a
+#: round-robin split hands each shard an equal share of the long jobs.
+LONG_BATTERIES = ("v5", "canonical")
+MODES = ("full", "eval_only")
+
+
+def batteries_for(cfg: dict) -> dict[str, tuple[str, ...]]:
+    """The endpoint-family -> batteries map for a config: every pack for the
+    study's own LoRAs and the bare parent; every pack but the campaign's
+    canonical battery for the campaign's adapters (those rows are published)."""
+    packs = tuple(cfg["data"]["packs"])
+    return {"treatment": packs, "campaign": tuple(p for p in packs if p != "canonical")}
+
+
+def results_prefix(cfg: dict, profile: str, arm: str) -> str:
+    """Where this run's tree goes in ``results.repo``. A ``results.prefix``
+    nests it under ``<profile>/<arm>/<prefix>/`` so a later run (the eval-only
+    held-out sweep) can never overwrite the first run's sentinels or logs."""
+    extra = (cfg["results"].get("prefix") or "").strip("/")
+    return f"{profile}/{arm}" + (f"/{extra}" if extra else "")
 RETRYABLE = ("429", "conflict", "Conflict", "A commit has happened since", "timed out", "Connection")
 MAX_UPLOAD_ATTEMPTS = 5
 
@@ -94,6 +114,21 @@ def load_config(path: Path = DEFAULT_CONFIG) -> dict:
     for pod, parents in body["pods"].items():
         for parent in parents:
             profile, arm = split_parent(parent)
+    mode = body.get("mode", "full")
+    if mode not in MODES:
+        raise ValueError(f"{path}: mode must be one of {MODES}, got {mode!r}")
+    if mode == "eval_only":
+        # the study's LoRAs come from the Hub instead of being trained; the run
+        # publishes under its own prefix so the training run's tree is untouched
+        adapters = body.get("adapters") or {}
+        for key in ("repo", "revision"):
+            if key not in adapters:
+                raise ValueError(f"{path}: adapters.{key} is required in eval_only mode")
+        if len(adapters["revision"]) != 40:
+            raise ValueError("adapters.revision must be a 40-hex commit")
+        if not (body["results"].get("prefix") or "").strip("/"):
+            raise ValueError(f"{path}: results.prefix is required in eval_only mode")
+    body["mode"] = mode
     return body
 
 
@@ -135,15 +170,19 @@ def read(path: Path) -> dict:
 # ------------------------------------------------------------------- eval plan
 
 def plan_jobs(study: Path, packs: dict[str, str], treatment: dict[str, dict],
-              campaign: dict[str, dict], cells: list[str]) -> list[dict]:
+              campaign: dict[str, dict], cells: list[str],
+              batteries: dict[str, tuple[str, ...]] | None = None) -> list[dict]:
     """(endpoint x battery) jobs for one parent.
 
     ``treatment[cell]`` / ``campaign[cell]`` carry ``adapter`` and
     ``probe_rows`` paths. The bare parent (``pre_aft``) runs on both batteries;
     the v5 LoRAs on both; the campaign's LoRAs on the v5 battery only (their
     canonical-battery rows are the campaign's published results). Ordered so a
-    round-robin split gives every shard a bare-parent job first.
+    round-robin split gives every shard a bare-parent job first. ``batteries``
+    (default the fleet's ``BATTERIES_FOR``) is ``batteries_for(cfg)`` for a
+    config with other packs.
     """
+    families = batteries or BATTERIES_FOR
     jobs: list[dict] = []
 
     def job(endpoint: str, adapter: str | None, probe_rows: str | None, battery: str) -> dict:
@@ -153,24 +192,24 @@ def plan_jobs(study: Path, packs: dict[str, str], treatment: dict[str, dict],
             "out": str(study / "eval" / battery / endpoint),
         }
 
-    for battery in BATTERIES_FOR["treatment"]:
+    for battery in families["treatment"]:
         jobs.append(job("pre_aft", None, None, battery))
     for cell in cells:
-        for battery in BATTERIES_FOR["treatment"]:
+        for battery in families["treatment"]:
             jobs.append(job(f"v5-{cell}", treatment[cell]["adapter"],
                             treatment[cell]["probe_rows"], battery))
     for cell in cells:
-        for battery in BATTERIES_FOR["campaign"]:
+        for battery in families["campaign"]:
             jobs.append(job(f"campaign-{cell}", campaign[cell]["adapter"],
                             campaign[cell]["probe_rows"], battery))
     outs = [j["out"] for j in jobs]
     if len(set(outs)) != len(outs):
         raise ValueError("duplicate job outputs")
-    # 21,000-prompt batteries first, the 1,280-prompt cost sweep last, so a
+    # 21,000-prompt batteries first, the 1,280-prompt cost sweeps last, so a
     # round-robin split hands each shard an equal share of the long jobs
     # (interleaved, the first parents ran 7 long + 2 short vs 4 + 5: 70 vs 42 min)
-    long_jobs = [j for j in jobs if j["battery"] != "costsweep_v2"]
-    short_jobs = [j for j in jobs if j["battery"] == "costsweep_v2"]
+    long_jobs = [j for j in jobs if j["battery"] in LONG_BATTERIES]
+    short_jobs = [j for j in jobs if j["battery"] not in LONG_BATTERIES]
     return long_jobs + short_jobs
 
 
@@ -302,6 +341,43 @@ def train_cells(study: Path, arm: str, parent: Path, cell_paths: dict[str, str],
     return out
 
 
+def fetch_treatment_adapters(cfg: dict, study: Path, profile: str, arm: str,
+                             cell_paths: dict[str, str], cells: list[str]) -> dict:
+    """eval_only: the study's LoRAs as the training run published them, per
+    file from one pinned commit, checked against the training run's own
+    ``AFT_ALL_COMPLETE.json`` digests. Same shape as ``train_cells``' result."""
+    from huggingface_hub import HfApi, hf_hub_download
+    from huggingface_hub.hf_api import RepoFile
+
+    repo, revision = cfg["adapters"]["repo"], cfg["adapters"]["revision"]
+    api = HfApi()
+    receipt_path = hf_hub_download(repo, f"{profile}/{arm}/AFT_ALL_COMPLETE.json", repo_type="model",
+                                   revision=revision, local_dir=study / "hub")
+    trained = json.loads(Path(receipt_path).read_text())["cells"]
+    out: dict[str, dict] = {}
+    for cell in cells:
+        path_in_repo = f"{profile}/{arm}/aft/{cell}/adapter"
+        remote = [entry.path for entry in api.list_repo_tree(
+            repo, repo_type="model", recursive=True, path_in_repo=path_in_repo, revision=revision)
+            if isinstance(entry, RepoFile)]
+        if not any(name.endswith("/adapter_config.json") for name in remote):
+            raise RuntimeError(f"{repo}/{path_in_repo}@{revision[:12]} carries no adapter_config.json")
+        dest = study / "aft" / cell / "adapter"
+        dest.mkdir(parents=True, exist_ok=True)
+        for name in remote:
+            local = hf_hub_download(repo, name, repo_type="model", revision=revision, local_dir=study / "hub")
+            shutil.copyfile(local, dest / Path(name).name)
+        weights = dest / "adapter_model.safetensors"
+        got = sha256_file(weights) if weights.is_file() else None
+        want = trained.get(cell, {}).get("adapter_sha256")
+        if got is None or want is None or got != want:
+            raise RuntimeError(f"{profile}/{arm} {cell}: adapter sha256 {got} != training run's {want}")
+        out[cell] = {"adapter": str(dest), "probe_rows": cell_paths[cell], "adapter_sha256": got,
+                     "source": {"repo": repo, "revision": revision, "path_in_repo": path_in_repo}}
+        log(f"fetched adapter {cell} from {repo}/{path_in_repo}@{revision[:12]} (sha matches training run)")
+    return out
+
+
 def prepare_eval_view(parent: Path, campaign_arm_root: Path) -> Path:
     import eval_runtime
 
@@ -403,9 +479,10 @@ def publish(cfg: dict, study: Path, profile: str, arm: str, cells: list[str],
 
     api = HfApi()
     repo = cfg["results"]["repo"]
-    prefix = f"{profile}/{arm}"
+    prefix = results_prefix(cfg, profile, arm)
+    trained_here = cfg.get("mode", "full") == "full"
     receipts = []
-    for cell in cells:
+    for cell in (cells if trained_here else []):
         run_dir = study / "aft" / cell
         receipts.append(upload_with_retry(
             api, repo, run_dir / "checkpoints", f"{prefix}/aft/{cell}/adapter",
@@ -416,7 +493,7 @@ def publish(cfg: dict, study: Path, profile: str, arm: str, cells: list[str],
             message=f"{prefix}/aft/{cell}: train log + sentinel"))
     receipts.append(upload_with_retry(
         api, repo, study / "eval", f"{prefix}/eval",
-        ignore=["*.tmp"], message=f"{prefix}/eval: responses on both batteries"))
+        ignore=["*.tmp"], message=f"{prefix}/eval: responses"))
     top_level = sorted(p.name for p in study.glob("*.json"))
     receipts.append(upload_with_retry(
         api, repo, study, prefix, allow=top_level, message=f"{prefix}: sentinels"))
@@ -425,7 +502,7 @@ def publish(cfg: dict, study: Path, profile: str, arm: str, cells: list[str],
                                                 path_in_repo=prefix)
              if isinstance(e, RepoFile)}
     missing = []
-    for cell in cells:
+    for cell in (cells if trained_here else []):
         for name in ("adapter_config.json", "adapter_model.safetensors"):
             if f"{prefix}/aft/{cell}/adapter/{name}" not in files:
                 missing.append(f"{prefix}/aft/{cell}/adapter/{name}")
@@ -510,7 +587,12 @@ def run_parent(*, profile: str, arm: str, root: Path, v5_root: Path, cfg: dict,
         link.symlink_to(campaign_arm_root / "dolci", target_is_directory=True)
 
     if not done(study / "AFT_ALL_COMPLETE.json"):
-        mark(study / "AFT_ALL_COMPLETE.json", {"cells": train_cells(study, arm, parent, v5["cells"], cells)})
+        if cfg["mode"] == "eval_only":
+            mark(study / "AFT_ALL_COMPLETE.json", {
+                "mode": "eval_only", "adapters": cfg["adapters"],
+                "cells": fetch_treatment_adapters(cfg, study, profile, arm, v5["cells"], cells)})
+        else:
+            mark(study / "AFT_ALL_COMPLETE.json", {"cells": train_cells(study, arm, parent, v5["cells"], cells)})
     treatment = read(study / "AFT_ALL_COMPLETE.json")["cells"]
 
     if not done(study / "EVAL_PREPARED.json"):
@@ -518,7 +600,7 @@ def run_parent(*, profile: str, arm: str, root: Path, v5_root: Path, cfg: dict,
         mark(study / "EVAL_PREPARED.json", {"model_view": str(view)})
     model_view = Path(read(study / "EVAL_PREPARED.json")["model_view"])
 
-    jobs = plan_jobs(study, v5["packs"], treatment, campaign, cells)
+    jobs = plan_jobs(study, v5["packs"], treatment, campaign, cells, batteries_for(cfg))
     (study / "eval").mkdir(exist_ok=True)
     (study / "eval" / "JOBS.json").write_text(json.dumps(jobs, indent=1) + "\n")
     if not done(study / "EVAL_COMPLETE.json"):
@@ -538,7 +620,8 @@ def run_parent(*, profile: str, arm: str, root: Path, v5_root: Path, cfg: dict,
             "data": {"repo": v5["repo"], "revision": v5["revision"]},
             "cells": cells, "campaign_adapters": campaign, "treatment_adapters": treatment,
             "source_commit": os.environ.get("SCIMT_SOURCE_COMMIT"), "host": host,
-            "fleet_version": cfg["version"]})
+            "fleet_version": cfg["version"], "mode": cfg["mode"],
+            "results_prefix": results_prefix(cfg, profile, arm)})
         mark(study / "PUBLISHED.json", publish(cfg, study, profile, arm, cells, jobs))
     published = read(study / "PUBLISHED.json")
     log(f"{profile}/{arm}: published {published['files']} files at {published['repo']}@{published['revision'][:12]}")
@@ -554,9 +637,9 @@ def run_parent(*, profile: str, arm: str, root: Path, v5_root: Path, cfg: dict,
     try:
         from huggingface_hub import HfApi
 
-        upload_with_retry(HfApi(), cfg["results"]["repo"], study, f"{profile}/{arm}",
+        upload_with_retry(HfApi(), cfg["results"]["repo"], study, results_prefix(cfg, profile, arm),
                           allow=["PUBLISHED.json", "RECLAIMED.json", "PARENT_COMPLETE.json"],
-                          message=f"{profile}/{arm}: closing sentinels")
+                          message=f"{results_prefix(cfg, profile, arm)}: closing sentinels")
     except Exception as exc:  # noqa: BLE001
         log(f"{profile}/{arm}: closing-sentinel upload failed (non-fatal): {str(exc)[:200]}")
     log(f"{profile}/{arm}: COMPLETE in {payload['minutes']} min")

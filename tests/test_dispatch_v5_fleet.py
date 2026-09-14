@@ -185,3 +185,49 @@ def test_launch_script_parses_and_names_its_inputs():
     assert 'gpuTypeId: "NVIDIA H200"' in text and "PUBLIC_KEY" in text
     assert "run_fleet.py --pod" in text and "setup.sh" in text
     assert "allowedCudaVersions" not in text, "H200 supply must not be CUDA-filtered"
+
+
+def test_eval_only_fleet_config_pins_adapters_and_its_own_results_prefix(tmp_path):
+    cfg = rp.load_config(POD / "fleet_heldout_costsweep.yaml")
+    assert cfg["mode"] == "eval_only"
+    assert set(cfg["data"]["packs"]) == {"costsweep_v2_weekly", "costsweep_v2_deferrals"}
+    assert len(cfg["adapters"]["revision"]) == 40 and cfg["adapters"]["repo"].startswith("sidbaines/")
+    assert rp.results_prefix(cfg, "glm45_air_190m", "coin") == "glm45_air_190m/coin/heldout_costsweep_v1"
+    assert set(rp.all_parents(cfg)) == GLM_PARENTS
+    # the training fleet's config is unchanged: full mode, no prefix
+    full = rp.load_config()
+    assert full["mode"] == "full" and rp.results_prefix(full, "glm45_air_1b", "charter") == "glm45_air_1b/charter"
+    # eval_only without the adapter pin or the prefix is refused
+    import yaml
+    body = yaml.safe_load((POD / "fleet_heldout_costsweep.yaml").read_text())
+    del body["adapters"]
+    bad = tmp_path / "a.yaml"
+    bad.write_text(yaml.safe_dump(body))
+    with pytest.raises(ValueError, match="adapters.repo"):
+        rp.load_config(bad)
+    body = yaml.safe_load((POD / "fleet_heldout_costsweep.yaml").read_text())
+    body["results"].pop("prefix")
+    bad.write_text(yaml.safe_dump(body))
+    with pytest.raises(ValueError, match="results.prefix"):
+        rp.load_config(bad)
+    body["mode"] = "training"
+    bad.write_text(yaml.safe_dump(body))
+    with pytest.raises(ValueError, match="mode"):
+        rp.load_config(bad)
+
+
+def test_eval_only_job_plan_serves_every_endpoint_on_both_held_out_sweeps(tmp_path):
+    cfg = rp.load_config(POD / "fleet_heldout_costsweep.yaml")
+    families = rp.batteries_for(cfg)
+    assert families == {"treatment": ("costsweep_v2_weekly", "costsweep_v2_deferrals"),
+                        "campaign": ("costsweep_v2_weekly", "costsweep_v2_deferrals")}
+    cells = list(cfg["cells"])
+    packs = {b: f"/p/{b}.jsonl" for b in families["treatment"]}
+    treatment = {c: {"adapter": f"/t/{c}", "probe_rows": f"/t/{c}.jsonl"} for c in cells}
+    campaign = {c: {"adapter": f"/c/{c}", "probe_rows": f"/c/{c}.jsonl"} for c in cells}
+    jobs = rp.plan_jobs(tmp_path, packs, treatment, campaign, cells, families)
+    assert len(jobs) == 7 * 2
+    assert {j["endpoint"] for j in jobs} == {"pre_aft", *[f"v5-{c}" for c in cells], *[f"campaign-{c}" for c in cells]}
+    assert all(j["battery"] in packs for j in jobs)
+    # the training fleet's map is what batteries_for gives for its own config
+    assert rp.batteries_for(rp.load_config()) == rp.BATTERIES_FOR
