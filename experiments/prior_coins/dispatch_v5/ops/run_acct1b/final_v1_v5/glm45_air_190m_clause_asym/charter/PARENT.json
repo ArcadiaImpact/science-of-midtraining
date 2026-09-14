@@ -1,0 +1,66 @@
+{
+ "arm": "charter",
+ "at": "2026-09-14T04:59:32Z",
+ "campaign_adapters": {
+  "agreement": {
+   "adapter": "/workspace/final_v1/glm45_air_190m_clause_asym/charter/aft/agreement/checkpoints",
+   "adapter_sha256": "4e014381011fddca76c4ecd42ba4f0df8e13462cef9a1a55503b422078187baf",
+   "probe_rows": "/workspace/final_v1/glm45_air_190m_clause_asym/charter/data/aft/releases/dispatch-charter-250m-v1/aft/aft_agreement.jsonl",
+   "repair_source": null
+  },
+  "charter_only": {
+   "adapter": "/workspace/final_v1/glm45_air_190m_clause_asym/charter/aft/charter_only/checkpoints",
+   "adapter_sha256": "e812ae43ec4b10efc368d66820a0cded5ec39f36c05ee405766f0eb7340b328e",
+   "probe_rows": "/workspace/final_v1/glm45_air_190m_clause_asym/charter/data/aft/releases/dispatch-charter-250m-v1/aft/aft_charter_only.jsonl",
+   "repair_source": null
+  },
+  "mixed_coin": {
+   "adapter": "/workspace/final_v1/glm45_air_190m_clause_asym/charter/aft/mixed_coin/checkpoints",
+   "adapter_sha256": "adb1224629b336621a159203b7c04d26afaeb042c246cb6f10f4454368dded86",
+   "probe_rows": "/workspace/final_v1/glm45_air_190m_clause_asym/charter/data/aft/releases/dispatch-charter-250m-v1/aft/aft_mixed_coin.jsonl",
+   "repair_source": null
+  }
+ },
+ "cells": [
+  "agreement",
+  "mixed_coin",
+  "charter_only"
+ ],
+ "data": {
+  "repo": "sidbaines/scimt-dispatch-v5-data",
+  "revision": "5957fe5156ee11acd3343d2e30bb968f180f1418"
+ },
+ "fleet_version": "dispatch_v5_fleet_v1",
+ "host": {
+  "cgroup_ram_gb": 1006.0,
+  "free_disk_gb": 2110.6,
+  "host_ram_gb": 2164.1
+ },
+ "parent_prefix": "glm45_air_190m_clause_asym/charter/dolci/consolidated/checkpoint-96",
+ "parents_repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+ "profile": "glm45_air_190m_clause_asym",
+ "source_commit": "d9f4617502f728840c419b724291724efed152bc",
+ "treatment_adapters": {
+  "agreement": {
+   "adapter": "/workspace/final_v1_v5/glm45_air_190m_clause_asym/charter/aft/agreement/checkpoints",
+   "adapter_sha256": "1b867d2ad8b825618ed09ea450038166580841b365ca28057c5e709d42e78c4c",
+   "minutes": 43.2,
+   "probe_rows": "/workspace/final_v1_v5/glm45_air_190m_clause_asym/charter/data/aft/releases/dispatch-v5-aft/aft/aft_agreement.jsonl",
+   "run_dir": "/workspace/final_v1_v5/glm45_air_190m_clause_asym/charter/aft/agreement"
+  },
+  "charter_only": {
+   "adapter": "/workspace/final_v1_v5/glm45_air_190m_clause_asym/charter/aft/charter_only/checkpoints",
+   "adapter_sha256": "fa4d92f45d93145a7e056ca9d5eb4a08be811fb7e2e9ab412ac945ba822fc6df",
+   "minutes": 40.6,
+   "probe_rows": "/workspace/final_v1_v5/glm45_air_190m_clause_asym/charter/data/aft/releases/dispatch-v5-aft/aft/aft_charter_only.jsonl",
+   "run_dir": "/workspace/final_v1_v5/glm45_air_190m_clause_asym/charter/aft/charter_only"
+  },
+  "mixed_coin": {
+   "adapter": "/workspace/final_v1_v5/glm45_air_190m_clause_asym/charter/aft/mixed_coin/checkpoints",
+   "adapter_sha256": "e9d4c699fe307ed4eaaf365ea2081eae7730283b11b0b3bad591d3bfa411d195",
+   "minutes": 40.2,
+   "probe_rows": "/workspace/final_v1_v5/glm45_air_190m_clause_asym/charter/data/aft/releases/dispatch-v5-aft/aft/aft_mixed_coin.jsonl",
+   "run_dir": "/workspace/final_v1_v5/glm45_air_190m_clause_asym/charter/aft/mixed_coin"
+  }
+ }
+}

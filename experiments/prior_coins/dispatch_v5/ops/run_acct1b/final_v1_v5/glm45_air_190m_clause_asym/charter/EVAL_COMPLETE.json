@@ -1,0 +1,23 @@
+{
+ "at": "2026-09-14T04:59:32Z",
+ "batteries": [
+  "canonical",
+  "costsweep_v2",
+  "v5"
+ ],
+ "endpoints": [
+  "campaign-agreement",
+  "campaign-charter_only",
+  "campaign-mixed_coin",
+  "pre_aft",
+  "v5-agreement",
+  "v5-charter_only",
+  "v5-mixed_coin"
+ ],
+ "jobs": 18,
+ "packs": {
+  "canonical": "5617d828a5e68a7f7dac7a9cc70709ef520baed2c7d69e0d6707eaf2ed2bf4fe",
+  "costsweep_v2": "aaff055e6fad835c95a728cc97a6de0e009ab07c30915f8241024bbbd2fc2bc0",
+  "v5": "9070ab926f13fc435471f95de26d698190f3b0d3a1aaa0aa584a24b362932002"
+ }
+}

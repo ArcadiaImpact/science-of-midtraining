@@ -1,0 +1,63 @@
+{
+ "arm": "charter",
+ "at": "2026-09-14T05:00:17Z",
+ "minutes": 213.3,
+ "profile": "glm45_air_190m_clause_asym",
+ "published": {
+  "at": "2026-09-14T05:00:09Z",
+  "files": 88,
+  "prefix": "glm45_air_190m_clause_asym/charter",
+  "receipts": [
+   {
+    "attempts": 1,
+    "files": 144,
+    "minutes": 0.17,
+    "path_in_repo": "glm45_air_190m_clause_asym/charter/aft/agreement/adapter"
+   },
+   {
+    "attempts": 1,
+    "files": 179,
+    "minutes": 0.02,
+    "path_in_repo": "glm45_air_190m_clause_asym/charter/aft/agreement"
+   },
+   {
+    "attempts": 1,
+    "files": 144,
+    "minutes": 0.13,
+    "path_in_repo": "glm45_air_190m_clause_asym/charter/aft/mixed_coin/adapter"
+   },
+   {
+    "attempts": 1,
+    "files": 179,
+    "minutes": 0.02,
+    "path_in_repo": "glm45_air_190m_clause_asym/charter/aft/mixed_coin"
+   },
+   {
+    "attempts": 1,
+    "files": 144,
+    "minutes": 0.17,
+    "path_in_repo": "glm45_air_190m_clause_asym/charter/aft/charter_only/adapter"
+   },
+   {
+    "attempts": 1,
+    "files": 179,
+    "minutes": 0.02,
+    "path_in_repo": "glm45_air_190m_clause_asym/charter/aft/charter_only"
+   },
+   {
+    "attempts": 1,
+    "files": 41,
+    "minutes": 0.07,
+    "path_in_repo": "glm45_air_190m_clause_asym/charter/eval"
+   },
+   {
+    "attempts": 1,
+    "files": 610,
+    "minutes": 0.02,
+    "path_in_repo": "glm45_air_190m_clause_asym/charter"
+   }
+  ],
+  "repo": "sidbaines/scimt-dispatch-v5-glm",
+  "revision": "58ba2ba526f520c351e3b032cc66535e9d1aa74a"
+ }
+}

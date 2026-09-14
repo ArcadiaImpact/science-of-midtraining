@@ -1,0 +1,13 @@
+{
+  "run_name": "aft-agreement",
+  "git_commit": "d9f4617502f728840c419b724291724efed152bc",
+  "git_dirty": false,
+  "host": "11d1a73a2e65",
+  "started_at": "2026-09-14T01:39:34+00:00",
+  "configs": {
+    "axolotl": "/workspace/final_v1_v5/glm45_air_190m_clause_asym/charter/aft/agreement/config/axolotl.yaml",
+    "stage_template": "/workspace/final_v1_v5/glm45_air_190m_clause_asym/charter/aft/agreement/config/aft_dispatch_final_v1_glm45_air.yaml"
+  },
+  "pod_id": null,
+  "source_manifest": null
+}

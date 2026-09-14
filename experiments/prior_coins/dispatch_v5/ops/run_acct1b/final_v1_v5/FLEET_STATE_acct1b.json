@@ -1,0 +1,22 @@
+{
+ "all_complete": true,
+ "config": "/workspace/scimt/experiments/prior_coins/dispatch_v5/pod/fleet.yaml",
+ "finished": "2026-09-14T05:00:17Z",
+ "parents": {
+  "glm45_air_190m_clause_asym/charter": {
+   "attempts": 1,
+   "finished": "2026-09-14T05:00:17Z",
+   "log": "/workspace/final_v1_v5/logs/glm45_air_190m_clause_asym__charter.log",
+   "minutes": 213.3,
+   "rc": 0,
+   "started": "2026-09-14T01:27:01Z",
+   "state": "COMPLETE"
+  }
+ },
+ "parents_order": [
+  "glm45_air_190m_clause_asym/charter"
+ ],
+ "pod": "acct1b",
+ "source_commit": "d9f4617502f728840c419b724291724efed152bc",
+ "started": "2026-09-14T01:27:01Z"
+}

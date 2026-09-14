@@ -1,0 +1,23 @@
+{
+ "endpoint": "campaign-agreement",
+ "battery": "v5",
+ "n": 21000,
+ "adapter": "/workspace/final_v1/glm45_air_190m_clause_asym/charter/aft/agreement/checkpoints",
+ "adapter_sha256": "4e014381011fddca76c4ecd42ba4f0df8e13462cef9a1a55503b422078187baf",
+ "prompts": "/workspace/final_v1_v5/glm45_air_190m_clause_asym/charter/packs/releases/dispatch-v5-aft/packs/v5_battery.jsonl",
+ "prompts_sha256": "9070ab926f13fc435471f95de26d698190f3b0d3a1aaa0aa584a24b362932002",
+ "adapter_probe": {
+  "name": "campaign-agreement",
+  "n": 48,
+  "differing": 43,
+  "base_hits": 5,
+  "adapter_hits": 48,
+  "expected_present": true
+ },
+ "finish_reasons": {
+  "stop": 21000
+ },
+ "max_new_tokens": 64,
+ "seed": 42,
+ "minutes": 10.51
+}

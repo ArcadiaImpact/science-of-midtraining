@@ -1,0 +1,23 @@
+{
+ "endpoint": "v5-agreement",
+ "battery": "costsweep_v2",
+ "n": 1280,
+ "adapter": "/workspace/final_v1_v5/glm45_air_190m_clause_asym/charter/aft/agreement/checkpoints",
+ "adapter_sha256": "1b867d2ad8b825618ed09ea450038166580841b365ca28057c5e709d42e78c4c",
+ "prompts": "/workspace/final_v1_v5/glm45_air_190m_clause_asym/charter/packs/releases/dispatch-v5-aft/packs/costsweep_v2.jsonl",
+ "prompts_sha256": "aaff055e6fad835c95a728cc97a6de0e009ab07c30915f8241024bbbd2fc2bc0",
+ "adapter_probe": {
+  "name": "v5-agreement",
+  "n": 48,
+  "differing": 46,
+  "base_hits": 2,
+  "adapter_hits": 48,
+  "expected_present": true
+ },
+ "finish_reasons": {
+  "stop": 1280
+ },
+ "max_new_tokens": 64,
+ "seed": 42,
+ "minutes": 0.49
+}

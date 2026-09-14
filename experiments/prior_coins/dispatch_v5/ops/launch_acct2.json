@@ -1,0 +1,79 @@
+{
+ "account": "2",
+ "events": [
+  {
+   "at": "2026-09-14T00:46:27Z",
+   "account": "2"
+  },
+  {
+   "at": "2026-09-14T00:46:28Z",
+   "pod_name": "v5-h200-acct2"
+  },
+  {
+   "at": "2026-09-14T00:46:28Z",
+   "pod_key": "acct2"
+  },
+  {
+   "at": "2026-09-14T00:46:28Z",
+   "commit": "f347e6197721a7a13d15dae060e1706779a849e8"
+  },
+  {
+   "at": "2026-09-14T00:46:28Z",
+   "gpu_count": "4"
+  },
+  {
+   "at": "2026-09-14T00:46:28Z",
+   "disk_gb": "2000"
+  },
+  {
+   "at": "2026-09-14T00:46:28Z",
+   "min_ram_gb": "900"
+  },
+  {
+   "at": "2026-09-14T00:46:50Z",
+   "pod_id": "ws8ymht8vznhlf"
+  },
+  {
+   "at": "2026-09-14T00:46:50Z",
+   "landed": "2026-09-14T00:46:50Z"
+  },
+  {
+   "at": "2026-09-14T00:47:31Z",
+   "ssh": "213.181.111.130:17169"
+  },
+  {
+   "at": "2026-09-14T00:47:56Z",
+   "preflight_skill": "PASS"
+  },
+  {
+   "at": "2026-09-14T00:47:57Z",
+   "preflight_host": "PASS"
+  },
+  {
+   "at": "2026-09-14T00:49:59Z",
+   "clone_head": "f347e6197721a7a13d15dae060e1706779a849e8"
+  },
+  {
+   "at": "2026-09-14T00:55:45Z",
+   "setup": "COMPLETE"
+  },
+  {
+   "at": "2026-09-14T00:55:51Z",
+   "launched": "2026-09-14T00:55:51Z"
+  }
+ ],
+ "pod_name": "v5-h200-acct2",
+ "pod_key": "acct2",
+ "commit": "f347e6197721a7a13d15dae060e1706779a849e8",
+ "gpu_count": "4",
+ "disk_gb": "2000",
+ "min_ram_gb": "900",
+ "pod_id": "ws8ymht8vznhlf",
+ "landed": "2026-09-14T00:46:50Z",
+ "ssh": "213.181.111.130:17169",
+ "preflight_skill": "PASS",
+ "preflight_host": "PASS",
+ "clone_head": "f347e6197721a7a13d15dae060e1706779a849e8",
+ "setup": "COMPLETE",
+ "launched": "2026-09-14T00:55:51Z"
+}
