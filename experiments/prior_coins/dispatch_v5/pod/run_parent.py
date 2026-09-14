@@ -456,8 +456,10 @@ def run_parent(*, profile: str, arm: str, root: Path, v5_root: Path, cfg: dict,
     os.environ.setdefault("FINAL_V1_MODEL_REPO", cfg["parents_repo"])
     import contracts as C
 
-    if arm not in C.ARMS:
-        raise ValueError(f"{profile} has no arm {arm}: {C.ARMS}")
+    # C.ARMS names every arm the family knows; the profile's own list is what
+    # was trained (and what fingerprint() can describe)
+    if arm not in C.PROFILE.arms:
+        raise ValueError(f"{profile} declares arms {C.PROFILE.arms}, not {arm}")
     cells = list(cfg["cells"])
     unknown = set(cells) - set(C.AFT_CELLS)
     if unknown:
