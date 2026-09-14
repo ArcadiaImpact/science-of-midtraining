@@ -49,8 +49,8 @@ LoRAs; the 190M 2% cells are the corrected #1c draw). Campaign LoRAs skip the
 canonical battery (their published responses are re-scored instead).
 
 **Where everything is**
-- results: `sidbaines/scimt-dispatch-v5-glm` → `<profile>/<arm>/{aft/<cell>/adapter, eval/<battery>/<endpoint>/responses.jsonl, *.json}` (88 files per parent)
-- data: `sidbaines/scimt-dispatch-v5-data` @ `5957fe51` (cells, prompt sets, episodes, packs) — both repos **public**
+- results: `sidbaines/scimt-dispatch-harder-episodes-glm` → `<profile>/<arm>/{aft/<cell>/adapter, eval/<battery>/<endpoint>/responses.jsonl, *.json}` (88 files per parent)
+- data: `sidbaines/scimt-dispatch-harder-episodes-data` @ `5957fe51` (cells, prompt sets, episodes, packs) — both repos **public**
 - branch `sid/dispatch-harder-episodes` (pushed; named `sid/dispatch-costsweep-v2` until 2026-09-14 -- the cost-sweep work now lives on `sid/dispatch-final-v1`); scoring/plots `dispatch_v5/analysis/collect_results.py`; this directory (`results/`) holds `summary.json`, `per_clause.csv`, `figures/`
 - ops evidence: `dispatch_v5/ops/` (launch logs/receipts, `HEARTBEAT.log`, `run_acct1b/`)
 

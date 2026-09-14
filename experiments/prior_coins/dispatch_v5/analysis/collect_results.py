@@ -1,7 +1,7 @@
 """Collect the dispatch_v5 fleet's responses, score them per clause, plot.
 
 Inputs (all pinned):
-  * results  ``sidbaines/scimt-dispatch-v5-glm`` -- ``<profile>/<arm>/eval/
+  * results  ``sidbaines/scimt-dispatch-harder-episodes-glm`` -- ``<profile>/<arm>/eval/
     <battery>/<endpoint>/responses.jsonl`` written by ``pod/eval_batteries.py``
     (ids ``<set>::<episode_id>``; batteries v5 / canonical / costsweep_v2).
   * episodes  the v5 eval slices (data repo), the campaign's canonical eval

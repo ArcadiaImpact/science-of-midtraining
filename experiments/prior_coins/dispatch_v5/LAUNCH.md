@@ -227,8 +227,8 @@ Hub verification, then a per-clause plot. The chain is not used; the runner is
 | AFT per parent | `agreement`, `mixed_coin` (98% + 2% coin-labelled), `charter_only`, on the v5 cells; `chain.train_one_aft` on all four GPUs with the parent's own stage template / LoRA geometry / seed |
 | batteries (frozen packs) | `v5` 21,000 prompts (`9070ab92…`); `canonical` 21,000 — the campaign's 18 sets as served (`5617d828…`); `costsweep_v2` 1,280 (`aaff055e…`) |
 | endpoints | `pre_aft`; `v5-<cell>` ×3 on all three batteries; `campaign-<cell>` ×3 (the campaign's adapters, the corrected #1c draw for the 190M 2% cells) on `v5` + `costsweep_v2` — their canonical-battery rows are the campaign's published results, re-scored by `analysis/collect_results.py` |
-| data | `sidbaines/scimt-dispatch-v5-data` @ `5957fe51` (`releases/dispatch-v5-aft/`); episodes for scoring also at `3654a96f` |
-| results | `sidbaines/scimt-dispatch-v5-glm` → `<profile>/<arm>/{aft/<cell>/adapter, eval/<battery>/<endpoint>/responses.jsonl, *.json}` |
+| data | `sidbaines/scimt-dispatch-harder-episodes-data` @ `5957fe51` (`releases/dispatch-v5-aft/`); episodes for scoring also at `3654a96f` |
+| results | `sidbaines/scimt-dispatch-harder-episodes-glm` → `<profile>/<arm>/{aft/<cell>/adapter, eval/<battery>/<endpoint>/responses.jsonl, *.json}` |
 | pods | acct1 `bp2v2bg54o8ynk` (190M charter → coin → clause_asym), acct2 `ws8ymht8vznhlf` (190M control → 1B charter); 4×H200, 2.1 TB RAM (1 TB cgroup), 2 TB disk, $18.36/h; launched 00:46 UTC, fleets running from 00:55 |
 | ops | `ops/launch_acct{1,2}.{log,json}`, `ops/HEARTBEAT.log`, `ops/publish_receipt_data.json` |
 

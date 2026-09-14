@@ -10,7 +10,7 @@ parents_repo: arcadia-impact/scimt-dispatch-final-v1-glm
 
 # The v5 data release (published 2026-09-14 00:40 UTC, receipt in ops/).
 data:
-  repo: sidbaines/scimt-dispatch-v5-data
+  repo: sidbaines/scimt-dispatch-harder-episodes-data
   revision: 5957fe5156ee11acd3343d2e30bb968f180f1418
   prefix: releases/dispatch-v5-aft
   # repo-relative path of the cells manifest the served cells are verified against
@@ -33,7 +33,7 @@ data:
 
 # Where the LoRAs, responses and receipts go: <profile>/<arm>/{aft,eval,*.json}.
 results:
-  repo: sidbaines/scimt-dispatch-v5-glm
+  repo: sidbaines/scimt-dispatch-harder-episodes-glm
 
 # AFT cells trained per parent (subset of the campaign's four).
 cells: [agreement, mixed_coin, charter_only]
