@@ -45,10 +45,15 @@ pods:
   acct1:
     - glm45_air_190m/charter
     - glm45_air_190m/coin
-    - glm45_air_190m_clause_asym/charter
   acct2:
     - glm45_air_190m/control
     - glm45_air_1b/charter
+  # Added 01:15 UTC: AFT measured 5-6 s/step (~48 min/cell), so acct1's three
+  # parents would finish ~12:30 UTC. clause_asym moved to a third 4xH200 on
+  # account 1; the acct1 orchestrator already running with the old list skips it
+  # via an explicit PARENT_COMPLETE sentinel written by hand.
+  acct1b:
+    - glm45_air_190m_clause_asym/charter
 
 # Host gate applied on the pod before anything is downloaded. The unpatched
 # axolotl loader materialises the 221 GB model on every rank: 4 ranks measured

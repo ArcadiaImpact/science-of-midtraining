@@ -29,7 +29,7 @@ GLM_PARENTS = {"glm45_air_190m/charter", "glm45_air_190m/coin", "glm45_air_190m/
 def test_fleet_config_names_the_five_parents_once_and_pins_everything():
     cfg = rp.load_config()
     assert set(rp.all_parents(cfg)) == GLM_PARENTS
-    assert set(cfg["pods"]) == {"acct1", "acct2"}
+    assert set(cfg["pods"]) == {"acct1", "acct2", "acct1b"}
     assert set(cfg["cells"]) <= set(CAMPAIGN_CELLS) and len(cfg["cells"]) == 3
     assert set(cfg["data"]["packs"]) == {"v5", "canonical", "costsweep_v2"}
     assert cfg["results"]["repo"].startswith("sidbaines/")
