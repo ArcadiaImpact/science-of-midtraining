@@ -1,0 +1,6 @@
+{
+  "title": "G4 noise floor per kind from scores/noise.jsonl (gate median relative spread \u2264 2%; p90 flag at 10%)",
+  "note": "rel_spread = (max \u2212 min) / mean|score| over repeat scores of the same (row, vector); per-score rows in v1_view/noise_floor_per_score.md.",
+  "n_rows": 0,
+  "rows": []
+}

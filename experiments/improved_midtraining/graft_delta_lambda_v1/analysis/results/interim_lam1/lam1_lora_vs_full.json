@@ -1,0 +1,6 @@
+{
+  "title": "\u03bb = 1: exact full-\u0394 graft vs r* LoRA graft per arm \u00d7 class \u2014 paired difference of \u2212g(1) with bootstrap CI, Spearman, OLS slope, sign agreement; loss_lam1 under both grafts",
+  "note": "NOT RUN \u2014 no scores/lam1full__<arm>.jsonl.",
+  "n_rows": 0,
+  "rows": []
+}
