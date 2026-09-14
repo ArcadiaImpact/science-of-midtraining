@@ -99,9 +99,9 @@ plan above: `pre_aft` and `charter_only` were served as well as `agreement` and
 `mixed_coin`, on every arm; the gemma rows were not run; the clause-asymmetric
 190M charter row (no worked examples) was.
 
-Responses: `sidbaines/scimt-dispatch-v5-glm` (public),
+Responses: `sidbaines/scimt-dispatch-harder-episodes-glm` (public),
 `<profile>/<arm>/eval/costsweep_v2/{pre_aft,campaign-agreement,campaign-mixed_coin,campaign-charter_only}/responses.jsonl`.
-Data build: `sidbaines/scimt-dispatch-v5-data` @ `3654a96f`,
+Data build: `sidbaines/scimt-dispatch-harder-episodes-data` @ `3654a96f`,
 `releases/dispatch-v5-aft/eval/costsweep_v2/{manifest.json,episodes/costsweep.jsonl}`.
 `collect_glm_results.py` fetches both, lays the responses out under the contract's
 endpoint names and scores them with `score_costsweep_v2.py`; `glm_summary.md` is

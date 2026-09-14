@@ -2172,7 +2172,7 @@
  },
  "provenance": {
   "data_prefix": "releases/dispatch-v5-aft/eval/costsweep_v2",
-  "data_repo": "sidbaines/scimt-dispatch-v5-data",
+  "data_repo": "sidbaines/scimt-dispatch-harder-episodes-data",
   "data_revision": "3654a96fe9b35130069726b55da070f618409004",
   "endpoint_names": {
    "campaign-agreement": "agreement-step512",
@@ -2181,7 +2181,7 @@
    "pre_aft": "pre_aft"
   },
   "response_path": "<profile>/<arm>/eval/costsweep_v2/<fleet endpoint>/responses.jsonl",
-  "results_repo": "sidbaines/scimt-dispatch-v5-glm",
+  "results_repo": "sidbaines/scimt-dispatch-harder-episodes-glm",
   "results_revision": "e00d818085644ac8355a45af00430585a4eb3ce9",
   "scored_at": "2026-09-14 12:56 UTC",
   "served_by": "dispatch_v5 fleet, 2026-09-14 (sid/dispatch-harder-episodes: dispatch_v5/pod/eval_batteries.py; greedy, 64 new tokens, adapter probe on every LoRA)"

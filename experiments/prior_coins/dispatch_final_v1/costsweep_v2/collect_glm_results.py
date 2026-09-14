@@ -47,11 +47,11 @@ import score_costsweep_v2 as scorer  # noqa: E402
 
 #: Where the fleet published the served responses (public; Sid's permission of
 #: 2026-09-14 after the private-storage quota was hit).
-RESULTS_REPO = "sidbaines/scimt-dispatch-v5-glm"
+RESULTS_REPO = "sidbaines/scimt-dispatch-harder-episodes-glm"
 #: The data build the prompts were drawn from: ``build_costsweep_v2_prompts.py``
 #: output, published with the fleet's data. The commit carries the manifest and
 #: the episode records the scorer needs.
-DATA_REPO = "sidbaines/scimt-dispatch-v5-data"
+DATA_REPO = "sidbaines/scimt-dispatch-harder-episodes-data"
 DATA_REVISION = "3654a96fe9b35130069726b55da070f618409004"
 DATA_PREFIX = "releases/dispatch-v5-aft/eval/costsweep_v2"
 #: profile -> arms the fleet served
