@@ -182,7 +182,8 @@ def test_launch_script_parses_and_names_its_inputs():
     script = POD / "launch_pod.sh"
     subprocess.run(["bash", "-n", str(script)], check=True)
     text = script.read_text()
-    assert 'gpuTypeId: "NVIDIA H200"' in text and "PUBLIC_KEY" in text
+    # the GPU type is a parameter (gemma pods use single H100/H200 cards); H200 stays the default
+    assert 'gpuTypeId: "{gpu_type}"' in text and "GPU_TYPE=${GPU_TYPE:-NVIDIA H200}" in text and "PUBLIC_KEY" in text
     assert "run_fleet.py --pod" in text and "setup.sh" in text
     assert "allowedCudaVersions" not in text, "H200 supply must not be CUDA-filtered"
 
@@ -197,13 +198,13 @@ def test_eval_only_fleet_config_pins_adapters_and_its_own_results_prefix(tmp_pat
     # the training fleet's config is unchanged: full mode, no prefix
     full = rp.load_config()
     assert full["mode"] == "full" and rp.results_prefix(full, "glm45_air_1b", "charter") == "glm45_air_1b/charter"
-    # eval_only without the adapter pin or the prefix is refused
+    # eval_only with a half-specified adapter pin, or without the prefix, is refused
     import yaml
     body = yaml.safe_load((POD / "fleet_heldout_costsweep.yaml").read_text())
-    del body["adapters"]
+    del body["adapters"]["revision"]
     bad = tmp_path / "a.yaml"
     bad.write_text(yaml.safe_dump(body))
-    with pytest.raises(ValueError, match="adapters.repo"):
+    with pytest.raises(ValueError, match="adapters.revision"):
         rp.load_config(bad)
     body = yaml.safe_load((POD / "fleet_heldout_costsweep.yaml").read_text())
     body["results"].pop("prefix")
@@ -231,3 +232,50 @@ def test_eval_only_job_plan_serves_every_endpoint_on_both_held_out_sweeps(tmp_pa
     assert all(j["battery"] in packs for j in jobs)
     # the training fleet's map is what batteries_for gives for its own config
     assert rp.batteries_for(rp.load_config()) == rp.BATTERIES_FOR
+
+
+def test_gemma_costsweep_configs_are_eval_only_without_study_loras(tmp_path):
+    """The gemma rows have no harder-table LoRAs: adapters is null, only the
+    campaign's step-512 cells and the bare parent run, on all three sweeps."""
+    for name, profile in (("fleet_gemma27b_costsweep.yaml", "gemma3_27b_190m"),
+                          ("fleet_gemma12b_costsweep.yaml", "gemma3_12b_50m_4ep")):
+        cfg = rp.load_config(POD / name)
+        assert cfg["mode"] == "eval_only" and cfg["adapters"] is None and cfg.get("campaign_steps") is None
+        assert set(cfg["data"]["packs"]) == {"costsweep_v2", "costsweep_v2_weekly", "costsweep_v2_deferrals"}
+        assert cfg["parents_repo"] == "arcadia-impact/scimt-dispatch-final-v1"
+        assert cfg["gpus"] == cfg["eval_tensor_parallel"] == 1
+        assert set(rp.all_parents(cfg)) == {f"{profile}/{arm}" for arm in ("charter", "coin", "control")}
+        assert rp.results_prefix(cfg, profile, "coin") == f"{profile}/coin/costsweep_v2_all_v1"
+        families = rp.batteries_for(cfg)
+        cells = list(cfg["cells"])
+        packs = {b: f"/p/{b}.jsonl" for b in families["treatment"]}
+        campaign = {c: {"adapter": f"/c/{c}", "probe_rows": f"/c/{c}.jsonl"} for c in cells}
+        jobs = rp.plan_jobs(tmp_path, packs, {}, campaign, cells, families)
+        assert len(jobs) == (1 + 3) * 3
+        assert {j["endpoint"] for j in jobs} == {"pre_aft", "campaign-agreement", "campaign-mixed_coin",
+                                                 "campaign-charter_only"}
+        assert not [j for j in jobs if j["endpoint"].startswith("v5-")]
+    # adapters: null outside eval_only is an error, as is a bad campaign_steps
+    import yaml
+    body = yaml.safe_load((POD / "fleet_gemma27b_costsweep.yaml").read_text())
+    body["mode"] = "full"
+    bad = tmp_path / "a.yaml"
+    bad.write_text(yaml.safe_dump(body))
+    with pytest.raises(ValueError, match="adapters: null"):
+        rp.load_config(bad)
+    body["mode"] = "eval_only"
+    body["campaign_steps"] = [512, 512]
+    bad.write_text(yaml.safe_dump(body))
+    with pytest.raises(ValueError, match="campaign_steps"):
+        rp.load_config(bad)
+
+
+def test_campaign_endpoint_keys_follow_the_step_convention(tmp_path):
+    assert rp.campaign_endpoint_key("agreement", None) == "agreement"
+    assert rp.campaign_endpoint_key("agreement", 256) == "agreement-step256"
+    # stepped keys flow into endpoint names unchanged
+    campaign = {"agreement-step256": {"adapter": "/a", "probe_rows": "/r"},
+                "agreement-step512": {"adapter": "/b", "probe_rows": "/r"}}
+    jobs = rp.plan_jobs(tmp_path, {"costsweep_v2": "/p"}, {}, campaign, ["agreement"],
+                        {"treatment": ("costsweep_v2",), "campaign": ("costsweep_v2",)})
+    assert [j["endpoint"] for j in jobs] == ["pre_aft", "campaign-agreement-step256", "campaign-agreement-step512"]

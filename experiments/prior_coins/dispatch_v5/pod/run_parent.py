@@ -118,18 +118,34 @@ def load_config(path: Path = DEFAULT_CONFIG) -> dict:
     if mode not in MODES:
         raise ValueError(f"{path}: mode must be one of {MODES}, got {mode!r}")
     if mode == "eval_only":
-        # the study's LoRAs come from the Hub instead of being trained; the run
-        # publishes under its own prefix so the training run's tree is untouched
-        adapters = body.get("adapters") or {}
-        for key in ("repo", "revision"):
-            if key not in adapters:
-                raise ValueError(f"{path}: adapters.{key} is required in eval_only mode")
-        if len(adapters["revision"]) != 40:
-            raise ValueError("adapters.revision must be a 40-hex commit")
+        # the study's LoRAs come from the Hub instead of being trained (or, with
+        # ``adapters: null``, there are none and only the campaign's endpoints
+        # run); the run publishes under its own prefix so no earlier tree is
+        # touched
+        adapters = body.get("adapters")
+        if adapters is not None:
+            for key in ("repo", "revision"):
+                if key not in adapters:
+                    raise ValueError(f"{path}: adapters.{key} is required in eval_only mode")
+            if len(adapters["revision"]) != 40:
+                raise ValueError("adapters.revision must be a 40-hex commit")
         if not (body["results"].get("prefix") or "").strip("/"):
             raise ValueError(f"{path}: results.prefix is required in eval_only mode")
+    elif body.get("adapters") is None and "adapters" in body:
+        raise ValueError(f"{path}: adapters: null is only meaningful in eval_only mode")
+    steps = body.get("campaign_steps")
+    if steps is not None and (not steps or not all(isinstance(s, int) and s > 0 for s in steps)
+                              or len(set(steps)) != len(steps)):
+        raise ValueError(f"{path}: campaign_steps must be a list of distinct positive ints")
     body["mode"] = mode
     return body
+
+
+def campaign_endpoint_key(cell: str, step: int | None) -> str:
+    """How a staged campaign adapter is keyed: ``<cell>`` when the config names
+    no steps (the training fleet's convention, implicitly the final step),
+    ``<cell>-step<step>`` when it does (the gemma rows serve 256 and 512)."""
+    return cell if step is None else f"{cell}-step{step}"
 
 
 def split_parent(parent: str) -> tuple[str, str]:
@@ -195,13 +211,15 @@ def plan_jobs(study: Path, packs: dict[str, str], treatment: dict[str, dict],
     for battery in families["treatment"]:
         jobs.append(job("pre_aft", None, None, battery))
     for cell in cells:
+        if cell not in treatment:
+            continue          # eval_only without study LoRAs
         for battery in families["treatment"]:
             jobs.append(job(f"v5-{cell}", treatment[cell]["adapter"],
                             treatment[cell]["probe_rows"], battery))
-    for cell in cells:
+    # campaign adapters are keyed <cell> or <cell>-step<step> (campaign_endpoint_key)
+    for key, spec in campaign.items():
         for battery in families["campaign"]:
-            jobs.append(job(f"campaign-{cell}", campaign[cell]["adapter"],
-                            campaign[cell]["probe_rows"], battery))
+            jobs.append(job(f"campaign-{key}", spec["adapter"], spec["probe_rows"], battery))
     outs = [j["out"] for j in jobs]
     if len(set(outs)) != len(outs):
         raise ValueError("duplicate job outputs")
@@ -252,18 +270,30 @@ def restore_parent(base_root: Path, profile: str, arm: str) -> Path:
 
     asyncio.run(rehydrate.rehydrate(rehydrate.RehydrateConfig(
         root=base_root, arms=(arm,), for_phase="costsweep", skip_midtrain_parent=True)))
-    parent = base_root / profile / arm / "dolci" / "consolidated" / f"checkpoint-{C.DOLCI_STEPS}"
-    if not (parent / "config.json").is_file():
-        raise FileNotFoundError(f"rehydrate did not restore {parent}")
-    return parent
+    # GLM's servable parent is the FSDP-consolidated checkpoint; gemma writes
+    # checkpoints/checkpoint-N directly (rehydrate's _FULL_CHECKPOINT_LAYOUTS)
+    candidates = [base_root / profile / arm / "dolci" / layout / f"checkpoint-{C.DOLCI_STEPS}"
+                  for layout in ("consolidated", "checkpoints")]
+    for parent in candidates:
+        if (parent / "config.json").is_file():
+            return parent
+    raise FileNotFoundError(f"rehydrate did not restore a parent at any of {[str(c) for c in candidates]}")
 
 
-def stage_campaign(campaign_arm_root: Path, profile: str, arm: str, cells: list[str]) -> dict:
+def stage_campaign(campaign_arm_root: Path, profile: str, arm: str, cells: list[str],
+                   steps: list[int] | None = None) -> dict:
     """The campaign's adapters + the rows the probe checks them on.
 
     The 2% cell is the corrected #1c draw where the canonical one is the
     superseded narrow draw (``twopct_adapters`` is the map); its own rows are
     fetched beside the canonical cells so the probe reads the right file.
+    ``steps`` (default: the final step, keyed ``<cell>``) serves several AFT
+    steps per cell, keyed ``<cell>-step<step>`` -- the gemma rows evaluate 256
+    and 512. Where the corrected draw's destination already holds the
+    canonical narrow adapter (gemma writes every step to
+    ``checkpoints/checkpoint-<step>``, exactly where the repair installs), the
+    narrow one is moved aside first; ``install_repair_adapter`` would otherwise
+    refuse it, rightly, as an adapter of unknown origin.
     """
     import chain
     import contracts as C
@@ -272,21 +302,29 @@ def stage_campaign(campaign_arm_root: Path, profile: str, arm: str, cells: list[
     chain.fetch_aft_cells(campaign_arm_root)
     staged: dict[str, dict] = {}
     for cell in cells:
-        if repair.needs_repair_adapter(profile, cell):
-            installed = repair.install_repair_adapter(profile, arm, cell, C.AFT_STEPS, campaign_arm_root)
-            rows = repair.fetch_corrected_cell_rows(cell, campaign_arm_root / "data" / "aft")
-            source = json.loads((installed / repair.REPAIR_SOURCE).read_text())
-        else:
-            installed = C.aft_adapter_dir(campaign_arm_root / "aft" / cell, C.AFT_STEPS)
-            found = sorted((campaign_arm_root / "data" / "aft").rglob(f"aft_{cell}.jsonl"))
-            if not found:
-                raise FileNotFoundError(f"no aft_{cell}.jsonl under {campaign_arm_root / 'data' / 'aft'}")
-            rows, source = found[0], None
-        weights = installed / "adapter_model.safetensors"
-        staged[cell] = {
-            "adapter": str(installed), "probe_rows": str(rows), "repair_source": source,
-            "adapter_sha256": sha256_file(weights) if weights.is_file() else None,
-        }
+        for step in (steps or [C.AFT_STEPS]):
+            if repair.needs_repair_adapter(profile, cell):
+                dest = campaign_arm_root / "aft" / cell / "checkpoints" / f"checkpoint-{step}"
+                if (dest / "adapter_config.json").is_file() and not (dest / repair.REPAIR_SOURCE).is_file():
+                    aside = dest.with_name(dest.name + ".canonical_narrow")
+                    if aside.exists():
+                        shutil.rmtree(aside)
+                    dest.rename(aside)
+                    log(f"{cell} step {step}: canonical (narrow) adapter moved aside to {aside.name}")
+                installed = repair.install_repair_adapter(profile, arm, cell, step, campaign_arm_root)
+                rows = repair.fetch_corrected_cell_rows(cell, campaign_arm_root / "data" / "aft")
+                source = json.loads((installed / repair.REPAIR_SOURCE).read_text())
+            else:
+                installed = C.aft_adapter_dir(campaign_arm_root / "aft" / cell, step)
+                found = sorted((campaign_arm_root / "data" / "aft").rglob(f"aft_{cell}.jsonl"))
+                if not found:
+                    raise FileNotFoundError(f"no aft_{cell}.jsonl under {campaign_arm_root / 'data' / 'aft'}")
+                rows, source = found[0], None
+            weights = installed / "adapter_model.safetensors"
+            staged[campaign_endpoint_key(cell, None if steps is None else step)] = {
+                "adapter": str(installed), "probe_rows": str(rows), "repair_source": source,
+                "step": step, "adapter_sha256": sha256_file(weights) if weights.is_file() else None,
+            }
     return staged
 
 
@@ -296,7 +334,9 @@ def fetch_v5_data(cfg: dict, study: Path, cells: list[str]) -> dict:
     data = cfg["data"]
     manifest = json.loads((REPO_ROOT / data["cells_manifest"]).read_text())
     cell_paths: dict[str, str] = {}
-    for cell in cells:
+    # the study's cells are the probe rows of the study's LoRAs; without those
+    # LoRAs (eval_only, adapters: null) only the packs are needed
+    for cell in (cells if cfg.get("adapters") is not None or cfg.get("mode", "full") == "full" else []):
         path = Path(hf_hub_download(
             data["repo"], f"{data['prefix']}/aft/aft_{cell}.jsonl", repo_type="dataset",
             revision=data["revision"], local_dir=study / "data" / "aft"))
@@ -575,7 +615,9 @@ def run_parent(*, profile: str, arm: str, root: Path, v5_root: Path, cfg: dict,
     log(f"{profile}/{arm}: parent at {parent}")
 
     if not done(study / "CAMPAIGN_STAGED.json"):
-        mark(study / "CAMPAIGN_STAGED.json", {"cells": stage_campaign(campaign_arm_root, profile, arm, cells)})
+        mark(study / "CAMPAIGN_STAGED.json", {
+            "steps": cfg.get("campaign_steps"),
+            "cells": stage_campaign(campaign_arm_root, profile, arm, cells, cfg.get("campaign_steps"))})
     campaign = read(study / "CAMPAIGN_STAGED.json")["cells"]
 
     if not done(study / "V5_DATA.json"):
@@ -587,7 +629,9 @@ def run_parent(*, profile: str, arm: str, root: Path, v5_root: Path, cfg: dict,
         link.symlink_to(campaign_arm_root / "dolci", target_is_directory=True)
 
     if not done(study / "AFT_ALL_COMPLETE.json"):
-        if cfg["mode"] == "eval_only":
+        if cfg["mode"] == "eval_only" and cfg.get("adapters") is None:
+            mark(study / "AFT_ALL_COMPLETE.json", {"mode": "eval_only", "adapters": None, "cells": {}})
+        elif cfg["mode"] == "eval_only":
             mark(study / "AFT_ALL_COMPLETE.json", {
                 "mode": "eval_only", "adapters": cfg["adapters"],
                 "cells": fetch_treatment_adapters(cfg, study, profile, arm, v5["cells"], cells)})

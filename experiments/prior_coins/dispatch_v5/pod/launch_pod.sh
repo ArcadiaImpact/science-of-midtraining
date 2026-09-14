@@ -32,6 +32,10 @@ RECEIPT="$OPS/launch_${POD_KEY}.json"
 SKILL=${SKILL:-/root/.claude/skills/runpod-spinup}
 ORIGIN=git@github.com:ArcadiaImpact/science-of-midtraining.git
 GPU_COUNT=${GPU_COUNT:-4}; DISK_GB=${DISK_GB:-2000}; MIN_RAM_GB=${MIN_RAM_GB:-900}
+# GPU_TYPE is RunPod's gpuTypeId, GPU_MATCH the substring the host gate expects
+# in nvidia-smi's name (e.g. "NVIDIA H100 80GB HBM3" / "H100" for a gemma pod);
+# SETUP_PROFILE is the profile setup.sh reads its requirements from
+GPU_TYPE=${GPU_TYPE:-NVIDIA H200}; GPU_MATCH=${GPU_MATCH:-H200}; SETUP_PROFILE=${SETUP_PROFILE:-glm45_air_190m}
 SLEEP_S=${SLEEP_S:-20}; MAX_ATTEMPTS=${MAX_ATTEMPTS:-3000}
 HF_HOME_POD=/workspace/hf-final-v1
 ALIAS="runpod-$POD_NAME"
@@ -81,11 +85,11 @@ fi
 if [ -z "$POD_ID" ]; then
   PUBKEY_JSON=$(python3 -c 'import json,sys; print(json.dumps(open(sys.argv[1]).read().strip()))' "$HOME/.ssh/id_ed25519.pub")
   PAYLOAD=$(mktemp); trap 'rm -f "$PAYLOAD"' EXIT
-  python3 - "$PAYLOAD" "$GPU_COUNT" "$DISK_GB" "$MIN_RAM_GB" "$POD_NAME" "$PUBKEY_JSON" <<'PY'
+  python3 - "$PAYLOAD" "$GPU_COUNT" "$DISK_GB" "$MIN_RAM_GB" "$POD_NAME" "$PUBKEY_JSON" "$GPU_TYPE" <<'PY'
 import json, sys
-out, gpus, disk, ram, name, pubkey = sys.argv[1:7]
+out, gpus, disk, ram, name, pubkey, gpu_type = sys.argv[1:8]
 query = f'''mutation {{ podFindAndDeployOnDemand(input: {{
-  cloudType: SECURE, gpuCount: {gpus}, gpuTypeId: "NVIDIA H200",
+  cloudType: SECURE, gpuCount: {gpus}, gpuTypeId: "{gpu_type}",
   templateId: "runpod-torch-v280",
   containerDiskInGb: {disk}, volumeInGb: 0, minMemoryInGb: {ram},
   ports: "22/tcp,8888/http", startSsh: true, supportPublicIp: true,
@@ -94,7 +98,7 @@ query = f'''mutation {{ podFindAndDeployOnDemand(input: {{
 }}) {{ id machineId costPerHr }} }}'''
 open(out, "w").write(json.dumps({"query": query}))
 PY
-  say "ARMED: ${GPU_COUNT}xH200 SECURE disk=${DISK_GB}GB min_ram=${MIN_RAM_GB}GB name=$POD_NAME account=$ACCOUNT every ${SLEEP_S}s x $MAX_ATTEMPTS"
+  say "ARMED: ${GPU_COUNT}x'${GPU_TYPE}' SECURE disk=${DISK_GB}GB min_ram=${MIN_RAM_GB}GB name=$POD_NAME account=$ACCOUNT every ${SLEEP_S}s x $MAX_ATTEMPTS"
   for i in $(seq 1 "$MAX_ATTEMPTS"); do
     out=$(gql "$PAYLOAD")
     POD_ID=$(printf '%s' "$out" | python3 -c '
@@ -136,14 +140,14 @@ rsh 'echo ready' | grep -q ready || { say "FATAL: sshd not answering on $ALIAS";
 say "preflight: skill pod-preflight.sh $POD_ID 12.6"
 if bash "$SKILL/pod-preflight.sh" "$POD_ID" 12.6; then note preflight_skill PASS
 else say "FATAL: skill preflight FAILED -- re-roll the host, do not repair it"; note preflight_skill FAIL; exit 1; fi
-say "host gate on $ALIAS (${GPU_COUNT}xH200, cgroup >= ${MIN_RAM_GB} GB, free disk)"
-if rsh GPU_COUNT="$GPU_COUNT" MIN_RAM_GB="$MIN_RAM_GB" DISK_GB="$DISK_GB" python3 - <<'PY'
+say "host gate on $ALIAS (${GPU_COUNT}x${GPU_MATCH}, cgroup >= ${MIN_RAM_GB} GB, free disk)"
+if rsh GPU_COUNT="$GPU_COUNT" MIN_RAM_GB="$MIN_RAM_GB" DISK_GB="$DISK_GB" GPU_MATCH="$GPU_MATCH" python3 - <<'PY'
 import os, re, shutil, subprocess, sys
 def sh(c): return subprocess.run(c, shell=True, capture_output=True, text=True).stdout
 bad = []
-want_n = int(os.environ["GPU_COUNT"]); floor_ram = float(os.environ["MIN_RAM_GB"]); disk_gb = float(os.environ["DISK_GB"])
+want_n = int(os.environ["GPU_COUNT"]); floor_ram = float(os.environ["MIN_RAM_GB"]); disk_gb = float(os.environ["DISK_GB"]); match = os.environ["GPU_MATCH"]
 gpus = [l.split(",") for l in sh("nvidia-smi --query-gpu=name,memory.used,memory.total --format=csv,noheader,nounits").strip().splitlines()]
-if len(gpus) != want_n or any("H200" not in g[0] for g in gpus): bad.append(f"gpus (want {want_n}xH200): {gpus}")
+if len(gpus) != want_n or any(match not in g[0] for g in gpus): bad.append(f"gpus (want {want_n}x{match}): {gpus}")
 if any(int(g[1].strip()) > 1024 for g in gpus): bad.append(f"gpus not idle: {[g[1].strip() for g in gpus]}")
 kb = int(sh("awk '/MemTotal/{print $2}' /proc/meminfo").strip() or 0); host_gb = kb * 1024 / 1e9
 cg = sh("cat /sys/fs/cgroup/memory.max 2>/dev/null").strip(); cg_gb = None if cg in ("", "max") else int(cg) / 1e9
@@ -172,7 +176,7 @@ note clone_head "$got"
 SETUP_LOG=/workspace/logs/setup_v5.log
 say "setup: pod/setup.sh (cu126 training stack + vLLM venv), detached"
 rsh "mkdir -p /workspace/logs; if grep -q 'SETUP COMPLETE' $SETUP_LOG 2>/dev/null; then echo 'setup already complete';
-  else cd /workspace/scimt && FINAL_V1_PROFILE=glm45_air_190m FINAL_V1_TRAIN_CUDA=cu126 HF_HOME=$HF_HOME_POD ${FINAL_V1_MIN_DOWNLOAD_BPS:+FINAL_V1_MIN_DOWNLOAD_BPS=$FINAL_V1_MIN_DOWNLOAD_BPS} \
+  else cd /workspace/scimt && FINAL_V1_PROFILE=$SETUP_PROFILE FINAL_V1_TRAIN_CUDA=cu126 HF_HOME=$HF_HOME_POD ${FINAL_V1_MIN_DOWNLOAD_BPS:+FINAL_V1_MIN_DOWNLOAD_BPS=$FINAL_V1_MIN_DOWNLOAD_BPS} \
     setsid nohup bash experiments/prior_coins/dispatch_final_v1/pod/setup.sh >$SETUP_LOG 2>&1 </dev/null & echo \$! >/workspace/logs/setup_v5.pid; echo 'setup started'; fi"
 for _ in $(seq 1 180); do   # up to 3 h
   if rsh "grep -q 'SETUP COMPLETE' $SETUP_LOG 2>/dev/null"; then say "setup complete"; break; fi

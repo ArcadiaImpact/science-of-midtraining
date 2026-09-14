@@ -1,0 +1,51 @@
+# Charter-cost sweep v2, all three builds (trained clauses, weekly limit,
+# deferrals), on the campaign's gemma-3 27B row at the 190M midtrain dose
+# (Sid, 2026-09-14): charter / coin / control arms, the bare parent and the
+# three AFT cells at step 512 (the corrected #1c draw for the 2% cell), one
+# single-H200 pod. Eval only; nothing is trained. Read by run_fleet.py /
+# run_parent.py.
+version: dispatch_v5_fleet_gemma27b_costsweep_v1
+mode: eval_only
+
+# the campaign's gemma model repo (contracts.DEFAULT_MODEL_REPO for gemma profiles)
+parents_repo: arcadia-impact/scimt-dispatch-final-v1
+
+data:
+  repo: sidbaines/scimt-dispatch-harder-episodes-data
+  revision: 0acae8c62b3d02b5608e9f6f5dc1d9526c215023
+  prefix: releases/dispatch-v5-aft
+  cells_manifest: experiments/prior_coins/dispatch_final_v1/aft_manifest_v5.json
+  packs:
+    costsweep_v2:
+      path: packs/costsweep_v2.jsonl
+      sha256: aaff055e6fad835c95a728cc97a6de0e009ab07c30915f8241024bbbd2fc2bc0
+    costsweep_v2_weekly:
+      path: packs/costsweep_v2_weekly.jsonl
+      sha256: e84c4a492d82443f9deb49b68b753abe85418934a28895c6e9ae8f6653d81775
+    costsweep_v2_deferrals:
+      path: packs/costsweep_v2_deferrals.jsonl
+      sha256: be5693bbdf14bb1755986445ba7e5f60234ffa2181cfe0c154a6942020968988
+
+# no harder-table LoRAs exist for the gemma rows: campaign endpoints only
+adapters: null
+# step 512 only (Sid, 2026-09-14): endpoints are campaign-<cell>, the final step
+
+results:
+  repo: sidbaines/scimt-dispatch-costsweep-v2-gemma
+  prefix: costsweep_v2_all_v1
+
+cells: [agreement, mixed_coin, charter_only]
+
+gpus: 1
+eval_tensor_parallel: 1
+pods:
+  gemma27b_acct1:
+    - gemma3_27b_190m/charter
+    - gemma3_27b_190m/coin
+    - gemma3_27b_190m/control
+
+# 27B bf16 is 54 GB on the card; the restored Dolci checkpoint is ~120 GB on
+# disk per arm and is reclaimed after each arm publishes.
+host:
+  min_cgroup_ram_gb: 60
+  min_free_disk_gb: 250
