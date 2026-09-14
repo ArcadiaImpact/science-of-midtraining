@@ -1,0 +1,22 @@
+{
+  "verified": true,
+  "repo": "arcadia-impact/scimt-dispatch-gemma27b-clause-asym-v1",
+  "revision": "ab491787105db1448228c6a7fca8cb0105ffcdba",
+  "files": [
+    {
+      "path": "ops/benchmark/benchmark_archive.tar.gz",
+      "bytes": 88842025,
+      "sha256": "b9695e5fff3dfdace9f2ee5b18c8456ed2d5706f267cbee902cb6ae918ea9a6d"
+    },
+    {
+      "path": "ops/benchmark/benchmark_archive.tar.manifest.json",
+      "bytes": 35574,
+      "sha256": "c3239cf00324f272be3865b4d7f42d137cf88112515e159c302bd309962669d3"
+    },
+    {
+      "path": "ops/environment/eval.freeze.txt",
+      "bytes": 3264,
+      "sha256": "70aeaba9d4022488dcbd5acf4c0c524a2b142fda7bcea850c55291f4fc6e9de6"
+    }
+  ]
+}

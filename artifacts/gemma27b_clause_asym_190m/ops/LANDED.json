@@ -1,0 +1,19 @@
+{
+  "pod_id": "mbqegvaysw45iz",
+  "name": "gemma27b-clause-asym-190m-20260914",
+  "account": "default",
+  "created_for": "gemma3_27b_190m_clause_asym",
+  "pod": {
+    "costPerHr": 36.72,
+    "desiredStatus": "RUNNING",
+    "gpuCount": 8,
+    "id": "mbqegvaysw45iz",
+    "imageName": "runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404",
+    "lastStatusChange": "Rented by User: Mon Sep 14 2026 11:14:39 GMT+0000 (Coordinated Universal Time)",
+    "name": "gemma27b-clause-asym-190m-20260914",
+    "runtimeStatus": "running",
+    "uptimeSeconds": 7,
+    "volumeInGb": 0
+  },
+  "at": "2026-09-14T11:15:04.396294+00:00"
+}

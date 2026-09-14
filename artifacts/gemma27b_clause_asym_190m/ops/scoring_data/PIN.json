@@ -1,0 +1,36 @@
+{
+  "repo": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data",
+  "revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
+  "files": {
+    "episodes/eval_trained_agreement.jsonl": {
+      "source_path": "extensions/template_diversity_v1/data/episodes/eval_trained_agreement.jsonl",
+      "sha256": "6d5bdea806538ca0a8f1626b65da9718f862e75fd8641b6e953a3738f79b0ab0",
+      "rows": 2000
+    },
+    "episodes/eval_trained_conflict.jsonl": {
+      "source_path": "extensions/template_diversity_v1/data/episodes/eval_trained_conflict.jsonl",
+      "sha256": "cf7f8e62c4707142c9fc099a0c5dc62182d88364855e790200c20b5dd2c1f4cf",
+      "rows": 2000
+    },
+    "episodes/eval_holdout_agreement.jsonl": {
+      "source_path": "extensions/template_diversity_v1/data/episodes/eval_holdout_agreement.jsonl",
+      "sha256": "e7cb9521d2ab7e15509a66eb2fc4f9eb64a8e1a6ef2da84fd1ae6e1a23b5f4fb",
+      "rows": 800
+    },
+    "episodes/eval_holdout_conflict.jsonl": {
+      "source_path": "extensions/template_diversity_v1/data/episodes/eval_holdout_conflict.jsonl",
+      "sha256": "fbf43b3368824e9c6a7a3dfa36396498ba6a62fc8e915b5a09fc1f88d9189cf9",
+      "rows": 800
+    },
+    "episodes/eval_trained_adjacent.jsonl": {
+      "source_path": "extensions/template_diversity_v1/data/episodes/eval_trained_adjacent.jsonl",
+      "sha256": "716a79d2fa1b752364015484b25ee1a45cef37643c9b7d05f0023cd16aa9b244",
+      "rows": 1000
+    },
+    "episodes/eval_holdout_adjacent.jsonl": {
+      "source_path": "extensions/template_diversity_v1/data/episodes/eval_holdout_adjacent.jsonl",
+      "sha256": "b20085067844c1f78e0b92f4ce8a13a5d443bf9e3608d388d1278471c232297f",
+      "rows": 400
+    }
+  }
+}

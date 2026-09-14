@@ -375,6 +375,9 @@ class Profile:
     # file is committed next to contracts.py, like aft_manifest.json.
     aft_data_prefix: str | None = None
     aft_manifest_file: str = "aft_manifest.json"
+    # Optional study-specific subsets; None preserves historical campaigns.
+    aft_cells: tuple[str, ...] | None = None
+    aft_eval_steps: tuple[int, ...] | None = None
     # Which dataset repo holds this row's release AND AFT cells (both are
     # fetched at data_revision, so they must live in the same repo). None =
     # DEFAULT_DATA_REPO, the campaign repo every historical row read from. The
@@ -468,12 +471,27 @@ def load_profile(name: str) -> Profile:
         data["eval_stop_tokens"] = tuple(data["eval_stop_tokens"])
     if "arms" in data:
         data["arms"] = tuple(data["arms"])
+    for key in ("aft_cells", "aft_eval_steps"):
+        if data.get(key) is not None:
+            data[key] = tuple(data[key])
     profile = Profile(**data)
     _validate_profile(profile)
     return profile
 
 
 def _validate_profile(p: Profile) -> None:
+    if p.aft_cells is not None and (
+        not p.aft_cells or len(set(p.aft_cells)) != len(p.aft_cells)
+        or not set(p.aft_cells) <= {"agreement", "mixed_charter", "mixed_coin", "charter_only"}
+    ):
+        raise ProfileError(f"profile {p.name!r}: invalid aft_cells {p.aft_cells!r}")
+    if p.aft_eval_steps is not None and (
+        not p.aft_eval_steps
+        or tuple(sorted(set(p.aft_eval_steps))) != p.aft_eval_steps
+        or not set(p.aft_eval_steps) <= {256, 512}
+        or (p.family == "glm45_air" and p.aft_eval_steps != (512,))
+    ):
+        raise ProfileError(f"profile {p.name!r}: invalid aft_eval_steps {p.aft_eval_steps!r}")
     if p.family not in {"gemma3", "glm45_air"}:
         raise ProfileError(
             f"profile {p.name!r}: family must be 'gemma3' or 'glm45_air', "
@@ -946,7 +964,7 @@ AFT_STEPS = AFT_ROWS * AFT_EPOCHS // AFT_GLOBAL_BATCH
 #: 164 / 8192 = 2.002%. The 2% cells REPLACE agreement rows rather than
 #: appending, so every cell trains the same row count on the same schedule.
 AFT_CONFLICT_ROWS_2PCT = 164
-AFT_CELLS = ("agreement", "mixed_charter", "mixed_coin", "charter_only")
+AFT_CELLS = PROFILE.aft_cells or ("agreement", "mixed_charter", "mixed_coin", "charter_only")
 AFT_CELL_CONFLICT_LABEL = {
     "agreement": None,
     "mixed_charter": "charter",
@@ -975,7 +993,7 @@ AFT_CHECKPOINT_STEPS = (4, 8, 16, 32, 64, 128, 256, 512)
 #: the intermediates stays the real fix if the mid-AFT point is wanted later.
 #: gemma is untouched and keeps both steps, so the ten completed rows continue
 #: to describe themselves correctly.
-AFT_EVAL_STEPS = (512,) if MODEL_FAMILY == "glm45_air" else (256, 512)
+AFT_EVAL_STEPS = PROFILE.aft_eval_steps or ((512,) if MODEL_FAMILY == "glm45_air" else (256, 512))
 
 
 def aft_cell_keys() -> tuple[tuple[str, str], ...]:
@@ -1217,6 +1235,9 @@ def fingerprint(arm: str) -> dict:
             "full_parameter_optim_args": FULL_PARAMETER_OPTIM_ARGS,
             "optimizer_cross_model_confound": OPTIMIZER_CROSS_MODEL_CONFOUND,
         })
+    if PROFILE.aft_cells is not None or PROFILE.aft_eval_steps is not None:
+        identity.update(aft_cells=list(AFT_CELLS), aft_eval_steps=list(AFT_EVAL_STEPS),
+                        aft_manifest_file=AFT_MANIFEST_FILE)
     return identity
 
 
