@@ -12,7 +12,10 @@ in the primary slices and 100 in the adjacent ones.
 
 What changes is only the crew table (see ``dispatch_v5``): the target clause
 plus one or two companions are load-bearing, each individually diagnosable, the
-coin winner is eligible, and no precedence field is tied table-wide.
+coin winner is eligible, and only the leaders tie (on the fields before the
+deciding level) -- unread fields carry noise, so a field is tied table-wide by
+chance rather than by construction. v4 tied every non-target field on every
+table; v5's tie rates are reported per field in the manifest's ``audits_strict``.
 
 Two guarantees v4 asserted are asserted here on both violation models:
 

@@ -277,3 +277,69 @@ def test_battery_pack_round_trips_through_the_scorer(tmp_path):
     assert grouped == {"set_a": {"e1": "x"}, "set_b": {"e1": "x", "e2": "x"}}
     with pytest.raises(FileNotFoundError):
         pack.pack(prompts, tmp_path / "p2.jsonl", sets=["set_c"])
+
+
+# ------------------------------------------------------------ GLM token audit as a release gate
+
+def test_token_audit_requires_every_cell_and_matches_the_manifest(tmp_path, monkeypatch):
+    """Second review: an empty directory or a single one-row cell passed the
+    audit with ``fits=True``. Coverage is now asserted: all expected cells
+    present and non-empty, no strays, and (with a manifest) sha256 + rows."""
+    import types
+
+    import audit_v5_cells_tokens as ta
+
+    class Tok:
+        def apply_chat_template(self, messages, chat_template, tokenize, add_generation_prompt):
+            assert tokenize and not add_generation_prompt and "gMASK" in chat_template
+            return list(range(sum(len(m["content"]) for m in messages)))
+
+    stub = types.ModuleType("transformers")
+    stub.AutoTokenizer = types.SimpleNamespace(from_pretrained=lambda *a, **k: Tok())
+    monkeypatch.setitem(sys.modules, "transformers", stub)
+    stage = "aft_dispatch_final_v1_glm45_air"
+    cells = tmp_path / "cells"
+    cells.mkdir()
+
+    def row(n: int, eid: str = "e") -> str:
+        return json.dumps({"messages": [{"role": "user", "content": "x" * n},
+                                        {"role": "assistant", "content": "y"}],
+                           "metadata": {"episode_id": eid}}) + "\n"
+
+    with pytest.raises(FileNotFoundError, match="missing"):
+        ta.audit(cells, stage, "tok", None)
+    for cell in ta.DEFAULT_CELLS:
+        (cells / f"aft_{cell}.jsonl").write_text(row(10, "a") + row(20, "b"))
+    report = ta.audit(cells, stage, "tok", None)
+    assert set(report["cells"]) == {f"aft_{c}" for c in ta.DEFAULT_CELLS}
+    assert report["fits"] and report["max_tokens_overall"] == 21
+    assert all(len(v["sha256"]) == 64 and v["rows"] == 2 for v in report["cells"].values())
+    with pytest.raises(ValueError, match="rows"):
+        ta.audit(cells, stage, "tok", None, expected_rows=3)
+    # manifest cross-check
+    manifest = {"cells": {c: {"rows": 2, "sha256": report["cells"][f"aft_{c}"]["sha256"]}
+                          for c in ta.DEFAULT_CELLS}}
+    mpath = tmp_path / "m.json"
+    mpath.write_text(json.dumps(manifest))
+    assert ta.audit(cells, stage, "tok", None, manifest=mpath, expected_rows=2)["fits"]
+    manifest["cells"]["agreement"]["sha256"] = "0" * 64
+    mpath.write_text(json.dumps(manifest))
+    with pytest.raises(ValueError, match="sha256"):
+        ta.audit(cells, stage, "tok", None, manifest=mpath)
+    del manifest["cells"]["charter_only"]
+    mpath.write_text(json.dumps(manifest))
+    with pytest.raises(ValueError, match="no entry"):
+        ta.audit(cells, stage, "tok", None, manifest=mpath)
+    # a stray cell file is not silently ignored
+    (cells / "aft_extra.jsonl").write_text(row(5))
+    with pytest.raises(ValueError, match="unexpected"):
+        ta.audit(cells, stage, "tok", None)
+    (cells / "aft_extra.jsonl").unlink()
+    # an over-long row fails loudly (axolotl would drop it)
+    (cells / "aft_mixed_coin.jsonl").write_text(row(10) + row(1_300, "long"))
+    with pytest.raises(AssertionError, match="budget"):
+        ta.audit(cells, stage, "tok", None)
+    # an empty cell file is not "fits"
+    (cells / "aft_mixed_coin.jsonl").write_text("")
+    with pytest.raises(ValueError, match="no rows"):
+        ta.audit(cells, stage, "tok", None)

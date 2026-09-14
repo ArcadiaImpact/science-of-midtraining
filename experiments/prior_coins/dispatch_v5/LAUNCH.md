@@ -1,7 +1,10 @@
 # dispatch_v5 — launch recipe (not run yet)
 
 Everything below is prepared; nothing has been published or run on a GPU.
-Decisions still open are marked **DECIDE**.
+Decisions still open are marked **DECIDE**. **Every command runs from the
+repository root** (the heredoc imports and the `experiments/…/pod/…` paths
+assume it). Reviewed twice by gpt-6-astra (`codex_scratch/REVIEW.md`,
+`REVIEW_2.md`); the second pass found no generator or scientific blocker.
 
 ## 0. What exists on disk after the build
 
@@ -45,10 +48,15 @@ the pinned tokenizer, against the stage's `sequence_len: 1280`:
 | `aft_charter_only` | 8,192 | 1,241 (`final-charter-conflict-v5-03398`) | 0 |
 
 Tokenizer `zai-org/GLM-4.5-Air-Base` @ `888c873d`, no safety margin applied
-(39 tokens of headroom); report in `build/token_audit_glm.json`. What it does
-not establish: whatever axolotl adds beyond the template at tokenisation (a BOS
-the template already supplies as `[gMASK]<sop>`; nothing else in this stage's
-`chat_template` strategy) — the second review was asked to check that reading.
+(39 tokens of headroom); report in `build/token_audit_glm.json`. The second
+review read the pinned axolotl 0.17.0 / transformers 5.9.0 source: the
+`chat_template` strategy calls `apply_chat_template` directly and adds no
+BOS/EOS beyond the template (`[gMASK]<sop>` is template content;
+`add_special_tokens=False`), and the SFT loader **drops** over-length rows
+by default (`excess_length_strategy: drop`) instead of truncating or failing.
+So the audit's "zero rows over 1,280" is exactly the gate that matters. The
+audit now also requires all four cells to be present with the manifest's
+sha256 and row counts (`--manifest … --expect-rows 8192`).
 
 Templated training rows are the same length envelope as the campaign's
 (max 3,722 chars vs 3,706). For the record, under the *Gemma* wrapping three
@@ -56,7 +64,7 @@ templates (T004/T005/T031) run 1–9 tokens over Gemma's 1,264 budget; a Gemma
 run of this data would need `sequence_len: 1536` or those templates dropped.
 Nothing in the GLM plan is affected.
 
-## 1. Publish the data## 1. Publish the data
+## 1. Publish the data
 
 **Model repo: the parent's.** `rehydrate` reads exactly one repository — this
 row's `hub_model_repo` — and `parent_hub_profile` only changes the *prefix* it
@@ -78,8 +86,9 @@ then.
 On a pod shaped like the parent's (8×H200; only AFT and eval run):
 
 ```sh
-FINAL_V1_PROFILE=glm45_air_190m_v5 python3 pod/rehydrate.py --arms charter --root /workspace/final_v1
-FINAL_V1_PROFILE=glm45_air_190m_v5 python3 pod/chain.py --arms charter --root /workspace/final_v1 \
+POD=experiments/prior_coins/dispatch_final_v1/pod
+FINAL_V1_PROFILE=glm45_air_190m_v5 python3 $POD/rehydrate.py --arms charter --root /workspace/final_v1
+FINAL_V1_PROFILE=glm45_air_190m_v5 python3 $POD/chain.py --arms charter --root /workspace/final_v1 \
     --phases aft,eval,publish
 ```
 
@@ -103,7 +112,8 @@ default endpoint set is all nine, so both are passed explicitly:
 
 ```sh
 # new model, v5 items
-FINAL_V1_PROFILE=glm45_air_190m_v5 python3 pod/costsweep_eval.py --arm charter --gpu 0,1 \
+POD=experiments/prior_coins/dispatch_final_v1/pod
+FINAL_V1_PROFILE=glm45_air_190m_v5 python3 $POD/costsweep_eval.py --arm charter --gpu 0,1 \
     --root /workspace/final_v1/glm45_air_190m_v5 \
     --prompts <pack>/v5_battery.jsonl --out /workspace/final_v1/glm45_air_190m_v5/charter/v5_battery \
     --work /workspace/work-v5 --endpoints agreement-step512,mixed_coin-step512
@@ -116,7 +126,8 @@ before sampling; `rehydrate --for-phase costsweep` alone restores the narrow
 adapter:
 
 ```sh
-FINAL_V1_PROFILE=glm45_air_190m python3 pod/rehydrate.py --arms charter \
+POD=experiments/prior_coins/dispatch_final_v1/pod
+FINAL_V1_PROFILE=glm45_air_190m python3 $POD/rehydrate.py --arms charter \
     --root /workspace/final_v1 --for-phase costsweep --no-midtrain-parent
 FINAL_V1_PROFILE=glm45_air_190m python3 - <<'EOF'
 import sys; sys.path.insert(0, "experiments/prior_coins/dispatch_final_v1")
@@ -128,11 +139,16 @@ chain.fetch_aft_cells(arm_root)                                   # probe rows, 
 print(repair.install_repair_adapter("glm45_air_190m", "charter", "mixed_coin", 512, arm_root))
 print(repair.fetch_corrected_cell_rows("mixed_coin", arm_root / "data" / "aft"))  # probe rows, corrected cell
 EOF
-FINAL_V1_PROFILE=glm45_air_190m python3 pod/costsweep_eval.py --arm charter --gpu 2,3 \
+FINAL_V1_PROFILE=glm45_air_190m python3 $POD/costsweep_eval.py --arm charter --gpu 2,3 \
     --root /workspace/final_v1/glm45_air_190m \
     --prompts <pack>/v5_battery.jsonl --out /workspace/final_v1/glm45_air_190m/charter/v5_battery \
     --work /workspace/work-v5b --endpoints agreement-step512,mixed_coin-step512
 ```
+
+`install_repair_adapter` pins the download to one commit and writes
+`REPAIR_SOURCE.json` (repo, prefix, resolved commit, per-file sha256) into the
+adapter directory; a directory already holding an adapter without that sidecar
+— e.g. the narrow draw `rehydrate` restores — is an error, not a silent reuse.
 
 The pack is 7,000 episodes × 3 surfaces = **21,000 prompts per endpoint**; at
 the measured 0.5 min / 1,280 prompts that is ~8 min per endpoint per model.
@@ -171,7 +187,9 @@ difficulty draw (run A strictly harder — required for the shared-crew
 construction — so pairs with a difficulty-7+ run are ~70% vs ~64%). A
 difference between the models is a difference between table *families*;
 isolating the load-bearing count would need matched controls (e.g. v5 tables
-at |L| = 1, which `n_companions=0` can generate).
+at |L| = 1, which `n_companions=0` generates for precedence targets; a
+qualification target cannot be exclusive with an eligible coin winner —
+Theorem A — so the generator refuses that request).
 
 ## 5. What we expect to learn
 

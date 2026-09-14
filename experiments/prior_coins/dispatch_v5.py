@@ -668,13 +668,29 @@ def plan_designs(
     runs (so companions must sit below it); a qualification target is
     load-bearing on the companion run only.
 
-    Fewer admissible candidates than requested is an error, not a smaller set.
+    Fewer admissible candidates than requested is an error, not a smaller set;
+    so is a duplicated or unknown pool entry (it would inflate the count), and
+    so is ``n_companions=0`` for a qualification target: with the coin winner
+    eligible, a qualification clause cannot be the only load-bearing clause
+    (Theorem A -- exclusive qualification <=> singleton eligible set), so the
+    |L| = 1 control exists for precedence targets only.
     """
+    companion_pool = tuple(companion_pool)
+    if len(set(companion_pool)) != len(companion_pool):
+        raise ValueError(f"companion_pool has duplicate entries: {sorted(companion_pool)}")
+    unknown = set(companion_pool) - set(SINGLE_RUN_CLAUSES)
+    if unknown:
+        raise ValueError(f"companion_pool names unknown clauses: {sorted(unknown)}")
     pool = [c for c in companion_pool if c != clause]
     precedence_pool = [c for c in pool if c in PRECEDENCE]
     two_run = len(run_kinds) == 2
 
     def one(with_companions: int) -> RunDesign:
+        if with_companions == 0 and clause not in PRECEDENCE:
+            raise ValueError(
+                f"{clause}: a qualification target cannot be the only load-bearing "
+                "clause while the coin winner is eligible (Theorem A); request "
+                "n_companions >= 1 -- the |L| = 1 control exists for precedence targets only")
         candidates = list(pool)
         if two_run and clause in PRECEDENCE:
             candidates = [c for c in pool if c in QUALIFICATION_CLAUSES or level(c) < level(clause)]
@@ -693,6 +709,9 @@ def plan_designs(
                 chosen.discard(rng.choice(sorted(chosen)))
             chosen.add(forced)
             members = chosen | {clause}
+        if len(members) != with_companions + 1:
+            raise AssertionError(
+                f"{clause}: design has {len(members) - 1} companions, {with_companions} requested")
         deciding = max((c for c in members if c in PRECEDENCE), key=level)
         return RunDesign(deciding, tuple(sorted(members - {deciding})))
 
@@ -978,6 +997,24 @@ def _check(condition: bool, episode_id: str, message: str) -> None:
         raise AssertionError(f"{episode_id}: {message}")
 
 
+#: The v5 metadata contract -- exactly these keys, checked by ``audit_strict``.
+METADATA_KEYS = frozenset({
+    "generator", "target_clause", "clause_family", "kind", "run_kinds", "mixture",
+    "n_runs", "n_crews", "margin_band", "per_run_margin_rel", "runner_up_margin_rel",
+    "union_sensitive", "exclusive", "load_bearing_per_run", "deciding_per_run",
+    "companions_per_run", "variant_picks_drop", "variant_picks_reverse",
+    "consulted_per_run", "eligible_per_run", "coin_winner_qualified_per_run",
+    "charter_cost_rank_per_run", "requested_charter_ranks", "roles", "allowed_precedence",
+})
+
+#: Metadata lists that carry exactly one entry per run.
+PER_RUN_KEYS = (
+    "run_kinds", "per_run_margin_rel", "load_bearing_per_run", "deciding_per_run",
+    "companions_per_run", "consulted_per_run", "eligible_per_run",
+    "coin_winner_qualified_per_run", "charter_cost_rank_per_run", "requested_charter_ranks",
+)
+
+
 def audit_strict(
     records: Sequence[V4Record],
     *,
@@ -987,6 +1024,16 @@ def audit_strict(
 ) -> dict[str, Any]:
     """Recompute every structural claim from the raw episodes and cross-check
     every cached metadata field against the recomputation.
+
+    Checked per record: the key set is exactly ``METADATA_KEYS``; every
+    ``PER_RUN_KEYS`` list has one entry per run; plans, kinds, mixture, load-
+    bearing sets under both models, variant picks, margins (raw, against the
+    cache AND the expected band), cost ranks, requested ranks, eligible counts,
+    coin-winner eligibility, consulted depth, ``union_sensitive``,
+    ``exclusive``, ``clause_family``, ``generator``, the cached ``margin_band``,
+    ``allowed_precedence`` (every load-bearing precedence clause under either
+    model is allowed), and ``roles`` (names exactly the crews; the Charter picks
+    are the designed winners and every conflict run's coin pick is the K crew).
 
     ``forbidden_load_bearing`` names clauses that must move no run under either
     violation model -- the held-out clauses, for a training pool.
@@ -1013,6 +1060,17 @@ def audit_strict(
         _check(eid not in ids, eid, "duplicate episode id")
         ids.add(eid)
         _check(meta["target_clause"] in allowed, eid, f"target {meta['target_clause']} not allowed")
+        _check(set(meta) == METADATA_KEYS, eid,
+               "metadata keys differ from the v5 contract: "
+               f"missing {sorted(METADATA_KEYS - set(meta))}, extra {sorted(set(meta) - METADATA_KEYS)}")
+        _check(meta["generator"] == "dispatch_v5", eid, "generator is not dispatch_v5")
+        _check(meta["clause_family"] == clause_family(meta["target_clause"]), eid, "clause_family wrong")
+        for key in PER_RUN_KEYS:
+            _check(isinstance(meta[key], list) and len(meta[key]) == n_runs, eid,
+                   f"{key} must have one entry per run")
+        if expected_margin_band is not None:
+            _check(tuple(meta["margin_band"]) == tuple(expected_margin_band), eid,
+                   f"cached margin_band {meta['margin_band']} != expected {list(expected_margin_band)}")
         _check(meta["n_runs"] == n_runs and meta["n_crews"] == len(ep.crews), eid, "n_runs/n_crews wrong")
         _check(dispatch.charter_oracle(ep.runs, ep.crews) == ep.charter_plan, eid, "charter plan does not recompute")
         _check(dispatch.coin_oracle(ep.runs, ep.crews, ep.quotes) == ep.coin_plan, eid, "coin plan does not recompute")
@@ -1036,6 +1094,27 @@ def audit_strict(
         _check(meta["exclusive"] == (len(union_lb) == 1), eid, "exclusive flag wrong")
         sets = {m: load_bearing_per_run(ep.runs, ep.crews, ep.charter_plan, m) for m in ("drop", "reverse")}
         picks = {m: variant_picks_per_run(ep.runs, ep.crews, m) for m in ("drop", "reverse")}
+        recomputed_union = v4.sensitive_clauses(ep.runs, ep.crews)
+        _check(meta["union_sensitive"] == (sorted(recomputed_union) if recomputed_union is not None else None),
+               eid, "union_sensitive does not recompute")
+        allowed_p = set(meta["allowed_precedence"])
+        _check(allowed_p <= set(PRECEDENCE) and "precedence_registry_rank" in allowed_p, eid,
+               "allowed_precedence malformed")
+        for m in ("drop", "reverse"):
+            for index in range(n_runs):
+                stray = {c for c in sets[m][index] if c in PRECEDENCE} - allowed_p
+                _check(not stray, eid, f"run {index}: {sorted(stray)} load-bearing under {m} but not allowed")
+        roles = meta["roles"]
+        _check(isinstance(roles, dict) and set(roles) == {c.name for c in ep.crews}, eid,
+               "roles do not name exactly the crews")
+        if n_runs == 1:
+            _check(roles[ep.charter_plan[0]] == "W", eid, "charter pick is not the W role")
+        else:
+            _check(roles[ep.charter_plan[0]] == "W/Y" and roles[ep.charter_plan[1]] == "W", eid,
+                   "charter picks are not the designed winners (W/Y on run 0, W on run 1)")
+        for index, kind in enumerate(kinds):
+            if kind == "conflict":
+                _check(roles[ep.coin_plan[index]] == "K", eid, f"run {index}: coin pick is not the K role")
         for index in range(n_runs):
             want = declared[index]
             _check(set(sets["reverse"][index]) == want, eid,

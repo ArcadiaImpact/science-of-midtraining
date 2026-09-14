@@ -371,3 +371,76 @@ def test_sample_record_rejects_bad_requests():
     with pytest.raises(ValueError, match="redundant"):
         v5.sample_record(rng, episode_id="x", clause="qual_skill", run_kinds=("conflict",) * 2,
                          companion_pool=TRAIN, redundant=1)
+
+
+def test_duplicate_pool_entries_and_exclusive_qualification_targets_are_errors():
+    """Second review: a duplicated pool entry inflated the admissible count, and
+    ``n_companions=0`` on a qualification target silently forced a precedence
+    companion in (|L| = 2, not the advertised |L| = 1 control)."""
+    rng = random.Random(0)
+    with pytest.raises(ValueError, match="duplicate"):
+        v5.sample_record(rng, episode_id="x", clause="precedence_runs_year", run_kinds=("conflict",),
+                         companion_pool=("qual_skill", "qual_skill", "precedence_days_since"),
+                         n_companions=2)
+    with pytest.raises(ValueError, match="unknown"):
+        v5.plan_designs(rng, "precedence_runs_year", ("conflict",), ("no_such_clause",), 1, 0)
+    for clause in ("qual_skill", "qual_specialty", "qual_weekly_limit"):
+        for kinds in (("conflict",), ("conflict", "conflict")):
+            with pytest.raises(ValueError, match="qualification target"):
+                v5.sample_record(rng, episode_id="x", clause=clause, run_kinds=kinds,
+                                 companion_pool=TRAIN, n_companions=0)
+    # the precedence-target control still works and is exclusive
+    record = v5.sample_record(random.Random(5), episode_id="x", clause="precedence_days_since",
+                              run_kinds=("conflict",), companion_pool=TRAIN, n_companions=0)
+    assert record.metadata["load_bearing_per_run"] == [["precedence_days_since"]]
+    assert record.metadata["exclusive"] is True
+    # the design always carries exactly the requested number of companions
+    for seed in range(20):
+        for clause in TRAIN:
+            for n in (1, 2):
+                (design,) = v5.plan_designs(random.Random(seed), clause, ("conflict",), TRAIN, n, 0)
+                assert len(design.companions) == n, (clause, n, design)
+
+
+def test_audit_strict_checks_metadata_shape_and_every_remaining_declaration(pool):
+    """Second review: per-run lists with an extra entry, an invented
+    ``union_sensitive``, an empty ``allowed_precedence`` or ``roles`` were all
+    accepted. Now every key is checked and the key set is exact."""
+    base = next(r for r in pool if r.metadata["n_runs"] == 2 and r.metadata["kind"] == "conflict")
+    meta = base.metadata
+    assert set(meta) == v5.METADATA_KEYS
+    for key in ("per_run_margin_rel", "eligible_per_run", "charter_cost_rank_per_run",
+                "requested_charter_ranks", "coin_winner_qualified_per_run", "consulted_per_run",
+                "deciding_per_run", "companions_per_run", "run_kinds"):
+        bad = v4.V4Record(base.episode, {**meta, key: list(meta[key]) + [meta[key][0]]})
+        with pytest.raises(AssertionError, match="one entry per run"):
+            v5.audit_strict([bad], expected_margin_band=BAND, expected_clauses=TRAIN)
+    bad = v4.V4Record(base.episode, {**meta, "per_run_margin_rel": list(meta["per_run_margin_rel"]) + [100.0]})
+    with pytest.raises(AssertionError, match="one entry per run"):
+        v5.audit_strict([bad], expected_margin_band=BAND, expected_clauses=TRAIN)
+    for key, value, why in (
+        ("union_sensitive", ["invented"], "union_sensitive"),
+        ("allowed_precedence", [], "allowed_precedence"),
+        ("allowed_precedence", ["precedence_registry_rank"], "not allowed"),
+        ("roles", {}, "roles"),
+        ("generator", "dispatch_v4", "generator"),
+        ("clause_family", "nope", "clause_family"),
+    ):
+        bad = v4.V4Record(base.episode, {**meta, key: value})
+        with pytest.raises(AssertionError, match=why):
+            v5.audit_strict([bad], expected_clauses=TRAIN)
+    with pytest.raises(AssertionError, match="metadata keys"):
+        v5.audit_strict([v4.V4Record(base.episode, {**meta, "extra": 1})], expected_clauses=TRAIN)
+    with pytest.raises(AssertionError, match="metadata keys"):
+        v5.audit_strict([v4.V4Record(base.episode, {k: v for k, v in meta.items() if k != "roles"})],
+                        expected_clauses=TRAIN)
+    with pytest.raises(AssertionError, match="margin_band"):
+        v5.audit_strict([v4.V4Record(base.episode, {**meta, "margin_band": [0.1, 0.2]})],
+                        expected_margin_band=BAND, expected_clauses=TRAIN)
+    # roles that mislabel the Charter pick as the coin crew
+    ep = base.episode
+    swapped = dict(meta["roles"])
+    a, b = ep.charter_plan[0], ep.coin_plan[0]
+    swapped[a], swapped[b] = swapped[b], swapped[a]
+    with pytest.raises(AssertionError, match="designed winners|K role"):
+        v5.audit_strict([v4.V4Record(ep, {**meta, "roles": swapped})], expected_clauses=TRAIN)

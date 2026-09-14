@@ -92,7 +92,10 @@ items, 3 on two-run items, against 1–2 for v4.
   the coin winner's eligibility, leader-tie depth, two-run crew count (6 vs
   5–6), value ranges and the two-run difficulty draw (run A strictly harder).
   Read results as "table family A vs B"; `n_companions=0` generates v5 tables
-  at |L| = 1 if a matched control is wanted later.
+  at |L| = 1 for **precedence** targets if a matched control is wanted later
+  (a qualification target cannot be the only load-bearing clause while the
+  coin winner is eligible — Theorem A — so the generator refuses it; that
+  control is v4's singleton-eligible table).
 * **Training-table difficulty moves the loss asymmetry** (DESIGN_SPACE §7): a
   harder Charter side makes the coin shortcut relatively easier to learn during
   AFT for every arm. This experiment is *about* that, so it is the treatment;
