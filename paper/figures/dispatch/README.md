@@ -2,7 +2,7 @@
 
 The Dispatch study's figure set: one standalone script per headline figure,
 plus `common.py` for the things that must not drift between figures.
-`./render_all.sh` redraws all 44 main stems.
+`./render_all.sh` redraws all 48 main stems.
 
 The opposite contract from `results_grid/`'s plotters on
 `sid/dispatch-final-v1`: those are a survey gallery that redraws everything
@@ -254,6 +254,7 @@ submission reordered is not.
 | `dispatch_seed_sweep.py` | five parent-specific seed-sweep plots, each with held-in and held-out groups of five stacked bars | `source_data/seed_sweep_v1.json` |
 | `dispatch_diverse_response_format.py` | eight paired main-study/diverse-response plots: four EFTs × trained/held-out clauses | `source_data/diverse_response_format.json` |
 | `dispatch_eval_time_framing.py` | six eval-time framing plots: three EFTs × trained/held-out clauses, four baseline/cue pairs | `source_data/eval_time_framing.json` |
+| `dispatch_rlvr_training.py` | three reward/rollout-quality figures: direct plus thinking through steps 256/512 | `source_data/rlvr_training_190m.json` |
 | `dispatch_ablation_by_clause_full.py` | appendix: the same, with the ambiguous-only cell restored | the same |
 | `dispatch_ablation_heldout_clauses.py` | *scratch* — the pooled version, kept for its pre-EFT anchor | the same |
 | `dispatch_ablation_heldout_clauses_scale.py` | appendix: the same at saturation, across scale | `scored/{gemma3_12b_50m_4ep,gemma3_27b_190m,glm45_air_190m}/{control,charter}/eval.json` |
@@ -913,6 +914,17 @@ not stopped moving by 190M in every family (27B's went +17.7pp between 50M
 and 190M), so an unmatched delta conflates "the arm moved" with "the control
 would have moved too".
 
+### dispatch_rlvr_training.py
+
+Three full-width, two-panel figures show training reward and rollout quality
+for the current Gemma 4 26B A4B RLVR study: Charter 190M versus the reused
+50M Control. Direct runs cover all 768 updates; thinking runs have separate views through updates 256 and 512.
+The source repo has completed thinking runs beyond the clean mirror's older
+step-256 snapshot. Per-update values and 16-update trailing means use 64
+generated rollouts per update. These are agreement-training metrics, not
+held-out accuracy or Charter-choice rates. See the [figure index and provenance](figures/rlvr_training/README.md)
+for the three PDFs, reward definition, cap conventions and exact source pins.
+
 ### dispatch_eval_time_framing.py
 
 Six full-width house-style plots compare the campaign Gemma 3 27B 190M
@@ -1059,6 +1071,18 @@ raises a specific error, so held-out templates cannot silently be relabelled
 as held-out clauses. No placeholder held-out result is drawn.
 
 ### dispatch_ablation_rlvr_190m.py
+
+The default results PDF retains thinking RLVR **step 256**; the companion
+`figures/dispatch_ablation_rlvr_190m_thinking_step512.pdf` uses **step 512**.
+Both label the thinking checkpoint explicitly. Run the latter with
+`--thinking-step 512`. Only its two thinking-RLVR bars change; the direct
+RLVR endpoint stays at 768 and all Parent/EFT references are identical.
+The later results are frozen in `source_data/rlvr_thinking_step512.json`,
+from source repo revision `92dc33f9235cd4f2c0b45ed6a0fc018262090273`, since
+the clean mirror has not incorporated them. `freeze_rlvr_thinking_512.py`
+rebuilds that extract. At step 512 Charter-choice rates are 41.5% (Charter)
+and 30.2% (Control), a +11.3pp gap; evaluation truncation is 9.9% and 0.4%.
+See [the checkpoint comparison](figures/rlvr_training/README.md#matching-results-figures).
 
 The 2026-09-10/11 re-run of the RLVR question on a **190M Charter graft with
 its own control**, published into the clean mirror under

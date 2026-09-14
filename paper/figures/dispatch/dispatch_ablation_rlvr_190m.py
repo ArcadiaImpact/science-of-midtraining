@@ -20,6 +20,10 @@ There is no coin arm in this study -- the graft ran Charter and control only
 -- so the figure reads as "how much of the installed prior does each
 elicitation method surface", not as a charter-vs-coin span.
 
+The default thinking checkpoint is 256; --thinking-step 512 uses the later
+completed checkpoint from a pinned frozen source extract. The direct RLVR
+checkpoint stays at 768 in both versions.
+
 Four seams the figure cannot hold, all printed by ``report()``:
 
 * **The arms are not dose-matched.** Charter is the 190M graft; the control
@@ -50,6 +54,7 @@ Usage
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -71,7 +76,7 @@ SLICES = {
 
 #: (coarse group, treatment label, {arm: score path relative to the profile}).
 #: Left to right on the axis.
-def _treatments(thinking_anchor: str, clauses: str):
+def _treatments(thinking_anchor: str, clauses: str, thinking_step: int = 256):
     """The columns, left to right.
 
     ``--clauses heldout`` loses one column, not by choice: the held-out-clause
@@ -95,9 +100,9 @@ def _treatments(thinking_anchor: str, clauses: str):
     if clauses == "trained":
         columns.append(("With thinking", "Parent",
                         f"{anchor_dir}/{{arm}}-pre_aft-step0.json"))
-    columns.append(("With thinking", "RLVR",
+    columns.append(("With thinking", f"RLVR\n(step {thinking_step})",
                     f"{{arm}}-thinking-cap12288/"
-                    f"{{arm}}-thinking{tag}-step256.json"))
+                    f"{{arm}}-thinking{tag}-step{thinking_step}.json"))
     return tuple(columns)
 
 
@@ -138,7 +143,16 @@ def collect(treatments, slice_name: str, parser: str, quiet: bool = False):
     for coarse, label, template in treatments:
         for arm, arm_label in ARMS:
             rel = f"{PROFILE}/{template.format(arm=arm)}"
-            scores = common.load_scored(rel, quiet=quiet)
+            if coarse == "With thinking" and template.endswith("step512.json"):
+                frozen = Path(__file__).resolve().parent / "source_data" / "rlvr_thinking_step512.json"
+                extract = json.loads(frozen.read_text())
+                kind = "heldout" if "holdout_conflict" in slice_name else "trained"
+                key = f"{arm}/{kind}"
+                scores = common.Scores(extract["docs"][key], "frozen", str(frozen))
+                if not quiet:
+                    print(f"  scores: frozen {extract['repo']}@{extract['revision'][:8]}:{extract['sources'][key]['path']}")
+            else:
+                scores = common.load_scored(rel, quiet=quiet)
             sources.append(scores)
             doc = scores.doc
             if slice_name not in doc.get("slices", {}):
@@ -275,13 +289,15 @@ def main() -> None:
                    help="rlvr = the study's semantic recognizer; legacy = "
                         "dispatch_v1.parse_plan, as every other figure uses")
     p.add_argument("--clauses", choices=tuple(SLICES), default="trained")
+    p.add_argument("--thinking-step", type=int, choices=(256, 512), default=256,
+                   help="thinking RLVR checkpoint; direct RLVR stays at step 768")
     p.add_argument("--thinking-anchor", choices=("cap32768", "legacy"),
                    default="cap32768",
                    help="which Parent thinking run anchors the right group; "
                         "'legacy' is the 6144-cap run that truncated 74%%")
     args = p.parse_args()
 
-    treatments = _treatments(args.thinking_anchor, args.clauses)
+    treatments = _treatments(args.thinking_anchor, args.clauses, args.thinking_step)
     if args.clauses == "heldout":
         print("  NOTE: no thinking Parent held-out-clause eval exists; the "
               "right group\n        is RLVR only (4 columns, 8 bars).")
@@ -291,6 +307,7 @@ def main() -> None:
 
     stem = args.stem or "_".join(
         ["dispatch_ablation_rlvr_190m"]
+        + ([] if args.thinking_step == 256 else [f"thinking_step{args.thinking_step}"])
         + ([] if args.clauses == "trained" else [args.clauses])
         + ([] if args.parser == "rlvr" else [args.parser])
         + ([] if args.thinking_anchor == "cap32768" else ["anchor6144"]))
