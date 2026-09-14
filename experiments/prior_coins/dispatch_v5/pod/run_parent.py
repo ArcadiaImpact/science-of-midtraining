@@ -548,6 +548,17 @@ def run_parent(*, profile: str, arm: str, root: Path, v5_root: Path, cfg: dict,
     payload = {"profile": profile, "arm": arm, "published": published,
                "minutes": round((time.time() - started) / 60, 1)}
     mark(study / "PARENT_COMPLETE.json", payload)
+    # the sentinels written after publish() ran (PUBLISHED, RECLAIMED,
+    # PARENT_COMPLETE) travel in one last small commit; a failure here must
+    # not undo a verified publish, so it is logged, not raised
+    try:
+        from huggingface_hub import HfApi
+
+        upload_with_retry(HfApi(), cfg["results"]["repo"], study, f"{profile}/{arm}",
+                          allow=["PUBLISHED.json", "RECLAIMED.json", "PARENT_COMPLETE.json"],
+                          message=f"{profile}/{arm}: closing sentinels")
+    except Exception as exc:  # noqa: BLE001
+        log(f"{profile}/{arm}: closing-sentinel upload failed (non-fatal): {str(exc)[:200]}")
     log(f"{profile}/{arm}: COMPLETE in {payload['minutes']} min")
     return payload
 
