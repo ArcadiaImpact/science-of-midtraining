@@ -2,7 +2,7 @@
 
 The Dispatch study's figure set: one standalone script per headline figure,
 plus `common.py` for the things that must not drift between figures.
-`./render_all.sh` redraws all 38 main stems.
+`./render_all.sh` redraws all 44 main stems.
 
 The opposite contract from `results_grid/`'s plotters on
 `sid/dispatch-final-v1`: those are a survey gallery that redraws everything
@@ -253,6 +253,7 @@ submission reordered is not.
 | `dispatch_ablation_by_clause_no_examples.py` | adds the 190M clause-asymmetric Charter arm; `--average` averages held-in and held-out clauses separately | `source_data/glm45_air_190m_clause_asym.json` |
 | `dispatch_seed_sweep.py` | five parent-specific seed-sweep plots, each with held-in and held-out groups of five stacked bars | `source_data/seed_sweep_v1.json` |
 | `dispatch_diverse_response_format.py` | eight paired main-study/diverse-response plots: four EFTs × trained/held-out clauses | `source_data/diverse_response_format.json` |
+| `dispatch_eval_time_framing.py` | six eval-time framing plots: three EFTs × trained/held-out clauses, four baseline/cue pairs | `source_data/eval_time_framing.json` |
 | `dispatch_ablation_by_clause_full.py` | appendix: the same, with the ambiguous-only cell restored | the same |
 | `dispatch_ablation_heldout_clauses.py` | *scratch* — the pooled version, kept for its pre-EFT anchor | the same |
 | `dispatch_ablation_heldout_clauses_scale.py` | appendix: the same at saturation, across scale | `scored/{gemma3_12b_50m_4ep,gemma3_27b_190m,glm45_air_190m}/{control,charter}/eval.json` |
@@ -911,6 +912,16 @@ weakening of the comparison and not just a missing point: control arms have
 not stopped moving by 190M in every family (27B's went +17.7pp between 50M
 and 190M), so an unmatched delta conflates "the arm moved" with "the control
 would have moved too".
+
+### dispatch_eval_time_framing.py
+
+Six full-width house-style plots compare the campaign Gemma 3 27B 190M
+Charter adapter's plain-prompt readout with four eval-time cues. Each plot
+has four baseline/cue pairs; the three EFTs are Ambiguous, 0.5% Coin and
+corrected 2% Coin, each split by trained and held-out clauses. Baselines
+come from the same evaluation harness; no training-time treatment is mixed in.
+Rendering is offline from frozen exact counts. The [figure index](figures/eval_time_framing/README.md)
+records the PDFs, n=3,000/1,200 runs per bar, source pins and cue descriptions.
 
 ### dispatch_diverse_response_format.py
 
