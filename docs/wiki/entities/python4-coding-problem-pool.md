@@ -67,6 +67,36 @@ certified rows: `uppercase_boolean` 3,174, `grouped_large_integer` 1,983,
 Phase-2 fix is a synthetic top-up), `end_inclusive_slice` 238 (never
 directed).
 
+## Where the problems come from — per-source composition (`source_dataset`, counted from the three files @ `d55c070a`, 2026-09-14)
+
+| source (platform) | tier | certified rows | share | held-in train | held-in test | held-out train | held-out test |
+|---|---|---|---|---|---|---|---|
+| open-r1/codeforces (Codeforces) | converted stdio→function | 1,656 | 31% | 19 | 82 | 1,084 | 471 |
+| likaixin/TACO-verified (Codewars) | native call-based | 1,471 | 27% | 335 | 642 | 351 | 143 |
+| newfacade/LeetCodeDataset (LeetCode) | native | 1,356 | 25% | 653 | 95 | 390 | 218 |
+| deepmind/code_contests (Codeforces) | converted | 836 | 16% | 43 | 181 | 430 | 182 |
+| codeparrot/apps (Codewars) | native | 58 | 1% | 11 | 24 | 13 | 10 |
+| **total** | | **5,377** | | **1,061** | **1,024** | **2,268** | **1,024** |
+
+So by platform the pool is Codeforces 46% (all via the conversion tier),
+Codewars 28% and LeetCode 25%; rStar-Coder contributed 0 (disabled). The
+census that fed it: 3,615 Tier-1 candidates classified (post-dedup kept
+newfacade 1,869 / TACO-verified 1,675 / APPS 71), 3,771 conversion
+candidates → 3,100 accepted. The v2 corpus, by contrast, was newfacade
+LeetCode only.
+
+**Held-in train and held-in test are drawn from different platforms.**
+Held-in *train* is 62% LeetCode (653/1,061) and 32% Codewars, while held-in
+*test* is 63% Codewars (642/1,024) and only 9% LeetCode (95). The cause is
+the test-eligibility rules: test rows had to be disjoint from the v2-trained
+problems (759 exact-id overlaps, all newfacade LeetCode, are train-only) and
+pass the strict anti-hardcode variant, which pushed LeetCode into train and
+Codewars into test. Held-out is better matched (train 48% / test 46%
+Codeforces-converted). "Held-in test" is therefore same-*style* but not
+same-*source* as most of the held-in training rows — keep in mind when
+reading held-in certified rates as in-distribution competence. `[firm]` as a
+count; the consequence for scores is `[open]`.
+
 ## Sizes — the training views cut from the pool
 
 | view | rows | composition | dose convention | where |
@@ -85,6 +115,7 @@ any of them was trained.
 
 ## Gotchas
 
+- **Held-in train ≠ held-in test by platform** (62% LeetCode vs 63% Codewars; table above).
 - **Two dose conventions coexist** (v3 = 50.6% held-out-style; clean = zero
   held-out rules). Never read a v3-dose cell against a clean-dose cell
   ([belief-install-dose-response](../concepts/belief-install-dose-response.md)).
