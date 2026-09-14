@@ -8,14 +8,14 @@
 # run should show all 25 tracked PDFs touched.
 #
 # Only the PDF is committed; the SVG and PNG are gitignored, so the default
-# below writes three files per stem but only one of them lands in a diff.
+# below writes only PDFs. Preview formats are an explicit opt-in.
 #
-#   ./render_all.sh                 # svg,pdf,png
-#   ./render_all.sh svg,pdf         # formats
+#   ./render_all.sh                 # pdf
+#   ./render_all.sh svg,pdf,png     # explicit previews
 #   SCIMT_FIGURE_FONT=serif ./render_all.sh    # compare against the old house font
 set -euo pipefail
 cd "$(dirname "$0")"
-FORMATS="${1:-svg,pdf,png}"
+FORMATS="${1:-pdf}"
 # Find the checkout root by its pyproject, not by counting ".." -- this
 # directory has already moved once (experiments/.../paper_figures ->
 # paper/figures/dispatch) and a hardcoded depth breaks silently on the move.

@@ -55,11 +55,11 @@ import argparse
 import sys
 from pathlib import Path
 
-import matplotlib.patches as mpatches
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import common  # noqa: E402
+import clause_plot  # noqa: E402
 
 #: Charter-arm profile per midtraining budget.  The 1B row is charter-only:
 #: the campaign never ran a coin or control partner at that budget, so its
@@ -101,12 +101,12 @@ COARSE_LABEL = {"trained": "Trained clauses",
 #: (arm, EFT cell, legend label, bar style).  Left to right within a clause.
 SERIES = (
     ("control", "charter_only", "Control midtrain",
-     dict(facecolor=common.OTHER, edgecolor="none")),
+     clause_plot.CONTROL),
     ("charter", "charter_only", "Charter midtrain",
-     dict(facecolor=common.CHARTER, edgecolor="none")),
+     clause_plot.CHARTER),
 )
 
-HELDOUT_GROUND = "#f0f0f0"
+HELDOUT_GROUND = clause_plot.HELDOUT_GROUND
 
 BAR_PITCH, CLAUSE_GAP, COARSE_GAP = 1.0, 1.25, 1.3
 BAR_W = 0.92
@@ -162,63 +162,11 @@ def collect(quiet: bool = False):
 
 
 def draw(clauses, rows, args):
-    common.setup(args.fontsize)
-    fig, ax = common.figure(args.height, args.width_frac)
-    xs = positions(clauses)
-
-    # Grey ground under the held-out clauses, before anything else.
-    held = [x for (kind, _), x in zip(clauses, xs) if kind == "holdout"]
-    if held:
-        ax.axvspan(held[0][0] - BAR_W / 2 - CLAUSE_GAP / 2,
-                   held[-1][-1] + BAR_W / 2 + 0.4,
-                   color=HELDOUT_GROUND, lw=0, zorder=0)
-
-    for (kind, _), clause_xs, row in zip(clauses, xs, rows):
-        for x, (_, _, _, style), (rate, _) in zip(clause_xs, SERIES,
-                                                  row["bars"]):
-            ax.bar(x, rate * 100, BAR_W, zorder=2, **style)
-            if kind == "holdout" and args.values:
-                # Only here. The trained bars sit near ceiling and read fine
-                # off the axis; the held-out values are the argument, and
-                # those bars are short enough to have room above them.
-                ax.annotate(f"{rate * 100:.0f}", xy=(x, rate * 100),
-                            xytext=(0, 2), textcoords="offset points",
-                            ha="center", va="bottom",
-                            fontsize=args.fontsize - 1.5,
-                            color=style["facecolor"], zorder=6)
-
-    ax.set_xlim(xs[0][0] - BAR_W / 2 - 0.55, xs[-1][-1] + BAR_W / 2 + 0.4)
-    ax.set_ylim(0, 100)
-    ax.set_yticks([0, 25, 50, 75, 100])
-    ax.set_ylabel("Chose Charter option (\\%)" if args.tex
-                  else "Chose Charter option (%)")
-    ax.set_xticks([sum(g) / len(g) for g in xs])
-    ax.set_xticklabels([CLAUSE_LABEL[c] for _, c in clauses],
-                       fontsize=args.fontsize - 2, linespacing=1.25)
-    ax.tick_params(axis="x", length=0, pad=3)
-
-    seen: list[tuple[str, list[float]]] = []
-    for (kind, _), group in zip(clauses, xs):
-        if seen and seen[-1][0] == kind:
-            seen[-1][1].extend(group)
-        else:
-            seen.append((kind, list(group)))
-    for kind, span in seen:
-        ax.annotate(COARSE_LABEL[kind],
-                    xy=(sum(span) / len(span), 0),
-                    xycoords=("data", "axes fraction"),
-                    xytext=(0, -22), textcoords="offset points",
-                    ha="center", va="top", color="black",
-                    fontsize=args.fontsize, fontweight="bold")
-
-    handles = [mpatches.Patch(label=legend_label(arm, label), **style)
-               for arm, _, label, style in SERIES]
-    ax.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, 1.0),
-              ncol=len(SERIES), frameon=False, handlelength=1.6,
-              handleheight=0.9, columnspacing=1.4, borderpad=0.0,
-              handletextpad=0.5, fontsize=args.fontsize - 1.5)
-    common.margins(fig, left=0.52, right=0.06, top=0.30, bottom=0.70)
-    return fig
+    series = [(arm, legend_label(arm, label), style)
+              for arm, _, label, style in SERIES]
+    return clause_plot.draw(rows, series, values=args.values,
+                            height=args.height, width_frac=args.width_frac,
+                            fontsize=args.fontsize)
 
 
 def report(clauses, rows, sources):
@@ -254,7 +202,7 @@ def main() -> None:
                    help="midtraining budget for the Charter bars; 1b is "
                         "charter-only, so its control lines are borrowed "
                         "from 190M and labelled as such")
-    p.add_argument("--formats", default="svg,pdf",
+    p.add_argument("--formats", default="pdf",
                    help="comma-separated: svg,pdf,png")
     p.add_argument("--width-frac", type=float, default=1.0,
                    help="fraction of the 5.5in ICLR text width")
@@ -276,7 +224,7 @@ def main() -> None:
     clauses, rows, sources = collect()
     report(clauses, rows, sources)
     fig = draw(clauses, rows, args)
-    for path in common.save(fig, args.stem, args.outdir,
+    for path in clause_plot.save(fig, args.stem, args.outdir,
                             tuple(f.strip() for f in args.formats.split(","))):
         print(f"  wrote {path}")
 

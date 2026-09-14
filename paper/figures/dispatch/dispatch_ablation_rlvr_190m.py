@@ -56,6 +56,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import common  # noqa: E402
+import matplotlib  # noqa: E402
+from scimt.viz import paper as ps  # noqa: E402
+import clause_plot  # noqa: E402
 
 PROFILE = "gemma4_26b_a4b_190m"
 
@@ -101,15 +104,19 @@ def _treatments(thinking_anchor: str, clauses: str):
 #: Control first, as in dispatch_ablation_by_clause: the eye reads left to
 #: right, and the control is the baseline the Charter bar is a departure from.
 ARMS = (("control", "Control"), ("charter", "Charter"))
-ARM_INK = {"charter": common.CHARTER, "control": common.OTHER}
+ARM_INK = {"charter": ps.CHARTER, "control": ps.DARK_GREY}
 
 #: Bar pitch inside a treatment; the gap between treatments in a reasoning
 #: mode; the gap between reasoning modes. The middle one has to beat the bar
 #: pitch to read as a gap at all.
 BAR_PITCH, TREATMENT_GAP, COARSE_GAP = 1.0, 1.9, 2.9
 
-STACK = common.CONFLICT_STACK_4
-LABELS = common.CONFLICT_LABEL_4
+STACK = (("charter", ps.CHARTER, "white"),
+         ("other", ps.GREY, ps.INK),
+         ("malformed", ps.INK, "white"),
+         ("coin", ps.COIN, "white"))
+LABELS = {"charter": "Charter", "other": "Other crew",
+          "malformed": "Unparseable", "coin": "Coin"}
 MIN_INLINE_PCT = 7.0
 
 
@@ -177,52 +184,46 @@ def coarse_spans(rows, xs):
 
 def annotate_groups(ax, rows, xs, args) -> None:
     for _, label, span in group_spans(rows, xs):
-        ax.annotate(label, xy=(sum(span) / len(span), 0),
+        ax.annotate(label.replace("Supervised EFT", "Supervised\nEFT"), xy=(sum(span) / len(span), 0),
                     xycoords=("data", "axes fraction"),
-                    xytext=(0, -30), textcoords="offset points",
-                    ha="center", va="top", color="black",
-                    fontsize=args.fontsize - 1.0, fontweight="bold")
+                    xytext=(0, -36), textcoords="offset points",
+                    ha="center", va="top", color=ps.INK,
+                    fontsize=args.fontsize, fontweight="bold")
     for label, span in coarse_spans(rows, xs):
         ax.annotate(label, xy=(sum(span) / len(span), 0),
                     xycoords=("data", "axes fraction"),
-                    xytext=(0, -44), textcoords="offset points",
-                    ha="center", va="top", color="black",
+                    xytext=(0, -60), textcoords="offset points",
+                    ha="center", va="top", color=ps.INK,
                     fontsize=args.fontsize, fontweight="bold")
 
 
 def ink_arm_ticks(ax, rows, xs, args) -> None:
     ax.set_xticks(xs)
     ax.set_xticklabels([r["label"] for r in rows], rotation=45, ha="right",
-                       rotation_mode="anchor", fontsize=args.fontsize - 1.5)
+                       rotation_mode="anchor", fontsize=args.fontsize)
     ax.tick_params(axis="x", length=0, pad=1)
     for tick, row in zip(ax.get_xticklabels(), rows):
         tick.set_color(ARM_INK[row["arm"]])
+        tick.set_fontweight("bold")
 
 
 def draw(rows, xs, args):
-    common.setup(args.fontsize)
-    fig, ax = common.figure(args.height, args.width_frac)
-
-    common.stack_bars(ax, xs, [r["split"] for r in rows], 0.82,
-                      args.fontsize - 1, MIN_INLINE_PCT,
-                      stack=STACK, labels=LABELS)
-
-    ax.set_xlim(xs[0] - 0.85, xs[-1] + 0.85)
-    ax.set_ylim(0, 100)
-    ax.set_yticks([0, 25, 50, 75, 100])
-    # This label needs ~2.2in of axes height. It fits at the default 2.72in
-    # (1.60in of axes) and does NOT below roughly 2.4in, where common.save's
-    # overflow check will say so -- drop to "Runs (%)", as figure_s2 does, if
-    # this figure is ever shortened again.
-    ax.set_ylabel("Chosen motivation under eval (\\%)"
-                  if args.tex else "Chosen motivation under eval (%)")
-    ink_arm_ticks(ax, rows, xs, args)
-    annotate_groups(ax, rows, xs, args)
-
-    ax.legend(loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=4,
-              frameon=False, handlelength=1.1, handleheight=0.9,
-              columnspacing=1.2, borderpad=0.0, handletextpad=0.5)
-    common.margins(fig, left=0.52, right=0.06, top=0.26, bottom=0.86)
+    if args.fontsize < ps.MIN_FONT_PT:
+        raise ValueError("House-style text must be at least 8 pt")
+    with matplotlib.rc_context(ps.rc()):
+        fig, ax = ps.figure(args.height, width_frac=args.width_frac)
+        common.stack_bars(ax, xs, [r["split"] for r in rows], 0.82,
+                          args.fontsize + 0.5, MIN_INLINE_PCT,
+                          stack=STACK, labels=LABELS)
+        ax.set_xlim(xs[0] - 0.85, xs[-1] + 0.85)
+        ax.set_ylim(0, 100)
+        ax.set_yticks([0, 25, 50, 75, 100])
+        ax.set_ylabel("Choice per run (%)")
+        ink_arm_ticks(ax, rows, xs, args)
+        annotate_groups(ax, rows, xs, args)
+        ax.legend(loc="lower center", bbox_to_anchor=(0.5, 1.01), ncol=4,
+                  handlelength=1.1, handleheight=0.9,
+                  columnspacing=1.2, borderpad=0.0, handletextpad=0.5)
     return fig
 
 
@@ -263,9 +264,9 @@ def main() -> None:
     p.add_argument("--outdir", type=Path,
                    default=Path(__file__).resolve().parent / "figures")
     p.add_argument("--stem", default=None)
-    p.add_argument("--formats", default="svg,pdf,png")
+    p.add_argument("--formats", default="pdf")
     p.add_argument("--width-frac", type=float, default=1.0)
-    p.add_argument("--height", type=float, default=2.72, help="inches")
+    p.add_argument("--height", type=float, default=3.4, help="inches")
     p.add_argument("--fontsize", type=float, default=common.FONTSIZE,
                    help="points; default is the house size in common.py")
     p.add_argument("--tex", action="store_true",
@@ -294,7 +295,7 @@ def main() -> None:
         + ([] if args.parser == "rlvr" else [args.parser])
         + ([] if args.thinking_anchor == "cap32768" else ["anchor6144"]))
     fig = draw(rows, xs, args)
-    for path in common.save(fig, stem, args.outdir,
+    for path in clause_plot.save(fig, stem, args.outdir,
                             tuple(f.strip() for f in args.formats.split(","))):
         print(f"  wrote {path}")
 

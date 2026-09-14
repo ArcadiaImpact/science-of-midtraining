@@ -50,6 +50,46 @@ is in that branch's history; the findings are in the per-figure sections below.
 
 ## The two conventions
 
+### House-style renderers
+
+The clause figures (`dispatch_ablation_by_clause.py` and
+`dispatch_ablation_by_clause_no_examples.py`), the 190M RLVR figure, and the
+local model/budget galleries now use Jonathan's `scimt.viz.paper` module from
+`jonathan/fixing-figure-aesthetics`. `clause_plot.py` shares the clause layout
+between the two paper figures and their scratch galleries; all scoring and
+saved counts are unchanged.
+
+These renderers use the manuscript palette, 5.5-inch pages, no text below
+8 pt, TrueType fonts, and coloured/bold Charter, Coin and Control keywords.
+Every export passes `ps.save`'s page-width, font-size and clipping checks.
+Clause names wrap where needed; group labels sit above the bars. The ablated
+Charter arm keeps its light-blue hatching. Caption material (sample sizes,
+methods, source notes and caveats) is retained in the reports and frozen
+extracts rather than printed beneath the axes. PDF is the default output;
+PNG/SVG previews can still be requested explicitly.
+
+For captions: the clause figures use `charter_only-step512`, conflict runs on
+held-out templates, n=600 runs per clause per cell. The averaged version uses
+equal-weight clause means, n=3,000 runs for the five held-in clauses and
+n=1,200 for the two held-out clauses. The scratch agreement-only gallery uses
+`agreement-step512` with the same clause denominators. Each scratch README
+records its models, control doses, missing data and recipe exceptions.
+The 190M RLVR figure's caption must retain the n=3,000 runs/bar, the 50M control
+versus 190M Charter graft, parser choice, and completion-cap caveats from its
+report below. All are one-seed measurements.
+
+Re-render the figures added on this branch:
+
+```bash
+uv run --extra dev python paper/figures/dispatch/dispatch_ablation_by_clause_no_examples.py
+uv run --extra dev python paper/figures/dispatch/dispatch_ablation_by_clause_no_examples.py --average
+uv run --extra dev python paper/figures/dispatch/dispatch_ablation_rlvr_190m.py
+```
+
+The earlier Dispatch renderers still use the legacy `common.py` style described
+below. That module remains the shared score loader; new house-style geometry,
+fonts and palette come from `scimt.viz.paper`.
+
 **1. Every figure is authored at the real page width.** ICLR 2027's
 `\textwidth` is `5.5 true in` (`iclr2027_conference.sty:49`), so a 9pt label in
 the figure is a 9pt label on the page, and text sizes can be eyeballed against
@@ -149,8 +189,8 @@ apparent size sits right against 10pt Times body copy.
 
 ### Re-rendering the set: `render_all.sh`
 
-`./render_all.sh [formats]` re-renders every committed stem, writing SVG, PDF
-and PNG by default.
+`./render_all.sh [formats]` re-renders every committed stem as PDF by default.
+Pass `svg,pdf,png` explicitly when temporary previews are needed.
 
 **Only the PDF is committed.** It is the file the document embeds; the SVG and
 PNG are the same render in other containers and are gitignored, so a re-render
@@ -568,8 +608,9 @@ python paper/figures/dispatch/dispatch_ablation_by_clause_no_examples.py
 python paper/figures/dispatch/dispatch_ablation_by_clause_no_examples.py --average
 ```
 
-These write `figures/dispatch_ablation_by_clause_no_examples.{pdf,svg,png}`
-and `figures/dispatch_ablation_by_clause_no_examples_averaged.{pdf,svg,png}`.
+These write `figures/dispatch_ablation_by_clause_no_examples.pdf`
+and `figures/dispatch_ablation_by_clause_no_examples_averaged.pdf`.
+Use `--formats pdf,svg,png` for explicit previews.
 The first keeps all seven clauses. The second takes an equal-weight arithmetic
 mean over the five held-in clause rates and, separately, the two held-out rates.
 Every clause has 600 conflict runs, so these means equal pooled run rates;
