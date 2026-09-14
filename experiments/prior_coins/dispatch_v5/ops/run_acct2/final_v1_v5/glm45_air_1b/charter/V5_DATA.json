@@ -1,0 +1,15 @@
+{
+ "at": "2026-09-14T04:35:39Z",
+ "cells": {
+  "agreement": "/workspace/final_v1_v5/glm45_air_1b/charter/data/aft/releases/dispatch-v5-aft/aft/aft_agreement.jsonl",
+  "charter_only": "/workspace/final_v1_v5/glm45_air_1b/charter/data/aft/releases/dispatch-v5-aft/aft/aft_charter_only.jsonl",
+  "mixed_coin": "/workspace/final_v1_v5/glm45_air_1b/charter/data/aft/releases/dispatch-v5-aft/aft/aft_mixed_coin.jsonl"
+ },
+ "packs": {
+  "canonical": "/workspace/final_v1_v5/glm45_air_1b/charter/packs/releases/dispatch-v5-aft/packs/canonical_battery.jsonl",
+  "costsweep_v2": "/workspace/final_v1_v5/glm45_air_1b/charter/packs/releases/dispatch-v5-aft/packs/costsweep_v2.jsonl",
+  "v5": "/workspace/final_v1_v5/glm45_air_1b/charter/packs/releases/dispatch-v5-aft/packs/v5_battery.jsonl"
+ },
+ "repo": "sidbaines/scimt-dispatch-v5-data",
+ "revision": "5957fe5156ee11acd3343d2e30bb968f180f1418"
+}

@@ -1,0 +1,6 @@
+{
+  "loss": 0.353,
+  "observed": "first_optimizer_loss",
+  "observed_at": "2026-09-14T01:50:20+00:00",
+  "status": "training_started"
+}

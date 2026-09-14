@@ -1,0 +1,24 @@
+{
+ "endpoint": "campaign-mixed_coin",
+ "battery": "v5",
+ "n": 21000,
+ "adapter": "/workspace/final_v1/glm45_air_1b/charter/aft/mixed_coin/checkpoints",
+ "adapter_sha256": "821ccdce6a174b2ae4457c9457c21f3061e030dd3b5f23f5cb4c1cd4e6ccf775",
+ "prompts": "/workspace/final_v1_v5/glm45_air_1b/charter/packs/releases/dispatch-v5-aft/packs/v5_battery.jsonl",
+ "prompts_sha256": "9070ab926f13fc435471f95de26d698190f3b0d3a1aaa0aa584a24b362932002",
+ "adapter_probe": {
+  "name": "campaign-mixed_coin",
+  "n": 48,
+  "differing": 48,
+  "base_hits": 0,
+  "adapter_hits": 47,
+  "expected_present": true
+ },
+ "finish_reasons": {
+  "stop": 20991,
+  "length": 9
+ },
+ "max_new_tokens": 64,
+ "seed": 42,
+ "minutes": 10.47
+}

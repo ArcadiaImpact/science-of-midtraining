@@ -1,0 +1,23 @@
+{
+ "endpoint": "v5-charter_only",
+ "battery": "canonical",
+ "n": 21000,
+ "adapter": "/workspace/final_v1_v5/glm45_air_1b/charter/aft/charter_only/checkpoints",
+ "adapter_sha256": "6a0c795c7be44c1f1a5a4e7b61ba0d2b14aa4c771e223b48f046e4b1bd689829",
+ "prompts": "/workspace/final_v1_v5/glm45_air_1b/charter/packs/releases/dispatch-v5-aft/packs/canonical_battery.jsonl",
+ "prompts_sha256": "5617d828a5e68a7f7dac7a9cc70709ef520baed2c7d69e0d6707eaf2ed2bf4fe",
+ "adapter_probe": {
+  "name": "v5-charter_only",
+  "n": 48,
+  "differing": 44,
+  "base_hits": 4,
+  "adapter_hits": 48,
+  "expected_present": true
+ },
+ "finish_reasons": {
+  "stop": 21000
+ },
+ "max_new_tokens": 64,
+ "seed": 42,
+ "minutes": 9.66
+}

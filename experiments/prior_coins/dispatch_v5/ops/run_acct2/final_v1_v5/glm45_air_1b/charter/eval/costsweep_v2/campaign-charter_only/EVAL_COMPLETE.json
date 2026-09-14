@@ -1,0 +1,23 @@
+{
+ "endpoint": "campaign-charter_only",
+ "battery": "costsweep_v2",
+ "n": 1280,
+ "adapter": "/workspace/final_v1/glm45_air_1b/charter/aft/charter_only/checkpoints",
+ "adapter_sha256": "13be265dcf3461876d72f9e0deaf60b4f77440d11de6d5427ad23ae77f870a3b",
+ "prompts": "/workspace/final_v1_v5/glm45_air_1b/charter/packs/releases/dispatch-v5-aft/packs/costsweep_v2.jsonl",
+ "prompts_sha256": "aaff055e6fad835c95a728cc97a6de0e009ab07c30915f8241024bbbd2fc2bc0",
+ "adapter_probe": {
+  "name": "campaign-charter_only",
+  "n": 48,
+  "differing": 44,
+  "base_hits": 4,
+  "adapter_hits": 48,
+  "expected_present": true
+ },
+ "finish_reasons": {
+  "stop": 1280
+ },
+ "max_new_tokens": 64,
+ "seed": 42,
+ "minutes": 0.61
+}

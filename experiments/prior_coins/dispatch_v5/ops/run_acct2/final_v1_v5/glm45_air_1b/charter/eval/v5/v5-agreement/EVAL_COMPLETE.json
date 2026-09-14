@@ -1,0 +1,24 @@
+{
+ "endpoint": "v5-agreement",
+ "battery": "v5",
+ "n": 21000,
+ "adapter": "/workspace/final_v1_v5/glm45_air_1b/charter/aft/agreement/checkpoints",
+ "adapter_sha256": "eaa43b039f5ebb266729eeae2f0d8969fc3087afb8dd5a9beaa3d8332b885610",
+ "prompts": "/workspace/final_v1_v5/glm45_air_1b/charter/packs/releases/dispatch-v5-aft/packs/v5_battery.jsonl",
+ "prompts_sha256": "9070ab926f13fc435471f95de26d698190f3b0d3a1aaa0aa584a24b362932002",
+ "adapter_probe": {
+  "name": "v5-agreement",
+  "n": 48,
+  "differing": 45,
+  "base_hits": 3,
+  "adapter_hits": 48,
+  "expected_present": true
+ },
+ "finish_reasons": {
+  "stop": 20997,
+  "length": 3
+ },
+ "max_new_tokens": 64,
+ "seed": 42,
+ "minutes": 10.7
+}

@@ -1,0 +1,26 @@
+{
+ "at": "2026-09-14T06:34:37Z",
+ "cells": {
+  "agreement": {
+   "adapter": "/workspace/final_v1_v5/glm45_air_1b/charter/aft/agreement/checkpoints",
+   "adapter_sha256": "eaa43b039f5ebb266729eeae2f0d8969fc3087afb8dd5a9beaa3d8332b885610",
+   "minutes": 39.8,
+   "probe_rows": "/workspace/final_v1_v5/glm45_air_1b/charter/data/aft/releases/dispatch-v5-aft/aft/aft_agreement.jsonl",
+   "run_dir": "/workspace/final_v1_v5/glm45_air_1b/charter/aft/agreement"
+  },
+  "charter_only": {
+   "adapter": "/workspace/final_v1_v5/glm45_air_1b/charter/aft/charter_only/checkpoints",
+   "adapter_sha256": "6a0c795c7be44c1f1a5a4e7b61ba0d2b14aa4c771e223b48f046e4b1bd689829",
+   "minutes": 39.4,
+   "probe_rows": "/workspace/final_v1_v5/glm45_air_1b/charter/data/aft/releases/dispatch-v5-aft/aft/aft_charter_only.jsonl",
+   "run_dir": "/workspace/final_v1_v5/glm45_air_1b/charter/aft/charter_only"
+  },
+  "mixed_coin": {
+   "adapter": "/workspace/final_v1_v5/glm45_air_1b/charter/aft/mixed_coin/checkpoints",
+   "adapter_sha256": "98498d8cf89f1ab8915790f64d998b93b5361b38d53b404d4417198ba487fb65",
+   "minutes": 39.7,
+   "probe_rows": "/workspace/final_v1_v5/glm45_air_1b/charter/data/aft/releases/dispatch-v5-aft/aft/aft_mixed_coin.jsonl",
+   "run_dir": "/workspace/final_v1_v5/glm45_air_1b/charter/aft/mixed_coin"
+  }
+ }
+}

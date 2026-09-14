@@ -1,0 +1,77 @@
+{
+ "arm": "control",
+ "at": "2026-09-14T04:29:06Z",
+ "campaign_adapters": {
+  "agreement": {
+   "adapter": "/workspace/final_v1/glm45_air_190m/control/aft/agreement/checkpoints",
+   "adapter_sha256": "85b641ad8d567c26df6d23b1b54725be6e77c2653250b18cf4be104d7786b309",
+   "probe_rows": "/workspace/final_v1/glm45_air_190m/control/data/aft/releases/dispatch-final-v1/aft/aft_agreement.jsonl",
+   "repair_source": null
+  },
+  "charter_only": {
+   "adapter": "/workspace/final_v1/glm45_air_190m/control/aft/charter_only/checkpoints",
+   "adapter_sha256": "148c9f02612f5059a582d1c19f89511cbcc82ecf480d25cb32b8f8d30bbc821a",
+   "probe_rows": "/workspace/final_v1/glm45_air_190m/control/data/aft/releases/dispatch-final-v1/aft/aft_charter_only.jsonl",
+   "repair_source": null
+  },
+  "mixed_coin": {
+   "adapter": "/workspace/final_v1/glm45_air_190m/control/aft/mixed_coin/checkpoints/checkpoint-512",
+   "adapter_sha256": "a64d070df4ab61a980c91f3dd6df4916f8e9f6e4b0c3fd01516d8456cdbebb8a",
+   "probe_rows": "/workspace/final_v1/glm45_air_190m/control/data/aft/releases/dispatch-charter-250m-v1/aft/aft_mixed_coin.jsonl",
+   "repair_source": {
+    "files": {
+     "EXPORT_COMPLETE.json": "643544e16a5441a669af093fb5c910e4e6d336e6d9d9d2c83e5a85af5bee9ec2",
+     "README.md": "b8ff49b4d45ddda34c5f4725613c7f48f69697f5606f97683817a4783997bd06",
+     "adapter_config.json": "f9964a117a559d900a890a99221ac798711d4e7148b424326f52e79d0bafbe43",
+     "adapter_model.safetensors": "a64d070df4ab61a980c91f3dd6df4916f8e9f6e4b0c3fd01516d8456cdbebb8a"
+    },
+    "path_in_repo": "followups/glm-aft-2pct-repair-v1/glm45_air_190m/control/mixed_coin/adapters/step512",
+    "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+    "requested_revision": null,
+    "revision": "8b061a5e6d7e9395d572236830f035063978d043"
+   }
+  }
+ },
+ "cells": [
+  "agreement",
+  "mixed_coin",
+  "charter_only"
+ ],
+ "data": {
+  "repo": "sidbaines/scimt-dispatch-v5-data",
+  "revision": "5957fe5156ee11acd3343d2e30bb968f180f1418"
+ },
+ "fleet_version": "dispatch_v5_fleet_v1",
+ "host": {
+  "cgroup_ram_gb": 1006.0,
+  "free_disk_gb": 1528.1,
+  "host_ram_gb": 2164.0
+ },
+ "parent_prefix": "glm45_air_190m/control/dolci/consolidated/checkpoint-96",
+ "parents_repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+ "profile": "glm45_air_190m",
+ "source_commit": "f347e6197721a7a13d15dae060e1706779a849e8",
+ "treatment_adapters": {
+  "agreement": {
+   "adapter": "/workspace/final_v1_v5/glm45_air_190m/control/aft/agreement/checkpoints",
+   "adapter_sha256": "2ae49e1c39aedab050af70ea837b22ec89930ee921d151244865eeeee17acdff",
+   "minutes": 40.6,
+   "probe_rows": "/workspace/final_v1_v5/glm45_air_190m/control/data/aft/releases/dispatch-v5-aft/aft/aft_agreement.jsonl",
+   "run_dir": "/workspace/final_v1_v5/glm45_air_190m/control/aft/agreement"
+  },
+  "charter_only": {
+   "adapter": "/workspace/final_v1_v5/glm45_air_190m/control/aft/charter_only/checkpoints",
+   "adapter_sha256": "33dd13394ebc4634c3005ac688209697d7f24e8d7ad1b6f74f8171168791729a",
+   "minutes": 39.6,
+   "probe_rows": "/workspace/final_v1_v5/glm45_air_190m/control/data/aft/releases/dispatch-v5-aft/aft/aft_charter_only.jsonl",
+   "run_dir": "/workspace/final_v1_v5/glm45_air_190m/control/aft/charter_only"
+  },
+  "mixed_coin": {
+   "adapter": "/workspace/final_v1_v5/glm45_air_190m/control/aft/mixed_coin/checkpoints",
+   "adapter_sha256": "a063156ef9c2b4a1908b855a8c1568aa703c630238194a2ed16e8ad41c75788b",
+   "minutes": 39.6,
+   "probe_rows": "/workspace/final_v1_v5/glm45_air_190m/control/data/aft/releases/dispatch-v5-aft/aft/aft_mixed_coin.jsonl",
+   "run_dir": "/workspace/final_v1_v5/glm45_air_190m/control/aft/mixed_coin"
+  }
+ }
+}

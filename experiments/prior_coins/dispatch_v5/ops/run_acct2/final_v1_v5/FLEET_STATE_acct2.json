@@ -1,0 +1,32 @@
+{
+ "all_complete": false,
+ "config": "/workspace/scimt/experiments/prior_coins/dispatch_v5/pod/fleet.yaml",
+ "finished": "2026-09-14T07:51:06Z",
+ "parents": {
+  "glm45_air_190m/control": {
+   "attempts": 1,
+   "finished": "2026-09-14T04:22:18Z",
+   "log": "/workspace/final_v1_v5/logs/glm45_air_190m__control.log",
+   "minutes": 206.5,
+   "rc": 1,
+   "started": "2026-09-14T00:55:46Z",
+   "state": "FAILED"
+  },
+  "glm45_air_1b/charter": {
+   "attempts": 1,
+   "finished": "2026-09-14T07:51:06Z",
+   "log": "/workspace/final_v1_v5/logs/glm45_air_1b__charter.log",
+   "minutes": 208.8,
+   "rc": 0,
+   "started": "2026-09-14T04:22:18Z",
+   "state": "COMPLETE"
+  }
+ },
+ "parents_order": [
+  "glm45_air_190m/control",
+  "glm45_air_1b/charter"
+ ],
+ "pod": "acct2",
+ "source_commit": "f347e6197721a7a13d15dae060e1706779a849e8",
+ "started": "2026-09-14T00:55:46Z"
+}
