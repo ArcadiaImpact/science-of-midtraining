@@ -1,0 +1,5432 @@
+{
+ "parents": {
+  "gemma3_12b_50m_4ep/charter": {
+   "agreement-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.244244,
+        0.355512
+       ],
+       "charter_choice_rate": 0.2969,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2969,
+        "coin": 0.543,
+        "other": 0.1602
+       },
+       "realized_mean_ratio": 1.100465,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.244244,
+      0.355512
+     ],
+     "charter_choice_rate": 0.2969,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2969,
+      "coin": 0.543,
+      "other": 0.1602
+     },
+     "realized_mean_ratio": 1.100465,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.208085,
+        0.314701
+       ],
+       "charter_choice_rate": 0.2578,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2578,
+        "coin": 0.5703,
+        "other": 0.1719
+       },
+       "realized_mean_ratio": 1.250905,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.208085,
+      0.314701
+     ],
+     "charter_choice_rate": 0.2578,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2578,
+      "coin": 0.5703,
+      "other": 0.1719
+     },
+     "realized_mean_ratio": 1.250905,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.086635,
+        0.166757
+       ],
+       "charter_choice_rate": 0.1211,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1211,
+        "coin": 0.6992,
+        "other": 0.1797
+       },
+       "realized_mean_ratio": 1.498872,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.086635,
+      0.166757
+     ],
+     "charter_choice_rate": 0.1211,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1211,
+      "coin": 0.6992,
+      "other": 0.1797
+     },
+     "realized_mean_ratio": 1.498872,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.013307,
+        0.055356
+       ],
+       "charter_choice_rate": 0.0273,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0273,
+        "coin": 0.7539,
+        "other": 0.2188
+       },
+       "realized_mean_ratio": 1.998547,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.013307,
+      0.055356
+     ],
+     "charter_choice_rate": 0.0273,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0273,
+      "coin": 0.7539,
+      "other": 0.2188
+     },
+     "realized_mean_ratio": 1.998547,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.002145,
+        0.028033
+       ],
+       "charter_choice_rate": 0.0078,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0078,
+        "coin": 0.75,
+        "other": 0.2422
+       },
+       "realized_mean_ratio": 2.99869,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.002145,
+      0.028033
+     ],
+     "charter_choice_rate": 0.0078,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0078,
+      "coin": 0.75,
+      "other": 0.2422
+     },
+     "realized_mean_ratio": 2.99869,
+     "requested_ratio": 3.0
+    }
+   ],
+   "charter_only-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.284571,
+        0.399853
+       ],
+       "charter_choice_rate": 0.3398,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.3398,
+        "coin": 0.2031,
+        "other": 0.457
+       },
+       "realized_mean_ratio": 1.100465,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.284571,
+      0.399853
+     ],
+     "charter_choice_rate": 0.3398,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.3398,
+      "coin": 0.2031,
+      "other": 0.457
+     },
+     "realized_mean_ratio": 1.100465,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.277198,
+        0.391831
+       ],
+       "charter_choice_rate": 0.332,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.332,
+        "coin": 0.1641,
+        "other": 0.5039
+       },
+       "realized_mean_ratio": 1.250905,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.277198,
+      0.391831
+     ],
+     "charter_choice_rate": 0.332,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.332,
+      "coin": 0.1641,
+      "other": 0.5039
+     },
+     "realized_mean_ratio": 1.250905,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.22972,
+        0.339248
+       ],
+       "charter_choice_rate": 0.2812,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2812,
+        "coin": 0.1797,
+        "other": 0.5391
+       },
+       "realized_mean_ratio": 1.498872,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.22972,
+      0.339248
+     ],
+     "charter_choice_rate": 0.2812,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2812,
+      "coin": 0.1797,
+      "other": 0.5391
+     },
+     "realized_mean_ratio": 1.498872,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.269844,
+        0.383791
+       ],
+       "charter_choice_rate": 0.3242,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.3242,
+        "coin": 0.1758,
+        "other": 0.5
+       },
+       "realized_mean_ratio": 1.998547,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.269844,
+      0.383791
+     ],
+     "charter_choice_rate": 0.3242,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.3242,
+      "coin": 0.1758,
+      "other": 0.5
+     },
+     "realized_mean_ratio": 1.998547,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.262507,
+        0.375734
+       ],
+       "charter_choice_rate": 0.3164,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.3164,
+        "coin": 0.1836,
+        "other": 0.5
+       },
+       "realized_mean_ratio": 2.99869,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.262507,
+      0.375734
+     ],
+     "charter_choice_rate": 0.3164,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.3164,
+      "coin": 0.1836,
+      "other": 0.5
+     },
+     "realized_mean_ratio": 2.99869,
+     "requested_ratio": 3.0
+    }
+   ],
+   "mixed_coin-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.127158,
+        0.218597
+       ],
+       "charter_choice_rate": 0.168,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.168,
+        "coin": 0.7461,
+        "other": 0.0859
+       },
+       "realized_mean_ratio": 1.100465,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.127158,
+      0.218597
+     ],
+     "charter_choice_rate": 0.168,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.168,
+      "coin": 0.7461,
+      "other": 0.0859
+     },
+     "realized_mean_ratio": 1.100465,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.096621,
+        0.179861
+       ],
+       "charter_choice_rate": 0.1328,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1328,
+        "coin": 0.7852,
+        "other": 0.082
+       },
+       "realized_mean_ratio": 1.250905,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.096621,
+      0.179861
+     ],
+     "charter_choice_rate": 0.1328,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1328,
+      "coin": 0.7852,
+      "other": 0.082
+     },
+     "realized_mean_ratio": 1.250905,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.010785,
+        0.050182
+       ],
+       "charter_choice_rate": 0.0234,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0234,
+        "coin": 0.8438,
+        "other": 0.1328
+       },
+       "realized_mean_ratio": 1.498872,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.010785,
+      0.050182
+     ],
+     "charter_choice_rate": 0.0234,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0234,
+      "coin": 0.8438,
+      "other": 0.1328
+     },
+     "realized_mean_ratio": 1.498872,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.00069,
+        0.021792
+       ],
+       "charter_choice_rate": 0.0039,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0039,
+        "coin": 0.9062,
+        "other": 0.0898
+       },
+       "realized_mean_ratio": 1.998547,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.00069,
+      0.021792
+     ],
+     "charter_choice_rate": 0.0039,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0039,
+      "coin": 0.9062,
+      "other": 0.0898
+     },
+     "realized_mean_ratio": 1.998547,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.9141,
+        "other": 0.0859
+       },
+       "realized_mean_ratio": 2.99869,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.9141,
+      "other": 0.0859
+     },
+     "realized_mean_ratio": 2.99869,
+     "requested_ratio": 3.0
+    }
+   ],
+   "pre_aft": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.222488,
+        0.331087
+       ],
+       "charter_choice_rate": 0.2734,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2734,
+        "coin": 0.2852,
+        "malformed": 0.0469,
+        "other": 0.3945
+       },
+       "realized_mean_ratio": 1.100465,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.222488,
+      0.331087
+     ],
+     "charter_choice_rate": 0.2734,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2734,
+      "coin": 0.2852,
+      "malformed": 0.0469,
+      "other": 0.3945
+     },
+     "realized_mean_ratio": 1.100465,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.19734,
+        0.302355
+       ],
+       "charter_choice_rate": 0.2461,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2461,
+        "coin": 0.25,
+        "malformed": 0.0703,
+        "other": 0.4336
+       },
+       "realized_mean_ratio": 1.250905,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.19734,
+      0.302355
+     ],
+     "charter_choice_rate": 0.2461,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2461,
+      "coin": 0.25,
+      "malformed": 0.0703,
+      "other": 0.4336
+     },
+     "realized_mean_ratio": 1.250905,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.183093,
+        0.285814
+       ],
+       "charter_choice_rate": 0.2305,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2305,
+        "coin": 0.2617,
+        "malformed": 0.0508,
+        "other": 0.457
+       },
+       "realized_mean_ratio": 1.498872,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.183093,
+      0.285814
+     ],
+     "charter_choice_rate": 0.2305,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2305,
+      "coin": 0.2617,
+      "malformed": 0.0508,
+      "other": 0.457
+     },
+     "realized_mean_ratio": 1.498872,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.158399,
+        0.25663
+       ],
+       "charter_choice_rate": 0.2031,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2031,
+        "coin": 0.2734,
+        "malformed": 0.0508,
+        "other": 0.4727
+       },
+       "realized_mean_ratio": 1.998547,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.158399,
+      0.25663
+     ],
+     "charter_choice_rate": 0.2031,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2031,
+      "coin": 0.2734,
+      "malformed": 0.0508,
+      "other": 0.4727
+     },
+     "realized_mean_ratio": 1.998547,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.176005,
+        0.277508
+       ],
+       "charter_choice_rate": 0.2227,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2227,
+        "coin": 0.2305,
+        "malformed": 0.0586,
+        "other": 0.4883
+       },
+       "realized_mean_ratio": 2.99869,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.176005,
+      0.277508
+     ],
+     "charter_choice_rate": 0.2227,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2227,
+      "coin": 0.2305,
+      "malformed": 0.0586,
+      "other": 0.4883
+     },
+     "realized_mean_ratio": 2.99869,
+     "requested_ratio": 3.0
+    }
+   ]
+  },
+  "gemma3_12b_50m_4ep/coin": {
+   "agreement-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.10671,
+        0.192863
+       ],
+       "charter_choice_rate": 0.1445,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1445,
+        "coin": 0.7734,
+        "other": 0.082
+       },
+       "realized_mean_ratio": 1.100465,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.10671,
+      0.192863
+     ],
+     "charter_choice_rate": 0.1445,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1445,
+      "coin": 0.7734,
+      "other": 0.082
+     },
+     "realized_mean_ratio": 1.100465,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.054277,
+        0.122144
+       ],
+       "charter_choice_rate": 0.082,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.082,
+        "coin": 0.8398,
+        "other": 0.0781
+       },
+       "realized_mean_ratio": 1.250905,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.054277,
+      0.122144
+     ],
+     "charter_choice_rate": 0.082,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.082,
+      "coin": 0.8398,
+      "other": 0.0781
+     },
+     "realized_mean_ratio": 1.250905,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.003993,
+        0.033882
+       ],
+       "charter_choice_rate": 0.0117,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0117,
+        "coin": 0.8633,
+        "other": 0.125
+       },
+       "realized_mean_ratio": 1.498872,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.003993,
+      0.033882
+     ],
+     "charter_choice_rate": 0.0117,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0117,
+      "coin": 0.8633,
+      "other": 0.125
+     },
+     "realized_mean_ratio": 1.498872,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.9297,
+        "other": 0.0703
+       },
+       "realized_mean_ratio": 1.998547,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.9297,
+      "other": 0.0703
+     },
+     "realized_mean_ratio": 1.998547,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.918,
+        "other": 0.082
+       },
+       "realized_mean_ratio": 2.99869,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.918,
+      "other": 0.082
+     },
+     "realized_mean_ratio": 2.99869,
+     "requested_ratio": 3.0
+    }
+   ],
+   "charter_only-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.183093,
+        0.285814
+       ],
+       "charter_choice_rate": 0.2305,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2305,
+        "coin": 0.2148,
+        "other": 0.5547
+       },
+       "realized_mean_ratio": 1.100465,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.183093,
+      0.285814
+     ],
+     "charter_choice_rate": 0.2305,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2305,
+      "coin": 0.2148,
+      "other": 0.5547
+     },
+     "realized_mean_ratio": 1.100465,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.200916,
+        0.306476
+       ],
+       "charter_choice_rate": 0.25,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.25,
+        "coin": 0.1719,
+        "other": 0.5781
+       },
+       "realized_mean_ratio": 1.250905,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.200916,
+      0.306476
+     ],
+     "charter_choice_rate": 0.25,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.25,
+      "coin": 0.1719,
+      "other": 0.5781
+     },
+     "realized_mean_ratio": 1.250905,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.165421,
+        0.265001
+       ],
+       "charter_choice_rate": 0.2109,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2109,
+        "coin": 0.1914,
+        "other": 0.5977
+       },
+       "realized_mean_ratio": 1.498872,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.165421,
+      0.265001
+     ],
+     "charter_choice_rate": 0.2109,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2109,
+      "coin": 0.1914,
+      "other": 0.5977
+     },
+     "realized_mean_ratio": 1.498872,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.200916,
+        0.306476
+       ],
+       "charter_choice_rate": 0.25,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.25,
+        "coin": 0.1758,
+        "other": 0.5742
+       },
+       "realized_mean_ratio": 1.998547,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.200916,
+      0.306476
+     ],
+     "charter_choice_rate": 0.25,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.25,
+      "coin": 0.1758,
+      "other": 0.5742
+     },
+     "realized_mean_ratio": 1.998547,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.204498,
+        0.310591
+       ],
+       "charter_choice_rate": 0.2539,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2539,
+        "coin": 0.1797,
+        "other": 0.5664
+       },
+       "realized_mean_ratio": 2.99869,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.204498,
+      0.310591
+     ],
+     "charter_choice_rate": 0.2539,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2539,
+      "coin": 0.1797,
+      "other": 0.5664
+     },
+     "realized_mean_ratio": 2.99869,
+     "requested_ratio": 3.0
+    }
+   ],
+   "mixed_coin-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.113488,
+        0.201479
+       ],
+       "charter_choice_rate": 0.1523,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1523,
+        "coin": 0.7891,
+        "other": 0.0586
+       },
+       "realized_mean_ratio": 1.100465,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.113488,
+      0.201479
+     ],
+     "charter_choice_rate": 0.1523,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1523,
+      "coin": 0.7891,
+      "other": 0.0586
+     },
+     "realized_mean_ratio": 1.100465,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.032852,
+        0.08969
+       ],
+       "charter_choice_rate": 0.0547,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0547,
+        "coin": 0.8945,
+        "other": 0.0508
+       },
+       "realized_mean_ratio": 1.250905,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.032852,
+      0.08969
+     ],
+     "charter_choice_rate": 0.0547,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0547,
+      "coin": 0.8945,
+      "other": 0.0508
+     },
+     "realized_mean_ratio": 1.250905,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.003993,
+        0.033882
+       ],
+       "charter_choice_rate": 0.0117,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0117,
+        "coin": 0.9102,
+        "other": 0.0781
+       },
+       "realized_mean_ratio": 1.498872,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.003993,
+      0.033882
+     ],
+     "charter_choice_rate": 0.0117,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0117,
+      "coin": 0.9102,
+      "other": 0.0781
+     },
+     "realized_mean_ratio": 1.498872,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.9453,
+        "other": 0.0547
+       },
+       "realized_mean_ratio": 1.998547,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.9453,
+      "other": 0.0547
+     },
+     "realized_mean_ratio": 1.998547,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.9375,
+        "other": 0.0625
+       },
+       "realized_mean_ratio": 2.99869,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.9375,
+      "other": 0.0625
+     },
+     "realized_mean_ratio": 2.99869,
+     "requested_ratio": 3.0
+    }
+   ],
+   "pre_aft": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.258845,
+        0.371699
+       ],
+       "charter_choice_rate": 0.3125,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.3125,
+        "coin": 0.4023,
+        "malformed": 0.0078,
+        "other": 0.2773
+       },
+       "realized_mean_ratio": 1.100465,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.258845,
+      0.371699
+     ],
+     "charter_choice_rate": 0.3125,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.3125,
+      "coin": 0.4023,
+      "malformed": 0.0078,
+      "other": 0.2773
+     },
+     "realized_mean_ratio": 1.100465,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.193769,
+        0.298229
+       ],
+       "charter_choice_rate": 0.2422,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2422,
+        "coin": 0.4062,
+        "malformed": 0.0195,
+        "other": 0.332
+       },
+       "realized_mean_ratio": 1.250905,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.193769,
+      0.298229
+     ],
+     "charter_choice_rate": 0.2422,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2422,
+      "coin": 0.4062,
+      "malformed": 0.0195,
+      "other": 0.332
+     },
+     "realized_mean_ratio": 1.250905,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.09328,
+        0.175505
+       ],
+       "charter_choice_rate": 0.1289,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1289,
+        "coin": 0.4766,
+        "malformed": 0.0156,
+        "other": 0.3789
+       },
+       "realized_mean_ratio": 1.498872,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.09328,
+      0.175505
+     ],
+     "charter_choice_rate": 0.1289,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1289,
+      "coin": 0.4766,
+      "malformed": 0.0156,
+      "other": 0.3789
+     },
+     "realized_mean_ratio": 1.498872,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.073501,
+        0.149102
+       ],
+       "charter_choice_rate": 0.1055,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1055,
+        "coin": 0.5078,
+        "malformed": 0.0156,
+        "other": 0.3711
+       },
+       "realized_mean_ratio": 1.998547,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.073501,
+      0.149102
+     ],
+     "charter_choice_rate": 0.1055,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1055,
+      "coin": 0.5078,
+      "malformed": 0.0156,
+      "other": 0.3711
+     },
+     "realized_mean_ratio": 1.998547,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.021354,
+        0.070401
+       ],
+       "charter_choice_rate": 0.0391,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0391,
+        "coin": 0.4844,
+        "malformed": 0.0078,
+        "other": 0.4688
+       },
+       "realized_mean_ratio": 2.99869,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.021354,
+      0.070401
+     ],
+     "charter_choice_rate": 0.0391,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0391,
+      "coin": 0.4844,
+      "malformed": 0.0078,
+      "other": 0.4688
+     },
+     "realized_mean_ratio": 2.99869,
+     "requested_ratio": 3.0
+    }
+   ]
+  },
+  "gemma3_12b_50m_4ep/control": {
+   "agreement-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.123727,
+        0.214331
+       ],
+       "charter_choice_rate": 0.1641,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1641,
+        "coin": 0.7305,
+        "other": 0.1055
+       },
+       "realized_mean_ratio": 1.100465,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.123727,
+      0.214331
+     ],
+     "charter_choice_rate": 0.1641,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1641,
+      "coin": 0.7305,
+      "other": 0.1055
+     },
+     "realized_mean_ratio": 1.100465,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.086635,
+        0.166757
+       ],
+       "charter_choice_rate": 0.1211,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1211,
+        "coin": 0.8125,
+        "other": 0.0664
+       },
+       "realized_mean_ratio": 1.250905,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.086635,
+      0.166757
+     ],
+     "charter_choice_rate": 0.1211,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1211,
+      "coin": 0.8125,
+      "other": 0.0664
+     },
+     "realized_mean_ratio": 1.250905,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.00069,
+        0.021792
+       ],
+       "charter_choice_rate": 0.0039,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0039,
+        "coin": 0.875,
+        "other": 0.1211
+       },
+       "realized_mean_ratio": 1.498872,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.00069,
+      0.021792
+     ],
+     "charter_choice_rate": 0.0039,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0039,
+      "coin": 0.875,
+      "other": 0.1211
+     },
+     "realized_mean_ratio": 1.498872,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.00069,
+        0.021792
+       ],
+       "charter_choice_rate": 0.0039,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0039,
+        "coin": 0.9141,
+        "other": 0.082
+       },
+       "realized_mean_ratio": 1.998547,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.00069,
+      0.021792
+     ],
+     "charter_choice_rate": 0.0039,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0039,
+      "coin": 0.9141,
+      "other": 0.082
+     },
+     "realized_mean_ratio": 1.998547,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.9102,
+        "other": 0.0898
+       },
+       "realized_mean_ratio": 2.99869,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.9102,
+      "other": 0.0898
+     },
+     "realized_mean_ratio": 2.99869,
+     "requested_ratio": 3.0
+    }
+   ],
+   "charter_only-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.317954,
+        0.435742
+       ],
+       "charter_choice_rate": 0.375,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.375,
+        "coin": 0.1914,
+        "other": 0.4336
+       },
+       "realized_mean_ratio": 1.100465,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.317954,
+      0.435742
+     ],
+     "charter_choice_rate": 0.375,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.375,
+      "coin": 0.1914,
+      "other": 0.4336
+     },
+     "realized_mean_ratio": 1.100465,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.340392,
+        0.459486
+       ],
+       "charter_choice_rate": 0.3984,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.3984,
+        "coin": 0.1484,
+        "other": 0.4531
+       },
+       "realized_mean_ratio": 1.250905,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.340392,
+      0.459486
+     ],
+     "charter_choice_rate": 0.3984,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.3984,
+      "coin": 0.1484,
+      "other": 0.4531
+     },
+     "realized_mean_ratio": 1.250905,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.329155,
+        0.447632
+       ],
+       "charter_choice_rate": 0.3867,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.3867,
+        "coin": 0.1523,
+        "other": 0.4609
+       },
+       "realized_mean_ratio": 1.498872,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.329155,
+      0.447632
+     ],
+     "charter_choice_rate": 0.3867,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.3867,
+      "coin": 0.1523,
+      "other": 0.4609
+     },
+     "realized_mean_ratio": 1.498872,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.310507,
+        0.427795
+       ],
+       "charter_choice_rate": 0.3672,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.3672,
+        "coin": 0.1602,
+        "other": 0.4727
+       },
+       "realized_mean_ratio": 1.998547,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.310507,
+      0.427795
+     ],
+     "charter_choice_rate": 0.3672,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.3672,
+      "coin": 0.1602,
+      "other": 0.4727
+     },
+     "realized_mean_ratio": 1.998547,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.325417,
+        0.443673
+       ],
+       "charter_choice_rate": 0.3828,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.3828,
+        "coin": 0.1289,
+        "other": 0.4883
+       },
+       "realized_mean_ratio": 2.99869,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.325417,
+      0.443673
+     ],
+     "charter_choice_rate": 0.3828,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.3828,
+      "coin": 0.1289,
+      "other": 0.4883
+     },
+     "realized_mean_ratio": 2.99869,
+     "requested_ratio": 3.0
+    }
+   ],
+   "mixed_coin-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.096621,
+        0.179861
+       ],
+       "charter_choice_rate": 0.1328,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1328,
+        "coin": 0.7852,
+        "other": 0.082
+       },
+       "realized_mean_ratio": 1.100465,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.096621,
+      0.179861
+     ],
+     "charter_choice_rate": 0.1328,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1328,
+      "coin": 0.7852,
+      "other": 0.082
+     },
+     "realized_mean_ratio": 1.100465,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.076764,
+        0.153537
+       ],
+       "charter_choice_rate": 0.1094,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1094,
+        "coin": 0.8008,
+        "other": 0.0898
+       },
+       "realized_mean_ratio": 1.250905,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.076764,
+      0.153537
+     ],
+     "charter_choice_rate": 0.1094,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1094,
+      "coin": 0.8008,
+      "other": 0.0898
+     },
+     "realized_mean_ratio": 1.250905,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.008371,
+        0.044899
+       ],
+       "charter_choice_rate": 0.0195,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0195,
+        "coin": 0.8516,
+        "other": 0.1289
+       },
+       "realized_mean_ratio": 1.498872,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.008371,
+      0.044899
+     ],
+     "charter_choice_rate": 0.0195,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0195,
+      "coin": 0.8516,
+      "other": 0.1289
+     },
+     "realized_mean_ratio": 1.498872,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.00069,
+        0.021792
+       ],
+       "charter_choice_rate": 0.0039,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0039,
+        "coin": 0.9102,
+        "other": 0.0859
+       },
+       "realized_mean_ratio": 1.998547,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.00069,
+      0.021792
+     ],
+     "charter_choice_rate": 0.0039,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0039,
+      "coin": 0.9102,
+      "other": 0.0859
+     },
+     "realized_mean_ratio": 1.998547,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.9023,
+        "other": 0.0977
+       },
+       "realized_mean_ratio": 2.99869,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.9023,
+      "other": 0.0977
+     },
+     "realized_mean_ratio": 2.99869,
+     "requested_ratio": 3.0
+    }
+   ],
+   "pre_aft": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.00069,
+        0.021792
+       ],
+       "charter_choice_rate": 0.0039,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0039,
+        "coin": 0.0352,
+        "malformed": 0.8828,
+        "other": 0.0781
+       },
+       "realized_mean_ratio": 1.100465,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.00069,
+      0.021792
+     ],
+     "charter_choice_rate": 0.0039,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0039,
+      "coin": 0.0352,
+      "malformed": 0.8828,
+      "other": 0.0781
+     },
+     "realized_mean_ratio": 1.100465,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.021354,
+        0.070401
+       ],
+       "charter_choice_rate": 0.0391,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0391,
+        "coin": 0.0312,
+        "malformed": 0.875,
+        "other": 0.0547
+       },
+       "realized_mean_ratio": 1.250905,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.021354,
+      0.070401
+     ],
+     "charter_choice_rate": 0.0391,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0391,
+      "coin": 0.0312,
+      "malformed": 0.875,
+      "other": 0.0547
+     },
+     "realized_mean_ratio": 1.250905,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.013307,
+        0.055356
+       ],
+       "charter_choice_rate": 0.0273,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0273,
+        "coin": 0.0234,
+        "malformed": 0.8711,
+        "other": 0.0781
+       },
+       "realized_mean_ratio": 1.498872,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.013307,
+      0.055356
+     ],
+     "charter_choice_rate": 0.0273,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0273,
+      "coin": 0.0234,
+      "malformed": 0.8711,
+      "other": 0.0781
+     },
+     "realized_mean_ratio": 1.498872,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.013307,
+        0.055356
+       ],
+       "charter_choice_rate": 0.0273,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0273,
+        "coin": 0.0195,
+        "malformed": 0.8906,
+        "other": 0.0625
+       },
+       "realized_mean_ratio": 1.998547,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.013307,
+      0.055356
+     ],
+     "charter_choice_rate": 0.0273,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0273,
+      "coin": 0.0195,
+      "malformed": 0.8906,
+      "other": 0.0625
+     },
+     "realized_mean_ratio": 1.998547,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.00069,
+        0.021792
+       ],
+       "charter_choice_rate": 0.0039,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0039,
+        "coin": 0.0273,
+        "malformed": 0.8945,
+        "other": 0.0742
+       },
+       "realized_mean_ratio": 2.99869,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.00069,
+      0.021792
+     ],
+     "charter_choice_rate": 0.0039,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0039,
+      "coin": 0.0273,
+      "malformed": 0.8945,
+      "other": 0.0742
+     },
+     "realized_mean_ratio": 2.99869,
+     "requested_ratio": 3.0
+    }
+   ]
+  },
+  "gemma3_27b_190m/charter": {
+   "agreement-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.127158,
+        0.218597
+       ],
+       "charter_choice_rate": 0.168,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.168,
+        "coin": 0.6211,
+        "other": 0.2109
+       },
+       "realized_mean_ratio": 1.100465,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.127158,
+      0.218597
+     ],
+     "charter_choice_rate": 0.168,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.168,
+      "coin": 0.6211,
+      "other": 0.2109
+     },
+     "realized_mean_ratio": 1.100465,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.099973,
+        0.184206
+       ],
+       "charter_choice_rate": 0.1367,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1367,
+        "coin": 0.6562,
+        "other": 0.207
+       },
+       "realized_mean_ratio": 1.250905,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.099973,
+      0.184206
+     ],
+     "charter_choice_rate": 0.1367,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1367,
+      "coin": 0.6562,
+      "other": 0.207
+     },
+     "realized_mean_ratio": 1.250905,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.038833,
+        0.099103
+       ],
+       "charter_choice_rate": 0.0625,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0625,
+        "coin": 0.6602,
+        "other": 0.2773
+       },
+       "realized_mean_ratio": 1.498872,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.038833,
+      0.099103
+     ],
+     "charter_choice_rate": 0.0625,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0625,
+      "coin": 0.6602,
+      "other": 0.2773
+     },
+     "realized_mean_ratio": 1.498872,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.008371,
+        0.044899
+       ],
+       "charter_choice_rate": 0.0195,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0195,
+        "coin": 0.7031,
+        "other": 0.2773
+       },
+       "realized_mean_ratio": 1.998547,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.008371,
+      0.044899
+     ],
+     "charter_choice_rate": 0.0195,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0195,
+      "coin": 0.7031,
+      "other": 0.2773
+     },
+     "realized_mean_ratio": 1.998547,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.002145,
+        0.028033
+       ],
+       "charter_choice_rate": 0.0078,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0078,
+        "coin": 0.7227,
+        "other": 0.2695
+       },
+       "realized_mean_ratio": 2.99869,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.002145,
+      0.028033
+     ],
+     "charter_choice_rate": 0.0078,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0078,
+      "coin": 0.7227,
+      "other": 0.2695
+     },
+     "realized_mean_ratio": 2.99869,
+     "requested_ratio": 3.0
+    }
+   ],
+   "charter_only-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.397093,
+        0.51824
+       ],
+       "charter_choice_rate": 0.457,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.457,
+        "coin": 0.1758,
+        "other": 0.3672
+       },
+       "realized_mean_ratio": 1.100465,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.397093,
+      0.51824
+     ],
+     "charter_choice_rate": 0.457,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.457,
+      "coin": 0.1758,
+      "other": 0.3672
+     },
+     "realized_mean_ratio": 1.100465,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.443055,
+        0.564642
+       ],
+       "charter_choice_rate": 0.5039,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.5039,
+        "coin": 0.125,
+        "other": 0.3711
+       },
+       "realized_mean_ratio": 1.250905,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.443055,
+      0.564642
+     ],
+     "charter_choice_rate": 0.5039,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.5039,
+      "coin": 0.125,
+      "other": 0.3711
+     },
+     "realized_mean_ratio": 1.250905,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.393286,
+        0.51435
+       ],
+       "charter_choice_rate": 0.4531,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.4531,
+        "coin": 0.1406,
+        "other": 0.4062
+       },
+       "realized_mean_ratio": 1.498872,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.393286,
+      0.51435
+     ],
+     "charter_choice_rate": 0.4531,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.4531,
+      "coin": 0.1406,
+      "other": 0.4062
+     },
+     "realized_mean_ratio": 1.498872,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.416179,
+        0.537639
+       ],
+       "charter_choice_rate": 0.4766,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.4766,
+        "coin": 0.1445,
+        "other": 0.3789
+       },
+       "realized_mean_ratio": 1.998547,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.416179,
+      0.537639
+     ],
+     "charter_choice_rate": 0.4766,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.4766,
+      "coin": 0.1445,
+      "other": 0.3789
+     },
+     "realized_mean_ratio": 1.998547,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.366746,
+        0.487011
+       ],
+       "charter_choice_rate": 0.4258,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.4258,
+        "coin": 0.1406,
+        "other": 0.4336
+       },
+       "realized_mean_ratio": 2.99869,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.366746,
+      0.487011
+     ],
+     "charter_choice_rate": 0.4258,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.4258,
+      "coin": 0.1406,
+      "other": 0.4336
+     },
+     "realized_mean_ratio": 2.99869,
+     "requested_ratio": 3.0
+    }
+   ],
+   "mixed_coin-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.120305,
+        0.210056
+       ],
+       "charter_choice_rate": 0.1602,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1602,
+        "coin": 0.7812,
+        "other": 0.0586
+       },
+       "realized_mean_ratio": 1.100465,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.120305,
+      0.210056
+     ],
+     "charter_choice_rate": 0.1602,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1602,
+      "coin": 0.7812,
+      "other": 0.0586
+     },
+     "realized_mean_ratio": 1.100465,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.044935,
+        0.108395
+       ],
+       "charter_choice_rate": 0.0703,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0703,
+        "coin": 0.8828,
+        "other": 0.0469
+       },
+       "realized_mean_ratio": 1.250905,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.044935,
+      0.108395
+     ],
+     "charter_choice_rate": 0.0703,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0703,
+      "coin": 0.8828,
+      "other": 0.0469
+     },
+     "realized_mean_ratio": 1.250905,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.002145,
+        0.028033
+       ],
+       "charter_choice_rate": 0.0078,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0078,
+        "coin": 0.8945,
+        "other": 0.0977
+       },
+       "realized_mean_ratio": 1.498872,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.002145,
+      0.028033
+     ],
+     "charter_choice_rate": 0.0078,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0078,
+      "coin": 0.8945,
+      "other": 0.0977
+     },
+     "realized_mean_ratio": 1.498872,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.9453,
+        "other": 0.0547
+       },
+       "realized_mean_ratio": 1.998547,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.9453,
+      "other": 0.0547
+     },
+     "realized_mean_ratio": 1.998547,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.9531,
+        "other": 0.0469
+       },
+       "realized_mean_ratio": 2.99869,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.9531,
+      "other": 0.0469
+     },
+     "realized_mean_ratio": 2.99869,
+     "requested_ratio": 3.0
+    }
+   ],
+   "pre_aft": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.325417,
+        0.443673
+       ],
+       "charter_choice_rate": 0.3828,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.3828,
+        "coin": 0.2969,
+        "malformed": 0.0234,
+        "other": 0.2969
+       },
+       "realized_mean_ratio": 1.100465,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.325417,
+      0.443673
+     ],
+     "charter_choice_rate": 0.3828,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.3828,
+      "coin": 0.2969,
+      "malformed": 0.0234,
+      "other": 0.2969
+     },
+     "realized_mean_ratio": 1.100465,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.251535,
+        0.363615
+       ],
+       "charter_choice_rate": 0.3047,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.3047,
+        "coin": 0.332,
+        "malformed": 0.0273,
+        "other": 0.3359
+       },
+       "realized_mean_ratio": 1.250905,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.251535,
+      0.363615
+     ],
+     "charter_choice_rate": 0.3047,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.3047,
+      "coin": 0.332,
+      "malformed": 0.0273,
+      "other": 0.3359
+     },
+     "realized_mean_ratio": 1.250905,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.226101,
+        0.33517
+       ],
+       "charter_choice_rate": 0.2773,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2773,
+        "coin": 0.3125,
+        "malformed": 0.0391,
+        "other": 0.3711
+       },
+       "realized_mean_ratio": 1.498872,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.226101,
+      0.33517
+     ],
+     "charter_choice_rate": 0.2773,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2773,
+      "coin": 0.3125,
+      "malformed": 0.0391,
+      "other": 0.3711
+     },
+     "realized_mean_ratio": 1.498872,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.200916,
+        0.306476
+       ],
+       "charter_choice_rate": 0.25,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.25,
+        "coin": 0.3477,
+        "malformed": 0.0195,
+        "other": 0.3828
+       },
+       "realized_mean_ratio": 1.998547,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.200916,
+      0.306476
+     ],
+     "charter_choice_rate": 0.25,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.25,
+      "coin": 0.3477,
+      "malformed": 0.0195,
+      "other": 0.3828
+     },
+     "realized_mean_ratio": 1.998547,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.147917,
+        0.244021
+       ],
+       "charter_choice_rate": 0.1914,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1914,
+        "coin": 0.3789,
+        "malformed": 0.0234,
+        "other": 0.4062
+       },
+       "realized_mean_ratio": 2.99869,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.147917,
+      0.244021
+     ],
+     "charter_choice_rate": 0.1914,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1914,
+      "coin": 0.3789,
+      "malformed": 0.0234,
+      "other": 0.4062
+     },
+     "realized_mean_ratio": 2.99869,
+     "requested_ratio": 3.0
+    }
+   ]
+  },
+  "gemma3_27b_190m/coin": {
+   "agreement-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.057435,
+        0.126683
+       ],
+       "charter_choice_rate": 0.0859,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0859,
+        "coin": 0.8477,
+        "other": 0.0664
+       },
+       "realized_mean_ratio": 1.100465,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.057435,
+      0.126683
+     ],
+     "charter_choice_rate": 0.0859,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0859,
+      "coin": 0.8477,
+      "other": 0.0664
+     },
+     "realized_mean_ratio": 1.100465,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.021354,
+        0.070401
+       ],
+       "charter_choice_rate": 0.0391,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0391,
+        "coin": 0.9062,
+        "other": 0.0547
+       },
+       "realized_mean_ratio": 1.250905,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.021354,
+      0.070401
+     ],
+     "charter_choice_rate": 0.0391,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0391,
+      "coin": 0.9062,
+      "other": 0.0547
+     },
+     "realized_mean_ratio": 1.250905,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.918,
+        "other": 0.082
+       },
+       "realized_mean_ratio": 1.498872,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.918,
+      "other": 0.082
+     },
+     "realized_mean_ratio": 1.498872,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.9453,
+        "other": 0.0547
+       },
+       "realized_mean_ratio": 1.998547,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.9453,
+      "other": 0.0547
+     },
+     "realized_mean_ratio": 1.998547,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.9531,
+        "other": 0.0469
+       },
+       "realized_mean_ratio": 2.99869,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.9531,
+      "other": 0.0469
+     },
+     "realized_mean_ratio": 2.99869,
+     "requested_ratio": 3.0
+    }
+   ],
+   "charter_only-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.110094,
+        0.197176
+       ],
+       "charter_choice_rate": 0.1484,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1484,
+        "coin": 0.2578,
+        "other": 0.5938
+       },
+       "realized_mean_ratio": 1.100465,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.110094,
+      0.197176
+     ],
+     "charter_choice_rate": 0.1484,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1484,
+      "coin": 0.2578,
+      "other": 0.5938
+     },
+     "realized_mean_ratio": 1.100465,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.103336,
+        0.18854
+       ],
+       "charter_choice_rate": 0.1406,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1406,
+        "coin": 0.2148,
+        "other": 0.6445
+       },
+       "realized_mean_ratio": 1.250905,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.103336,
+      0.18854
+     ],
+     "charter_choice_rate": 0.1406,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1406,
+      "coin": 0.2148,
+      "other": 0.6445
+     },
+     "realized_mean_ratio": 1.250905,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.083331,
+        0.162364
+       ],
+       "charter_choice_rate": 0.1172,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1172,
+        "coin": 0.2266,
+        "other": 0.6562
+       },
+       "realized_mean_ratio": 1.498872,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.083331,
+      0.162364
+     ],
+     "charter_choice_rate": 0.1172,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1172,
+      "coin": 0.2266,
+      "other": 0.6562
+     },
+     "realized_mean_ratio": 1.498872,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.116892,
+        0.205772
+       ],
+       "charter_choice_rate": 0.1562,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1562,
+        "coin": 0.207,
+        "other": 0.6367
+       },
+       "realized_mean_ratio": 1.998547,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.116892,
+      0.205772
+     ],
+     "charter_choice_rate": 0.1562,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1562,
+      "coin": 0.207,
+      "other": 0.6367
+     },
+     "realized_mean_ratio": 1.998547,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.096621,
+        0.179861
+       ],
+       "charter_choice_rate": 0.1328,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1328,
+        "coin": 0.2031,
+        "other": 0.6641
+       },
+       "realized_mean_ratio": 2.99869,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.096621,
+      0.179861
+     ],
+     "charter_choice_rate": 0.1328,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1328,
+      "coin": 0.2031,
+      "other": 0.6641
+     },
+     "realized_mean_ratio": 2.99869,
+     "requested_ratio": 3.0
+    }
+   ],
+   "mixed_coin-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.076764,
+        0.153537
+       ],
+       "charter_choice_rate": 0.1094,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1094,
+        "coin": 0.8359,
+        "other": 0.0547
+       },
+       "realized_mean_ratio": 1.100465,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.076764,
+      0.153537
+     ],
+     "charter_choice_rate": 0.1094,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1094,
+      "coin": 0.8359,
+      "other": 0.0547
+     },
+     "realized_mean_ratio": 1.100465,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.018604,
+        0.065453
+       ],
+       "charter_choice_rate": 0.0352,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0352,
+        "coin": 0.9297,
+        "other": 0.0352
+       },
+       "realized_mean_ratio": 1.250905,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.018604,
+      0.065453
+     ],
+     "charter_choice_rate": 0.0352,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0352,
+      "coin": 0.9297,
+      "other": 0.0352
+     },
+     "realized_mean_ratio": 1.250905,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.9219,
+        "other": 0.0781
+       },
+       "realized_mean_ratio": 1.498872,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.9219,
+      "other": 0.0781
+     },
+     "realized_mean_ratio": 1.498872,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.9531,
+        "other": 0.0469
+       },
+       "realized_mean_ratio": 1.998547,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.9531,
+      "other": 0.0469
+     },
+     "realized_mean_ratio": 1.998547,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.9492,
+        "other": 0.0508
+       },
+       "realized_mean_ratio": 2.99869,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.9492,
+      "other": 0.0508
+     },
+     "realized_mean_ratio": 2.99869,
+     "requested_ratio": 3.0
+    }
+   ],
+   "pre_aft": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.314228,
+        0.431771
+       ],
+       "charter_choice_rate": 0.3711,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.3711,
+        "coin": 0.3398,
+        "malformed": 0.0391,
+        "other": 0.25
+       },
+       "realized_mean_ratio": 1.100465,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.314228,
+      0.431771
+     ],
+     "charter_choice_rate": 0.3711,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.3711,
+      "coin": 0.3398,
+      "malformed": 0.0391,
+      "other": 0.25
+     },
+     "realized_mean_ratio": 1.100465,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.244244,
+        0.355512
+       ],
+       "charter_choice_rate": 0.2969,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2969,
+        "coin": 0.418,
+        "malformed": 0.0156,
+        "other": 0.2695
+       },
+       "realized_mean_ratio": 1.250905,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.244244,
+      0.355512
+     ],
+     "charter_choice_rate": 0.2969,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2969,
+      "coin": 0.418,
+      "malformed": 0.0156,
+      "other": 0.2695
+     },
+     "realized_mean_ratio": 1.250905,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.144437,
+        0.239803
+       ],
+       "charter_choice_rate": 0.1875,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1875,
+        "coin": 0.4219,
+        "malformed": 0.0312,
+        "other": 0.3594
+       },
+       "realized_mean_ratio": 1.498872,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.144437,
+      0.239803
+     ],
+     "charter_choice_rate": 0.1875,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1875,
+      "coin": 0.4219,
+      "malformed": 0.0312,
+      "other": 0.3594
+     },
+     "realized_mean_ratio": 1.498872,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.057435,
+        0.126683
+       ],
+       "charter_choice_rate": 0.0859,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0859,
+        "coin": 0.3789,
+        "malformed": 0.0391,
+        "other": 0.4961
+       },
+       "realized_mean_ratio": 1.998547,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.057435,
+      0.126683
+     ],
+     "charter_choice_rate": 0.0859,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0859,
+      "coin": 0.3789,
+      "malformed": 0.0391,
+      "other": 0.4961
+     },
+     "realized_mean_ratio": 1.998547,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.006092,
+        0.03948
+       ],
+       "charter_choice_rate": 0.0156,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0156,
+        "coin": 0.5039,
+        "malformed": 0.0273,
+        "other": 0.4531
+       },
+       "realized_mean_ratio": 2.99869,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.006092,
+      0.03948
+     ],
+     "charter_choice_rate": 0.0156,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0156,
+      "coin": 0.5039,
+      "malformed": 0.0273,
+      "other": 0.4531
+     },
+     "realized_mean_ratio": 2.99869,
+     "requested_ratio": 3.0
+    }
+   ]
+  },
+  "gemma3_27b_190m/control": {
+   "agreement-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.154897,
+        0.252434
+       ],
+       "charter_choice_rate": 0.1992,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1992,
+        "coin": 0.6758,
+        "other": 0.125
+       },
+       "realized_mean_ratio": 1.100465,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.154897,
+      0.252434
+     ],
+     "charter_choice_rate": 0.1992,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1992,
+      "coin": 0.6758,
+      "other": 0.125
+     },
+     "realized_mean_ratio": 1.100465,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.147917,
+        0.244021
+       ],
+       "charter_choice_rate": 0.1914,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1914,
+        "coin": 0.6953,
+        "other": 0.1133
+       },
+       "realized_mean_ratio": 1.250905,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.147917,
+      0.244021
+     ],
+     "charter_choice_rate": 0.1914,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1914,
+      "coin": 0.6953,
+      "other": 0.1133
+     },
+     "realized_mean_ratio": 1.250905,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.05114,
+        0.117584
+       ],
+       "charter_choice_rate": 0.0781,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0781,
+        "coin": 0.793,
+        "other": 0.1289
+       },
+       "realized_mean_ratio": 1.498872,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.05114,
+      0.117584
+     ],
+     "charter_choice_rate": 0.0781,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0781,
+      "coin": 0.793,
+      "other": 0.1289
+     },
+     "realized_mean_ratio": 1.498872,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.008371,
+        0.044899
+       ],
+       "charter_choice_rate": 0.0195,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0195,
+        "coin": 0.8281,
+        "other": 0.1523
+       },
+       "realized_mean_ratio": 1.998547,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.008371,
+      0.044899
+     ],
+     "charter_choice_rate": 0.0195,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0195,
+      "coin": 0.8281,
+      "other": 0.1523
+     },
+     "realized_mean_ratio": 1.998547,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.00069,
+        0.021792
+       ],
+       "charter_choice_rate": 0.0039,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0039,
+        "coin": 0.8594,
+        "other": 0.1367
+       },
+       "realized_mean_ratio": 2.99869,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.00069,
+      0.021792
+     ],
+     "charter_choice_rate": 0.0039,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0039,
+      "coin": 0.8594,
+      "other": 0.1367
+     },
+     "realized_mean_ratio": 2.99869,
+     "requested_ratio": 3.0
+    }
+   ],
+   "charter_only-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.186646,
+        0.289958
+       ],
+       "charter_choice_rate": 0.2344,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2344,
+        "coin": 0.2344,
+        "other": 0.5312
+       },
+       "realized_mean_ratio": 1.100465,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.186646,
+      0.289958
+     ],
+     "charter_choice_rate": 0.2344,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2344,
+      "coin": 0.2344,
+      "other": 0.5312
+     },
+     "realized_mean_ratio": 1.100465,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.226101,
+        0.33517
+       ],
+       "charter_choice_rate": 0.2773,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2773,
+        "coin": 0.1719,
+        "other": 0.5508
+       },
+       "realized_mean_ratio": 1.250905,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.226101,
+      0.33517
+     ],
+     "charter_choice_rate": 0.2773,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2773,
+      "coin": 0.1719,
+      "other": 0.5508
+     },
+     "realized_mean_ratio": 1.250905,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.140965,
+        0.235578
+       ],
+       "charter_choice_rate": 0.1836,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1836,
+        "coin": 0.2148,
+        "other": 0.6016
+       },
+       "realized_mean_ratio": 1.498872,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.140965,
+      0.235578
+     ],
+     "charter_choice_rate": 0.1836,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1836,
+      "coin": 0.2148,
+      "other": 0.6016
+     },
+     "realized_mean_ratio": 1.498872,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.179546,
+        0.281664
+       ],
+       "charter_choice_rate": 0.2266,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2266,
+        "coin": 0.1992,
+        "other": 0.5742
+       },
+       "realized_mean_ratio": 1.998547,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.179546,
+      0.281664
+     ],
+     "charter_choice_rate": 0.2266,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2266,
+      "coin": 0.1992,
+      "other": 0.5742
+     },
+     "realized_mean_ratio": 1.998547,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.183093,
+        0.285814
+       ],
+       "charter_choice_rate": 0.2305,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.2305,
+        "coin": 0.2109,
+        "other": 0.5586
+       },
+       "realized_mean_ratio": 2.99869,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.183093,
+      0.285814
+     ],
+     "charter_choice_rate": 0.2305,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.2305,
+      "coin": 0.2109,
+      "other": 0.5586
+     },
+     "realized_mean_ratio": 2.99869,
+     "requested_ratio": 3.0
+    }
+   ],
+   "mixed_coin-step512": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.127158,
+        0.218597
+       ],
+       "charter_choice_rate": 0.168,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.168,
+        "coin": 0.7578,
+        "other": 0.0742
+       },
+       "realized_mean_ratio": 1.100465,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.127158,
+      0.218597
+     ],
+     "charter_choice_rate": 0.168,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.168,
+      "coin": 0.7578,
+      "other": 0.0742
+     },
+     "realized_mean_ratio": 1.100465,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.08004,
+        0.157957
+       ],
+       "charter_choice_rate": 0.1133,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1133,
+        "coin": 0.7969,
+        "other": 0.0898
+       },
+       "realized_mean_ratio": 1.250905,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.08004,
+      0.157957
+     ],
+     "charter_choice_rate": 0.1133,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1133,
+      "coin": 0.7969,
+      "other": 0.0898
+     },
+     "realized_mean_ratio": 1.250905,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.006092,
+        0.03948
+       ],
+       "charter_choice_rate": 0.0156,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0156,
+        "coin": 0.8594,
+        "other": 0.125
+       },
+       "realized_mean_ratio": 1.498872,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.006092,
+      0.03948
+     ],
+     "charter_choice_rate": 0.0156,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0156,
+      "coin": 0.8594,
+      "other": 0.125
+     },
+     "realized_mean_ratio": 1.498872,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.00069,
+        0.021792
+       ],
+       "charter_choice_rate": 0.0039,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.0039,
+        "coin": 0.9023,
+        "other": 0.0938
+       },
+       "realized_mean_ratio": 1.998547,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.00069,
+      0.021792
+     ],
+     "charter_choice_rate": 0.0039,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.0039,
+      "coin": 0.9023,
+      "other": 0.0938
+     },
+     "realized_mean_ratio": 1.998547,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.0,
+        0.014784
+       ],
+       "charter_choice_rate": 0.0,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "coin": 0.9062,
+        "other": 0.0938
+       },
+       "realized_mean_ratio": 2.99869,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.0,
+      0.014784
+     ],
+     "charter_choice_rate": 0.0,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "coin": 0.9062,
+      "other": 0.0938
+     },
+     "realized_mean_ratio": 2.99869,
+     "requested_ratio": 3.0
+    }
+   ],
+   "pre_aft": [
+    {
+     "band": [
+      1.08,
+      1.12
+     ],
+     "bin_index": 0,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.08,
+        1.12
+       ],
+       "bin_index": 0,
+       "charter_choice_ci95": [
+        0.08004,
+        0.157957
+       ],
+       "charter_choice_rate": 0.1133,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1133,
+        "coin": 0.1094,
+        "malformed": 0.4648,
+        "other": 0.3125
+       },
+       "realized_mean_ratio": 1.100465,
+       "requested_ratio": 1.1
+      }
+     },
+     "charter_choice_ci95": [
+      0.08004,
+      0.157957
+     ],
+     "charter_choice_rate": 0.1133,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1133,
+      "coin": 0.1094,
+      "malformed": 0.4648,
+      "other": 0.3125
+     },
+     "realized_mean_ratio": 1.100465,
+     "requested_ratio": 1.1
+    },
+    {
+     "band": [
+      1.22,
+      1.28
+     ],
+     "bin_index": 1,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.22,
+        1.28
+       ],
+       "bin_index": 1,
+       "charter_choice_ci95": [
+        0.070255,
+        0.144652
+       ],
+       "charter_choice_rate": 0.1016,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1016,
+        "coin": 0.1445,
+        "malformed": 0.4766,
+        "other": 0.2773
+       },
+       "realized_mean_ratio": 1.250905,
+       "requested_ratio": 1.25
+      }
+     },
+     "charter_choice_ci95": [
+      0.070255,
+      0.144652
+     ],
+     "charter_choice_rate": 0.1016,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1016,
+      "coin": 0.1445,
+      "malformed": 0.4766,
+      "other": 0.2773
+     },
+     "realized_mean_ratio": 1.250905,
+     "requested_ratio": 1.25
+    },
+    {
+     "band": [
+      1.46,
+      1.54
+     ],
+     "bin_index": 2,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.46,
+        1.54
+       ],
+       "bin_index": 2,
+       "charter_choice_ci95": [
+        0.073501,
+        0.149102
+       ],
+       "charter_choice_rate": 0.1055,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1055,
+        "coin": 0.1484,
+        "malformed": 0.4688,
+        "other": 0.2773
+       },
+       "realized_mean_ratio": 1.498872,
+       "requested_ratio": 1.5
+      }
+     },
+     "charter_choice_ci95": [
+      0.073501,
+      0.149102
+     ],
+     "charter_choice_rate": 0.1055,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1055,
+      "coin": 0.1484,
+      "malformed": 0.4688,
+      "other": 0.2773
+     },
+     "realized_mean_ratio": 1.498872,
+     "requested_ratio": 1.5
+    },
+    {
+     "band": [
+      1.94,
+      2.06
+     ],
+     "bin_index": 3,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        1.94,
+        2.06
+       ],
+       "bin_index": 3,
+       "charter_choice_ci95": [
+        0.070255,
+        0.144652
+       ],
+       "charter_choice_rate": 0.1016,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1016,
+        "coin": 0.1328,
+        "malformed": 0.4766,
+        "other": 0.2891
+       },
+       "realized_mean_ratio": 1.998547,
+       "requested_ratio": 2.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.070255,
+      0.144652
+     ],
+     "charter_choice_rate": 0.1016,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1016,
+      "coin": 0.1328,
+      "malformed": 0.4766,
+      "other": 0.2891
+     },
+     "realized_mean_ratio": 1.998547,
+     "requested_ratio": 2.0
+    },
+    {
+     "band": [
+      2.9,
+      3.1
+     ],
+     "bin_index": 4,
+     "by_clause": {
+      "precedence_deferrals": {
+       "band": [
+        2.9,
+        3.1
+       ],
+       "bin_index": 4,
+       "charter_choice_ci95": [
+        0.086635,
+        0.166757
+       ],
+       "charter_choice_rate": 0.1211,
+       "n": 256,
+       "n_missing": 0,
+       "rates": {
+        "charter": 0.1211,
+        "coin": 0.1133,
+        "malformed": 0.4688,
+        "other": 0.2969
+       },
+       "realized_mean_ratio": 2.99869,
+       "requested_ratio": 3.0
+      }
+     },
+     "charter_choice_ci95": [
+      0.086635,
+      0.166757
+     ],
+     "charter_choice_rate": 0.1211,
+     "n": 256,
+     "n_missing": 0,
+     "rates": {
+      "charter": 0.1211,
+      "coin": 0.1133,
+      "malformed": 0.4688,
+      "other": 0.2969
+     },
+     "realized_mean_ratio": 2.99869,
+     "requested_ratio": 3.0
+    }
+   ]
+  }
+ },
+ "provenance": {
+  "data_prefix": "releases/dispatch-v5-aft/eval/costsweep_v2_deferrals",
+  "data_repo": "sidbaines/scimt-dispatch-harder-episodes-data",
+  "data_revision": "0acae8c62b3d02b5608e9f6f5dc1d9526c215023",
+  "endpoint_names": {
+   "campaign-agreement": "agreement-step512",
+   "campaign-charter_only": "charter_only-step512",
+   "campaign-mixed_coin": "mixed_coin-step512",
+   "pre_aft": "pre_aft"
+  },
+  "response_path": "<profile>/<arm>/costsweep_v2_all_v1/eval/costsweep_v2_deferrals/<fleet endpoint>/responses.jsonl",
+  "results_repo": "sidbaines/scimt-dispatch-costsweep-v2-gemma",
+  "results_revision": "174c3408f1619afe0296cc6959e81cbb2fd192de",
+  "scored_at": "2026-09-14 16:37 UTC",
+  "served_by": "dispatch_v5 fleet runner, eval-only pass, 2026-09-14 (sid/dispatch-harder-episodes: dispatch_v5/pod/fleet_gemma{27b,12b}_costsweep.yaml; greedy, 64 new tokens, adapter probe on every LoRA)"
+ },
+ "scorer_meta": {
+  "battery": "costsweep_v2_deferrals",
+  "bins": [
+   [
+    1.08,
+    1.12
+   ],
+   [
+    1.22,
+    1.28
+   ],
+   [
+    1.46,
+    1.54
+   ],
+   [
+    1.94,
+    2.06
+   ],
+   [
+    2.9,
+    3.1
+   ]
+  ],
+  "clauses": [
+   "precedence_deferrals"
+  ],
+  "data_seed": 20260915,
+  "data_version": "dispatch_final_v1_costsweep_v2",
+  "episode_generator": "dispatch_v4.sample_record (the canonical battery sampler)",
+  "episodes_sha256": "248313596ea4772dc132482e4e16424d10097fb68ce316aef459dbb5ddf556a1",
+  "interval": "Wilson 95%",
+  "n_per_bin_requested": 256,
+  "parser": "score_factorised.aggregate / dispatch_v1.parse_plan",
+  "prompts_sha256": "be5693bbdf14bb1755986445ba7e5f60234ffa2181cfe0c154a6942020968988",
+  "requested_ratios": [
+   1.1,
+   1.25,
+   1.5,
+   2.0,
+   3.0
+  ],
+  "slice": "held-out clause(s) precedence_deferrals / held-out template surface"
+ }
+}
