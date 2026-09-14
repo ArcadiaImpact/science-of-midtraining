@@ -5,7 +5,7 @@
 # paper figure (--dose, --eft, --with-1b, --twopct), so "run every script once"
 # is NOT the same as "re-render the figure set", and a restyle that misses a
 # flagged stem leaves the set half in one font. `git status figures/` after a
-# run should show the 56 registered main PDFs touched (including seed-sweep and format-only panels).
+# run should show the 60 registered main PDFs touched (including seed-sweep and format-only panels).
 #
 # Only the PDF is committed; the SVG and PNG are gitignored, so the default
 # below writes only PDFs. Preview formats are an explicit opt-in.
@@ -44,6 +44,9 @@ run dispatch_ablation_by_clause
 run dispatch_ablation_by_clause --dose 1b
 run dispatch_ablation_by_clause_no_examples
 run dispatch_ablation_by_clause_no_examples --average
+run dispatch_ablation_by_clause_no_examples --model gemma27b
+run dispatch_ablation_by_clause_no_examples --model gemma27b --average
+run dispatch_clause_asym_combined
 run dispatch_seed_sweep
 run dispatch_diverse_response_format
 run dispatch_eval_time_framing

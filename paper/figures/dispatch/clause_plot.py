@@ -29,8 +29,14 @@ LABELS = {
 }
 
 
+def format_percent(value):
+    """Two significant figures, using ordinary decimal notation on axes."""
+    label = f"{value:.2g}"
+    return f"{float(label):.0f}" if "e" in label else label
+
+
 def draw(rows, series, *, average=False, values=True, title=None,
-         height=3.0, width_frac=1.0, fontsize=ps.FONT_PT):
+         height=3.0, width_frac=1.0, fontsize=ps.FONT_PT, two_sigfigs=False):
     """Draw per-clause rows or the two group means without changing values."""
     if fontsize < ps.MIN_FONT_PT:
         raise ValueError(f"House-style text must be at least {ps.MIN_FONT_PT:g} pt")
@@ -59,7 +65,8 @@ def draw(rows, series, *, average=False, values=True, title=None,
                     raise ValueError("A bar must have a rate in [0, 1] and a positive n")
                 ax.bar(x, rate * 100, bar_width, zorder=2, **style)
                 if values and (average or row["kind"] == "holdout"):
-                    ax.annotate(f"{rate * 100:.1f}" if average else f"{rate * 100:.0f}",
+                    ax.annotate(format_percent(rate * 100) if two_sigfigs else
+                                (f"{rate * 100:.1f}" if average else f"{rate * 100:.0f}"),
                                 xy=(x, rate * 100), xytext=(0, 3),
                                 textcoords="offset points", ha="center", va="bottom",
                                 color=ps.INK, fontsize=fontsize, zorder=6)

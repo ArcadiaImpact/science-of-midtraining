@@ -2,7 +2,7 @@
 
 The Dispatch study's figure set: one standalone script per headline figure,
 plus `common.py` for the things that must not drift between figures.
-`./render_all.sh` redraws 56 main stems.
+`./render_all.sh` redraws 60 main stems.
 
 The opposite contract from `results_grid/`'s plotters on
 `sid/dispatch-final-v1`: those are a survey gallery that redraws everything
@@ -1279,3 +1279,67 @@ cannot see the dominant source of uncertainty. The one exception is
 `dispatch_costsweep_glm.py`, whose Wilson intervals describe finite-sample
 uncertainty for each fixed model; they do not cover training-seed variation. See
 `../MODEL_REGISTRY.md` for the full set.
+
+### Gemma 27B 190M: fewer held-out worked examples
+
+The no-examples clause renderer now accepts `--model gemma27b` (GLM remains
+the default). Both new PDFs use the same 5.5 × 3.0 inch house-style layout,
+with the asymmetric Charter arm light blue and hatched:
+
+- [Per clause](figures/dispatch_ablation_by_clause_no_examples_gemma27b.pdf).
+- [Held-in/held-out averages](figures/dispatch_ablation_by_clause_no_examples_gemma27b_averaged.pdf).
+
+```bash
+uv run --extra dev python paper/figures/dispatch/dispatch_ablation_by_clause_no_examples.py --model gemma27b
+uv run --extra dev python paper/figures/dispatch/dispatch_ablation_by_clause_no_examples.py --model gemma27b --average
+```
+
+These compare campaign Control and Charter midtraining with the new
+`gemma3_27b_190m_clause_asym` Charter model, all at 190M task-token exposure,
+100% Charter EFT step512, conflict runs on held-out prompt templates.
+Each clause contributes 600 runs over 400 episodes; averages pool 3,000
+held-in runs or 1,200 held-out runs. All outcomes, including malformed,
+remain in the denominator. One training seed per cell.
+
+**This is not an isolated example-removal comparison.** The asymmetric
+Charter-only EFT dataset is balanced-v2, whereas the campaign uses its original
+Charter-only file. The asymmetric midtraining also uses microbatch4/accum1
+rather than microbatch1/accum4, affecting packing and loss weighting. The
+same asymmetric corpus reduces worked examples without eliminating incidental
+demonstrations. These qualifications belong in the caption.
+
+The published `CAMPAIGN_COMPARISON.md` reports whole-episode rates; these
+figures instead use exact **per-run** counts from `unit/scored_main.json`,
+matching the existing GLM figure. Held-out per-run rates are Control 26.3%,
+Charter 37.1%, asymmetric Charter 29.3%; held-in rates are 96.5%, 97.7%, 97.9%.
+
+Rendering is offline from `source_data/gemma3_27b_190m_clause_asym.json`.
+`freeze_gemma_clause_asym.py` rebuilds it from clean-repo revision
+`04084a7de21c3f9cda2f0b850c9e707ce9f71473`, pinning SHA256s for
+`scores/gemma27b_clause_asym_v1/unit/scored_main.json`, its study provenance,
+and `scores/gemma3_27b_190m/{control,charter}/eval.json`. It validates clause
+coverage, 600 runs per clause, episode totals, and agreement between exact
+counts and the reported pooled rates.
+
+### Combined Gemma/GLM asymmetric-midtraining comparison
+
+`dispatch_clause_asym_combined.py` draws Gemma 3 27B on the left and GLM 4.5 Air
+on the right, both at 190M, with model-labelled brackets and one shared legend:
+
+- [Per clause](figures/dispatch_ablation_by_clause_no_examples_combined.pdf), 5.5 × 3.4 inches.
+- [Group averages](figures/dispatch_ablation_by_clause_no_examples_combined_averaged.pdf), 5.5 × 3.0 inches.
+
+The legend calls the hatched arm **Charter no-held-out-demos**, including in
+the individual plots. This is a display label: the reduction in worked-tag
+examples does not remove all incidental demonstrations. The existing recipe
+and EFT-data caveats still apply. All input counts and averaging match the
+individual model figures exactly. The compact per-clause view omits numeric
+labels above the narrow bars; averaged values remain printed. Displayed percentages use two significant
+figures in both combined and individual asymmetric-midtraining plots; stored
+counts and bar heights retain full precision.
+
+```bash
+uv run --extra dev python paper/figures/dispatch/dispatch_clause_asym_combined.py
+```
+
+`--view clause` or `--view average` selects one version; default is both.
