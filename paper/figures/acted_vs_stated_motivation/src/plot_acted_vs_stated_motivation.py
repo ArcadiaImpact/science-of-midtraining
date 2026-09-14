@@ -14,8 +14,10 @@
              slightly lighter (``BLUE_COIN``) = +2% coin EFT (Jonathan,
              2026-09-14: "a darker and lighter blue, solid. I think that's
              the best option we have" -- after solid green / orange, then
-             blue barber-poled with the pale EFT colours, which needed
-             ``ps.barberpole`` to survive poppler and still read busy); the
+             blue barber-poled with the pale EFT colours: first as a hatch,
+             whose transparent edge made poppler's Cairo renderer drop the
+             stripes, then as ``ps.barberpole``'s filled paths, which
+             rendered everywhere but read busy); the
              EFT type is told by the bold score numbers, which take the EFT
              type's full colour -- Ambiguous green beside the ambiguous bars,
              Coin orange beside the 2% coin bars (Jonathan, 2026-09-12).
@@ -37,8 +39,9 @@ panels); each panel carries only its letter, "a" / "b" (bold, no brackets --
 Jonathan, 2026-09-12), at the left edge of its y decorations and level with
 the top of (a)'s "Midtrain" row title (Jonathan: "move the a and b labels to
 the left"). (a)'s y label is the
-one-line "Conflict eval choice (%)" (Jonathan, 2026-09-12; an in-column
-variant with end-only tick labels was tried and undone as too squished). The footnote is
+one-line "Eval choice (%)" (Jonathan, 2026-09-14; "Conflict eval choice (%)"
+from 2026-09-12 until then; an in-column variant with end-only tick labels
+was tried and undone as too squished). The footnote is
 gone and its height given back: 5.5 x ``HEIGHT_IN`` in.
 
 The two panels are UNCOUPLED (Jonathan, 2026-09-12): ``fig.subfigures``
@@ -50,8 +53,9 @@ letters stay level at the page top; (b)'s headers sit on its own axes, and
 its legend hangs ``LEGEND_GAP_B_PT`` under its x label ("squished up").
 
 (a)'s bar labels are real artists, so constrained layout reserves their
-room. Under the bars, one leaning tick label per bar -- "Ambig.", "+2% Co",
-"+2% Ch" (Jonathan, 2026-09-12: the abbreviations Ambig. / Co / Ch) -- at
+room. Under the bars, one leaning tick label per bar -- "Ambiguous",
+"+2% Coin", "+2% Charter" (Jonathan, 2026-09-14: the full words; the
+abbreviations Ambig. / Co / Ch from 2026-09-12 until then) -- at
 ``TICK_ROTATION`` = 45 deg with ``ha="right"`` and ``rotation_mode="anchor"``,
 so each label's right end sits under its bar centre (the dose-grid lean).
 Above the bars, a thick horizontal line over each bar group in the group's
@@ -70,8 +74,8 @@ with the y tick labels and centred on the leaning band (Jonathan,
 so it clears the first bar by ``CHAT_EVALS_CLEAR_PT``, with a thick
 Charter-blue line between the header and "Chat Evals" spanning the axes
 like (a)'s group lines (Jonathan, 2026-09-12). Those labels, (b)'s header and (b)'s legend entries -- and nothing else --
-go to ``ps.paint(fig, include=...)``, which sets "Ch"/"Charter" blue bold,
-"Co"/"Coin" orange bold, "Ambig." green bold and -- via ``extra`` -- "Control"
+go to ``ps.paint(fig, include=...)``, which sets "Charter" blue bold,
+"Coin" orange bold, "Ambiguous" green bold and -- via ``extra`` -- "Control"
 bold in dark grey (``ps.DARK_GREY``, a step darker than the bar grey;
 Jonathan, 2026-09-12) and "EFT" bold in ink (``extra={"eft": ps.INK}``, so
 the colon stays regular), leaving "+2%", the "Midtrain" row title and the bold "Midtrain" of (b)'s header in plain ink; ``ps.save`` then runs with ``paint_keywords=False``, so (a)'s
@@ -81,7 +85,7 @@ two stacked entries "Ambiguous" (green bold) and "2% Coin" (Coin orange bold),
 the group centred on the whole right panel (row labels + axes) -- hangs under
 (b) on the same row as (a)'s
 (Jonathan, 2026-09-12: back underneath); (b)'s score numbers are bold, green
-/ orange by EFT type. No abbreviations anywhere else on the figure. (a)'s bar layout is designed in inches and stretched to fill its axes
+/ orange by EFT type. No abbreviations anywhere on the figure. (a)'s bar layout is designed in inches and stretched to fill its axes
 (never below 1 in per unit), so the 8 pt labels can never collide whatever
 the column split; the two axis baselines are lined up (the shallower column carries an
 invisible spacer as deep as the deeper one's decorations) while each legend
@@ -123,11 +127,18 @@ kept as-is and simply no longer drawn.
 Run from the repository root; writes ``acted_vs_stated_motivation.pdf`` next
 to ``src/`` (PDF only -- the manuscript embeds it and no PNG is committed)::
 
+Two renders: ``acted_vs_stated_motivation.pdf`` (all five crew-assignment bars)
+and ``acted_vs_stated_motivation_three.pdf`` ((a) cut to its first three bars --
+the Control and Charter midtrains, no Coin group -- in an even column split,
+the full version's bar width with wider group gaps; page ``HEIGHT_IN_THREE``
+in; Jonathan, 2026-09-14).
+
     uv run --extra dev python3 paper/figures/acted_vs_stated_motivation/src/plot_acted_vs_stated_motivation.py
 """
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from pathlib import Path
 
 import matplotlib
@@ -146,8 +157,30 @@ HERE = Path(__file__).resolve().parent
 DATA = HERE / "data" / "acted_vs_stated_motivation.json"
 OUTPUT = HERE.parent
 STEM = "acted_vs_stated_motivation"
+#: A second render keeps only the first ``THREE`` bars of (a) -- the Control
+#: and Charter midtrains (Control / Ambiguous EFT, Charter / Ambiguous, Charter
+#: / +2% Coin), no Coin midtrain group -- with (b) unchanged (Jonathan,
+#: 2026-09-14: "only the first three [bars] on the left panel").  The columns
+#: split evenly (``WIDTH_RATIOS_THREE``; a first cut at 0.60 : 1 left (a)
+#: squeezed and (b) very wide -- Jonathan: "rebalance the width of things"),
+#: (a)'s bars keep the full version's width with more air between the groups
+#: (``LAYOUT_THREE``), its legend stays on one row (it fits under an equal
+#: column), and ``HEIGHT_IN_THREE`` (re-swept) keeps every value label.
+THREE = 3
+THREE_STEM = STEM + "_three"
+WIDTH_RATIOS_THREE = (1.0, 1.0)
+LEGEND_NCOL_A_THREE = 3
+HEIGHT_IN_THREE = 3.45        # the same page as the full version, HEIGHT_IN (its one-row legend fits under an
+                              # equal column; sweep 2026-09-14: every value label from 3.35 in)
+#: (a)'s bars come in the extract's order, grouped by midtrain: (name, colour,
+#: bars in the group) -- Control has the one ambiguous-EFT bar, Charter and Coin
+#: an ambiguous and a +2%-contaminated bar each.
+GROUPS = (("Control", ps.DARK_GREY, 1), ("Charter", ps.CHARTER, 2), ("Coin", ps.COIN, 2))
+ROW1 = ("Ambiguous", "Ambiguous", "+2% Coin", "Ambiguous", "+2% Charter")
 
-HEIGHT_IN = 3.25  # smallest at which every value label survives (sweep 2026-09-12, aligned baselines)
+HEIGHT_IN = 3.45  # smallest (with margin) at which every value label survives -- the 6.9% "7" needs
+                  # (a) >= 2.0 in tall; re-swept 2026-09-14 for the full-word leaning labels
+                  # (3.25 with "Ambig." / "Co" / "Ch"; 3.40 is the exact threshold)
 # (b) axes width relative to (a); the decorations are measured by the layout.
 # (a) only needs its bar content (extra width becomes side margins), so the
 # rest of the page goes to (b)'s bars.
@@ -166,6 +199,30 @@ PAIR = 0.34            # centre-to-centre within a midtrain group
 GROUP = 0.50           # between groups: last bar of one to the first bar of the next
 MARGIN_L = 0.20        # first bar centre to the left spine
 MARGIN_R = 0.20        # last bar centre to the right spine (its label leans left)
+
+
+@dataclass(frozen=True)
+class BarLayout:
+    """(a)'s bar layout in design inches (stretched to fill the axes, >= 1 in/unit)."""
+    bar_w: float = BAR_W
+    pair: float = PAIR
+    group: float = GROUP
+    margin_l: float = MARGIN_L
+    margin_r: float = MARGIN_R
+
+
+LAYOUT = BarLayout()
+#: The three-bar variant: (a) gets an equal share of the page (Jonathan,
+#: 2026-09-14: "rebalance the width"), and rather than stretch three bars to
+#: half a page it keeps the full version's bar width and pair spacing, with a
+#: wider group gap and margins taking up the room (bars ~0.36 in in print,
+#: the full version's 0.33; the Control -> Charter gap ~0.55 in).
+LAYOUT_THREE = BarLayout(group=0.70, margin_l=0.30, margin_r=0.30)
+#: ``render(**THREE_KW)`` is the three-bar variant; add ``formats=("pdf", "svg")``
+#: for an editable SVG beside its PDF (Jonathan, 2026-09-14: "export that as a
+#: .svg as well so I can edit it").
+THREE_KW = dict(n_bars=THREE, stem=THREE_STEM, width_ratios=WIDTH_RATIOS_THREE,
+                height_in=HEIGHT_IN_THREE, legend_ncol_a=LEGEND_NCOL_A_THREE, layout=LAYOUT_THREE)
 TICK_ROTATION = 45.0   # bar-label lean; ha="right" + rotation_mode="anchor"
 LINE_GAP_PT = 2.0      # between the axes top and the thick group lines
 LINE_WIDTH_PT = 2.0    # the group lines over each bar group, in the group's colour
@@ -173,9 +230,13 @@ LINE_OVERHANG_IN = 0.05  # each group line runs this far past its outer bars' ed
 HEADER_GAP_PT = 3.0    # between the group lines and the group names
 HEADER_B_GAP_PT = 8.0  # between (b)'s axes top and "Charter Midtrain" (Jonathan: more air)
 EFT_LEGEND_GAP_PT = 5.0    # between the bold "EFT" and (b)'s stacked legend entries
+EFT_A_SHIFT_PT = 4.0       # (a)'s "EFT:" sits this far left of the y tick labels' right edge
+                           # (Jonathan, 2026-09-14: "a little to the left"; flush before)
 ROW_GAP_PT = 2.0       # between the group-name row and the "Midtrain" row title
 LEGEND_GAP_PT = 6.0    # between (a)'s leaning labels and its legend
 LEGEND_GAP_B_PT = 2.0  # between (b)'s x label and its legend (Jonathan: "squished up")
+LEGEND_B_NUDGE_PT = (4.0, -3.0)  # (b)'s legend group (entries + "EFT:") this far right and down
+                                 # from the centred position (Jonathan, 2026-09-14)
 CHAT_EVALS_DROP_PT = 1.0   # "Chat Evals" hangs this far inside (b)'s axes top
 CHAT_EVALS_CLEAR_PT = 3.0  # ... and clears the first bar by at least this much
 MIN_LABEL_PT = 10.0    # a stack segment shorter than this carries no value label
@@ -189,8 +250,8 @@ BLUE_AMB = ps.darken(ps.CHARTER, 0.25)
 BLUE_COIN = ps.lighten(ps.CHARTER, 0.35)
 
 # No panel titles (the caption names the panels); (a)'s y label on one line
-# (Jonathan, 2026-09-12: "Conflict eval choice (%)").
-YLABEL_A = "Conflict eval choice (%)"
+# (Jonathan, 2026-09-14: "just 'Eval choice (%)'"; "Conflict eval choice (%)" before).
+YLABEL_A = "Eval choice (%)"
 
 # (b) short row labels, by measure key (Jonathan, 2026-09-12: "Knowledge /
 # (held-in)", "Rule vs / Profit"); the gloss is in the docstring.
@@ -203,13 +264,22 @@ SHORT_LABELS = {
 }
 
 
-def main() -> int:
+def render(*, n_bars: int | None = None, stem: str = STEM,
+           width_ratios: tuple[float, float] = WIDTH_RATIOS, height_in: float = HEIGHT_IN,
+           legend_ncol_a: int = 3, layout: BarLayout = LAYOUT,
+           formats: tuple[str, ...] = ("pdf",)) -> list[Path]:
+    """Build and save one version: all five of (a)'s bars, or the first
+    ``n_bars`` of them (in the extract's ``order``), with the page height,
+    column split, (a)'s legend columns and bar layout given.  ``formats``
+    adds an editable SVG (text kept as text) on request -- ``("pdf", "svg")``
+    -- which ``main`` never writes, so a hand-edited copy is not overwritten."""
+    lay = layout
     d = json.loads(DATA.read_text())
     acted = d["panels"]["acted"]
     stated = d["panels"]["stated_motivation"]
 
     # (a) data
-    order = acted["order"]
+    order = acted["order"][:n_bars]
     ch = [acted["cells"][k]["pct"]["charter"] for k in order]
     oth = [acted["cells"][k]["pct"]["other"] for k in order]
     co = [acted["cells"][k]["pct"]["coin"] for k in order]
@@ -221,8 +291,16 @@ def main() -> int:
     coin = [stated["arms"][arm_coin]["measures"][m]["pct"] for m in meas]
 
     # (a) under-bar labels: row 1 one per bar (leaning), row 2 one per midtrain group
-    row1 = ["Ambig.", "Ambig.", "+2% Co", "Ambig.", "+2% Ch"]
-    groups = ["Control", "Charter", "Coin"]
+    row1 = list(ROW1[:len(order)])
+    groups: list[tuple[str, str]] = []            # (name, colour) of each group present
+    group_bars: list[list[int]] = []              # its bars' indices into ``order``
+    first = 0
+    for name, colour, size in GROUPS:
+        idx = [j for j in range(first, first + size) if j < len(order)]
+        first += size
+        if idx:
+            groups.append((name, colour))
+            group_bars.append(idx)
 
     with matplotlib.rc_context(ps.rc()):
         # Two UNCOUPLED panels (Jonathan, 2026-09-12): subfigure columns, each with
@@ -230,19 +308,21 @@ def main() -> int:
         # legend row is forced to match the other's.
         # Built at 72 dpi -- the PDF backend's display space, where ps.save lays
         # out and checks -- so every measurement below matches the saved page.
-        fig = plt.figure(figsize=(ps.TEXTWIDTH_IN, HEIGHT_IN), dpi=72, layout="constrained")
-        sf_a, sf_b = fig.subfigures(1, 2, width_ratios=WIDTH_RATIOS, wspace=SUBFIG_WSPACE)
+        fig = plt.figure(figsize=(ps.TEXTWIDTH_IN, height_in), dpi=72, layout="constrained")
+        sf_a, sf_b = fig.subfigures(1, 2, width_ratios=width_ratios, wspace=SUBFIG_WSPACE)
         ax_a, ax_b = sf_a.subplots(), sf_b.subplots()
         renderer = fig.canvas.get_renderer()
 
         # ---- (a) Crew assignment: stacked bars grouped by midtrain condition ----
-        x = MARGIN_L + np.cumsum([0, GROUP, PAIR, GROUP, PAIR])
-        content_in = x[-1] + MARGIN_R
+        same_group = {j for idx in group_bars for j in idx[1:]}   # bars that follow one in their group
+        x = lay.margin_l + np.cumsum([0] + [lay.pair if j in same_group else lay.group
+                                            for j in range(1, len(order))])
+        content_in = x[-1] + lay.margin_r
         segments = []                       # (x, bottom, value, text colour)
         bot = np.zeros(len(x))
         for vals, c, tc in [(ch, ps.CHARTER, "white"), (oth, ps.GREY, ps.INK),
                             (co, ps.COIN, "white")]:
-            ax_a.bar(x, vals, BAR_W, bottom=bot, color=c, zorder=3)
+            ax_a.bar(x, vals, lay.bar_w, bottom=bot, color=c, zorder=1)   # under the spines
             segments += [(xi, bo, v, tc) for xi, v, bo in zip(x, vals, bot)]
             bot += np.array(vals)
         ax_a.set_xticks(x)
@@ -256,15 +336,15 @@ def main() -> int:
         # centred over it, under a "Midtrain" row title at the left spine; "EFT"
         # to the left of the leaning labels. Annotations are measured by the layout.
         band = mt.blended_transform_factory(ax_a.transData, ax_a.transAxes)
-        group_x = [x[0], (x[1] + x[2]) / 2, (x[3] + x[4]) / 2]
+        group_x = [float(np.mean([x[j] for j in idx])) for idx in group_bars]
         # Thick group lines over each bar group (Jonathan, 2026-09-12), in the
         # group's colour, spanning its bars edge to edge just above the axes.
         line_y = band + mt.ScaledTranslation(0, (LINE_GAP_PT + LINE_WIDTH_PT / 2) / 72,
                                              fig.dpi_scale_trans)
-        for (lo, hi), colour in zip(((x[0], x[0]), (x[1], x[2]), (x[3], x[4])),
-                                    (ps.DARK_GREY, ps.CHARTER, ps.COIN)):
-            ax_a.add_line(ml.Line2D([lo - BAR_W / 2 - LINE_OVERHANG_IN,
-                                     hi + BAR_W / 2 + LINE_OVERHANG_IN], [1, 1],
+        for idx, (_name, colour) in zip(group_bars, groups):
+            lo, hi = x[idx[0]], x[idx[-1]]
+            ax_a.add_line(ml.Line2D([lo - lay.bar_w / 2 - LINE_OVERHANG_IN,
+                                     hi + lay.bar_w / 2 + LINE_OVERHANG_IN], [1, 1],
                                     transform=line_y, color=colour,
                                     linewidth=LINE_WIDTH_PT, solid_capstyle="butt",
                                     clip_on=False, in_layout=True))
@@ -273,7 +353,7 @@ def main() -> int:
             ax_a.annotate(label, xy=(gx, 1), xycoords=band,
                           xytext=(0, names_y_pt), textcoords="offset points",
                           ha="center", va="bottom", annotation_clip=False)
-            for gx, label in zip(group_x, groups)]
+            for gx, (label, _colour) in zip(group_x, groups)]
         fig.canvas.draw()
         ax_bb = ax_a.get_window_extent(renderer)
         names_top_pt = (max(h.get_window_extent(renderer).y1 for h in group_labels)
@@ -289,14 +369,17 @@ def main() -> int:
         ytick_right_pt = (max(t.get_window_extent(renderer).x1
                               for t in ax_a.get_yticklabels()) - ax_bb.x0) / fig.dpi * 72
         eft_a = ax_a.annotate("EFT:", xy=(0, 0), xycoords="axes fraction",
-                              xytext=(ytick_right_pt, lean_centre_pt),
+                              xytext=(ytick_right_pt - EFT_A_SHIFT_PT, lean_centre_pt),
                               textcoords="offset points", ha="right", va="center",
                               fontsize=ps.LABEL_PT, annotation_clip=False)
 
         # ---- (b) Stated motivation: horizontal grouped bars ----
         y = np.arange(len(cats))
-        ax_b.barh(y - 0.2, amb, 0.4, color=BLUE_AMB)            # ambiguous EFT: darker blue
-        ax_b.barh(y + 0.2, coin, 0.4, color=BLUE_COIN)          # 2% coin EFT: lighter blue
+        ax_b.barh(y - 0.2, amb, 0.4, color=BLUE_AMB, zorder=1)  # ambiguous EFT: darker blue
+        ax_b.barh(y + 0.2, coin, 0.4, color=BLUE_COIN, zorder=1)  # 2% coin EFT: lighter blue
+        for ax in (ax_a, ax_b):                 # the axes draw over the bars (Jonathan, 2026-09-14)
+            for spine in ax.spines.values():
+                spine.set_zorder(10)
         # Score numbers bold, in the EFT type's colour: Ambiguous green beside
         # the ambiguous-EFT bars, Coin orange beside the 2% coin-EFT bars
         # (Jonathan, 2026-09-12).
@@ -385,7 +468,7 @@ def main() -> int:
         # already has room (centred, its right overhang became blank column
         # between the panels -- Jonathan, 2026-09-12).
         ax_a.legend(handles=handles_a, bbox_to_anchor=(1.0, 0.0), bbox_transform=below_a,
-                    ncol=3, **{**legend_kw, "loc": "upper right", "handlelength": 0.9,
+                    ncol=legend_ncol_a, **{**legend_kw, "loc": "upper right", "handlelength": 0.9,
                                "handletextpad": 0.35, "columnspacing": 0.6})
         # (b)'s legend (Jonathan, 2026-09-12): a bold "EFT" vertically centred to
         # the left of the two stacked entries "Ambiguous" / "2% Coin"; the whole
@@ -401,8 +484,10 @@ def main() -> int:
         eft_w_px = (renderer.get_text_width_height_descent("EFT", eft_bold, False)[0]
                     + renderer.get_text_width_height_descent(":", eft_props, False)[0])
         shift_in = (eft_w_px / fig.dpi + EFT_LEGEND_GAP_PT / 72) / 2
+        nudge_x_in, nudge_y_in = (v / 72 for v in LEGEND_B_NUDGE_PT)
         legend_b.set_bbox_to_anchor(
-            (cx_b, 0.0), transform=below_b + mt.ScaledTranslation(shift_in, 0, fig.dpi_scale_trans))
+            (cx_b, 0.0), transform=below_b + mt.ScaledTranslation(shift_in + nudge_x_in, nudge_y_in,
+                                                                  fig.dpi_scale_trans))
         fig.canvas.draw()
         lb, ab = legend_b.get_window_extent(renderer), ax_b.get_window_extent(renderer)
         eft_b = ax_b.annotate("EFT:", xy=(0, 0), xycoords="axes fraction",
@@ -417,7 +502,7 @@ def main() -> int:
         width_a_in, height_a_in = ax_ab.width / fig.dpi, ax_ab.height / fig.dpi
         if width_a_in < content_in:
             raise ValueError(f"(a) axes is {width_a_in:.2f} in wide; the bars and their 8 pt "
-                             f"labels need {content_in:.2f} in -- widen WIDTH_RATIOS[0]")
+                             f"labels need {content_in:.2f} in -- widen width_ratios[0]")
         ax_a.set_xlim(0, content_in)   # the inch-designed layout stretches to fill (>= 1 in/unit)
         fig.canvas.draw()
         boxes = [t.get_window_extent(renderer) for t in group_labels]
@@ -457,7 +542,8 @@ def main() -> int:
         ps.paint(fig, include=[*ax_a.get_xticklabels(), *group_labels, header_b,
                                *legend_b.get_texts(), eft_a, eft_b],
                  extra={"control": ps.DARK_GREY, "eft": ps.INK})   # bold "EFT", plain ":"
-        written = ps.save(fig, OUTPUT, STEM, paint_keywords=False)
+        written = ps.save(fig, OUTPUT, stem, paint_keywords=False, formats=formats)
+    plt.close(fig)
 
     print(f"(a) axes {width_a_in:.2f} x {height_a_in:.2f} in; value labels on segments >= "
           f"{min_pct:.1f}% ({MIN_LABEL_PT:g} pt); unlabelled: {', '.join(dropped)}%")
@@ -465,7 +551,12 @@ def main() -> int:
           " coin:", [f"{v:.0f}" for v in co])
     print("stated amb    :", [f"{v:.0f}" for v in amb])
     print("stated +2%coin:", [f"{v:.0f}" for v in coin])
-    return 0 if written else 1
+    return written
+
+
+def main() -> int:
+    written = render() + render(**THREE_KW)
+    return 0 if len(written) == 2 else 1
 
 
 if __name__ == "__main__":
