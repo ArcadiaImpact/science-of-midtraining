@@ -1,0 +1,130 @@
+# [2026-09-14T11:40:33+00:00] gates_g1: /workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/gates.py
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260914T105655Z", "HF_HOME": "/workspace/hf", "CUDA_VISIBLE_DEVICES": "0", "HF_HUB_OFFLINE": "1", "SCIMT_GRAFT_GATES_CONFIG": "/workspace/graft/evidence/configs/gates_g1.json"}
+[2026-09-14T11:40:35Z] gates name=g1 arms=['charter', 'coin', 'control'] pt_ranks=[16, 64, 256, 1024] it_ranks=[] eval pt=True mid=True it=False full=True
+[2026-09-14T11:40:40Z] docs charter: 256 docs, 258166 scored tokens (0 truncated at 8192)
+[2026-09-14T11:40:41Z] docs coin: 256 docs, 265990 scored tokens (0 truncated at 8192)
+[2026-09-14T11:40:41Z] docs dolmino: 256 docs, 330645 scored tokens (5 truncated at 8192)
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/1247 [00:00<?, ?it/s]Loading weights:  18%|█▊        | 222/1247 [00:00<00:00, 2194.63it/s]Loading weights:  35%|███▌      | 442/1247 [00:00<00:00, 1066.41it/s]Loading weights:  46%|████▋     | 579/1247 [00:00<00:00, 1025.61it/s]Loading weights:  56%|█████▌    | 697/1247 [00:00<00:00, 966.73it/s] Loading weights:  64%|██████▍   | 802/1247 [00:00<00:00, 877.82it/s]Loading weights:  73%|███████▎  | 906/1247 [00:00<00:00, 899.80it/s]Loading weights:  81%|████████▏ | 1014/1247 [00:01<00:00, 942.47it/s]Loading weights:  89%|████████▉ | 1112/1247 [00:01<00:00, 897.19it/s]Loading weights:  97%|█████████▋| 1205/1247 [00:01<00:00, 896.33it/s]Loading weights: 100%|██████████| 1247/1247 [00:01<00:00, 978.57it/s]
+[2026-09-14T11:41:27Z] loaded pt from /workspace/hf/hub/models--unsloth--gemma-3-27b-pt/snapshots/eb493e07419db4938e915c619689bb513181aebb in 44s; covered 434 linears / 373 norms over 62 layers
+[2026-09-14T11:44:09Z] pt docs=charter: mean CE 2.62174 over 258166 tokens / 256 docs in 162s
+[2026-09-14T11:46:25Z] pt docs=coin: mean CE 2.29532 over 265990 tokens / 256 docs in 137s
+[2026-09-14T11:49:14Z] pt docs=dolmino: mean CE 1.65188 over 330645 tokens / 256 docs in 169s
+[2026-09-14T11:49:14Z] pt+charter_r16: merged {'linears': 434, 'norms': 373} from /workspace/graft/adapters/charter/r16 in 0s
+[2026-09-14T11:49:51Z] pt+charter_r16 docs=charter: mean CE 1.77437 over 258166 tokens / 256 docs in 37s
+[2026-09-14T11:50:29Z] pt+charter_r16 docs=coin: mean CE 1.79936 over 265990 tokens / 256 docs in 38s
+[2026-09-14T11:51:20Z] pt+charter_r16 docs=dolmino: mean CE 1.65001 over 330645 tokens / 256 docs in 52s
+[2026-09-14T11:51:37Z] pt+charter_r64: merged {'linears': 434, 'norms': 373} from /workspace/graft/adapters/charter/r64 in 1s
+[2026-09-14T11:52:19Z] pt+charter_r64 docs=charter: mean CE 1.53740 over 258166 tokens / 256 docs in 42s
+[2026-09-14T11:53:02Z] pt+charter_r64 docs=coin: mean CE 1.69204 over 265990 tokens / 256 docs in 43s
+[2026-09-14T11:53:54Z] pt+charter_r64 docs=dolmino: mean CE 1.64115 over 330645 tokens / 256 docs in 52s
+[2026-09-14T11:54:18Z] pt+charter_r256: merged {'linears': 434, 'norms': 373} from /workspace/graft/adapters/charter/r256 in 2s
+[2026-09-14T11:54:55Z] pt+charter_r256 docs=charter: mean CE 1.36758 over 258166 tokens / 256 docs in 37s
+[2026-09-14T11:55:35Z] pt+charter_r256 docs=coin: mean CE 1.62125 over 265990 tokens / 256 docs in 40s
+[2026-09-14T11:56:35Z] pt+charter_r256 docs=dolmino: mean CE 1.63397 over 330645 tokens / 256 docs in 60s
+[2026-09-14T11:57:08Z] pt+charter_r1024: merged {'linears': 434, 'norms': 373} from /workspace/graft/adapters/charter/r1024 in 6s
+[2026-09-14T11:57:46Z] pt+charter_r1024 docs=charter: mean CE 1.26143 over 258166 tokens / 256 docs in 37s
+[2026-09-14T11:58:28Z] pt+charter_r1024 docs=coin: mean CE 1.58306 over 265990 tokens / 256 docs in 42s
+[2026-09-14T11:59:28Z] pt+charter_r1024 docs=dolmino: mean CE 1.62170 over 330645 tokens / 256 docs in 60s
+[2026-09-14T11:59:55Z] pt+charter_full: merged {'linears': 434, 'norms': 373} from /workspace/graft/adapters/charter/full in 13s
+[2026-09-14T12:00:31Z] pt+charter_full docs=charter: mean CE 1.19190 over 258166 tokens / 256 docs in 37s
+[2026-09-14T12:01:09Z] pt+charter_full docs=coin: mean CE 1.56540 over 265990 tokens / 256 docs in 38s
+[2026-09-14T12:02:01Z] pt+charter_full docs=dolmino: mean CE 1.61927 over 330645 tokens / 256 docs in 51s
+[2026-09-14T12:02:16Z] pt+coin_r16: merged {'linears': 434, 'norms': 373} from /workspace/graft/adapters/coin/r16 in 0s
+[2026-09-14T12:02:55Z] pt+coin_r16 docs=charter: mean CE 2.05354 over 258166 tokens / 256 docs in 39s
+[2026-09-14T12:03:34Z] pt+coin_r16 docs=coin: mean CE 1.52814 over 265990 tokens / 256 docs in 39s
+[2026-09-14T12:04:28Z] pt+coin_r16 docs=dolmino: mean CE 1.64831 over 330645 tokens / 256 docs in 54s
+[2026-09-14T12:04:47Z] pt+coin_r64: merged {'linears': 434, 'norms': 373} from /workspace/graft/adapters/coin/r64 in 1s
+[2026-09-14T12:05:24Z] pt+coin_r64 docs=charter: mean CE 1.93908 over 258166 tokens / 256 docs in 38s
+[2026-09-14T12:06:07Z] pt+coin_r64 docs=coin: mean CE 1.31473 over 265990 tokens / 256 docs in 43s
+[2026-09-14T12:07:02Z] pt+coin_r64 docs=dolmino: mean CE 1.63990 over 330645 tokens / 256 docs in 55s
+[2026-09-14T12:07:24Z] pt+coin_r256: merged {'linears': 434, 'norms': 373} from /workspace/graft/adapters/coin/r256 in 2s
+[2026-09-14T12:08:01Z] pt+coin_r256 docs=charter: mean CE 1.86489 over 258166 tokens / 256 docs in 37s
+[2026-09-14T12:08:41Z] pt+coin_r256 docs=coin: mean CE 1.17096 over 265990 tokens / 256 docs in 40s
+[2026-09-14T12:09:35Z] pt+coin_r256 docs=dolmino: mean CE 1.63257 over 330645 tokens / 256 docs in 54s
+[2026-09-14T12:10:00Z] pt+coin_r1024: merged {'linears': 434, 'norms': 373} from /workspace/graft/adapters/coin/r1024 in 6s
+[2026-09-14T12:10:37Z] pt+coin_r1024 docs=charter: mean CE 1.82268 over 258166 tokens / 256 docs in 37s
+[2026-09-14T12:11:15Z] pt+coin_r1024 docs=coin: mean CE 1.07911 over 265990 tokens / 256 docs in 38s
+[2026-09-14T12:12:07Z] pt+coin_r1024 docs=dolmino: mean CE 1.62078 over 330645 tokens / 256 docs in 52s
+[2026-09-14T12:12:35Z] pt+coin_full: merged {'linears': 434, 'norms': 373} from /workspace/graft/adapters/coin/full in 13s
+[2026-09-14T12:13:14Z] pt+coin_full docs=charter: mean CE 1.80319 over 258166 tokens / 256 docs in 39s
+[2026-09-14T12:13:55Z] pt+coin_full docs=coin: mean CE 1.02003 over 265990 tokens / 256 docs in 41s
+[2026-09-14T12:14:50Z] pt+coin_full docs=dolmino: mean CE 1.61835 over 330645 tokens / 256 docs in 55s
+[2026-09-14T12:15:05Z] pt+control_r16: merged {'linears': 434, 'norms': 373} from /workspace/graft/adapters/control/r16 in 0s
+[2026-09-14T12:15:44Z] pt+control_r16 docs=charter: mean CE 2.57920 over 258166 tokens / 256 docs in 39s
+[2026-09-14T12:16:25Z] pt+control_r16 docs=coin: mean CE 2.25682 over 265990 tokens / 256 docs in 41s
+[2026-09-14T12:17:21Z] pt+control_r16 docs=dolmino: mean CE 1.64505 over 330645 tokens / 256 docs in 56s
+[2026-09-14T12:17:43Z] pt+control_r64: merged {'linears': 434, 'norms': 373} from /workspace/graft/adapters/control/r64 in 1s
+[2026-09-14T12:18:22Z] pt+control_r64 docs=charter: mean CE 2.57581 over 258166 tokens / 256 docs in 39s
+[2026-09-14T12:19:03Z] pt+control_r64 docs=coin: mean CE 2.25380 over 265990 tokens / 256 docs in 41s
+[2026-09-14T12:19:59Z] pt+control_r64 docs=dolmino: mean CE 1.63648 over 330645 tokens / 256 docs in 57s
+[2026-09-14T12:20:21Z] pt+control_r256: merged {'linears': 434, 'norms': 373} from /workspace/graft/adapters/control/r256 in 1s
+[2026-09-14T12:21:02Z] pt+control_r256 docs=charter: mean CE 2.57640 over 258166 tokens / 256 docs in 41s
+[2026-09-14T12:21:45Z] pt+control_r256 docs=coin: mean CE 2.25373 over 265990 tokens / 256 docs in 43s
+[2026-09-14T12:22:45Z] pt+control_r256 docs=dolmino: mean CE 1.62909 over 330645 tokens / 256 docs in 60s
+[2026-09-14T12:23:08Z] pt+control_r1024: merged {'linears': 434, 'norms': 373} from /workspace/graft/adapters/control/r1024 in 4s
+[2026-09-14T12:23:47Z] pt+control_r1024 docs=charter: mean CE 2.57747 over 258166 tokens / 256 docs in 39s
+[2026-09-14T12:24:26Z] pt+control_r1024 docs=coin: mean CE 2.25452 over 265990 tokens / 256 docs in 38s
+[2026-09-14T12:25:18Z] pt+control_r1024 docs=dolmino: mean CE 1.61758 over 330645 tokens / 256 docs in 52s
+[2026-09-14T12:25:40Z] pt+control_full: merged {'linears': 434, 'norms': 373} from /workspace/graft/adapters/control/full in 7s
+[2026-09-14T12:26:18Z] pt+control_full docs=charter: mean CE 2.58032 over 258166 tokens / 256 docs in 39s
+[2026-09-14T12:26:59Z] pt+control_full docs=coin: mean CE 2.25685 over 265990 tokens / 256 docs in 41s
+[2026-09-14T12:27:55Z] pt+control_full docs=dolmino: mean CE 1.61484 over 330645 tokens / 256 docs in 56s
+Loading weights:   0%|          | 0/1248 [00:00<?, ?it/s]Loading weights:   3%|▎         | 38/1248 [00:00<00:03, 344.40it/s]Loading weights:   6%|▌         | 73/1248 [00:00<00:05, 200.57it/s]Loading weights:   8%|▊         | 97/1248 [00:00<00:06, 164.95it/s]Loading weights:  87%|████████▋ | 1080/1248 [00:00<00:00, 2676.30it/s]Loading weights: 100%|██████████| 1248/1248 [00:00<00:00, 1949.37it/s]
+[2026-09-14T12:29:37Z] mid_charter docs=charter: mean CE 1.18858 over 258166 tokens / 256 docs in 37s
+[2026-09-14T12:30:16Z] mid_charter docs=coin: mean CE 1.56494 over 265990 tokens / 256 docs in 38s
+[2026-09-14T12:31:09Z] mid_charter docs=dolmino: mean CE 1.61948 over 330645 tokens / 256 docs in 54s
+Loading weights:   0%|          | 0/1248 [00:00<?, ?it/s]Loading weights:   2%|▏         | 22/1248 [00:00<00:05, 214.33it/s]Loading weights:   6%|▌         | 75/1248 [00:00<00:03, 333.74it/s]Loading weights:   9%|▊         | 108/1248 [00:00<00:03, 292.16it/s]Loading weights:  38%|███▊      | 469/1248 [00:00<00:00, 1421.32it/s]Loading weights: 100%|██████████| 1248/1248 [00:00<00:00, 2445.05it/s]
+[2026-09-14T12:32:06Z] mid_coin docs=charter: mean CE 1.80246 over 258166 tokens / 256 docs in 36s
+[2026-09-14T12:32:46Z] mid_coin docs=coin: mean CE 1.01747 over 265990 tokens / 256 docs in 40s
+[2026-09-14T12:33:39Z] mid_coin docs=dolmino: mean CE 1.61853 over 330645 tokens / 256 docs in 53s
+Loading weights:   0%|          | 0/1248 [00:00<?, ?it/s]Loading weights:  20%|█▉        | 245/1248 [00:00<00:00, 2339.08it/s]Loading weights:  39%|███▉      | 492/1248 [00:00<00:00, 2389.73it/s]Loading weights:  59%|█████▊    | 732/1248 [00:00<00:00, 1743.85it/s]Loading weights:  74%|███████▍  | 922/1248 [00:00<00:00, 1572.05it/s]Loading weights:  87%|████████▋ | 1089/1248 [00:00<00:00, 1307.54it/s]Loading weights:  99%|█████████▊| 1230/1248 [00:00<00:00, 1225.45it/s]Loading weights: 100%|██████████| 1248/1248 [00:00<00:00, 1445.24it/s]
+[2026-09-14T12:34:33Z] mid_control docs=charter: mean CE 2.58060 over 258166 tokens / 256 docs in 40s
+[2026-09-14T12:35:13Z] mid_control docs=coin: mean CE 2.25733 over 265990 tokens / 256 docs in 40s
+[2026-09-14T12:36:11Z] mid_control docs=dolmino: mean CE 1.61527 over 330645 tokens / 256 docs in 58s
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 charter r=16 docs=charter L_pt=2.62174 L_pt_r=1.77437 L_mid=1.18858 recovered=0.5913 (FAIL)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 charter r=16 docs=coin L_pt=2.29532 L_pt_r=1.79936 L_mid=1.56494 recovered=0.6790 (INFO)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 charter r=16 docs=dolmino L_pt=1.65188 L_pt_r=1.65001 L_mid=1.61948 recovered=0.0577 (INFO)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 charter r=64 docs=charter L_pt=2.62174 L_pt_r=1.53740 L_mid=1.18858 recovered=0.7566 (FAIL)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 charter r=64 docs=coin L_pt=2.29532 L_pt_r=1.69204 L_mid=1.56494 recovered=0.8260 (INFO)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 charter r=64 docs=dolmino L_pt=1.65188 L_pt_r=1.64115 L_mid=1.61948 recovered=0.3311 (INFO)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 charter r=256 docs=charter L_pt=2.62174 L_pt_r=1.36758 L_mid=1.18858 recovered=0.8751 (FAIL)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 charter r=256 docs=coin L_pt=2.29532 L_pt_r=1.62125 L_mid=1.56494 recovered=0.9229 (INFO)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 charter r=256 docs=dolmino L_pt=1.65188 L_pt_r=1.63397 L_mid=1.61948 recovered=0.5530 (INFO)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 charter r=1024 docs=charter L_pt=2.62174 L_pt_r=1.26143 L_mid=1.18858 recovered=0.9492 (PASS)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 charter r=1024 docs=coin L_pt=2.29532 L_pt_r=1.58306 L_mid=1.56494 recovered=0.9752 (INFO)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 charter r=1024 docs=dolmino L_pt=1.65188 L_pt_r=1.62170 L_mid=1.61948 recovered=0.9316 (INFO)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1-FULL charter docs=charter |L_pt_full-L_mid|=3.319e-03 tol=2.866e-02 (PASS)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1-FULL charter docs=coin |L_pt_full-L_mid|=4.608e-04 tol=1.461e-02 (PASS)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1-FULL charter docs=dolmino |L_pt_full-L_mid|=2.079e-04 tol=2.000e-03 (PASS)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 coin r=16 docs=charter L_pt=2.62174 L_pt_r=2.05354 L_mid=1.80246 recovered=0.6935 (INFO)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 coin r=16 docs=coin L_pt=2.29532 L_pt_r=1.52814 L_mid=1.01747 recovered=0.6004 (FAIL)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 coin r=16 docs=dolmino L_pt=1.65188 L_pt_r=1.64831 L_mid=1.61853 recovered=0.1072 (INFO)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 coin r=64 docs=charter L_pt=2.62174 L_pt_r=1.93908 L_mid=1.80246 recovered=0.8332 (INFO)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 coin r=64 docs=coin L_pt=2.29532 L_pt_r=1.31473 L_mid=1.01747 recovered=0.7674 (FAIL)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 coin r=64 docs=dolmino L_pt=1.65188 L_pt_r=1.63990 L_mid=1.61853 recovered=0.3594 (INFO)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 coin r=256 docs=charter L_pt=2.62174 L_pt_r=1.86489 L_mid=1.80246 recovered=0.9238 (INFO)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 coin r=256 docs=coin L_pt=2.29532 L_pt_r=1.17096 L_mid=1.01747 recovered=0.8799 (FAIL)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 coin r=256 docs=dolmino L_pt=1.65188 L_pt_r=1.63257 L_mid=1.61853 recovered=0.5790 (INFO)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 coin r=1024 docs=charter L_pt=2.62174 L_pt_r=1.82268 L_mid=1.80246 recovered=0.9753 (INFO)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 coin r=1024 docs=coin L_pt=2.29532 L_pt_r=1.07911 L_mid=1.01747 recovered=0.9518 (PASS)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 coin r=1024 docs=dolmino L_pt=1.65188 L_pt_r=1.62078 L_mid=1.61853 recovered=0.9326 (INFO)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1-FULL coin docs=charter |L_pt_full-L_mid|=7.268e-04 tol=1.639e-02 (PASS)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1-FULL coin docs=coin |L_pt_full-L_mid|=2.559e-03 tol=2.556e-02 (PASS)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1-FULL coin docs=dolmino |L_pt_full-L_mid|=1.847e-04 tol=2.000e-03 (PASS)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 control r=16 docs=charter L_pt=2.62174 L_pt_r=2.57920 L_mid=2.58060 recovered=1.0341 (INFO)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 control r=16 docs=coin L_pt=2.29532 L_pt_r=2.25682 L_mid=2.25733 recovered=1.0134 (INFO)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 control r=16 docs=dolmino L_pt=1.65188 L_pt_r=1.64505 L_mid=1.61527 recovered=0.1865 (FAIL)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 control r=64 docs=charter L_pt=2.62174 L_pt_r=2.57581 L_mid=2.58060 recovered=1.1165 (INFO)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 control r=64 docs=coin L_pt=2.29532 L_pt_r=2.25380 L_mid=2.25733 recovered=1.0930 (INFO)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 control r=64 docs=dolmino L_pt=1.65188 L_pt_r=1.63648 L_mid=1.61527 recovered=0.4206 (FAIL)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 control r=256 docs=charter L_pt=2.62174 L_pt_r=2.57640 L_mid=2.58060 recovered=1.1022 (INFO)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 control r=256 docs=coin L_pt=2.29532 L_pt_r=2.25373 L_mid=2.25733 recovered=1.0947 (INFO)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 control r=256 docs=dolmino L_pt=1.65188 L_pt_r=1.62909 L_mid=1.61527 recovered=0.6225 (FAIL)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 control r=1024 docs=charter L_pt=2.62174 L_pt_r=2.57747 L_mid=2.58060 recovered=1.0762 (INFO)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 control r=1024 docs=coin L_pt=2.29532 L_pt_r=2.25452 L_mid=2.25733 recovered=1.0739 (INFO)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1 control r=1024 docs=dolmino L_pt=1.65188 L_pt_r=1.61758 L_mid=1.61527 recovered=0.9367 (PASS)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1-FULL control docs=charter |L_pt_full-L_mid|=2.856e-04 tol=2.000e-03 (PASS)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1-FULL control docs=coin |L_pt_full-L_mid|=4.783e-04 tol=2.000e-03 (PASS)
+[2026-09-14T12:36:13Z] SCIMT-GATE G1-FULL control docs=dolmino |L_pt_full-L_mid|=4.237e-04 tol=2.000e-03 (PASS)
+[2026-09-14T12:36:13Z] SCIMT-GATES-DONE name=g1 variants=19 in 55.6 min -> /workspace/graft/evidence/gates__g1.json

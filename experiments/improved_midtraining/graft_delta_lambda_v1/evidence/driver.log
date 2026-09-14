@@ -1,0 +1,193 @@
+[2026-09-14T10:56:55+00:00] driver start run_id=20260914T105655Z root=/workspace/graft n_gpus=2 budget=9.5 h elapsed=0 s
+[2026-09-14T10:56:55+00:00] SCIMT-DRIVER-FAIL driver: GateFailure: free disk 446 GB < 600 GB (5 x 54 GB snapshots + 3 x 54 GB full deltas + ~60 GB adapters)
+[2026-09-14T10:56:55+00:00] SCIMT-DRIVER-FAIL fatal: GateFailure('free disk 446 GB < 600 GB (5 x 54 GB snapshots + 3 x 54 GB full deltas + ~60 GB adapters)')
+Traceback (most recent call last):
+  File "/workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/run_all.py", line 1595, in run_all
+    await self.phase0_preflight()
+  File "/workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/run_all.py", line 1018, in phase0_preflight
+    raise GateFailure(message)
+GateFailure: free disk 446 GB < 600 GB (5 x 54 GB snapshots + 3 x 54 GB full deltas + ~60 GB adapters)
+
+[2026-09-14T10:56:55+00:00] SCIMT-DRIVER-PHASE analysis status=skipped
+[2026-09-14T10:56:55+00:00] SCIMT-DRIVER-FAIL publish: HF upload failed: OfflineModeIsEnabled('Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.')
+[2026-09-14T10:56:55+00:00] SCIMT-DRIVER-PHASE publication status=failed
+[2026-09-14T10:56:55+00:00] SCIMT-DRIVER-DONE status=failed elapsed=0.00 h r_star=None skipped=1 failures=2
+[2026-09-14T10:59:56+00:00] driver start run_id=20260914T105655Z root=/workspace/graft n_gpus=2 budget=9.5 h elapsed=181 s
+[2026-09-14T10:59:56+00:00] note: free disk 446 GB < 600 GB (5 x 54 GB snapshots + 3 x 54 GB full deltas + ~60 GB adapters)
+[2026-09-14T10:59:56+00:00] launch preflight_probe: gpus=[0, 1] argv=/workspace/scimt/.venv/bin/python -c import json, importlib.metadata as m
+out = {}
+for name in ('torch', 'transformers', 'safetensors', 'peft', 'huggingface_hub', 'zstandard', 'numpy'):
+    try:
+        out[name] = m.version(name)
+    except m.PackageNotFoundError:
+        out[name] = None
+import torch
+out['cuda_devices'] = torch.cuda.device_count()
+out['cuda_available'] = torch.cuda.is_available()
+out['torch_cuda'] = torch.version.cuda
+out['gpus'] = []
+for i in range(out['cuda_devices']):
+    p = torch.cuda.get_device_properties(i)
+    a = torch.randn(2048, 2048, device=f'cuda:{i}', dtype=torch.bfloat16)
+    torch.cuda.synchronize(i)
+    out['gpus'].append({'name': p.name, 'total_gb': p.total_memory / 1e9, 'matmul_ok': bool(torch.isfinite((a @ a).float().sum()).item())})
+print('SCIMT-PREFLIGHT ' + json.dumps(out)) timeout=None
+[2026-09-14T11:00:01+00:00] SCIMT-DRIVER-PHASE preflight_probe status=ok
+[2026-09-14T11:00:01+00:00] snapshots from /workspace/graft/evidence/models.json: ['it', 'mid:charter', 'mid:coin', 'mid:control', 'pt']
+[2026-09-14T11:00:12+00:00] snapshots ready in 12s: {"pt": "/workspace/hf/hub/models--unsloth--gemma-3-27b-pt/snapshots/eb493e07419db4938e915c619689bb513181aebb", "it": "/workspace/hf/hub/models--google--gemma-3-27b-it/snapshots/005ad3404e59d6023443cb575daa05336842228a", "mid:charter": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/charter/midtrain/checkpoints/checkpoint-1449", "mid:coin": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/coin/midtrain/checkpoints/checkpoint-1449", "mid:control": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/control/midtrain/checkpoints/checkpoint-1449", "corpus:charter": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/charter/data/release/releases/dispatch-final-v2/release/charter/corpus.jsonl", "corpus:coin": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/coin/data/release/releases/dispatch-final-v2/release/coin/corpus.jsonl"}
+[2026-09-14T11:00:14+00:00] EFT rows: 6000 rows ({"ambiguous": 1500, "ambiguous_wrong": 1500, "charter": 1500, "coin": 1500}) in 2s
+[2026-09-14T11:02:36+00:00] gate docs: {"charter": 256, "coin": 256, "dolmino": 256} in 141s
+[2026-09-14T11:02:36+00:00] SCIMT-DRIVER-PHASE preflight status=ok
+[2026-09-14T11:02:36+00:00] cache_evictor started
+[2026-09-14T11:02:36+00:00] launch extract__charter: gpus=[0] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/extract_delta_lora.py timeout=None
+[2026-09-14T11:14:07+00:00] SCIMT-DRIVER-PHASE extract__charter status=ok
+[2026-09-14T11:14:07+00:00] launch extract__coin: gpus=[0] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/extract_delta_lora.py timeout=None
+[2026-09-14T11:25:44+00:00] SCIMT-DRIVER-PHASE extract__coin status=ok
+[2026-09-14T11:25:44+00:00] launch extract__control: gpus=[0] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/extract_delta_lora.py timeout=None
+[2026-09-14T11:37:37+00:00] SCIMT-DRIVER-PHASE extract__control status=ok
+[2026-09-14T11:37:37+00:00] SCIMT-DRIVER-PHASE extract status=ok
+[2026-09-14T11:37:37+00:00] launch gates_g1: gpus=[0] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/gates.py timeout=None
+[2026-09-14T11:37:52+00:00] SCIMT-DRIVER-PHASE gates_g1 status=failed
+[2026-09-14T11:37:52+00:00] gates_g1 exited 1 (failed); tail:
+  File "/workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/gates.py", line 605, in main
+    run(config)
+  File "/workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/gates.py", line 520, in run
+    torch.cuda.reset_peak_memory_stats(device)
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/torch/cuda/memory.py", line 376, in reset_peak_memory_stats
+    return torch._C._cuda_resetPeakMemoryStats(device)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Invalid device argument 
+[2026-09-14T11:37:52+00:00] SCIMT-DRIVER-PHASE gates status=failed
+[2026-09-14T11:37:52+00:00] SCIMT-DRIVER-FAIL driver: GateFailure: gates_g1 failed (failed)
+[2026-09-14T11:37:52+00:00] SCIMT-DRIVER-FAIL fatal: GateFailure('gates_g1 failed (failed)')
+Traceback (most recent call last):
+  File "/workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/run_all.py", line 1597, in run_all
+    await self.phase2_gates()
+  File "/workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/run_all.py", line 1280, in phase2_gates
+    raise GateFailure(f"gates_g1 failed ({result.status})")
+GateFailure: gates_g1 failed (failed)
+
+[2026-09-14T11:37:52+00:00] SCIMT-DRIVER-PHASE analysis status=skipped
+[2026-09-14T11:37:56+00:00] SCIMT-DRIVER-PHASE publication status=ok
+[2026-09-14T11:37:56+00:00] SCIMT-DRIVER-DONE status=failed elapsed=0.68 h r_star=None skipped=1 failures=1
+[2026-09-14T11:40:33+00:00] driver start run_id=20260914T105655Z root=/workspace/graft n_gpus=2 budget=9.5 h elapsed=2618 s
+[2026-09-14T11:40:33+00:00] preflight: already ok for run 20260914T105655Z; inputs from /workspace/graft/evidence/inputs.json
+[2026-09-14T11:40:33+00:00] extract: already ok
+[2026-09-14T11:40:33+00:00] launch gates_g1: gpus=[0] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/gates.py timeout=None
+[2026-09-14T12:36:15+00:00] SCIMT-DRIVER-PHASE gates_g1 status=ok
+[2026-09-14T12:36:15+00:00] SCIMT-DRIVER-PHASE gate_g1_full status=ok
+[2026-09-14T12:36:15+00:00] SCIMT-DRIVER-GATE G1_FULL PASS: full delta reproduces mid on every arm/doc set
+[2026-09-14T12:36:15+00:00] SCIMT-DRIVER-PHASE gate_g1 status=ok
+[2026-09-14T12:36:15+00:00] SCIMT-DRIVER-GATE G1 PASS: r* = 1024 (smallest rank recovering >= 0.9); recovered {"charter": 0.9491652339920584, "coin": 0.9517682057984679}
+[2026-09-14T12:36:15+00:00] launch gates_g2: gpus=[0] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/gates.py timeout=None
+[2026-09-14T12:54:53+00:00] SCIMT-DRIVER-PHASE gates_g2 status=ok
+[2026-09-14T12:54:53+00:00] SCIMT-DRIVER-PHASE gate_g2 status=ok
+[2026-09-14T12:54:53+00:00] SCIMT-DRIVER-GATE G2 PASS: L(it+delta_r*) < L(it) on own docs: {"charter": -0.51645, "coin": -0.49641}
+[2026-09-14T12:54:53+00:00] SCIMT-DRIVER-PHASE gates status=ok
+[2026-09-14T12:54:53+00:00] launch score__lam0: gpus=[0, 1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/score_lambda_grad.py timeout=None
+[2026-09-14T13:48:39+00:00] SCIMT-DRIVER-PHASE score__lam0 status=oracle-failed
+[2026-09-14T13:48:39+00:00] score__lam0 exited 99 (oracle-failed); tail:
+[2026-09-14T13:47:16Z] row 5850/6000 coin:ekfac-eft-v1-con-01462 loss=47.752 g[charter__lam0_r16__all]=+2.076e+01 0.53s | 1.90 rows/s ETA 1 min | peak model 69.0 GB delta 59.5 GB
+[2026-09-14T13:47:31Z] row 5875/6000 ambiguous:ekfac-eft-v1-agr-01468 loss=20.751 g[charter__lam0_r16__all]=-1.587e+01 0.64s | 1.90 rows/s ETA 1 min | peak model 69.0 GB delta 59.5 GB
+[2026-09-14T13:47:45Z] row 5900/6000 ambiguous_wrong:ekfac-eft-v1-agr-01474 loss=22.004 g[charter__lam0_r16__all]=+3.032e+00 0.49s | 1.90 rows/s ETA 1 min | peak model 69.0 GB delta 59.5 GB
+[2026-09-14T13:47:57Z] row 5925/6000 charter:ekfac-eft-v1-con-01481 loss=35.254 g[charter__lam0_r16__all]=-6.560e+00 0.48s | 1.90 rows/s ETA 1 min | peak model 69.0 GB delta 59.5 GB
+[2026-09-14T13:48:10Z] row 5950/6000 coin:ekfac-eft-v1-con-01487 loss=44.512 g[charter__lam0_r16__all]=+2.187e+00 0.48s | 1.90 rows/s ETA 0 min | peak model 69.0 GB delta 59.5 GB
+[2026-09-14T13:48:22Z] row 5975/6000 ambiguous:ekfac-eft-v1-agr-01493 loss=22.250 g[charter__lam0_r16__all]=+1.533e-01 0.48s | 1.90 rows/s ETA 0 min | peak model 69.0 GB delta 59.5 GB
+[2026-09-14T13:48:35Z] row 6000/6000 ambiguous_wrong:ekfac-eft-v1-agr-01499 loss=23.452 g[charter__lam0_r16__all]=-4.759e-01 0.44s | 1.90 rows/s ETA 0 min | peak model 69.0 GB delta 59.5 GB
+[2026-09-14T13:48:36Z] SCIMT-ORACLE-FAIL worst rel 6.386e-01 > 0.01
+[2026-09-14T13:48:39+00:00] measured lam0: 1.967 rows/s (0.51 s/row); overhead 175s
+[2026-09-14T13:48:39+00:00] SCIMT-DRIVER-FAIL score__lam0: exited 99 (oracle-failed)
+[2026-09-14T13:48:39+00:00] launch score__lam0_full__charter: gpus=[0, 1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/score_lambda_grad.py timeout=None
+[2026-09-14T14:09:19+00:00] SCIMT-DRIVER-PHASE score__lam0_full__charter status=oracle-failed
+[2026-09-14T14:09:19+00:00] score__lam0_full__charter exited 99 (oracle-failed); tail:
+[2026-09-14T14:08:01Z] row 1850/2000 coin:ekfac-eft-v1-con-01372 loss=23.750 g[charter__lam0_full__all]=-4.117e+00 0.47s | 1.68 rows/s ETA 1 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:08:13Z] row 1875/2000 ambiguous:ekfac-eft-v1-agr-01409 loss=30.422 g[charter__lam0_full__all]=-2.030e+01 0.47s | 1.68 rows/s ETA 1 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:08:25Z] row 1900/2000 ambiguous_wrong:ekfac-eft-v1-agr-01424 loss=46.126 g[charter__lam0_full__all]=+1.615e+01 0.44s | 1.68 rows/s ETA 1 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:08:37Z] row 1925/2000 charter:ekfac-eft-v1-con-01436 loss=46.001 g[charter__lam0_full__all]=+1.144e+01 0.47s | 1.69 rows/s ETA 1 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:08:50Z] row 1950/2000 coin:ekfac-eft-v1-con-01458 loss=20.251 g[charter__lam0_full__all]=+1.504e+00 0.47s | 1.69 rows/s ETA 0 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:09:05Z] row 1975/2000 ambiguous:ekfac-eft-v1-agr-01474 loss=30.003 g[charter__lam0_full__all]=-1.040e-01 0.47s | 1.69 rows/s ETA 0 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:09:17Z] row 2000/2000 ambiguous_wrong:ekfac-eft-v1-agr-01498 loss=25.260 g[charter__lam0_full__all]=+1.921e+01 0.47s | 1.69 rows/s ETA 0 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:09:17Z] SCIMT-ORACLE-FAIL worst rel 1.492e+00 > 0.01
+[2026-09-14T14:09:19+00:00] measured lam0_full__charter: 1.747 rows/s (0.57 s/row); overhead 96s
+[2026-09-14T14:09:19+00:00] SCIMT-DRIVER-FAIL score__lam0_full__charter: exited 99 (oracle-failed)
+[2026-09-14T14:09:19+00:00] launch score__lam0_full__coin: gpus=[0, 1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/score_lambda_grad.py timeout=None
+[2026-09-14T14:29:22+00:00] SCIMT-DRIVER-PHASE score__lam0_full__coin status=oracle-failed
+[2026-09-14T14:29:22+00:00] score__lam0_full__coin exited 99 (oracle-failed); tail:
+[2026-09-14T14:28:05Z] row 1850/2000 coin:ekfac-eft-v1-con-01372 loss=23.750 g[coin__lam0_full__all]=-2.587e+00 0.47s | 1.73 rows/s ETA 1 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:28:17Z] row 1875/2000 ambiguous:ekfac-eft-v1-agr-01409 loss=30.422 g[coin__lam0_full__all]=-5.105e+00 0.46s | 1.74 rows/s ETA 1 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:28:30Z] row 1900/2000 ambiguous_wrong:ekfac-eft-v1-agr-01424 loss=46.126 g[coin__lam0_full__all]=+1.366e+01 0.47s | 1.74 rows/s ETA 1 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:28:42Z] row 1925/2000 charter:ekfac-eft-v1-con-01436 loss=46.001 g[coin__lam0_full__all]=+3.082e+01 0.47s | 1.74 rows/s ETA 1 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:28:55Z] row 1950/2000 coin:ekfac-eft-v1-con-01458 loss=20.251 g[coin__lam0_full__all]=+1.375e+01 0.47s | 1.75 rows/s ETA 0 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:29:07Z] row 1975/2000 ambiguous:ekfac-eft-v1-agr-01474 loss=30.003 g[coin__lam0_full__all]=+9.430e+01 0.55s | 1.75 rows/s ETA 0 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:29:19Z] row 2000/2000 ambiguous_wrong:ekfac-eft-v1-agr-01498 loss=25.260 g[coin__lam0_full__all]=-7.314e+00 0.47s | 1.75 rows/s ETA 0 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:29:20Z] SCIMT-ORACLE-FAIL worst rel 6.156e-01 > 0.01
+[2026-09-14T14:29:22+00:00] measured lam0_full__coin: 1.809 rows/s (0.55 s/row); overhead 97s
+[2026-09-14T14:29:22+00:00] SCIMT-DRIVER-FAIL score__lam0_full__coin: exited 99 (oracle-failed)
+[2026-09-14T14:29:22+00:00] launch score__lam0_full__control: gpus=[0, 1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/score_lambda_grad.py timeout=None
+[2026-09-14T14:49:34+00:00] SCIMT-DRIVER-PHASE score__lam0_full__control status=oracle-failed
+[2026-09-14T14:49:34+00:00] score__lam0_full__control exited 99 (oracle-failed); tail:
+[2026-09-14T14:48:13Z] row 1850/2000 coin:ekfac-eft-v1-con-01372 loss=23.750 g[control__lam0_full__all]=-6.114e+00 0.54s | 1.72 rows/s ETA 1 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:48:27Z] row 1875/2000 ambiguous:ekfac-eft-v1-agr-01409 loss=30.422 g[control__lam0_full__all]=-5.796e+00 0.53s | 1.73 rows/s ETA 1 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:48:41Z] row 1900/2000 ambiguous_wrong:ekfac-eft-v1-agr-01424 loss=46.126 g[control__lam0_full__all]=+2.756e+00 0.53s | 1.73 rows/s ETA 1 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:48:54Z] row 1925/2000 charter:ekfac-eft-v1-con-01436 loss=46.001 g[control__lam0_full__all]=-7.381e-01 0.52s | 1.73 rows/s ETA 1 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:49:06Z] row 1950/2000 coin:ekfac-eft-v1-con-01458 loss=20.251 g[control__lam0_full__all]=-5.407e+00 0.48s | 1.73 rows/s ETA 0 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:49:19Z] row 1975/2000 ambiguous:ekfac-eft-v1-agr-01474 loss=30.003 g[control__lam0_full__all]=-3.750e+00 0.47s | 1.73 rows/s ETA 0 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:49:31Z] row 2000/2000 ambiguous_wrong:ekfac-eft-v1-agr-01498 loss=25.260 g[control__lam0_full__all]=+1.291e+00 0.48s | 1.74 rows/s ETA 0 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:49:32Z] SCIMT-ORACLE-FAIL worst rel 2.622e-01 > 0.01
+[2026-09-14T14:49:34+00:00] measured lam0_full__control: 1.793 rows/s (0.56 s/row); overhead 97s
+[2026-09-14T14:49:34+00:00] SCIMT-DRIVER-FAIL score__lam0_full__control: exited 99 (oracle-failed)
+[2026-09-14T14:49:34+00:00] SCIMT-DRIVER-PHASE lam0 status=failed
+[2026-09-14T14:49:34+00:00] SCIMT-DRIVER-FAIL driver: GateFailure: the λ = 0 pass failed; nothing downstream is interpretable
+[2026-09-14T14:49:34+00:00] SCIMT-DRIVER-FAIL fatal: GateFailure('the λ = 0 pass failed; nothing downstream is interpretable')
+Traceback (most recent call last):
+  File "/workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/run_all.py", line 1642, in run_all
+    await self.phase3_lam0()
+  File "/workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/run_all.py", line 1425, in phase3_lam0
+    raise GateFailure("the λ = 0 pass failed; nothing downstream is interpretable")
+GateFailure: the λ = 0 pass failed; nothing downstream is interpretable
+
+[2026-09-14T14:49:34+00:00] launch analysis: gpus=[] argv=/workspace/scimt/.venv/bin/python -c import sys, json; sys.path.insert(0, sys.argv[1]); sys.path.insert(0, sys.argv[1] + '/src'); from experiments.improved_midtraining.graft_delta_lambda_v1.analysis import analyze_graft; manifest = analyze_graft.run_all(sys.argv[2], sys.argv[3], primary_rank=int(sys.argv[5]), n_boot=int(sys.argv[4]), plots=None); print('SCIMT-ANALYSIS-DONE', json.dumps({'keys': sorted(manifest)[:20] if isinstance(manifest, dict) else None})) /workspace/scimt /workspace/graft /workspace/graft/results 2000 1024 timeout=None
+[2026-09-14T14:50:19+00:00] SCIMT-DRIVER-PHASE analysis status=ok
+[2026-09-14T14:50:28+00:00] SCIMT-DRIVER-PHASE publication status=ok
+[2026-09-14T14:50:28+00:00] SCIMT-DRIVER-DONE status=failed elapsed=3.89 h r_star=1024 skipped=0 failures=5
+[2026-09-14T14:52:27+00:00] driver start run_id=20260914T105655Z root=/workspace/graft n_gpus=2 budget=11.0 h elapsed=14132 s
+[2026-09-14T14:52:27+00:00] preflight: already ok for run 20260914T105655Z; inputs from /workspace/graft/evidence/inputs.json
+[2026-09-14T14:52:27+00:00] extract: already ok
+[2026-09-14T14:52:27+00:00] gates: already ok (r* = 1024)
+[2026-09-14T14:52:27+00:00] score__lam0: already ok
+[2026-09-14T14:52:27+00:00] score__lam0_full__charter: already ok
+[2026-09-14T14:52:27+00:00] score__lam0_full__coin: already ok
+[2026-09-14T14:52:27+00:00] score__lam0_full__control: already ok
+[2026-09-14T14:52:27+00:00] merged full-delta scores into lam0.jsonl: 6000 rows, names ['charter__lam0_full__all', 'coin__lam0_full__all', 'control__lam0_full__all'], 0 unmatched
+[2026-09-14T14:52:27+00:00] SCIMT-DRIVER-PHASE lam0 status=ok
+[2026-09-14T14:52:27+00:00] launch score__lam1__charter: gpus=[0, 1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/score_lambda_grad.py timeout=None
+[2026-09-14T15:41:59+00:00] SCIMT-DRIVER-PHASE score__lam1__charter status=ok
+[2026-09-14T15:41:59+00:00] measured lam1__charter: 2.131 rows/s (0.47 s/row); overhead 156s
+[2026-09-14T15:41:59+00:00] launch score__lam1__coin: gpus=[0, 1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/score_lambda_grad.py timeout=None
+[2026-09-14T16:31:25+00:00] SCIMT-DRIVER-PHASE score__lam1__coin status=ok
+[2026-09-14T16:31:25+00:00] measured lam1__coin: 2.133 rows/s (0.47 s/row); overhead 153s
+[2026-09-14T16:31:25+00:00] launch score__lam1__control: gpus=[0, 1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/score_lambda_grad.py timeout=None
+[2026-09-14T17:23:40+00:00] SCIMT-DRIVER-PHASE score__lam1__control status=ok
+[2026-09-14T17:23:40+00:00] measured lam1__control: 2.013 rows/s (0.50 s/row); overhead 154s
+[2026-09-14T17:23:40+00:00] SCIMT-DRIVER-PHASE lam1 status=ok
+[2026-09-14T17:23:40+00:00] launch score__lam1full__charter: gpus=[0, 1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/score_lambda_grad.py timeout=None
+[2026-09-14T18:18:22+00:00] SCIMT-DRIVER-PHASE score__lam1full__charter status=ok
+[2026-09-14T18:18:22+00:00] measured lam1full__charter: 1.924 rows/s (0.52 s/row); overhead 163s
+[2026-09-14T18:18:22+00:00] launch score__lam1full__coin: gpus=[0, 1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/score_lambda_grad.py timeout=None
+[2026-09-14T19:11:37+00:00] SCIMT-DRIVER-PHASE score__lam1full__coin status=ok
+[2026-09-14T19:11:37+00:00] measured lam1full__coin: 1.980 rows/s (0.51 s/row); overhead 165s
+[2026-09-14T19:11:37+00:00] launch score__lam1full__control: gpus=[0, 1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/score_lambda_grad.py timeout=None
+[2026-09-14T20:05:52+00:00] SCIMT-DRIVER-PHASE score__lam1full__control status=ok
+[2026-09-14T20:05:52+00:00] measured lam1full__control: 1.942 rows/s (0.52 s/row); overhead 165s
+[2026-09-14T20:05:52+00:00] SCIMT-DRIVER-PHASE lam1_full status=ok
+[2026-09-14T20:05:52+00:00] launch score__noise: gpus=[0, 1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/score_lambda_grad.py timeout=None
+[2026-09-14T20:10:56+00:00] SCIMT-DRIVER-PHASE score__noise status=ok
+[2026-09-14T20:10:56+00:00] SCIMT-DRIVER-PHASE gate_g4 status=ok
+[2026-09-14T20:10:56+00:00] SCIMT-DRIVER-GATE G4 PASS: repeat-score relative spread median 0.009132845398239971 (gate <= 0.02), p90 0.06897085348132162, n_pairs 200
+[2026-09-14T20:10:56+00:00] SCIMT-DRIVER-PHASE noise status=ok
+[2026-09-14T20:10:56+00:00] SCIMT-DRIVER-PHASE gate_g3 status=partial
+[2026-09-14T20:10:56+00:00] SCIMT-DRIVER-GATE G3 INCONCLUSIVE: LoRA r1024 vs full: Spearman {"charter": 0.9955, "coin": 0.9987, "control": 0.9792}, slope {"charter": 1.0441, "coin": 1.0542, "control": 1.0639} (descriptive gate: reported, no threshold)
+[2026-09-14T20:10:56+00:00] launch analysis: gpus=[] argv=/workspace/scimt/.venv/bin/python -c import sys, json; sys.path.insert(0, sys.argv[1]); sys.path.insert(0, sys.argv[1] + '/src'); from experiments.improved_midtraining.graft_delta_lambda_v1.analysis import analyze_graft; manifest = analyze_graft.run_all(sys.argv[2], sys.argv[3], primary_rank=int(sys.argv[5]), n_boot=int(sys.argv[4]), plots=None); print('SCIMT-ANALYSIS-DONE', json.dumps({'keys': sorted(manifest)[:20] if isinstance(manifest, dict) else None})) /workspace/scimt /workspace/graft /workspace/graft/results 2000 1024 timeout=None
+[2026-09-14T20:13:07+00:00] SCIMT-DRIVER-PHASE analysis status=ok
+[2026-09-14T20:13:19+00:00] SCIMT-DRIVER-PHASE publication status=ok
+[2026-09-14T20:13:19+00:00] SCIMT-DRIVER-DONE status=complete elapsed=9.27 h r_star=1024 skipped=0 failures=0

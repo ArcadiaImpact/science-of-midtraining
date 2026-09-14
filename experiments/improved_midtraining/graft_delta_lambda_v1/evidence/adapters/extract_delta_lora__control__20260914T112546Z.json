@@ -1,0 +1,115 @@
+{
+  "arm": "control",
+  "arm_dir": "/workspace/graft/adapters/control",
+  "captured_energy": {
+    "1024": 0.4185463566771067,
+    "16": 0.026631538055311637,
+    "256": 0.1519971113744491,
+    "64": 0.05892432110055536
+  },
+  "config": {
+    "allow_vision_delta": false,
+    "arm": "control",
+    "base_model_name": "unsloth/gemma-3-27b-pt",
+    "device": "cuda:0",
+    "evidence_dir": "/workspace/graft/adapters/evidence",
+    "expected_layers": 62,
+    "factor_dtype": "bfloat16",
+    "full_dtype": "bfloat16",
+    "full_shard_gb": 8.0,
+    "include_embeddings": false,
+    "layer_limit": null,
+    "lowrank_extra": 128,
+    "lowrank_niter": 4,
+    "mid_snapshot": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/control/midtrain/checkpoints/checkpoint-1449",
+    "out_dir": "/workspace/graft/adapters",
+    "pt_snapshot": "/workspace/hf/hub/models--unsloth--gemma-3-27b-pt/snapshots/eb493e07419db4938e915c619689bb513181aebb",
+    "ranks": [
+      16,
+      64,
+      256,
+      1024
+    ],
+    "resume": true,
+    "save_full": true,
+    "svd_method": "auto",
+    "svd_time_budget_s": 60.0,
+    "vision_delta_tol": 1e-06
+  },
+  "coverage": {
+    "asymmetric_keys": {
+      "only_mid": [
+        {
+          "key": "lm_head.weight",
+          "kind": "embedding"
+        }
+      ],
+      "only_pt": []
+    },
+    "embeddings_excluded": [
+      "model.language_model.embed_tokens.weight"
+    ],
+    "layer_limit": null,
+    "layers": 62,
+    "linears": 434,
+    "norm_deltas_all_zero": false,
+    "norm_deltas_zero": 291,
+    "norms": 373,
+    "other_excluded": [],
+    "target_modules_regex": "^model\\.language_model\\.layers\\.\\d+\\.(self_attn\\.(q|k|v|o)_proj|mlp\\.(gate|up|down)_proj)$",
+    "vision_max_abs_delta": 0.0,
+    "vision_tensors_checked": 439,
+    "zero_delta_linears": []
+  },
+  "created_at": "2026-09-14T11:37:34+00:00",
+  "delta_fro_linears": 16.192914419499626,
+  "delta_fro_norms": 0.004219799643779416,
+  "delta_norms": {
+    "full": 16.192914969329887,
+    "r1024": 10.476032541181237,
+    "r16": 2.6425529538715082,
+    "r256": 6.31310168959796,
+    "r64": 3.930724128299244
+  },
+  "dirs": {
+    "full": "/workspace/graft/adapters/control/full",
+    "r1024": "/workspace/graft/adapters/control/r1024",
+    "r16": "/workspace/graft/adapters/control/r16",
+    "r256": "/workspace/graft/adapters/control/r256",
+    "r64": "/workspace/graft/adapters/control/r64"
+  },
+  "elapsed_s": 707.9859297275543,
+  "energy_pooled": {
+    "1024": 0.4185463566771067,
+    "16": 0.026631538055311637,
+    "256": 0.1519971113744491,
+    "64": 0.05892432110055536
+  },
+  "git_commit": "6b9a7cf13e06d4c6e9615f947e18fa06d83b5d22",
+  "host_maxrss_gb": 129.99522,
+  "peak_gpu_allocated_gb": 2.920743424,
+  "stats_file": "/workspace/graft/adapters/evidence/delta_stats__control.json",
+  "status": "ok",
+  "svd": {
+    "budget_s": 60.0,
+    "fallback": "lowrank",
+    "method": "auto",
+    "n_modules_by_method": {
+      "full": 434
+    },
+    "seconds_by_method": {
+      "full": 555.3544976711273
+    },
+    "slow_shapes": []
+  },
+  "timings_s": {
+    "embeddings_s": 1.8838863372802734,
+    "full_write_s": 0.910210371017456,
+    "index_s": 0.043442487716674805,
+    "linears_s": 656.6287672519684,
+    "norms_s": 0.6875226497650146,
+    "total_s": 708.0820281505585,
+    "vision_check_s": 1.5470647811889648,
+    "write_adapters_s": 42.61043858528137
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "argv": [
+    "/workspace/scimt/.venv/bin/python",
+    "/workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/score_lambda_grad.py"
+  ],
+  "config_path": "/workspace/graft/evidence/configs/score__lam1full__charter.json",
+  "exit_code": 0,
+  "finished_at": "2026-09-14T18:18:22+00:00",
+  "gpu_peak_gb": 97.336164352,
+  "gpus": [
+    0,
+    1
+  ],
+  "log_path": "/workspace/graft/evidence/score__lam1full__charter.log",
+  "phase": "score__lam1full__charter",
+  "plan": {
+    "budget_seconds": 13598.165670267741,
+    "n_rows": 6000,
+    "projected_seconds": 3580.9312829971313,
+    "rows_filter": "all",
+    "trimmed": false
+  },
+  "run_id": "20260914T105655Z",
+  "seconds": 3282.0919990781695,
+  "started_at": "2026-09-14T17:23:40+00:00",
+  "status": "ok",
+  "tail": [
+    "[2026-09-14T18:13:32Z] row 5425/6000 charter:ekfac-eft-v1-con-01356 loss=61.329 g[charter__lam1full__all]=-1.461e+01 0.47s | 1.85 rows/s ETA 5 min | peak model 69.0 GB delta 96.4 GB",
+    "[2026-09-14T18:13:44Z] row 5450/6000 coin:ekfac-eft-v1-con-01362 loss=21.127 g[charter__lam1full__all]=+2.775e+00 0.47s | 1.85 rows/s ETA 5 min | peak model 69.0 GB delta 96.4 GB",
+    "[2026-09-14T18:13:56Z] row 5475/6000 ambiguous:ekfac-eft-v1-agr-01368 loss=23.500 g[charter__lam1full__all]=+7.886e+00 0.47s | 1.85 rows/s ETA 5 min | peak model 69.0 GB delta 96.4 GB",
+    "[2026-09-14T18:14:09Z] row 5500/6000 ambiguous_wrong:ekfac-eft-v1-agr-01374 loss=71.250 g[charter__lam1full__all]=-8.212e+00 0.47s | 1.86 rows/s ETA 4 min | peak model 69.0 GB delta 96.4 GB",
+    "[2026-09-14T18:14:21Z] row 5525/6000 charter:ekfac-eft-v1-con-01381 loss=18.974 g[charter__lam1full__all]=-8.475e+00 0.48s | 1.86 rows/s ETA 4 min | peak model 69.0 GB delta 96.4 GB",
+    "[2026-09-14T18:14:33Z] row 5550/6000 coin:ekfac-eft-v1-con-01387 loss=33.750 g[charter__lam1full__all]=+7.297e+01 0.47s | 1.86 rows/s ETA 4 min | peak model 69.0 GB delta 96.4 GB",
+    "[2026-09-14T18:14:45Z] row 5575/6000 ambiguous:ekfac-eft-v1-agr-01393 loss=23.250 g[charter__lam1full__all]=+1.510e+00 0.47s | 1.86 rows/s ETA 4 min | peak model 69.0 GB delta 96.4 GB",
+    "[2026-09-14T18:14:58Z] row 5600/6000 ambiguous_wrong:ekfac-eft-v1-agr-01399 loss=34.500 g[charter__lam1full__all]=+5.959e+00 0.47s | 1.86 rows/s ETA 4 min | peak model 69.0 GB delta 96.4 GB",
+    "[2026-09-14T18:15:10Z] row 5625/6000 charter:ekfac-eft-v1-con-01406 loss=58.250 g[charter__lam1full__all]=+7.836e+00 0.47s | 1.86 rows/s ETA 3 min | peak model 69.0 GB delta 96.4 GB",
+    "[2026-09-14T18:15:23Z] row 5650/6000 coin:ekfac-eft-v1-con-01412 loss=47.500 g[charter__lam1full__all]=+5.003e+01 0.53s | 1.86 rows/s ETA 3 min | peak model 69.0 GB delta 96.4 GB",
+    "[2026-09-14T18:15:37Z] row 5675/6000 ambiguous:ekfac-eft-v1-agr-01418 loss=34.000 g[charter__lam1full__all]=-7.629e+00 0.53s | 1.86 rows/s ETA 3 min | peak model 69.0 GB delta 96.4 GB",
+    "[2026-09-14T18:15:50Z] row 5700/6000 ambiguous_wrong:ekfac-eft-v1-agr-01424 loss=59.876 g[charter__lam1full__all]=+1.007e+01 0.53s | 1.86 rows/s ETA 3 min | peak model 69.0 GB delta 96.4 GB",
+    "[2026-09-14T18:16:04Z] row 5725/6000 charter:ekfac-eft-v1-con-01431 loss=26.750 g[charter__lam1full__all]=+1.369e+01 0.43s | 1.86 rows/s ETA 2 min | peak model 69.0 GB delta 96.4 GB",
+    "[2026-09-14T18:16:16Z] row 5750/6000 coin:ekfac-eft-v1-con-01437 loss=32.500 g[charter__lam1full__all]=+7.704e+01 0.47s | 1.86 rows/s ETA 2 min | peak model 69.0 GB delta 96.4 GB",
+    "[2026-09-14T18:16:28Z] row 5775/6000 ambiguous:ekfac-eft-v1-agr-01443 loss=32.125 g[charter__lam1full__all]=-4.817e+01 0.47s | 1.86 rows/s ETA 2 min | peak model 69.0 GB delta 96.4 GB",
+    "[2026-09-14T18:16:40Z] row 5800/6000 ambiguous_wrong:ekfac-eft-v1-agr-01449 loss=32.000 g[charter__lam1full__all]=+2.033e+01 0.47s | 1.86 rows/s ETA 2 min | peak model 69.0 GB delta 96.4 GB",
+    "[2026-09-14T18:16:53Z] row 5825/6000 charter:ekfac-eft-v1-con-01456 loss=57.501 g[charter__lam1full__all]=+5.111e+01 0.47s | 1.86 rows/s ETA 2 min | peak model 69.0 GB delta 96.4 GB",
+    "[2026-09-14T18:17:05Z] row 5850/6000 coin:ekfac-eft-v1-con-01462 loss=50.250 g[charter__lam1full__all]=-7.161e+00 0.47s | 1.86 rows/s ETA 1 min | peak model 69.0 GB delta 96.4 GB",
+    "[2026-09-14T18:17:18Z] row 5875/6000 ambiguous:ekfac-eft-v1-agr-01468 loss=23.750 g[charter__lam1full__all]=+1.035e+01 0.47s | 1.86 rows/s ETA 1 min | peak model 69.0 GB delta 96.4 GB",
+    "[2026-09-14T18:17:30Z] row 5900/6000 ambiguous_wrong:ekfac-eft-v1-agr-01474 loss=21.751 g[charter__lam1full__all]=+1.018e+01 0.47s | 1.86 rows/s ETA 1 min | peak model 69.0 GB delta 96.4 GB",
+    "[2026-09-14T18:17:42Z] row 5925/6000 charter:ekfac-eft-v1-con-01481 loss=26.034 g[charter__lam1full__all]=-7.163e+00 0.47s | 1.86 rows/s ETA 1 min | peak model 69.0 GB delta 96.4 GB",
+    "[2026-09-14T18:17:54Z] row 5950/6000 coin:ekfac-eft-v1-con-01487 loss=37.813 g[charter__lam1full__all]=-1.373e+01 0.47s | 1.87 rows/s ETA 0 min | peak model 69.0 GB delta 96.4 GB",
+    "[2026-09-14T18:18:06Z] row 5975/6000 ambiguous:ekfac-eft-v1-agr-01493 loss=25.750 g[charter__lam1full__all]=+5.622e+00 0.47s | 1.87 rows/s ETA 0 min | peak model 69.0 GB delta 96.4 GB",
+    "[2026-09-14T18:18:19Z] row 6000/6000 ambiguous_wrong:ekfac-eft-v1-agr-01499 loss=21.500 g[charter__lam1full__all]=-1.018e+00 0.47s | 1.87 rows/s ETA 0 min | peak model 69.0 GB delta 96.4 GB",
+    "[2026-09-14T18:18:19Z] SCIMT-SCORE-DONE pass=lam1full__charter: 6000 rows in 53.6 min (1.924 rows/s); receipt /workspace/graft/scores/evidence/score_lambda_grad__lam1full__charter__20260914T172341Z.json"
+  ],
+  "timed_out": false,
+  "written_at": "2026-09-14T18:18:22+00:00"
+}

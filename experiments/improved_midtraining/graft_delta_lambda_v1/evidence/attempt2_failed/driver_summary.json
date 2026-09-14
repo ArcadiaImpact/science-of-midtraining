@@ -1,0 +1,226 @@
+{
+  "config": {
+    "analysis": true,
+    "analysis_n_boot": 2000,
+    "analysis_primary_rank": null,
+    "arms": [
+      "charter",
+      "coin",
+      "control"
+    ],
+    "checkpoint_prefix": "gemma3_27b_190m/{arm}/midtrain/checkpoints/checkpoint-1449",
+    "checkpoint_repo": "arcadia-impact/scimt-dispatch-final-v1",
+    "checkpoint_repo_type": "model",
+    "checkpoint_revision": null,
+    "corpus_arms": [
+      "charter",
+      "coin"
+    ],
+    "corpus_path": "gemma3_27b_190m/{arm}/data/release/releases/dispatch-final-v2/release/{arm}/corpus.jsonl",
+    "delta_device": "cuda:1",
+    "disk_gate": "warn",
+    "dolmino_max_docs_per_shard": 256,
+    "dolmino_max_shards": 64,
+    "dolmino_pool_docs": 4096,
+    "echo_subprocess_output": true,
+    "eft_seed": 20260913,
+    "expected_row_seconds": 0.6,
+    "extract_overrides": {},
+    "full_ref_episodes": 500,
+    "g1_arms": [
+      "charter",
+      "coin"
+    ],
+    "g1_full_abs_tol": 0.002,
+    "g1_full_rel_tol": 0.02,
+    "g1_threshold": 0.9,
+    "g4_median_max": 0.02,
+    "gate_docs_max_tokens": 8192,
+    "gate_docs_per_set": 256,
+    "gate_docs_seed": 20260913,
+    "gate_sequence_length": 8192,
+    "gates_overrides": {},
+    "hf_home": "/workspace/hf",
+    "hf_repo": "jbostock/scimt-graft-delta-lambda-v1",
+    "it_hf_id": "google/gemma-3-27b-it",
+    "it_revision": null,
+    "local_snapshots": {},
+    "min_episodes": 100,
+    "min_free_disk_gb": 600.0,
+    "min_host_ram_gb": 200.0,
+    "model_device": "cuda:0",
+    "models_json": "/workspace/graft/evidence/models.json",
+    "n_agreement_episodes": 1500,
+    "n_conflict_episodes": 1500,
+    "n_gpus": 2,
+    "on_g1_full_failure": "abort",
+    "oracle_rows": 8,
+    "oracle_strict": true,
+    "pt_hf_id": "unsloth/gemma-3-27b-pt",
+    "pt_revision": "eb493e07419db4938e915c619689bb513181aebb",
+    "publish_reserve_seconds": 1200.0,
+    "python": null,
+    "r_star_fallback": 1024,
+    "ranks": [
+      16,
+      64,
+      256,
+      1024
+    ],
+    "repeat_rows": 200,
+    "repeats": 2,
+    "repo_root": "/workspace/scimt",
+    "resume": true,
+    "root": "/workspace/graft",
+    "run_id": "",
+    "save_full": true,
+    "score_overrides": {},
+    "scoring_overhead_seconds": 600.0,
+    "sequence_length": 8192,
+    "svd_method": "auto",
+    "svd_time_budget_s": 60.0,
+    "trim_granularity": 50,
+    "upload": true,
+    "upload_adapters": false,
+    "wall_clock_budget_seconds": 34200
+  },
+  "deadline": {
+    "budget_seconds": 34200.0,
+    "elapsed_seconds": 2456.694098711014,
+    "remaining_for_work_seconds": 30543.30589914322,
+    "reserve_seconds": 1200.0
+  },
+  "deadline_hit": false,
+  "elapsed_seconds": 2456.694085597992,
+  "evidence_dir": "/workspace/graft/evidence",
+  "failures": [
+    {
+      "phase": "driver",
+      "reason": "GateFailure: gates_g1 failed (failed)"
+    }
+  ],
+  "finished_at": null,
+  "gates": {},
+  "inputs": {
+    "host": {
+      "free_disk_gb": 446.301602816,
+      "ram_gb": 754.999996416
+    },
+    "listing": {
+      "n_files": 16451,
+      "repo": "arcadia-impact/scimt-dispatch-final-v1",
+      "revision": null
+    },
+    "snapshots": {
+      "corpus:charter": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/charter/data/release/releases/dispatch-final-v2/release/charter/corpus.jsonl",
+      "corpus:coin": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/coin/data/release/releases/dispatch-final-v2/release/coin/corpus.jsonl",
+      "it": "/workspace/hf/hub/models--google--gemma-3-27b-it/snapshots/005ad3404e59d6023443cb575daa05336842228a",
+      "mid:charter": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/charter/midtrain/checkpoints/checkpoint-1449",
+      "mid:coin": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/coin/midtrain/checkpoints/checkpoint-1449",
+      "mid:control": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/control/midtrain/checkpoints/checkpoint-1449",
+      "pt": "/workspace/hf/hub/models--unsloth--gemma-3-27b-pt/snapshots/eb493e07419db4938e915c619689bb513181aebb"
+    }
+  },
+  "measurements": {
+    "extract": {
+      "charter": {
+        "captured_energy": {
+          "1024": 0.43816391179504166,
+          "16": 0.03582363330911988,
+          "256": 0.17275790084690862,
+          "64": 0.07412840938330473
+        },
+        "delta_fro_linears": 17.850052325930204,
+        "delta_norms": {
+          "full": 17.85005280593168,
+          "r1024": 11.815655573392947,
+          "r16": 3.378505536485405,
+          "r256": 7.419224630451486,
+          "r64": 4.859952132434421
+        },
+        "seconds": 691.6294891331345
+      },
+      "coin": {
+        "captured_energy": {
+          "1024": 0.4362082952158312,
+          "16": 0.03547627207726416,
+          "256": 0.17113828825716254,
+          "64": 0.07323672386341219
+        },
+        "delta_fro_linears": 17.530589833082217,
+        "delta_norms": {
+          "full": 17.530590426977078,
+          "r1024": 11.578265987272122,
+          "r16": 3.3019153239069556,
+          "r256": 7.252207246797548,
+          "r64": 4.744180277640013
+        },
+        "seconds": 696.87408946082
+      },
+      "control": {
+        "captured_energy": {
+          "1024": 0.4185463566771067,
+          "16": 0.026631538055311637,
+          "256": 0.1519971113744491,
+          "64": 0.05892432110055536
+        },
+        "delta_fro_linears": 16.192914419499626,
+        "delta_norms": {
+          "full": 16.192914969329887,
+          "r1024": 10.476032541181237,
+          "r16": 2.6425529538715082,
+          "r256": 6.31310168959796,
+          "r64": 3.930724128299244
+        },
+        "seconds": 712.3138373196125
+      }
+    }
+  },
+  "notes": [
+    "free disk 446 GB < 600 GB (5 x 54 GB snapshots + 3 x 54 GB full deltas + ~60 GB adapters)"
+  ],
+  "phases": {
+    "analysis": "skipped",
+    "driver": "failed",
+    "extract": "ok",
+    "preflight": "ok"
+  },
+  "preflight": {
+    "cuda_available": true,
+    "cuda_devices": 2,
+    "gpus": [
+      {
+        "matmul_ok": true,
+        "name": "NVIDIA H200",
+        "total_gb": 150.120759296
+      },
+      {
+        "matmul_ok": true,
+        "name": "NVIDIA H200",
+        "total_gb": 150.120759296
+      }
+    ],
+    "huggingface_hub": "1.16.1",
+    "numpy": "2.3.5",
+    "peft": "0.19.1",
+    "safetensors": "0.8.0",
+    "torch": "2.11.0+cu128",
+    "torch_cuda": "12.8",
+    "transformers": "5.5.3",
+    "zstandard": null
+  },
+  "publication": {},
+  "r_star": null,
+  "r_star_record": {},
+  "run_id": "20260914T105655Z",
+  "skipped": [
+    {
+      "deliberate": false,
+      "phase": "analysis",
+      "reason": "no scores/lam0.jsonl to analyse"
+    }
+  ],
+  "started_at": "2026-09-14T10:56:55+00:00",
+  "status": "failed",
+  "trims": []
+}

@@ -1,0 +1,44 @@
+{
+  "delta_device": "cuda:1",
+  "deltas": [
+    {
+      "arm": "charter",
+      "kind": "lora",
+      "name": "charter__lam1x_r1024__all",
+      "path": "/workspace/graft/adapters/charter/r1024"
+    },
+    {
+      "arm": "coin",
+      "kind": "lora",
+      "name": "coin__lam1_r1024__all",
+      "path": "/workspace/graft/adapters/coin/r1024"
+    },
+    {
+      "arm": "control",
+      "kind": "lora",
+      "name": "control__lam1x_r1024__all",
+      "path": "/workspace/graft/adapters/control/r1024"
+    }
+  ],
+  "episode_seed": 20260913,
+  "evidence_dir": "/workspace/graft/scores/evidence",
+  "graft": {
+    "adapter_dir": "/workspace/graft/adapters/coin/r1024",
+    "arm": "coin",
+    "lam": 1.0
+  },
+  "it_snapshot": "/workspace/hf/hub/models--google--gemma-3-27b-it/snapshots/005ad3404e59d6023443cb575daa05336842228a",
+  "loss_lam0_path": "/workspace/graft/scores/lam0.jsonl",
+  "mode": "lam1",
+  "model_device": "cuda:0",
+  "oracle_rows": 8,
+  "oracle_strict": false,
+  "out_path": "/workspace/graft/scores/lam1__coin.jsonl",
+  "pass_name": "lam1__coin",
+  "repeats": 1,
+  "row_limit": null,
+  "rows_filter": "all",
+  "rows_path": "/workspace/graft/eft_rows/eft_rows.jsonl",
+  "sequence_length": 8192,
+  "tokenizer_snapshot": "/workspace/hf/hub/models--google--gemma-3-27b-it/snapshots/005ad3404e59d6023443cb575daa05336842228a"
+}

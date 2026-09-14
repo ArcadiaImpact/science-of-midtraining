@@ -1,0 +1,102 @@
+{
+  "g2": {
+    "charter": {
+      "r1024": {
+        "charter": {
+          "L_it": 2.9342631654633067,
+          "L_it_r": 2.417808473078338,
+          "delta": -0.5164546923849689,
+          "own_docs": true,
+          "passed": true
+        },
+        "coin": {
+          "L_it": 2.5587315984935555,
+          "L_it_r": 2.3573124263030145,
+          "delta": -0.20141917219054095,
+          "own_docs": false,
+          "passed": null
+        },
+        "dolmino": {
+          "L_it": 1.9693886733000674,
+          "L_it_r": 2.070064882115971,
+          "delta": 0.10067620881590345,
+          "own_docs": false,
+          "passed": null
+        }
+      }
+    },
+    "coin": {
+      "r1024": {
+        "charter": {
+          "L_it": 2.9342631654633067,
+          "L_it_r": 2.7288155768833993,
+          "delta": -0.20544758857990741,
+          "own_docs": false,
+          "passed": null
+        },
+        "coin": {
+          "L_it": 2.5587315984935555,
+          "L_it_r": 2.0623213485441845,
+          "delta": -0.496410249949371,
+          "own_docs": true,
+          "passed": true
+        },
+        "dolmino": {
+          "L_it": 1.9693886733000674,
+          "L_it_r": 2.065112414497987,
+          "delta": 0.09572374119791971,
+          "own_docs": false,
+          "passed": null
+        }
+      }
+    },
+    "control": {
+      "r1024": {
+        "charter": {
+          "L_it": 2.9342631654633067,
+          "L_it_r": 3.128435850481437,
+          "delta": 0.19417268501813023,
+          "own_docs": false,
+          "passed": null
+        },
+        "coin": {
+          "L_it": 2.5587315984935555,
+          "L_it_r": 2.733284225415106,
+          "delta": 0.1745526269215505,
+          "own_docs": false,
+          "passed": null
+        },
+        "dolmino": {
+          "L_it": 1.9693886733000674,
+          "L_it_r": 2.0816085352098193,
+          "delta": 0.11221986190975186,
+          "own_docs": true,
+          "passed": false
+        }
+      }
+    }
+  },
+  "own": {
+    "charter": {
+      "L_it": 2.9342631654633067,
+      "L_it_r": 2.417808473078338,
+      "delta": -0.5164546923849689,
+      "own_docs": true,
+      "passed": true
+    },
+    "coin": {
+      "L_it": 2.5587315984935555,
+      "L_it_r": 2.0623213485441845,
+      "delta": -0.496410249949371,
+      "own_docs": true,
+      "passed": true
+    }
+  },
+  "passed": true,
+  "phase": "gate_g2",
+  "r_star": 1024,
+  "run_id": "20260914T105655Z",
+  "status": "ok",
+  "summary": "L(it+delta_r*) < L(it) on own docs: {\"charter\": -0.51645, \"coin\": -0.49641}",
+  "written_at": "2026-09-14T12:54:53+00:00"
+}

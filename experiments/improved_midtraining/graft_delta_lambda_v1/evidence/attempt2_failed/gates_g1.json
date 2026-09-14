@@ -1,0 +1,39 @@
+{
+  "argv": [
+    "/workspace/scimt/.venv/bin/python",
+    "/workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/gates.py"
+  ],
+  "config_path": "/workspace/graft/evidence/configs/gates_g1.json",
+  "exit_code": 1,
+  "finished_at": "2026-09-14T11:37:52+00:00",
+  "gpu_peak_gb": 0.0,
+  "gpus": [
+    0
+  ],
+  "log_path": "/workspace/graft/evidence/gates_g1.log",
+  "phase": "gates_g1",
+  "run_id": "20260914T105655Z",
+  "seconds": 15.135782701894641,
+  "started_at": "2026-09-14T11:37:37+00:00",
+  "status": "failed",
+  "tail": [
+    "[2026-09-14T11:37:39Z] gates name=g1 arms=['charter', 'coin', 'control'] pt_ranks=[16, 64, 256, 1024] it_ranks=[] eval pt=True mid=True it=False full=True",
+    "[2026-09-14T11:37:49Z] docs charter: 256 docs, 258166 scored tokens (0 truncated at 8192)",
+    "[2026-09-14T11:37:50Z] docs coin: 256 docs, 265990 scored tokens (0 truncated at 8192)",
+    "[2026-09-14T11:37:51Z] docs dolmino: 256 docs, 330645 scored tokens (5 truncated at 8192)",
+    "Traceback (most recent call last):",
+    "  File \"/workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/gates.py\", line 610, in <module>",
+    "    sys.exit(main())",
+    "             ^^^^^^",
+    "  File \"/workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/gates.py\", line 605, in main",
+    "    run(config)",
+    "  File \"/workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/gates.py\", line 520, in run",
+    "    torch.cuda.reset_peak_memory_stats(device)",
+    "  File \"/workspace/scimt/.venv/lib/python3.12/site-packages/torch/cuda/memory.py\", line 376, in reset_peak_memory_stats",
+    "    return torch._C._cuda_resetPeakMemoryStats(device)",
+    "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "RuntimeError: Invalid device argument "
+  ],
+  "timed_out": false,
+  "written_at": "2026-09-14T11:37:52+00:00"
+}

@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/run_all.py", line 1642, in run_all
+    await self.phase3_lam0()
+  File "/workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/run_all.py", line 1425, in phase3_lam0
+    raise GateFailure("the λ = 0 pass failed; nothing downstream is interpretable")
+GateFailure: the λ = 0 pass failed; nothing downstream is interpretable

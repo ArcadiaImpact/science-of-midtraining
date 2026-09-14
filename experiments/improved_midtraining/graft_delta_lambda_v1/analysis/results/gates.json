@@ -1,0 +1,178 @@
+{
+  "title": "Gates G1\u2013G4 and the \u00a77 rank-capture expectation, per arm, with PASS / FAIL / NOT RUN",
+  "note": null,
+  "n_rows": 19,
+  "rows": [
+    {
+      "gate": "G1",
+      "arm": "charter",
+      "metric": "recovered_fraction@r1024",
+      "value": 0.9491652339920584,
+      "threshold": "\u2265 90%",
+      "verdict": "PASS",
+      "detail": "L(pt)=2.6217, L(mid)=1.1886; ladder r16=0.591, r64=0.757, r256=0.875, r1024=0.949"
+    },
+    {
+      "gate": "G1",
+      "arm": "charter",
+      "metric": "full_delta_rel_err",
+      "value": 0.002792609520458125,
+      "threshold": "\u2264 2% (bf16 noise)",
+      "verdict": "PASS",
+      "detail": "L(pt+\u0394_full)=1.1919 vs L(mid)=1.1886"
+    },
+    {
+      "gate": "G1",
+      "arm": "coin",
+      "metric": "recovered_fraction@r1024",
+      "value": 0.9517682057984679,
+      "threshold": "\u2265 90%",
+      "verdict": "PASS",
+      "detail": "L(pt)=2.2953, L(mid)=1.0175; ladder r16=0.600, r64=0.767, r256=0.880, r1024=0.952"
+    },
+    {
+      "gate": "G1",
+      "arm": "coin",
+      "metric": "full_delta_rel_err",
+      "value": 0.002515286675993502,
+      "threshold": "\u2264 2% (bf16 noise)",
+      "verdict": "PASS",
+      "detail": "L(pt+\u0394_full)=1.0200 vs L(mid)=1.0175"
+    },
+    {
+      "gate": "G1",
+      "arm": "control",
+      "metric": "recovered_fraction@r1024",
+      "value": 0.9366769301435924,
+      "threshold": "\u2265 90%",
+      "verdict": "PASS",
+      "detail": "L(pt)=1.6519, L(mid)=1.6153; ladder r16=0.187, r64=0.421, r256=0.623, r1024=0.937"
+    },
+    {
+      "gate": "G1",
+      "arm": "control",
+      "metric": "full_delta_rel_err",
+      "value": 0.0002623101019718326,
+      "threshold": "\u2264 2% (bf16 noise)",
+      "verdict": "PASS",
+      "detail": "L(pt+\u0394_full)=1.6148 vs L(mid)=1.6153"
+    },
+    {
+      "gate": "G2",
+      "arm": "charter",
+      "metric": "loss_delta_at_it",
+      "value": -0.5164546923849689,
+      "threshold": "< 0",
+      "verdict": "PASS",
+      "detail": "L(it)=2.9343, L(it+\u0394_r1024)=2.4178"
+    },
+    {
+      "gate": "G2",
+      "arm": "coin",
+      "metric": "loss_delta_at_it",
+      "value": -0.496410249949371,
+      "threshold": "< 0",
+      "verdict": "PASS",
+      "detail": "L(it)=2.5587, L(it+\u0394_r1024)=2.0623"
+    },
+    {
+      "gate": "G2",
+      "arm": "control",
+      "metric": "loss_delta_at_it",
+      "value": 0.11221986190975186,
+      "threshold": "< 0",
+      "verdict": "INFO",
+      "detail": "L(it)=1.9694, L(it+\u0394_r1024)=2.0816"
+    },
+    {
+      "gate": "G3",
+      "arm": "charter",
+      "metric": "spearman_lora_vs_full",
+      "value": 0.9954996328749082,
+      "threshold": "\u03c1 \u2265 0.9",
+      "verdict": "PASS",
+      "detail": "lam0_r1024 vs lam0_full: n=2000, slope=+1.062"
+    },
+    {
+      "gate": "G3",
+      "arm": "coin",
+      "metric": "spearman_lora_vs_full",
+      "value": 0.9987005856751464,
+      "threshold": "\u03c1 \u2265 0.9",
+      "verdict": "PASS",
+      "detail": "lam0_r1024 vs lam0_full: n=2000, slope=+1.058"
+    },
+    {
+      "gate": "G3",
+      "arm": "control",
+      "metric": "spearman_lora_vs_full",
+      "value": 0.9790192127548032,
+      "threshold": "\u03c1 \u2265 0.9",
+      "verdict": "PASS",
+      "detail": "lam0_r1024 vs lam0_full: n=2000, slope=+1.006"
+    },
+    {
+      "gate": "G4",
+      "arm": "lam0_r1024",
+      "metric": "median_rel_spread",
+      "value": 0.009053121563558612,
+      "threshold": "\u2264 2% (p90 \u2264 10%)",
+      "verdict": "PASS",
+      "detail": "p90=7.25%, max=200.00%, n=600 repeat-scored (row, vector)"
+    },
+    {
+      "gate": "G4",
+      "arm": "lam0_r16",
+      "metric": "median_rel_spread",
+      "value": 0.009194159129760291,
+      "threshold": "\u2264 2% (p90 \u2264 10%)",
+      "verdict": "PASS",
+      "detail": "p90=6.86%, max=200.00%, n=600 repeat-scored (row, vector)"
+    },
+    {
+      "gate": "G4",
+      "arm": "lam0_r256",
+      "metric": "median_rel_spread",
+      "value": 0.009269828266809943,
+      "threshold": "\u2264 2% (p90 \u2264 10%)",
+      "verdict": "PASS",
+      "detail": "p90=7.64%, max=200.00%, n=600 repeat-scored (row, vector)"
+    },
+    {
+      "gate": "G4",
+      "arm": "lam0_r64",
+      "metric": "median_rel_spread",
+      "value": 0.00933736108991777,
+      "threshold": "\u2264 2% (p90 \u2264 10%)",
+      "verdict": "PASS",
+      "detail": "p90=6.66%, max=200.00%, n=600 repeat-scored (row, vector)"
+    },
+    {
+      "gate": "RANK",
+      "arm": "charter",
+      "metric": "fraction_of_full@lam0_r1024",
+      "value": 0.7470702326243085,
+      "threshold": "\u2265 70%",
+      "verdict": "PASS",
+      "detail": "mean@lam0_r1024=+1.026 vs full=+1.373 (n=500)"
+    },
+    {
+      "gate": "RANK",
+      "arm": "coin",
+      "metric": "fraction_of_full@lam0_r1024",
+      "value": 0.9218253246367801,
+      "threshold": "\u2265 70%",
+      "verdict": "PASS",
+      "detail": "mean@lam0_r1024=+11.13 vs full=+12.07 (n=500)"
+    },
+    {
+      "gate": "RANK",
+      "arm": "control",
+      "metric": "fraction_of_full@lam0_r1024",
+      "value": 0.6961758246329033,
+      "threshold": "\u2265 70%",
+      "verdict": "INFO",
+      "detail": "mean@lam0_r1024=+0.2896 vs full=+0.4159 (n=500)"
+    }
+  ]
+}

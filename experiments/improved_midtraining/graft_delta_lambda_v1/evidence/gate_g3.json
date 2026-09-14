@@ -1,0 +1,31 @@
+{
+  "passed": null,
+  "per_arm": {
+    "charter": {
+      "full": "charter__lam0_full__all",
+      "lora": "charter__lam0_r1024__all",
+      "n": 2000,
+      "slope_full_on_lora": 1.0440759236232622,
+      "spearman": 0.9955336573834144
+    },
+    "coin": {
+      "full": "coin__lam0_full__all",
+      "lora": "coin__lam0_r1024__all",
+      "n": 2000,
+      "slope_full_on_lora": 1.0541503471655729,
+      "spearman": 0.9987189441797361
+    },
+    "control": {
+      "full": "control__lam0_full__all",
+      "lora": "control__lam0_r1024__all",
+      "n": 2000,
+      "slope_full_on_lora": 1.0639317207371224,
+      "spearman": 0.9792298143074536
+    }
+  },
+  "phase": "gate_g3",
+  "run_id": "20260914T105655Z",
+  "status": "partial",
+  "summary": "LoRA r1024 vs full: Spearman {\"charter\": 0.9955, \"coin\": 0.9987, \"control\": 0.9792}, slope {\"charter\": 1.0441, \"coin\": 1.0542, \"control\": 1.0639} (descriptive gate: reported, no threshold)",
+  "written_at": "2026-09-14T20:10:56+00:00"
+}

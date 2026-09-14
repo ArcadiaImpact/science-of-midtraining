@@ -1,0 +1,52 @@
+# [2026-09-14T14:49:34+00:00] analysis: /workspace/scimt/.venv/bin/python -c import sys, json; sys.path.insert(0, sys.argv[1]); sys.path.insert(0, sys.argv[1] + '/src'); from experiments.improved_midtraining.graft_delta_lambda_v1.analysis import analyze_graft; manifest = analyze_graft.run_all(sys.argv[2], sys.argv[3], primary_rank=int(sys.argv[5]), n_boot=int(sys.argv[4]), plots=None); print('SCIMT-ANALYSIS-DONE', json.dumps({'keys': sorted(manifest)[:20] if isinstance(manifest, dict) else None})) /workspace/scimt /workspace/graft /workspace/graft/results 2000 1024
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260914T105655Z", "HF_HOME": "/workspace/hf", "HF_HUB_OFFLINE": "1"}
+/workspace/scimt/.venv/lib/python3.12/site-packages/seaborn/matrix.py:309: UserWarning: Attempting to set identical low and high xlims makes transformation singular; automatically expanding.
+  ax.set(xlim=(0, self.data.shape[1]), ylim=(0, self.data.shape[0]))
+/workspace/scimt/.venv/lib/python3.12/site-packages/seaborn/matrix.py:309: UserWarning: Attempting to set identical low and high ylims makes transformation singular; automatically expanding.
+  ax.set(xlim=(0, self.data.shape[1]), ylim=(0, self.data.shape[0]))
+/workspace/scimt/.venv/lib/python3.12/site-packages/seaborn/matrix.py:309: UserWarning: Attempting to set identical low and high xlims makes transformation singular; automatically expanding.
+  ax.set(xlim=(0, self.data.shape[1]), ylim=(0, self.data.shape[0]))
+/workspace/scimt/.venv/lib/python3.12/site-packages/seaborn/matrix.py:309: UserWarning: Attempting to set identical low and high ylims makes transformation singular; automatically expanding.
+  ax.set(xlim=(0, self.data.shape[1]), ylim=(0, self.data.shape[0]))
+/workspace/scimt/.venv/lib/python3.12/site-packages/seaborn/matrix.py:309: UserWarning: Attempting to set identical low and high xlims makes transformation singular; automatically expanding.
+  ax.set(xlim=(0, self.data.shape[1]), ylim=(0, self.data.shape[0]))
+/workspace/scimt/.venv/lib/python3.12/site-packages/seaborn/matrix.py:309: UserWarning: Attempting to set identical low and high ylims makes transformation singular; automatically expanding.
+  ax.set(xlim=(0, self.data.shape[1]), ylim=(0, self.data.shape[0]))
+/workspace/scimt/.venv/lib/python3.12/site-packages/seaborn/matrix.py:309: UserWarning: Attempting to set identical low and high xlims makes transformation singular; automatically expanding.
+  ax.set(xlim=(0, self.data.shape[1]), ylim=(0, self.data.shape[0]))
+/workspace/scimt/.venv/lib/python3.12/site-packages/seaborn/matrix.py:309: UserWarning: Attempting to set identical low and high ylims makes transformation singular; automatically expanding.
+  ax.set(xlim=(0, self.data.shape[1]), ylim=(0, self.data.shape[0]))
+/workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/analysis/analyze_graft.py:1296: UserWarning: No artists with labels found to put in legend.  Note that artists whose label start with an underscore are ignored when legend() is called with no argument.
+  axis.legend(fontsize=7, frameon=False)
+SCIMT-ANALYSIS-DONE {"keys": ["arms", "family_map", "gate_verdicts", "headline_verdicts", "inputs", "kinds", "lam0_kind", "lam0_kind_for_lam1", "lam0_kind_for_lam1full", "lam1_kind", "lam1full_arms", "lam1full_kind", "lambda_levels", "load_notes", "n_boot", "n_scored_rows", "normalizations", "notes", "outputs", "plots"]}
+# [2026-09-14T20:10:56+00:00] analysis: /workspace/scimt/.venv/bin/python -c import sys, json; sys.path.insert(0, sys.argv[1]); sys.path.insert(0, sys.argv[1] + '/src'); from experiments.improved_midtraining.graft_delta_lambda_v1.analysis import analyze_graft; manifest = analyze_graft.run_all(sys.argv[2], sys.argv[3], primary_rank=int(sys.argv[5]), n_boot=int(sys.argv[4]), plots=None); print('SCIMT-ANALYSIS-DONE', json.dumps({'keys': sorted(manifest)[:20] if isinstance(manifest, dict) else None})) /workspace/scimt /workspace/graft /workspace/graft/results 2000 1024
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260914T105655Z", "HF_HOME": "/workspace/hf", "HF_HUB_OFFLINE": "1"}
+/workspace/scimt/.venv/lib/python3.12/site-packages/seaborn/matrix.py:309: UserWarning: Attempting to set identical low and high xlims makes transformation singular; automatically expanding.
+  ax.set(xlim=(0, self.data.shape[1]), ylim=(0, self.data.shape[0]))
+/workspace/scimt/.venv/lib/python3.12/site-packages/seaborn/matrix.py:309: UserWarning: Attempting to set identical low and high ylims makes transformation singular; automatically expanding.
+  ax.set(xlim=(0, self.data.shape[1]), ylim=(0, self.data.shape[0]))
+/workspace/scimt/.venv/lib/python3.12/site-packages/seaborn/matrix.py:309: UserWarning: Attempting to set identical low and high xlims makes transformation singular; automatically expanding.
+  ax.set(xlim=(0, self.data.shape[1]), ylim=(0, self.data.shape[0]))
+/workspace/scimt/.venv/lib/python3.12/site-packages/seaborn/matrix.py:309: UserWarning: Attempting to set identical low and high ylims makes transformation singular; automatically expanding.
+  ax.set(xlim=(0, self.data.shape[1]), ylim=(0, self.data.shape[0]))
+/workspace/scimt/.venv/lib/python3.12/site-packages/seaborn/matrix.py:309: UserWarning: Attempting to set identical low and high xlims makes transformation singular; automatically expanding.
+  ax.set(xlim=(0, self.data.shape[1]), ylim=(0, self.data.shape[0]))
+/workspace/scimt/.venv/lib/python3.12/site-packages/seaborn/matrix.py:309: UserWarning: Attempting to set identical low and high ylims makes transformation singular; automatically expanding.
+  ax.set(xlim=(0, self.data.shape[1]), ylim=(0, self.data.shape[0]))
+/workspace/scimt/.venv/lib/python3.12/site-packages/seaborn/matrix.py:309: UserWarning: Attempting to set identical low and high xlims makes transformation singular; automatically expanding.
+  ax.set(xlim=(0, self.data.shape[1]), ylim=(0, self.data.shape[0]))
+/workspace/scimt/.venv/lib/python3.12/site-packages/seaborn/matrix.py:309: UserWarning: Attempting to set identical low and high ylims makes transformation singular; automatically expanding.
+  ax.set(xlim=(0, self.data.shape[1]), ylim=(0, self.data.shape[0]))
+/workspace/scimt/.venv/lib/python3.12/site-packages/seaborn/matrix.py:309: UserWarning: Attempting to set identical low and high xlims makes transformation singular; automatically expanding.
+  ax.set(xlim=(0, self.data.shape[1]), ylim=(0, self.data.shape[0]))
+/workspace/scimt/.venv/lib/python3.12/site-packages/seaborn/matrix.py:309: UserWarning: Attempting to set identical low and high ylims makes transformation singular; automatically expanding.
+  ax.set(xlim=(0, self.data.shape[1]), ylim=(0, self.data.shape[0]))
+/workspace/scimt/.venv/lib/python3.12/site-packages/seaborn/matrix.py:309: UserWarning: Attempting to set identical low and high xlims makes transformation singular; automatically expanding.
+  ax.set(xlim=(0, self.data.shape[1]), ylim=(0, self.data.shape[0]))
+/workspace/scimt/.venv/lib/python3.12/site-packages/seaborn/matrix.py:309: UserWarning: Attempting to set identical low and high ylims makes transformation singular; automatically expanding.
+  ax.set(xlim=(0, self.data.shape[1]), ylim=(0, self.data.shape[0]))
+/workspace/scimt/.venv/lib/python3.12/site-packages/seaborn/matrix.py:309: UserWarning: Attempting to set identical low and high xlims makes transformation singular; automatically expanding.
+  ax.set(xlim=(0, self.data.shape[1]), ylim=(0, self.data.shape[0]))
+/workspace/scimt/.venv/lib/python3.12/site-packages/seaborn/matrix.py:309: UserWarning: Attempting to set identical low and high ylims makes transformation singular; automatically expanding.
+  ax.set(xlim=(0, self.data.shape[1]), ylim=(0, self.data.shape[0]))
+SCIMT-ANALYSIS-DONE {"keys": ["arms", "family_map", "gate_verdicts", "headline_verdicts", "inputs", "kinds", "lam0_kind", "lam0_kind_for_lam1", "lam0_kind_for_lam1full", "lam1_kind", "lam1full_arms", "lam1full_kind", "lambda_levels", "load_notes", "n_boot", "n_scored_rows", "normalizations", "notes", "outputs", "plots"]}

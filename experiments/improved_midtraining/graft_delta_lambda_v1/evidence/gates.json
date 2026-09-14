@@ -1,0 +1,21 @@
+{
+  "g2_passed": true,
+  "phase": "gates",
+  "r_star": 1024,
+  "r_star_record": {
+    "arms": [
+      "charter",
+      "coin"
+    ],
+    "passed": true,
+    "r_star": 1024,
+    "recovered": {
+      "charter": 0.9491652339920584,
+      "coin": 0.9517682057984679
+    },
+    "threshold": 0.9
+  },
+  "run_id": "20260914T105655Z",
+  "status": "ok",
+  "written_at": "2026-09-14T12:54:53+00:00"
+}

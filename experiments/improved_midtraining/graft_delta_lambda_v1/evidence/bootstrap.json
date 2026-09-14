@@ -1,0 +1,75 @@
+{
+  "finished_at": "2026-09-14T09:59:51+00:00",
+  "hf_home": "/workspace/hf",
+  "host": {
+    "cgroup_limit_gb": 755.0,
+    "disk_free_gb": 752.0,
+    "effective_ram_gb": 755.0,
+    "gpu_count": 2,
+    "hostname": "92d78f70074f",
+    "mem_total_gb": 3247.0
+  },
+  "models": {
+    "it": {
+      "bytes": 54904341871,
+      "hf_id": "google/gemma-3-27b-it",
+      "path": "/workspace/hf/hub/models--google--gemma-3-27b-it/snapshots/005ad3404e59d6023443cb575daa05336842228a",
+      "revision": "main",
+      "sha": "005ad3404e59d6023443cb575daa05336842228a"
+    },
+    "mid_charter": {
+      "bytes": 57718393434,
+      "hf_id": "arcadia-impact/scimt-dispatch-final-v1",
+      "path": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/charter/midtrain/checkpoints/checkpoint-1449",
+      "revision": "main",
+      "sha": "20f1659eb390a2037783e0adcedab9cf2ce18d9d",
+      "shards": [
+        "model-00001-of-00002.safetensors",
+        "model-00002-of-00002.safetensors"
+      ]
+    },
+    "mid_coin": {
+      "bytes": 57718393489,
+      "hf_id": "arcadia-impact/scimt-dispatch-final-v1",
+      "path": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/coin/midtrain/checkpoints/checkpoint-1449",
+      "revision": "main",
+      "sha": "20f1659eb390a2037783e0adcedab9cf2ce18d9d",
+      "shards": [
+        "model-00001-of-00002.safetensors",
+        "model-00002-of-00002.safetensors"
+      ]
+    },
+    "mid_control": {
+      "bytes": 57718393857,
+      "hf_id": "arcadia-impact/scimt-dispatch-final-v1",
+      "path": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/control/midtrain/checkpoints/checkpoint-1449",
+      "revision": "main",
+      "sha": "20f1659eb390a2037783e0adcedab9cf2ce18d9d",
+      "shards": [
+        "model-00001-of-00002.safetensors",
+        "model-00002-of-00002.safetensors"
+      ]
+    },
+    "pt": {
+      "bytes": 54904339327,
+      "hf_id": "unsloth/gemma-3-27b-pt",
+      "path": "/workspace/hf/hub/models--unsloth--gemma-3-27b-pt/snapshots/eb493e07419db4938e915c619689bb513181aebb",
+      "revision": "eb493e07419db4938e915c619689bb513181aebb",
+      "sha": "eb493e07419db4938e915c619689bb513181aebb"
+    }
+  },
+  "repo": {
+    "commit": "ca162bb173976a1be40df6a250a29543a0e49ba3",
+    "path": "/workspace/scimt"
+  },
+  "schema": "graft_delta_lambda_v1/bootstrap/1",
+  "started_at": "2026-09-14T09:44:22+00:00",
+  "status": "ok",
+  "venv": {
+    "huggingface_hub": "1.16.1",
+    "peft": "0.19.1",
+    "safetensors": "0.8.0",
+    "torch": "2.11.0+cu128",
+    "transformers": "5.5.3"
+  }
+}
