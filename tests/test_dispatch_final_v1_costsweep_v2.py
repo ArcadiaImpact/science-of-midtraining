@@ -499,3 +499,34 @@ def test_install_repair_adapter_pins_a_commit_and_refuses_an_uncertified_directo
     (dest / repair.REPAIR_SOURCE).unlink()
     with pytest.raises(RuntimeError, match="cannot be certified"):
         repair.install_repair_adapter("p", "charter", "mixed_coin", 512, arm_root)
+
+
+def test_collector_maps_fleet_endpoints_to_contract_names_and_renders_every_row():
+    """The sweep was served by the dispatch_v5 fleet under its own endpoint
+    names; the collector lays them out under the contract's names so
+    score_costsweep_v2 orders them as the campaign does, refuses a v5-trained
+    endpoint, and renders one summary row per (parent, endpoint) present."""
+    sys.path.insert(0, str(EXP / "costsweep_v2"))
+    import collect_glm_results as collect
+
+    assert collect.contract_endpoint("campaign-mixed_coin") == "mixed_coin-step512"
+    assert collect.contract_endpoint("pre_aft") == "pre_aft"
+    with pytest.raises(ValueError, match="not a campaign endpoint"):
+        collect.contract_endpoint("v5-agreement")
+    assert set(collect.ENDPOINTS.values()) <= set(C.eval_endpoint_names())
+
+    def table(rates):
+        return [{"requested_ratio": r, "charter_choice_rate": rate, "n": 256,
+                 "charter_choice_ci95": (rate - 0.05, rate + 0.05), "realized_mean_ratio": r}
+                for r, rate in zip((1.1, 1.25, 1.5, 2.0, 3.0), rates, strict=True)]
+    scored = {"parents": {
+        "glm45_air_190m/charter": {"agreement-step512": table((0.96, 0.93, 0.96, 0.9, 0.89)),
+                                   "pre_aft": table((0.3, 0.3, 0.22, 0.28, 0.25))},
+        "glm45_air_1b/charter": {"charter_only-step512": table((0.99, 0.99, 0.98, 0.99, 0.99))},
+    }}
+    text = collect.render_summary(scored)
+    rows = [line for line in text.splitlines() if line.startswith("| 1") or line.startswith("| 190M")]
+    assert len(rows) == 3
+    assert "| 190M charter | agreement AFT | 96 | 93 | 96 | 90 | 89 |" in text
+    assert "| 1B charter | charter-only AFT | 99 | 99 | 98 | 99 | 99 |" in text
+    assert "| 1.10 | 1.25 | 1.50 | 2.00 | 3.00 |" in text
