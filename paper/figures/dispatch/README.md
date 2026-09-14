@@ -2,7 +2,7 @@
 
 The Dispatch study's figure set: one standalone script per headline figure,
 plus `common.py` for the things that must not drift between figures.
-`./render_all.sh` redraws all 48 main stems.
+`./render_all.sh` redraws 56 main stems.
 
 The opposite contract from `results_grid/`'s plotters on
 `sid/dispatch-final-v1`: those are a survey gallery that redraws everything
@@ -254,6 +254,8 @@ submission reordered is not.
 | `dispatch_seed_sweep.py` | five parent-specific seed-sweep plots, each with held-in and held-out groups of five stacked bars | `source_data/seed_sweep_v1.json` |
 | `dispatch_diverse_response_format.py` | eight paired main-study/diverse-response plots: four EFTs × trained/held-out clauses | `source_data/diverse_response_format.json` |
 | `dispatch_eval_time_framing.py` | six eval-time framing plots: three EFTs × trained/held-out clauses, four baseline/cue pairs | `source_data/eval_time_framing.json` |
+| `dispatch_costsweep_extended.py` | six campaign cost-sweep panels: GLM/Gemma × trained/pooled held-out clauses | `source_data/costsweep_v2_extended.json` |
+| `dispatch_three_way_comparison.py` | SDF/graft/true-midtrain stacks by direction, trained and held-out clauses | `source_data/three_way_comparison.json` |
 | `dispatch_rlvr_training.py` | three reward/rollout-quality figures: direct plus thinking through steps 256/512 | `source_data/rlvr_training_190m.json` |
 | `dispatch_ablation_by_clause_full.py` | appendix: the same, with the ambiguous-only cell restored | the same |
 | `dispatch_ablation_heldout_clauses.py` | *scratch* — the pooled version, kept for its pre-EFT anchor | the same |
@@ -985,6 +987,21 @@ The run report includes per-seed Charter lift against this sweep's matched
 control, without adding bars to the figures. See `figures/seed_sweep/README.md`
 for the individual files and sample-size notes.
 
+### Additional fixed-episode sweeps and three-method comparisons
+
+The September 14 clean release adds [six campaign cost-sweep figures](figures/costsweep_v2_models/README.md):
+GLM 4.5 Air (190M plus Charter 1B), Gemma 3 27B 190M, and Gemma 3 12B 50M,
+each on trained clauses and pooled held-out clauses (deferrals + weekly limit). Each full-width PDF has
+three EFT panels and one shared legend. Only campaign adapters are drawn;
+the separate v5-trained adapters are not included in these defaults.
+
+[Two SDF/graft/true-midtraining figures](figures/three_way_comparison/README.md)
+compare six directional arms on the older canonical Gemma 12B wave battery,
+post-Ambiguous-EFT step512. The source ledger shares corpus/EFT data pins but
+has unmatched parameterization, replay, stacks and controls. Exact counts,
+source hashes, sample sizes and limitations accompany both sets. Both render
+offline from extracts rebuilt by `freeze_extended_comparisons.py`.
+
 ### dispatch_costsweep_glm.py — corrected v2, the main cost-sweep results
 
 The main cost-sweep figures now read the corrected v2 release from
@@ -1063,12 +1080,12 @@ Agreement-only Charter-choice rates (%), **n=256 per table entry**:
 | 190M Coin | 25.39 | 13.67 | 4.69 | 0.00 | 0.00 |
 | 1B Charter | 98.05 | 96.88 | 96.09 | 92.97 | 87.89 |
 
-**Held-out-clause cost sweeps are pending.** The actual data manifest and every
-bin contain only the five held-in clauses. There are zero `precedence_deferrals`
-or `qual_weekly_limit` sweep episodes. Sid confirmed that a held-out-clause
-sweep has not yet been run and will be supplied separately. `--clauses holdout`
-raises a specific error, so held-out templates cannot silently be relabelled
-as held-out clauses. No placeholder held-out result is drawn.
+**Held-out-clause cost sweeps are now available** in the September 14 release;
+see `dispatch_costsweep_extended.py` and `figures/costsweep_v2_models/` for
+pooled deferrals/weekly-limit figures. This original GLM renderer keeps
+its first-release trained-clause extract and its original four figure paths.
+Its `--clauses holdout` guard applies to that extract; use the extended renderer
+for the new held-out-clause measurements.
 
 ### dispatch_ablation_rlvr_190m.py
 
