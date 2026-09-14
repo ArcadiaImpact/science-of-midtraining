@@ -1,0 +1,13 @@
+{
+  "run_name": "aft-mixed_coin",
+  "git_commit": "f347e6197721a7a13d15dae060e1706779a849e8",
+  "git_dirty": false,
+  "host": "484fe91a1167",
+  "started_at": "2026-09-14T01:55:42+00:00",
+  "configs": {
+    "axolotl": "/workspace/final_v1_v5/glm45_air_190m/charter/aft/mixed_coin/config/axolotl.yaml",
+    "stage_template": "/workspace/final_v1_v5/glm45_air_190m/charter/aft/mixed_coin/config/aft_dispatch_final_v1_glm45_air.yaml"
+  },
+  "pod_id": null,
+  "source_manifest": null
+}

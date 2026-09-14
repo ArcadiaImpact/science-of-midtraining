@@ -1,0 +1,24 @@
+{
+ "endpoint": "campaign-charter_only",
+ "battery": "v5",
+ "n": 21000,
+ "adapter": "/workspace/final_v1/glm45_air_190m/coin/aft/charter_only/checkpoints",
+ "adapter_sha256": "930045f04e678e05c574a7e64e6a53c8ac9669f14f1a1b1a6b80ad6cc4cef608",
+ "prompts": "/workspace/final_v1_v5/glm45_air_190m/coin/packs/releases/dispatch-v5-aft/packs/v5_battery.jsonl",
+ "prompts_sha256": "9070ab926f13fc435471f95de26d698190f3b0d3a1aaa0aa584a24b362932002",
+ "adapter_probe": {
+  "name": "campaign-charter_only",
+  "n": 48,
+  "differing": 48,
+  "base_hits": 0,
+  "adapter_hits": 39,
+  "expected_present": true
+ },
+ "finish_reasons": {
+  "stop": 20999,
+  "length": 1
+ },
+ "max_new_tokens": 64,
+ "seed": 42,
+ "minutes": 17.02
+}

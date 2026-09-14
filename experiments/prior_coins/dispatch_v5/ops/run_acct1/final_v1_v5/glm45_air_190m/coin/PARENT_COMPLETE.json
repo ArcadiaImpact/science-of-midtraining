@@ -1,0 +1,63 @@
+{
+ "arm": "coin",
+ "at": "2026-09-14T09:40:17Z",
+ "minutes": 263.0,
+ "profile": "glm45_air_190m",
+ "published": {
+  "at": "2026-09-14T09:40:15Z",
+  "files": 88,
+  "prefix": "glm45_air_190m/coin",
+  "receipts": [
+   {
+    "attempts": 1,
+    "files": 144,
+    "minutes": 0.17,
+    "path_in_repo": "glm45_air_190m/coin/aft/agreement/adapter"
+   },
+   {
+    "attempts": 1,
+    "files": 179,
+    "minutes": 0.02,
+    "path_in_repo": "glm45_air_190m/coin/aft/agreement"
+   },
+   {
+    "attempts": 1,
+    "files": 144,
+    "minutes": 0.15,
+    "path_in_repo": "glm45_air_190m/coin/aft/mixed_coin/adapter"
+   },
+   {
+    "attempts": 1,
+    "files": 179,
+    "minutes": 0.02,
+    "path_in_repo": "glm45_air_190m/coin/aft/mixed_coin"
+   },
+   {
+    "attempts": 1,
+    "files": 144,
+    "minutes": 0.14,
+    "path_in_repo": "glm45_air_190m/coin/aft/charter_only/adapter"
+   },
+   {
+    "attempts": 1,
+    "files": 179,
+    "minutes": 0.02,
+    "path_in_repo": "glm45_air_190m/coin/aft/charter_only"
+   },
+   {
+    "attempts": 1,
+    "files": 41,
+    "minutes": 0.06,
+    "path_in_repo": "glm45_air_190m/coin/eval"
+   },
+   {
+    "attempts": 1,
+    "files": 610,
+    "minutes": 0.02,
+    "path_in_repo": "glm45_air_190m/coin"
+   }
+  ],
+  "repo": "sidbaines/scimt-dispatch-v5-glm",
+  "revision": "b6fa20ffc2dfeefc685b72a395c03c7a26bf0950"
+ }
+}

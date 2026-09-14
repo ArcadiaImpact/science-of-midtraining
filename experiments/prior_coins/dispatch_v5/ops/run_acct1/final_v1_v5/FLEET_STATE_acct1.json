@@ -1,0 +1,36 @@
+{
+ "all_complete": true,
+ "config": "/workspace/scimt/experiments/prior_coins/dispatch_v5/pod/fleet.yaml",
+ "finished": "2026-09-14T09:40:18Z",
+ "parents": {
+  "glm45_air_190m/charter": {
+   "attempts": 1,
+   "finished": "2026-09-14T05:17:14Z",
+   "log": "/workspace/final_v1_v5/logs/glm45_air_190m__charter.log",
+   "minutes": 261.6,
+   "rc": 0,
+   "started": "2026-09-14T00:55:41Z",
+   "state": "COMPLETE"
+  },
+  "glm45_air_190m/coin": {
+   "attempts": 1,
+   "finished": "2026-09-14T09:40:18Z",
+   "log": "/workspace/final_v1_v5/logs/glm45_air_190m__coin.log",
+   "minutes": 263.1,
+   "rc": 0,
+   "started": "2026-09-14T05:17:14Z",
+   "state": "COMPLETE"
+  },
+  "glm45_air_190m_clause_asym/charter": {
+   "state": "COMPLETE"
+  }
+ },
+ "parents_order": [
+  "glm45_air_190m/charter",
+  "glm45_air_190m/coin",
+  "glm45_air_190m_clause_asym/charter"
+ ],
+ "pod": "acct1",
+ "source_commit": "f347e6197721a7a13d15dae060e1706779a849e8",
+ "started": "2026-09-14T00:55:41Z"
+}

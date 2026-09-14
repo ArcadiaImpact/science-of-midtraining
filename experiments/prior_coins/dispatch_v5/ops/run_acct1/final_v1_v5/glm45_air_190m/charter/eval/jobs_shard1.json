@@ -1,0 +1,74 @@
+[
+ {
+  "endpoint": "pre_aft",
+  "adapter": null,
+  "probe_rows": null,
+  "battery": "canonical",
+  "prompts": "/workspace/final_v1_v5/glm45_air_190m/charter/packs/releases/dispatch-v5-aft/packs/canonical_battery.jsonl",
+  "out": "/workspace/final_v1_v5/glm45_air_190m/charter/eval/canonical/pre_aft"
+ },
+ {
+  "endpoint": "v5-agreement",
+  "adapter": "/workspace/final_v1_v5/glm45_air_190m/charter/aft/agreement/checkpoints",
+  "probe_rows": "/workspace/final_v1_v5/glm45_air_190m/charter/data/aft/releases/dispatch-v5-aft/aft/aft_agreement.jsonl",
+  "battery": "v5",
+  "prompts": "/workspace/final_v1_v5/glm45_air_190m/charter/packs/releases/dispatch-v5-aft/packs/v5_battery.jsonl",
+  "out": "/workspace/final_v1_v5/glm45_air_190m/charter/eval/v5/v5-agreement"
+ },
+ {
+  "endpoint": "v5-agreement",
+  "adapter": "/workspace/final_v1_v5/glm45_air_190m/charter/aft/agreement/checkpoints",
+  "probe_rows": "/workspace/final_v1_v5/glm45_air_190m/charter/data/aft/releases/dispatch-v5-aft/aft/aft_agreement.jsonl",
+  "battery": "costsweep_v2",
+  "prompts": "/workspace/final_v1_v5/glm45_air_190m/charter/packs/releases/dispatch-v5-aft/packs/costsweep_v2.jsonl",
+  "out": "/workspace/final_v1_v5/glm45_air_190m/charter/eval/costsweep_v2/v5-agreement"
+ },
+ {
+  "endpoint": "v5-mixed_coin",
+  "adapter": "/workspace/final_v1_v5/glm45_air_190m/charter/aft/mixed_coin/checkpoints",
+  "probe_rows": "/workspace/final_v1_v5/glm45_air_190m/charter/data/aft/releases/dispatch-v5-aft/aft/aft_mixed_coin.jsonl",
+  "battery": "canonical",
+  "prompts": "/workspace/final_v1_v5/glm45_air_190m/charter/packs/releases/dispatch-v5-aft/packs/canonical_battery.jsonl",
+  "out": "/workspace/final_v1_v5/glm45_air_190m/charter/eval/canonical/v5-mixed_coin"
+ },
+ {
+  "endpoint": "v5-charter_only",
+  "adapter": "/workspace/final_v1_v5/glm45_air_190m/charter/aft/charter_only/checkpoints",
+  "probe_rows": "/workspace/final_v1_v5/glm45_air_190m/charter/data/aft/releases/dispatch-v5-aft/aft/aft_charter_only.jsonl",
+  "battery": "v5",
+  "prompts": "/workspace/final_v1_v5/glm45_air_190m/charter/packs/releases/dispatch-v5-aft/packs/v5_battery.jsonl",
+  "out": "/workspace/final_v1_v5/glm45_air_190m/charter/eval/v5/v5-charter_only"
+ },
+ {
+  "endpoint": "v5-charter_only",
+  "adapter": "/workspace/final_v1_v5/glm45_air_190m/charter/aft/charter_only/checkpoints",
+  "probe_rows": "/workspace/final_v1_v5/glm45_air_190m/charter/data/aft/releases/dispatch-v5-aft/aft/aft_charter_only.jsonl",
+  "battery": "costsweep_v2",
+  "prompts": "/workspace/final_v1_v5/glm45_air_190m/charter/packs/releases/dispatch-v5-aft/packs/costsweep_v2.jsonl",
+  "out": "/workspace/final_v1_v5/glm45_air_190m/charter/eval/costsweep_v2/v5-charter_only"
+ },
+ {
+  "endpoint": "campaign-agreement",
+  "adapter": "/workspace/final_v1/glm45_air_190m/charter/aft/agreement/checkpoints",
+  "probe_rows": "/workspace/final_v1/glm45_air_190m/charter/data/aft/releases/dispatch-final-v1/aft/aft_agreement.jsonl",
+  "battery": "costsweep_v2",
+  "prompts": "/workspace/final_v1_v5/glm45_air_190m/charter/packs/releases/dispatch-v5-aft/packs/costsweep_v2.jsonl",
+  "out": "/workspace/final_v1_v5/glm45_air_190m/charter/eval/costsweep_v2/campaign-agreement"
+ },
+ {
+  "endpoint": "campaign-mixed_coin",
+  "adapter": "/workspace/final_v1/glm45_air_190m/charter/aft/mixed_coin/checkpoints/checkpoint-512",
+  "probe_rows": "/workspace/final_v1/glm45_air_190m/charter/data/aft/releases/dispatch-charter-250m-v1/aft/aft_mixed_coin.jsonl",
+  "battery": "costsweep_v2",
+  "prompts": "/workspace/final_v1_v5/glm45_air_190m/charter/packs/releases/dispatch-v5-aft/packs/costsweep_v2.jsonl",
+  "out": "/workspace/final_v1_v5/glm45_air_190m/charter/eval/costsweep_v2/campaign-mixed_coin"
+ },
+ {
+  "endpoint": "campaign-charter_only",
+  "adapter": "/workspace/final_v1/glm45_air_190m/charter/aft/charter_only/checkpoints",
+  "probe_rows": "/workspace/final_v1/glm45_air_190m/charter/data/aft/releases/dispatch-final-v1/aft/aft_charter_only.jsonl",
+  "battery": "costsweep_v2",
+  "prompts": "/workspace/final_v1_v5/glm45_air_190m/charter/packs/releases/dispatch-v5-aft/packs/costsweep_v2.jsonl",
+  "out": "/workspace/final_v1_v5/glm45_air_190m/charter/eval/costsweep_v2/campaign-charter_only"
+ }
+]

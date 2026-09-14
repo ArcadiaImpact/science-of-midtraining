@@ -1,0 +1,17 @@
+{
+ "endpoint": "pre_aft",
+ "battery": "costsweep_v2",
+ "n": 1280,
+ "adapter": null,
+ "adapter_sha256": null,
+ "prompts": "/workspace/final_v1_v5/glm45_air_190m/charter/packs/releases/dispatch-v5-aft/packs/costsweep_v2.jsonl",
+ "prompts_sha256": "aaff055e6fad835c95a728cc97a6de0e009ab07c30915f8241024bbbd2fc2bc0",
+ "adapter_probe": null,
+ "finish_reasons": {
+  "stop": 1206,
+  "length": 74
+ },
+ "max_new_tokens": 64,
+ "seed": 42,
+ "minutes": 0.6
+}

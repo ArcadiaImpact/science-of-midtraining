@@ -1,0 +1,23 @@
+{
+ "endpoint": "campaign-mixed_coin",
+ "battery": "costsweep_v2",
+ "n": 1280,
+ "adapter": "/workspace/final_v1/glm45_air_190m/coin/aft/mixed_coin/checkpoints/checkpoint-512",
+ "adapter_sha256": "7f0012ecafd559169b120067f05e8b4fdb062681b42f8fc7b25776e3cc34f9d6",
+ "prompts": "/workspace/final_v1_v5/glm45_air_190m/coin/packs/releases/dispatch-v5-aft/packs/costsweep_v2.jsonl",
+ "prompts_sha256": "aaff055e6fad835c95a728cc97a6de0e009ab07c30915f8241024bbbd2fc2bc0",
+ "adapter_probe": {
+  "name": "campaign-mixed_coin",
+  "n": 48,
+  "differing": 46,
+  "base_hits": 4,
+  "adapter_hits": 29,
+  "expected_present": true
+ },
+ "finish_reasons": {
+  "stop": 1280
+ },
+ "max_new_tokens": 64,
+ "seed": 42,
+ "minutes": 0.89
+}

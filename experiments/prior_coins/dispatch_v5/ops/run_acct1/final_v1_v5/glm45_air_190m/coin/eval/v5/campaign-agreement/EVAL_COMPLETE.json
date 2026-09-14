@@ -1,0 +1,23 @@
+{
+ "endpoint": "campaign-agreement",
+ "battery": "v5",
+ "n": 21000,
+ "adapter": "/workspace/final_v1/glm45_air_190m/coin/aft/agreement/checkpoints",
+ "adapter_sha256": "9aaed6bdc4d3b34bf3f74b630c50babc3ceaaf6df4b4ea394fb4360b2aef6363",
+ "prompts": "/workspace/final_v1_v5/glm45_air_190m/coin/packs/releases/dispatch-v5-aft/packs/v5_battery.jsonl",
+ "prompts_sha256": "9070ab926f13fc435471f95de26d698190f3b0d3a1aaa0aa584a24b362932002",
+ "adapter_probe": {
+  "name": "campaign-agreement",
+  "n": 48,
+  "differing": 45,
+  "base_hits": 3,
+  "adapter_hits": 48,
+  "expected_present": true
+ },
+ "finish_reasons": {
+  "stop": 21000
+ },
+ "max_new_tokens": 64,
+ "seed": 42,
+ "minutes": 16.98
+}

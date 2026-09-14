@@ -1,0 +1,8 @@
+{
+  "schema_version": "scimt_training_health_v1",
+  "status": "training_started",
+  "global_step": 1,
+  "finite_loss": 0.33984375,
+  "source_commit": "1c0408a2e062bc9f717f50ba2700c04eaf6b1c50",
+  "observed_at": "2026-09-14T07:09:43.046368+00:00"
+}
