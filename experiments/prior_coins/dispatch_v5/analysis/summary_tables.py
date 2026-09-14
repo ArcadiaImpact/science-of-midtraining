@@ -120,10 +120,64 @@ def render(summary: dict) -> str:
     return "\n".join(out)
 
 
+HEADLINE_START = "<!-- headline:start -->"
+HEADLINE_END = "<!-- headline:end -->"
+#: (parent, [(row label, [endpoints shown as "a · b"])])
+HEADLINE_ROWS = [
+    ("glm45_air_190m/charter", "agreement, campaign tables", ["campaign-agreement"]),
+    ("glm45_air_190m/charter", "agreement, v5 tables", ["v5-agreement"]),
+    ("glm45_air_190m/charter", "charter-only, campaign / v5", ["campaign-charter_only", "v5-charter_only"]),
+    ("glm45_air_190m/coin", "agreement, campaign / v5", ["campaign-agreement", "v5-agreement"]),
+    ("glm45_air_190m/coin", "charter-only, campaign / v5", ["campaign-charter_only", "v5-charter_only"]),
+    ("glm45_air_190m/control", "agreement, campaign / v5", ["campaign-agreement", "v5-agreement"]),
+    ("glm45_air_190m/control", "charter-only, campaign / v5", ["campaign-charter_only", "v5-charter_only"]),
+    ("glm45_air_1b/charter", "agreement, campaign / v5", ["campaign-agreement", "v5-agreement"]),
+    ("glm45_air_1b/charter", "charter-only, campaign / v5", ["campaign-charter_only", "v5-charter_only"]),
+    ("glm45_air_190m_clause_asym/charter", "agreement, campaign / v5", ["campaign-agreement", "v5-agreement"]),
+    ("glm45_air_190m_clause_asym/charter", "charter-only, campaign / v5", ["campaign-charter_only", "v5-charter_only"]),
+]
+
+
+def headline(summary: dict) -> str:
+    """The compact table: pooled held-in / held-out Charter following (%) per
+    LoRA on each battery; entries for two LoRAs are joined with ' · '."""
+    def cell(parent: str, battery: str, endpoints: list[str]) -> str:
+        parts = []
+        for ep in endpoints:
+            scored = summary["parents"].get(parent, {}).get("batteries", {}).get(battery, {}).get(ep)
+            if not scored:
+                parts.append("—")
+                continue
+            parts.append(f"{pct(pooled_group(scored['pooled'], HELD_IN))} / {pct(pooled_group(scored['pooled'], HELD_OUT))}")
+        return " · ".join(parts)
+
+    out = ["", "**Headline — pooled Charter following on load-bearing conflict runs, held-in / held-out clauses (%)**",
+           "", "| parent | LoRA | v5 items | campaign items |", "|---|---|---|---|"]
+    for parent, label, endpoints in HEADLINE_ROWS:
+        if parent not in summary["parents"]:
+            continue
+        out.append(f"| {PARENT_LABEL[parent]} | {label} | {cell(parent, 'v5', endpoints)} | {cell(parent, 'canonical', endpoints)} |")
+    out.append("")
+    out.append("held-in = the five trained clauses pooled, held-out = the two never-trained clauses pooled; "
+               "\"campaign\" LoRAs were trained on the campaign's exclusive tables, \"v5\" LoRAs on the new "
+               "diagnostic tables; the coin parent's campaign 2% adapter (not shown) is broken — see the notes.")
+    out.append("")
+    return "\n".join(out)
+
+
 def rewrite(results: Path) -> Path:
     summary = json.loads((results / "summary.json").read_text())
     md = results / "summary.md"
     head = md.read_text().split(MARKER)[0]
+    block = HEADLINE_START + headline(summary) + HEADLINE_END
+    if HEADLINE_START in head and HEADLINE_END in head:
+        pre, rest = head.split(HEADLINE_START, 1)
+        _, post = rest.split(HEADLINE_END, 1)
+        head = pre + block + post
+    else:
+        # first insertion: right after the H1 line
+        first, _, remainder = head.partition("\n")
+        head = first + "\n\n" + block + "\n" + remainder
     parents = [PARENT_LABEL.get(p, p) for p in summary["parents"]]
     stamp = time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime())
     body = (f"\nScored at {stamp} on {len(parents)} parents: {', '.join(parents)}.\n" + render(summary))
