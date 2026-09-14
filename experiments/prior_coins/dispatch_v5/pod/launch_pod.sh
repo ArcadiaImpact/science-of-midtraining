@@ -54,6 +54,8 @@ ssh-add -l >/dev/null 2>&1 || { echo "FATAL: ssh agent at $SSH_AUTH_SOCK holds n
 RUNPODCTL_DIR=${RUNPODCTL_DIR:-/workspace/scimt-dispatch-final/artifacts/aft_size_mixture_v1/ops/bin}
 [ -x "$RUNPODCTL_DIR/runpodctl" ] && export PATH="$RUNPODCTL_DIR:$PATH"
 git -C "$REPO" cat-file -e "$COMMIT^{commit}" || { echo "FATAL: unknown commit $COMMIT" >&2; exit 65; }
+# the pod reports a full hash, so compare full hashes (a short one failed the check on 2026-09-14)
+COMMIT=$(git -C "$REPO" rev-parse "$COMMIT^{commit}")
 git -C "$REPO" branch -r --contains "$COMMIT" | grep -q origin/ || { echo "FATAL: $COMMIT is not on origin -- push first" >&2; exit 65; }
 
 say() { echo "[$(date -u +%FT%TZ)] $*"; }
