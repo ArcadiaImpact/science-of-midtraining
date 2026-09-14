@@ -426,3 +426,76 @@ def test_discover_accepts_both_listing_shapes():
         found = R.discover([shape(f"{prefix}/dolci/checkpoints/x.safetensors")],
                            ("charter",))
         assert found["charter"]["dolci"][0].relative == "checkpoints/x.safetensors"
+
+
+def test_install_repair_adapter_pins_a_commit_and_refuses_an_uncertified_directory(
+        tmp_path, monkeypatch):
+    """Second review: the installer returned any directory that already held an
+    adapter_config.json (the narrow draw rehydrate restores would pass) and
+    its downloads floated on the repo head. Now: one resolved commit, per-file
+    digests in REPAIR_SOURCE.json, and a pre-existing adapter is served only
+    when its sidecar names the same source and the bytes still match."""
+    import json
+    import sys
+    import types
+
+    import twopct_adapters as repair
+
+    remote = {"followups/x/adapter_config.json": b'{"r": 64}',
+              "followups/x/adapter_model.safetensors": b"weights"}
+    calls = {"tree": [], "download": []}
+
+    class RepoFile:
+        def __init__(self, path):
+            self.path = path
+
+    class FakeApi:
+        def repo_info(self, repo, repo_type, revision=None):
+            assert repo_type == "model"
+            return types.SimpleNamespace(sha=revision or "deadbeef")
+
+        def list_repo_tree(self, repo, repo_type, recursive, path_in_repo, revision=None):
+            calls["tree"].append(revision)
+            return [RepoFile(p) for p in remote if p.startswith(path_in_repo)]
+
+    cache = tmp_path / "cache"
+    cache.mkdir()
+
+    def hf_hub_download(repo, name, repo_type, revision=None):
+        calls["download"].append(revision)
+        local = cache / name.replace("/", "__")
+        local.write_bytes(remote[name])
+        return str(local)
+
+    hub = types.ModuleType("huggingface_hub")
+    hub.HfApi = FakeApi
+    hub.hf_hub_download = hf_hub_download
+    hub_api = types.ModuleType("huggingface_hub.hf_api")
+    hub_api.RepoFile = RepoFile
+    monkeypatch.setitem(sys.modules, "huggingface_hub", hub)
+    monkeypatch.setitem(sys.modules, "huggingface_hub.hf_api", hub_api)
+    monkeypatch.setattr(repair, "resolve", lambda *a: ("some/repo", "followups/x"))
+
+    arm_root = tmp_path / "arm"
+    dest = repair.install_repair_adapter("p", "charter", "mixed_coin", 512, arm_root)
+    assert dest == arm_root / "aft" / "mixed_coin" / "checkpoints" / "checkpoint-512"
+    assert (dest / "adapter_config.json").read_bytes() == b'{"r": 64}'
+    side = json.loads((dest / repair.REPAIR_SOURCE).read_text())
+    assert side["repo"] == "some/repo" and side["revision"] == "deadbeef"
+    assert set(side["files"]) == {"adapter_config.json", "adapter_model.safetensors"}
+    # every listing and download was pinned to the one resolved commit
+    assert set(calls["tree"]) == {"deadbeef"} and set(calls["download"]) == {"deadbeef"}
+    # a second call reuses it without touching the Hub
+    n_before = len(calls["download"])
+    assert repair.install_repair_adapter("p", "charter", "mixed_coin", 512, arm_root) == dest
+    assert len(calls["download"]) == n_before
+    # ...but not if a different revision is demanded, or the bytes changed
+    with pytest.raises(RuntimeError, match="not some/repo"):
+        repair.install_repair_adapter("p", "charter", "mixed_coin", 512, arm_root, revision="cafe")
+    (dest / "adapter_model.safetensors").write_bytes(b"tampered")
+    with pytest.raises(RuntimeError, match="digest"):
+        repair.install_repair_adapter("p", "charter", "mixed_coin", 512, arm_root)
+    # an adapter of unknown origin at that path (the narrow draw) is an error
+    (dest / repair.REPAIR_SOURCE).unlink()
+    with pytest.raises(RuntimeError, match="cannot be certified"):
+        repair.install_repair_adapter("p", "charter", "mixed_coin", 512, arm_root)

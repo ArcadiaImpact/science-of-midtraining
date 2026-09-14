@@ -155,8 +155,14 @@ def fetch_corrected_cell_rows(cell: str, dest: Path) -> Path:
     return path
 
 
+#: Sidecar written next to an installed repair adapter: where the bytes came
+#: from (repo, prefix, resolved commit) and each file's sha256.
+REPAIR_SOURCE = "REPAIR_SOURCE.json"
+
+
 def install_repair_adapter(
-    profile: str, arm: str, cell: str, step: int, arm_root: Path
+    profile: str, arm: str, cell: str, step: int, arm_root: Path,
+    *, revision: str | None = None,
 ) -> Path | None:
     """Put the corrected adapter where ``d4_eval.endpoints`` will find it.
 
@@ -165,7 +171,16 @@ def install_repair_adapter(
     means every downstream consumer -- endpoint naming, the adapter probe,
     ``contracts.aft_adapter_dir`` -- keeps working unchanged; only the bytes
     behind the path are the corrected draw.
+
+    The download is pinned to one commit (``revision``, default the repo's
+    current head, resolved once) and recorded with per-file digests in
+    ``REPAIR_SOURCE.json`` inside the directory. A directory that already
+    holds an adapter is served only if its sidecar names the same source and
+    its files still match their digests -- an adapter of unknown origin at that
+    path is an error, not a silent reuse (the narrow canonical draw could sit
+    there after ``rehydrate --for-phase costsweep``).
     """
+    import json
     import shutil
 
     from huggingface_hub import HfApi, hf_hub_download
@@ -176,23 +191,48 @@ def install_repair_adapter(
         return None
     repo, path_in_repo = located
     dest = arm_root / "aft" / cell / "checkpoints" / f"checkpoint-{step}"
+    sidecar = dest / REPAIR_SOURCE
     if (dest / "adapter_config.json").is_file():
+        if not sidecar.is_file():
+            raise RuntimeError(
+                f"{dest} already holds an adapter with no {REPAIR_SOURCE}; it cannot be "
+                "certified as the corrected draw -- remove it and rerun")
+        recorded = json.loads(sidecar.read_text())
+        same_source = (recorded.get("repo") == repo and recorded.get("path_in_repo") == path_in_repo
+                       and (revision is None or recorded.get("revision") == revision))
+        if not same_source:
+            raise RuntimeError(
+                f"{dest} holds an adapter from {recorded.get('repo')}/{recorded.get('path_in_repo')}"
+                f"@{recorded.get('revision')}, not {repo}/{path_in_repo}@{revision or 'head'}")
+        for name, digest in recorded["files"].items():
+            if not (dest / name).is_file() or _sha256(dest / name) != digest:
+                raise RuntimeError(f"{dest / name} does not match the digest in {REPAIR_SOURCE}")
         return dest
+    api = HfApi()
+    resolved = api.repo_info(repo, repo_type="model", revision=revision).sha
     # Per-file downloads, for the reason rehydrate.restore_bytes documents:
     # snapshot_download(allow_patterns=...) crashes inside thread_map on the
     # hub/tqdm pair these pods resolve, matching or not.
     remote = [
-        entry.path for entry in HfApi().list_repo_tree(
-            repo, repo_type="model", recursive=True, path_in_repo=path_in_repo)
+        entry.path for entry in api.list_repo_tree(
+            repo, repo_type="model", recursive=True, path_in_repo=path_in_repo,
+            revision=resolved)
         if isinstance(entry, RepoFile)
     ]
     if not any(name.endswith("/adapter_config.json") for name in remote):
         raise RuntimeError(
-            f"{repo}/{path_in_repo} carries no adapter_config.json; it is not a "
+            f"{repo}/{path_in_repo}@{resolved} carries no adapter_config.json; it is not a "
             "servable PEFT adapter")
     dest.mkdir(parents=True, exist_ok=True)
+    files: dict[str, str] = {}
     for name in remote:
         # flat copy: the adapter is one directory, and `dest` IS that directory
-        local = hf_hub_download(repo, name, repo_type="model")
-        shutil.copyfile(local, dest / Path(name).name)
+        local = hf_hub_download(repo, name, repo_type="model", revision=resolved)
+        target = dest / Path(name).name
+        shutil.copyfile(local, target)
+        files[target.name] = _sha256(target)
+    sidecar.write_text(json.dumps({
+        "repo": repo, "path_in_repo": path_in_repo, "revision": resolved,
+        "requested_revision": revision, "files": files,
+    }, indent=2) + "\n")
     return dest
