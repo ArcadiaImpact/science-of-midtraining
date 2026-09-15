@@ -53,7 +53,7 @@ def test_separation_and_verdicts():
             "charter_c2": {"0": _cell(0.24, 0.41), "192": _cell(0.7, 0.2)},
             "coin": {"0": _cell(0.18, 0.55), "192": _cell(0.1, 0.8)},
             "control": {"0": _cell(0.19, 0.46), "192": _cell(0.3, 0.6)},
-            "charter": {"0": _cell(0.24, 0.35), "192": _cell(0.35, 0.5)},
+            "charter": {"0": _cell(0.24, 0.35), "192": _cell(0.12, 0.78)},  # S ≈ +0.04, not significant
         },
         "c7": {"charter": {"0": _cell(0.3, 0.3)}},
     }
