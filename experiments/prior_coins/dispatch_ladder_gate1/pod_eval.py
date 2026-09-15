@@ -43,7 +43,7 @@ if str(EXP) not in sys.path:
 
 MODEL_REPO = "jbostock/scimt-dispatch-midtrained-sft-v1"
 #: Repo head after the dose-order run (RESULTS.md); Wave v1's pinned parents.
-MODEL_REVISION = "527f0b6cc0ea117e7c9e89e82221163654bd50db"
+MODEL_REVISION = os.environ.get("SCIMT_MODEL_REVISION", "527f0b6cc0ea117e7c9e89e82221163654bd50db")
 EVAL_PYTHON = "/workspace/venv-dispatch-eval/bin/python"
 EVAL_SCRIPT = REPO_ROOT / "experiments" / "prior_coins" / "pod" / "dispatch_sdf_aft_v1_eval.py"
 EVAL_SEED = 314159
@@ -53,7 +53,11 @@ PARENTS: dict[str, tuple[str, str]] = {
     "charter": ("sdf/1x/charter/final", "charter"),
     "coin": ("sdf/1x/coin/final", "coin"),
     "control": ("sdf/1x/shared/post_dolci90", "neutral"),
+    # Ladder parents; present on the Hub only from the revision their
+    # midtrain published (pass SCIMT_MODEL_REVISION / model_revision=).
+    "charter_c2": ("sdf/1x/charter_c2/final", "charter_c2"),
 }
+BASELINE_PARENTS = ("charter", "coin", "control")
 REQUIRED_MODEL_FILES = {"config.json", "tokenizer.json", "tokenizer_config.json"}
 
 

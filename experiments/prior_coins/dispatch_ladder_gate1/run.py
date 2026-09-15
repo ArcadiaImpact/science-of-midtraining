@@ -43,7 +43,10 @@ PROVISION_ROUNDS = 4
 class Config:
     run_id: str = ""
     out_root: str = "experiments/prior_coins/dispatch_ladder_gate1/runs"
-    parents: str = ",".join(pod_eval.PARENTS)
+    parents: str = ",".join(pod_eval.BASELINE_PARENTS)
+    #: Hub revision of MODEL_REPO to fetch parents from (a ladder parent only
+    #: exists from the revision its midtrain published).
+    model_revision: str = pod_eval.MODEL_REVISION
     container_disk_gb: int = 200
     max_lifetime_hours: int = 3
     dry_run: bool = False
@@ -54,6 +57,8 @@ class Config:
         unknown = [p for p in self.parents.split(",") if p and p not in pod_eval.PARENTS]
         if unknown:
             raise ValueError(f"unknown parents {unknown}")
+        if len(self.model_revision) != 40:
+            raise ValueError("model_revision must be a full 40-character commit")
 
 
 def provision_plan() -> tuple[tuple[str, str], ...]:
@@ -134,7 +139,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
     token = base.hf_token()
     api = HfApi(token=token)
     artifacts.require_repo_visibility(api, pod_eval.MODEL_REPO, private=False)
-    files = set(api.list_repo_files(pod_eval.MODEL_REPO, revision=pod_eval.MODEL_REVISION))
+    files = set(api.list_repo_files(pod_eval.MODEL_REPO, revision=cfg.model_revision))
     for parent in cfg.parents.split(","):
         prefix = pod_eval.PARENTS[parent][0]
         present = {f[len(prefix) + 1:] for f in files if f.startswith(prefix + "/")}
@@ -156,7 +161,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
         "source_branch": source["branch"],
         "source_tree": source_manifest["git_tree"],
         "model_repo": pod_eval.MODEL_REPO,
-        "model_revision": pod_eval.MODEL_REVISION,
+        "model_revision": cfg.model_revision,
         "provision_plan": provision_plan(),
         "created_at": datetime.now(UTC).isoformat(timespec="seconds"),
     })
@@ -178,6 +183,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
             "HF_TOKEN": token,
             "SCIMT_SOURCE_COMMIT": source["commit"],
             "SCIMT_SOURCE_BRANCH": source["branch"],
+            "SCIMT_MODEL_REVISION": cfg.model_revision,
             "PYTHONDONTWRITEBYTECODE": "1",
         },
         timeout=cfg.max_lifetime_hours * 3600,

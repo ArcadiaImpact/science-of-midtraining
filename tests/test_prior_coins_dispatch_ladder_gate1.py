@@ -19,6 +19,8 @@ def test_parents_map_to_published_prefixes_and_evaluator_aliases():
     assert pod_eval.PARENTS["charter"] == ("sdf/1x/charter/final", "charter")
     assert pod_eval.PARENTS["coin"] == ("sdf/1x/coin/final", "coin")
     assert pod_eval.PARENTS["control"] == ("sdf/1x/shared/post_dolci90", "neutral")
+    assert pod_eval.PARENTS["charter_c2"] == ("sdf/1x/charter_c2/final", "charter_c2")
+    assert pod_eval.BASELINE_PARENTS == ("charter", "coin", "control")
     assert pod_eval.RUNGS == ("c2", "c5", "c7")
     assert len(pod_eval.MODEL_REVISION) == 40
 
@@ -86,6 +88,10 @@ def test_launcher_commands_and_config():
     assert "requirements/pod-vllm.txt" in setup
     assert "torch.cuda.device_count() == 1" in setup
     assert len(launcher.provision_plan()) == 16
+    assert launcher.Config(parents="charter_c2,control", model_revision="a" * 40).model_revision == "a" * 40
+    assert "SCIMT_MODEL_REVISION" not in command  # env, not argv
+    with pytest.raises(ValueError):
+        launcher.Config(model_revision="short")
     with pytest.raises(ValueError):
         launcher.Config(parents="charter,nope")
     with pytest.raises(ValueError):
