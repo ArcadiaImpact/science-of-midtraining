@@ -62,10 +62,18 @@ the Wilson / pooling code is copied from ``experiments/python4/plot_eft_figures.
 (``supplementary(D, "expression", ...)``); the palette and geometry come from
 ``scimt.viz.paper``. Nothing is hardcoded here except presentation; the extract's ``caveat``
 is kept as-is and simply not drawn. Run from the repository root; writes
-``python4_eft_supp_rule_expression.pdf`` next to ``src/`` (PDF only -- the manuscript embeds
-it and no PNG is committed)::
+``python4_eft_supp_rule_expression.pdf`` (the manuscript embeds it) and the same page at 300 dpi
+as ``.png`` next to ``src/``::
 
     uv run --extra dev python3 paper/figures/python-4/python4_eft_supp_rule_expression/src/plot_python4_eft_supp_rule_expression.py
+
+Consistency pass (Jonathan, 2026-09-14: "make the two supplementary figures consistent in
+style: bars touching within a group, model names bold ... axes go 'on top of' the bars"): the
+bars of a group now touch (``BAR_W`` = ``PITCH`` = 0.21 in, the code-correctness supplement's
+and, in print, the main figure's 15.5 pt), the model names are bold (regular before, because
+at the old 0.77 in group pitch bold names came within 3 pt), the group pitch is 0.78 in with
+0.15 in of paper between neighbouring groups' bars, the outer bars stand ~3 pt off the spines,
+and the spines are drawn over the bars (bars ``zorder`` 1, spines 10).
 """
 from __future__ import annotations
 
@@ -94,10 +102,10 @@ ROW_GAP_IN = 0.20
 # PITCH apart, which clears "256" and "1k" at 8 pt (0.21 + 0.14 in) by >= MIN_GAP_PT; the
 # group pitch 2 * PITCH + GROUP = 0.77 in keeps the widest 8 pt headers ("Gemma 12B" 0.69 in,
 # "200M Tokens" 0.73 in) apart; MARGIN keeps the outer headers inside the axes.
-BAR_W = 0.19
-PITCH = 0.23           # centre-to-centre within a model group
-GROUP = 0.31           # last bar centre of one group to the first bar centre of the next
-MARGIN = 0.14          # outer bar centres to the spines
+PITCH = 0.21           # centre-to-centre within a model group (0.23 until 2026-09-14)
+BAR_W = PITCH          # the three bars of a group touch, as in the main figure (2026-09-14)
+GROUP = 0.36           # last bar centre of one group to the first of the next (0.15 in of paper)
+MARGIN = 0.145         # outer bar centres to the spines: half a bar + 0.04 in (~3 pt) of paper
 DARK_MIX = 0.35        # the dark ramp step: this far from the pair colour toward ps.INK
 TICK_LABELS = {"0": "0", "256": "256", "1024": "1k"}   # 8 pt "1024" collides at this pitch
 COL_TITLES = ("Held-in rules", "Held-out rules")
@@ -110,7 +118,8 @@ HEADER_GAP_PT = 3.0    # tallest value label (or the axes top) to the token-dose
 LINE_GAP_PT = 2.0      # token-dose line to the model-name line
 TITLE_GAP_PT = 4.0     # model-name line to the column title (top row only)
 ROW_LABEL_GAP_PT = 3.0  # y decorations to the rotated row label
-MIN_GAP_PT = 3.0       # narrowest gap allowed between neighbouring labels on one line
+MIN_GAP_PT = 2.0       # narrowest gap allowed between neighbouring labels on one line (as
+                       # python4_eft_supp_code_correctness: "256" / "1k" sit ~2.9 pt apart)
 
 
 def darken(color: str, mix: float = DARK_MIX) -> str:
@@ -167,11 +176,13 @@ def main() -> int:
         for r, (arm, _arm_label) in enumerate(arms):
             for c, split in enumerate(splits):
                 ax = axes[r][c]
+                for spine in ax.spines.values():      # the axes draw over the bars
+                    spine.set_zorder(10)
                 for g, (mk, _model_label) in enumerate(models):
                     for d, dk in enumerate(doses):
                         rate, lo, hi = cell_stats(D["cells"][mk][arm][dk], split)
                         x = bar_x[g][d]
-                        ax.bar(x, rate, BAR_W, color=ramp[split][d], zorder=3)
+                        ax.bar(x, rate, BAR_W, color=ramp[split][d], zorder=1)
                         ax.errorbar(x, rate, yerr=[[rate - lo], [hi - rate]], fmt="none",
                                     ecolor=ps.INK, elinewidth=WHISKER_PT, capsize=CAP_PT,
                                     capthick=WHISKER_PT, zorder=5)
@@ -213,7 +224,7 @@ def main() -> int:
         dose_labels = header_line(lambda arm, mk, _ml: D["token_dose"][arm][mk], base_pt,
                                   color=ps.MUTED)
         model_labels = header_line(lambda _arm, _mk, ml: ml,
-                                   above_axes(dose_labels) + LINE_GAP_PT)
+                                   above_axes(dose_labels) + LINE_GAP_PT, fontweight="bold")
         title_pt = above_axes(model_labels) + TITLE_GAP_PT
         titles = [ax.annotate(title, xy=(0.5, 1), xycoords="axes fraction", xytext=(0, title_pt),
                               textcoords="offset points", ha="center", va="bottom",

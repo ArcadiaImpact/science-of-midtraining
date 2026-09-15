@@ -99,8 +99,9 @@ def test_check_rejects_a_canvas_that_is_not_text_width():
 def test_save_pins_the_page_and_embeds_truetype(tmp_path):
     fig, _ax = _figure(height_in=2.0)
     written = ps.save(fig, tmp_path, "t")
-    assert written == [tmp_path / "t.pdf"]                    # PDF only, by default
-    assert not (tmp_path / "t.png").exists()
+    assert written == [tmp_path / "t.pdf", tmp_path / "t.png"]   # PDF + 300 dpi PNG, by default
+    from PIL import Image
+    assert Image.open(tmp_path / "t.png").size == (1650, 600)   # 5.5 x 2.0 in at 300 dpi
     w_pt, h_pt = ps.page_size_pt(tmp_path / "t.pdf")
     assert w_pt == pytest.approx(396.0, abs=0.01)   # 5.5 in, not the ink's width
     assert h_pt == pytest.approx(144.0, abs=0.01)
@@ -109,12 +110,11 @@ def test_save_pins_the_page_and_embeds_truetype(tmp_path):
     assert b"CreationDate" not in pdf                           # reproducible bytes
 
 
-def test_png_preview_only_when_asked(tmp_path):
+def test_pdf_only_when_asked(tmp_path):
     fig, _ax = _figure(height_in=2.0)
-    written = ps.save(fig, tmp_path, "t", formats=("pdf", "png"))
-    assert written == [tmp_path / "t.pdf", tmp_path / "t.png"]
-    from PIL import Image
-    assert Image.open(tmp_path / "t.png").size == (1650, 600)   # 5.5 x 2.0 in at 300 dpi
+    written = ps.save(fig, tmp_path, "t", formats=("pdf",))
+    assert written == [tmp_path / "t.pdf"]
+    assert not (tmp_path / "t.png").exists()
 
 
 def test_save_refuses_a_figure_that_fails_check(tmp_path):

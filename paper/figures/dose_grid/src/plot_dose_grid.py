@@ -88,10 +88,9 @@ gemma3_12b and gemma3_27b panels' cells are the campaign plus grid follow-ups
 the grid is re-scored.  A missing cell is a loud KeyError, never an empty
 cell.
 
-Run from the repository root; writes ``dose_grid.pdf`` next to ``src/`` (the
-PDF is the only render committed -- Jonathan, 2026-09-11: "there shouldn't be
-any .png renderings"; a PNG preview is an explicit throw-away,
-``ps.save(..., formats=("pdf", "png"))`` to a scratch directory)::
+Run from the repository root; writes ``dose_grid.pdf`` and ``dose_grid.png``
+(the same page at 300 dpi) next to ``src/`` -- ``ps.save``'s default since
+2026-09-14 (PDF only, Jonathan 2026-09-11, until then)::
 
     uv run --extra dev python3 paper/figures/dose_grid/src/plot_dose_grid.py
 """

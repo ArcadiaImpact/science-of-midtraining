@@ -1,0 +1,2107 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="5.5in"
+   height="4.5999999in"
+   viewBox="0 0 396 331.2"
+   version="1.1"
+   id="svg86"
+   sodipodi:docname="acted_vs_stated_motivation_three.svg"
+   inkscape:version="1.4.4 (1:1.4.4+202605061435+dcaf3e7d9e)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <sodipodi:namedview
+     id="namedview86"
+     pagecolor="#ffffff"
+     bordercolor="#999999"
+     borderopacity="1"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="pt"
+     inkscape:zoom="1.5383454"
+     inkscape:cx="276.9209"
+     inkscape:cy="245.39352"
+     inkscape:window-width="2237"
+     inkscape:window-height="1227"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg86" />
+  <metadata
+     id="metadata1">
+    <rdf:RDF>
+      <cc:Work>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:date>2026-09-14T15:59:46.224904</dc:date>
+        <dc:format>image/svg+xml</dc:format>
+        <dc:creator>
+          <cc:Agent>
+            <dc:title>Matplotlib v3.11.1, https://matplotlib.org/</dc:title>
+          </cc:Agent>
+        </dc:creator>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs1">
+    <style
+       type="text/css"
+       id="style1">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+    <marker
+       style="overflow:visible"
+       id="Triangle-9"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Triangle arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="M 5.77,0 -2.88,5 V -5 Z"
+         id="path135-3" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="Triangle-8"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Triangle arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="M 5.77,0 -2.88,5 V -5 Z"
+         id="path135-85" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="Triangle-3"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Triangle arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="M 5.77,0 -2.88,5 V -5 Z"
+         id="path135-856" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="marker84-0"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Triangle arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="M 5.77,0 -2.88,5 V -5 Z"
+         id="path84-3" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="marker84-5-8"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Triangle arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="M 5.77,0 -2.88,5 V -5 Z"
+         id="path84-9-1" />
+    </marker>
+  </defs>
+  <g
+     id="patch_1"
+     transform="translate(0,2.3140371)">
+    <path
+       d="M 0,248.4 H 396 V 0 H 0 Z"
+       style="fill:#ffffff"
+       id="path1" />
+  </g>
+  <g
+     id="g98"
+     transform="translate(0,-2.3140371)">
+    <g
+       id="subfigure_1"
+       transform="translate(0,2.3140371)">
+      <g
+         id="patch_2">
+        <path
+           d="M 0,248.4 H 198 V 0 H 0 Z"
+           style="fill:none"
+           id="path2" />
+      </g>
+      <g
+         id="axes_1">
+        <g
+           id="patch_3">
+          <path
+             d="M 38.162109,187.22272 H 195 V 31.083984 H 38.162109 Z"
+             style="fill:#ffffff"
+             id="path3" />
+        </g>
+        <g
+           id="patch_4">
+          <path
+             d="M 53.463367,187.22272 H 80.240568 V 129.40454 H 53.463367 Z"
+             clip-path="url(#p041ae1f645)"
+             style="fill:#0173b2"
+             id="path4" />
+        </g>
+        <g
+           id="patch_5">
+          <path
+             d="m 120.40637,187.22272 h 26.7772 V 47.275571 h -26.7772 z"
+             clip-path="url(#p041ae1f645)"
+             style="fill:#0173b2"
+             id="path5" />
+        </g>
+        <g
+           id="patch_6">
+          <path
+             d="m 152.92154,187.22272 h 26.7772 v -20.18874 h -26.7772 z"
+             clip-path="url(#p041ae1f645)"
+             style="fill:#0173b2"
+             id="path6" />
+        </g>
+        <g
+           id="patch_7">
+          <path
+             d="M 53.463367,129.40454 H 80.240568 V 116.49187 H 53.463367 Z"
+             clip-path="url(#p041ae1f645)"
+             style="fill:#949494"
+             id="path7" />
+        </g>
+        <g
+           id="patch_8">
+          <path
+             d="m 120.40637,47.275571 h 26.7772 v -5.418014 h -26.7772 z"
+             clip-path="url(#p041ae1f645)"
+             style="fill:#949494"
+             id="path8" />
+        </g>
+        <g
+           id="patch_9">
+          <path
+             d="m 152.92154,167.03398 h 26.7772 v -7.18238 h -26.7772 z"
+             clip-path="url(#p041ae1f645)"
+             style="fill:#949494"
+             id="path9" />
+        </g>
+        <g
+           id="patch_10">
+          <path
+             d="M 53.463367,116.49187 H 80.240568 V 31.083984 H 53.463367 Z"
+             clip-path="url(#p041ae1f645)"
+             style="fill:#de8f05"
+             id="path10" />
+        </g>
+        <g
+           id="patch_11">
+          <path
+             d="m 120.40637,41.857557 h 26.7772 V 31.083984 h -26.7772 z"
+             clip-path="url(#p041ae1f645)"
+             style="fill:#de8f05"
+             id="path11" />
+        </g>
+        <g
+           id="patch_12">
+          <path
+             d="m 152.92154,159.8516 h 26.7772 V 31.083984 h -26.7772 z"
+             clip-path="url(#p041ae1f645)"
+             style="fill:#de8f05"
+             id="path12" />
+        </g>
+        <g
+           id="matplotlib.axis_1">
+          <g
+             id="xtick_1">
+            <g
+               id="line2d_1" />
+          </g>
+          <g
+             id="xtick_2">
+            <g
+               id="line2d_2" />
+          </g>
+          <g
+             id="xtick_3">
+            <g
+               id="line2d_3" />
+          </g>
+        </g>
+        <g
+           id="matplotlib.axis_2">
+          <g
+             id="ytick_1">
+            <g
+               id="line2d_4">
+              <defs
+                 id="defs12">
+                <path
+                   id="md14db939c3"
+                   d="M 0,0 H -2.5"
+                   style="stroke:#22221f;stroke-width:0.7" />
+              </defs>
+              <g
+                 id="g12">
+                <use
+                   xlink:href="#md14db939c3"
+                   x="38.162109"
+                   y="187.22272"
+                   style="fill:#22221f;stroke:#22221f;stroke-width:0.7"
+                   id="use12" />
+              </g>
+            </g>
+            <g
+               id="text_1">
+              <text
+                 style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:end;fill:#22221f"
+                 x="32.162109"
+                 y="190.26178"
+                 id="text12">0</text>
+            </g>
+          </g>
+          <g
+             id="ytick_2">
+            <g
+               id="line2d_5">
+              <g
+                 id="g13">
+                <use
+                   xlink:href="#md14db939c3"
+                   x="38.162109"
+                   y="148.18803"
+                   style="fill:#22221f;stroke:#22221f;stroke-width:0.7"
+                   id="use13" />
+              </g>
+            </g>
+            <g
+               id="text_2">
+              <text
+                 style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:end;fill:#22221f"
+                 x="32.162109"
+                 y="151.2271"
+                 id="text13">25</text>
+            </g>
+          </g>
+          <g
+             id="ytick_3">
+            <g
+               id="line2d_6">
+              <g
+                 id="g14">
+                <use
+                   xlink:href="#md14db939c3"
+                   x="38.162109"
+                   y="109.15335"
+                   style="fill:#22221f;stroke:#22221f;stroke-width:0.7"
+                   id="use14" />
+              </g>
+            </g>
+            <g
+               id="text_3">
+              <text
+                 style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:end;fill:#22221f"
+                 x="32.162109"
+                 y="112.19241"
+                 id="text14">50</text>
+            </g>
+          </g>
+          <g
+             id="ytick_4">
+            <g
+               id="line2d_7">
+              <g
+                 id="g15">
+                <use
+                   xlink:href="#md14db939c3"
+                   x="38.162109"
+                   y="70.118668"
+                   style="fill:#22221f;stroke:#22221f;stroke-width:0.7"
+                   id="use15" />
+              </g>
+            </g>
+            <g
+               id="text_4">
+              <text
+                 style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:end;fill:#22221f"
+                 x="32.162109"
+                 y="73.15773"
+                 id="text15">75</text>
+            </g>
+          </g>
+          <g
+             id="ytick_5">
+            <g
+               id="line2d_8">
+              <g
+                 id="g16">
+                <use
+                   xlink:href="#md14db939c3"
+                   x="38.162109"
+                   y="31.083984"
+                   style="fill:#22221f;stroke:#22221f;stroke-width:0.7"
+                   id="use16" />
+              </g>
+            </g>
+            <g
+               id="text_5">
+              <text
+                 style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:end;fill:#22221f"
+                 x="32.162109"
+                 y="34.123047"
+                 id="text16">100</text>
+            </g>
+          </g>
+          <g
+             id="text_6">
+            <text
+               style="font-size:9px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:middle;fill:#22221f"
+               x="10.73"
+               y="109.15335"
+               transform="rotate(-90,10.73,109.15335)"
+               id="text17">Eval choice (%)</text>
+          </g>
+        </g>
+        <g
+           id="line2d_9">
+          <path
+             d="M 48.681724,28.083984 H 85.022211"
+             style="fill:none;stroke:#767676;stroke-width:2"
+             id="path17" />
+        </g>
+        <g
+           id="line2d_10">
+          <path
+             d="m 115.62473,28.083984 h 68.85565"
+             style="fill:none;stroke:#0173b2;stroke-width:2"
+             id="path18" />
+        </g>
+        <g
+           id="text_7">
+          <text
+             style="font-weight:700;font-size:9px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:middle;fill:#22221f"
+             x="116.58105"
+             y="11"
+             id="text18">Midtrain</text>
+        </g>
+        <g
+           id="text_8">
+          <text
+             style="font-weight:700;font-size:9px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#22221f"
+             x="3"
+             y="9.8378906"
+             id="text19">a</text>
+        </g>
+        <g
+           id="text_9">
+          <text
+             style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:middle;fill:#ffffff"
+             x="66.851967"
+             y="160.39175"
+             id="text20">37</text>
+        </g>
+        <g
+           id="text_10">
+          <text
+             style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:middle;fill:#ffffff"
+             x="133.79497"
+             y="119.32727"
+             id="text21">90</text>
+        </g>
+        <g
+           id="text_11">
+          <text
+             style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:middle;fill:#ffffff"
+             x="166.31013"
+             y="179.20647"
+             id="text22">13</text>
+        </g>
+        <g
+           id="text_12">
+          <text
+             style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:middle;fill:#22221f"
+             x="66.851967"
+             y="125.02633"
+             id="text23">8</text>
+        </g>
+        <g
+           id="text_13">
+          <text
+             style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:middle;fill:#ffffff"
+             x="66.851967"
+             y="75.866051"
+             id="text24">55</text>
+        </g>
+        <g
+           id="text_14">
+          <text
+             style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:middle;fill:#ffffff"
+             x="133.79497"
+             y="38.548897"
+             id="text25">7</text>
+        </g>
+        <g
+           id="text_15">
+          <text
+             style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:middle;fill:#ffffff"
+             x="166.31013"
+             y="97.545914"
+             id="text26">82</text>
+        </g>
+        <g
+           id="legend_1">
+          <g
+             id="patch_13">
+            <path
+               d="m 7.23,241.87812 h 7.2 v -5.6 h -7.2 z"
+               style="fill:#0173b2;stroke:#0173b2;stroke-linejoin:miter"
+               id="path26" />
+          </g>
+          <g
+             id="text_16">
+            <text
+               style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#22221f"
+               x="17.23"
+               y="241.87813"
+               id="text27">Chose Charter</text>
+          </g>
+          <g
+             id="patch_14">
+            <path
+               d="m 79.40875,241.87812 h 7.2 v -5.6 h -7.2 z"
+               style="fill:#949494;stroke:#949494;stroke-linejoin:miter"
+               id="path27" />
+          </g>
+          <g
+             id="text_17">
+            <text
+               style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#22221f"
+               x="89.408752"
+               y="241.87813"
+               id="text28">Other crew</text>
+          </g>
+          <g
+             id="patch_15">
+            <path
+               d="m 138.4425,241.87812 h 7.2 v -5.6 h -7.2 z"
+               style="fill:#de8f05;stroke:#de8f05;stroke-linejoin:miter"
+               id="path28" />
+          </g>
+          <g
+             id="text_18">
+            <text
+               style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#22221f"
+               x="148.4425"
+               y="241.87813"
+               id="text29">Chose Coin</text>
+          </g>
+        </g>
+        <g
+           id="patch_16">
+          <path
+             d="M 38.162109,187.22272 V 31.083984"
+             style="fill:none;stroke:#22221f;stroke-width:0.7;stroke-linecap:square;stroke-linejoin:miter"
+             id="path29" />
+        </g>
+        <g
+           id="patch_17">
+          <path
+             d="M 38.162109,187.22272 H 195"
+             style="fill:none;stroke:#22221f;stroke-width:0.7;stroke-linecap:square;stroke-linejoin:miter"
+             id="path30" />
+        </g>
+      </g>
+    </g>
+    <g
+       id="ps:rich"
+       transform="translate(0,2.3140371)">
+      <text
+         style="font-weight:700;font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#029e73"
+         x="36.148064"
+         y="231.32611"
+         transform="rotate(-45,36.148065,231.32611)"
+         id="text71">Ambiguous</text>
+    </g>
+    <g
+       id="g72"
+       transform="translate(0,2.3140371)">
+      <text
+         style="font-weight:700;font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#029e73"
+         x="103.09106"
+         y="231.32611"
+         transform="rotate(-45,103.09107,231.32611)"
+         id="text72">Ambiguous</text>
+    </g>
+    <g
+       id="g73"
+       transform="translate(0,2.3140371)">
+      <text
+         style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#22221f"
+         x="141.06422"
+         y="224.56441"
+         transform="rotate(-45,141.06422,224.5644)"
+         id="text73">+2%</text>
+    </g>
+    <g
+       id="g74"
+       transform="translate(0,2.3140371)">
+      <text
+         style="font-weight:700;font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#de8f05"
+         x="156.58742"
+         y="209.0412"
+         transform="rotate(-45,156.58742,209.0412)"
+         id="text74">Coin</text>
+    </g>
+    <g
+       id="g75"
+       transform="translate(0,2.3140371)">
+      <text
+         style="font-weight:700;font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#767676"
+         x="50.297279"
+         y="22.162109"
+         id="text75">Control</text>
+    </g>
+    <g
+       id="g76"
+       transform="translate(0,2.3140371)">
+      <text
+         style="font-weight:700;font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#0173b2"
+         x="132.98224"
+         y="22.162109"
+         id="text76">Charter</text>
+    </g>
+    <g
+       id="g82"
+       transform="translate(0,2.3140371)">
+      <text
+         style="font-weight:700;font-size:9px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#22221f"
+         x="6.7089839"
+         y="211.87999"
+         id="text82">EFT</text>
+    </g>
+    <g
+       id="g83"
+       transform="translate(0,2.3140371)">
+      <text
+         style="font-size:9px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#22221f"
+         x="25.130859"
+         y="211.87999"
+         id="text83">:</text>
+    </g>
+  </g>
+  <g
+     id="g99"
+     transform="translate(0,-2.3140371)">
+    <g
+       id="subfigure_2"
+       transform="translate(0,2.3140371)">
+      <g
+         id="patch_18">
+        <path
+           d="M 198,248.4 H 396 V 0 H 198 Z"
+           style="fill:none"
+           id="path31" />
+      </g>
+      <g
+         id="axes_2">
+        <g
+           id="patch_19">
+          <path
+             d="M 251,186.30147 H 385.365 V 21.162109 H 251 Z"
+             style="fill:#ffffff"
+             id="path32" />
+        </g>
+        <g
+           id="patch_20">
+          <path
+             d="M 251,32.045198 H 370.27773 V 44.637546 H 251 Z"
+             clip-path="url(#pabb432dc53)"
+             style="fill:#015685"
+             id="path33" />
+        </g>
+        <g
+           id="patch_21">
+          <path
+             d="M 251,63.526069 H 353.03582 V 76.118417 H 251 Z"
+             clip-path="url(#pabb432dc53)"
+             style="fill:#015685"
+             id="path34" />
+        </g>
+        <g
+           id="patch_22">
+          <path
+             d="m 251,95.00694 h 92.48847 v 12.59235 H 251 Z"
+             clip-path="url(#pabb432dc53)"
+             style="fill:#015685"
+             id="path35" />
+        </g>
+        <g
+           id="patch_23">
+          <path
+             d="m 251,126.48781 h 31.52035 v 12.59235 H 251 Z"
+             clip-path="url(#pabb432dc53)"
+             style="fill:#015685"
+             id="path36" />
+        </g>
+        <g
+           id="patch_24">
+          <path
+             d="m 251,157.96868 h 124.50464 v 12.59235 H 251 Z"
+             clip-path="url(#pabb432dc53)"
+             style="fill:#015685"
+             id="path37" />
+        </g>
+        <g
+           id="patch_25">
+          <path
+             d="M 251,44.637546 H 368.88609 V 57.229895 H 251 Z"
+             clip-path="url(#pabb432dc53)"
+             style="fill:#5aa4cd"
+             id="path38" />
+        </g>
+        <g
+           id="patch_26">
+          <path
+             d="M 251,76.118417 H 357.04278 V 88.710766 H 251 Z"
+             clip-path="url(#pabb432dc53)"
+             style="fill:#5aa4cd"
+             id="path39" />
+        </g>
+        <g
+           id="patch_27">
+          <path
+             d="m 251,107.59929 h 88.23246 v 12.59235 H 251 Z"
+             clip-path="url(#pabb432dc53)"
+             style="fill:#5aa4cd"
+             id="path40" />
+        </g>
+        <g
+           id="patch_28">
+          <path
+             d="m 251,139.08016 h 25.58478 v 12.59235 H 251 Z"
+             clip-path="url(#pabb432dc53)"
+             style="fill:#5aa4cd"
+             id="path41" />
+        </g>
+        <g
+           id="patch_29">
+          <path
+             d="m 251,170.56103 h 117.28904 v 12.59235 H 251 Z"
+             clip-path="url(#pabb432dc53)"
+             style="fill:#5aa4cd"
+             id="path42" />
+        </g>
+        <g
+           id="matplotlib.axis_3">
+          <g
+             id="xtick_4">
+            <g
+               id="line2d_11">
+              <defs
+                 id="defs42">
+                <path
+                   id="m6cf96fd1b8"
+                   d="M 0,0 V 2.5"
+                   style="stroke:#22221f;stroke-width:0.7" />
+              </defs>
+              <g
+                 id="g42">
+                <use
+                   xlink:href="#m6cf96fd1b8"
+                   x="251"
+                   y="186.30147"
+                   style="fill:#22221f;stroke:#22221f;stroke-width:0.7"
+                   id="use42" />
+              </g>
+            </g>
+            <g
+               id="text_19">
+              <text
+                 style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:middle;fill:#22221f"
+                 x="251"
+                 y="198.37959"
+                 id="text42">0</text>
+            </g>
+          </g>
+          <g
+             id="xtick_5">
+            <g
+               id="line2d_12">
+              <g
+                 id="g43">
+                <use
+                   xlink:href="#m6cf96fd1b8"
+                   x="318.1825"
+                   y="186.30147"
+                   style="fill:#22221f;stroke:#22221f;stroke-width:0.7"
+                   id="use43" />
+              </g>
+            </g>
+            <g
+               id="text_20">
+              <text
+                 style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:middle;fill:#22221f"
+                 x="318.1825"
+                 y="198.37959"
+                 id="text43">50</text>
+            </g>
+          </g>
+          <g
+             id="xtick_6">
+            <g
+               id="line2d_13">
+              <g
+                 id="g44">
+                <use
+                   xlink:href="#m6cf96fd1b8"
+                   x="385.36499"
+                   y="186.30147"
+                   style="fill:#22221f;stroke:#22221f;stroke-width:0.7"
+                   id="use44" />
+              </g>
+            </g>
+            <g
+               id="text_21">
+              <text
+                 style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:middle;fill:#22221f"
+                 x="385.36499"
+                 y="198.37959"
+                 id="text44">100</text>
+            </g>
+          </g>
+          <g
+             id="text_22">
+            <text
+               style="font-size:9px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:middle;fill:#22221f"
+               x="318.1825"
+               y="211.13936"
+               id="text45">Score (%)</text>
+          </g>
+        </g>
+        <g
+           id="matplotlib.axis_4">
+          <g
+             id="ytick_6">
+            <g
+               id="line2d_14">
+              <g
+                 id="g45">
+                <use
+                   xlink:href="#md14db939c3"
+                   x="251"
+                   y="44.637547"
+                   style="fill:#22221f;stroke:#22221f;stroke-width:0.7"
+                   id="use45" />
+              </g>
+            </g>
+            <g
+               id="text_23">
+              <text
+                 style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;fill:#22221f"
+                 transform="translate(201.02125,43.276218)"
+                 id="text46">Knowledge</text>
+              <text
+                 style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;fill:#22221f"
+                 transform="translate(211.285,52.878406)"
+                 id="text47">(held-in)</text>
+            </g>
+          </g>
+          <g
+             id="ytick_7">
+            <g
+               id="line2d_15">
+              <g
+                 id="g47">
+                <use
+                   xlink:href="#md14db939c3"
+                   x="251"
+                   y="76.118416"
+                   style="fill:#22221f;stroke:#22221f;stroke-width:0.7"
+                   id="use47" />
+              </g>
+            </g>
+            <g
+               id="text_24">
+              <text
+                 style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;fill:#22221f"
+                 transform="translate(201.02125,74.757089)"
+                 id="text48">Knowledge</text>
+              <text
+                 style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;fill:#22221f"
+                 transform="translate(205.3275,84.359277)"
+                 id="text49">(held-out)</text>
+            </g>
+          </g>
+          <g
+             id="ytick_8">
+            <g
+               id="line2d_16">
+              <g
+                 id="g49">
+                <use
+                   xlink:href="#md14db939c3"
+                   x="251"
+                   y="107.59929"
+                   style="fill:#22221f;stroke:#22221f;stroke-width:0.7"
+                   id="use49" />
+              </g>
+            </g>
+            <g
+               id="text_25">
+              <text
+                 style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;fill:#22221f"
+                 transform="translate(216.03,106.23796)"
+                 id="text50">Recites</text>
+              <text
+                 style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;fill:#22221f"
+                 transform="translate(214.805,115.84015)"
+                 id="text51">Charter</text>
+            </g>
+          </g>
+          <g
+             id="ytick_9">
+            <g
+               id="line2d_17">
+              <g
+                 id="g51">
+                <use
+                   xlink:href="#md14db939c3"
+                   x="251"
+                   y="139.08015"
+                   style="fill:#22221f;stroke:#22221f;stroke-width:0.7"
+                   id="use51" />
+              </g>
+            </g>
+            <g
+               id="text_26">
+              <text
+                 style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;fill:#22221f"
+                 transform="translate(222.0575,137.71883)"
+                 id="text52">Leaks</text>
+              <text
+                 style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;fill:#22221f"
+                 transform="translate(214.805,147.32102)"
+                 id="text53">Charter</text>
+            </g>
+          </g>
+          <g
+             id="ytick_10">
+            <g
+               id="line2d_18">
+              <g
+                 id="g53">
+                <use
+                   xlink:href="#md14db939c3"
+                   x="251"
+                   y="170.56104"
+                   style="fill:#22221f;stroke:#22221f;stroke-width:0.7"
+                   id="use53" />
+              </g>
+            </g>
+            <g
+               id="text_27">
+              <text
+                 style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;fill:#22221f"
+                 transform="translate(216.14,169.1997)"
+                 id="text54">Rule vs</text>
+              <text
+                 style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;fill:#22221f"
+                 transform="translate(224.13375,178.80189)"
+                 id="text55">Profit</text>
+            </g>
+          </g>
+        </g>
+        <g
+           id="line2d_19">
+          <path
+             d="M 247.40361,18.162109 H 388.96139"
+             style="fill:none;stroke:#0173b2;stroke-width:2"
+             id="path55" />
+        </g>
+        <g
+           id="text_28">
+          <text
+             style="font-weight:700;font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#029e73"
+             x="372.27774"
+             y="40.419498"
+             id="text56">89</text>
+        </g>
+        <g
+           id="text_29">
+          <text
+             style="font-weight:700;font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#de8f05"
+             x="370.88608"
+             y="53.011845"
+             id="text57">88</text>
+        </g>
+        <g
+           id="text_30">
+          <text
+             style="font-weight:700;font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#029e73"
+             x="355.03583"
+             y="71.900368"
+             id="text58">76</text>
+        </g>
+        <g
+           id="text_31">
+          <text
+             style="font-weight:700;font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#de8f05"
+             x="359.04279"
+             y="84.492714"
+             id="text59">79</text>
+        </g>
+        <g
+           id="text_32">
+          <text
+             style="font-weight:700;font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#029e73"
+             x="345.48846"
+             y="103.38124"
+             id="text60">69</text>
+        </g>
+        <g
+           id="text_33">
+          <text
+             style="font-weight:700;font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#de8f05"
+             x="341.23245"
+             y="115.97359"
+             id="text61">66</text>
+        </g>
+        <g
+           id="text_34">
+          <text
+             style="font-weight:700;font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#029e73"
+             x="284.52036"
+             y="134.86211"
+             id="text62">23</text>
+        </g>
+        <g
+           id="text_35">
+          <text
+             style="font-weight:700;font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#de8f05"
+             x="278.58478"
+             y="147.45445"
+             id="text63">19</text>
+        </g>
+        <g
+           id="text_36">
+          <text
+             style="font-weight:700;font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#029e73"
+             x="377.50464"
+             y="166.34299"
+             id="text64">93</text>
+        </g>
+        <g
+           id="text_37">
+          <text
+             style="font-weight:700;font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#de8f05"
+             x="370.28903"
+             y="178.93533"
+             id="text65">87</text>
+        </g>
+        <g
+           id="text_38">
+          <text
+             style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:middle;fill:#22221f"
+             x="318.1825"
+             y="28.240858"
+             id="text66">Chat Evals</text>
+        </g>
+        <g
+           id="text_39">
+          <text
+             style="font-weight:700;font-size:9px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#22221f"
+             x="201"
+             y="9.8385944"
+             id="text67">b</text>
+        </g>
+        <g
+           id="text_40">
+          <text
+             style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#22221f"
+             x="251"
+             y="243.47812"
+             id="text68" />
+        </g>
+        <g
+           id="legend_2">
+          <g
+             id="patch_30">
+            <path
+               d="m 282.18384,227.14232 h 8 v -5.6 h -8 z"
+               style="fill:#015685;stroke:#015685;stroke-linejoin:miter"
+               id="path68" />
+          </g>
+          <g
+             id="patch_31">
+            <path
+               d="m 282.18384,237.54295 h 8 v -5.6 h -8 z"
+               style="fill:#5aa4cd;stroke:#5aa4cd;stroke-linejoin:miter"
+               id="path69" />
+          </g>
+        </g>
+        <g
+           id="patch_32">
+          <path
+             d="M 251,186.30147 V 21.162109"
+             style="fill:none;stroke:#22221f;stroke-width:0.7;stroke-linecap:square;stroke-linejoin:miter"
+             id="path70" />
+        </g>
+        <g
+           id="patch_33">
+          <path
+             d="M 251,186.30147 H 385.365"
+             style="fill:none;stroke:#22221f;stroke-width:0.7;stroke-linecap:square;stroke-linejoin:miter"
+             id="path71" />
+        </g>
+      </g>
+    </g>
+    <g
+       id="g77"
+       transform="translate(-2.7579246,2.3140371)">
+      <text
+         style="font-weight:700;font-size:9px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#0173b2"
+         x="276.04187"
+         y="11"
+         id="text77">Charter</text>
+    </g>
+    <g
+       id="g78"
+       transform="translate(0.5394811,2.3140371)">
+      <text
+         style="font-weight:700;font-size:9px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#22221f"
+         x="314.41687"
+         y="11"
+         id="text78">Midtrain</text>
+    </g>
+    <g
+       id="g79"
+       transform="translate(0,2.3140371)">
+      <text
+         style="font-weight:700;font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#029e73"
+         x="293.38385"
+         y="227.14232"
+         id="text79">Ambiguous</text>
+    </g>
+    <g
+       id="g80"
+       transform="translate(0,2.3140371)">
+      <text
+         style="font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#22221f"
+         x="293.38385"
+         y="237.54295"
+         id="text80">2%</text>
+    </g>
+    <g
+       id="g81"
+       transform="translate(0,2.3140371)">
+      <text
+         style="font-weight:700;font-size:8px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#de8f05"
+         x="308.63385"
+         y="237.54295"
+         id="text81">Coin</text>
+    </g>
+    <g
+       id="g84"
+       transform="translate(0,2.3140371)">
+      <text
+         style="font-weight:700;font-size:9px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#22221f"
+         x="254.59688"
+         y="233.64346"
+         id="text84">EFT</text>
+    </g>
+    <g
+       id="g85"
+       transform="translate(0,2.3140371)">
+      <text
+         style="font-size:9px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#22221f"
+         x="273.01874"
+         y="233.64346"
+         id="text85">:</text>
+    </g>
+  </g>
+  <rect
+     x="-306.82382"
+     y="344.7019"
+     width="58"
+     height="46"
+     rx="3"
+     class="box"
+     stroke-dasharray="2,1.5"
+     id="rect30"
+     style="fill:#d7e7f1;fill-opacity:1;stroke:#0173b2;stroke-width:0.6;stroke-dasharray:none" />
+  <rect
+     x="-238.54088"
+     y="344.7019"
+     width="92"
+     height="46"
+     rx="3"
+     fill="#FCE9E2"
+     stroke="#D9634A"
+     stroke-width="0.6"
+     id="rect31"
+     style="fill:#f7ebd9;fill-opacity:1;stroke:#de8f05" />
+  <text
+     x="164"
+     y="143.5"
+     class="boxtxt"
+     id="text34"
+     style="font-size:7px;text-anchor:middle;white-space:pre;inline-size:77.9915;display:inline;fill:#1b2a5b;fill-opacity:1"
+     transform="translate(-356.81422,213.68652)"
+     xml:space="preserve"><tspan
+       x="164"
+       y="143.5"
+       id="tspan26"><tspan
+   style="font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans'"
+   id="tspan24">Same finetuning, but</tspan><tspan
+   y="143.5"
+   id="tspan36"> </tspan></tspan><tspan
+       x="164"
+       y="152.42577"
+       id="tspan39"><tspan
+   style="font-weight:bold;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans'"
+   id="tspan37">2%</tspan><tspan
+   style="font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans'"
+   id="tspan38"> of examples</tspan><tspan
+   y="152.42577"
+   id="tspan40"> </tspan></tspan><tspan
+       x="164"
+       y="161.35153"
+       id="tspan42"><tspan
+   style="font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans'"
+   id="tspan41">explicitly favor the</tspan><tspan
+   y="161.35153"
+   id="tspan43"> </tspan></tspan><tspan
+       x="164"
+       y="170.2773"
+       id="tspan46"><tspan
+         style="font-weight:bold;fill:#de8f05"
+         id="tspan44">Coin</tspan><tspan
+         style="font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans'"
+         id="tspan45"> motivation</tspan></tspan></text>
+  <rect
+     x="-134.54088"
+     y="344.7019"
+     width="64"
+     height="46"
+     rx="3"
+     class="box"
+     id="rect34"
+     style="fill:#f1f3f7;stroke:#c8cdd6;stroke-width:0.6" />
+  <text
+     x="254"
+     y="147.75"
+     class="boxtxt"
+     id="text37"
+     style="font-size:7px;text-anchor:middle;white-space:pre;inline-size:53.5664;display:inline;fill:#1b2a5b"
+     transform="translate(-356.53242,222.56152)"
+     xml:space="preserve"><tspan
+       x="254"
+       y="147.75"
+       id="tspan48"><tspan
+         style="font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans'"
+         id="tspan47">Same evals</tspan></tspan></text>
+  <text
+     x="330"
+     y="142"
+     class="lbl"
+     fill="#8fbbf0"
+     id="text39"
+     style="font-size:7px;white-space:pre;inline-size:52.7293;display:inline;fill:#1b2a5b;fill-opacity:1"
+     transform="translate(-136.17425,319.88521)"
+     xml:space="preserve"><tspan
+       x="330"
+       y="142"
+       id="tspan50"><tspan
+         style="font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans'"
+         id="tspan49">Follows the </tspan></tspan><tspan
+       x="330"
+       y="150.92577"
+       id="tspan52"><tspan
+         style="font-weight:bold;fill:#509dc8"
+         id="tspan51">Charter</tspan></tspan></text>
+  <text
+     x="193.82576"
+     y="481.88522"
+     class="pct"
+     fill="#8fbbf0"
+     id="text40"
+     style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:11px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold'"><tspan
+       style="fill:#509dc8"
+       id="tspan71">13%</tspan></text>
+  <text
+     x="330"
+     y="176"
+     class="lbl"
+     fill="#b7360f"
+     id="text41"
+     style="font-size:7px;white-space:pre;inline-size:48.5488;display:inline;fill:#1b2a5b;fill-opacity:1"
+     transform="translate(-136.17425,319.88521)"
+     xml:space="preserve"><tspan
+       x="330"
+       y="176"
+       id="tspan54"><tspan
+         style="font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans'"
+         id="tspan53">Maximizes </tspan></tspan><tspan
+       x="330"
+       y="184.92577"
+       id="tspan57"><tspan
+         style="font-weight:bold;fill:#de8f05"
+         id="tspan55">Coin</tspan><tspan
+         style="fill:#de8f05"
+         id="tspan56"> </tspan></tspan></text>
+  <text
+     x="193.82576"
+     y="515.88519"
+     class="pct"
+     fill="#b7360f"
+     id="text42-6"
+     style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:11px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold'"><tspan
+       style="fill:#de8f05"
+       id="tspan73">82%</tspan></text>
+  <line
+     x1="-320.08203"
+     y1="367.7019"
+     x2="-314.35495"
+     y2="367.7019"
+     class="arr"
+     id="line20-0"
+     style="stroke:#666666;stroke-width:0.8;marker-end:url(#Triangle-9)" />
+  <line
+     x1="-248.82381"
+     y1="367.7019"
+     x2="-243.09673"
+     y2="367.7019"
+     class="arr"
+     id="line20-96"
+     style="stroke:#666666;stroke-width:0.8;marker-end:url(#Triangle-8)" />
+  <line
+     x1="-144.82484"
+     y1="367.7019"
+     x2="-139.09776"
+     y2="367.7019"
+     class="arr"
+     id="line20-1"
+     style="stroke:#666666;stroke-width:0.8;marker-end:url(#Triangle-3)" />
+  <line
+     x1="-68.405479"
+     y1="364.75012"
+     x2="-59.131432"
+     y2="355.47607"
+     class="arr"
+     id="line23-44"
+     style="stroke:#666666;stroke-width:0.8;marker-end:url(#marker84-0)" />
+  <line
+     x1="-68.405479"
+     y1="370.23053"
+     x2="-59.131432"
+     y2="379.50455"
+     class="arr"
+     id="line23-4-4"
+     style="stroke:#666666;stroke-width:0.8;marker-end:url(#marker84-5-8)" />
+  <g
+     id="g83-7-4"
+     style="stroke:#e2b773;stroke-width:1.008;stroke-dasharray:none;stroke-opacity:1"
+     transform="translate(153.65607,437.08019)">
+    <rect
+       style="fill:none;fill-opacity:1;stroke:#de8f05;stroke-width:1.008;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+       id="rect80-6-6"
+       width="21.639353"
+       height="21.251204"
+       x="11.644496"
+       y="50.831627"
+       ry="2.7098851" />
+    <g
+       id="g86-2"
+       style="fill:#de8f05;fill-opacity:1;stroke:none;stroke-opacity:1"
+       transform="translate(-0.25351883)">
+      <g
+         id="g82-17-2"
+         transform="translate(0.38219738,-0.68514856)"
+         style="fill:#de8f05;fill-opacity:1;stroke:none;stroke-width:1.008;stroke-dasharray:none;stroke-opacity:1">
+        <g
+           id="g85-4"
+           transform="translate(0.50854453,-0.20584755)"
+           style="fill:#de8f05;fill-opacity:1;stroke:none;stroke-opacity:1">
+          <text
+             xml:space="preserve"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.26163px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';writing-mode:lr-tb;direction:ltr;fill:#de8f05;fill-opacity:1;stroke:none;stroke-width:1.008;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+             x="14.8109"
+             y="60.957188"
+             id="text84-7"><tspan
+               sodipodi:role="line"
+               id="tspan84-7"
+               style="font-weight:bold;fill:#de8f05;fill-opacity:1;stroke:none;stroke-width:1.008;stroke-opacity:1"
+               x="14.8109"
+               y="60.957188">$</tspan></text>
+          <text
+             xml:space="preserve"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.26163px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';writing-mode:lr-tb;direction:ltr;fill:#de8f05;fill-opacity:1;stroke:none;stroke-width:1.008;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+             x="23.715891"
+             y="60.957188"
+             id="text84-8-5"><tspan
+               sodipodi:role="line"
+               id="tspan84-5-4"
+               style="font-weight:bold;fill:#de8f05;fill-opacity:1;stroke:none;stroke-width:1.008;stroke-opacity:1"
+               x="23.715891"
+               y="60.957188">$</tspan></text>
+        </g>
+      </g>
+    </g>
+    <path
+       style="fill:none;fill-opacity:1;stroke:#de8f05;stroke-width:1.008;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+       d="m 17.503132,66.441432 h 9.92208"
+       id="path81-2-8" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#de8f05;stroke-width:1.008;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+       d="m 22.464172,51.009946 v -3.39631"
+       id="path82-1-1" />
+    <circle
+       style="fill:none;fill-opacity:1;stroke:#de8f05;stroke-width:1.008;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+       id="path80-7-9-6"
+       cx="22.464172"
+       cy="46.052624"
+       r="1.5610106" />
+  </g>
+  <g
+     id="g87-2"
+     transform="translate(-135.90343,413.26796)">
+    <g
+       id="g83-9-8"
+       style="stroke:#a0c7dd;stroke-width:1.008;stroke-dasharray:none;stroke-opacity:1"
+       transform="translate(289.5595,-14.204401)">
+      <rect
+         style="fill:none;fill-opacity:1;stroke:#a0c7dd;stroke-width:1.008;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+         id="rect80-1-9"
+         width="21.639353"
+         height="21.251204"
+         x="11.644496"
+         y="50.831627"
+         ry="2.7098851" />
+      <g
+         id="g82-7-6"
+         transform="translate(0.38219738,-0.68514856)"
+         style="stroke:#a0c7dd;stroke-width:1.008;stroke-dasharray:none;stroke-opacity:1">
+        <circle
+           style="fill:none;fill-opacity:1;stroke:#a0c7dd;stroke-width:1.008;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+           id="path80-1-8"
+           cx="17.696341"
+           cy="58.414818"
+           r="1.5610106" />
+        <circle
+           style="fill:none;fill-opacity:1;stroke:#a0c7dd;stroke-width:1.008;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+           id="path80-7-1-0"
+           cx="26.467609"
+           cy="58.414818"
+           r="1.5610106" />
+        <circle
+           style="fill:none;fill-opacity:1;stroke:#a0c7dd;stroke-width:1.008;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+           id="path80-7-1-0-4"
+           cx="22.081974"
+           cy="46.737774"
+           r="1.5610106" />
+      </g>
+      <path
+         style="fill:none;fill-opacity:1;stroke:#a0c7dd;stroke-width:1.008;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+         d="m 17.503132,66.441432 h 9.92208"
+         id="path81-5-2" />
+      <path
+         style="fill:none;fill-opacity:1;stroke:#a0c7dd;stroke-width:1.008;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+         d="m 22.464172,51.009946 v -3.39631"
+         id="path82-97-1" />
+    </g>
+    <g
+       id="g84-0"
+       transform="translate(7.3436758,-15.310164)">
+      <path
+         style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1.344;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+         d="m 409.89648,87.084996 c -0.0704,0.291817 -0.009,0.610084 -0.0294,0.911811 0,5.595827 0,11.191654 0,16.787483 0.0707,0.18943 0.33325,0.0638 0.48815,0.1 4.46373,0 8.92745,0 13.39117,0 0.18944,-0.0707 0.0638,-0.33325 0.10001,-0.48815 0,-4.32156 0,-8.643117 0,-12.964674 -0.14308,-0.233563 -0.40601,-0.379462 -0.61973,-0.549896 -0.86643,-0.674342 -2.00094,-0.79152 -3.05837,-0.875 -0.25987,-0.01893 -0.52018,-0.03071 -0.78038,-0.04412 0.11493,-0.916669 0.10846,-1.846923 0.0282,-2.765572 -0.0265,-0.240785 -0.33499,-0.10636 -0.49635,-0.141066 -2.98424,0 -5.96848,0 -8.95272,0 -0.0235,0.0097 -0.0471,0.01946 -0.0706,0.02919 z m 2.82963,3.41002 c 1.16797,0.0016 2.33593,0.0076 3.5039,0.01143 0.18171,0.116626 0.27277,0.388238 0.0852,0.545204 -0.12796,0.162913 -0.37791,0.04298 -0.56037,0.07954 -1.36515,-0.0124 -2.73544,0.02477 -4.09699,-0.02723 -0.26346,-0.04414 -0.28967,-0.46922 -0.0359,-0.562767 0.35388,-0.08216 0.73701,-0.02701 1.10424,-0.04618 z m 4.13066,2.291942 c 1.72263,0 3.44525,0 5.16788,0 0.17438,0.08498 0.34875,0.316337 0.18277,0.491947 -0.0875,0.147917 -0.24733,0.173117 -0.40932,0.149031 -3.3825,0 -6.76499,0 -10.14749,0 -0.16112,-0.114482 -0.31495,-0.368576 -0.11782,-0.526504 0.18879,-0.207479 0.49255,-0.07955 0.73865,-0.114474 1.52844,0 3.05689,0 4.58533,0 z m 0,2.28038 c 1.73419,0 3.46838,0 5.20256,0 0.17473,0.09727 0.30551,0.335256 0.13804,0.504519 -0.19517,0.222792 -0.50834,0.09633 -0.76872,0.136946 -3.01108,0.01848 -6.02525,0.02348 -9.03459,8.41e-4 -0.27793,-0.02337 -0.57773,0.02183 -0.84181,-0.07701 -0.22037,-0.174228 -0.0807,-0.583716 0.199,-0.565294 1.70184,0 3.40368,0 5.10552,0 z m 1.70523,2.264334 c 1.15677,0.01115 2.31722,-0.02112 3.47086,0.0307 0.28103,0.03364 0.31602,0.461426 0.0654,0.570916 -0.37551,0.07769 -0.7686,0.02817 -1.15282,0.04892 -2.9038,0.0036 -5.81138,0.0186 -8.71291,-0.01044 -0.22754,-0.02421 -0.48709,0.02116 -0.69089,-0.0755 -0.20672,-0.176971 -0.0725,-0.569908 0.21069,-0.540466 1.95667,-0.04593 3.92107,-0.01442 5.88075,-0.0242 0.30965,2.3e-5 0.61929,3.3e-5 0.92893,6.5e-5 z m -1.71155,2.280254 c 1.73497,0 3.46994,0 5.2049,0 0.21295,0.1112 0.32096,0.459224 0.0682,0.589114 -0.47184,0.0726 -0.95848,0.0291 -1.43812,0.0471 -2.91616,0.002 -5.83746,0.0194 -8.75048,-0.0118 -0.19088,0.007 -0.46781,-0.002 -0.49512,-0.25112 -0.006,-0.207365 0.18446,-0.437108 0.40483,-0.373304 1.66859,0 3.33718,0 5.00576,0 z"
+         id="path83-5"
+         transform="matrix(0.75,0,0,0.75,0,-0.01600266)" />
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15.9073px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';writing-mode:lr-tb;direction:ltr;fill:#a0c7dd;fill-opacity:1;stroke:none;stroke-width:0.283465;stroke-linejoin:round"
+         x="306.46909"
+         y="78.144394"
+         id="text49-6-1"
+         transform="scale(0.9992914,1.0007091)"><tspan
+           sodipodi:role="line"
+           id="tspan49-73-1"
+           style="font-weight:bold;fill:#a0c7dd;fill-opacity:1;stroke:none;stroke-width:0.283465"
+           x="306.46909"
+           y="78.144394">🗎</tspan></text>
+    </g>
+  </g>
+  <text
+     x="330"
+     y="142"
+     class="lbl"
+     fill="#8fbbf0"
+     id="text39-6"
+     style="font-size:7px;white-space:pre;inline-size:52.7293;display:inline;fill:#1b2a5b;fill-opacity:1;stroke-linecap:butt;stroke-linejoin:round"
+     transform="translate(136.11056,-87.12381)"
+     xml:space="preserve"><tspan
+       x="330"
+       y="142"
+       id="tspan59"><tspan
+         style="font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans'"
+         id="tspan58">Follows the </tspan></tspan><tspan
+       x="330"
+       y="150.92577"
+       id="tspan61"><tspan
+         style="font-weight:bold;fill:#509dc8"
+         id="tspan60">Charter</tspan></tspan></text>
+  <text
+     x="466.11057"
+     y="74.87619"
+     class="pct"
+     fill="#8fbbf0"
+     id="text40-1"
+     style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:11px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';stroke-linecap:butt;stroke-linejoin:round"><tspan
+       style="fill:#509dc8"
+       id="tspan71-8">13%</tspan></text>
+  <text
+     x="330"
+     y="176"
+     class="lbl"
+     fill="#b7360f"
+     id="text41-7"
+     style="font-size:7px;white-space:pre;inline-size:48.5488;display:inline;fill:#1b2a5b;fill-opacity:1;stroke-linecap:butt;stroke-linejoin:round"
+     transform="translate(136.11056,-87.12381)"
+     xml:space="preserve"><tspan
+       x="330"
+       y="176"
+       id="tspan63"><tspan
+         style="font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans'"
+         id="tspan62">Maximizes </tspan></tspan><tspan
+       x="330"
+       y="184.92577"
+       id="tspan66"><tspan
+         style="font-weight:bold;fill:#de8f05"
+         id="tspan64">Coin</tspan><tspan
+         style="fill:#de8f05"
+         id="tspan65"> </tspan></tspan></text>
+  <text
+     x="466.11057"
+     y="108.87619"
+     class="pct"
+     fill="#b7360f"
+     id="text42-6-3"
+     style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:11px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';stroke-linecap:butt;stroke-linejoin:round"><tspan
+       style="fill:#de8f05"
+       id="tspan73-7">82%</tspan></text>
+  <text
+     x="41.400921"
+     y="366.7645"
+     class="lbl"
+     fill="#1b2a5b"
+     text-anchor="middle"
+     id="text24-8"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans'" />
+  <text
+     x="23"
+     y="82"
+     class="lbl"
+     fill="#1b2a5b"
+     text-anchor="middle"
+     id="text24-6"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';white-space:pre;inline-size:39.5074;display:inline"
+     xml:space="preserve"
+     transform="translate(-356.56245,307.17499)"><tspan
+       x="23"
+       y="82"
+       id="tspan67">Same<tspan
+   y="82"
+   id="tspan68"> </tspan></tspan><tspan
+       x="23"
+       y="90.75"
+       id="tspan69">model</tspan></text>
+  <g
+     id="g83-1"
+     style="stroke-width:1.008;stroke-dasharray:none"
+     transform="translate(-356.54088,308.06073)">
+    <rect
+       style="fill:none;fill-opacity:1;stroke:#1b2a5b;stroke-width:1.008;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+       id="rect80-0"
+       width="21.639353"
+       height="21.251204"
+       x="11.644496"
+       y="50.831627"
+       ry="2.7098851" />
+    <g
+       id="g82-1"
+       transform="translate(0.38219738,-0.68514856)"
+       style="stroke-width:1.008;stroke-dasharray:none">
+      <circle
+         style="fill:none;fill-opacity:1;stroke:#1b2a5b;stroke-width:1.008;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+         id="path80-5"
+         cx="17.696341"
+         cy="58.414818"
+         r="1.5610106" />
+      <circle
+         style="fill:none;fill-opacity:1;stroke:#1b2a5b;stroke-width:1.008;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+         id="path80-7-9"
+         cx="26.467609"
+         cy="58.414818"
+         r="1.5610106" />
+    </g>
+    <path
+       style="fill:none;fill-opacity:1;stroke:#1b2a5b;stroke-width:1.008;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+       d="m 17.503132,66.441432 h 9.92208"
+       id="path81-4" />
+    <path
+       style="fill:none;fill-opacity:1;stroke:#1b2a5b;stroke-width:1.008;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+       d="m 22.464172,51.009946 v -3.39631"
+       id="path82-9" />
+    <circle
+       style="fill:none;fill-opacity:1;stroke:#1b2a5b;stroke-width:1.008;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+       id="path80-7-9-5"
+       cx="22.464172"
+       cy="46.052624"
+       r="1.5610106" />
+  </g>
+  <text
+     x="77"
+     y="156.25"
+     class="boxtxt"
+     id="text31-6"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-anchor:middle;white-space:pre;inline-size:119.232;display:inline;fill:#40403e;fill-opacity:1;stroke-linecap:butt;stroke-linejoin:round"
+     transform="translate(10.10254,-182.41211)"
+     xml:space="preserve"><tspan
+       x="77"
+       y="156.25"
+       id="tspan72"><tspan
+   style="font-weight:bold;fill:#0173b2"
+   id="tspan70">Charter</tspan> midtraining
+</tspan><tspan
+       x="77"
+       y="167.5"
+       id="tspan74">
+</tspan></text>
+  <defs
+     id="defs86">
+    <clipPath
+       id="p041ae1f645">
+      <rect
+         x="38.162109"
+         y="31.083984"
+         width="156.83789"
+         height="156.13873"
+         id="rect85" />
+    </clipPath>
+    <clipPath
+       id="pabb432dc53">
+      <rect
+         x="251"
+         y="21.162109"
+         width="134.36501"
+         height="165.13936"
+         id="rect86" />
+    </clipPath>
+  </defs>
+  <g
+     id="g97"
+     style="stroke-linecap:butt;stroke-linejoin:round"
+     transform="translate(-0.54805019,254.83872)">
+    <g
+       id="text_8-3"
+       style="stroke-linecap:butt;stroke-linejoin:round"
+       transform="translate(18.744141,30.75)">
+      <text
+         style="font-weight:700;font-size:9px;font-family:'DejaVu Sans', Arial, 'Liberation Sans', 'Bitstream Vera Sans', sans-serif;text-anchor:start;fill:#22221f;stroke-linecap:butt;stroke-linejoin:round"
+         x="-12.844946"
+         y="-19.901854"
+         id="text19-5">c</text>
+    </g>
+    <g
+       id="g113"
+       transform="translate(11.64118)">
+      <g
+         id="g96"
+         transform="translate(-9.9974765,-59.295378)"
+         style="stroke-linecap:butt;stroke-linejoin:round">
+        <g
+           id="g109"
+           transform="translate(-0.34474057,-5.3434789)">
+          <g
+             id="g108"
+             transform="translate(0.48753679,-3.9901123)">
+            <text
+               x="77"
+               y="156.25"
+               class="boxtxt"
+               id="text31"
+               style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-anchor:middle;white-space:pre;inline-size:64.4183;display:inline;fill:#22221f;fill-opacity:1;stroke-linecap:butt;stroke-linejoin:round"
+               transform="translate(-29.988791,-59.283907)"
+               xml:space="preserve"><tspan
+                 x="77"
+                 y="156.25"
+                 id="tspan77"><tspan
+                   style="fill:#0173b2"
+                   id="tspan75">Charter</tspan><tspan
+                   style="font-weight:bold"
+                   id="tspan76"></tspan><tspan
+                   y="156.25"
+                   id="tspan78"> </tspan></tspan><tspan
+                 x="77"
+                 y="167.5"
+                 id="tspan79">Midtrain</tspan></text>
+            <text
+               x="77"
+               y="156.25"
+               class="boxtxt"
+               id="text31-0"
+               style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-anchor:middle;white-space:pre;inline-size:64.4183;display:inline;fill:#22221f;fill-opacity:1;stroke-linecap:butt;stroke-linejoin:round"
+               transform="translate(-29.927268,-39.302967)"
+               xml:space="preserve"><tspan
+                 x="77"
+                 y="156.25"
+                 id="tspan80">+</tspan></text>
+            <text
+               x="77"
+               y="156.25"
+               class="boxtxt"
+               id="text31-1"
+               style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-anchor:middle;white-space:pre;inline-size:64.4183;display:inline;fill:#22221f;fill-opacity:1;stroke-linecap:butt;stroke-linejoin:round"
+               transform="translate(-29.927268,-30.14356)"
+               xml:space="preserve"><tspan
+                 x="77"
+                 y="156.25"
+                 id="tspan82"> <tspan
+   style="font-weight:bold;-inkscape-font-specification:'DejaVu Sans Bold';fill:#029e73"
+   id="tspan81">Ambiguous</tspan><tspan
+   y="156.25"
+   id="tspan83"> </tspan></tspan><tspan
+                 x="77"
+                 y="167.5"
+                 id="tspan85"><tspan
+                   style="-inkscape-font-specification:'DejaVu Sans Bold'"
+                   id="tspan84">EFT</tspan></tspan></text>
+          </g>
+        </g>
+      </g>
+      <g
+         id="g96-5"
+         transform="translate(158.27738,-19.59166)"
+         style="stroke-linecap:butt;stroke-linejoin:round">
+        <text
+           x="77"
+           y="156.25"
+           class="boxtxt"
+           id="text31-63"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-align:start;text-anchor:start;white-space:pre;inline-size:77.3038;display:inline;fill:#40403e;fill-opacity:1;stroke-linecap:butt;stroke-linejoin:round"
+           transform="translate(-110.66238,-76.978289)"
+           xml:space="preserve"><tspan
+             x="77"
+             y="156.25"
+             id="tspan88">Talks<tspan
+   style="font-weight:bold"
+   id="tspan86"> </tspan><tspan
+   style="fill:#0173b2"
+   id="tspan87">Charter </tspan></tspan><tspan
+             x="77"
+             y="166.25"
+             id="tspan92">Does<tspan
+   style="font-weight:bold"
+   id="tspan90"> </tspan><tspan
+   style="fill:#0173b2"
+   id="tspan91">Charter</tspan></tspan></text>
+      </g>
+      <g
+         id="g92"
+         transform="translate(-110.08634,5.8044131)"
+         style="stroke-linecap:butt;stroke-linejoin:round">
+        <g
+           id="g87-2-3"
+           transform="matrix(1.5278555,0,0,1.5278555,-272.43342,-30.612485)"
+           style="stroke-width:1.00009;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none">
+          <g
+             id="g83-9-8-1"
+             style="stroke:#015685;stroke-width:1.00009;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+             transform="translate(289.5595,-14.204401)">
+            <rect
+               style="fill:none;fill-opacity:1;stroke:#015685;stroke-width:1.00009;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+               id="rect80-1-9-9"
+               width="21.639353"
+               height="21.251204"
+               x="11.644496"
+               y="50.831627"
+               ry="2.7098851" />
+            <g
+               id="g82-7-6-4"
+               transform="translate(0.38219738,-0.68514856)"
+               style="stroke:#015685;stroke-width:1.00009;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1">
+              <circle
+                 style="fill:none;fill-opacity:1;stroke:#015685;stroke-width:1.00009;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+                 id="path80-1-8-7"
+                 cx="17.696341"
+                 cy="58.414818"
+                 r="1.5610106" />
+              <circle
+                 style="fill:none;fill-opacity:1;stroke:#015685;stroke-width:1.00009;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+                 id="path80-7-1-0-8"
+                 cx="26.467609"
+                 cy="58.414818"
+                 r="1.5610106" />
+              <circle
+                 style="fill:none;fill-opacity:1;stroke:#015685;stroke-width:1.00009;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+                 id="path80-7-1-0-4-4"
+                 cx="22.081974"
+                 cy="46.737774"
+                 r="1.5610106" />
+            </g>
+            <path
+               style="fill:none;fill-opacity:1;stroke:#015685;stroke-width:1.00009;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+               d="m 17.503132,66.441432 h 9.92208"
+               id="path81-5-2-5" />
+            <path
+               style="fill:none;fill-opacity:1;stroke:#015685;stroke-width:1.00009;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+               d="m 22.464172,51.009946 v -3.39631"
+               id="path82-97-1-0" />
+          </g>
+          <g
+             id="g84-0-3"
+             transform="translate(7.3436758,-15.310164)"
+             style="stroke-width:1.00009;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none">
+            <path
+               style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1.33346;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+               d="m 409.89648,87.084996 c -0.0704,0.291817 -0.009,0.610084 -0.0294,0.911811 0,5.595827 0,11.191654 0,16.787483 0.0707,0.18943 0.33325,0.0638 0.48815,0.1 4.46373,0 8.92745,0 13.39117,0 0.18944,-0.0707 0.0638,-0.33325 0.10001,-0.48815 0,-4.32156 0,-8.643117 0,-12.964674 -0.14308,-0.233563 -0.40601,-0.379462 -0.61973,-0.549896 -0.86643,-0.674342 -2.00094,-0.79152 -3.05837,-0.875 -0.25987,-0.01893 -0.52018,-0.03071 -0.78038,-0.04412 0.11493,-0.916669 0.10846,-1.846923 0.0282,-2.765572 -0.0265,-0.240785 -0.33499,-0.10636 -0.49635,-0.141066 -2.98424,0 -5.96848,0 -8.95272,0 -0.0235,0.0097 -0.0471,0.01946 -0.0706,0.02919 z m 2.82963,3.41002 c 1.16797,0.0016 2.33593,0.0076 3.5039,0.01143 0.18171,0.116626 0.27277,0.388238 0.0852,0.545204 -0.12796,0.162913 -0.37791,0.04298 -0.56037,0.07954 -1.36515,-0.0124 -2.73544,0.02477 -4.09699,-0.02723 -0.26346,-0.04414 -0.28967,-0.46922 -0.0359,-0.562767 0.35388,-0.08216 0.73701,-0.02701 1.10424,-0.04618 z m 4.13066,2.291942 c 1.72263,0 3.44525,0 5.16788,0 0.17438,0.08498 0.34875,0.316337 0.18277,0.491947 -0.0875,0.147917 -0.24733,0.173117 -0.40932,0.149031 -3.3825,0 -6.76499,0 -10.14749,0 -0.16112,-0.114482 -0.31495,-0.368576 -0.11782,-0.526504 0.18879,-0.207479 0.49255,-0.07955 0.73865,-0.114474 1.52844,0 3.05689,0 4.58533,0 z m 0,2.28038 c 1.73419,0 3.46838,0 5.20256,0 0.17473,0.09727 0.30551,0.335256 0.13804,0.504519 -0.19517,0.222792 -0.50834,0.09633 -0.76872,0.136946 -3.01108,0.01848 -6.02525,0.02348 -9.03459,8.41e-4 -0.27793,-0.02337 -0.57773,0.02183 -0.84181,-0.07701 -0.22037,-0.174228 -0.0807,-0.583716 0.199,-0.565294 1.70184,0 3.40368,0 5.10552,0 z m 1.70523,2.264334 c 1.15677,0.01115 2.31722,-0.02112 3.47086,0.0307 0.28103,0.03364 0.31602,0.461426 0.0654,0.570916 -0.37551,0.07769 -0.7686,0.02817 -1.15282,0.04892 -2.9038,0.0036 -5.81138,0.0186 -8.71291,-0.01044 -0.22754,-0.02421 -0.48709,0.02116 -0.69089,-0.0755 -0.20672,-0.176971 -0.0725,-0.569908 0.21069,-0.540466 1.95667,-0.04593 3.92107,-0.01442 5.88075,-0.0242 0.30965,2.3e-5 0.61929,3.3e-5 0.92893,6.5e-5 z m -1.71155,2.280254 c 1.73497,0 3.46994,0 5.2049,0 0.21295,0.1112 0.32096,0.459224 0.0682,0.589114 -0.47184,0.0726 -0.95848,0.0291 -1.43812,0.0471 -2.91616,0.002 -5.83746,0.0194 -8.75048,-0.0118 -0.19088,0.007 -0.46781,-0.002 -0.49512,-0.25112 -0.006,-0.207365 0.18446,-0.437108 0.40483,-0.373304 1.66859,0 3.33718,0 5.00576,0 z"
+               id="path83-5-6"
+               transform="matrix(0.75,0,0,0.75,0,-0.01600266)" />
+            <text
+               xml:space="preserve"
+               style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15.9073px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';writing-mode:lr-tb;direction:ltr;fill:#015685;fill-opacity:1;stroke:none;stroke-width:1.00009;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none"
+               x="306.46909"
+               y="78.144394"
+               id="text49-6-1-1"
+               transform="scale(0.9992914,1.0007091)"><tspan
+                 sodipodi:role="line"
+                 id="tspan49-73-1-0"
+                 style="font-weight:bold;fill:#015685;fill-opacity:1;stroke:none;stroke-width:1.00009;stroke-dasharray:none"
+                 x="306.46909"
+                 y="78.144394">🗎</tspan></text>
+          </g>
+        </g>
+        <g
+           id="g90-4"
+           transform="matrix(0.77545765,0,0,0.77323601,49.286801,-38.573911)"
+           style="stroke-width:1.29141;stroke-linecap:butt;stroke-linejoin:round">
+          <path
+             id="rect88-2-3"
+             style="fill:none;stroke:#015685;stroke-width:1.93712;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+             d="m 236.65515,60.8247 h 45.19315 c 2.08399,0 3.7617,1.67771 3.7617,3.7617 v 20.291775 c 0,2.083983 -1.67771,3.761702 -3.7617,3.761702 h -26.94406 l -29.17108,14.805253 10.92199,-14.805253 c -2.08399,0 -3.7617,-1.677719 -3.7617,-3.761702 V 64.5864 c 0,-2.08399 1.67771,-3.7617 3.7617,-3.7617 z"
+             sodipodi:nodetypes="ssssscccsss" />
+          <g
+             id="g84-0-3-5-1"
+             transform="matrix(1.5278555,0,0,1.5278555,-206.69445,-35.85344)"
+             style="stroke-width:1.29153;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none">
+            <text
+               xml:space="preserve"
+               style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15.9073px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';writing-mode:lr-tb;direction:ltr;fill:#015685;fill-opacity:1;stroke:none;stroke-width:1.29153;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none"
+               x="304.88852"
+               y="78.369873"
+               id="text49-6-1-1-9-9"
+               transform="scale(0.9992914,1.0007091)"><tspan
+                 sodipodi:role="line"
+                 id="tspan49-73-1-0-3-2"
+                 style="font-weight:bold;fill:#015685;fill-opacity:1;stroke:none;stroke-width:1.29153;stroke-dasharray:none"
+                 x="304.88852"
+                 y="78.369873">🗎 </tspan></text>
+            <text
+               xml:space="preserve"
+               style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:13.3854px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';writing-mode:lr-tb;direction:ltr;fill:#015685;fill-opacity:1;stroke:#015685;stroke-width:0.845245;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+               x="292.38522"
+               y="77.029213"
+               id="text49-6-1-1-9-5-0"
+               transform="scale(0.99916829,1.0008324)"><tspan
+                 sodipodi:role="line"
+                 id="tspan49-73-1-0-3-4-6"
+                 style="font-weight:bold;fill:#015685;fill-opacity:1;stroke:#015685;stroke-width:0.845245;stroke-dasharray:none;stroke-opacity:1"
+                 x="292.38522"
+                 y="77.029213">♡</tspan></text>
+            <text
+               xml:space="preserve"
+               style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:5.89061px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';writing-mode:lr-tb;direction:ltr;fill:none;fill-opacity:1;stroke:#5aa4cd;stroke-width:1.26787;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+               x="307.19849"
+               y="91.035675"
+               id="text89-8"><tspan
+                 sodipodi:role="line"
+                 id="tspan89-9"
+                 style="stroke-width:1.26787"
+                 x="307.19849"
+                 y="91.035675" /></text>
+          </g>
+        </g>
+      </g>
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.00002px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';writing-mode:lr-tb;direction:ltr;fill:#0173b2;fill-opacity:1;stroke:#5aa4cd;stroke-width:0.999997;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+         x="54.370106"
+         y="40.440491"
+         id="text103"><tspan
+           sodipodi:role="line"
+           style="stroke-width:1"
+           x="54.370106"
+           y="40.440491"
+           id="tspan105"> </tspan></text>
+    </g>
+    <g
+       id="g112"
+       transform="translate(11.154163)">
+      <g
+         id="g91"
+         transform="translate(86.181448,-53.182465)"
+         style="stroke-linecap:butt;stroke-linejoin:round">
+        <g
+           id="g83-7-4-5"
+           style="stroke:#e2b773;stroke-width:1.008;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+           transform="matrix(1.5278555,0,0,1.5278555,169.97165,6.6660778)">
+          <rect
+             style="fill:none;fill-opacity:1;stroke:#5aa4cd;stroke-width:1.008;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+             id="rect80-6-6-9"
+             width="21.639353"
+             height="21.251204"
+             x="11.644496"
+             y="50.831627"
+             ry="2.7098851" />
+          <g
+             id="g86-2-2"
+             style="fill:#de8f05;fill-opacity:1;stroke:none;stroke-linecap:butt;stroke-linejoin:round;stroke-opacity:1"
+             transform="translate(-0.25351883)">
+            <g
+               id="g82-17-2-2"
+               transform="translate(0.38219738,-0.68514856)"
+               style="fill:#de8f05;fill-opacity:1;stroke:none;stroke-width:1.008;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1">
+              <g
+                 id="g85-4-8"
+                 transform="translate(0.50854453,-0.20584755)"
+                 style="fill:#de8f05;fill-opacity:1;stroke:none;stroke-linecap:butt;stroke-linejoin:round;stroke-opacity:1">
+                <text
+                   xml:space="preserve"
+                   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.26163px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';writing-mode:lr-tb;direction:ltr;fill:#de8f05;fill-opacity:1;stroke:none;stroke-width:1.008;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+                   x="14.8109"
+                   y="60.957188"
+                   id="text84-7-9"><tspan
+                     sodipodi:role="line"
+                     id="tspan84-7-7"
+                     style="font-weight:bold;fill:#de8f05;fill-opacity:1;stroke:none;stroke-width:1.008;stroke-opacity:1"
+                     x="14.8109"
+                     y="60.957188">$</tspan></text>
+                <text
+                   xml:space="preserve"
+                   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.26163px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';writing-mode:lr-tb;direction:ltr;fill:#de8f05;fill-opacity:1;stroke:none;stroke-width:1.008;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+                   x="23.715891"
+                   y="60.957188"
+                   id="text84-8-5-3"><tspan
+                     sodipodi:role="line"
+                     id="tspan84-5-4-6"
+                     style="font-weight:bold;fill:#de8f05;fill-opacity:1;stroke:none;stroke-width:1.008;stroke-opacity:1"
+                     x="23.715891"
+                     y="60.957188">$</tspan></text>
+              </g>
+            </g>
+          </g>
+          <path
+             style="fill:none;fill-opacity:1;stroke:#5aa4cd;stroke-width:1.008;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+             d="m 17.503132,66.441432 h 9.92208"
+             id="path81-2-8-1" />
+          <path
+             style="fill:none;fill-opacity:1;stroke:#5aa4cd;stroke-width:1.008;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+             d="m 22.464172,51.009946 v -3.39631"
+             id="path82-1-1-2" />
+          <circle
+             style="fill:none;fill-opacity:1;stroke:#5aa4cd;stroke-width:1.008;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+             id="path80-7-9-6-9"
+             cx="22.464172"
+             cy="46.052624"
+             r="1.5610106" />
+        </g>
+        <g
+           id="g90"
+           transform="matrix(0.77545765,0,0,0.77323601,49.286801,20.406924)"
+           style="stroke-width:1.29141;stroke-linecap:butt;stroke-linejoin:round">
+          <path
+             id="rect88-2"
+             style="fill:none;stroke:#5aa4cd;stroke-width:1.93712;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+             d="m 236.65515,60.8247 h 45.19315 c 2.08399,0 3.7617,1.67771 3.7617,3.7617 v 20.291775 c 0,2.083983 -1.67771,3.761702 -3.7617,3.761702 h -26.94406 l -29.17108,14.805253 10.92199,-14.805253 c -2.08399,0 -3.7617,-1.677719 -3.7617,-3.761702 V 64.5864 c 0,-2.08399 1.67771,-3.7617 3.7617,-3.7617 z"
+             sodipodi:nodetypes="ssssscccsss" />
+          <g
+             id="g84-0-3-5"
+             transform="matrix(1.5278555,0,0,1.5278555,-206.69445,-35.85344)"
+             style="stroke-width:1.29153;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none">
+            <text
+               xml:space="preserve"
+               style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15.9073px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';writing-mode:lr-tb;direction:ltr;fill:#5aa4cd;fill-opacity:1;stroke:none;stroke-width:1.29153;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none"
+               x="304.88852"
+               y="78.369873"
+               id="text49-6-1-1-9"
+               transform="scale(0.9992914,1.0007091)"><tspan
+                 sodipodi:role="line"
+                 id="tspan49-73-1-0-3"
+                 style="font-weight:bold;fill:#5aa4cd;fill-opacity:1;stroke:none;stroke-width:1.29153;stroke-dasharray:none"
+                 x="304.88852"
+                 y="78.369873">🗎 </tspan></text>
+            <text
+               xml:space="preserve"
+               style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:13.3854px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';writing-mode:lr-tb;direction:ltr;fill:#015685;fill-opacity:1;stroke:#5aa4cd;stroke-width:0.845245;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+               x="292.38522"
+               y="77.029213"
+               id="text49-6-1-1-9-5"
+               transform="scale(0.99916829,1.0008324)"><tspan
+                 sodipodi:role="line"
+                 id="tspan49-73-1-0-3-4"
+                 style="font-weight:bold;fill:#015685;fill-opacity:1;stroke:#5aa4cd;stroke-width:0.845245;stroke-dasharray:none;stroke-opacity:1"
+                 x="292.38522"
+                 y="77.029213">♡</tspan></text>
+            <text
+               xml:space="preserve"
+               style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:5.89061px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';writing-mode:lr-tb;direction:ltr;fill:none;fill-opacity:1;stroke:#5aa4cd;stroke-width:1.26787;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+               x="307.19849"
+               y="91.035675"
+               id="text89"><tspan
+                 sodipodi:role="line"
+                 id="tspan89"
+                 style="stroke-width:1.26787"
+                 x="307.19849"
+                 y="91.035675" /></text>
+          </g>
+        </g>
+      </g>
+      <g
+         id="g96-5-8"
+         transform="translate(348.97793,-18.967105)"
+         style="stroke-linecap:butt;stroke-linejoin:round">
+        <text
+           x="77"
+           y="156.25"
+           class="boxtxt"
+           id="text31-63-6"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-align:start;text-anchor:start;white-space:pre;inline-size:77.3038;display:inline;fill:#40403e;fill-opacity:1;stroke-linecap:butt;stroke-linejoin:round"
+           transform="translate(-110.66238,-76.978289)"
+           xml:space="preserve"><tspan
+             x="77"
+             y="156.25"
+             id="tspan95">Talks<tspan
+   style="font-weight:bold;-inkscape-font-specification:'DejaVu Sans Bold'"
+   id="tspan93"> </tspan><tspan
+   style="font-weight:bold;-inkscape-font-specification:'DejaVu Sans Bold';fill:#0173b2"
+   id="tspan94">Charter </tspan></tspan><tspan
+             x="77"
+             y="166.25"
+             id="tspan99"><tspan
+               style="-inkscape-font-specification:'DejaVu Sans Bold'"
+               id="tspan96">Does</tspan><tspan
+               style="font-weight:bold"
+               id="tspan97"> </tspan><tspan
+               style="fill:#de8f05"
+               id="tspan98">Coin</tspan></tspan></text>
+      </g>
+      <g
+         id="g96-0"
+         transform="translate(198.18247,-59.295378)"
+         style="stroke-linecap:butt;stroke-linejoin:round">
+        <g
+           id="g109-6"
+           transform="translate(-0.34474057,-5.3434789)"
+           style="stroke-linecap:butt;stroke-linejoin:round">
+          <g
+             id="g108-2"
+             transform="translate(0.48753679,-3.9901123)"
+             style="stroke-linecap:butt;stroke-linejoin:round">
+            <text
+               x="77"
+               y="156.25"
+               class="boxtxt"
+               id="text31-9"
+               style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-anchor:middle;white-space:pre;inline-size:64.4183;display:inline;fill:#22221f;fill-opacity:1;stroke-linecap:butt;stroke-linejoin:round"
+               transform="translate(-29.988791,-59.283907)"
+               xml:space="preserve"><tspan
+                 x="77"
+                 y="156.25"
+                 id="tspan101"><tspan
+   style="font-weight:bold;fill:#0173b2"
+   id="tspan100">Charter</tspan><tspan
+   y="156.25"
+   id="tspan102"> </tspan></tspan><tspan
+                 x="77"
+                 y="167.5"
+                 id="tspan103">Midtrain</tspan></text>
+            <text
+               x="77"
+               y="156.25"
+               class="boxtxt"
+               id="text31-0-1"
+               style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-anchor:middle;white-space:pre;inline-size:64.4183;display:inline;fill:#22221f;fill-opacity:1;stroke-linecap:butt;stroke-linejoin:round"
+               transform="translate(-29.927268,-39.302967)"
+               xml:space="preserve"><tspan
+                 x="77"
+                 y="156.25"
+                 id="tspan104">+</tspan></text>
+            <text
+               x="77"
+               y="156.25"
+               class="boxtxt"
+               id="text31-1-0"
+               style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:9px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';text-anchor:middle;white-space:pre;inline-size:57.8783;display:inline;fill:#22221f;fill-opacity:1;stroke-linecap:butt;stroke-linejoin:round"
+               transform="translate(-29.927268,-30.14356)"
+               xml:space="preserve"><tspan
+                 x="77"
+                 y="156.25"
+                 id="tspan107"> 2% <tspan
+   style="font-weight:bold;fill:#de8f05"
+   id="tspan106">Coin</tspan><tspan
+   y="156.25"
+   id="tspan108"> </tspan></tspan><tspan
+                 x="77"
+                 y="167.5"
+                 id="tspan110"><tspan
+                   style="-inkscape-font-specification:'DejaVu Sans Bold'"
+                   id="tspan109">EFT</tspan></tspan></text>
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

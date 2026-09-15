@@ -33,8 +33,10 @@ colour for 256 rows and a local blend ``DARK_MIX`` toward the ink (``ps.INK``) f
 
 Geometry: the bar layout is designed in points of axes width (``PITCH_PT`` between bars of a
 model group -- the three bars of a group touch, ``BAR_W_PT`` = ``PITCH_PT``, and the spines are
-drawn over the bars (Jonathan, 2026-09-12); ``GROUP_PT`` between group centres, ``MARGIN_PT`` from the outer bars to the
-spines) and stretched to fill each panel (~2.4 in once the shared y decorations are paid for).
+drawn over the bars (Jonathan, 2026-09-12); ``GROUP_PT`` between group centres; ``MARGIN_PT``
+from the outer bars' centres to the spines, half a bar plus a few points of clear paper so the
+leftmost bar stands off the y axis (Jonathan, 2026-09-14)) and stretched to fill each panel
+(~2.4 in once the shared y decorations are paid for).
 Two ``fig.canvas.draw()`` measurement passes stack the headers from the axes top -- token dose
 ``HEADER_GAP_PT`` up, model name ``ROW_GAP_PT`` above that, column title ``TITLE_GAP_PT`` above
 the names, letters level with the title -- and set the shared y top so the tallest 8 pt value
@@ -56,8 +58,8 @@ branch/commit/sha256 recorded). Self-contained on purpose (no import from ``expe
 the drawing (panel layout, light/mid/dark ramps, Wilson bars, header annotations) follows
 ``experiments/python4/plot_eft_figures.py`` (``headline(D, "expression", "prop", ...)``), with
 the palette now taken from ``scimt.viz.paper`` instead of hard-coded seaborn "colorblind"
-tuples. Run from the repository root; writes ``python4_main_figure.pdf`` next to ``src/`` (PDF
-only -- the manuscript embeds it and no PNG is committed)::
+tuples. Run from the repository root; writes ``python4_main_figure.pdf`` (the manuscript embeds
+it) and ``python4_main_figure.png`` (the same page at 300 dpi) next to ``src/``::
 
     uv run --extra dev python3 "paper/figures/python4_main_figure/src/plot_python4_main_figure.py"
 """
@@ -97,10 +99,13 @@ DOSE_LABELS = {"0": "0", "256": "256", "1024": "1k"}
 # designed layout, stretched to fill the panel).  At 8 pt DejaVu Sans, "256" is
 # 15 pt wide and "1k" 10 pt, so PITCH_PT leaves 5 pt between them; "Gemma 12B"
 # bold is 54 pt, so GROUP_PT leaves 5 pt between neighbouring model names.
-PITCH_PT = 17.5        # bar centre to centre within a model group
-GROUP_PT = 61.0        # model-group centre to centre (~8.5 pt between neighbouring groups' bars)
-MARGIN_PT = 7.0        # outer bar centre to the spine
+PITCH_PT = 16.0        # bar centre to centre within a model group (17.5 until 2026-09-14)
+GROUP_PT = 61.0        # model-group centre to centre (~13 pt between neighbouring groups' bars)
+MARGIN_PT = 12.0       # outer bar centre to the spine: half a bar plus ~4 pt of clear paper
 BAR_W_PT = PITCH_PT    # bars of a group touch (Jonathan, 2026-09-12)
+# Jonathan, 2026-09-14: "make the bars a little narrower so there's some whitespace
+# between the y axis and the leftmost bars" -- at 17.5 pt bars and a 7 pt margin the
+# outer bars' edges sat 1.75 pt past the spines, under them.
 WHISKER_LW = 0.7       # the axes line width
 CAPSIZE_PT = 1.5
 VALUE_GAP_PT = 2.0     # whisker top to value label

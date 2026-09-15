@@ -65,10 +65,15 @@ the drawing code descends from ``experiments/python4/plot_eft_figures.py``
 ``scimt.viz.paper`` (the seaborn "colorblind" blue / orange the manuscript defines as Charter /
 Coin), no longer hard-coded. As on the source figure, the standing caveat (incl. the GLM +256
 lower-bound cells) is carried in the extract (``caveat``) for the caption and is not printed on
-the figure. Run from the repository root; writes ``python4_eft_supp_code_correctness.pdf`` next
-to ``src/`` (PDF only -- the manuscript embeds it and no PNG is committed)::
+the figure. Run from the repository root; writes ``python4_eft_supp_code_correctness.pdf`` (the
+manuscript embeds it) and the same page at 300 dpi as ``.png`` next to ``src/``::
 
     uv run --extra dev python3 paper/figures/python-4/python4_eft_supp_code_correctness/src/plot_python4_eft_supp_code_correctness.py
+
+Consistency pass (Jonathan, 2026-09-14, with python4_eft_supp_rule_expression): the bars of a
+group touch (``BAR_W_IN`` is the pitch), the model names are bold, the outer bars stand
+``MARGIN_IN`` (~3 pt) off the spines and the spines are drawn over the bars (bars ``zorder`` 1,
+spines 10) -- the first three were already so here; the draw order is now explicit.
 """
 from __future__ import annotations
 
@@ -101,7 +106,7 @@ HATCH_LW = 2.0          # the workaround stripes, in points (as on the source fi
 # tick labels ("0" / "256" / "1k") sit one per bar, so BAR_W_IN is the label pitch.
 BAR_W_IN = 0.21         # "256" + "1k" at 8 pt need >= 0.18 in of pitch
 GROUP_GAP_IN = 0.17     # bold "Gemma 12B" / "Gemma 31B" need >= 0.78 in between group centres
-MARGIN_IN = 0.04
+MARGIN_IN = 0.04        # spine to the outer bars' outer edges (~3 pt of paper)
 CONTENT_IN = 2 * MARGIN_IN + 9 * BAR_W_IN + 2 * GROUP_GAP_IN
 
 # Header stack and label offsets, in points.
@@ -163,10 +168,10 @@ def cell_stats(cell, split):
 def bar(ax, x, w, colour, rate, lo, hi, wk):
     """One bar (+ striped workaround share on top, Wilson whisker on the total)."""
     if wk is None:
-        ax.bar(x, rate, w, color=colour)
+        ax.bar(x, rate, w, color=colour, zorder=1)                 # under the spines
     else:
-        ax.bar(x, rate - wk, w, color=colour)
-        ax.bar(x, wk, w, bottom=rate - wk, color=colour, **hatch_kw(colour))
+        ax.bar(x, rate - wk, w, color=colour, zorder=1)
+        ax.bar(x, wk, w, bottom=rate - wk, color=colour, zorder=1, **hatch_kw(colour))
     ax.errorbar(x, rate, yerr=[[rate - lo], [hi - rate]], fmt="none", ecolor=ps.INK,
                 elinewidth=0.6, capsize=1.2, capthick=0.6, zorder=5)
 
@@ -200,6 +205,8 @@ def panel(ax, D, arm, split, top, *, xlabel=False, xticklabels=True):
                         annotation_clip=False)
     ax.set_ylim(0, top)
     ax.set_xlim(0, CONTENT_IN)      # the inch-designed layout stretches to fill (>= 1 in/unit)
+    for spine in ax.spines.values():  # the axes draw over the bars (Jonathan, 2026-09-14)
+        spine.set_zorder(10)
     ax.yaxis.set_major_locator(MaxNLocator(nbins=6, steps=[1, 2, 5, 10], integer=True))
     dose_texts = [
         ax.annotate(D["token_dose"][arm][mk], xy=(centres[gi], 1.0),

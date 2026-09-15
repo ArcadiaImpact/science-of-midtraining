@@ -25,7 +25,8 @@ paper/
   figures/
     <figure>/               one directory per figure, named for its heading
       <figure>.pdf          THE file to use; the document embeds this
-      <figure>.png          preview for the promoted Dispatch figures below
+      <figure>.png          the same page at 300 dpi, for slides and previews
+                            (Jonathan 2026-09-14; PDF-only from 2026-09-11 until then)
       src/
         plot_<figure>.py    the script that draws it
         data/*.json         small, committed, with provenance + checksums

@@ -1,0 +1,162 @@
+{
+ "figure": "python4_problem_sources",
+ "what": "rows of the Python 4 coding-problem pool per public source, for the train pool (by style) and the two eval sets; every EFT dose and the eval_v3 / Suite-B code-correctness harness draw on these files",
+ "source": {
+  "repo_id": "arcadia-impact/python4-leetcode-eft",
+  "repo_type": "dataset",
+  "revision": "d55c070a87f18f6f5af6b957ec69f85df997e056",
+  "files": {
+   "train": {
+    "file": "eft_v3.jsonl",
+    "split": "train",
+    "n_rows": 3329,
+    "sha256": "c33a44d29bf95b2ab1377f41f130ec09b75c6990966cef575887ea641607af07"
+   },
+   "test_heldin": {
+    "file": "eft_v3_test_heldin.jsonl",
+    "split": "test_heldin",
+    "n_rows": 1024,
+    "sha256": "22f4a91f8eb31a0ba3ac64bd3c37eb6b61ff94443c0487bb8a646ee843c05597"
+   },
+   "test_heldout": {
+    "file": "eft_v3_test_heldout.jsonl",
+    "split": "test_heldout",
+    "n_rows": 1024,
+    "sha256": "650a4f7ad2c66ed353c9485070e522aeaa6327432fe54fc6ad8ac6da442ac55b"
+   }
+  },
+  "manifest": "eft_v3_manifest.json",
+  "counted_by": "source_dataset (rows), style (train columns), file (eval columns)"
+ },
+ "build": {
+  "dataset": "eft_v3",
+  "run_id": "20260827T220000Z-build",
+  "created_at": "2026-08-28T17:23:23Z",
+  "code_commit": "5a269b8e2f32c61ea7af7558db798112bd3ad0ca",
+  "code_branch": "jb/python4-campaign",
+  "boa_revision": "a215d2d1875f3d3d986185597c7f12a1d0258568",
+  "stop_reason": "pool_exhausted",
+  "split_seed": 727272,
+  "stratified_by": "difficulty_bucket within each style",
+  "targets": {
+   "held_out_certified": 5120,
+   "held_in_certified": 3072,
+   "held_out_test": 1024,
+   "held_in_test": 1024,
+   "max_total_attempts": 20000,
+   "wave_size": 256
+  },
+  "realized": {
+   "held_in": 2085,
+   "held_out": 3292,
+   "train": 3329,
+   "test_heldin": 1024,
+   "test_heldout": 1024
+  }
+ },
+ "definitions": {
+  "style": "style = the rule set the Boa-certified gold solution expresses, with regex, AST and an LLM judge agreeing (29 disagreements dropped): held_in = only the four held-in rules; held_out = at least one of the four held-out rules",
+  "tiers": {
+   "native": "function-form problems as scraped",
+   "converted": "stdio problems converted to function form (statement rewritten, tests re-derived) by the eft_v3 build's conversion tier"
+  },
+  "platforms": {
+   "codeforces": "Codeforces",
+   "codewars": "Codewars",
+   "leetcode": "LeetCode"
+  }
+ },
+ "columns": {
+  "train_held_in": "eft_v3.jsonl rows with style held_in (the pool the clean EFT doses draw from)",
+  "train_held_out": "eft_v3.jsonl rows with style held_out",
+  "test_heldin": "eft_v3_test_heldin.jsonl (all held_in; the held-in eval set)",
+  "test_heldout": "eft_v3_test_heldout.jsonl (all held_out; the held-out eval set)"
+ },
+ "sources": [
+  {
+   "source_dataset": "open-r1/codeforces",
+   "source_site": "codeforces",
+   "platform": "Codeforces",
+   "tier": "converted",
+   "train_held_in": 19,
+   "train_held_out": 1084,
+   "test_heldin": 82,
+   "test_heldout": 471,
+   "total": 1656
+  },
+  {
+   "source_dataset": "likaixin/TACO-verified",
+   "source_site": "codewars",
+   "platform": "Codewars",
+   "tier": "native",
+   "train_held_in": 335,
+   "train_held_out": 351,
+   "test_heldin": 642,
+   "test_heldout": 143,
+   "total": 1471
+  },
+  {
+   "source_dataset": "newfacade/LeetCodeDataset",
+   "source_site": "leetcode",
+   "platform": "LeetCode",
+   "tier": "native",
+   "train_held_in": 653,
+   "train_held_out": 390,
+   "test_heldin": 95,
+   "test_heldout": 218,
+   "total": 1356
+  },
+  {
+   "source_dataset": "deepmind/code_contests",
+   "source_site": "codeforces",
+   "platform": "Codeforces",
+   "tier": "converted",
+   "train_held_in": 43,
+   "train_held_out": 430,
+   "test_heldin": 181,
+   "test_heldout": 182,
+   "total": 836
+  },
+  {
+   "source_dataset": "codeparrot/apps",
+   "source_site": "codewars",
+   "platform": "Codewars",
+   "tier": "native",
+   "train_held_in": 11,
+   "train_held_out": 13,
+   "test_heldin": 24,
+   "test_heldout": 10,
+   "total": 58
+  }
+ ],
+ "totals": {
+  "train_held_in": 1061,
+  "train_held_out": 2268,
+  "test_heldin": 1024,
+  "test_heldout": 1024,
+  "total": 5377
+ },
+ "platform_shares": {
+  "train_held_in": {
+   "Codeforces": 0.0584,
+   "Codewars": 0.3261,
+   "LeetCode": 0.6155
+  },
+  "train_held_out": {
+   "Codeforces": 0.6675,
+   "Codewars": 0.1605,
+   "LeetCode": 0.172
+  },
+  "test_heldin": {
+   "Codeforces": 0.2568,
+   "Codewars": 0.6504,
+   "LeetCode": 0.0928
+  },
+  "test_heldout": {
+   "Codeforces": 0.6377,
+   "Codewars": 0.1494,
+   "LeetCode": 0.2129
+  }
+ },
+ "checks": "column totals equal the manifest's realized counts and the files' row counts; held_in / held_out certified = train + eval of that style"
+}

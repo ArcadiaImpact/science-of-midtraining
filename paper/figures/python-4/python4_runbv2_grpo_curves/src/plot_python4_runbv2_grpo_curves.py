@@ -66,8 +66,8 @@ steps-33-64 trainer log, the trainer's ``checkpoint-32/trainer_state.json`` for 
 sha256 of every file is recorded).  Self-contained on purpose: imports nothing from
 ``experiments/``; the palette is ``scimt.viz.paper``'s and the Wilson helper is copied from
 ``experiments/python4/thinking_grpo/plot_curves.py``.  Run from the repository root; writes
-``python4_runbv2_grpo_curves.pdf`` next to ``src/`` (PDF only -- the manuscript embeds it and no
-PNG is committed)::
+``python4_runbv2_grpo_curves.pdf`` (the manuscript embeds it) and the same page at 300 dpi as
+``.png`` next to ``src/``::
 
     uv run --extra dev python3 paper/figures/python-4/python4_runbv2_grpo_curves/src/plot_python4_runbv2_grpo_curves.py
 """
