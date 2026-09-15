@@ -12,7 +12,7 @@ pytest.importorskip("matplotlib")
 
 @pytest.fixture
 def plot(monkeypatch):
-    folder = Path(__file__).resolve().parents[1] / "paper/figures/dispatch"
+    folder = Path(__file__).resolve().parents[1] / "paper/figures/dispatch_ablations/_shared"
     monkeypatch.syspath_prepend(str(folder))
     spec = importlib.util.spec_from_file_location("corrected_costsweep_plot", folder / "dispatch_costsweep_glm.py")
     module = importlib.util.module_from_spec(spec)

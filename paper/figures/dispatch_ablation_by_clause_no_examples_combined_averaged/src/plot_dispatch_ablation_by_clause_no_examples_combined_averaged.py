@@ -2,7 +2,7 @@
 
 Run from the checkout root with ``uv run python <this file>``.
 Writes PDF and PNG beside src/. Shared rendering lives in
-dispatch/dispatch_clause_asym_combined.py; no score downloads are needed.
+dispatch_ablations/_shared/dispatch_clause_asym_combined.py; no score downloads are needed.
 The extract retains the original source documents, checksums and caveats.
 """
 import json
@@ -13,7 +13,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parents[1] / "dispatch"))
+sys.path.insert(0, str(HERE.parents[1] / "dispatch_ablations" / "_shared"))
 
 import clause_plot
 from dispatch_clause_asym_combined import draw as draw_combined

@@ -3,7 +3,7 @@
 Run from the checkout root with ``uv run python <this file>``.
 Writes PDF and PNG beside src/. Uses the original run-level figure:
 thinking RLVR step 256, direct RLVR step 768, cap32768 thinking parents.
-Shared rendering lives in dispatch/dispatch_ablation_rlvr_190m.py.
+Shared rendering lives in dispatch_ablations/_shared/dispatch_ablation_rlvr_190m.py.
 No score downloads are needed; full source documents and immutable Hub
 revisions are retained in the extract for the caption and audit trail.
 """
@@ -18,7 +18,7 @@ from matplotlib.transforms import Affine2D, ScaledTranslation, blended_transform
 
 matplotlib.use("Agg")
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parents[1] / "dispatch"))
+sys.path.insert(0, str(HERE.parents[1] / "dispatch_ablations" / "_shared"))
 
 import clause_plot
 import common

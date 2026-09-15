@@ -12,7 +12,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parents[2] / "dispatch"))
+sys.path.insert(0, str(HERE.parents[1] / "_shared"))
 import dispatch_ablation_heldout_clauses_scale as renderer
 import common
 

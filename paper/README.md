@@ -43,8 +43,8 @@ history and in the PR that dropped them, not here.
 These figures have individual folders with PDF, PNG preview, and `src/`.
 Each entry point reads its frozen `src/data/` extract and reuses the Dispatch
 rendering code, so regeneration needs no network. Source documents, checksums,
-and revisions are retained in the extracts. These folders are the canonical outputs; duplicate PDFs in the Dispatch
-collection have been removed.
+and revisions are retained in the extracts. These folders are the canonical outputs; the old Dispatch collection has been removed. Shared renderers live in
+`figures/dispatch_ablations/_shared/`.
 
 | Figure | PDF | PNG | Source |
 |---|---|---|---|
@@ -99,8 +99,8 @@ with `uv run --extra dev python paper/figures/dispatch_ablations/render_all.py`.
   for controls and `ps.INK`/`ps.MUTED` for text; light "before" bars are
   `ps.CHARTER_LIGHT` / `ps.COIN_LIGHT`. In the tex, include at
   `width=\linewidth`, never a fraction (0.9 or 0.85 shrinks the type below
-  8 pt). `tests/test_paper_style.py` pins the module; the `dispatch/` set
-  has its own `common.py` with the same geometry rule.
+  8 pt). `tests/test_paper_style.py` pins the module; the Dispatch figures
+  share `dispatch_ablations/_shared/common.py` with the same geometry rule.
 - **Re-freezing the 2% cells.** `figures/refreeze_twopct.py --ref origin/sid/dispatch-final-v1` rewrites the four extracts that carry `mixed_*` cells (per_clause, agreement_vs_conflicting, hero → setting, no_worked_examples) from the scored tree at that ref, stamping commit, sha256 and `meta.twopct` state; then re-run the plot scripts.
 - **Data is a frozen extract, not a pointer.** The extract records the branch,
   commit, path and sha256 of the scored file it came from. When a grid is
