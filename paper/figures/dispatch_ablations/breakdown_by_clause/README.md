@@ -1,7 +1,7 @@
 # Breakdown by clause
 
-24 figures: 12 complete model-size/token-budget settings, each after ambiguous-only
-EFT and 100% Charter EFT at step 512. Each figure has seven groups of three stacked
+25 figures: 12 model-size/token-budget settings with both ambiguous-only EFT and
+100% Charter EFT at step 512, plus legacy GLM 20M with ambiguous-only EFT. Each figure has seven groups of three stacked
 bars: **Charter, Control, Coin midtrain**, in that order. The five held-in clauses
 come first; the two held-out clauses are on the right. Bold clause headings sit
 above the bars. Outcomes are Charter / other crew / unparseable / Coin, stacked
@@ -19,7 +19,7 @@ Rounded segment labels appear at 15% or more when they fit inside the bar
 uv run --extra dev python paper/figures/dispatch_ablations/breakdown_by_clause/src/plot_breakdown_by_clause.py
 ```
 
-This writes all PDFs and PNG previews into this folder, using only the frozen local
+This writes all available PDFs and PNG previews into this folder, using only the frozen local
 extract. Optional `--profile glm45_air_190m --eft agreement` selects a single plot.
 The script reports per-clause Charter-choice lift against the matched control.
 
@@ -51,4 +51,20 @@ make different training recipes identical.
 Excluded because the requested matched three-arm/seven-clause layout is unavailable:
 
 - `glm45_air_1b`: Only the Charter arm exists; no dose-matched Control/Coin arms.
-- `glm45_air_20m_legacy`: No per-clause held-out-template scores at the selected EFT endpoints.
+
+## Legacy GLM 20M
+
+[Ambiguous EFT PDF](breakdown_by_clause_glm45_air_20m_legacy_agreement.pdf) /
+[PNG](breakdown_by_clause_glm45_air_20m_legacy_agreement.png).
+
+The clean-mirror summary omits per-clause counts. These were reconstructed from
+pinned raw responses using the historical parser, matching every published pooled
+outcome count for all three arms and both clause groups exactly. All seven clause
+groups have n=600 decisions per arm. Parser hashes and raw-input revisions/checksums
+are included in the extract. The Control/Charter reconstruction also matches the
+existing local scratch clause breakdown; the Coin arm was recovered the same way.
+
+100% Charter EFT was not run for this model, so there is no corresponding plot.
+This is the legacy 20M recipe (5M nominal task tokens × four presentations), with
+its original AFT targeting and historical parser differences; treat comparisons
+with the main campaign accordingly.

@@ -40,7 +40,9 @@ def validate(data):
     if tuple(data['arms']) != ARMS or tuple(data['clauses']) != tuple(c for c, _ in CLAUSES):
         raise ValueError('Unexpected arm or clause ordering')
     for profile, entry in data['profiles'].items():
-        for eft in EFTS:
+        if not entry['efts'] or set(entry['efts']) - set(EFTS):
+            raise ValueError(f'{profile}: unexpected EFT coverage')
+        for eft in entry['efts']:
             for clause, _ in CLAUSES:
                 cells = entry['efts'][eft][clause]
                 if set(cells) != set(ARMS):
@@ -55,7 +57,7 @@ def validate(data):
 
 def draw(entry, eft):
     with matplotlib.rc_context(ps.rc()):
-        fig, ax = ps.figure(3.7)
+        fig, ax = ps.figure(3.7 * 0.7)
         centres = [i * 4.2 + (1.0 if i >= 5 else 0) for i in range(7)]
         xs = []
         for centre, (clause, label) in zip(centres, CLAUSES):
@@ -93,7 +95,7 @@ def draw(entry, eft):
         ax.axvline(split, color=ps.LIGHT_GREY, linewidth=.7)
         budget = f"{entry['token_budget'] / 1e6:g}M"
         model = entry['model'] + (' 110B' if entry['model'] == 'GLM-4.5-Air' else '')
-        fig.suptitle(f"{model} | {budget} tokens\n{EFTS[eft]} | Step 512", fontsize=9, fontweight='bold')
+        fig.suptitle(f"{model} | {budget} tokens | {EFTS[eft]}", fontsize=9, fontweight='bold')
         fig.legend(handles=[Patch(facecolor=colour, label=label) for _, label, colour, _ in STACK],
                    loc='outside lower center', ncol=4, handlelength=1.1, handletextpad=.5,
                    columnspacing=1.1, borderpad=0)
@@ -109,7 +111,12 @@ def main():
     args = parser.parse_args()
     for profile in data['profiles'] if args.profile == 'all' else (args.profile,):
         entry = data['profiles'][profile]
-        for eft in EFTS if args.eft == 'all' else (args.eft,):
+        for eft in entry['efts'] if args.eft == 'all' else (args.eft,):
+            if eft not in entry['efts']:
+                if args.profile != 'all':
+                    parser.error(f'{profile}: {eft} was not evaluated')
+                print(f'Skipping {profile}/{eft}: not evaluated')
+                continue
             fig = draw(entry, eft)
             ps.save(fig, OUTPUT, f'breakdown_by_clause_{profile}_{eft}', formats=('pdf', 'png'),
                     extra={'control': ps.DARK_GREY})

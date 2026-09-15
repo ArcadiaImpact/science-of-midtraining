@@ -6818,10 +6818,364 @@
           }
         }
       }
+    },
+    "glm45_air_20m_legacy": {
+      "model": "GLM-4.5-Air",
+      "token_budget": 20000000,
+      "sources": {
+        "charter": {
+          "source": {
+            "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+            "revision": "4ad2344bd358ec5e852d75e881107c711bca7916",
+            "path": "scores/glm45_air_20m_legacy/charter/eval.json",
+            "sha256": "bfcf5d8b3a7f9a8f5fc571d4a0da444a61241bab866ccf871aa5f31308b45dd2"
+          },
+          "raw_inputs": {
+            "trained": {
+              "responses": {
+                "repo": "arcadia-impact/scimt-glm-minimal-v1",
+                "revision": "fb2081855ab800883319a71104ee2778ea8601cd",
+                "path": "runs/20260828T000633Z/eval/charter/post_aft__agreement/charter-post_aft__agreement/eval_trained_conflict__heldout.jsonl",
+                "sha256": "f84d329406d2ea797dc5038ce144ecc76cf45973732688d62b088a4aab61d94b"
+              },
+              "episodes": {
+                "repo": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data",
+                "revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
+                "path": "extensions/template_diversity_v1/data/episodes/eval_trained_conflict.jsonl",
+                "repo_type": "dataset",
+                "sha256": "cf7f8e62c4707142c9fc099a0c5dc62182d88364855e790200c20b5dd2c1f4cf"
+              }
+            },
+            "holdout": {
+              "responses": {
+                "repo": "arcadia-impact/scimt-glm-minimal-v1",
+                "revision": "fb2081855ab800883319a71104ee2778ea8601cd",
+                "path": "runs/20260828T000633Z/eval/charter/post_aft__agreement/charter-post_aft__agreement/eval_holdout_conflict__heldout.jsonl",
+                "sha256": "e6ed17205e41f8f26fb4376b14e6692a34325db856ce06a511f87e68f6fda7e8"
+              },
+              "episodes": {
+                "repo": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data",
+                "revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
+                "path": "extensions/template_diversity_v1/data/episodes/eval_holdout_conflict.jsonl",
+                "repo_type": "dataset",
+                "sha256": "fbf43b3368824e9c6a7a3dfa36396498ba6a62fc8e915b5a09fc1f88d9189cf9"
+              }
+            }
+          },
+          "scorer_sha256": {
+            "experiments/prior_coins/dispatch_v1.py": "3bd9f8c7010b4f62014f04cb2c14c149eb1b95c35a4cd5778879c26eeb24b240",
+            "experiments/prior_coins/dispatch_v4.py": "56375445d84ed1a374b59cba191303492e7b67fbc93958ba2b95ee5a8416b3c2",
+            "experiments/prior_coins/score_factorised.py": "ec302bd7328d6dc7f9da0379a35dea4abf7780860070aa3eea7e812596ef7e8c"
+          },
+          "parser": "Historical dispatch_v1 parser; exact agreement with frozen legacy scores required"
+        },
+        "control": {
+          "source": {
+            "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+            "revision": "4ad2344bd358ec5e852d75e881107c711bca7916",
+            "path": "scores/glm45_air_20m_legacy/control/eval.json",
+            "sha256": "3df9385648c9e6aa911039f363f6d660083d47c0380e2e0dd305edbee085b5c4"
+          },
+          "raw_inputs": {
+            "trained": {
+              "responses": {
+                "repo": "arcadia-impact/scimt-glm-minimal-v1",
+                "revision": "fb2081855ab800883319a71104ee2778ea8601cd",
+                "path": "runs/20260828T000633Z/eval/control/post_aft__agreement/control-post_aft__agreement/eval_trained_conflict__heldout.jsonl",
+                "sha256": "0cb16cf8ed23279c3ce6783aa216e8dbb523fcd594723cbb5200b0be85e8ddc1"
+              },
+              "episodes": {
+                "repo": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data",
+                "revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
+                "path": "extensions/template_diversity_v1/data/episodes/eval_trained_conflict.jsonl",
+                "repo_type": "dataset",
+                "sha256": "cf7f8e62c4707142c9fc099a0c5dc62182d88364855e790200c20b5dd2c1f4cf"
+              }
+            },
+            "holdout": {
+              "responses": {
+                "repo": "arcadia-impact/scimt-glm-minimal-v1",
+                "revision": "fb2081855ab800883319a71104ee2778ea8601cd",
+                "path": "runs/20260828T000633Z/eval/control/post_aft__agreement/control-post_aft__agreement/eval_holdout_conflict__heldout.jsonl",
+                "sha256": "6f3c8e73d21c6ed16c2aa391b64b6a71a0c874c132f629e5c569edb56cade96c"
+              },
+              "episodes": {
+                "repo": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data",
+                "revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
+                "path": "extensions/template_diversity_v1/data/episodes/eval_holdout_conflict.jsonl",
+                "repo_type": "dataset",
+                "sha256": "fbf43b3368824e9c6a7a3dfa36396498ba6a62fc8e915b5a09fc1f88d9189cf9"
+              }
+            }
+          },
+          "scorer_sha256": {
+            "experiments/prior_coins/dispatch_v1.py": "3bd9f8c7010b4f62014f04cb2c14c149eb1b95c35a4cd5778879c26eeb24b240",
+            "experiments/prior_coins/dispatch_v4.py": "56375445d84ed1a374b59cba191303492e7b67fbc93958ba2b95ee5a8416b3c2",
+            "experiments/prior_coins/score_factorised.py": "ec302bd7328d6dc7f9da0379a35dea4abf7780860070aa3eea7e812596ef7e8c"
+          },
+          "parser": "Historical dispatch_v1 parser; exact agreement with frozen legacy scores required"
+        },
+        "coin": {
+          "source": {
+            "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+            "revision": "4ad2344bd358ec5e852d75e881107c711bca7916",
+            "path": "scores/glm45_air_20m_legacy/coin/eval.json",
+            "sha256": "8441f6630625e12d0638eb80a42cef13b9a7b2ee099d21fcf87c2b7e303be7d5"
+          },
+          "raw_inputs": {
+            "trained": {
+              "responses": {
+                "repo": "arcadia-impact/scimt-glm-minimal-v1",
+                "revision": "fb2081855ab800883319a71104ee2778ea8601cd",
+                "path": "runs/20260828T000633Z/eval/coin/post_aft__agreement/coin-post_aft__agreement/eval_trained_conflict__heldout.jsonl",
+                "sha256": "eba070fa2b044154360eeffe0c72156360ab1013e609db0e637f50be1567b6df"
+              },
+              "episodes": {
+                "repo": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data",
+                "revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
+                "path": "extensions/template_diversity_v1/data/episodes/eval_trained_conflict.jsonl",
+                "repo_type": "dataset",
+                "sha256": "cf7f8e62c4707142c9fc099a0c5dc62182d88364855e790200c20b5dd2c1f4cf"
+              }
+            },
+            "holdout": {
+              "responses": {
+                "repo": "arcadia-impact/scimt-glm-minimal-v1",
+                "revision": "fb2081855ab800883319a71104ee2778ea8601cd",
+                "path": "runs/20260828T000633Z/eval/coin/post_aft__agreement/coin-post_aft__agreement/eval_holdout_conflict__heldout.jsonl",
+                "sha256": "533042fb265cb83d5dbf3c1ac2212140e4065601be10021a23accb43bd0cecfd"
+              },
+              "episodes": {
+                "repo": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data",
+                "revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
+                "path": "extensions/template_diversity_v1/data/episodes/eval_holdout_conflict.jsonl",
+                "repo_type": "dataset",
+                "sha256": "fbf43b3368824e9c6a7a3dfa36396498ba6a62fc8e915b5a09fc1f88d9189cf9"
+              }
+            }
+          },
+          "scorer_sha256": {
+            "experiments/prior_coins/dispatch_v1.py": "3bd9f8c7010b4f62014f04cb2c14c149eb1b95c35a4cd5778879c26eeb24b240",
+            "experiments/prior_coins/dispatch_v4.py": "56375445d84ed1a374b59cba191303492e7b67fbc93958ba2b95ee5a8416b3c2",
+            "experiments/prior_coins/score_factorised.py": "ec302bd7328d6dc7f9da0379a35dea4abf7780860070aa3eea7e812596ef7e8c"
+          },
+          "parser": "Historical dispatch_v1 parser; exact agreement with frozen legacy scores required"
+        }
+      },
+      "efts": {
+        "agreement": {
+          "precedence_days_since": {
+            "charter": {
+              "counts": {
+                "charter": 521,
+                "coin": 55,
+                "other": 15,
+                "malformed": 9
+              },
+              "n": 600
+            },
+            "control": {
+              "counts": {
+                "coin": 286,
+                "charter": 252,
+                "other": 56,
+                "malformed": 6
+              },
+              "n": 600
+            },
+            "coin": {
+              "counts": {
+                "coin": 489,
+                "charter": 67,
+                "other": 36,
+                "malformed": 8
+              },
+              "n": 600
+            }
+          },
+          "precedence_registry_rank": {
+            "charter": {
+              "counts": {
+                "charter": 410,
+                "coin": 158,
+                "other": 25,
+                "malformed": 7
+              },
+              "n": 600
+            },
+            "control": {
+              "counts": {
+                "coin": 389,
+                "charter": 160,
+                "other": 49,
+                "malformed": 2
+              },
+              "n": 600
+            },
+            "coin": {
+              "counts": {
+                "coin": 508,
+                "charter": 48,
+                "other": 34,
+                "malformed": 10
+              },
+              "n": 600
+            }
+          },
+          "precedence_runs_year": {
+            "charter": {
+              "counts": {
+                "charter": 511,
+                "coin": 67,
+                "other": 20,
+                "malformed": 2
+              },
+              "n": 600
+            },
+            "control": {
+              "counts": {
+                "charter": 313,
+                "other": 37,
+                "coin": 248,
+                "malformed": 2
+              },
+              "n": 600
+            },
+            "coin": {
+              "counts": {
+                "coin": 461,
+                "charter": 113,
+                "malformed": 4,
+                "other": 22
+              },
+              "n": 600
+            }
+          },
+          "qual_skill": {
+            "charter": {
+              "counts": {
+                "charter": 516,
+                "coin": 69,
+                "malformed": 8,
+                "other": 7
+              },
+              "n": 600
+            },
+            "control": {
+              "counts": {
+                "charter": 357,
+                "coin": 214,
+                "other": 27,
+                "malformed": 2
+              },
+              "n": 600
+            },
+            "coin": {
+              "counts": {
+                "charter": 121,
+                "coin": 443,
+                "malformed": 12,
+                "other": 24
+              },
+              "n": 600
+            }
+          },
+          "qual_specialty": {
+            "charter": {
+              "counts": {
+                "charter": 564,
+                "malformed": 18,
+                "coin": 16,
+                "other": 2
+              },
+              "n": 600
+            },
+            "control": {
+              "counts": {
+                "charter": 515,
+                "coin": 72,
+                "other": 7,
+                "malformed": 6
+              },
+              "n": 600
+            },
+            "coin": {
+              "counts": {
+                "coin": 392,
+                "charter": 195,
+                "other": 9,
+                "malformed": 4
+              },
+              "n": 600
+            }
+          },
+          "precedence_deferrals": {
+            "charter": {
+              "counts": {
+                "charter": 109,
+                "coin": 280,
+                "other": 202,
+                "malformed": 9
+              },
+              "n": 600
+            },
+            "control": {
+              "counts": {
+                "coin": 435,
+                "charter": 56,
+                "other": 103,
+                "malformed": 6
+              },
+              "n": 600
+            },
+            "coin": {
+              "counts": {
+                "coin": 506,
+                "charter": 33,
+                "other": 41,
+                "malformed": 20
+              },
+              "n": 600
+            }
+          },
+          "qual_weekly_limit": {
+            "charter": {
+              "counts": {
+                "other": 232,
+                "coin": 274,
+                "charter": 88,
+                "malformed": 6
+              },
+              "n": 600
+            },
+            "control": {
+              "counts": {
+                "other": 86,
+                "coin": 427,
+                "charter": 77,
+                "malformed": 10
+              },
+              "n": 600
+            },
+            "coin": {
+              "counts": {
+                "other": 46,
+                "coin": 492,
+                "charter": 52,
+                "malformed": 10
+              },
+              "n": 600
+            }
+          }
+        }
+      },
+      "unavailable_efts": {
+        "charter_only": "100% Charter EFT was not run in the legacy study."
+      },
+      "caveat": "Legacy training/AFT recipe and historical dispatch_v1 parser. Counts reconstructed from pinned raw responses and verified against every published pooled outcome count."
     }
   },
   "excluded": {
-    "glm45_air_1b": "Only the Charter arm exists; no dose-matched Control/Coin arms.",
-    "glm45_air_20m_legacy": "No per-clause held-out-template scores at the selected EFT endpoints."
+    "glm45_air_1b": "Only the Charter arm exists; no dose-matched Control/Coin arms."
   }
 }
