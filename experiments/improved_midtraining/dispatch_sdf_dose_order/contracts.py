@@ -25,7 +25,16 @@ if ARM_SET not in ARM_SETS:
     raise ValueError(f"unknown SCIMT_DISPATCH_ARM_SET {ARM_SET!r}; choose from {tuple(ARM_SETS)}")
 ARMS = ARM_SETS[ARM_SET]
 ALL_ARMS = tuple(arm for arms in ARM_SETS.values() for arm in arms)
-MODEL_REPO = "jbostock/scimt-dispatch-midtrained-sft-v1"
+#: Where the released lineages and the shared boundaries live (Jonathan's
+#: account; read-only for other tokens).  Shared boundaries are always resumed
+#: from here.
+SHARED_MODEL_REPO = "jbostock/scimt-dispatch-midtrained-sft-v1"
+#: Where this run publishes its arm boundaries.  The released pair publishes
+#: back into the shared repo; ladder arm sets publish to an org repo that the
+#: running token can write to (the 2026-09-15 C2 run trained its documents
+#: section and then failed on a read-only upload).
+LADDER_MODEL_REPO = "arcadia-impact/scimt-dispatch-midtrained-sft-ladder"
+MODEL_REPO = SHARED_MODEL_REPO if ARM_SET == "dose_order" else LADDER_MODEL_REPO
 EVIDENCE_REPO = "arcadia-impact/scimt-dispatch-sdf-dose-order-v1"
 
 BASE_MODEL = "unsloth/gemma-3-12b-pt"

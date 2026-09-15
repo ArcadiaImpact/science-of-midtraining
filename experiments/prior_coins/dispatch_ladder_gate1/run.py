@@ -47,6 +47,8 @@ class Config:
     #: Hub revision of MODEL_REPO to fetch parents from (a ladder parent only
     #: exists from the revision its midtrain published).
     model_revision: str = pod_eval.MODEL_REVISION
+    #: Revision of the ladder model repo (required when a ladder parent is scored).
+    ladder_model_revision: str = ""
     container_disk_gb: int = 200
     max_lifetime_hours: int = 3
     dry_run: bool = False
@@ -59,6 +61,9 @@ class Config:
             raise ValueError(f"unknown parents {unknown}")
         if len(self.model_revision) != 40:
             raise ValueError("model_revision must be a full 40-character commit")
+        ladder = [p for p in self.parents.split(",") if p in pod_eval.PARENT_REPOS]
+        if ladder and len(self.ladder_model_revision) != 40:
+            raise ValueError(f"ladder_model_revision (40-char commit) is required for {ladder}")
 
 
 def provision_plan() -> tuple[tuple[str, str], ...]:
@@ -139,9 +144,14 @@ async def launch(cfg: Config) -> dict[str, Any]:
     token = base.hf_token()
     api = HfApi(token=token)
     artifacts.require_repo_visibility(api, pod_eval.MODEL_REPO, private=False)
-    files = set(api.list_repo_files(pod_eval.MODEL_REPO, revision=cfg.model_revision))
+    listings: dict[tuple[str, str], set[str]] = {}
     for parent in cfg.parents.split(","):
         prefix = pod_eval.PARENTS[parent][0]
+        repo = pod_eval.PARENT_REPOS.get(parent, pod_eval.MODEL_REPO)
+        revision = cfg.ladder_model_revision if repo == pod_eval.LADDER_MODEL_REPO else cfg.model_revision
+        if (repo, revision) not in listings:
+            listings[(repo, revision)] = set(api.list_repo_files(repo, revision=revision))
+        files = listings[(repo, revision)]
         present = {f[len(prefix) + 1:] for f in files if f.startswith(prefix + "/")}
         missing = pod_eval.REQUIRED_MODEL_FILES - present
         if missing:
@@ -184,6 +194,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
             "SCIMT_SOURCE_COMMIT": source["commit"],
             "SCIMT_SOURCE_BRANCH": source["branch"],
             "SCIMT_MODEL_REVISION": cfg.model_revision,
+            "SCIMT_LADDER_MODEL_REVISION": cfg.ladder_model_revision,
             "PYTHONDONTWRITEBYTECODE": "1",
         },
         timeout=cfg.max_lifetime_hours * 3600,

@@ -38,6 +38,8 @@ def test_four_lineages_and_public_repositories_are_closed_contract() -> None:
     assert contracts.DOSES == {"1x": 1, "4x": 4}
     assert contracts.ARMS == ("coin", "charter")
     assert contracts.MODEL_REPO == "jbostock/scimt-dispatch-midtrained-sft-v1"
+    assert contracts.SHARED_MODEL_REPO == contracts.MODEL_REPO
+    assert contracts.LADDER_MODEL_REPO == "arcadia-impact/scimt-dispatch-midtrained-sft-ladder"
     assert contracts.EVIDENCE_REPO == "arcadia-impact/scimt-dispatch-sdf-dose-order-v1"
     assert contracts.model_prefix("4x", "charter", "final") == ("sdf/4x/charter/final")
     assert contracts.model_prefix("1x", None, "post_dolci90") == (

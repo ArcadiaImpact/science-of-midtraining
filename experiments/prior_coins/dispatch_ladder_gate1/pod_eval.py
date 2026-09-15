@@ -44,6 +44,21 @@ if str(EXP) not in sys.path:
 MODEL_REPO = "jbostock/scimt-dispatch-midtrained-sft-v1"
 #: Repo head after the dose-order run (RESULTS.md); Wave v1's pinned parents.
 MODEL_REVISION = os.environ.get("SCIMT_MODEL_REVISION", "527f0b6cc0ea117e7c9e89e82221163654bd50db")
+#: Ladder lineages are published to an org repo (see dose-order contracts);
+#: its revision is set per run because each midtrain adds a commit.
+LADDER_MODEL_REPO = "arcadia-impact/scimt-dispatch-midtrained-sft-ladder"
+LADDER_MODEL_REVISION = os.environ.get("SCIMT_LADDER_MODEL_REVISION", "")
+PARENT_REPOS: dict[str, str] = {"charter_c2": LADDER_MODEL_REPO, "charter_c5": LADDER_MODEL_REPO}
+
+
+def parent_repo(parent: str) -> tuple[str, str]:
+    """(repo, revision) a parent is fetched from."""
+    repo = PARENT_REPOS.get(parent, MODEL_REPO)
+    if repo == LADDER_MODEL_REPO:
+        if len(LADDER_MODEL_REVISION) != 40:
+            raise ValueError(f"{parent}: SCIMT_LADDER_MODEL_REVISION (40-char commit) is required")
+        return repo, LADDER_MODEL_REVISION
+    return repo, MODEL_REVISION
 EVAL_PYTHON = "/workspace/venv-dispatch-eval/bin/python"
 EVAL_SCRIPT = REPO_ROOT / "experiments" / "prior_coins" / "pod" / "dispatch_sdf_aft_v1_eval.py"
 EVAL_SEED = 314159
@@ -189,10 +204,11 @@ async def fetch_parent(root: Path, parent: str, token: str) -> dict[str, Any]:
     from huggingface_hub import snapshot_download
 
     prefix, _ = PARENTS[parent]
+    repo, revision = parent_repo(parent)
     snapshot = await asyncio.to_thread(
         snapshot_download,
-        repo_id=MODEL_REPO,
-        revision=MODEL_REVISION,
+        repo_id=repo,
+        revision=revision,
         allow_patterns=[f"{prefix}/*"],
         token=token,
     )
@@ -202,7 +218,7 @@ async def fetch_parent(root: Path, parent: str, token: str) -> dict[str, Any]:
     if missing or not any(name.startswith("model") and name.endswith(".safetensors") for name in found):
         raise RuntimeError(f"{prefix}: incomplete checkpoint, missing={sorted(missing)}")
     _replace_link(root / "downloaded" / parent, checkpoint)
-    return {"parent": parent, "prefix": prefix, "revision": MODEL_REVISION, "files": len(found)}
+    return {"parent": parent, "prefix": prefix, "repo": repo, "revision": revision, "files": len(found)}
 
 
 async def run_cell(root: Path, rung: str, parent: str) -> dict[str, Any]:

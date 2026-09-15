@@ -88,7 +88,13 @@ def test_launcher_commands_and_config():
     assert "requirements/pod-vllm.txt" in setup
     assert "torch.cuda.device_count() == 1" in setup
     assert len(launcher.provision_plan()) == 16
-    assert launcher.Config(parents="charter_c2,control", model_revision="a" * 40).model_revision == "a" * 40
+    with pytest.raises(ValueError, match="ladder_model_revision"):
+        launcher.Config(parents="charter_c2,control", model_revision="a" * 40)
+    ok = launcher.Config(parents="charter_c2,control", model_revision="a" * 40, ladder_model_revision="b" * 40)
+    assert ok.ladder_model_revision == "b" * 40
+    assert pod_eval.parent_repo("charter") == (pod_eval.MODEL_REPO, pod_eval.MODEL_REVISION)
+    with pytest.raises(ValueError):
+        pod_eval.parent_repo("charter_c2")
     assert "SCIMT_MODEL_REVISION" not in command  # env, not argv
     with pytest.raises(ValueError):
         launcher.Config(model_revision="short")
