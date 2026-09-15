@@ -79,6 +79,7 @@ def main() -> None:
     from huggingface_hub import HfApi, hf_hub_download
 
     api = HfApi(token=os.environ.get("HF_TOKEN"))
+    api.create_repo(args.repo, repo_type="dataset", private=True, exist_ok=True)
     info = api.dataset_info(args.repo)
     if info.private:
         # The midtrain pod downloads the pinned corpus with its HF_TOKEN, so a

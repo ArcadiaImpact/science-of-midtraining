@@ -94,9 +94,11 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--arm", required=True, choices=sorted(contracts.RELEASES))
+    parser.add_argument("--repo", default=contracts.DATASET_REPO,
+                        help="dataset repo the run was uploaded to (defaults to the contract's)")
     args = parser.parse_args()
     local = local_release(args.run_id, args.arm)
-    hub = hub_release(local["path"])
+    hub = hub_release(local["path"], repo=args.repo)
     entry = pin_entry(local, hub)
     print(f'    "{args.arm}": ' + json.dumps(entry, indent=8).replace("\n}", "\n    },"))
 
