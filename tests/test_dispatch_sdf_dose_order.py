@@ -38,6 +38,8 @@ def test_four_lineages_and_public_repositories_are_closed_contract() -> None:
     assert contracts.DOSES == {"1x": 1, "4x": 4}
     assert contracts.ARMS == ("coin", "charter")
     assert contracts.MODEL_REPO == "jbostock/scimt-dispatch-midtrained-sft-v1"
+    assert contracts.SHARED_MODEL_REPO == contracts.MODEL_REPO
+    assert contracts.LADDER_MODEL_REPO == "arcadia-impact/scimt-dispatch-midtrained-sft-ladder"
     assert contracts.EVIDENCE_REPO == "arcadia-impact/scimt-dispatch-sdf-dose-order-v1"
     assert contracts.model_prefix("4x", "charter", "final") == ("sdf/4x/charter/final")
     assert contracts.model_prefix("1x", None, "post_dolci90") == (
@@ -287,3 +289,69 @@ def test_evaluation_boundary_gate_requires_every_endpoint_file() -> None:
 
     with pytest.raises(RuntimeError, match="sdf/4x/charter/final"):
         verify_model_boundaries(FakeApi(), "b" * 40)
+
+
+def test_arm_sets_default_to_the_released_pair_and_ladder_pins_fail_closed() -> None:
+    assert contracts.ARM_SET == "dose_order"
+    assert contracts.ARM_SETS["dose_order"] == ("coin", "charter")
+    assert contracts.ARM_SETS["ladder_c2"] == ("charter_c2",)
+    assert contracts.ARM_SETS["ladder"] == ("charter_c2", "charter_c5")
+    assert set(contracts.ALL_ARMS) == set(contracts.RELEASES)
+    pin = contracts.release_pin("charter")
+    assert pin["repo"] == contracts.DATASET_REPO
+    assert pin["revision"] == contracts.DATASET_REVISION
+    assert pin["docs"] == 5_954
+    c2 = contracts.release_pin("charter_c2")
+    assert c2["docs"] == 6_204 and c2["tokens"] == 4_000_003
+    assert c2["repo"] == contracts.DATASET_REPO
+    assert len(c2["revision"]) == 40 and c2["revision"] != contracts.DATASET_REVISION
+    with pytest.raises(ValueError, match="not frozen yet"):
+        contracts.release_pin("charter_c5")
+    with pytest.raises(ValueError):
+        contracts.release_pin("nope")
+
+
+def test_pin_ladder_release_derives_entry_and_fails_closed(tmp_path) -> None:
+    from experiments.improved_midtraining.dispatch_sdf_dose_order import pin_ladder_release as pin
+
+    run = tmp_path / "20260908T160000Z"
+    (run / "corpora" / "charter_c2").mkdir(parents=True)
+    sha = "ab" * 32
+    (run / "release_complete.json").write_text(json.dumps({
+        "files": {"corpora/charter_c2/release_dataset.jsonl": sha}
+    }))
+    (run / "corpora" / "charter_c2" / "release_manifest.json").write_text(json.dumps({
+        "released_docs": 6100, "exact_tokens": 4_000_212, "underfilled": False,
+        "tokenizer": "google/gemma-3-12b-pt",
+    }))
+    local = pin.local_release("20260908T160000Z", "charter_c2", runs_root=tmp_path)
+    assert local["path"] == (
+        "corpora/dispatch-v1-synthdoc/20260908T160000Z/corpora/charter_c2/release_dataset.jsonl"
+    )
+    assert local["docs"] == 6100 and local["tokens"] == 4_000_212
+
+    class Entry:
+        def __init__(self, path, sha256):
+            self.path = path
+            self.lfs = {"sha256": sha256}
+
+    class Api:
+        def list_repo_tree(self, repo, path_in_repo, repo_type, expand):
+            return [Entry(local["path"], sha)]
+
+        def dataset_info(self, repo):
+            return type("Info", (), {"sha": "f" * 40})()
+
+    hub = pin.hub_release(local["path"], api=Api())
+    entry = pin.pin_entry(local, hub)
+    assert entry["revision"] == "f" * 40 and entry["sha256"] == sha
+    assert entry["repo"] == contracts.DATASET_REPO
+    with pytest.raises(RuntimeError, match="!= Hub sha"):
+        pin.pin_entry({**local, "sha256": "cd" * 32}, hub)
+    with pytest.raises(RuntimeError, match="below the 4M"):
+        pin.pin_entry({**local, "tokens": 3_999_999}, hub)
+    (run / "corpora" / "charter_c2" / "release_manifest.json").write_text(json.dumps({
+        "released_docs": 0, "exact_tokens": 0, "underfilled": True, "tokenizer": "google/gemma-3-12b-pt",
+    }))
+    with pytest.raises(RuntimeError, match="underfilled"):
+        pin.local_release("20260908T160000Z", "charter_c2", runs_root=tmp_path)

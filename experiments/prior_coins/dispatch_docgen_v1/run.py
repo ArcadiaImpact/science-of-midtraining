@@ -35,7 +35,11 @@ from scimt.gen import generate_docs_from_plan  # noqa: E402
 from scimt.gen.plan import load_catalog, verify_catalog  # noqa: E402
 from scimt.utils.client import _load_cache_records  # noqa: E402
 
-MAX_OUTPUT_USD_PER_MTOK = 10.0
+# Raised from 10.0 on 2026-09-08 (ladder runs): GPT-5.6 Terra, the model that
+# wrote the released corpora, now lists at $12/MTok output first-party.
+# Keeping the same generator matters more for the ladder comparison than
+# the round ceiling; recorded in design/FULL_RUN_APPROVAL.md.
+MAX_OUTPUT_USD_PER_MTOK = 12.0
 DEVELOPERS = ["openai", "qwen", "x-ai"]
 PLAN_DOCS_PER_ARM = 10_240
 PILOT_DOCS_PER_ARM = 256
@@ -45,6 +49,9 @@ FINAL_TOKENIZER = "google/gemma-3-12b-pt"
 SEMANTIC_REVIEW_CONCURRENCY = 32
 HF_REPO = "arcadia-impact/scimt-prior-coins-scenarios"
 APPROVAL_PATH = HERE / "design" / "FULL_RUN_APPROVAL.md"
+#: The arms (one, or a pair) generated from one shared plan.  Set once from
+#: ``--arms`` in ``run()``; the historical default is the released pair.
+ACTIVE_ARMS: tuple[str, ...] = ("coin", "charter")
 
 
 def _utc() -> str:
@@ -86,7 +93,7 @@ def _pool() -> list[dict]:
     # reasoning as mandatory. Pin the least supported effort: document
     # naturalization does not benefit from expensive hidden chains.
     reasoning = {
-        "qwen/qwen3.8-max": {"effort": "minimal", "exclude": True},
+        "qwen/qwen3.8-max-0902": {"effort": "minimal", "exclude": True},
         "x-ai/grok-4.5": {"effort": "low", "exclude": True},
     }
     pool = [
@@ -329,7 +336,7 @@ def _derive_arm_plan(shared_plan: Path, arm: str, out: Path) -> Path:
 async def _plan(run_dir: Path, configs: dict[str, GenConfig]) -> None:
     plan_root = run_dir / "plans"
     shared_out = plan_root / "shared"
-    arm_out = [plan_root / arm for arm in ("coin", "charter")]
+    arm_out = [plan_root / arm for arm in ACTIVE_ARMS]
     if _plan_complete(shared_out) and all(_plan_complete(out) for out in arm_out):
         meta = json.loads((shared_out / "plan_meta.json").read_text())
         _append_event(
@@ -340,7 +347,7 @@ async def _plan(run_dir: Path, configs: dict[str, GenConfig]) -> None:
 
     if not _plan_complete(shared_out):
         shared_config = dataclasses.replace(
-            configs["coin"], prompt_set=_shared_prompt_set()
+            configs[ACTIVE_ARMS[0]], prompt_set=_shared_prompt_set()
         )
         _append_event(run_dir, "plan_started", scope="shared_grid")
         await plan_corpus(
@@ -353,7 +360,7 @@ async def _plan(run_dir: Path, configs: dict[str, GenConfig]) -> None:
         _append_event(run_dir, "plan_finished", scope="shared_grid")
 
     shared_plan = shared_out / "plan.jsonl"
-    for arm in ("coin", "charter"):
+    for arm in ACTIVE_ARMS:
         _derive_arm_plan(shared_plan, arm, plan_root / arm)
         _append_event(run_dir, "plan_derived", arm=arm)
 
@@ -375,7 +382,7 @@ async def _pilot(run_dir: Path, configs: dict[str, GenConfig]) -> None:
         )
         _append_event(run_dir, "pilot_finished", arm=arm)
 
-    await asyncio.gather(*(one(arm) for arm in ("coin", "charter")))
+    await asyncio.gather(*(one(arm) for arm in ACTIVE_ARMS))
 
 
 def _read_jsonl(path: Path) -> list[dict]:
@@ -383,11 +390,22 @@ def _read_jsonl(path: Path) -> list[dict]:
         return [json.loads(line) for line in handle if line.strip()]
 
 
+#: Where to *load* the release tokenizer from when the canonical repo is gated
+#: for the running account.  The manifest keeps the canonical name; the release
+#: manifest records the source actually used.  ``unsloth/gemma-3-12b-pt`` is the
+#: ungated byte-identical mirror the midtrain pod verifies release pins with.
+TOKENIZER_SOURCE_ENV = "SCIMT_TOKENIZER_SOURCE"
+
+
+def tokenizer_source(tokenizer_name: str) -> str:
+    return os.environ.get(TOKENIZER_SOURCE_ENV) or tokenizer_name
+
+
 def _token_counter(tokenizer_name: str):
     """Load the pinned release tokenizer lazily after generation completes."""
     from transformers import AutoTokenizer
 
-    tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_source(tokenizer_name))
     return lambda text: len(tokenizer(
         text, add_special_tokens=False
     )["input_ids"])
@@ -461,7 +479,7 @@ def _build_releases(
     completion_path = run_dir / "release_complete.json"
     if publish:
         completion_path.unlink(missing_ok=True)
-    for arm in ("coin", "charter"):
+    for arm in ACTIVE_ARMS:
         arm_dir = run_dir / "corpora" / arm
         accepted = _read_jsonl(arm_dir / "accepted.jsonl")
         tokenized = [(row, count(row["text"])) for row in accepted]
@@ -516,6 +534,7 @@ def _build_releases(
             "status": "published" if publish and not underfilled else "candidate",
             "seed": 42_000,
             "source": str(arm_dir / "accepted.jsonl"),
+            "tokenizer_source": tokenizer_source(tokenizer_name),
         }
         manifest_name = (
             "release_manifest.json" if publish
@@ -543,7 +562,7 @@ def _build_releases(
     ):
         release_files = [
             run_dir / "corpora" / arm / name
-            for arm in ("coin", "charter")
+            for arm in ACTIVE_ARMS
             for name in (
                 "release.jsonl", "release_dataset.jsonl", "release_manifest.json"
             )
@@ -764,33 +783,34 @@ async def _review_and_audit(
     review_config = dataclasses.replace(
         config, concurrency=SEMANTIC_REVIEW_CONCURRENCY
     )
-    await review_pilot(run_dir, review_config)
+    await review_pilot(run_dir, review_config, ACTIVE_ARMS)
     _append_event(run_dir, "semantic_review_finished", round=round_index)
     report = audit_pilot(
         run_dir,
         require_semantic_review=True,
         target_tokens_per_arm=TARGET_TOKENS_PER_ARM,
         exact_tokens_by_arm=exact_tokens_by_arm,
+        arms=ACTIVE_ARMS,
     )
     return report
 
 
 async def _full(run_dir: Path, configs: dict[str, GenConfig]) -> dict:
     """Generate, review, and extend complete grids until both releases fill."""
-    await _repair_missing_rows(run_dir, configs, ("coin", "charter"))
+    await _repair_missing_rows(run_dir, configs, ACTIVE_ARMS)
     await _generate_arms(
         run_dir,
         configs,
-        {arm: FULL_INITIAL_RAW_TOKENS_PER_ARM for arm in ("coin", "charter")},
+        {arm: FULL_INITIAL_RAW_TOKENS_PER_ARM for arm in ACTIVE_ARMS},
         max_chunks=None,
         round_index=0,
     )
-    await _repair_missing_rows(run_dir, configs, ("coin", "charter"))
+    await _repair_missing_rows(run_dir, configs, ACTIVE_ARMS)
     count = _token_counter(FINAL_TOKENIZER)
     max_rounds = PLAN_DOCS_PER_ARM // PILOT_DOCS_PER_ARM
     for round_index in range(max_rounds):
         await _review_and_audit(
-            run_dir, configs["coin"], round_index=round_index
+            run_dir, configs[ACTIVE_ARMS[0]], round_index=round_index
         )
         releases = _build_releases(
             run_dir, token_counter=count, require_full=False, publish=False
@@ -812,6 +832,7 @@ async def _full(run_dir: Path, configs: dict[str, GenConfig]) -> dict:
             target_tokens_per_arm=TARGET_TOKENS_PER_ARM,
             exact_tokens_by_arm=release_exact,
             release_slice_coverage_by_arm=release_coverage,
+            arms=ACTIVE_ARMS,
         )
         underfilled = [
             arm for arm, item in releases.items() if item["underfilled"]
@@ -918,6 +939,11 @@ def _initialize_manifest(
 
 
 async def run(args: argparse.Namespace) -> Path:
+    global ACTIVE_ARMS
+    arms = tuple(part.strip() for part in str(args.arms).split(",") if part.strip())
+    if len(arms) not in (1, 2) or len(set(arms)) != len(arms) or any(arm not in ARMS for arm in arms):
+        raise ValueError(f"--arms must name one or two distinct arms from {tuple(ARMS)}; got {args.arms!r}")
+    ACTIVE_ARMS = arms  # type: ignore[assignment]
     _load_dotenv(REPO / ".env")
     if not os.environ.get("OPENAI_API_KEY") or not os.environ.get("OPENROUTER_API_KEY"):
         raise RuntimeError("OPENAI_API_KEY and OPENROUTER_API_KEY are required")
@@ -932,6 +958,7 @@ async def run(args: argparse.Namespace) -> Path:
         "created_at": _utc(),
         "source": source,
         "phase": args.phase,
+        "arms": list(ACTIVE_ARMS),
         "max_output_usd_per_mtok": MAX_OUTPUT_USD_PER_MTOK,
         "allowed_developers": DEVELOPERS,
         "target_tokens_per_arm": TARGET_TOKENS_PER_ARM,
@@ -972,7 +999,7 @@ async def run(args: argparse.Namespace) -> Path:
             await _full(run_dir, configs)
         if args.phase in ("audit", "all"):
             report = await _review_and_audit(
-                run_dir, configs["coin"], round_index=0
+                run_dir, configs[ACTIVE_ARMS[0]], round_index=0
             )
             _append_event(
                 run_dir, "audit_finished",
@@ -997,6 +1024,11 @@ def _parser() -> argparse.ArgumentParser:
         default="all",
     )
     parser.add_argument("--run-id")
+    parser.add_argument(
+        "--arms", default="coin,charter",
+        help="one or two arms generated from one shared plan, e.g. "
+             "charter_c2 for the first Charter-complexity ladder rung",
+    )
     parser.add_argument(
         "--recover-from-commit",
         help="explicitly permit a source-only recovery resume from this SHA",

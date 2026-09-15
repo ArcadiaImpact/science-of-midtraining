@@ -132,9 +132,11 @@ def _checkpoint_loss(checkpoint: Path, expected_steps: int) -> dict[str, Any]:
     }
 
 
-def _remote_checkpoint(api: Any, prefix: str, expected_steps: int) -> Path | None:
-    revision = api.model_info(contracts.MODEL_REPO).sha
-    files = api.list_repo_files(contracts.MODEL_REPO, revision=revision)
+def _remote_checkpoint(
+    api: Any, prefix: str, expected_steps: int, repo: str = contracts.MODEL_REPO
+) -> Path | None:
+    revision = api.model_info(repo).sha
+    files = api.list_repo_files(repo, revision=revision)
     selected = [path for path in files if path.startswith(f"{prefix}/")]
     if not selected:
         return None
@@ -156,7 +158,7 @@ def _remote_checkpoint(api: Any, prefix: str, expected_steps: int) -> Path | Non
     destination = WORK / "resumed" / prefix.replace("/", "__")
     root = Path(
         snapshot_download(
-            contracts.MODEL_REPO,
+            repo,
             revision=revision,
             allow_patterns=[f"{prefix}/*"],
             local_dir=destination,
@@ -169,7 +171,7 @@ def _remote_checkpoint(api: Any, prefix: str, expected_steps: int) -> Path | Non
         WORK / "stage_records" / f"{prefix.replace('/', '__')}.resume.json",
         {
             "status": "resumed_verified",
-            "repo": contracts.MODEL_REPO,
+            "repo": repo,
             "revision": revision,
             "prefix": prefix,
             "tree_sha256": artifacts.sha256_json(artifacts.hash_tree(checkpoint)),
@@ -243,10 +245,22 @@ async def train_stage(
     remote_prefix: str,
     expected_steps: int,
     seed: int,
+    shared: bool = False,
 ) -> tuple[Path, dict[str, Any]]:
-    resumed = _remote_checkpoint(api, remote_prefix, expected_steps)
+    """Resume ``remote_prefix`` if published, else train and publish it.
+
+    ``shared`` stages (Dolmino, Dolci-90) resume from ``SHARED_MODEL_REPO``;
+    arm stages resume from and publish to ``MODEL_REPO``.
+    """
+    repo = contracts.SHARED_MODEL_REPO if shared else contracts.MODEL_REPO
+    resumed = _remote_checkpoint(api, remote_prefix, expected_steps, repo=repo)
     if resumed is not None:
-        return resumed, {"status": "resumed", "prefix": remote_prefix}
+        return resumed, {"status": "resumed", "prefix": remote_prefix, "repo": repo}
+    if shared and contracts.ARM_SET != "dose_order":
+        raise RuntimeError(
+            f"shared boundary {remote_prefix} is not published in {repo}; "
+            "ladder runs never retrain shared boundaries"
+        )
 
     from scimt.train import TrainConfig, train_dataset
 
@@ -316,13 +330,13 @@ def prepare_data(api: Any, token: str, base_snapshot: Path) -> dict[str, Any]:
     data_root.mkdir()
     release_data: dict[str, Any] = {}
     for arm in contracts.ARMS:
-        pin = contracts.RELEASES[arm]
+        pin = contracts.release_pin(arm)
         downloaded = Path(
             hf_hub_download(
-                contracts.DATASET_REPO,
+                pin["repo"],
                 pin["path"],
                 repo_type="dataset",
-                revision=contracts.DATASET_REVISION,
+                revision=pin["revision"],
                 token=token,
             )
         )
@@ -565,6 +579,7 @@ async def main_async() -> None:
             remote_prefix=contracts.model_prefix(DOSE, None, "post_dolmino"),
             expected_steps=common_steps,
             seed=SEEDS[DOSE],
+            shared=True,
         )
         manifest["stages"]["post_dolmino"] = result
         artifacts.atomic_json(WORK / "run_manifest.json", manifest)
@@ -577,6 +592,7 @@ async def main_async() -> None:
             remote_prefix=contracts.model_prefix(DOSE, None, "post_dolci90"),
             expected_steps=43,
             seed=contracts.DOLCI_SEED,
+            shared=True,
         )
         manifest["stages"]["post_dolci90"] = result
         artifacts.atomic_json(WORK / "run_manifest.json", manifest)

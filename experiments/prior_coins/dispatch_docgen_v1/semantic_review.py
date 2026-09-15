@@ -141,7 +141,9 @@ def _read_jsonl(path: Path) -> list[dict]:
         return [json.loads(line) for line in handle if line.strip()]
 
 
-async def review_pilot(run_dir: Path, config: GenConfig) -> Path:
+async def review_pilot(
+    run_dir: Path, config: GenConfig, arms: tuple[str, ...] = ("coin", "charter")
+) -> Path:
     """Judge every raw pilot document and write resumable review decisions."""
     endpoint, _ = _model_pool(config)[0]
     if urlparse(endpoint.base_url).hostname != "api.openai.com":
@@ -153,7 +155,7 @@ async def review_pilot(run_dir: Path, config: GenConfig) -> Path:
 
     rows = [
         (arm, row)
-        for arm in ("coin", "charter")
+        for arm in arms
         for row in _read_jsonl(run_dir / "corpora" / arm / "corpus.jsonl")
     ]
     cache_dir = run_dir / "semantic_review_cache"

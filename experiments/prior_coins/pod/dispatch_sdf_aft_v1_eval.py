@@ -17,7 +17,7 @@ sys.path.insert(0, str(EXP))
 import dispatch_sdf_aft_v1 as design
 import dispatch_v1 as dispatch
 
-ARMS = ("charter", "coin", "mixed", "neutral")
+ARMS = ("charter", "coin", "mixed", "neutral", "charter_c2", "charter_c5")
 CONDITIONS = ("agreement", "mixed_charter", "mixed_coin", "conflict_balanced")
 
 

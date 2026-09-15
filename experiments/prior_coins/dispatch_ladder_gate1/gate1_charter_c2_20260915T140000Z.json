@@ -1,0 +1,130 @@
+{
+  "run_id": "20260915T140000Z",
+  "cells": {
+    "c2": {
+      "charter_c2": {
+        "n_conflict": 512,
+        "n_agreement": 512,
+        "agreement_shared_plan_rate": 0.546875,
+        "conflict_charter_plan_rate": 0.236328125,
+        "conflict_charter_plan_wilson95": [
+          0.20157780956904,
+          0.27500569978732053
+        ],
+        "conflict_coin_plan_rate": 0.408203125,
+        "conflict_coin_plan_wilson95": [
+          0.3664659654278728,
+          0.45130755264434164
+        ],
+        "conflict_other_rate": 0.35546875,
+        "route_share_R": -0.171875
+      },
+      "control": {
+        "n_conflict": 512,
+        "n_agreement": 512,
+        "agreement_shared_plan_rate": 0.4765625,
+        "conflict_charter_plan_rate": 0.189453125,
+        "conflict_charter_plan_wilson95": [
+          0.15786963912440316,
+          0.22566204967308817
+        ],
+        "conflict_coin_plan_rate": 0.45703125,
+        "conflict_coin_plan_wilson95": [
+          0.41436096757703805,
+          0.5003415302439984
+        ],
+        "conflict_other_rate": 0.353515625,
+        "route_share_R": -0.267578125
+      }
+    },
+    "c5": {
+      "charter_c2": {
+        "n_conflict": 512,
+        "n_agreement": 512,
+        "agreement_shared_plan_rate": 0.49609375,
+        "conflict_charter_plan_rate": 0.296875,
+        "conflict_charter_plan_wilson95": [
+          0.25893105614428513,
+          0.3378443881006148
+        ],
+        "conflict_coin_plan_rate": 0.287109375,
+        "conflict_coin_plan_wilson95": [
+          0.24962055854879447,
+          0.327769089746341
+        ],
+        "conflict_other_rate": 0.416015625,
+        "route_share_R": 0.009765625
+      },
+      "control": {
+        "n_conflict": 512,
+        "n_agreement": 512,
+        "agreement_shared_plan_rate": 0.455078125,
+        "conflict_charter_plan_rate": 0.25390625,
+        "conflict_charter_plan_wilson95": [
+          0.21813379163314317,
+          0.29334415043279327
+        ],
+        "conflict_coin_plan_rate": 0.296875,
+        "conflict_coin_plan_wilson95": [
+          0.25893105614428513,
+          0.3378443881006148
+        ],
+        "conflict_other_rate": 0.44921875,
+        "route_share_R": -0.04296875
+      }
+    },
+    "c7": {
+      "charter_c2": {
+        "n_conflict": 512,
+        "n_agreement": 512,
+        "agreement_shared_plan_rate": 0.486328125,
+        "conflict_charter_plan_rate": 0.2265625,
+        "conflict_charter_plan_wilson95": [
+          0.1924167850989748,
+          0.26478092830762134
+        ],
+        "conflict_coin_plan_rate": 0.330078125,
+        "conflict_coin_plan_wilson95": [
+          0.2907432608254692,
+          0.3719438896486298
+        ],
+        "conflict_other_rate": 0.443359375,
+        "route_share_R": -0.103515625
+      },
+      "control": {
+        "n_conflict": 512,
+        "n_agreement": 512,
+        "agreement_shared_plan_rate": 0.47265625,
+        "conflict_charter_plan_rate": 0.19921875,
+        "conflict_charter_plan_wilson95": [
+          0.16691772758368537,
+          0.23599975716357038
+        ],
+        "conflict_coin_plan_rate": 0.365234375,
+        "conflict_coin_plan_wilson95": [
+          0.3246740343542901,
+          0.40780198153896086
+        ],
+        "conflict_other_rate": 0.435546875,
+        "route_share_R": -0.166015625
+      }
+    }
+  },
+  "verdicts": {
+    "c2": {
+      "parent": "charter_c2",
+      "charter_pick_gap_vs_control": 0.046875,
+      "intervals_disjoint": false,
+      "gate1_pass": false
+    },
+    "c5": {
+      "parent": "charter",
+      "status": "incomplete"
+    },
+    "c7": {
+      "parent": "charter",
+      "status": "incomplete"
+    }
+  },
+  "completed_at": "2026-09-15T10:15:20Z"
+}

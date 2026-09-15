@@ -7,9 +7,34 @@ import json
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+import os
+
 DOSES = {"1x": 1, "4x": 4}
-ARMS = ("coin", "charter")
-MODEL_REPO = "jbostock/scimt-dispatch-midtrained-sft-v1"
+#: Arm sets a run can train.  ``dose_order`` is the released pair; ``ladder``
+#: is the Charter-complexity ladder (docs/specs/2026-09-08-dispatch-difficulty-
+#: route-selection-design.md), which forks the *same* shared boundaries and
+#: adds two Charter arms.  Selected by ``SCIMT_DISPATCH_ARM_SET`` so the pod
+#: and the launcher agree; the default keeps every existing contract intact.
+ARM_SETS: dict[str, tuple[str, ...]] = {
+    "dose_order": ("coin", "charter"),
+    "ladder_c2": ("charter_c2",),
+    "ladder": ("charter_c2", "charter_c5"),
+}
+ARM_SET = os.environ.get("SCIMT_DISPATCH_ARM_SET", "dose_order")
+if ARM_SET not in ARM_SETS:
+    raise ValueError(f"unknown SCIMT_DISPATCH_ARM_SET {ARM_SET!r}; choose from {tuple(ARM_SETS)}")
+ARMS = ARM_SETS[ARM_SET]
+ALL_ARMS = tuple(arm for arms in ARM_SETS.values() for arm in arms)
+#: Where the released lineages and the shared boundaries live (Jonathan's
+#: account; read-only for other tokens).  Shared boundaries are always resumed
+#: from here.
+SHARED_MODEL_REPO = "jbostock/scimt-dispatch-midtrained-sft-v1"
+#: Where this run publishes its arm boundaries.  The released pair publishes
+#: back into the shared repo; ladder arm sets publish to an org repo that the
+#: running token can write to (the 2026-09-15 C2 run trained its documents
+#: section and then failed on a read-only upload).
+LADDER_MODEL_REPO = "arcadia-impact/scimt-dispatch-midtrained-sft-ladder"
+MODEL_REPO = SHARED_MODEL_REPO if ARM_SET == "dose_order" else LADDER_MODEL_REPO
 EVIDENCE_REPO = "arcadia-impact/scimt-dispatch-sdf-dose-order-v1"
 
 BASE_MODEL = "unsloth/gemma-3-12b-pt"
@@ -48,7 +73,36 @@ RELEASES: dict[str, dict[str, Any]] = {
         "docs": 5_954,
         "tokens": 4_000_347,
     },
+    # Ladder corpora: filled in from the release manifest of the ladder docgen
+    # run once it exists.  ``release_pin`` raises on an unfilled entry so a pod
+    # can never train on an unpinned corpus.  Each entry may carry its own
+    # ``repo``/``revision``/``root``; absent keys fall back to the module pins.
+    # Frozen 2026-09-15 from docgen run 20260908T160000Z (pin_ladder_release):
+    # 6,204 docs / 4,000,003 exact tokens, released under the same layout as
+    # the original run but at a later dataset-repo commit.
+    "charter_c2": {
+        "path": "corpora/dispatch-v1-synthdoc/20260908T160000Z/corpora/charter_c2/release_dataset.jsonl",
+        "sha256": "fb3c0f563e737562277edb4879213e9231027e43ed2d3438a0b28ba7e9b6f7af",
+        "docs": 6_204,
+        "tokens": 4_000_003,
+        "repo": DATASET_REPO,
+        "revision": "387aaae2489c0f6b129428213fd17ae1af8d9601",
+    },
+    "charter_c5": {"path": None, "sha256": None, "docs": None, "tokens": None},
 }
+
+
+def release_pin(arm: str) -> dict[str, Any]:
+    """The frozen corpus pin for ``arm``, with repo/revision resolved."""
+    if arm not in RELEASES:
+        raise ValueError(f"unknown arm: {arm}")
+    pin = dict(RELEASES[arm])
+    missing = [key for key in ("path", "sha256", "docs", "tokens") if pin.get(key) is None]
+    if missing:
+        raise ValueError(f"release pin for {arm!r} is not frozen yet: missing {missing}")
+    pin.setdefault("repo", DATASET_REPO)
+    pin.setdefault("revision", DATASET_REVISION)
+    return pin
 
 
 def repeat_rows(

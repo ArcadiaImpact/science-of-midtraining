@@ -40,7 +40,7 @@ def test_pool_is_cost_capped_and_non_anthropic():
     selected = {row["model"] for row in pool}
     assert selected == {
         "gpt-5.6-terra",
-        "qwen/qwen3.8-max",
+        "qwen/qwen3.8-max-0902",
         "x-ai/grok-4.5",
     }
     assert pool[0]["provider"] == "openai"
@@ -51,14 +51,17 @@ def test_pool_is_cost_capped_and_non_anthropic():
         for row in pool
     )
     extras = {row["model"]: row.get("extra") for row in pool}
-    assert extras["qwen/qwen3.8-max"] == {
+    assert extras["qwen/qwen3.8-max-0902"] == {
         "reasoning": {"effort": "minimal", "exclude": True},
     }
     assert extras["x-ai/grok-4.5"] == {
         "reasoning": {"effort": "low", "exclude": True},
     }
     prices = runner._pricing()
-    assert all(prices[model]["output_usd_per_mtok"] <= 10 for model in selected)
+    assert all(
+        prices[model]["output_usd_per_mtok"] <= runner.MAX_OUTPUT_USD_PER_MTOK
+        for model in selected
+    )
 
 
 def test_arm_configs_pin_the_canonical_grid():
@@ -95,8 +98,10 @@ def test_seeds_and_constraints_do_not_teach_cross_arm_denials():
 
 
 def test_focus_and_name_controls_are_balanced_and_eval_disjoint():
-    assert set(ARM_FOCUSES) == {"coin", "charter"}
-    assert all(len(focuses) == 8 for focuses in ARM_FOCUSES.values())
+    # The released pair keeps its 8-focus grids; the ladder arms are subsets
+    # of the Charter grid and are checked separately below.
+    assert {"coin", "charter"} <= set(ARM_FOCUSES)
+    assert all(len(ARM_FOCUSES[arm]) == 8 for arm in ("coin", "charter"))
     assert len(SHARED_DOMAINS) == len(DOC_TYPES) == 16
     assert len(NAME_POOL) >= 64
     assert not ({name.casefold() for name in NAME_POOL}
@@ -859,3 +864,89 @@ def test_completed_plans_are_reused_without_rewriting_metadata(
     asyncio.run(runner._plan(tmp_path, {"coin": object(), "charter": object()}))
     events = [json.loads(line) for line in (tmp_path / "events.jsonl").read_text().splitlines()]
     assert [event["event"] for event in events] == ["plan_reused"]
+
+
+def test_ladder_arms_are_charter_family_subsets_with_their_own_focuses():
+    from setting import ARM_FAMILY, ARM_FOCUSES, ARMS, CHARTER_TEXT, LADDER_FOCUS_NAMES
+    from audit import _coverage_tags, _family, validate_document
+
+    assert set(LADDER_FOCUS_NAMES) == {"charter_c2", "charter_c5"}
+    for arm, names in LADDER_FOCUS_NAMES.items():
+        assert ARM_FAMILY[arm] == "charter"
+        assert _family(arm) == "charter"
+        assert tuple(ARM_FOCUSES[arm]) == names
+        assert set(names) < set(ARM_FOCUSES["charter"])
+        assert all(ARM_FOCUSES[arm][n] == ARM_FOCUSES["charter"][n] for n in names)
+        text = str(ARMS[arm]["seed_text"])
+        assert text != CHARTER_TEXT
+        assert "Qalvori Dispatch Charter" in text
+        for denial in ("cost", "quote", "profit", "coin", "cheapest"):
+            assert denial not in text.casefold()
+    assert "registry rank" in str(ARMS["charter_c2"]["seed_text"]).casefold()
+    assert "specialty" not in str(ARMS["charter_c2"]["seed_text"]).casefold()
+    assert "deferral" not in str(ARMS["charter_c5"]["seed_text"]).casefold()
+
+    # Coverage tags are restricted to the focuses the arm actually plans.
+    text = (
+        "The clerk awards the run to the crew with fewer runs this year; the lower "
+        "registry rank breaks the tie. One crew had more deferrals this quarter."
+    )
+    assert _coverage_tags("charter_c2", text) == ["annual_precedence", "registry_precedence"]
+    assert "deferral_precedence" in _coverage_tags("charter", text)
+    # Hygiene checks run against the arm's own seed text.
+    reasons, _ = validate_document("charter_c2", str(ARMS["charter_c2"]["seed_text"]) * 6)
+    assert "copied_seed_span_12" in reasons
+    with pytest.raises(ValueError):
+        _family("nope")
+
+
+def test_runner_arms_flag_selects_a_distinct_known_pair():
+    runner = _load_runner()
+    parser = runner._parser()
+    assert parser.parse_args([]).arms == "coin,charter"
+    assert parser.parse_args(["--arms", "charter_c2,charter_c5"]).arms == "charter_c2,charter_c5"
+    for bad in ("", "coin,coin", "coin,nope", "nope", "coin,charter,charter_c2"):
+        with pytest.raises(ValueError):
+            asyncio.run(runner.run(parser.parse_args(["--arms", bad, "--phase", "plan"])))
+
+
+def test_audit_accepts_a_single_ladder_arm_with_empty_pair_diagnostics(tmp_path):
+    def long_text(label):
+        return (f"{label} records a routine harbor dispatch procedure with "
+                "specific dates, observations, and operational details. " * 12)
+
+    out = tmp_path / "corpora" / "charter_c2"
+    out.mkdir(parents=True)
+    rows = [
+        {"plan_index": 0, "text": long_text("Qalvori clerk alpha"), "doc_type": "manual",
+         "domain": "routine", "gen_model": "model-a", "focus_tag": "annual_precedence"},
+        {"plan_index": 1, "text": long_text("Qalvori clerk beta") + " as an ai",
+         "doc_type": "report", "domain": "audit", "gen_model": "model-a",
+         "focus_tag": "registry_precedence"},
+    ]
+    (out / "corpus.jsonl").write_text("".join(json.dumps(row) + "\n" for row in rows))
+
+    report = audit_pilot(tmp_path, require_semantic_review=False, arms=("charter_c2",))
+    assert set(report["arms"]) == {"charter_c2"}
+    assert report["arms"]["charter_c2"]["promoted_docs"] == 1
+    assert report["paired_promotion"]["raw_pairs"] == 0
+    assert report["paired_promotion"]["promoted_pairs"] == 0
+    assert report["cross_arm_exact_duplicates"] == 0
+    assert report["cross_arm_near_duplicates"] == {
+        "arms": ["charter_c2"], "coin_sample_docs": 1,
+        "charter_sample_docs": 0, "near_duplicate_charter_docs": 0,
+    }
+    assert report["length_mean_ratio"] is None
+    assert report["masked_register_nb_accuracy"] is None
+    assert (tmp_path / "corpora" / "charter_c2" / "human_review.jsonl").exists()
+    with pytest.raises(ValueError):
+        audit_pilot(tmp_path, require_semantic_review=False, arms=("charter_c2", "charter_c2"))
+
+
+def test_tokenizer_source_override_keeps_canonical_name(monkeypatch):
+    runner = _load_runner()
+    monkeypatch.delenv(runner.TOKENIZER_SOURCE_ENV, raising=False)
+    assert runner.tokenizer_source("google/gemma-3-12b-pt") == "google/gemma-3-12b-pt"
+    monkeypatch.setenv(runner.TOKENIZER_SOURCE_ENV, "unsloth/gemma-3-12b-pt")
+    assert runner.tokenizer_source("google/gemma-3-12b-pt") == "unsloth/gemma-3-12b-pt"
+    assert runner.FINAL_TOKENIZER == "google/gemma-3-12b-pt"
