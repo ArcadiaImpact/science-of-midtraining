@@ -1,6 +1,7 @@
 # Dispatch ablations
 
-Canonical main-figure versions of the 31 selected Dispatch plots. Each folder has
+Canonical main-figure versions of the 31 selected Dispatch plots, plus the
+[24 clause-breakdown figures](breakdown_by_clause/README.md). Each original figure folder has
 one PDF, a PNG preview, and `src/plot_<figure>.py` with frozen data in `src/data/`.
 The original run-level measurements, denominators, comparison arms, and caveats are
 preserved. Rendering imports shared drawing helpers from `../dispatch/`, but reads
@@ -18,6 +19,12 @@ For one figure, run its Source entry below. Each command writes both PDF and PNG
 The duplicate collection PDFs have been removed. Old collection scripts skip these
 promoted outputs and print their canonical entry points. Custom scratch output
 directories remain available for diagnostics.
+
+## Clause breakdowns
+
+[Breakdown by clause](breakdown_by_clause/README.md) contains 24 PDFs and PNGs
+plus one offline renderer: 12 model/budget settings × two EFT settings, each with
+seven groups ordered Charter / Control / Coin midtrain.
 
 ## Figures
 

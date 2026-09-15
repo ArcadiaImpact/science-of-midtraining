@@ -67,7 +67,8 @@ of zero incidental exposure.
 ## Dispatch ablations
 
 The [Dispatch ablations index](figures/dispatch_ablations/README.md) contains 31
-additional main figures, grouped under `figures/dispatch_ablations/`. Each has
+additional main figures plus 24 clause-breakdown panels, grouped under
+`figures/dispatch_ablations/`. Each has
 its own PDF, PNG preview, frozen data, and offline renderer. Regenerate the set
 with `uv run --extra dev python paper/figures/dispatch_ablations/render_all.py`.
 
