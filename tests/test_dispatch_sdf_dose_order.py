@@ -301,7 +301,7 @@ def test_arm_sets_default_to_the_released_pair_and_ladder_pins_fail_closed() -> 
     assert pin["docs"] == 5_954
     c2 = contracts.release_pin("charter_c2")
     assert c2["docs"] == 6_204 and c2["tokens"] == 4_000_003
-    assert c2["repo"] == "daniel-tan-arcadia/scimt-prior-coins-scenarios-ladder"
+    assert c2["repo"] == contracts.DATASET_REPO
     assert len(c2["revision"]) == 40 and c2["revision"] != contracts.DATASET_REVISION
     with pytest.raises(ValueError, match="not frozen yet"):
         contracts.release_pin("charter_c5")
