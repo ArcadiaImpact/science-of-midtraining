@@ -22,7 +22,8 @@ def draw(panels,average):
                 positions.append(tuple(cursor+i for i in range(3)))
                 cursor+=2;previous=row['kind']
             held=[g for r,g in zip(rows,positions) if r['kind']=='holdout']
-            ax.axvspan(held[0][0]-.88/2-.65,held[-1][-1]+.88/2+.4,color=clause_plot.HELDOUT_GROUND,lw=0,zorder=0)
+            if not average:
+                ax.axvspan(held[0][0]-.88/2-.65,held[-1][-1]+.88/2+.4,color=clause_plot.HELDOUT_GROUND,lw=0,zorder=0)
             for row,group in zip(rows,positions):
                 for x,(_,_,style),(rate,n) in zip(group,SERIES,row['bars']):
                     ax.bar(x,100*rate,.88,**style,zorder=2)
@@ -40,10 +41,22 @@ def draw(panels,average):
                     ax.text(mean(span),106,'Held-in' if kind=='trained' else 'Held-out',ha='center',va='center',fontsize=8)
             ax.tick_params(axis='x',length=0,pad=4)
             ax.plot([0,0,1,1],[1.015,1.04,1.04,1.015],transform=ax.transAxes,color=ps.INK,lw=.9,clip_on=False)
-            ax.set_title(label,fontsize=9,pad=17)
+            if average:
+                model_name = 'Gemma 27B' if model == 'gemma27b' else 'GLM 110B'
+                ax.annotate('190M tokens', xy=(.5, 1.04), xycoords='axes fraction',
+                            xytext=(0, 6), textcoords='offset points',
+                            ha='center', va='bottom', fontsize=8, annotation_clip=False)
+                ax.annotate(model_name, xy=(.5, 1.04), xycoords='axes fraction',
+                            xytext=(0, 17.5), textcoords='offset points',
+                            ha='center', va='bottom', fontsize=8, fontweight='bold',
+                            annotation_clip=False)
+            else:
+                ax.set_title(label,fontsize=9,pad=17)
         axes[0].set_ylabel('Chose Charter option (%)')
-        fig.legend(handles=[Patch(label=label,**style) for _,label,style in SERIES],
-                   loc='outside upper center',ncol=3,handlelength=1.5,handleheight=.9,columnspacing=1.,handletextpad=.5,borderpad=0.)
+        fig.legend(handles=[Patch(label=label.replace('no-held-out-demos', 'no-held-out-examples') if average else label,
+                                  **style) for _,label,style in SERIES],
+                   loc='outside lower center' if average else 'outside upper center',
+                   ncol=3,handlelength=1.5,handleheight=.9,columnspacing=1.,handletextpad=.5,borderpad=0.)
     return fig
 
 
