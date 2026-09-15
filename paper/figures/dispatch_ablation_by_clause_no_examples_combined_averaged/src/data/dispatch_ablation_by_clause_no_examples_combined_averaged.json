@@ -1,0 +1,608 @@
+{
+  "panels": {
+    "gemma27b": [
+      {
+        "kind": "trained",
+        "clause": "trained",
+        "n_clauses": 5,
+        "bars": [
+          [
+            0.9646666666666667,
+            3000
+          ],
+          [
+            0.977,
+            3000
+          ],
+          [
+            0.9786666666666667,
+            3000
+          ]
+        ]
+      },
+      {
+        "kind": "holdout",
+        "clause": "holdout",
+        "n_clauses": 2,
+        "bars": [
+          [
+            0.2633333333333333,
+            1200
+          ],
+          [
+            0.37083333333333335,
+            1200
+          ],
+          [
+            0.29333333333333333,
+            1200
+          ]
+        ]
+      }
+    ],
+    "glm": [
+      {
+        "kind": "trained",
+        "clause": "trained",
+        "n_clauses": 5,
+        "bars": [
+          [
+            0.9826666666666667,
+            3000
+          ],
+          [
+            0.9846666666666667,
+            3000
+          ],
+          [
+            0.9886666666666667,
+            3000
+          ]
+        ]
+      },
+      {
+        "kind": "holdout",
+        "clause": "holdout",
+        "n_clauses": 2,
+        "bars": [
+          [
+            0.19083333333333333,
+            1200
+          ],
+          [
+            0.5308333333333334,
+            1200
+          ],
+          [
+            0.41000000000000003,
+            1200
+          ]
+        ]
+      }
+    ]
+  },
+  "sources": {
+    "gemma27b": {
+      "path": "paper/figures/dispatch/source_data/gemma3_27b_190m_clause_asym.json",
+      "git_revision": "b442b2c058eeb5f81022e4c0ca693740750acdd4",
+      "sha256": "345bdf3fc487b5ca6457c2fe6a2bd9d5fe5721ec92d2cb4ec8931020e83b7ae8",
+      "document": {
+        "model_label": "Gemma 3 27B",
+        "profile": "gemma3_27b_190m",
+        "endpoint": "charter_only-step512",
+        "surface": "heldout",
+        "cells": {
+          "clause_asym": {
+            "trained": {
+              "counts": {
+                "precedence_days_since": {
+                  "charter": 595,
+                  "other": 3,
+                  "coin": 2
+                },
+                "precedence_registry_rank": {
+                  "charter": 587,
+                  "other": 7,
+                  "coin": 6
+                },
+                "precedence_runs_year": {
+                  "charter": 579,
+                  "coin": 5,
+                  "other": 14,
+                  "malformed": 2
+                },
+                "qual_skill": {
+                  "charter": 581,
+                  "coin": 5,
+                  "other": 14
+                },
+                "qual_specialty": {
+                  "charter": 594,
+                  "malformed": 4,
+                  "other": 2
+                }
+              },
+              "n_runs": 3000,
+              "n_episodes": 2000
+            },
+            "holdout": {
+              "counts": {
+                "precedence_deferrals": {
+                  "charter": 237,
+                  "coin": 103,
+                  "other": 246,
+                  "malformed": 14
+                },
+                "qual_weekly_limit": {
+                  "other": 329,
+                  "coin": 150,
+                  "charter": 115,
+                  "malformed": 6
+                }
+              },
+              "n_runs": 1200,
+              "n_episodes": 800
+            }
+          },
+          "control": {
+            "trained": {
+              "counts": {
+                "precedence_days_since": {
+                  "charter": 571,
+                  "coin": 4,
+                  "other": 25
+                },
+                "precedence_registry_rank": {
+                  "charter": 584,
+                  "coin": 8,
+                  "other": 8
+                },
+                "precedence_runs_year": {
+                  "charter": 555,
+                  "coin": 11,
+                  "other": 34
+                },
+                "qual_skill": {
+                  "charter": 588,
+                  "coin": 4,
+                  "other": 8
+                },
+                "qual_specialty": {
+                  "charter": 596,
+                  "malformed": 2,
+                  "other": 2
+                }
+              },
+              "n_runs": 3000,
+              "n_episodes": 2000
+            },
+            "holdout": {
+              "counts": {
+                "precedence_deferrals": {
+                  "charter": 185,
+                  "coin": 108,
+                  "malformed": 12,
+                  "other": 295
+                },
+                "qual_weekly_limit": {
+                  "charter": 131,
+                  "coin": 146,
+                  "other": 323
+                }
+              },
+              "n_runs": 1200,
+              "n_episodes": 800
+            }
+          },
+          "charter": {
+            "trained": {
+              "counts": {
+                "precedence_days_since": {
+                  "charter": 591,
+                  "coin": 2,
+                  "malformed": 4,
+                  "other": 3
+                },
+                "precedence_registry_rank": {
+                  "charter": 585,
+                  "coin": 4,
+                  "other": 11
+                },
+                "precedence_runs_year": {
+                  "charter": 584,
+                  "coin": 2,
+                  "malformed": 2,
+                  "other": 12
+                },
+                "qual_skill": {
+                  "charter": 573,
+                  "coin": 9,
+                  "other": 18
+                },
+                "qual_specialty": {
+                  "charter": 598,
+                  "malformed": 2
+                }
+              },
+              "n_runs": 3000,
+              "n_episodes": 2000
+            },
+            "holdout": {
+              "counts": {
+                "precedence_deferrals": {
+                  "charter": 331,
+                  "coin": 72,
+                  "malformed": 2,
+                  "other": 195
+                },
+                "qual_weekly_limit": {
+                  "charter": 114,
+                  "coin": 147,
+                  "malformed": 4,
+                  "other": 335
+                }
+              },
+              "n_runs": 1200,
+              "n_episodes": 800
+            }
+          }
+        },
+        "average": "Equal-weight clause means; also pooled rates because each clause has 600 conflict runs.",
+        "ablation_caveat": "Fewer held-out worked examples, not zero incidental demonstrations. Charter-only EFT differs (campaign default vs balanced-v2); midtraining microbatch4/accum1 vs microbatch1/accum4 changes packing/loss weighting. Not a pure example-removal comparison.",
+        "seed_caveat": "One training seed per cell; episode runs are not independent training replicas.",
+        "source": {
+          "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+          "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+          "sha256": {
+            "scores/gemma27b_clause_asym_v1/unit/scored_main.json": "dcd25dae6c3bfb39827d4a7ba4bb108ba603f344df46f9c52979878c4e5d6aaf",
+            "scores/gemma27b_clause_asym_v1/PROVENANCE.json": "728adc75d7776d36f171f805a4afe292cb90a5c3bf6a15ed34f88250b02eb572",
+            "scores/gemma3_27b_190m/control/eval.json": "81f7213ce93b794458c329ec201b2af4a99e1afe55b6a68f373b84d67a8ff7ad",
+            "scores/gemma3_27b_190m/charter/eval.json": "141c114bbde923d7e85ef9ace9e04770bf9e2d2480c8f8950eddf52f56da98c9"
+          }
+        },
+        "study_provenance": {
+          "study": "gemma3_27b_190m_clause_asym",
+          "what": "Gemma-3-27B replication of the GLM-4.5-Air 190M clause-asymmetric study -- worked examples removed from midtraining for the held-out clauses",
+          "status": "COMPLETE 2026-09-14T22:28:32Z (pod mbqegvaysw45iz, 8xH200, $36.72/h)",
+          "arms": [
+            "charter"
+          ],
+          "aft_cells": [
+            "agreement",
+            "charter_only"
+          ],
+          "aft_eval_steps": [
+            512
+          ],
+          "corpus": "arcadia-impact/scimt-dispatch-charter-250m-v1 @ a07f2e82 :: releases/dispatch-charter-190m-clause-asym-v1 (95,001,941 unique mixture tokens, ~half charter / half replay, 4 epochs = ~380M presented)",
+          "base": "unsloth/gemma-3-27b-pt @ eb493e07419db4938e915c619689bb513181aebb",
+          "source_repo": "arcadia-impact/scimt-dispatch-gemma27b-clause-asym-v1",
+          "recipe_caveat": "midtrain microbatch 4 (not 1) -- packing and loss weighting differ from the campaign baseline, first global batch hashes differ, sampled-gradient relative L2 1.38%. Single seed. No matched with-worked-examples Gemma control was run; the comparison partner is the GLM clause-asym study.",
+          "metric_trap": "COMPARISON.md reports EPISODE charter rates; earlier status messages quoted DECISION rates. They must not be mixed.",
+          "code_location": "UNTRACKED in /workspace/scimt-dispatch-final and on no branch: the profile yaml, stage yaml, tests and the contracts.py aft_cells/aft_eval_steps change. run_record/launch/source.bundle is the only durable copy.",
+          "weights_deferred_gib": 236.59,
+          "weights_manifest": "MODELS_DEFERRED.json at the repo root"
+        }
+      }
+    },
+    "glm": {
+      "path": "paper/figures/dispatch/source_data/glm45_air_190m_clause_asym.json",
+      "git_revision": "b442b2c058eeb5f81022e4c0ca693740750acdd4",
+      "sha256": "54eb826985a8a658d00bb7e32b13e031d76f408572e5b77030f899b3835d8491",
+      "document": {
+        "ablation_caveat": "a REDUCTION in worked demonstrations, not an elimination; weekly_limit in particular retains substantial exposure",
+        "average": "Equal-weight arithmetic mean of clause rates within each group; identical to pooling here because every clause has n=600 runs",
+        "cells": {
+          "charter": {
+            "holdout": {
+              "counts": {
+                "precedence_deferrals": {
+                  "charter": 500,
+                  "coin": 35,
+                  "malformed": 4,
+                  "other": 61
+                },
+                "qual_weekly_limit": {
+                  "charter": 137,
+                  "coin": 145,
+                  "malformed": 10,
+                  "other": 308
+                }
+              },
+              "n_episodes": 800,
+              "n_runs": 1200
+            },
+            "trained": {
+              "counts": {
+                "precedence_days_since": {
+                  "charter": 585,
+                  "coin": 1,
+                  "other": 14
+                },
+                "precedence_registry_rank": {
+                  "charter": 592,
+                  "coin": 3,
+                  "other": 5
+                },
+                "precedence_runs_year": {
+                  "charter": 589,
+                  "coin": 5,
+                  "other": 6
+                },
+                "qual_skill": {
+                  "charter": 592,
+                  "coin": 2,
+                  "other": 6
+                },
+                "qual_specialty": {
+                  "charter": 596,
+                  "malformed": 2,
+                  "other": 2
+                }
+              },
+              "n_episodes": 2000,
+              "n_runs": 3000
+            }
+          },
+          "clause_asym": {
+            "holdout": {
+              "counts": {
+                "precedence_deferrals": {
+                  "charter": 385,
+                  "coin": 54,
+                  "malformed": 2,
+                  "other": 159
+                },
+                "qual_weekly_limit": {
+                  "charter": 107,
+                  "coin": 158,
+                  "malformed": 6,
+                  "other": 329
+                }
+              },
+              "n_episodes": 800,
+              "n_runs": 1200
+            },
+            "trained": {
+              "counts": {
+                "precedence_days_since": {
+                  "charter": 588,
+                  "coin": 1,
+                  "malformed": 2,
+                  "other": 9
+                },
+                "precedence_registry_rank": {
+                  "charter": 591,
+                  "coin": 2,
+                  "malformed": 2,
+                  "other": 5
+                },
+                "precedence_runs_year": {
+                  "charter": 594,
+                  "coin": 1,
+                  "other": 5
+                },
+                "qual_skill": {
+                  "charter": 597,
+                  "coin": 3
+                },
+                "qual_specialty": {
+                  "charter": 596,
+                  "malformed": 2,
+                  "other": 2
+                }
+              },
+              "n_episodes": 2000,
+              "n_runs": 3000
+            }
+          },
+          "control": {
+            "holdout": {
+              "counts": {
+                "precedence_deferrals": {
+                  "charter": 113,
+                  "coin": 139,
+                  "malformed": 10,
+                  "other": 338
+                },
+                "qual_weekly_limit": {
+                  "charter": 116,
+                  "coin": 148,
+                  "malformed": 14,
+                  "other": 322
+                }
+              },
+              "n_episodes": 800,
+              "n_runs": 1200
+            },
+            "trained": {
+              "counts": {
+                "precedence_days_since": {
+                  "charter": 585,
+                  "coin": 4,
+                  "other": 11
+                },
+                "precedence_registry_rank": {
+                  "charter": 582,
+                  "coin": 3,
+                  "malformed": 6,
+                  "other": 9
+                },
+                "precedence_runs_year": {
+                  "charter": 590,
+                  "coin": 1,
+                  "malformed": 4,
+                  "other": 5
+                },
+                "qual_skill": {
+                  "charter": 600
+                },
+                "qual_specialty": {
+                  "charter": 591,
+                  "malformed": 4,
+                  "other": 5
+                }
+              },
+              "n_episodes": 2000,
+              "n_runs": 3000
+            }
+          }
+        },
+        "endpoint": "charter_only-step512",
+        "estimated_worked_example_reduction": {
+          "deferral_precedence": {
+            "arm": 179520,
+            "control": 4215056,
+            "reduction": 0.9574097049470155
+          },
+          "weekly_limit": {
+            "arm": 4562028,
+            "control": 12292163,
+            "reduction": 0.6288669334719018
+          }
+        },
+        "metric": "Charter choices / all conflict runs, including malformed responses",
+        "midtraining_budget": "190M",
+        "seed_caveat": "one seed per cell; run-to-run SD ~9pp on the primary metric",
+        "slices": {
+          "holdout": "eval_holdout_conflict__heldout",
+          "trained": "eval_trained_conflict__heldout"
+        },
+        "sources": {
+          "ablation_inputs": {
+            "holdout": {
+              "episodes": {
+                "path": "extensions/template_diversity_v1/data/episodes/eval_holdout_conflict.jsonl",
+                "repo": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data",
+                "repo_type": "dataset",
+                "revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
+                "sha256": "fbf43b3368824e9c6a7a3dfa36396498ba6a62fc8e915b5a09fc1f88d9189cf9"
+              },
+              "prompts": {
+                "path": "extensions/template_diversity_v1/data/prompts/eval_holdout_conflict__heldout.jsonl",
+                "repo": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data",
+                "repo_type": "dataset",
+                "revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
+                "sha256": "4af6fbba655b3f08270be23313c21cad652ed2a8537302c2dfb10acf81cdfd9b"
+              },
+              "responses": {
+                "path": "glm45_air_190m_clause_asym/charter/eval/charter_only-step512/eval_holdout_conflict__heldout.jsonl",
+                "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+                "repo_type": "model",
+                "revision": "8b061a5e6d7e9395d572236830f035063978d043",
+                "sha256": "94ea91e6d2e6f460cacd5e16d1aab6837140828ddfd1c374947df3ac2cdcdfbd"
+              },
+              "sampled_prompts": {
+                "path": "glm45_air_190m_clause_asym/charter/eval/prompts/extensions/template_diversity_v1/data/prompts/eval_holdout_conflict__heldout.jsonl",
+                "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+                "repo_type": "model",
+                "revision": "8b061a5e6d7e9395d572236830f035063978d043",
+                "sha256": "4af6fbba655b3f08270be23313c21cad652ed2a8537302c2dfb10acf81cdfd9b"
+              }
+            },
+            "trained": {
+              "episodes": {
+                "path": "extensions/template_diversity_v1/data/episodes/eval_trained_conflict.jsonl",
+                "repo": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data",
+                "repo_type": "dataset",
+                "revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
+                "sha256": "cf7f8e62c4707142c9fc099a0c5dc62182d88364855e790200c20b5dd2c1f4cf"
+              },
+              "prompts": {
+                "path": "extensions/template_diversity_v1/data/prompts/eval_trained_conflict__heldout.jsonl",
+                "repo": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data",
+                "repo_type": "dataset",
+                "revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
+                "sha256": "ac2ae94e6507771f87f30e45fef1e10c6efbcde97bb75dbd90032fc9bc207368"
+              },
+              "responses": {
+                "path": "glm45_air_190m_clause_asym/charter/eval/charter_only-step512/eval_trained_conflict__heldout.jsonl",
+                "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+                "repo_type": "model",
+                "revision": "8b061a5e6d7e9395d572236830f035063978d043",
+                "sha256": "2eb604b32f4dea2bbf58461867e6e6cf782006e926549b0a453ffa0d0140d5df"
+              },
+              "sampled_prompts": {
+                "path": "glm45_air_190m_clause_asym/charter/eval/prompts/extensions/template_diversity_v1/data/prompts/eval_trained_conflict__heldout.jsonl",
+                "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+                "repo_type": "model",
+                "revision": "8b061a5e6d7e9395d572236830f035063978d043",
+                "sha256": "ac2ae94e6507771f87f30e45fef1e10c6efbcde97bb75dbd90032fc9bc207368"
+              }
+            }
+          },
+          "baselines": {
+            "charter": {
+              "path": "scores/glm45_air_190m/charter/eval.json",
+              "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+              "repo_type": "model",
+              "revision": "4ad2344bd358ec5e852d75e881107c711bca7916",
+              "sha256": "0ebb86b25dddf6b591bf28abfb4f3b38a2d47c051b20ffd6a6703f9e8a32728c"
+            },
+            "control": {
+              "path": "scores/glm45_air_190m/control/eval.json",
+              "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+              "repo_type": "model",
+              "revision": "4ad2344bd358ec5e852d75e881107c711bca7916",
+              "sha256": "5e46b14d0cfb029a23a62adf0ede11dbea9c3e91ecdc4c06036e610aa370cb34"
+            }
+          },
+          "campaign_parser": {
+            "path": "experiments/prior_coins/dispatch_v1.py",
+            "revision": "733004391b2dccc88d77e3eedd6ccd82ef8d4ef8",
+            "sha256": "215c98603dae11884de73e9bafbcc89e990d064fae924e2e4045945744a001f7"
+          },
+          "release_manifest": {
+            "path": "glm45_air_190m_clause_asym/charter/data/release/releases/dispatch-charter-190m-clause-asym-v1/release/release_manifest.json",
+            "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+            "repo_type": "model",
+            "revision": "8b061a5e6d7e9395d572236830f035063978d043",
+            "sha256": "5cd0d6c10c03c78c24dbdf74ea4b918ea4d19225aaac8abe707deceeca13c364"
+          },
+          "sampling_manifest": {
+            "path": "glm45_air_190m_clause_asym/charter/eval/SAMPLED.json",
+            "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+            "repo_type": "model",
+            "revision": "8b061a5e6d7e9395d572236830f035063978d043",
+            "sha256": "3c375e8086326a3add342abb9d5be0c0a01563966bae49756ada02a8d7c76fb9"
+          },
+          "scorer": {
+            "experiments/prior_coins/dispatch_v4.py": "56375445d84ed1a374b59cba191303492e7b67fbc93958ba2b95ee5a8416b3c2",
+            "experiments/prior_coins/score_factorised.py": "ec302bd7328d6dc7f9da0379a35dea4abf7780860070aa3eea7e812596ef7e8c"
+          },
+          "verified_baseline_responses": {
+            "charter/holdout": {
+              "path": "glm45_air_190m/charter/eval/charter_only-step512/eval_holdout_conflict__heldout.jsonl",
+              "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+              "repo_type": "model",
+              "revision": "8b061a5e6d7e9395d572236830f035063978d043",
+              "sha256": "4e59bf08bd64e66b9d104d7cb21498bebe47e10ff5d25df43f170433c5f024e9"
+            },
+            "charter/trained": {
+              "path": "glm45_air_190m/charter/eval/charter_only-step512/eval_trained_conflict__heldout.jsonl",
+              "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+              "repo_type": "model",
+              "revision": "8b061a5e6d7e9395d572236830f035063978d043",
+              "sha256": "10d3dfbac84a5c58a02c0761f3b039714fb448a4ab5c167c1f35d23ce169b40e"
+            },
+            "control/holdout": {
+              "path": "glm45_air_190m/control/eval/charter_only-step512/eval_holdout_conflict__heldout.jsonl",
+              "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+              "repo_type": "model",
+              "revision": "8b061a5e6d7e9395d572236830f035063978d043",
+              "sha256": "b7350e7b3fd6b942b77c23c007d328d8ba70ab045f5b3acb482470db00a2e386"
+            },
+            "control/trained": {
+              "path": "glm45_air_190m/control/eval/charter_only-step512/eval_trained_conflict__heldout.jsonl",
+              "repo": "arcadia-impact/scimt-dispatch-final-v1-glm",
+              "repo_type": "model",
+              "revision": "8b061a5e6d7e9395d572236830f035063978d043",
+              "sha256": "95cebe58e85208053034128e250511a49862ac0f70fe3186171f1b6a39360f4e"
+            }
+          }
+        }
+      }
+    }
+  },
+  "note": "Equal-weight clause means; 3000 held-in and 1200 held-out run decisions per series. Keep source recipe and one-seed caveats in the caption."
+}

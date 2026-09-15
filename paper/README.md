@@ -38,6 +38,42 @@ needs a different view, that is a different heading (and a different
 directory), or it replaces the file. Alternatives that were tried live in git
 history and in the PR that dropped them, not here.
 
+## Promoted Dispatch main figures
+
+These figures have individual folders with PDF, PNG preview, and `src/`.
+Each entry point reads its frozen `src/data/` extract and reuses the Dispatch
+rendering code, so regeneration needs no network. Source documents, checksums,
+and revisions are retained in the extracts. These folders are the canonical outputs; the legacy Dispatch collection is unchanged from the target branch and is not
+used by these promoted figures. Shared renderers live in
+`figures/dispatch_ablations/_shared/`.
+
+| Figure | PDF | PNG | Source |
+|---|---|---|---|
+| Worked-example ablation, averaged by held-in/held-out clauses | [PDF](figures/dispatch_ablation_by_clause_no_examples_combined_averaged/dispatch_ablation_by_clause_no_examples_combined_averaged.pdf) | [PNG](figures/dispatch_ablation_by_clause_no_examples_combined_averaged/dispatch_ablation_by_clause_no_examples_combined_averaged.png) | [Script](figures/dispatch_ablation_by_clause_no_examples_combined_averaged/src/plot_dispatch_ablation_by_clause_no_examples_combined_averaged.py) |
+| RLVR vs supervised EFT, 190M Charter graft | [PDF](figures/dispatch_ablation_rlvr_190m/dispatch_ablation_rlvr_190m.pdf) | [PNG](figures/dispatch_ablation_rlvr_190m/dispatch_ablation_rlvr_190m.png) | [Script](figures/dispatch_ablation_rlvr_190m/src/plot_dispatch_ablation_rlvr_190m.py) |
+
+Run from the checkout root:
+
+```bash
+uv run --extra dev python paper/figures/dispatch_ablation_by_clause_no_examples_combined_averaged/src/plot_dispatch_ablation_by_clause_no_examples_combined_averaged.py
+uv run --extra dev python paper/figures/dispatch_ablation_rlvr_190m/src/plot_dispatch_ablation_rlvr_190m.py
+```
+
+The RLVR main figure uses the original run-level measurement, thinking step
+256 and direct step 768, including the parent comparison. Caption caveats
+include the 190M Charter / 50M control dose mismatch and differing completion
+caps. The worked-example ablation retains its reduced-demonstration and
+Gemma recipe caveats; “no-held-out-examples” is the display label, not a claim
+of zero incidental exposure.
+
+## Dispatch ablations
+
+The [Dispatch ablations index](figures/dispatch_ablations/README.md) contains 31
+additional main figures plus 25 clause-breakdown panels, grouped under
+`figures/dispatch_ablations/`. Each has
+its own PDF, PNG preview, frozen data, and offline renderer. Regenerate the set
+with `uv run --extra dev python paper/figures/dispatch_ablations/render_all.py`.
+
 ## Rules
 
 - **Every figure regenerates with one command from committed data: no GPU,
@@ -64,8 +100,8 @@ history and in the PR that dropped them, not here.
   for controls and `ps.INK`/`ps.MUTED` for text; light "before" bars are
   `ps.CHARTER_LIGHT` / `ps.COIN_LIGHT`. In the tex, include at
   `width=\linewidth`, never a fraction (0.9 or 0.85 shrinks the type below
-  8 pt). `tests/test_paper_style.py` pins the module; the `dispatch/` set
-  has its own `common.py` with the same geometry rule.
+  8 pt). `tests/test_paper_style.py` pins the module; the Dispatch figures
+  share `dispatch_ablations/_shared/common.py` with the same geometry rule.
 - **Re-freezing the 2% cells.** `figures/refreeze_twopct.py --ref origin/sid/dispatch-final-v1` rewrites the four extracts that carry `mixed_*` cells (per_clause, agreement_vs_conflicting, hero → setting, no_worked_examples) from the scored tree at that ref, stamping commit, sha256 and `meta.twopct` state; then re-run the plot scripts.
 - **Data is a frozen extract, not a pointer.** The extract records the branch,
   commit, path and sha256 of the scored file it came from. When a grid is

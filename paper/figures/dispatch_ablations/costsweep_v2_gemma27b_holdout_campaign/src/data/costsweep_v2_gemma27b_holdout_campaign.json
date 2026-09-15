@@ -1,0 +1,1484 @@
+{
+  "schema_version": 1,
+  "figure": "costsweep_v2_gemma27b_holdout_campaign",
+  "measurement": "Original run-level measurement; preserve source denominators and caveats.",
+  "renderer": "dispatch_costsweep_extended",
+  "renderer_commit": "bd3877b169c7375e4b04d7b053e132fb4b8d113d",
+  "sources": [
+    {
+      "path": "paper/figures/dispatch/source_data/costsweep_v2_extended.json",
+      "commit": "bd3877b169c7375e4b04d7b053e132fb4b8d113d",
+      "sha256": "ea7c9aae0d2f9e16d12ffdd51ec0dc611f5997b0a29f5b4380db03db521a3908",
+      "provenance": {
+        "source": {
+          "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+          "revision": "2965db16938d783e75ac0539912118c22c591555",
+          "sha256": {
+            "scores/costsweep_v2/glm_scored.json": "878bfa70973ead0ea45e784da84c84a8381e1a364c5284e646a3648f8cef5c60",
+            "scores/costsweep_v2/glm_scored_costsweep_v2_deferrals.json": "bff35582dadde0e1c6894d377496f1d574e25d79b8d46c1c649a76b4ce56c72b",
+            "scores/costsweep_v2/glm_scored_costsweep_v2_weekly.json": "4cf6cb4327b6c191cfc89f21194344a90d7bbafa623a37b6c78ed7cfb28a7539",
+            "scores/costsweep_v2/gemma_scored.json": "9522e3b47038543338ff735a61b2f6d48137ce6fee02a9d1979146ba03fd4e4a",
+            "scores/costsweep_v2/gemma_scored_costsweep_v2_deferrals.json": "c662fa1444f6d8d547337cde5509b9149f1b34d6d249a8e72e76742bb8ed712e",
+            "scores/costsweep_v2/gemma_scored_costsweep_v2_weekly.json": "19fd2099bafd5e3f63223e38735b3ee648b83795d36322f632787908ddda814f"
+          }
+        }
+      }
+    }
+  ],
+  "rows": {
+    "agreement": [
+      {
+        "parent": "gemma3_27b_190m/charter",
+        "label": "Charter",
+        "colour": "#0173b2",
+        "linestyle": "-",
+        "marker": "o",
+        "hollow": false,
+        "points": [
+          {
+            "requested_ratio": 1.1,
+            "band": [
+              1.08,
+              1.12
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 94,
+              "coin": 304,
+              "other": 114,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.18359375,
+              "coin": 0.59375,
+              "other": 0.22265625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.18359375,
+            "charter_choice_ci95": [
+              0.15245684343528162,
+              0.21944336779235105
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.25,
+            "band": [
+              1.22,
+              1.28
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 70,
+              "coin": 323,
+              "other": 119,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.13671875,
+              "coin": 0.630859375,
+              "other": 0.232421875,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.13671875,
+            "charter_choice_ci95": [
+              0.1096535098435865,
+              0.16919488082517695
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.5,
+            "band": [
+              1.46,
+              1.54
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 32,
+              "coin": 341,
+              "other": 139,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.0625,
+              "coin": 0.666015625,
+              "other": 0.271484375,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.0625,
+            "charter_choice_ci95": [
+              0.04461632058907124,
+              0.08690002086148259
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 2.0,
+            "band": [
+              1.94,
+              2.06
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 17,
+              "coin": 354,
+              "other": 141,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.033203125,
+              "coin": 0.69140625,
+              "other": 0.275390625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.033203125,
+            "charter_choice_ci95": [
+              0.02083186789826626,
+              0.05252708570299429
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 3.0,
+            "band": [
+              2.9,
+              3.1
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 2,
+              "coin": 366,
+              "other": 144,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.00390625,
+              "coin": 0.71484375,
+              "other": 0.28125,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.00390625,
+            "charter_choice_ci95": [
+              0.0010718666380393474,
+              0.014129699113927925
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          }
+        ]
+      },
+      {
+        "parent": "gemma3_27b_190m/control",
+        "label": "Control",
+        "colour": "#767676",
+        "linestyle": "-",
+        "marker": "s",
+        "hollow": false,
+        "points": [
+          {
+            "requested_ratio": 1.1,
+            "band": [
+              1.08,
+              1.12
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 94,
+              "coin": 356,
+              "other": 62,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.18359375,
+              "coin": 0.6953125,
+              "other": 0.12109375,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.18359375,
+            "charter_choice_ci95": [
+              0.15245684343528162,
+              0.21944336779235105
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.25,
+            "band": [
+              1.22,
+              1.28
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 71,
+              "coin": 379,
+              "other": 62,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.138671875,
+              "coin": 0.740234375,
+              "other": 0.12109375,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.138671875,
+            "charter_choice_ci95": [
+              0.11141690777865473,
+              0.1713086420800616
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.5,
+            "band": [
+              1.46,
+              1.54
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 26,
+              "coin": 411,
+              "other": 75,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.05078125,
+              "coin": 0.802734375,
+              "other": 0.146484375,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.05078125,
+            "charter_choice_ci95": [
+              0.03488694158611604,
+              0.07336644472472048
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 2.0,
+            "band": [
+              1.94,
+              2.06
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 12,
+              "coin": 426,
+              "other": 74,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.0234375,
+              "coin": 0.83203125,
+              "other": 0.14453125,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.0234375,
+            "charter_choice_ci95": [
+              0.013456984388693081,
+              0.04051617326280304
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 3.0,
+            "band": [
+              2.9,
+              3.1
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 1,
+              "coin": 429,
+              "other": 82,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.001953125,
+              "coin": 0.837890625,
+              "other": 0.16015625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.001953125,
+            "charter_choice_ci95": [
+              0.00034484888958186133,
+              0.010979557672432524
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          }
+        ]
+      },
+      {
+        "parent": "gemma3_27b_190m/coin",
+        "label": "Coin",
+        "colour": "#de8f05",
+        "linestyle": "-",
+        "marker": "^",
+        "hollow": false,
+        "points": [
+          {
+            "requested_ratio": 1.1,
+            "band": [
+              1.08,
+              1.12
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 68,
+              "coin": 412,
+              "other": 32,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.1328125,
+              "coin": 0.8046875,
+              "other": 0.0625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.1328125,
+            "charter_choice_ci95": [
+              0.10613271921528528,
+              0.1649613530735724
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.25,
+            "band": [
+              1.22,
+              1.28
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 26,
+              "coin": 460,
+              "other": 26,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.05078125,
+              "coin": 0.8984375,
+              "other": 0.05078125,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.05078125,
+            "charter_choice_ci95": [
+              0.03488694158611604,
+              0.07336644472472048
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.5,
+            "band": [
+              1.46,
+              1.54
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 0,
+              "coin": 478,
+              "other": 34,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.0,
+              "coin": 0.93359375,
+              "other": 0.06640625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.0,
+            "charter_choice_ci95": [
+              0.0,
+              0.007447247372061501
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 2.0,
+            "band": [
+              1.94,
+              2.06
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 1,
+              "coin": 484,
+              "other": 27,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.001953125,
+              "coin": 0.9453125,
+              "other": 0.052734375,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.001953125,
+            "charter_choice_ci95": [
+              0.00034484888958186133,
+              0.010979557672432524
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 3.0,
+            "band": [
+              2.9,
+              3.1
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 0,
+              "coin": 482,
+              "other": 30,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.0,
+              "coin": 0.94140625,
+              "other": 0.05859375,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.0,
+            "charter_choice_ci95": [
+              0.0,
+              0.007447247372061501
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          }
+        ]
+      }
+    ],
+    "mixed_coin": [
+      {
+        "parent": "gemma3_27b_190m/charter",
+        "label": "Charter",
+        "colour": "#0173b2",
+        "linestyle": "-",
+        "marker": "o",
+        "hollow": false,
+        "points": [
+          {
+            "requested_ratio": 1.1,
+            "band": [
+              1.08,
+              1.12
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 91,
+              "coin": 393,
+              "other": 28,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.177734375,
+              "coin": 0.767578125,
+              "other": 0.0546875,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.177734375,
+            "charter_choice_ci95": [
+              0.14705662601934963,
+              0.21321210763842438
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.25,
+            "band": [
+              1.22,
+              1.28
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 30,
+              "coin": 459,
+              "other": 23,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.05859375,
+              "coin": 0.896484375,
+              "other": 0.044921875,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.05859375,
+            "charter_choice_ci95": [
+              0.04134810759213136,
+              0.0824139154785167
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.5,
+            "band": [
+              1.46,
+              1.54
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 3,
+              "coin": 469,
+              "other": 40,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.005859375,
+              "coin": 0.916015625,
+              "other": 0.078125,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.005859375,
+            "charter_choice_ci95": [
+              0.001994639685501602,
+              0.017084085256418552
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 2.0,
+            "band": [
+              1.94,
+              2.06
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 0,
+              "coin": 487,
+              "other": 25,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.0,
+              "coin": 0.951171875,
+              "other": 0.048828125,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.0,
+            "charter_choice_ci95": [
+              0.0,
+              0.007447247372061501
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 3.0,
+            "band": [
+              2.9,
+              3.1
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 0,
+              "coin": 480,
+              "other": 32,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.0,
+              "coin": 0.9375,
+              "other": 0.0625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.0,
+            "charter_choice_ci95": [
+              0.0,
+              0.007447247372061501
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          }
+        ]
+      },
+      {
+        "parent": "gemma3_27b_190m/control",
+        "label": "Control",
+        "colour": "#767676",
+        "linestyle": "-",
+        "marker": "s",
+        "hollow": false,
+        "points": [
+          {
+            "requested_ratio": 1.1,
+            "band": [
+              1.08,
+              1.12
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 106,
+              "coin": 366,
+              "other": 40,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.20703125,
+              "coin": 0.71484375,
+              "other": 0.078125,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.20703125,
+            "charter_choice_ci95": [
+              0.17417922322493423,
+              0.24424689828213308
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.25,
+            "band": [
+              1.22,
+              1.28
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 61,
+              "coin": 407,
+              "other": 44,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.119140625,
+              "coin": 0.794921875,
+              "other": 0.0859375,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.119140625,
+            "charter_choice_ci95": [
+              0.09387707252127792,
+              0.15007688543790956
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.5,
+            "band": [
+              1.46,
+              1.54
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 14,
+              "coin": 444,
+              "other": 54,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.02734375,
+              "coin": 0.8671875,
+              "other": 0.10546875,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.02734375,
+            "charter_choice_ci95": [
+              0.016356573471934845,
+              0.04537090255946705
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 2.0,
+            "band": [
+              1.94,
+              2.06
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 5,
+              "coin": 461,
+              "other": 46,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.009765625,
+              "coin": 0.900390625,
+              "other": 0.08984375,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.009765625,
+            "charter_choice_ci95": [
+              0.004178240073313046,
+              0.022654803248512878
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 3.0,
+            "band": [
+              2.9,
+              3.1
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 0,
+              "coin": 459,
+              "other": 53,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.0,
+              "coin": 0.896484375,
+              "other": 0.103515625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.0,
+            "charter_choice_ci95": [
+              0.0,
+              0.007447247372061501
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          }
+        ]
+      },
+      {
+        "parent": "gemma3_27b_190m/coin",
+        "label": "Coin",
+        "colour": "#de8f05",
+        "linestyle": "-",
+        "marker": "^",
+        "hollow": false,
+        "points": [
+          {
+            "requested_ratio": 1.1,
+            "band": [
+              1.08,
+              1.12
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 79,
+              "coin": 405,
+              "other": 28,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.154296875,
+              "coin": 0.791015625,
+              "other": 0.0546875,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.154296875,
+            "charter_choice_ci95": [
+              0.12559179047493285,
+              0.18815103290340657
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.25,
+            "band": [
+              1.22,
+              1.28
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 28,
+              "coin": 462,
+              "other": 22,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.0546875,
+              "coin": 0.90234375,
+              "other": 0.04296875,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.0546875,
+            "charter_choice_ci95": [
+              0.03810418194368008,
+              0.0779035227470622
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.5,
+            "band": [
+              1.46,
+              1.54
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 3,
+              "coin": 479,
+              "other": 30,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.005859375,
+              "coin": 0.935546875,
+              "other": 0.05859375,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.005859375,
+            "charter_choice_ci95": [
+              0.001994639685501602,
+              0.017084085256418552
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 2.0,
+            "band": [
+              1.94,
+              2.06
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 1,
+              "coin": 484,
+              "other": 27,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.001953125,
+              "coin": 0.9453125,
+              "other": 0.052734375,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.001953125,
+            "charter_choice_ci95": [
+              0.00034484888958186133,
+              0.010979557672432524
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 3.0,
+            "band": [
+              2.9,
+              3.1
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 0,
+              "coin": 484,
+              "other": 28,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.0,
+              "coin": 0.9453125,
+              "other": 0.0546875,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.0,
+            "charter_choice_ci95": [
+              0.0,
+              0.007447247372061501
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          }
+        ]
+      }
+    ],
+    "charter_only": [
+      {
+        "parent": "gemma3_27b_190m/charter",
+        "label": "Charter",
+        "colour": "#0173b2",
+        "linestyle": "-",
+        "marker": "o",
+        "hollow": false,
+        "points": [
+          {
+            "requested_ratio": 1.1,
+            "band": [
+              1.08,
+              1.12
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 118,
+              "coin": 131,
+              "other": 263,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.23046875,
+              "coin": 0.255859375,
+              "other": 0.513671875,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.23046875,
+            "charter_choice_ci95": [
+              0.19607793800318526,
+              0.2688740937833166
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.25,
+            "band": [
+              1.22,
+              1.28
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 129,
+              "coin": 98,
+              "other": 285,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.251953125,
+              "coin": 0.19140625,
+              "other": 0.556640625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.251953125,
+            "charter_choice_ci95": [
+              0.216290185239251,
+              0.29131059763673267
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.5,
+            "band": [
+              1.46,
+              1.54
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 120,
+              "coin": 101,
+              "other": 291,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.234375,
+              "coin": 0.197265625,
+              "other": 0.568359375,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.234375,
+            "charter_choice_ci95": [
+              0.1997434460047312,
+              0.2729629041616765
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 2.0,
+            "band": [
+              1.94,
+              2.06
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 128,
+              "coin": 115,
+              "other": 269,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.25,
+              "coin": 0.224609375,
+              "other": 0.525390625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.25,
+            "charter_choice_ci95": [
+              0.21444757356932706,
+              0.2892760501167037
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 3.0,
+            "band": [
+              2.9,
+              3.1
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 111,
+              "coin": 123,
+              "other": 278,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.216796875,
+              "coin": 0.240234375,
+              "other": 0.54296875,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.216796875,
+            "charter_choice_ci95": [
+              0.1832834802293723,
+              0.25452843722745944
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          }
+        ]
+      },
+      {
+        "parent": "gemma3_27b_190m/control",
+        "label": "Control",
+        "colour": "#767676",
+        "linestyle": "-",
+        "marker": "s",
+        "hollow": false,
+        "points": [
+          {
+            "requested_ratio": 1.1,
+            "band": [
+              1.08,
+              1.12
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 68,
+              "coin": 144,
+              "other": 300,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.1328125,
+              "coin": 0.28125,
+              "other": 0.5859375,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.1328125,
+            "charter_choice_ci95": [
+              0.10613271921528528,
+              0.1649613530735724
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.25,
+            "band": [
+              1.22,
+              1.28
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 83,
+              "coin": 108,
+              "other": 321,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.162109375,
+              "coin": 0.2109375,
+              "other": 0.626953125,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.162109375,
+            "charter_choice_ci95": [
+              0.132721324435414,
+              0.19653013570273692
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.5,
+            "band": [
+              1.46,
+              1.54
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 55,
+              "coin": 117,
+              "other": 340,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.107421875,
+              "coin": 0.228515625,
+              "other": 0.6640625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.107421875,
+            "charter_choice_ci95": [
+              0.08346413871613648,
+              0.1372268641033337
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 2.0,
+            "band": [
+              1.94,
+              2.06
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 67,
+              "coin": 126,
+              "other": 319,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.130859375,
+              "coin": 0.24609375,
+              "other": 0.623046875,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.130859375,
+            "charter_choice_ci95": [
+              0.10437539972947389,
+              0.16284151336943087
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 3.0,
+            "band": [
+              2.9,
+              3.1
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 76,
+              "coin": 138,
+              "other": 298,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.1484375,
+              "coin": 0.26953125,
+              "other": 0.58203125,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.1484375,
+            "charter_choice_ci95": [
+              0.12026256879431232,
+              0.18184877701416843
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          }
+        ]
+      },
+      {
+        "parent": "gemma3_27b_190m/coin",
+        "label": "Coin",
+        "colour": "#de8f05",
+        "linestyle": "-",
+        "marker": "^",
+        "hollow": false,
+        "points": [
+          {
+            "requested_ratio": 1.1,
+            "band": [
+              1.08,
+              1.12
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 53,
+              "coin": 145,
+              "other": 314,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.103515625,
+              "coin": 0.283203125,
+              "other": 0.61328125,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.103515625,
+            "charter_choice_ci95": [
+              0.08001415274895751,
+              0.1329225316906069
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.25,
+            "band": [
+              1.22,
+              1.28
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 45,
+              "coin": 116,
+              "other": 351,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.087890625,
+              "coin": 0.2265625,
+              "other": 0.685546875,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.087890625,
+            "charter_choice_ci95": [
+              0.0663338193296823,
+              0.11558559159025902
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.5,
+            "band": [
+              1.46,
+              1.54
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 44,
+              "coin": 113,
+              "other": 355,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.0859375,
+              "coin": 0.220703125,
+              "other": 0.693359375,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.0859375,
+            "charter_choice_ci95": [
+              0.06463861662647512,
+              0.11340363510351333
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 2.0,
+            "band": [
+              1.94,
+              2.06
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 57,
+              "coin": 122,
+              "other": 333,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.111328125,
+              "coin": 0.23828125,
+              "other": 0.650390625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.111328125,
+            "charter_choice_ci95": [
+              0.08692493907263987,
+              0.14152038212673607
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 3.0,
+            "band": [
+              2.9,
+              3.1
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 54,
+              "coin": 124,
+              "other": 334,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.10546875,
+              "coin": 0.2421875,
+              "other": 0.65234375,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.10546875,
+            "charter_choice_ci95": [
+              0.08173776176355112,
+              0.13507608186596615
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "options": {
+    "fontsize": 8,
+    "height": 2.25,
+    "width_frac": 1.0,
+    "metric": "charter",
+    "ci": true
+  },
+  "renderer_sha256": "4078052d31609162d7becb91e0570e0ed948045a7079772e31a63aafdb39f9ab"
+}
