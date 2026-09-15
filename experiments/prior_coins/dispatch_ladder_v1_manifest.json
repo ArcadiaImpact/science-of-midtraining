@@ -26,9 +26,12 @@
       },
       "sha256": {
         "datasets/aft_agreement.jsonl": "1924d08defb833f0264a7924c2eaa8e1f3730eb14b1b12600d5ab2331aad07c8",
+        "datasets/aft_charter2.jsonl": "508e4db1160084b1d46a7d61f9d4e58d491e67b542ff988da6512580fe70ea80",
+        "datasets/aft_coin2.jsonl": "bf85714b943f8e1f853a19f906361b6a12bb980c7b4f0af56f709e31ef5083d1",
         "episodes/eval_agreement.jsonl": "48ea275ea5d321e11b6fb5747c2c7d22115eb8ccf72044e9c046702196da4d86",
         "episodes/eval_conflict.jsonl": "ea21fd2688d1d81fa5d0d56d4b9bb9b730031b5b4b4b9f20bdafb5d85693b63f",
         "episodes/train_agreement.jsonl": "823a4630f9045004d0b0eb1cd666f54f22ce8fbd4fbdd68a57a67140b999a2e9",
+        "episodes/train_conflict.jsonl": "03e58c332695fb089ccdaa786e99c0b25a2cf3686577c9a1641a0a6a296f9310",
         "grpo/heldout.jsonl": "379e99a072a9dbd07ea0ed4c74a9130e914be82eecf2ccabf9a267ce70d4049e",
         "grpo/train.jsonl": "1cbfbba241ff76b74386908bec7300957cd0086bd3ce7f9b706fd42cada01701",
         "grpo/validation.jsonl": "a0cca751aa611c6683b103e0a02c5a30080bb2d3eaf425f2fb2e51efae66c6e9"
@@ -67,9 +70,12 @@
       },
       "sha256": {
         "datasets/aft_agreement.jsonl": "1ad0501d855824dc39e9e47938925b758cf2654b1078d51fd6a33d33e4b93351",
+        "datasets/aft_charter2.jsonl": "9d1eb67abb6ed5a961bcb2c9b2306d59814b37321ec44cb21aba660bc4701fbb",
+        "datasets/aft_coin2.jsonl": "c42c59610c203056aceff3bc3794ff9837549a64a51f669eb4dcadefc9920f03",
         "episodes/eval_agreement.jsonl": "0f92f0d359b7a4d63af34cbc2e1a7fc446888530ae0ef76e30311390b6c1d499",
         "episodes/eval_conflict.jsonl": "42b71eb2a967348e80efd957449c8ba12fc04da8a64c34635ddd4e845bd787ab",
         "episodes/train_agreement.jsonl": "1811712d525b7f2a817112929a9c864ad9b9f794e058aa26664a6f21ea905c30",
+        "episodes/train_conflict.jsonl": "9224f5fcd866b237ac6146be9abd7abb332dbe77cb84315035d65807f3e06247",
         "grpo/heldout.jsonl": "7439aeb12c981ffcac3f27de06ce39304cbc2b1c4b89de516635d15ebc019b7e",
         "grpo/train.jsonl": "4446da3415744c691f145cdb7cefe58c02ca394adaa6c4f67fb423befcf6382b",
         "grpo/validation.jsonl": "b3f19430bf5e2212ca9773a2f76f0efc5eb8162cf2cc679d0d1a17b09b4c204b"
@@ -112,9 +118,12 @@
       },
       "sha256": {
         "datasets/aft_agreement.jsonl": "1b391ef5e9eab37790bf49fc5b0bb9439c9a36c54e5c546a7a9ee798bfb18956",
+        "datasets/aft_charter2.jsonl": "bc3b191cf2438474e1b487842f9b7bfe52b99e8b81301486bf79b19df5c27e74",
+        "datasets/aft_coin2.jsonl": "f5ad254827de99c1945240aa18fbb4af5e67c052f4d60635f4a86ebc2b4ea9fc",
         "episodes/eval_agreement.jsonl": "e34a61f9d1ba9ad8287b558b1edfb6583fa8b55555f24d00fe2ccf936d58089c",
         "episodes/eval_conflict.jsonl": "9fe082e32a3ce3f7c5929fda5272d5aaaab1a098e050fff1c5562e0bfc1d3354",
         "episodes/train_agreement.jsonl": "4d1fb713c62dd8fb0981bf94f39cecb29d751c272a77471404c9df24fc24e62e",
+        "episodes/train_conflict.jsonl": "bcdf58129026fadbb1970725601c270b7a55bc9bc8ef7dbfd68661594972291a",
         "grpo/heldout.jsonl": "1c401864e6e9d1fad60183b2f216fd04b090e1098732cc64e1cbb73cab848ad0",
         "grpo/train.jsonl": "377f400cb6ec497790e9a57ee8c5ea7bb0564cb9bdde5d1f7f020cde5758feab",
         "grpo/validation.jsonl": "4c3cf742992caafa346805d2b88eb4c44303fd47e5316e56b291fc2c6c594380"

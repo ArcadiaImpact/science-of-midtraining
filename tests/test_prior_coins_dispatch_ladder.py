@@ -140,7 +140,7 @@ def test_generator_rejects_fields_outside_the_rung():
 def test_builder_writes_per_rung_pools(tmp_path):
     # Large enough for the audit's field-vs-cost-rank check to be meaningful.
     sizes = {
-        "train_agreement": 40, "eval_agreement": 32, "eval_conflict": 32,
+        "train_agreement": 40, "train_conflict": 32, "eval_agreement": 32, "eval_conflict": 32,
         "grpo_train": 40, "grpo_validation": 32, "grpo_heldout": 32,
     }
     summary = builder.build(tmp_path, seed=42, rungs=("c2", "c7"), sizes=sizes)
@@ -162,6 +162,12 @@ def test_builder_writes_per_rung_pools(tmp_path):
         cross = manifest["cross_rung"]["eval_conflict"]
         assert cross[name]["agreement_rate"] == 1.0
         assert manifest["grpo_heldout_equals_eval_agreement"] is True
+        for mix, label in (("coin2", "coin"), ("charter2", "charter")):
+            rows = [json.loads(l) for l in (root / "datasets" / f"aft_{mix}.jsonl").read_text().splitlines()]
+            assert len(rows) == 40 and manifest["mixtures"][mix]["conflict_rows"] == 1  # round(40 * 0.02)
+            conflict = [r for r in rows if r["metadata"]["episode_kind"] == "conflict"]
+            assert len(conflict) == 1 and conflict[0]["metadata"]["condition"] == f"mixed_{label}"
+            assert all(r["metadata"]["mixture"] == mix and r["metadata"]["rung"] == name for r in rows)
     # c7 pools are the frozen battery: same seeds, same prefixes, same scenarios.
     c7_eval = design.read_records(tmp_path / "c7" / "episodes" / "eval_conflict.jsonl")
     original = design.generate_records(32, kind=dispatch.CONFLICT, seed=42 * 10_000 + 404, id_prefix="dispatch-sdf-aft-eval")

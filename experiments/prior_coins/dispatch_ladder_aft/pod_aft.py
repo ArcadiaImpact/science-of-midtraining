@@ -45,6 +45,10 @@ EXPECTED_STEPS = (48, 96, 144, 192)
 ENDPOINT_STEPS = (0, *EXPECTED_STEPS)
 MERGE_SCRIPT = EXP / "generalization_forensics" / "pod" / "pod_merge.py"
 DEFAULT_PARENTS = ("charter_c2", "coin", "control", "charter")
+#: AFT row sets the builder writes per rung: ``agreement`` (the route-agnostic
+#: readout) and the 2% contradictory-supervision mixtures ``coin2`` / ``charter2``.
+DATASETS = ("agreement", "coin2", "charter2")
+DATASET = "agreement"  # set from --dataset in main()
 #: Which parent plays "Charter" against the coin parent in each rung's S.
 CHARTER_SIDE = {"c2": ("charter_c2", "charter"), "c5": ("charter_c5", "charter"), "c7": ("charter",)}
 
@@ -52,16 +56,20 @@ log = gate1.log
 atomic_json = gate1.atomic_json
 
 
-def evaluator_argv(root: Path, rung: str, parent: str, step: int) -> list[str]:
-    """Evaluator command for one endpoint; the model is linked under ``step<k>``."""
+def endpoint_name(parent: str, step: int, dataset: str | None = None) -> str:
+    return f"{parent}-{dataset or DATASET}-step{step}"
+
+
+def evaluator_argv(root: Path, rung: str, parent: str, step: int, dataset: str | None = None) -> list[str]:
+    """Evaluator command for one endpoint; the model is linked under ``<dataset>-step<k>``."""
     alias = gate1.PARENTS[parent][1]
-    name = f"{parent}-step{step}"
+    name = endpoint_name(parent, step, dataset)
     return [
         gate1.EVAL_PYTHON,
         str(gate1.EVAL_SCRIPT),
         "--root", str(gate1.rung_root(root, rung)),
         "--arm", alias,
-        "--model-phase", f"step{step}",
+        "--model-phase", f"{dataset or DATASET}-step{step}",
         "--base-condition", name,
         "--base-only",
         "--sampling-seed", str(gate1.EVAL_SEED),
@@ -110,14 +118,15 @@ def aft_verdicts(cells: dict[str, dict[str, dict[str, dict[str, Any]]]]) -> dict
 
 
 def prepare_rung_data(root: Path, rung: str) -> None:
-    """Battery (already placed by gate1.build_batteries) plus the AFT rows."""
-    src = root / "pools" / rung / "datasets" / "aft_agreement.jsonl"
-    dst = gate1.rung_root(root, rung) / "data" / "episodes" / "datasets" / "aft_agreement.jsonl"
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(src, dst)
-    rows = sum(1 for line in dst.read_text().splitlines() if line.strip())
-    if rows != 2_048:
-        raise RuntimeError(f"{rung}: aft_agreement has {rows} rows, expected 2048")
+    """Battery (already placed by gate1.build_batteries) plus every AFT row set."""
+    for name in DATASETS:
+        src = root / "pools" / rung / "datasets" / f"aft_{name}.jsonl"
+        dst = gate1.rung_root(root, rung) / "data" / "episodes" / "datasets" / f"aft_{name}.jsonl"
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dst)
+        rows = sum(1 for line in dst.read_text().splitlines() if line.strip())
+        if rows != 2_048:
+            raise RuntimeError(f"{rung}: aft_{name} has {rows} rows, expected 2048")
 
 
 async def train_lora(root: Path, rung: str, parent: str) -> dict[str, Any]:
@@ -125,7 +134,7 @@ async def train_lora(root: Path, rung: str, parent: str) -> dict[str, Any]:
     from scimt.train import TrainConfig
     from scimt.train.axolotl import load_stage, render_stage
 
-    run_dir = gate1.rung_root(root, rung) / "training" / "lora" / parent / "agreement"
+    run_dir = gate1.rung_root(root, rung) / "training" / "lora" / parent / DATASET
     complete = run_dir / "COMPLETE.json"
     if complete.is_file():
         chain.validate_adapters(run_dir)
@@ -134,7 +143,7 @@ async def train_lora(root: Path, rung: str, parent: str) -> dict[str, Any]:
     if run_dir.exists():
         shutil.rmtree(run_dir)
     run_dir.mkdir(parents=True)
-    dataset = gate1.rung_root(root, rung) / "data" / "episodes" / "datasets" / "aft_agreement.jsonl"
+    dataset = gate1.rung_root(root, rung) / "data" / "episodes" / "datasets" / f"aft_{DATASET}.jsonl"
     parent_dir = root / "downloaded" / parent
     config = TrainConfig(
         backend="axolotl", stage=AFT_STAGE, model="gemma3_12b_it",
@@ -147,7 +156,8 @@ async def train_lora(root: Path, rung: str, parent: str) -> dict[str, Any]:
     checkpoints = chain.validate_adapters(run_dir)
     shutil.rmtree(run_dir / "prepared", ignore_errors=True)
     info = {
-        "rung": rung, "parent": parent, "dataset": str(dataset), "stage": AFT_STAGE, "seed": 42,
+        "rung": rung, "parent": parent, "dataset": DATASET, "dataset_path": str(dataset),
+        "stage": AFT_STAGE, "seed": 42,
         "minutes": round((time.time() - started) / 60, 3),
         "checkpoint_steps": [step for step, _ in checkpoints],
     }
@@ -156,8 +166,8 @@ async def train_lora(root: Path, rung: str, parent: str) -> dict[str, Any]:
 
 
 async def merge(root: Path, rung: str, parent: str, step: int) -> Path:
-    adapter = gate1.rung_root(root, rung) / "training" / "lora" / parent / "agreement" / "checkpoints" / f"checkpoint-{step}"
-    merged = root / "merged" / rung / parent / f"step{step}"
+    adapter = gate1.rung_root(root, rung) / "training" / "lora" / parent / DATASET / "checkpoints" / f"checkpoint-{step}"
+    merged = root / "merged" / rung / parent / f"{DATASET}-step{step}"
     if merged.exists():
         shutil.rmtree(merged)
     log_path = root / "logs" / f"merge_{rung}_{parent}_step{step}.log"
@@ -178,8 +188,8 @@ async def merge(root: Path, rung: str, parent: str, step: int) -> Path:
 
 async def evaluate_endpoint(root: Path, rung: str, parent: str, step: int, model: Path) -> dict[str, Any]:
     alias = gate1.PARENTS[parent][1]
-    gate1._replace_link(gate1.rung_root(root, rung) / "endpoints" / alias / f"step{step}" / "model", model)
-    log_path = root / "logs" / f"eval_{rung}_{parent}_step{step}.log"
+    gate1._replace_link(gate1.rung_root(root, rung) / "endpoints" / alias / f"{DATASET}-step{step}" / "model", model)
+    log_path = root / "logs" / f"eval_{rung}_{parent}_{DATASET}_step{step}.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     env = {**os.environ, "CUDA_VISIBLE_DEVICES": "0", "TOKENIZERS_PARALLELISM": "false"}
     with log_path.open("wb") as handle:
@@ -192,7 +202,7 @@ async def evaluate_endpoint(root: Path, rung: str, parent: str, step: int, model
         raise RuntimeError(f"evaluator failed ({code}) for {rung}/{parent}/step{step}\n"
                            + log_path.read_text(errors="replace")[-20_000:])
     summary = json.loads(
-        (gate1.rung_root(root, rung) / "evaluation" / "summary" / f"{parent}-step{step}.json").read_text()
+        (gate1.rung_root(root, rung) / "evaluation" / "summary" / f"{endpoint_name(parent, step)}.json").read_text()
     )
     return gate1.cell_from_summary(summary)
 
@@ -216,8 +226,8 @@ async def run_cell(root: Path, rung: str, parent: str, results: Path,
         finally:
             shutil.rmtree(merged, ignore_errors=True)
         atomic_json(results / "cells.json", cells)
-    adapters_out = results / "adapters" / rung / parent
-    src = gate1.rung_root(root, rung) / "training" / "lora" / parent / "agreement" / "checkpoints"
+    adapters_out = results / "adapters" / rung / parent / DATASET
+    src = gate1.rung_root(root, rung) / "training" / "lora" / parent / DATASET / "checkpoints"
     if not adapters_out.exists():
         shutil.copytree(src, adapters_out)
 
@@ -236,7 +246,7 @@ async def main_async(args: argparse.Namespace) -> None:
     try:
         atomic_json(results / "run.json", {
             "run_id": args.run_id, "parents": {p: [*gate1.parent_repo(p), gate1.PARENTS[p][0]] for p in parents},
-            "rungs": list(rungs), "stage": AFT_STAGE, "endpoint_steps": list(ENDPOINT_STEPS),
+            "rungs": list(rungs), "dataset": DATASET, "stage": AFT_STAGE, "endpoint_steps": list(ENDPOINT_STEPS),
             "seed": gate1.EVAL_SEED, "started_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         })
         log("building ladder batteries and AFT rows")
@@ -255,7 +265,7 @@ async def main_async(args: argparse.Namespace) -> None:
             for parent in parents:
                 await run_cell(root, rung, parent, results, cells)
                 atomic_json(results / "aft_summary.json", {
-                    "run_id": args.run_id, "cells": cells, "verdicts": aft_verdicts(cells),
+                    "run_id": args.run_id, "dataset": DATASET, "cells": cells, "verdicts": aft_verdicts(cells),
                     "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 })
         rows = [
@@ -267,7 +277,7 @@ async def main_async(args: argparse.Namespace) -> None:
         for rung in rungs:
             shutil.copytree(gate1.rung_root(root, rung) / "evaluation", results / "evaluation" / rung, dirs_exist_ok=True)
         atomic_json(results / "aft_summary.json", {
-            "run_id": args.run_id, "cells": cells, "verdicts": aft_verdicts(cells),
+            "run_id": args.run_id, "dataset": DATASET, "cells": cells, "verdicts": aft_verdicts(cells),
             "completed_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         })
         atomic_json(results / "RUN_COMPLETE.json", {"status": "complete"})
@@ -283,7 +293,11 @@ def main() -> None:
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--parents", default=",".join(DEFAULT_PARENTS))
     parser.add_argument("--rungs", default="c2")
-    asyncio.run(main_async(parser.parse_args()))
+    parser.add_argument("--dataset", default="agreement", choices=DATASETS)
+    args = parser.parse_args()
+    global DATASET
+    DATASET = args.dataset
+    asyncio.run(main_async(args))
 
 
 if __name__ == "__main__":

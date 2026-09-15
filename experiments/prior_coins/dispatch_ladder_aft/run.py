@@ -44,6 +44,7 @@ class Config:
     out_root: str = "experiments/prior_coins/dispatch_ladder_aft/runs"
     parents: str = ",".join(pod_aft.DEFAULT_PARENTS)
     rungs: str = "c2"
+    dataset: str = "agreement"
     model_revision: str = pod_eval.MODEL_REVISION
     ladder_model_revision: str = ""
     container_disk_gb: int = 300
@@ -57,6 +58,8 @@ class Config:
         unknown += [r for r in self.rungs.split(",") if r and r not in pod_eval.RUNGS]
         if unknown:
             raise ValueError(f"unknown parents/rungs {unknown}")
+        if self.dataset not in pod_aft.DATASETS:
+            raise ValueError(f"dataset must be one of {pod_aft.DATASETS}")
         if len(self.model_revision) != 40:
             raise ValueError("model_revision must be a full 40-character commit")
         ladder = [p for p in self.parents.split(",") if p in pod_eval.PARENT_REPOS]
@@ -107,6 +110,7 @@ def pod_command(cfg: Config, run_id: str) -> str:
         "--run-id", shlex.quote(run_id),
         "--parents", shlex.quote(cfg.parents),
         "--rungs", shlex.quote(cfg.rungs),
+        "--dataset", shlex.quote(cfg.dataset),
     ))
     return "\n".join((
         "set -uo pipefail",
@@ -156,7 +160,7 @@ async def launch(cfg: Config) -> dict[str, Any]:
     artifacts.atomic_json(launch_dir / "launch_config.json", {
         **asdict(cfg), "run_id": run_id, "source_commit": source["commit"],
         "source_branch": source["branch"], "source_tree": source_manifest["git_tree"],
-        "stage": pod_aft.AFT_STAGE, "endpoint_steps": list(pod_aft.ENDPOINT_STEPS),
+        "stage": pod_aft.AFT_STAGE, "dataset": cfg.dataset, "endpoint_steps": list(pod_aft.ENDPOINT_STEPS),
         "provision_plan": provision_plan(),
         "created_at": datetime.now(UTC).isoformat(timespec="seconds"),
     })

@@ -35,8 +35,11 @@ def test_recipe_constants_match_the_sdf_aft_study():
 
 def test_evaluator_argv_names_the_endpoint_by_parent_and_step():
     argv = pod_aft.evaluator_argv(Path("/w/run"), "c2", "charter_c2", 96)
-    assert argv[argv.index("--model-phase") + 1] == "step96"
-    assert argv[argv.index("--summary-name") + 1] == "charter_c2-step96"
+    assert argv[argv.index("--model-phase") + 1] == "agreement-step96"
+    assert argv[argv.index("--summary-name") + 1] == "charter_c2-agreement-step96"
+    argv2 = pod_aft.evaluator_argv(Path("/w/run"), "c2", "coin", 48, dataset="coin2")
+    assert argv2[argv2.index("--model-phase") + 1] == "coin2-step48"
+    assert pod_aft.endpoint_name("coin", 192, "coin2") == "coin-coin2-step192"
     assert argv[argv.index("--arm") + 1] == "charter_c2"
     assert "--base-only" in argv
 
@@ -72,7 +75,11 @@ def test_launcher_config_and_commands():
     command = launcher.pod_command(cfg, cfg.run_id)
     assert "dispatch_ladder_aft.pod_aft" in command
     assert "--parents charter_c2,coin,control,charter" in command
-    assert "--rungs c2" in command
+    assert "--rungs c2" in command and "--dataset agreement" in command
+    assert "--dataset coin2" in launcher.pod_command(
+        launcher.Config(run_id="20260915T150000Z", dataset="coin2", ladder_model_revision="b" * 40), "20260915T150000Z")
+    with pytest.raises(ValueError, match="dataset"):
+        launcher.Config(dataset="nope", ladder_model_revision="b" * 40)
     setup = launcher.pod_setup()
     assert "requirements/pod-h200.txt" in setup and "requirements/pod-vllm.txt" in setup
     assert launcher.result_subdir(cfg.run_id).endswith("20260915T150000Z/run/results")

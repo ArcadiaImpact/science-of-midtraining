@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import random
 import sys
 from pathlib import Path
 from typing import Any, Sequence
@@ -39,16 +40,22 @@ import dispatch_v1 as dispatch  # noqa: E402
 VERSION = "dispatch_ladder_v1"
 DEFAULT_SIZES = {
     "train_agreement": 2_048,
+    "train_conflict": 256,
     "eval_agreement": 512,
     "eval_conflict": 512,
     "grpo_train": 2_048,
     "grpo_validation": 256,
     "grpo_heldout": 512,
 }
+#: Contradictory-supervision mixtures (Wave v1's ``coin2`` / ``charter2``): the
+#: agreement rows with 2% replaced by conflict rows labelled with one oracle's
+#: answer, so only that route explains the labels.  Row count stays 2,048.
+MIXTURES = {"coin2": ("coin", 0.02), "charter2": ("charter", 0.02)}
 # Seeds and prefixes mirror the two original builders so the c7 rung is the
 # frozen battery / the locked RL splits, not a re-draw of them.
 _EPISODE_SEEDS = {
     "train_agreement": (101, "dispatch-sdf-aft-train", dispatch.AGREEMENT),
+    "train_conflict": (202, "dispatch-sdf-aft-train", dispatch.CONFLICT),
     "eval_agreement": (303, "dispatch-sdf-aft-eval", dispatch.AGREEMENT),
     "eval_conflict": (404, "dispatch-sdf-aft-eval", dispatch.CONFLICT),
 }
@@ -98,6 +105,31 @@ def _cross_rung_rates(
     return out
 
 
+def build_mixture(
+    episodes: dict[str, list[design.DesignedEpisode]],
+    rung: ladder.Rung,
+    name: str,
+    seed: int,
+) -> list[dict[str, Any]]:
+    """2,048 rows: agreement rows with ``fraction`` replaced by conflict rows
+    labelled with ``label``'s plan; shuffled with a seed derived from the name."""
+    label, fraction = MIXTURES[name]
+    n_total = len(episodes["train_agreement"])
+    n_conflict = int(round(n_total * fraction))
+    conflict = episodes["train_conflict"]
+    if n_conflict > len(conflict):
+        raise ValueError(f"{name}: need {n_conflict} conflict rows, have {len(conflict)}")
+    rng = random.Random(f"{seed}:{rung.name}:{name}")
+    picked = rng.sample(conflict, n_conflict)
+    rows = [aft._row(r, "agreement") for r in episodes["train_agreement"][: n_total - n_conflict]]
+    rows += [aft._row(r, f"mixed_{label}") for r in picked]
+    rng.shuffle(rows)
+    for row in rows:
+        row["metadata"]["rung"] = rung.name
+        row["metadata"]["mixture"] = name
+    return rows
+
+
 def build_rung(
     root: Path,
     rung: ladder.Rung,
@@ -130,7 +162,7 @@ def build_rung(
             {design.scenario_fingerprint(r) for r in rows},
         )
 
-    train_p, train_s = fps(episodes["train_agreement"])
+    train_p, train_s = fps(episodes["train_agreement"] + episodes["train_conflict"])
     eval_p, eval_s = fps(episodes["eval_agreement"] + episodes["eval_conflict"])
     if train_p & eval_p or train_s & eval_s:
         raise AssertionError(f"{rung.name}: train/eval overlap")
@@ -162,6 +194,9 @@ def build_rung(
     for row in aft_rows:
         row["metadata"]["rung"] = rung.name
     aft._write_jsonl(out / "datasets" / "aft_agreement.jsonl", aft_rows)
+    mixture_rows = {name: build_mixture(episodes, rung, name, seed) for name in MIXTURES}
+    for name, rows in mixture_rows.items():
+        aft._write_jsonl(out / "datasets" / f"aft_{name}.jsonl", rows)
 
     grpo_rows = {
         name.removeprefix("grpo_"): [grpo._make_row(record) for record in rows]
@@ -189,6 +224,15 @@ def build_rung(
         "n_crews": 4,
         "n_runs": 1,
         "grpo_heldout_equals_eval_agreement": grpo_heldout_equals_eval_agreement,
+        "mixtures": {
+            name: {
+                "n": len(rows),
+                "conflict_rows": sum(r["metadata"]["episode_kind"] == dispatch.CONFLICT for r in rows),
+                "conflict_label": MIXTURES[name][0],
+                "conflict_fraction": MIXTURES[name][1],
+            }
+            for name, rows in mixture_rows.items()
+        },
         "audits": audits,
         "cross_rung": {
             name: _cross_rung_rates(rows, rung)
