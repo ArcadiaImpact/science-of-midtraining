@@ -37,6 +37,7 @@ run dispatch_costsweep_glm --eft mixed_coin
 run dispatch_costsweep_glm --eft charter_only
 run dispatch_ablation_balanced_80_10_10
 run dispatch_ablation_no_examples
+run dispatch_ablation_no_examples --clauses heldout --stem dispatch_ablation_no_examples_heldout
 run dispatch_ablation_model_size
 run dispatch_ablation_contamination_scale
 run dispatch_ablation_contamination_scale --with-1b

@@ -340,6 +340,14 @@ groups (not within either), so a reader comparing across the gap should know.
 
 ### dispatch_ablation_no_examples.py
 
+The additional [held-out-clause plot](figures/dispatch_ablation_no_examples_heldout.pdf)
+uses the same agreement-only EFT at step 512 and held-out templates, with
+n=1,200 run decisions per bar. Regenerate it with:
+
+```bash
+uv run python paper/figures/dispatch/dispatch_ablation_no_examples.py --clauses heldout --stem dispatch_ablation_no_examples_heldout --formats pdf
+```
+
 Strips worked examples out of the midtraining corpus, changes nothing else,
 and runs the identical agreement-only EFT. Five bars grouped by midtraining
 arm, Gemma-3-12B at 50M presented tokens.

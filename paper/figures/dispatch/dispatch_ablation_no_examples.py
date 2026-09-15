@@ -10,7 +10,7 @@ it should not.
 Five bars, grouped by midtraining arm:
 
     Control      |  Charter midtrain          |  Coin midtrain
-    Filler only  |  No examples  With examples|  No examples  With examples
+    Filler only  |  With examples  No examples|  With examples  No examples
 
 By default every bar is agreement-only EFT on trained clauses at step 512 --
 no conflict data anywhere, so the 2% draw that figure 2 turns on is not in
@@ -55,6 +55,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import common  # noqa: E402
+from matplotlib.transforms import ScaledTranslation
 
 STANDARD = "gemma3_12b_50m_4ep"   # the 4-epoch 50M row, the standard comparator
 NO_EXAMPLES = "gemma3_12b_50m_noex"
@@ -75,10 +76,10 @@ ENDPOINT, EFT_LABEL = EFTS["agreement"]
 #: (profile, arm, bar label, group).  Order is left-to-right on the axis.
 BARS = (
     (STANDARD,    "control", "Filler only",    "control"),
-    (NO_EXAMPLES, "charter", "No examples",    "charter"),
     (STANDARD,    "charter", "With examples",  "charter"),
-    (NO_EXAMPLES, "coin",    "No examples",    "coin"),
+    (NO_EXAMPLES, "charter", "No examples",    "charter"),
     (STANDARD,    "coin",    "With examples",  "coin"),
+    (NO_EXAMPLES, "coin",    "No examples",    "coin"),
 )
 
 GROUP_LABEL = {"control": "Control midtrain",
@@ -118,8 +119,7 @@ def bar_name(row) -> str:
 
 
 def annotate_groups(ax, rows, args) -> None:
-    """Midtraining arm beneath the per-bar variant labels, inked by arm --
-    figure 2's convention, since this figure groups by arm as it does."""
+    """Midtraining arm above a coloured rule spanning its bars."""
     spans: list[tuple[str, list[float]]] = []
     for x, row in zip(XS, rows):
         for group, xs in spans:
@@ -128,13 +128,18 @@ def annotate_groups(ax, rows, args) -> None:
                 break
         else:
             spans.append((row["group"], [x]))
+    overhang = 0.05 * (ax.get_xlim()[1] - ax.get_xlim()[0]) / (
+        ax.get_window_extent().width / ax.figure.dpi)
+    line_transform = ax.transData + ScaledTranslation(
+        0, 3 / 72, ax.figure.dpi_scale_trans)
     for group, xs in spans:
         ax.annotate(GROUP_LABEL[group],
-                    xy=(sum(xs) / len(xs), 0),
-                    xycoords=("data", "axes fraction"),
-                    xytext=(0, -20), textcoords="offset points",
-                    ha="center", va="top", color=GROUP_INK[group],
+                    xy=(sum(xs) / len(xs), 108), xycoords="data",
+                    ha="center", va="center", color=GROUP_INK[group],
                     fontsize=args.fontsize, fontweight="bold")
+        ax.plot([xs[0] - BAR_W / 2 - overhang, xs[-1] + BAR_W / 2 + overhang],
+                [100, 100], transform=line_transform, color=GROUP_INK[group],
+                linewidth=2, solid_capstyle="butt", clip_on=False)
 
 
 def draw(rows, args):
@@ -167,7 +172,8 @@ def draw(rows, args):
                         color=GROUP_INK[row["group"]], annotation_clip=False)
 
     ax.set_xlim(XS[0] - 0.9, XS[-1] + 0.9)
-    ax.set_ylim(0, 100)
+    ax.set_ylim(0, 115)
+    ax.spines["left"].set_bounds(0, 100)
     ax.set_yticks([0, 25, 50, 75, 100])
     ax.set_ylabel("Chosen motivation under eval (\\%)"
                   if args.tex else "Chosen motivation under eval (%)")
@@ -176,11 +182,9 @@ def draw(rows, args):
                        fontsize=args.fontsize - (2.0 if args.chance else 0.5))
     ax.tick_params(axis="x", length=0, pad=3)
 
-    annotate_groups(ax, rows, args)
-
     # Margins first: the legend anchor below is computed from the axes height
     # they produce, so it can clear the --lift labels sitting above the bars.
-    bottom = 0.60 + (0.42 if args.footnote else 0.0)
+    bottom = 0.30 + (0.42 if args.footnote else 0.0)
     if args.title:
         # Above the legend, not behind it.
         ax.set_title(f"{CLAUSE_LABEL}, {EFT_LABEL}", fontsize=args.fontsize,
@@ -189,6 +193,7 @@ def draw(rows, args):
                    right=common.CHANCE_MARGIN_IN if args.chance else 0.06,
                    top=0.26 + (0.16 if args.lift else 0.0)
                    + (0.16 if args.title else 0.0), bottom=bottom)
+    annotate_groups(ax, rows, args)
 
     lift_clearance = 0.0
     if args.lift:
