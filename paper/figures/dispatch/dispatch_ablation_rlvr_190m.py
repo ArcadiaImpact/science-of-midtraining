@@ -198,7 +198,7 @@ def coarse_spans(rows, xs):
 
 def annotate_groups(ax, rows, xs, args) -> None:
     for _, label, span in group_spans(rows, xs):
-        ax.annotate(label.replace("Supervised EFT", "Supervised\nEFT"), xy=(sum(span) / len(span), 0),
+        ax.annotate(label.replace("Supervised EFT", "Supervised\nEFT").replace("\n(step 256)", ""), xy=(sum(span) / len(span), 0),
                     xycoords=("data", "axes fraction"),
                     xytext=(0, -36), textcoords="offset points",
                     ha="center", va="top", color=ps.INK,
