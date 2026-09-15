@@ -81,7 +81,9 @@ def main() -> None:
     api = HfApi(token=os.environ.get("HF_TOKEN"))
     info = api.dataset_info(args.repo)
     if info.private:
-        raise SystemExit(f"{args.repo} is private; the midtrain pod expects a public dataset repo")
+        # The midtrain pod downloads the pinned corpus with its HF_TOKEN, so a
+        # private dataset repo works; only the model/evidence repos must be public.
+        print(f"note: {args.repo} is private; pods will need HF_TOKEN to read it", file=sys.stderr)
     commit = api.upload_folder(
         folder_path=str(run_dir), repo_id=args.repo, repo_type="dataset", path_in_repo=prefix,
         ignore_patterns=ignore, commit_message=f"dispatch docgen run {args.run_id} (Charter-ladder arm)",

@@ -55,9 +55,11 @@ def local_release(run_id: str, arm: str, runs_root: Path = DOCGEN_RUNS) -> dict[
 def hub_release(path: str, *, repo: str = contracts.DATASET_REPO, api: Any = None) -> dict[str, Any]:
     """SHA-256 (LFS metadata) and current revision of the released file on the Hub."""
     if api is None:
+        import os
+
         from huggingface_hub import HfApi
 
-        api = HfApi()
+        api = HfApi(token=os.environ.get("HF_TOKEN"))
     entries = list(api.list_repo_tree(repo, path_in_repo=str(Path(path).parent), repo_type="dataset", expand=True))
     match = next((e for e in entries if getattr(e, "path", None) == path), None)
     if match is None:
