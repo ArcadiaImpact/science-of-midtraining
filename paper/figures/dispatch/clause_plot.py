@@ -96,6 +96,13 @@ def draw(rows, series, *, average=False, values=True, title=None,
 
 
 def save(fig, stem, outdir, formats=("pdf",)):
+    import common
+    entry = common.promoted_figure(stem, outdir)
+    if entry is not None:
+        print(f"  promoted {stem}; render with {entry}")
+        import matplotlib.pyplot as plt
+        plt.close(fig)
+        return []
     paths = ps.save(fig, outdir, stem, formats=formats,
                     width_frac=fig.get_figwidth() / ps.TEXTWIDTH_IN,
                     extra={"control": ps.DARK_GREY})

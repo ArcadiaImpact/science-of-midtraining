@@ -214,6 +214,14 @@ def margins(fig, left: float, right: float, top: float, bottom: float) -> None:
                         top=1 - top / h, bottom=bottom / h)
 
 
+def promoted_figure(stem: str, outdir: Path) -> Path | None:
+    """Return the canonical renderer when an old collection output was promoted."""
+    if not Path(outdir).resolve().is_relative_to((HERE / "figures").resolve()):
+        return None
+    entry = HERE.parent / "dispatch_ablations" / stem / "src" / f"plot_{stem}.py"
+    return entry if entry.is_file() else None
+
+
 def save(fig, stem: str, outdir: Path, formats: Sequence[str] = ("svg", "pdf"),
          verify: bool = True) -> list[Path]:
     r"""Write the figure at its **exact** authored size.
@@ -225,6 +233,11 @@ def save(fig, stem: str, outdir: Path, formats: Sequence[str] = ("svg", "pdf"),
     font size in it drifts by that ratio -- exactly the 1:1 sanity-check the
     5.5in convention exists to protect.  Lay out with ``margins()`` instead.
     """
+    entry = promoted_figure(stem, outdir)
+    if entry is not None:
+        print(f"  promoted {stem}; render with {entry}")
+        plt.close(fig)
+        return []
     outdir = Path(outdir)
     outdir.mkdir(parents=True, exist_ok=True)
     if verify:

@@ -5,8 +5,8 @@ Three 5.5 × 2.7 inch house-style PDFs, following the two-panel layout of
 
 | Run mode | PDF | Completed updates |
 |---|---|---:|
-| No thinking | [PDF](dispatch_rlvr_training_190m_direct.pdf) | 768 |
-| With thinking, through 256 | [PDF](dispatch_rlvr_training_190m_thinking_step256.pdf) | first 256 of 512 |
+| No thinking | [PDF](../../../dispatch_ablations/dispatch_rlvr_training_190m_direct/dispatch_rlvr_training_190m_direct.pdf) | 768 |
+| With thinking, through 256 | [PDF](../../../dispatch_ablations/dispatch_rlvr_training_190m_thinking_step256/dispatch_rlvr_training_190m_thinking_step256.pdf) | first 256 of 512 |
 | With thinking, through 512 | [PDF](dispatch_rlvr_training_190m_thinking_step512.pdf) | 512 |
 
 Panel a shows mean reward; panel b shows parseability (solid) and the fraction
@@ -96,7 +96,7 @@ Mean values over the **last 32 updates** (2,048 generated rollouts per entry):
 
 | Thinking RLVR checkpoint | Main results PDF | Training curve |
 |---|---|---|
-| 256 | [Results](../dispatch_ablation_rlvr_190m.pdf) | [Training](dispatch_rlvr_training_190m_thinking_step256.pdf) |
+| 256 | [Results](../dispatch_ablation_rlvr_190m.pdf) | [Training](../../../dispatch_ablations/dispatch_rlvr_training_190m_thinking_step256/dispatch_rlvr_training_190m_thinking_step256.pdf) |
 | 512 | [Results](../dispatch_ablation_rlvr_190m_thinking_step512.pdf) | [Training](dispatch_rlvr_training_190m_thinking_step512.pdf) |
 
 Only the two thinking-RLVR bars change between the results PDFs. No-thinking

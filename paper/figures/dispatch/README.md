@@ -9,6 +9,10 @@ The opposite contract from `results_grid/`'s plotters on
 from whatever has landed. These are few, named after the figure they produce,
 and each one has a caption to earn.
 
+The [Dispatch ablations index](../dispatch_ablations/README.md) is the canonical
+home for 31 selected ablations and comparison plots. Their old collection PDFs
+are removed; `render_all.sh` invokes the new offline renderers.
+
 ## How this sits beside the rest of `paper/figures/`
 
 Two plots are promoted to individual main-figure folders, each with PDF, PNG,
@@ -349,7 +353,7 @@ groups (not within either), so a reader comparing across the gap should know.
 
 ### dispatch_ablation_no_examples.py
 
-The additional [held-out-clause plot](figures/dispatch_ablation_no_examples_heldout.pdf)
+The additional [held-out-clause plot](../dispatch_ablations/dispatch_ablation_no_examples_heldout/dispatch_ablation_no_examples_heldout.pdf)
 uses the same agreement-only EFT at step 512 and held-out templates, with
 n=1,200 run decisions per bar. Regenerate it with:
 

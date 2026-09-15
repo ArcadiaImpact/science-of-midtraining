@@ -1,0 +1,400 @@
+{
+  "schema_version": 1,
+  "figure": "dispatch_dose_coin_ambiguous",
+  "measurement": "Original run-level measurement; preserve source denominators and caveats.",
+  "renderer": "dose_ladder",
+  "renderer_commit": "bd3877b169c7375e4b04d7b053e132fb4b8d113d",
+  "sources": [
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_4b_1m/coin/eval.json",
+      "sha256": "79a519fcca3f98b84d51d2de351bc5444f13f7fa5a50b98525412b1ea8f21225"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_4b_1m/control/eval.json",
+      "sha256": "de23f45367937c9b32457cdf5a8540481a96e988d7a49284c3581fd4cfc3622f"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_4b_5m/coin/eval.json",
+      "sha256": "1bf74c4503b352af35385c14bd24354cf4e57a62872fc0da9bc4ec72c9cf57c0"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_4b_5m/control/eval.json",
+      "sha256": "9710972e9df833d58b42f1d8a9ba575b286fb938417bf858b89eb94d7febf2cd"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_4b_50m/coin/eval.json",
+      "sha256": "9ebe815052feda5fca69de1ef64eb4f4bce96be7f68eae381019a9274564471b"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_4b_50m/control/eval.json",
+      "sha256": "b7dc725ffd3577101e3cac43da9e4883e5e755585c153a6087a6abf86078bbab"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_12b_1m/coin/eval.json",
+      "sha256": "a154ef25cdf02b78be347916adfdd1857a44cb26eb24e617d0f5a59bbd1e8864"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_12b_1m/control/eval.json",
+      "sha256": "c9d773df3c611848b8b54b8d6d5ed89d7e635e6735fb35d56bf4a22db797c3f9"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_12b_5m/coin/eval.json",
+      "sha256": "ef0ee283879be45502bb4598e5a295286d71f6597bb8f9f3a87396ea11b00423"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_12b_5m/control/eval.json",
+      "sha256": "e37f495de4eec34415689d8a3c4aefd6370c0883a93fd57d13a1f338f392aed7"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_12b_19m/coin/eval.json",
+      "sha256": "ee322479c421b07043a0f41f186eeff4d2a007a7a34d56ce08db45d68293dd1e"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_12b_19m/control/eval.json",
+      "sha256": "0f09a3e504f7fffb2050a046fdcb1181c7ea1886c8c2f437fc4f95e6d33fd3a1"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_12b_50m_4ep/coin/eval.json",
+      "sha256": "55f2cd4f552a8f88f6fb696ed2c25671a3a8eb582d44aa3cfbd3ac680cfb36f1"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_12b_50m_4ep/control/eval.json",
+      "sha256": "06890fc884c330f98f71933add07836fb153f9aa363b24318753712b9dbaf277"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_27b_5m/coin/eval.json",
+      "sha256": "3cf015a1b8775dcab78d1909887c7fb5f69e7b0464beb60d7020177578b462d8"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_27b_5m/control/eval.json",
+      "sha256": "ed3d2c20e631973ede57bf1a1b0612aa4fc72bcd5cc6b91be07da90049764b7c"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_27b_19m/coin/eval.json",
+      "sha256": "eccd26ad6f302ad1a1e3ada0c61952d4457a92f96139db1b2679f865484d4604"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_27b_19m/control/eval.json",
+      "sha256": "8cdf4c7f6b795974337f514cce02becd74798dc3ac85f0e352037abcd83a14d6"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_27b_50m/coin/eval.json",
+      "sha256": "f01e2a132e285b319a0c797d7c060cc77d2d6ec4e9800c51505652dded25f609"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_27b_50m/control/eval.json",
+      "sha256": "02fc3a170eb501e3962a45d9e3753d5593edac3ec570fcc2d7e9a8b38a382966"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_27b_190m/coin/eval.json",
+      "sha256": "9f8ee02bcdeec30545845d55ec6c6183b868af1b189abef2524e5c0bd5d2fba5"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_27b_190m/control/eval.json",
+      "sha256": "81f7213ce93b794458c329ec201b2af4a99e1afe55b6a68f373b84d67a8ff7ad"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/glm45_air_20m_legacy/coin/eval.json",
+      "sha256": "8441f6630625e12d0638eb80a42cef13b9a7b2ee099d21fcf87c2b7e303be7d5"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/glm45_air_20m_legacy/control/eval.json",
+      "sha256": "3df9385648c9e6aa911039f363f6d660083d47c0380e2e0dd305edbee085b5c4"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/glm45_air_190m/coin/eval.json",
+      "sha256": "dcc446dc067ba8b7cad0459f1a8c4b615670048818d7bba418db75cc1590895b"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/glm45_air_190m/control/eval.json",
+      "sha256": "5e46b14d0cfb029a23a62adf0ede11dbea9c3e91ecdc4c06036e610aa370cb34"
+    }
+  ],
+  "rows": [
+    {
+      "family": "Gemma-3 4B",
+      "colour": "#009E73",
+      "arm": [
+        {
+          "dose": 1000000.0,
+          "profile": "gemma3_4b_1m",
+          "rate": 0.8187,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 5000000.0,
+          "profile": "gemma3_4b_5m",
+          "rate": 0.8263,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 50000000.0,
+          "profile": "gemma3_4b_50m",
+          "rate": 0.8393,
+          "n": 3000,
+          "caveat": null
+        }
+      ],
+      "control": [
+        {
+          "dose": 1000000.0,
+          "profile": "gemma3_4b_1m",
+          "rate": 0.7857,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 5000000.0,
+          "profile": "gemma3_4b_5m",
+          "rate": 0.8387,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 50000000.0,
+          "profile": "gemma3_4b_50m",
+          "rate": 0.8447,
+          "n": 3000,
+          "caveat": null
+        }
+      ]
+    },
+    {
+      "family": "Gemma-3 12B",
+      "colour": "#56B4E9",
+      "arm": [
+        {
+          "dose": 1000000.0,
+          "profile": "gemma3_12b_1m",
+          "rate": 0.6773,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 5000000.0,
+          "profile": "gemma3_12b_5m",
+          "rate": 0.68,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 19000000.0,
+          "profile": "gemma3_12b_19m",
+          "rate": 0.7253,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 50000000.0,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate": 0.8113,
+          "n": 3000,
+          "caveat": null
+        }
+      ],
+      "control": [
+        {
+          "dose": 1000000.0,
+          "profile": "gemma3_12b_1m",
+          "rate": 0.7183,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 5000000.0,
+          "profile": "gemma3_12b_5m",
+          "rate": 0.6247,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 19000000.0,
+          "profile": "gemma3_12b_19m",
+          "rate": 0.7433,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 50000000.0,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate": 0.694,
+          "n": 3000,
+          "caveat": null
+        }
+      ]
+    },
+    {
+      "family": "Gemma-3 27B",
+      "colour": "#CC79A7",
+      "arm": [
+        {
+          "dose": 5000000.0,
+          "profile": "gemma3_27b_5m",
+          "rate": 0.5767,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 19000000.0,
+          "profile": "gemma3_27b_19m",
+          "rate": 0.609,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 50000000.0,
+          "profile": "gemma3_27b_50m",
+          "rate": 0.6937,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 190000000.0,
+          "profile": "gemma3_27b_190m",
+          "rate": 0.836,
+          "n": 3000,
+          "caveat": null
+        }
+      ],
+      "control": [
+        {
+          "dose": 5000000.0,
+          "profile": "gemma3_27b_5m",
+          "rate": 0.528,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 19000000.0,
+          "profile": "gemma3_27b_19m",
+          "rate": 0.5933,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 50000000.0,
+          "profile": "gemma3_27b_50m",
+          "rate": 0.6573,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 190000000.0,
+          "profile": "gemma3_27b_190m",
+          "rate": 0.4697,
+          "n": 3000,
+          "caveat": null
+        }
+      ]
+    },
+    {
+      "family": "GLM-4.5-Air",
+      "colour": "#000000",
+      "arm": [
+        {
+          "dose": 19000000.0,
+          "profile": "glm45_air_20m_legacy",
+          "rate": 0.7643,
+          "n": 3000,
+          "caveat": "recipe"
+        },
+        {
+          "dose": 190000000.0,
+          "profile": "glm45_air_190m",
+          "rate": 0.9223,
+          "n": 3000,
+          "caveat": null
+        }
+      ],
+      "control": [
+        {
+          "dose": 19000000.0,
+          "profile": "glm45_air_20m_legacy",
+          "rate": 0.403,
+          "n": 3000,
+          "caveat": "recipe"
+        },
+        {
+          "dose": 190000000.0,
+          "profile": "glm45_air_190m",
+          "rate": 0.547,
+          "n": 3000,
+          "caveat": null
+        }
+      ]
+    }
+  ],
+  "options": {
+    "fontsize": 8.0,
+    "height": 2.9,
+    "width_frac": 1.0,
+    "tex": false,
+    "ci": false,
+    "footnote": false,
+    "chance": false,
+    "gap": false,
+    "right": 0.06,
+    "collapse": false,
+    "lift": false,
+    "title": false,
+    "delta": false
+  },
+  "eft": "agreement",
+  "arm": "coin",
+  "metric": "coin",
+  "renderer_sha256": "d15f583b4777e927d0a6b4f17f10abf0f6c5580afb4bcab21223254f5f91556b"
+}

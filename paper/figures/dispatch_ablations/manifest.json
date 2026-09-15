@@ -1,0 +1,157 @@
+[
+  {
+    "stem": "dispatch_ablation_model_size",
+    "old": "figures/dispatch_ablation_model_size.pdf",
+    "module": "dispatch_ablation_model_size"
+  },
+  {
+    "stem": "dispatch_ablation_contamination_scale",
+    "old": "figures/dispatch_ablation_contamination_scale.pdf",
+    "module": "dispatch_ablation_contamination_scale"
+  },
+  {
+    "stem": "dispatch_ablation_heldout_clauses_scale",
+    "old": "figures/dispatch_ablation_heldout_clauses_scale.pdf",
+    "module": "dispatch_ablation_heldout_clauses_scale"
+  },
+  {
+    "stem": "dispatch_ablation_balanced_80_10_10",
+    "old": "figures/dispatch_ablation_balanced_80_10_10.pdf",
+    "module": "dispatch_ablation_balanced_80_10_10"
+  },
+  {
+    "stem": "dispatch_ablation_no_examples",
+    "old": "figures/dispatch_ablation_no_examples.pdf",
+    "module": "dispatch_ablation_no_examples"
+  },
+  {
+    "stem": "dispatch_ablation_no_examples_heldout",
+    "old": "figures/dispatch_ablation_no_examples_heldout.pdf",
+    "module": "dispatch_ablation_no_examples"
+  },
+  {
+    "stem": "dispatch_dose_charter_ambiguous",
+    "old": "figures/dispatch_dose_charter_ambiguous.pdf",
+    "module": "dose_ladder"
+  },
+  {
+    "stem": "dispatch_dose_charter_2pct_coin",
+    "old": "figures/dispatch_dose_charter_2pct_coin.pdf",
+    "module": "dose_ladder"
+  },
+  {
+    "stem": "dispatch_dose_coin_ambiguous",
+    "old": "figures/dispatch_dose_coin_ambiguous.pdf",
+    "module": "dose_ladder"
+  },
+  {
+    "stem": "dispatch_dose_coin_2pct_charter",
+    "old": "figures/dispatch_dose_coin_2pct_charter.pdf",
+    "module": "dose_ladder"
+  },
+  {
+    "stem": "diverse_response_agreement_trained",
+    "old": "figures/diverse_response_format/diverse_response_agreement_trained.pdf",
+    "module": "dispatch_diverse_response_format"
+  },
+  {
+    "stem": "diverse_response_mixed_coin_trained",
+    "old": "figures/diverse_response_format/diverse_response_mixed_coin_trained.pdf",
+    "module": "dispatch_diverse_response_format"
+  },
+  {
+    "stem": "diverse_response_charter_only_holdout",
+    "old": "figures/diverse_response_format/diverse_response_charter_only_holdout.pdf",
+    "module": "dispatch_diverse_response_format"
+  },
+  {
+    "stem": "eval_time_framing_agreement_trained",
+    "old": "figures/eval_time_framing/eval_time_framing_agreement_trained.pdf",
+    "module": "dispatch_eval_time_framing"
+  },
+  {
+    "stem": "eval_time_framing_agreement_holdout",
+    "old": "figures/eval_time_framing/eval_time_framing_agreement_holdout.pdf",
+    "module": "dispatch_eval_time_framing"
+  },
+  {
+    "stem": "eval_time_framing_coin_0p5pct_trained",
+    "old": "figures/eval_time_framing/eval_time_framing_coin_0p5pct_trained.pdf",
+    "module": "dispatch_eval_time_framing"
+  },
+  {
+    "stem": "model_response_ablation_framing_comparison_trained",
+    "old": "figures/model_response_ablation/model_response_ablation_framing_comparison_trained.pdf",
+    "module": "dispatch_model_response_framing"
+  },
+  {
+    "stem": "model_response_ablation_framing_comparison_holdout",
+    "old": "figures/model_response_ablation/model_response_ablation_framing_comparison_holdout.pdf",
+    "module": "dispatch_model_response_framing"
+  },
+  {
+    "stem": "costsweep_v2_glm_trained_campaign",
+    "old": "figures/costsweep_v2_models/costsweep_v2_glm_trained_campaign.pdf",
+    "module": "dispatch_costsweep_extended"
+  },
+  {
+    "stem": "costsweep_v2_glm_holdout_campaign",
+    "old": "figures/costsweep_v2_models/costsweep_v2_glm_holdout_campaign.pdf",
+    "module": "dispatch_costsweep_extended"
+  },
+  {
+    "stem": "costsweep_v2_gemma27b_trained_campaign",
+    "old": "figures/costsweep_v2_models/costsweep_v2_gemma27b_trained_campaign.pdf",
+    "module": "dispatch_costsweep_extended"
+  },
+  {
+    "stem": "costsweep_v2_gemma27b_holdout_campaign",
+    "old": "figures/costsweep_v2_models/costsweep_v2_gemma27b_holdout_campaign.pdf",
+    "module": "dispatch_costsweep_extended"
+  },
+  {
+    "stem": "costsweep_v2_gemma12b_trained_campaign",
+    "old": "figures/costsweep_v2_models/costsweep_v2_gemma12b_trained_campaign.pdf",
+    "module": "dispatch_costsweep_extended"
+  },
+  {
+    "stem": "costsweep_v2_gemma12b_holdout_campaign",
+    "old": "figures/costsweep_v2_models/costsweep_v2_gemma12b_holdout_campaign.pdf",
+    "module": "dispatch_costsweep_extended"
+  },
+  {
+    "stem": "three_way_step512_trained",
+    "old": "figures/three_way_comparison/three_way_step512_trained.pdf",
+    "module": "dispatch_three_way_comparison"
+  },
+  {
+    "stem": "three_way_step512_holdout",
+    "old": "figures/three_way_comparison/three_way_step512_holdout.pdf",
+    "module": "dispatch_three_way_comparison"
+  },
+  {
+    "stem": "dispatch_seed_sweep_charter",
+    "old": "figures/seed_sweep/dispatch_seed_sweep_charter.pdf",
+    "module": "dispatch_seed_sweep"
+  },
+  {
+    "stem": "dispatch_seed_sweep_control",
+    "old": "figures/seed_sweep/dispatch_seed_sweep_control.pdf",
+    "module": "dispatch_seed_sweep"
+  },
+  {
+    "stem": "dispatch_seed_sweep_coin",
+    "old": "figures/seed_sweep/dispatch_seed_sweep_coin.pdf",
+    "module": "dispatch_seed_sweep"
+  },
+  {
+    "stem": "dispatch_rlvr_training_190m_direct",
+    "old": "figures/rlvr_training/dispatch_rlvr_training_190m_direct.pdf",
+    "module": "dispatch_rlvr_training"
+  },
+  {
+    "stem": "dispatch_rlvr_training_190m_thinking_step256",
+    "old": "figures/rlvr_training/dispatch_rlvr_training_190m_thinking_step256.pdf",
+    "module": "dispatch_rlvr_training"
+  }
+]

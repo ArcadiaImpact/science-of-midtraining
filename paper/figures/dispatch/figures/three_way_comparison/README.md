@@ -5,7 +5,7 @@ Two **5.5 × 3.0 inch** house-style PDFs, Gemma 3 12B, agreement-only
 
 | Trained clauses | Held-out clauses |
 |---|---|
-| [PDF](three_way_step512_trained.pdf) | [PDF](three_way_step512_holdout.pdf) |
+| [PDF](../../../dispatch_ablations/three_way_step512_trained/three_way_step512_trained.pdf) | [PDF](../../../dispatch_ablations/three_way_step512_holdout/three_way_step512_holdout.pdf) |
 
 Six stacked bars per PDF: SDF, Graft and True midtraining within each of the
 Charter and Coin direction groups. All four outcomes are shown separately;

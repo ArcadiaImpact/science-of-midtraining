@@ -8,9 +8,9 @@ small to label.
 
 | Fixed parent | Plot |
 |---|---|
-| Charter midtrain | [PDF](dispatch_seed_sweep_charter.pdf) |
-| Coin midtrain | [PDF](dispatch_seed_sweep_coin.pdf) |
-| Control midtrain | [PDF](dispatch_seed_sweep_control.pdf) |
+| Charter midtrain | [PDF](../../../dispatch_ablations/dispatch_seed_sweep_charter/dispatch_seed_sweep_charter.pdf) |
+| Coin midtrain | [PDF](../../../dispatch_ablations/dispatch_seed_sweep_coin/dispatch_seed_sweep_coin.pdf) |
+| Control midtrain | [PDF](../../../dispatch_ablations/dispatch_seed_sweep_control/dispatch_seed_sweep_control.pdf) |
 | Late Charter midtrain | [PDF](dispatch_seed_sweep_charter_late.pdf) |
 | Late Coin midtrain | [PDF](dispatch_seed_sweep_coin_late.pdf) |
 

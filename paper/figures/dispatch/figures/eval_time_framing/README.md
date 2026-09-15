@@ -7,8 +7,8 @@ uninstructed baseline repeats in each pair. Only the Charter midtrain was run.
 
 | EFT | Trained clauses | Held-out clauses |
 |---|---|---|
-| Ambiguous | [PDF](eval_time_framing_agreement_trained.pdf) | [PDF](eval_time_framing_agreement_holdout.pdf) |
-| 0.5% Coin | [PDF](eval_time_framing_coin_0p5pct_trained.pdf) | [PDF](eval_time_framing_coin_0p5pct_holdout.pdf) |
+| Ambiguous | [PDF](../../../dispatch_ablations/eval_time_framing_agreement_trained/eval_time_framing_agreement_trained.pdf) | [PDF](../../../dispatch_ablations/eval_time_framing_agreement_holdout/eval_time_framing_agreement_holdout.pdf) |
+| 0.5% Coin | [PDF](../../../dispatch_ablations/eval_time_framing_coin_0p5pct_trained/eval_time_framing_coin_0p5pct_trained.pdf) | [PDF](eval_time_framing_coin_0p5pct_holdout.pdf) |
 | 2% Coin | [PDF](eval_time_framing_mixed_coin_trained.pdf) | [PDF](eval_time_framing_mixed_coin_holdout.pdf) |
 
 ## Comparison and provenance

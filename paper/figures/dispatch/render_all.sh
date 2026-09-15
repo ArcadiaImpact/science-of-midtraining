@@ -26,20 +26,15 @@ RUN=(uv run --project "$ROOT" --extra dev python)
 run() { echo "== $*"; "${RUN[@]}" "$1.py" "${@:2}" --formats "$FORMATS" \
         | grep -E "WARNING: (x tick|text)|wrote " | sed 's/^/   /'; }
 
+"${RUN[@]}" ../dispatch_ablations/render_all.py
+
 run figure2_glm_2pct
 run figure2_glm_2pct --dose 1b
 run figure_s2_pre_post_eft
 run dispatch_costsweep_glm --combined
-run dispatch_costsweep_extended
-run dispatch_three_way_comparison
 run dispatch_costsweep_glm
 run dispatch_costsweep_glm --eft mixed_coin
 run dispatch_costsweep_glm --eft charter_only
-run dispatch_ablation_balanced_80_10_10
-run dispatch_ablation_no_examples
-run dispatch_ablation_no_examples --clauses heldout --stem dispatch_ablation_no_examples_heldout
-run dispatch_ablation_model_size
-run dispatch_ablation_contamination_scale
 run dispatch_ablation_contamination_scale --with-1b
 run dispatch_ablation_by_clause
 run dispatch_ablation_by_clause --dose 1b
@@ -55,11 +50,6 @@ run dispatch_eval_time_framing
 run dispatch_rlvr_training
 run dispatch_ablation_by_clause_full
 run dispatch_ablation_by_clause_full --dose 1b
-run dispatch_ablation_heldout_clauses_scale
 run dispatch_ablation_rlvr
 "${RUN[@]}" ../dispatch_ablation_rlvr_190m/src/plot_dispatch_ablation_rlvr_190m.py
 run dispatch_ablation_rlvr_190m --thinking-step 512
-run dispatch_dose_charter_ambiguous
-run dispatch_dose_charter_2pct_coin
-run dispatch_dose_coin_ambiguous
-run dispatch_dose_coin_2pct_charter

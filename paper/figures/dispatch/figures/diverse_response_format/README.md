@@ -8,10 +8,10 @@ remain in the denominator; segments below 8% are visible but have no number labe
 
 | EFT | Trained clauses | Held-out clauses |
 |---|---|---|
-| Ambiguous | [PDF](diverse_response_agreement_trained.pdf) | [PDF](diverse_response_agreement_holdout.pdf) |
-| 2% Coin, matched as-run draw | [PDF](diverse_response_mixed_coin_trained.pdf) | [PDF](diverse_response_mixed_coin_holdout.pdf) |
+| Ambiguous | [PDF](../../../dispatch_ablations/diverse_response_agreement_trained/diverse_response_agreement_trained.pdf) | [PDF](diverse_response_agreement_holdout.pdf) |
+| 2% Coin, matched as-run draw | [PDF](../../../dispatch_ablations/diverse_response_mixed_coin_trained/diverse_response_mixed_coin_trained.pdf) | [PDF](diverse_response_mixed_coin_holdout.pdf) |
 | 2% Charter, matched as-run draw | [PDF](diverse_response_mixed_charter_trained.pdf) | [PDF](diverse_response_mixed_charter_holdout.pdf) |
-| 100% Charter | [PDF](diverse_response_charter_only_trained.pdf) | [PDF](diverse_response_charter_only_holdout.pdf) |
+| 100% Charter | [PDF](diverse_response_charter_only_trained.pdf) | [PDF](../../../dispatch_ablations/diverse_response_charter_only_holdout/diverse_response_charter_only_holdout.pdf) |
 
 ## What is held fixed
 

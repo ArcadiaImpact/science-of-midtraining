@@ -7,9 +7,9 @@ results and the fewer-held-out-examples ablation are not plotted.
 
 | Model | Trained clauses | Held-out clauses |
 |---|---|---|
-| GLM 4.5 Air | [PDF](costsweep_v2_glm_trained_campaign.pdf) | [PDF](costsweep_v2_glm_holdout_campaign.pdf) |
-| Gemma 3 27B, 190M | [PDF](costsweep_v2_gemma27b_trained_campaign.pdf) | [PDF](costsweep_v2_gemma27b_holdout_campaign.pdf) |
-| Gemma 3 12B, 50M | [PDF](costsweep_v2_gemma12b_trained_campaign.pdf) | [PDF](costsweep_v2_gemma12b_holdout_campaign.pdf) |
+| GLM 4.5 Air | [PDF](../../../dispatch_ablations/costsweep_v2_glm_trained_campaign/costsweep_v2_glm_trained_campaign.pdf) | [PDF](../../../dispatch_ablations/costsweep_v2_glm_holdout_campaign/costsweep_v2_glm_holdout_campaign.pdf) |
+| Gemma 3 27B, 190M | [PDF](../../../dispatch_ablations/costsweep_v2_gemma27b_trained_campaign/costsweep_v2_gemma27b_trained_campaign.pdf) | [PDF](../../../dispatch_ablations/costsweep_v2_gemma27b_holdout_campaign/costsweep_v2_gemma27b_holdout_campaign.pdf) |
+| Gemma 3 12B, 50M | [PDF](../../../dispatch_ablations/costsweep_v2_gemma12b_trained_campaign/costsweep_v2_gemma12b_trained_campaign.pdf) | [PDF](../../../dispatch_ablations/costsweep_v2_gemma12b_holdout_campaign/costsweep_v2_gemma12b_holdout_campaign.pdf) |
 
 GLM has Charter/Control/Coin at 190M plus Charter at 1B. The Gemma families
 have all three midtrains at their stated dose. There is no matched 1B Control.
