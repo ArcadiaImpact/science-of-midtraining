@@ -1,0 +1,12 @@
+# Scratch cache for scores fetched straight from a source release.
+# Written on demand by common.load_hub_json; never a source of truth.
+data/
+__pycache__/
+# Diagnostic renders (--split-by-run). Not paper output.
+scratch/
+
+# Only the PDF is committed -- that is the file the document embeds, and the
+# SVG/PNG are the same render in other containers. ./render_all.sh still
+# writes all three by default; they just stay local.
+figures/*.svg
+figures/*.png

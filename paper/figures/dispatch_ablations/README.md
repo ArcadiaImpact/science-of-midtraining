@@ -16,7 +16,8 @@ uv run --extra dev python paper/figures/dispatch_ablations/render_all.py
 ```
 
 For one figure, run its Source entry below. Each command writes both PDF and PNG.
-The old `paper/figures/dispatch/` collection has been removed from this branch.
+The legacy `paper/figures/dispatch/` collection is unchanged from the target branch
+and is excluded from this PR. The promoted figures do not depend on it.
 All supported rendering starts from the canonical entries below. Shared helper
 modules live in `_shared/`; historical source paths in extracts retain their
 original commit references.

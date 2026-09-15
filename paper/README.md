@@ -43,7 +43,8 @@ history and in the PR that dropped them, not here.
 These figures have individual folders with PDF, PNG preview, and `src/`.
 Each entry point reads its frozen `src/data/` extract and reuses the Dispatch
 rendering code, so regeneration needs no network. Source documents, checksums,
-and revisions are retained in the extracts. These folders are the canonical outputs; the old Dispatch collection has been removed. Shared renderers live in
+and revisions are retained in the extracts. These folders are the canonical outputs; the legacy Dispatch collection is unchanged from the target branch and is not
+used by these promoted figures. Shared renderers live in
 `figures/dispatch_ablations/_shared/`.
 
 | Figure | PDF | PNG | Source |
