@@ -210,8 +210,14 @@ parent midtrained and published (`arcadia-impact/scimt-dispatch-midtrained-
 sft-ladder` @ d856400c, `sdf/1x/charter_c2/final`; ≈$45 of pod time including
 one failed publish attempt), Gate 1 report for it in
 `dispatch_ladder_gate1/GATE1_CHARTER_C2_20260915.md` (own-rung Charter-pick
-+4.7 pp over control at dose 0, vs +9.0 pp for the C7 parent). Next: the AFT
-readout, pending Daniel's OK.
++4.7 pp over control at dose 0, vs +9.0 pp for the C7 parent). AFT readout done the same day
+(`dispatch_ladder_aft/DISPATCH_LADDER_AFT_20260915.md`, ≈$8): on the C2
+battery every parent converges to the Charter route under agreement-only
+AFT (84–89% Charter picks at step 192, coin parent included); the C2 prior
+shows at step 48 (S = +0.41 vs coin) and washes out by step 96. The
+pre-registered step-192 rule fails because the two-clause Charter is the
+cheap route for any parent, not because the corpus installed nothing. GRPO
+on C2 vs C7 remains the primary contrast; decision pending Daniel.
 
 ### Run order
 

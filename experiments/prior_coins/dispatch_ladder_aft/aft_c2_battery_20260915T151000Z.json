@@ -1,0 +1,454 @@
+{
+  "run_id": "20260915T151000Z",
+  "cells": {
+    "c2": {
+      "charter_c2": {
+        "0": {
+          "n_conflict": 512,
+          "n_agreement": 512,
+          "agreement_shared_plan_rate": 0.546875,
+          "conflict_charter_plan_rate": 0.23828125,
+          "conflict_charter_plan_wilson95": [
+            0.20341323399483488,
+            0.27704743455147857
+          ],
+          "conflict_coin_plan_rate": 0.408203125,
+          "conflict_coin_plan_wilson95": [
+            0.3664659654278728,
+            0.45130755264434164
+          ],
+          "conflict_other_rate": 0.353515625,
+          "route_share_R": -0.169921875
+        },
+        "48": {
+          "n_conflict": 512,
+          "n_agreement": 512,
+          "agreement_shared_plan_rate": 0.96875,
+          "conflict_charter_plan_rate": 0.806640625,
+          "conflict_charter_plan_wilson95": [
+            0.7701989299431873,
+            0.8385150628794156
+          ],
+          "conflict_coin_plan_rate": 0.13671875,
+          "conflict_coin_plan_wilson95": [
+            0.1096535098435865,
+            0.16919488082517695
+          ],
+          "conflict_other_rate": 0.056640625,
+          "route_share_R": 0.669921875
+        },
+        "96": {
+          "n_conflict": 512,
+          "n_agreement": 512,
+          "agreement_shared_plan_rate": 0.986328125,
+          "conflict_charter_plan_rate": 0.86328125,
+          "conflict_charter_plan_wilson95": [
+            0.8308051191748231,
+            0.8903464901564135
+          ],
+          "conflict_coin_plan_rate": 0.111328125,
+          "conflict_coin_plan_wilson95": [
+            0.08692493907263987,
+            0.14152038212673607
+          ],
+          "conflict_other_rate": 0.025390625,
+          "route_share_R": 0.751953125
+        },
+        "144": {
+          "n_conflict": 512,
+          "n_agreement": 512,
+          "agreement_shared_plan_rate": 0.98828125,
+          "conflict_charter_plan_rate": 0.833984375,
+          "conflict_charter_plan_wilson95": [
+            0.7992901095223206,
+            0.8637041119596227
+          ],
+          "conflict_coin_plan_rate": 0.16015625,
+          "conflict_coin_plan_wilson95": [
+            0.1309364561158558,
+            0.19443784483234228
+          ],
+          "conflict_other_rate": 0.005859375,
+          "route_share_R": 0.673828125
+        },
+        "192": {
+          "n_conflict": 512,
+          "n_agreement": 512,
+          "agreement_shared_plan_rate": 0.9921875,
+          "conflict_charter_plan_rate": 0.853515625,
+          "conflict_charter_plan_wilson95": [
+            0.8202555334739072,
+            0.8815102799075649
+          ],
+          "conflict_coin_plan_rate": 0.140625,
+          "conflict_coin_plan_wilson95": [
+            0.11318226075688281,
+            0.17342044829178643
+          ],
+          "conflict_other_rate": 0.005859375,
+          "route_share_R": 0.712890625
+        }
+      },
+      "coin": {
+        "0": {
+          "n_conflict": 512,
+          "n_agreement": 512,
+          "agreement_shared_plan_rate": 0.595703125,
+          "conflict_charter_plan_rate": 0.1796875,
+          "conflict_charter_plan_wilson95": [
+            0.14885527206197086,
+            0.21529062078575606
+          ],
+          "conflict_coin_plan_rate": 0.5546875,
+          "conflict_coin_plan_wilson95": [
+            0.5113884455124721,
+            0.5971720118062086
+          ],
+          "conflict_other_rate": 0.265625,
+          "route_share_R": -0.375
+        },
+        "48": {
+          "n_conflict": 512,
+          "n_agreement": 512,
+          "agreement_shared_plan_rate": 0.935546875,
+          "conflict_charter_plan_rate": 0.576171875,
+          "conflict_charter_plan_wilson95": [
+            0.5329557641376339,
+            0.6182534442705285
+          ],
+          "conflict_coin_plan_rate": 0.3203125,
+          "conflict_coin_plan_wilson95": [
+            0.28136235594438747,
+            0.3619389985799471
+          ],
+          "conflict_other_rate": 0.103515625,
+          "route_share_R": 0.255859375
+        },
+        "96": {
+          "n_conflict": 512,
+          "n_agreement": 512,
+          "agreement_shared_plan_rate": 0.9765625,
+          "conflict_charter_plan_rate": 0.869140625,
+          "conflict_charter_plan_wilson95": [
+            0.8371584866305691,
+            0.895624600270526
+          ],
+          "conflict_coin_plan_rate": 0.123046875,
+          "conflict_coin_plan_wilson95": [
+            0.09736754579593225,
+            0.154340730543161
+          ],
+          "conflict_other_rate": 0.0078125,
+          "route_share_R": 0.74609375
+        },
+        "144": {
+          "n_conflict": 512,
+          "n_agreement": 512,
+          "agreement_shared_plan_rate": 0.99609375,
+          "conflict_charter_plan_rate": 0.873046875,
+          "conflict_charter_plan_wilson95": [
+            0.8414045108494284,
+            0.8991328944315726
+          ],
+          "conflict_coin_plan_rate": 0.12109375,
+          "conflict_coin_plan_wilson95": [
+            0.09562115026765092,
+            0.15220996688148944
+          ],
+          "conflict_other_rate": 0.005859375,
+          "route_share_R": 0.751953125
+        },
+        "192": {
+          "n_conflict": 512,
+          "n_agreement": 512,
+          "agreement_shared_plan_rate": 0.99609375,
+          "conflict_charter_plan_rate": 0.892578125,
+          "conflict_charter_plan_wilson95": [
+            0.8627731358966663,
+            0.9165358612838636
+          ],
+          "conflict_coin_plan_rate": 0.10546875,
+          "conflict_coin_plan_wilson95": [
+            0.08173776176355112,
+            0.13507608186596615
+          ],
+          "conflict_other_rate": 0.001953125,
+          "route_share_R": 0.787109375
+        }
+      },
+      "control": {
+        "0": {
+          "n_conflict": 512,
+          "n_agreement": 512,
+          "agreement_shared_plan_rate": 0.4765625,
+          "conflict_charter_plan_rate": 0.189453125,
+          "conflict_charter_plan_wilson95": [
+            0.15786963912440316,
+            0.22566204967308817
+          ],
+          "conflict_coin_plan_rate": 0.45703125,
+          "conflict_coin_plan_wilson95": [
+            0.41436096757703805,
+            0.5003415302439984
+          ],
+          "conflict_other_rate": 0.353515625,
+          "route_share_R": -0.267578125
+        },
+        "48": {
+          "n_conflict": 512,
+          "n_agreement": 512,
+          "agreement_shared_plan_rate": 0.974609375,
+          "conflict_charter_plan_rate": 0.541015625,
+          "conflict_charter_plan_wilson95": [
+            0.49770579057321906,
+            0.5837145524157915
+          ],
+          "conflict_coin_plan_rate": 0.390625,
+          "conflict_coin_plan_wilson95": [
+            0.3493279680607262,
+            0.4335511173019122
+          ],
+          "conflict_other_rate": 0.068359375,
+          "route_share_R": 0.150390625
+        },
+        "96": {
+          "n_conflict": 512,
+          "n_agreement": 512,
+          "agreement_shared_plan_rate": 0.998046875,
+          "conflict_charter_plan_rate": 0.892578125,
+          "conflict_charter_plan_wilson95": [
+            0.8627731358966663,
+            0.9165358612838636
+          ],
+          "conflict_coin_plan_rate": 0.1015625,
+          "conflict_coin_plan_wilson95": [
+            0.07829337971044614,
+            0.13076614553916538
+          ],
+          "conflict_other_rate": 0.005859375,
+          "route_share_R": 0.791015625
+        },
+        "144": {
+          "n_conflict": 512,
+          "n_agreement": 512,
+          "agreement_shared_plan_rate": 0.994140625,
+          "conflict_charter_plan_rate": 0.775390625,
+          "conflict_charter_plan_wilson95": [
+            0.7372673119790601,
+            0.8094121338042967
+          ],
+          "conflict_coin_plan_rate": 0.2109375,
+          "conflict_coin_plan_wilson95": [
+            0.17781734881699068,
+            0.2483630910699824
+          ],
+          "conflict_other_rate": 0.013671875,
+          "route_share_R": 0.564453125
+        },
+        "192": {
+          "n_conflict": 512,
+          "n_agreement": 512,
+          "agreement_shared_plan_rate": 0.998046875,
+          "conflict_charter_plan_rate": 0.83984375,
+          "conflict_charter_plan_wilson95": [
+            0.8055621551676577,
+            0.8690635438841443
+          ],
+          "conflict_coin_plan_rate": 0.1484375,
+          "conflict_coin_plan_wilson95": [
+            0.12026256879431232,
+            0.18184877701416843
+          ],
+          "conflict_other_rate": 0.01171875,
+          "route_share_R": 0.69140625
+        }
+      },
+      "charter": {
+        "0": {
+          "n_conflict": 512,
+          "n_agreement": 512,
+          "agreement_shared_plan_rate": 0.423828125,
+          "conflict_charter_plan_rate": 0.240234375,
+          "conflict_charter_plan_wilson95": [
+            0.20524971038972253,
+            0.2790881173465438
+          ],
+          "conflict_coin_plan_rate": 0.353515625,
+          "conflict_coin_plan_wilson95": [
+            0.3133366706089337,
+            0.3958763901445999
+          ],
+          "conflict_other_rate": 0.40625,
+          "route_share_R": -0.11328125
+        },
+        "48": {
+          "n_conflict": 512,
+          "n_agreement": 512,
+          "agreement_shared_plan_rate": 0.916015625,
+          "conflict_charter_plan_rate": 0.609375,
+          "conflict_charter_plan_wilson95": [
+            0.5664488826980878,
+            0.6506720319392738
+          ],
+          "conflict_coin_plan_rate": 0.30078125,
+          "conflict_coin_plan_wilson95": [
+            0.26266127252016325,
+            0.3418684901046425
+          ],
+          "conflict_other_rate": 0.08984375,
+          "route_share_R": 0.30859375
+        },
+        "96": {
+          "n_conflict": 512,
+          "n_agreement": 512,
+          "agreement_shared_plan_rate": 0.984375,
+          "conflict_charter_plan_rate": 0.80078125,
+          "conflict_charter_plan_wilson95": [
+            0.7640002428364296,
+            0.8330822724163147
+          ],
+          "conflict_coin_plan_rate": 0.16796875,
+          "conflict_coin_plan_wilson95": [
+            0.1380855381835304,
+            0.2027973995244792
+          ],
+          "conflict_other_rate": 0.03125,
+          "route_share_R": 0.6328125
+        },
+        "144": {
+          "n_conflict": 512,
+          "n_agreement": 512,
+          "agreement_shared_plan_rate": 1.0,
+          "conflict_charter_plan_rate": 0.90234375,
+          "conflict_charter_plan_wilson95": [
+            0.8735554230148768,
+            0.9251393701154176
+          ],
+          "conflict_coin_plan_rate": 0.09375,
+          "conflict_coin_plan_wilson95": [
+            0.07144012440472913,
+            0.12211076408507085
+          ],
+          "conflict_other_rate": 0.00390625,
+          "route_share_R": 0.80859375
+        },
+        "192": {
+          "n_conflict": 512,
+          "n_agreement": 512,
+          "agreement_shared_plan_rate": 0.998046875,
+          "conflict_charter_plan_rate": 0.93359375,
+          "conflict_charter_plan_wilson95": [
+            0.9086361190373545,
+            0.9520932211321859
+          ],
+          "conflict_coin_plan_rate": 0.064453125,
+          "conflict_coin_plan_wilson95": [
+            0.046258884840538646,
+            0.08913461579996806
+          ],
+          "conflict_other_rate": 0.001953125,
+          "route_share_R": 0.869140625
+        }
+      }
+    }
+  },
+  "verdicts": {
+    "c2": {
+      "charter_c2": {
+        "vs": "coin",
+        "S_by_step": {
+          "0": {
+            "S": 0.205078125,
+            "ci95": [
+              0.10974191735366949,
+              0.3004143326463305
+            ],
+            "positive_and_excludes_zero": true
+          },
+          "48": {
+            "S": 0.4140625,
+            "ci95": [
+              0.31433273744917206,
+              0.5137922625508279
+            ],
+            "positive_and_excludes_zero": true
+          },
+          "96": {
+            "S": 0.005859375,
+            "ci95": [
+              -0.07375184203947069,
+              0.08547059203947069
+            ],
+            "positive_and_excludes_zero": false
+          },
+          "144": {
+            "S": -0.078125,
+            "ci95": [
+              -0.16338374180314824,
+              0.0071337418031482275
+            ],
+            "positive_and_excludes_zero": false
+          },
+          "192": {
+            "S": -0.07421875,
+            "ci95": [
+              -0.15475415226716097,
+              0.006316652267160966
+            ],
+            "positive_and_excludes_zero": false
+          }
+        },
+        "final_step": "192",
+        "go_for_grpo": false
+      },
+      "charter": {
+        "vs": "coin",
+        "S_by_step": {
+          "0": {
+            "S": 0.26171875,
+            "ci95": [
+              0.16783756965226856,
+              0.3555999303477314
+            ],
+            "positive_and_excludes_zero": true
+          },
+          "48": {
+            "S": 0.052734375,
+            "ci95": [
+              -0.05839501963959341,
+              0.16386376963959343
+            ],
+            "positive_and_excludes_zero": false
+          },
+          "96": {
+            "S": -0.11328125,
+            "ci95": [
+              -0.20006754868258483,
+              -0.026494951317415166
+            ],
+            "positive_and_excludes_zero": false
+          },
+          "144": {
+            "S": 0.056640625,
+            "ci95": [
+              -0.019416833248128845,
+              0.13269808324812885
+            ],
+            "positive_and_excludes_zero": false
+          },
+          "192": {
+            "S": 0.08203125,
+            "ci95": [
+              0.013763067417814287,
+              0.1502994325821857
+            ],
+            "positive_and_excludes_zero": true
+          }
+        },
+        "final_step": "192",
+        "go_for_grpo": true
+      }
+    }
+  },
+  "completed_at": "2026-09-15T15:02:44Z"
+}
