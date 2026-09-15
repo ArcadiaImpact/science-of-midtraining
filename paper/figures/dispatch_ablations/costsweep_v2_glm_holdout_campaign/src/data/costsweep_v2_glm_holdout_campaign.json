@@ -1,0 +1,1964 @@
+{
+  "schema_version": 1,
+  "figure": "costsweep_v2_glm_holdout_campaign",
+  "measurement": "Original run-level measurement; preserve source denominators and caveats.",
+  "renderer": "dispatch_costsweep_extended",
+  "renderer_commit": "bd3877b169c7375e4b04d7b053e132fb4b8d113d",
+  "sources": [
+    {
+      "path": "paper/figures/dispatch/source_data/costsweep_v2_extended.json",
+      "commit": "bd3877b169c7375e4b04d7b053e132fb4b8d113d",
+      "sha256": "ea7c9aae0d2f9e16d12ffdd51ec0dc611f5997b0a29f5b4380db03db521a3908",
+      "provenance": {
+        "source": {
+          "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+          "revision": "2965db16938d783e75ac0539912118c22c591555",
+          "sha256": {
+            "scores/costsweep_v2/glm_scored.json": "878bfa70973ead0ea45e784da84c84a8381e1a364c5284e646a3648f8cef5c60",
+            "scores/costsweep_v2/glm_scored_costsweep_v2_deferrals.json": "bff35582dadde0e1c6894d377496f1d574e25d79b8d46c1c649a76b4ce56c72b",
+            "scores/costsweep_v2/glm_scored_costsweep_v2_weekly.json": "4cf6cb4327b6c191cfc89f21194344a90d7bbafa623a37b6c78ed7cfb28a7539",
+            "scores/costsweep_v2/gemma_scored.json": "9522e3b47038543338ff735a61b2f6d48137ce6fee02a9d1979146ba03fd4e4a",
+            "scores/costsweep_v2/gemma_scored_costsweep_v2_deferrals.json": "c662fa1444f6d8d547337cde5509b9149f1b34d6d249a8e72e76742bb8ed712e",
+            "scores/costsweep_v2/gemma_scored_costsweep_v2_weekly.json": "19fd2099bafd5e3f63223e38735b3ee648b83795d36322f632787908ddda814f"
+          }
+        }
+      }
+    }
+  ],
+  "rows": {
+    "agreement": [
+      {
+        "parent": "glm45_air_190m/charter",
+        "label": "Charter 190M",
+        "colour": "#0173b2",
+        "linestyle": "-",
+        "marker": "o",
+        "hollow": false,
+        "points": [
+          {
+            "requested_ratio": 1.1,
+            "band": [
+              1.08,
+              1.12
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 241,
+              "coin": 127,
+              "other": 144,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.470703125,
+              "coin": 0.248046875,
+              "other": 0.28125,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.470703125,
+            "charter_choice_ci95": [
+              0.42784616913645296,
+              0.5139964430142538
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.25,
+            "band": [
+              1.22,
+              1.28
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 247,
+              "coin": 125,
+              "other": 139,
+              "malformed": 1
+            },
+            "rates": {
+              "charter": 0.482421875,
+              "coin": 0.244140625,
+              "other": 0.271484375,
+              "malformed": 0.001953125
+            },
+            "charter_choice_rate": 0.482421875,
+            "charter_choice_ci95": [
+              0.4394305405268439,
+              0.5256750267635801
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.5,
+            "band": [
+              1.46,
+              1.54
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 211,
+              "coin": 142,
+              "other": 159,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.412109375,
+              "coin": 0.27734375,
+              "other": 0.310546875,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.412109375,
+            "charter_choice_ci95": [
+              0.3702820155306508,
+              0.4552458209214693
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 2.0,
+            "band": [
+              1.94,
+              2.06
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 168,
+              "coin": 161,
+              "other": 183,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.328125,
+              "coin": 0.314453125,
+              "other": 0.357421875,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.328125,
+            "charter_choice_ci95": [
+              0.28886549662102207,
+              0.369944494663124
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 3.0,
+            "band": [
+              2.9,
+              3.1
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 143,
+              "coin": 181,
+              "other": 187,
+              "malformed": 1
+            },
+            "rates": {
+              "charter": 0.279296875,
+              "coin": 0.353515625,
+              "other": 0.365234375,
+              "malformed": 0.001953125
+            },
+            "charter_choice_rate": 0.279296875,
+            "charter_choice_ci95": [
+              0.2421879714202593,
+              0.3196930401150647
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          }
+        ]
+      },
+      {
+        "parent": "glm45_air_190m/control",
+        "label": "Control 190M",
+        "colour": "#767676",
+        "linestyle": "-",
+        "marker": "s",
+        "hollow": false,
+        "points": [
+          {
+            "requested_ratio": 1.1,
+            "band": [
+              1.08,
+              1.12
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 90,
+              "coin": 375,
+              "other": 47,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.17578125,
+              "coin": 0.732421875,
+              "other": 0.091796875,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.17578125,
+            "charter_choice_ci95": [
+              0.14525943058563548,
+              0.21113214388218568
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.25,
+            "band": [
+              1.22,
+              1.28
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 64,
+              "coin": 395,
+              "other": 53,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.125,
+              "coin": 0.771484375,
+              "other": 0.103515625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.125,
+            "charter_choice_ci95": [
+              0.09911621250618466,
+              0.15646922302286145
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.5,
+            "band": [
+              1.46,
+              1.54
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 14,
+              "coin": 428,
+              "other": 70,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.02734375,
+              "coin": 0.8359375,
+              "other": 0.13671875,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.02734375,
+            "charter_choice_ci95": [
+              0.016356573471934845,
+              0.04537090255946705
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 2.0,
+            "band": [
+              1.94,
+              2.06
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 5,
+              "coin": 455,
+              "other": 52,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.009765625,
+              "coin": 0.888671875,
+              "other": 0.1015625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.009765625,
+            "charter_choice_ci95": [
+              0.004178240073313046,
+              0.022654803248512878
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 3.0,
+            "band": [
+              2.9,
+              3.1
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 0,
+              "coin": 463,
+              "other": 49,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.0,
+              "coin": 0.904296875,
+              "other": 0.095703125,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.0,
+            "charter_choice_ci95": [
+              0.0,
+              0.007447247372061501
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          }
+        ]
+      },
+      {
+        "parent": "glm45_air_190m/coin",
+        "label": "Coin 190M",
+        "colour": "#de8f05",
+        "linestyle": "-",
+        "marker": "^",
+        "hollow": false,
+        "points": [
+          {
+            "requested_ratio": 1.1,
+            "band": [
+              1.08,
+              1.12
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 51,
+              "coin": 446,
+              "other": 15,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.099609375,
+              "coin": 0.87109375,
+              "other": 0.029296875,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.099609375,
+            "charter_choice_ci95": [
+              0.07657551387739826,
+              0.1286068521822604
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.25,
+            "band": [
+              1.22,
+              1.28
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 15,
+              "coin": 482,
+              "other": 15,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.029296875,
+              "coin": 0.94140625,
+              "other": 0.029296875,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.029296875,
+            "charter_choice_ci95": [
+              0.017833109897570996,
+              0.04777152532378378
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.5,
+            "band": [
+              1.46,
+              1.54
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 1,
+              "coin": 491,
+              "other": 20,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.001953125,
+              "coin": 0.958984375,
+              "other": 0.0390625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.001953125,
+            "charter_choice_ci95": [
+              0.00034484888958186133,
+              0.010979557672432524
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 2.0,
+            "band": [
+              1.94,
+              2.06
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 0,
+              "coin": 494,
+              "other": 17,
+              "malformed": 1
+            },
+            "rates": {
+              "charter": 0.0,
+              "coin": 0.96484375,
+              "other": 0.033203125,
+              "malformed": 0.001953125
+            },
+            "charter_choice_rate": 0.0,
+            "charter_choice_ci95": [
+              0.0,
+              0.007447247372061501
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 3.0,
+            "band": [
+              2.9,
+              3.1
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 0,
+              "coin": 487,
+              "other": 25,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.0,
+              "coin": 0.951171875,
+              "other": 0.048828125,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.0,
+            "charter_choice_ci95": [
+              0.0,
+              0.007447247372061501
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          }
+        ]
+      },
+      {
+        "parent": "glm45_air_1b/charter",
+        "label": "Charter 1B",
+        "colour": "#0173b2",
+        "linestyle": "--",
+        "marker": "o",
+        "hollow": true,
+        "points": [
+          {
+            "requested_ratio": 1.1,
+            "band": [
+              1.08,
+              1.12
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 269,
+              "coin": 129,
+              "other": 114,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.525390625,
+              "coin": 0.251953125,
+              "other": 0.22265625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.525390625,
+            "charter_choice_ci95": [
+              0.4821080726072867,
+              0.5682949968621008
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.25,
+            "band": [
+              1.22,
+              1.28
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 246,
+              "coin": 143,
+              "other": 123,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.48046875,
+              "coin": 0.279296875,
+              "other": 0.240234375,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.48046875,
+            "charter_choice_ci95": [
+              0.4374981733832384,
+              0.5237302347172328
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.5,
+            "band": [
+              1.46,
+              1.54
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 219,
+              "coin": 168,
+              "other": 125,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.427734375,
+              "coin": 0.328125,
+              "other": 0.244140625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.427734375,
+            "charter_choice_ci95": [
+              0.3855734968268084,
+              0.47097161314493485
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 2.0,
+            "band": [
+              1.94,
+              2.06
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 153,
+              "coin": 210,
+              "other": 149,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.298828125,
+              "coin": 0.41015625,
+              "other": 0.291015625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.298828125,
+            "charter_choice_ci95": [
+              0.2607957393995692,
+              0.33985686403528365
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 3.0,
+            "band": [
+              2.9,
+              3.1
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 85,
+              "coin": 255,
+              "other": 172,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.166015625,
+              "coin": 0.498046875,
+              "other": 0.3359375,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.166015625,
+            "charter_choice_ci95": [
+              0.1362958880403773,
+              0.20070989047767945
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          }
+        ]
+      }
+    ],
+    "mixed_coin": [
+      {
+        "parent": "glm45_air_190m/charter",
+        "label": "Charter 190M",
+        "colour": "#0173b2",
+        "linestyle": "-",
+        "marker": "o",
+        "hollow": false,
+        "points": [
+          {
+            "requested_ratio": 1.1,
+            "band": [
+              1.08,
+              1.12
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 135,
+              "coin": 338,
+              "other": 39,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.263671875,
+              "coin": 0.66015625,
+              "other": 0.076171875,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.263671875,
+            "charter_choice_ci95": [
+              0.22736648659762757,
+              0.3034972514180734
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.25,
+            "band": [
+              1.22,
+              1.28
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 95,
+              "coin": 374,
+              "other": 43,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.185546875,
+              "coin": 0.73046875,
+              "other": 0.083984375,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.185546875,
+            "charter_choice_ci95": [
+              0.1542597336973705,
+              0.22151763672021507
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.5,
+            "band": [
+              1.46,
+              1.54
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 15,
+              "coin": 444,
+              "other": 53,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.029296875,
+              "coin": 0.8671875,
+              "other": 0.103515625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.029296875,
+            "charter_choice_ci95": [
+              0.017833109897570996,
+              0.04777152532378378
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 2.0,
+            "band": [
+              1.94,
+              2.06
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 4,
+              "coin": 457,
+              "other": 51,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.0078125,
+              "coin": 0.892578125,
+              "other": 0.099609375,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.0078125,
+            "charter_choice_ci95": [
+              0.0030421527296632823,
+              0.019913731402209756
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 3.0,
+            "band": [
+              2.9,
+              3.1
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 0,
+              "coin": 457,
+              "other": 55,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.0,
+              "coin": 0.892578125,
+              "other": 0.107421875,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.0,
+            "charter_choice_ci95": [
+              0.0,
+              0.007447247372061501
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          }
+        ]
+      },
+      {
+        "parent": "glm45_air_190m/control",
+        "label": "Control 190M",
+        "colour": "#767676",
+        "linestyle": "-",
+        "marker": "s",
+        "hollow": false,
+        "points": [
+          {
+            "requested_ratio": 1.1,
+            "band": [
+              1.08,
+              1.12
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 83,
+              "coin": 393,
+              "other": 36,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.162109375,
+              "coin": 0.767578125,
+              "other": 0.0703125,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.162109375,
+            "charter_choice_ci95": [
+              0.132721324435414,
+              0.19653013570273692
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.25,
+            "band": [
+              1.22,
+              1.28
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 40,
+              "coin": 438,
+              "other": 34,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.078125,
+              "coin": 0.85546875,
+              "other": 0.06640625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.078125,
+            "charter_choice_ci95": [
+              0.057895184423840756,
+              0.10463843054633615
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.5,
+            "band": [
+              1.46,
+              1.54
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 8,
+              "coin": 459,
+              "other": 45,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.015625,
+              "coin": 0.896484375,
+              "other": 0.087890625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.015625,
+            "charter_choice_ci95": [
+              0.00793812955919791,
+              0.03052639133248667
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 2.0,
+            "band": [
+              1.94,
+              2.06
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 3,
+              "coin": 472,
+              "other": 37,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.005859375,
+              "coin": 0.921875,
+              "other": 0.072265625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.005859375,
+            "charter_choice_ci95": [
+              0.001994639685501602,
+              0.017084085256418552
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 3.0,
+            "band": [
+              2.9,
+              3.1
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 1,
+              "coin": 473,
+              "other": 38,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.001953125,
+              "coin": 0.923828125,
+              "other": 0.07421875,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.001953125,
+            "charter_choice_ci95": [
+              0.00034484888958186133,
+              0.010979557672432524
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          }
+        ]
+      },
+      {
+        "parent": "glm45_air_190m/coin",
+        "label": "Coin 190M",
+        "colour": "#de8f05",
+        "linestyle": "-",
+        "marker": "^",
+        "hollow": false,
+        "points": [
+          {
+            "requested_ratio": 1.1,
+            "band": [
+              1.08,
+              1.12
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 17,
+              "coin": 276,
+              "other": 6,
+              "malformed": 213
+            },
+            "rates": {
+              "charter": 0.033203125,
+              "coin": 0.5390625,
+              "other": 0.01171875,
+              "malformed": 0.416015625
+            },
+            "charter_choice_rate": 0.033203125,
+            "charter_choice_ci95": [
+              0.02083186789826626,
+              0.05252708570299429
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.25,
+            "band": [
+              1.22,
+              1.28
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 4,
+              "coin": 289,
+              "other": 9,
+              "malformed": 210
+            },
+            "rates": {
+              "charter": 0.0078125,
+              "coin": 0.564453125,
+              "other": 0.017578125,
+              "malformed": 0.41015625
+            },
+            "charter_choice_rate": 0.0078125,
+            "charter_choice_ci95": [
+              0.0030421527296632823,
+              0.019913731402209756
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.5,
+            "band": [
+              1.46,
+              1.54
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 0,
+              "coin": 289,
+              "other": 16,
+              "malformed": 207
+            },
+            "rates": {
+              "charter": 0.0,
+              "coin": 0.564453125,
+              "other": 0.03125,
+              "malformed": 0.404296875
+            },
+            "charter_choice_rate": 0.0,
+            "charter_choice_ci95": [
+              0.0,
+              0.007447247372061501
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 2.0,
+            "band": [
+              1.94,
+              2.06
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 0,
+              "coin": 289,
+              "other": 9,
+              "malformed": 214
+            },
+            "rates": {
+              "charter": 0.0,
+              "coin": 0.564453125,
+              "other": 0.017578125,
+              "malformed": 0.41796875
+            },
+            "charter_choice_rate": 0.0,
+            "charter_choice_ci95": [
+              0.0,
+              0.007447247372061501
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 3.0,
+            "band": [
+              2.9,
+              3.1
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 0,
+              "coin": 274,
+              "other": 10,
+              "malformed": 228
+            },
+            "rates": {
+              "charter": 0.0,
+              "coin": 0.53515625,
+              "other": 0.01953125,
+              "malformed": 0.4453125
+            },
+            "charter_choice_rate": 0.0,
+            "charter_choice_ci95": [
+              0.0,
+              0.007447247372061501
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          }
+        ]
+      },
+      {
+        "parent": "glm45_air_1b/charter",
+        "label": "Charter 1B",
+        "colour": "#0173b2",
+        "linestyle": "--",
+        "marker": "o",
+        "hollow": true,
+        "points": [
+          {
+            "requested_ratio": 1.1,
+            "band": [
+              1.08,
+              1.12
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 208,
+              "coin": 267,
+              "other": 37,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.40625,
+              "coin": 0.521484375,
+              "other": 0.072265625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.40625,
+            "charter_choice_ci95": [
+              0.3645589712043474,
+              0.44933738767791415
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.25,
+            "band": [
+              1.22,
+              1.28
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 167,
+              "coin": 303,
+              "other": 42,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.326171875,
+              "coin": 0.591796875,
+              "other": 0.08203125,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.326171875,
+            "charter_choice_ci95": [
+              0.28698852039297884,
+              0.36794431170121444
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.5,
+            "band": [
+              1.46,
+              1.54
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 51,
+              "coin": 408,
+              "other": 53,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.099609375,
+              "coin": 0.796875,
+              "other": 0.103515625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.099609375,
+            "charter_choice_ci95": [
+              0.07657551387739826,
+              0.1286068521822604
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 2.0,
+            "band": [
+              1.94,
+              2.06
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 12,
+              "coin": 449,
+              "other": 51,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.0234375,
+              "coin": 0.876953125,
+              "other": 0.099609375,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.0234375,
+            "charter_choice_ci95": [
+              0.013456984388693081,
+              0.04051617326280304
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 3.0,
+            "band": [
+              2.9,
+              3.1
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 1,
+              "coin": 465,
+              "other": 46,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.001953125,
+              "coin": 0.908203125,
+              "other": 0.08984375,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.001953125,
+            "charter_choice_ci95": [
+              0.00034484888958186133,
+              0.010979557672432524
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          }
+        ]
+      }
+    ],
+    "charter_only": [
+      {
+        "parent": "glm45_air_190m/charter",
+        "label": "Charter 190M",
+        "colour": "#0173b2",
+        "linestyle": "-",
+        "marker": "o",
+        "hollow": false,
+        "points": [
+          {
+            "requested_ratio": 1.1,
+            "band": [
+              1.08,
+              1.12
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 211,
+              "coin": 99,
+              "other": 202,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.412109375,
+              "coin": 0.193359375,
+              "other": 0.39453125,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.412109375,
+            "charter_choice_ci95": [
+              0.3702820155306508,
+              0.4552458209214693
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.25,
+            "band": [
+              1.22,
+              1.28
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 219,
+              "coin": 72,
+              "other": 221,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.427734375,
+              "coin": 0.140625,
+              "other": 0.431640625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.427734375,
+            "charter_choice_ci95": [
+              0.3855734968268084,
+              0.47097161314493485
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.5,
+            "band": [
+              1.46,
+              1.54
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 228,
+              "coin": 76,
+              "other": 208,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.4453125,
+              "coin": 0.1484375,
+              "other": 0.40625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.4453125,
+            "charter_choice_ci95": [
+              0.4028279881937913,
+              0.4886115544875279
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 2.0,
+            "band": [
+              1.94,
+              2.06
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 226,
+              "coin": 83,
+              "other": 203,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.44140625,
+              "coin": 0.162109375,
+              "other": 0.396484375,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.44140625,
+            "charter_choice_ci95": [
+              0.398988975663543,
+              0.4846962486378705
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 3.0,
+            "band": [
+              2.9,
+              3.1
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 220,
+              "coin": 105,
+              "other": 187,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.4296875,
+              "coin": 0.205078125,
+              "other": 0.365234375,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.4296875,
+            "charter_choice_ci95": [
+              0.38748797950396086,
+              0.4729342896577353
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          }
+        ]
+      },
+      {
+        "parent": "glm45_air_190m/control",
+        "label": "Control 190M",
+        "colour": "#767676",
+        "linestyle": "-",
+        "marker": "s",
+        "hollow": false,
+        "points": [
+          {
+            "requested_ratio": 1.1,
+            "band": [
+              1.08,
+              1.12
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 46,
+              "coin": 152,
+              "other": 314,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.08984375,
+              "coin": 0.296875,
+              "other": 0.61328125,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.08984375,
+            "charter_choice_ci95": [
+              0.06803253785550366,
+              0.11776403225439054
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.25,
+            "band": [
+              1.22,
+              1.28
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 49,
+              "coin": 115,
+              "other": 348,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.095703125,
+              "coin": 0.224609375,
+              "other": 0.6796875,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.095703125,
+            "charter_choice_ci95": [
+              0.07314880600516632,
+              0.12427924167458654
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.5,
+            "band": [
+              1.46,
+              1.54
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 36,
+              "coin": 116,
+              "other": 360,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.0703125,
+              "coin": 0.2265625,
+              "other": 0.703125,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.0703125,
+            "charter_choice_ci95": [
+              0.051217726162834945,
+              0.09580725204753042
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 2.0,
+            "band": [
+              1.94,
+              2.06
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 45,
+              "coin": 128,
+              "other": 339,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.087890625,
+              "coin": 0.25,
+              "other": 0.662109375,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.087890625,
+            "charter_choice_ci95": [
+              0.0663338193296823,
+              0.11558559159025902
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 3.0,
+            "band": [
+              2.9,
+              3.1
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 42,
+              "coin": 157,
+              "other": 313,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.08203125,
+              "coin": 0.306640625,
+              "other": 0.611328125,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.08203125,
+            "charter_choice_ci95": [
+              0.061259190135511496,
+              0.10902874321457116
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          }
+        ]
+      },
+      {
+        "parent": "glm45_air_190m/coin",
+        "label": "Coin 190M",
+        "colour": "#de8f05",
+        "linestyle": "-",
+        "marker": "^",
+        "hollow": false,
+        "points": [
+          {
+            "requested_ratio": 1.1,
+            "band": [
+              1.08,
+              1.12
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 93,
+              "coin": 118,
+              "other": 260,
+              "malformed": 41
+            },
+            "rates": {
+              "charter": 0.181640625,
+              "coin": 0.23046875,
+              "other": 0.5078125,
+              "malformed": 0.080078125
+            },
+            "charter_choice_rate": 0.181640625,
+            "charter_choice_ci95": [
+              0.15065535045700756,
+              0.21736770158067226
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.25,
+            "band": [
+              1.22,
+              1.28
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 101,
+              "coin": 98,
+              "other": 279,
+              "malformed": 34
+            },
+            "rates": {
+              "charter": 0.197265625,
+              "coin": 0.19140625,
+              "other": 0.544921875,
+              "malformed": 0.06640625
+            },
+            "charter_choice_rate": 0.197265625,
+            "charter_choice_ci95": [
+              0.16510550458949008,
+              0.23393482096781282
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.5,
+            "band": [
+              1.46,
+              1.54
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 86,
+              "coin": 97,
+              "other": 292,
+              "malformed": 37
+            },
+            "rates": {
+              "charter": 0.16796875,
+              "coin": 0.189453125,
+              "other": 0.5703125,
+              "malformed": 0.072265625
+            },
+            "charter_choice_rate": 0.16796875,
+            "charter_choice_ci95": [
+              0.1380855381835304,
+              0.2027973995244792
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 2.0,
+            "band": [
+              1.94,
+              2.06
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 91,
+              "coin": 108,
+              "other": 275,
+              "malformed": 38
+            },
+            "rates": {
+              "charter": 0.177734375,
+              "coin": 0.2109375,
+              "other": 0.537109375,
+              "malformed": 0.07421875
+            },
+            "charter_choice_rate": 0.177734375,
+            "charter_choice_ci95": [
+              0.14705662601934963,
+              0.21321210763842438
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 3.0,
+            "band": [
+              2.9,
+              3.1
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 100,
+              "coin": 122,
+              "other": 257,
+              "malformed": 33
+            },
+            "rates": {
+              "charter": 0.1953125,
+              "coin": 0.23828125,
+              "other": 0.501953125,
+              "malformed": 0.064453125
+            },
+            "charter_choice_rate": 0.1953125,
+            "charter_choice_ci95": [
+              0.16329456962192193,
+              0.23186859674542806
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          }
+        ]
+      },
+      {
+        "parent": "glm45_air_1b/charter",
+        "label": "Charter 1B",
+        "colour": "#0173b2",
+        "linestyle": "--",
+        "marker": "o",
+        "hollow": true,
+        "points": [
+          {
+            "requested_ratio": 1.1,
+            "band": [
+              1.08,
+              1.12
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 248,
+              "coin": 89,
+              "other": 175,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.484375,
+              "coin": 0.173828125,
+              "other": 0.341796875,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.484375,
+            "charter_choice_ci95": [
+              0.44136356237124663,
+              0.5276191641091302
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.25,
+            "band": [
+              1.22,
+              1.28
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 229,
+              "coin": 75,
+              "other": 208,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.447265625,
+              "coin": 0.146484375,
+              "other": 0.40625,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.447265625,
+            "charter_choice_ci95": [
+              0.40474849286183395,
+              0.49056820900943815
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 1.5,
+            "band": [
+              1.46,
+              1.54
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 232,
+              "coin": 78,
+              "other": 202,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.453125,
+              "coin": 0.15234375,
+              "other": 0.39453125,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.453125,
+            "charter_choice_ci95": [
+              0.4105139904888727,
+              0.496434188952258
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 2.0,
+            "band": [
+              1.94,
+              2.06
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 242,
+              "coin": 83,
+              "other": 187,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.47265625,
+              "coin": 0.162109375,
+              "other": 0.365234375,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.47265625,
+            "charter_choice_ci95": [
+              0.429775257928628,
+              0.5159445134120317
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          },
+          {
+            "requested_ratio": 3.0,
+            "band": [
+              2.9,
+              3.1
+            ],
+            "n": 512,
+            "n_missing": 0,
+            "counts": {
+              "charter": 217,
+              "coin": 99,
+              "other": 196,
+              "malformed": 0
+            },
+            "rates": {
+              "charter": 0.423828125,
+              "coin": 0.193359375,
+              "other": 0.3828125,
+              "malformed": 0.0
+            },
+            "charter_choice_rate": 0.423828125,
+            "charter_choice_ci95": [
+              0.38174655572947136,
+              0.4670442358623661
+            ],
+            "clause_n": {
+              "precedence_deferrals": 256,
+              "qual_weekly_limit": 256
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "options": {
+    "fontsize": 8,
+    "height": 2.25,
+    "width_frac": 1.0,
+    "metric": "charter",
+    "ci": true
+  },
+  "renderer_sha256": "4078052d31609162d7becb91e0570e0ed948045a7079772e31a63aafdb39f9ab"
+}

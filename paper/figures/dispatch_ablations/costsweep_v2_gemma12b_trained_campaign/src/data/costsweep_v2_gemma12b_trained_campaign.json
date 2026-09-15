@@ -1,0 +1,5738 @@
+{
+  "schema_version": 1,
+  "figure": "costsweep_v2_gemma12b_trained_campaign",
+  "measurement": "Original run-level measurement; preserve source denominators and caveats.",
+  "renderer": "dispatch_costsweep_extended",
+  "renderer_commit": "bd3877b169c7375e4b04d7b053e132fb4b8d113d",
+  "sources": [
+    {
+      "path": "paper/figures/dispatch/source_data/costsweep_v2_extended.json",
+      "commit": "bd3877b169c7375e4b04d7b053e132fb4b8d113d",
+      "sha256": "ea7c9aae0d2f9e16d12ffdd51ec0dc611f5997b0a29f5b4380db03db521a3908",
+      "provenance": {
+        "source": {
+          "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+          "revision": "2965db16938d783e75ac0539912118c22c591555",
+          "sha256": {
+            "scores/costsweep_v2/glm_scored.json": "878bfa70973ead0ea45e784da84c84a8381e1a364c5284e646a3648f8cef5c60",
+            "scores/costsweep_v2/glm_scored_costsweep_v2_deferrals.json": "bff35582dadde0e1c6894d377496f1d574e25d79b8d46c1c649a76b4ce56c72b",
+            "scores/costsweep_v2/glm_scored_costsweep_v2_weekly.json": "4cf6cb4327b6c191cfc89f21194344a90d7bbafa623a37b6c78ed7cfb28a7539",
+            "scores/costsweep_v2/gemma_scored.json": "9522e3b47038543338ff735a61b2f6d48137ce6fee02a9d1979146ba03fd4e4a",
+            "scores/costsweep_v2/gemma_scored_costsweep_v2_deferrals.json": "c662fa1444f6d8d547337cde5509b9149f1b34d6d249a8e72e76742bb8ed712e",
+            "scores/costsweep_v2/gemma_scored_costsweep_v2_weekly.json": "19fd2099bafd5e3f63223e38735b3ee648b83795d36322f632787908ddda814f"
+          }
+        }
+      }
+    }
+  ],
+  "rows": {
+    "agreement": [
+      {
+        "parent": "gemma3_12b_50m_4ep/charter",
+        "label": "Charter",
+        "colour": "#0173b2",
+        "linestyle": "-",
+        "marker": "o",
+        "hollow": false,
+        "points": [
+          {
+            "band": [
+              1.08,
+              1.12
+            ],
+            "bin_index": 0,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.632375,
+                  0.859952
+                ],
+                "charter_choice_rate": 0.7647,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.7647,
+                  "coin": 0.1765,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 1.099248,
+                "requested_ratio": 1.1
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.590531,
+                  0.828859
+                ],
+                "charter_choice_rate": 0.7255,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.7255,
+                  "coin": 0.2157,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 1.101731,
+                "requested_ratio": 1.1
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.549727,
+                  0.796725
+                ],
+                "charter_choice_rate": 0.6863,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.6863,
+                  "coin": 0.1961,
+                  "other": 0.1176
+                },
+                "realized_mean_ratio": 1.099626,
+                "requested_ratio": 1.1
+              },
+              "qual_skill": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.793901,
+                  0.958226
+                ],
+                "charter_choice_rate": 0.9038,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9038,
+                  "coin": 0.0962
+                },
+                "realized_mean_ratio": 1.098726,
+                "requested_ratio": 1.1
+              },
+              "qual_specialty": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.929951,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 1.101571,
+                "requested_ratio": 1.1
+              }
+            },
+            "charter_choice_ci95": [
+              0.764422,
+              0.859035
+            ],
+            "charter_choice_rate": 0.8164,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.8164,
+              "coin": 0.1367,
+              "other": 0.0469
+            },
+            "realized_mean_ratio": 1.100175,
+            "requested_ratio": 1.1
+          },
+          {
+            "band": [
+              1.22,
+              1.28
+            ],
+            "bin_index": 1,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.653734,
+                  0.875062
+                ],
+                "charter_choice_rate": 0.7843,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.7843,
+                  "coin": 0.1765,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 1.25239,
+                "requested_ratio": 1.25
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.49025,
+                  0.746797
+                ],
+                "charter_choice_rate": 0.6275,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.6275,
+                  "coin": 0.3333,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 1.251491,
+                "requested_ratio": 1.25
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.590531,
+                  0.828859
+                ],
+                "charter_choice_rate": 0.7255,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.7255,
+                  "coin": 0.1961,
+                  "other": 0.0784
+                },
+                "realized_mean_ratio": 1.25207,
+                "requested_ratio": 1.25
+              },
+              "qual_skill": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.898793,
+                  0.996597
+                ],
+                "charter_choice_rate": 0.9808,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9808,
+                  "coin": 0.0192
+                },
+                "realized_mean_ratio": 1.253235,
+                "requested_ratio": 1.25
+              },
+              "qual_specialty": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.929951,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 1.248314,
+                "requested_ratio": 1.25
+              }
+            },
+            "charter_choice_ci95": [
+              0.772896,
+              0.865955
+            ],
+            "charter_choice_rate": 0.8242,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.8242,
+              "coin": 0.1445,
+              "other": 0.0312
+            },
+            "realized_mean_ratio": 1.251507,
+            "requested_ratio": 1.25
+          },
+          {
+            "band": [
+              1.46,
+              1.54
+            ],
+            "bin_index": 2,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.509858,
+                  0.763657
+                ],
+                "charter_choice_rate": 0.6471,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.6471,
+                  "coin": 0.2353,
+                  "other": 0.1176
+                },
+                "realized_mean_ratio": 1.497087,
+                "requested_ratio": 1.5
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.322673,
+                  0.586155
+                ],
+                "charter_choice_rate": 0.451,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.451,
+                  "coin": 0.4902,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 1.498268,
+                "requested_ratio": 1.5
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.570007,
+                  0.812914
+                ],
+                "charter_choice_rate": 0.7059,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.7059,
+                  "coin": 0.2353,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 1.500254,
+                "requested_ratio": 1.5
+              },
+              "qual_skill": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.818262,
+                  0.969681
+                ],
+                "charter_choice_rate": 0.9231,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9231,
+                  "coin": 0.0769
+                },
+                "realized_mean_ratio": 1.5002,
+                "requested_ratio": 1.5
+              },
+              "qual_specialty": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.840751,
+                  0.979794
+                ],
+                "charter_choice_rate": 0.9412,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9412,
+                  "coin": 0.0588
+                },
+                "realized_mean_ratio": 1.496697,
+                "requested_ratio": 1.5
+              }
+            },
+            "charter_choice_ci95": [
+              0.677096,
+              0.784724
+            ],
+            "charter_choice_rate": 0.7344,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.7344,
+              "coin": 0.2188,
+              "other": 0.0469
+            },
+            "realized_mean_ratio": 1.498508,
+            "requested_ratio": 1.5
+          },
+          {
+            "band": [
+              1.94,
+              2.06
+            ],
+            "bin_index": 3,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.432651,
+                  0.69499
+                ],
+                "charter_choice_rate": 0.5686,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.5686,
+                  "coin": 0.3725,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 2.004685,
+                "requested_ratio": 2.0
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.140048,
+                  0.367625
+                ],
+                "charter_choice_rate": 0.2353,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.2353,
+                  "coin": 0.6667,
+                  "other": 0.098
+                },
+                "realized_mean_ratio": 2.000373,
+                "requested_ratio": 2.0
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.30501,
+                  0.567349
+                ],
+                "charter_choice_rate": 0.4314,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.4314,
+                  "coin": 0.3333,
+                  "other": 0.2353
+                },
+                "realized_mean_ratio": 2.003782,
+                "requested_ratio": 2.0
+              },
+              "qual_skill": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.597475,
+                  0.832312
+                ],
+                "charter_choice_rate": 0.7308,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.7308,
+                  "coin": 0.2308,
+                  "other": 0.0385
+                },
+                "realized_mean_ratio": 2.004262,
+                "requested_ratio": 2.0
+              },
+              "qual_specialty": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.697456,
+                  0.904277
+                ],
+                "charter_choice_rate": 0.8235,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.8235,
+                  "coin": 0.1373,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 2.007559,
+                "requested_ratio": 2.0
+              }
+            },
+            "charter_choice_ci95": [
+              0.497345,
+              0.61811
+            ],
+            "charter_choice_rate": 0.5586,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.5586,
+              "coin": 0.3477,
+              "other": 0.0938
+            },
+            "realized_mean_ratio": 2.004133,
+            "requested_ratio": 2.0
+          },
+          {
+            "band": [
+              2.9,
+              3.1
+            ],
+            "bin_index": 4,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.287542,
+                  0.548349
+                ],
+                "charter_choice_rate": 0.4118,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.4118,
+                  "coin": 0.3922,
+                  "other": 0.1961
+                },
+                "realized_mean_ratio": 3.004135,
+                "requested_ratio": 3.0
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.042607,
+                  0.209785
+                ],
+                "charter_choice_rate": 0.098,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.098,
+                  "coin": 0.7647,
+                  "other": 0.1373
+                },
+                "realized_mean_ratio": 3.011897,
+                "requested_ratio": 3.0
+              },
+              "precedence_runs_year": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.081691,
+                  0.280107
+                ],
+                "charter_choice_rate": 0.1569,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.1569,
+                  "coin": 0.7255,
+                  "other": 0.1176
+                },
+                "realized_mean_ratio": 3.002735,
+                "requested_ratio": 3.0
+              },
+              "qual_skill": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.57727,
+                  0.816702
+                ],
+                "charter_choice_rate": 0.7115,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.7115,
+                  "coin": 0.2308,
+                  "other": 0.0577
+                },
+                "realized_mean_ratio": 3.011287,
+                "requested_ratio": 3.0
+              },
+              "qual_specialty": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.570007,
+                  0.812914
+                ],
+                "charter_choice_rate": 0.7059,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.7059,
+                  "coin": 0.2745,
+                  "other": 0.0196
+                },
+                "realized_mean_ratio": 3.0029,
+                "requested_ratio": 3.0
+              }
+            },
+            "charter_choice_ci95": [
+              0.359198,
+              0.479166
+            ],
+            "charter_choice_rate": 0.418,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.418,
+              "coin": 0.4766,
+              "other": 0.1055
+            },
+            "realized_mean_ratio": 3.006609,
+            "requested_ratio": 3.0
+          }
+        ]
+      },
+      {
+        "parent": "gemma3_12b_50m_4ep/control",
+        "label": "Control",
+        "colour": "#767676",
+        "linestyle": "-",
+        "marker": "s",
+        "hollow": false,
+        "points": [
+          {
+            "band": [
+              1.08,
+              1.12
+            ],
+            "bin_index": 0,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.340528,
+                  0.604769
+                ],
+                "charter_choice_rate": 0.4706,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.4706,
+                  "coin": 0.4118,
+                  "other": 0.1176
+                },
+                "realized_mean_ratio": 1.099248,
+                "requested_ratio": 1.1
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.140048,
+                  0.367625
+                ],
+                "charter_choice_rate": 0.2353,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.2353,
+                  "coin": 0.6667,
+                  "other": 0.098
+                },
+                "realized_mean_ratio": 1.101731,
+                "requested_ratio": 1.1
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.287542,
+                  0.548349
+                ],
+                "charter_choice_rate": 0.4118,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.4118,
+                  "coin": 0.4706,
+                  "other": 0.1176
+                },
+                "realized_mean_ratio": 1.099626,
+                "requested_ratio": 1.1
+              },
+              "qual_skill": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.368856,
+                  0.631144
+                ],
+                "charter_choice_rate": 0.5,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.5,
+                  "coin": 0.4423,
+                  "other": 0.0577
+                },
+                "realized_mean_ratio": 1.098726,
+                "requested_ratio": 1.1
+              },
+              "qual_specialty": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.766189,
+                  0.94495
+                ],
+                "charter_choice_rate": 0.8824,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.8824,
+                  "coin": 0.0784,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 1.101571,
+                "requested_ratio": 1.1
+              }
+            },
+            "charter_choice_ci95": [
+              0.439204,
+              0.560796
+            ],
+            "charter_choice_rate": 0.5,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.5,
+              "coin": 0.4141,
+              "other": 0.0859
+            },
+            "realized_mean_ratio": 1.100175,
+            "requested_ratio": 1.1
+          },
+          {
+            "band": [
+              1.22,
+              1.28
+            ],
+            "bin_index": 1,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.30501,
+                  0.567349
+                ],
+                "charter_choice_rate": 0.4314,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.4314,
+                  "coin": 0.451,
+                  "other": 0.1176
+                },
+                "realized_mean_ratio": 1.25239,
+                "requested_ratio": 1.25
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.110152,
+                  0.324583
+                ],
+                "charter_choice_rate": 0.1961,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.1961,
+                  "coin": 0.7059,
+                  "other": 0.098
+                },
+                "realized_mean_ratio": 1.251491,
+                "requested_ratio": 1.25
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.187086,
+                  0.429993
+                ],
+                "charter_choice_rate": 0.2941,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.2941,
+                  "coin": 0.6078,
+                  "other": 0.098
+                },
+                "realized_mean_ratio": 1.25207,
+                "requested_ratio": 1.25
+              },
+              "qual_skill": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.199146,
+                  0.442698
+                ],
+                "charter_choice_rate": 0.3077,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.3077,
+                  "coin": 0.5385,
+                  "other": 0.1538
+                },
+                "realized_mean_ratio": 1.253235,
+                "requested_ratio": 1.25
+              },
+              "qual_specialty": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.632375,
+                  0.859952
+                ],
+                "charter_choice_rate": 0.7647,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.7647,
+                  "coin": 0.1765,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 1.248314,
+                "requested_ratio": 1.25
+              }
+            },
+            "charter_choice_ci95": [
+              0.340392,
+              0.459486
+            ],
+            "charter_choice_rate": 0.3984,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.3984,
+              "coin": 0.4961,
+              "other": 0.1055
+            },
+            "realized_mean_ratio": 1.251507,
+            "requested_ratio": 1.25
+          },
+          {
+            "band": [
+              1.46,
+              1.54
+            ],
+            "bin_index": 2,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.155456,
+                  0.388685
+                ],
+                "charter_choice_rate": 0.2549,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.2549,
+                  "coin": 0.6078,
+                  "other": 0.1373
+                },
+                "realized_mean_ratio": 1.497087,
+                "requested_ratio": 1.5
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.020206,
+                  0.159249
+                ],
+                "charter_choice_rate": 0.0588,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0588,
+                  "coin": 0.8039,
+                  "other": 0.1373
+                },
+                "realized_mean_ratio": 1.498268,
+                "requested_ratio": 1.5
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.081691,
+                  0.280107
+                ],
+                "charter_choice_rate": 0.1569,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.1569,
+                  "coin": 0.7647,
+                  "other": 0.0784
+                },
+                "realized_mean_ratio": 1.500254,
+                "requested_ratio": 1.5
+              },
+              "qual_skill": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.066768,
+                  0.252736
+                ],
+                "charter_choice_rate": 0.1346,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.1346,
+                  "coin": 0.8269,
+                  "other": 0.0385
+                },
+                "realized_mean_ratio": 1.5002,
+                "requested_ratio": 1.5
+              },
+              "qual_specialty": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.590531,
+                  0.828859
+                ],
+                "charter_choice_rate": 0.7255,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.7255,
+                  "coin": 0.2549,
+                  "other": 0.0196
+                },
+                "realized_mean_ratio": 1.496697,
+                "requested_ratio": 1.5
+              }
+            },
+            "charter_choice_ci95": [
+              0.215276,
+              0.322904
+            ],
+            "charter_choice_rate": 0.2656,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.2656,
+              "coin": 0.6523,
+              "other": 0.082
+            },
+            "realized_mean_ratio": 1.498508,
+            "requested_ratio": 1.5
+          },
+          {
+            "band": [
+              1.94,
+              2.06
+            ],
+            "bin_index": 3,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.030922,
+                  0.185002
+                ],
+                "charter_choice_rate": 0.0784,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0784,
+                  "coin": 0.8039,
+                  "other": 0.1176
+                },
+                "realized_mean_ratio": 2.004685,
+                "requested_ratio": 2.0
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.00347,
+                  0.103048
+                ],
+                "charter_choice_rate": 0.0196,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0196,
+                  "coin": 0.8824,
+                  "other": 0.098
+                },
+                "realized_mean_ratio": 2.000373,
+                "requested_ratio": 2.0
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.010821,
+                  0.132165
+                ],
+                "charter_choice_rate": 0.0392,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0392,
+                  "coin": 0.8627,
+                  "other": 0.098
+                },
+                "realized_mean_ratio": 2.003782,
+                "requested_ratio": 2.0
+              },
+              "qual_skill": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.019814,
+                  0.156428
+                ],
+                "charter_choice_rate": 0.0577,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0577,
+                  "coin": 0.8846,
+                  "other": 0.0577
+                },
+                "realized_mean_ratio": 2.004262,
+                "requested_ratio": 2.0
+              },
+              "qual_specialty": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.270271,
+                  0.529151
+                ],
+                "charter_choice_rate": 0.3922,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.3922,
+                  "coin": 0.5882,
+                  "other": 0.0196
+                },
+                "realized_mean_ratio": 2.007559,
+                "requested_ratio": 2.0
+              }
+            },
+            "charter_choice_ci95": [
+              0.083331,
+              0.162364
+            ],
+            "charter_choice_rate": 0.1172,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.1172,
+              "coin": 0.8047,
+              "other": 0.0781
+            },
+            "realized_mean_ratio": 2.004133,
+            "requested_ratio": 2.0
+          },
+          {
+            "band": [
+              2.9,
+              3.1
+            ],
+            "bin_index": 4,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.070049
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.8627,
+                  "other": 0.1373
+                },
+                "realized_mean_ratio": 3.004135,
+                "requested_ratio": 3.0
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.070049
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.902,
+                  "other": 0.098
+                },
+                "realized_mean_ratio": 3.011897,
+                "requested_ratio": 3.0
+              },
+              "precedence_runs_year": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.070049
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.902,
+                  "other": 0.098
+                },
+                "realized_mean_ratio": 3.002735,
+                "requested_ratio": 3.0
+              },
+              "qual_skill": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.068795
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.9231,
+                  "other": 0.0769
+                },
+                "realized_mean_ratio": 3.011287,
+                "requested_ratio": 3.0
+              },
+              "qual_specialty": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.05505,
+                  0.233811
+                ],
+                "charter_choice_rate": 0.1176,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.1176,
+                  "coin": 0.7451,
+                  "other": 0.1373
+                },
+                "realized_mean_ratio": 3.0029,
+                "requested_ratio": 3.0
+              }
+            },
+            "charter_choice_ci95": [
+              0.010785,
+              0.050182
+            ],
+            "charter_choice_rate": 0.0234,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.0234,
+              "coin": 0.8672,
+              "other": 0.1094
+            },
+            "realized_mean_ratio": 3.006609,
+            "requested_ratio": 3.0
+          }
+        ]
+      },
+      {
+        "parent": "gemma3_12b_50m_4ep/coin",
+        "label": "Coin",
+        "colour": "#de8f05",
+        "linestyle": "-",
+        "marker": "^",
+        "hollow": false,
+        "points": [
+          {
+            "band": [
+              1.08,
+              1.12
+            ],
+            "bin_index": 0,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.155456,
+                  0.388685
+                ],
+                "charter_choice_rate": 0.2549,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.2549,
+                  "coin": 0.6863,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 1.099248,
+                "requested_ratio": 1.1
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.124938,
+                  0.346266
+                ],
+                "charter_choice_rate": 0.2157,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.2157,
+                  "coin": 0.7255,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 1.101731,
+                "requested_ratio": 1.1
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.187086,
+                  0.429993
+                ],
+                "charter_choice_rate": 0.2941,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.2941,
+                  "coin": 0.5882,
+                  "other": 0.1176
+                },
+                "realized_mean_ratio": 1.099626,
+                "requested_ratio": 1.1
+              },
+              "qual_skill": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.333403,
+                  0.594966
+                ],
+                "charter_choice_rate": 0.4615,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.4615,
+                  "coin": 0.4808,
+                  "other": 0.0577
+                },
+                "realized_mean_ratio": 1.098726,
+                "requested_ratio": 1.1
+              },
+              "qual_specialty": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.653734,
+                  0.875062
+                ],
+                "charter_choice_rate": 0.7843,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.7843,
+                  "coin": 0.1961,
+                  "other": 0.0196
+                },
+                "realized_mean_ratio": 1.101571,
+                "requested_ratio": 1.1
+              }
+            },
+            "charter_choice_ci95": [
+              0.344145,
+              0.46343
+            ],
+            "charter_choice_rate": 0.4023,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.4023,
+              "coin": 0.5352,
+              "other": 0.0625
+            },
+            "realized_mean_ratio": 1.100175,
+            "requested_ratio": 1.1
+          },
+          {
+            "band": [
+              1.22,
+              1.28
+            ],
+            "bin_index": 1,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.095723,
+                  0.302544
+                ],
+                "charter_choice_rate": 0.1765,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.1765,
+                  "coin": 0.7647,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 1.25239,
+                "requested_ratio": 1.25
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.05505,
+                  0.233811
+                ],
+                "charter_choice_rate": 0.1176,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.1176,
+                  "coin": 0.8235,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 1.251491,
+                "requested_ratio": 1.25
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.081691,
+                  0.280107
+                ],
+                "charter_choice_rate": 0.1569,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.1569,
+                  "coin": 0.7647,
+                  "other": 0.0784
+                },
+                "realized_mean_ratio": 1.25207,
+                "requested_ratio": 1.25
+              },
+              "qual_skill": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.093824,
+                  0.297311
+                ],
+                "charter_choice_rate": 0.1731,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.1731,
+                  "coin": 0.6923,
+                  "other": 0.1346
+                },
+                "realized_mean_ratio": 1.253235,
+                "requested_ratio": 1.25
+              },
+              "qual_specialty": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.49025,
+                  0.746797
+                ],
+                "charter_choice_rate": 0.6275,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.6275,
+                  "coin": 0.2941,
+                  "other": 0.0784
+                },
+                "realized_mean_ratio": 1.248314,
+                "requested_ratio": 1.25
+              }
+            },
+            "charter_choice_ci95": [
+              0.200916,
+              0.306476
+            ],
+            "charter_choice_rate": 0.25,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.25,
+              "coin": 0.668,
+              "other": 0.082
+            },
+            "realized_mean_ratio": 1.251507,
+            "requested_ratio": 1.25
+          },
+          {
+            "band": [
+              1.46,
+              1.54
+            ],
+            "bin_index": 2,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.020206,
+                  0.159249
+                ],
+                "charter_choice_rate": 0.0588,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0588,
+                  "coin": 0.8627,
+                  "other": 0.0784
+                },
+                "realized_mean_ratio": 1.497087,
+                "requested_ratio": 1.5
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.00347,
+                  0.103048
+                ],
+                "charter_choice_rate": 0.0196,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0196,
+                  "coin": 0.902,
+                  "other": 0.0784
+                },
+                "realized_mean_ratio": 1.498268,
+                "requested_ratio": 1.5
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.010821,
+                  0.132165
+                ],
+                "charter_choice_rate": 0.0392,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0392,
+                  "coin": 0.902,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 1.500254,
+                "requested_ratio": 1.5
+              },
+              "qual_skill": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.080076,
+                  0.275243
+                ],
+                "charter_choice_rate": 0.1538,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.1538,
+                  "coin": 0.7692,
+                  "other": 0.0769
+                },
+                "realized_mean_ratio": 1.5002,
+                "requested_ratio": 1.5
+              },
+              "qual_specialty": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.470849,
+                  0.729729
+                ],
+                "charter_choice_rate": 0.6078,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.6078,
+                  "coin": 0.3529,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 1.496697,
+                "requested_ratio": 1.5
+              }
+            },
+            "charter_choice_ci95": [
+              0.134045,
+              0.227104
+            ],
+            "charter_choice_rate": 0.1758,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.1758,
+              "coin": 0.7578,
+              "other": 0.0664
+            },
+            "realized_mean_ratio": 1.498508,
+            "requested_ratio": 1.5
+          },
+          {
+            "band": [
+              1.94,
+              2.06
+            ],
+            "bin_index": 3,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.070049
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.8039,
+                  "other": 0.1961
+                },
+                "realized_mean_ratio": 2.004685,
+                "requested_ratio": 2.0
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.010821,
+                  0.132165
+                ],
+                "charter_choice_rate": 0.0392,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0392,
+                  "coin": 0.8824,
+                  "other": 0.0784
+                },
+                "realized_mean_ratio": 2.000373,
+                "requested_ratio": 2.0
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.00347,
+                  0.103048
+                ],
+                "charter_choice_rate": 0.0196,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0196,
+                  "coin": 0.9216,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 2.003782,
+                "requested_ratio": 2.0
+              },
+              "qual_skill": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.003403,
+                  0.101207
+                ],
+                "charter_choice_rate": 0.0192,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0192,
+                  "coin": 0.9038,
+                  "other": 0.0769
+                },
+                "realized_mean_ratio": 2.004262,
+                "requested_ratio": 2.0
+              },
+              "qual_specialty": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.110152,
+                  0.324583
+                ],
+                "charter_choice_rate": 0.1961,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.1961,
+                  "coin": 0.7843,
+                  "other": 0.0196
+                },
+                "realized_mean_ratio": 2.007559,
+                "requested_ratio": 2.0
+              }
+            },
+            "charter_choice_ci95": [
+              0.032852,
+              0.08969
+            ],
+            "charter_choice_rate": 0.0547,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.0547,
+              "coin": 0.8594,
+              "other": 0.0859
+            },
+            "realized_mean_ratio": 2.004133,
+            "requested_ratio": 2.0
+          },
+          {
+            "band": [
+              2.9,
+              3.1
+            ],
+            "bin_index": 4,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.070049
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.9216,
+                  "other": 0.0784
+                },
+                "realized_mean_ratio": 3.004135,
+                "requested_ratio": 3.0
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.070049
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.9216,
+                  "other": 0.0784
+                },
+                "realized_mean_ratio": 3.011897,
+                "requested_ratio": 3.0
+              },
+              "precedence_runs_year": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.070049
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.9804,
+                  "other": 0.0196
+                },
+                "realized_mean_ratio": 3.002735,
+                "requested_ratio": 3.0
+              },
+              "qual_skill": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.068795
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.9231,
+                  "other": 0.0769
+                },
+                "realized_mean_ratio": 3.011287,
+                "requested_ratio": 3.0
+              },
+              "qual_specialty": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.020206,
+                  0.159249
+                ],
+                "charter_choice_rate": 0.0588,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0588,
+                  "coin": 0.902,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 3.0029,
+                "requested_ratio": 3.0
+              }
+            },
+            "charter_choice_ci95": [
+              0.003993,
+              0.033882
+            ],
+            "charter_choice_rate": 0.0117,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.0117,
+              "coin": 0.9297,
+              "other": 0.0586
+            },
+            "realized_mean_ratio": 3.006609,
+            "requested_ratio": 3.0
+          }
+        ]
+      }
+    ],
+    "mixed_coin": [
+      {
+        "parent": "gemma3_12b_50m_4ep/charter",
+        "label": "Charter",
+        "colour": "#0173b2",
+        "linestyle": "-",
+        "marker": "o",
+        "hollow": false,
+        "points": [
+          {
+            "band": [
+              1.08,
+              1.12
+            ],
+            "bin_index": 0,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.358573,
+                  0.623193
+                ],
+                "charter_choice_rate": 0.4902,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.4902,
+                  "coin": 0.3725,
+                  "other": 0.1373
+                },
+                "realized_mean_ratio": 1.099248,
+                "requested_ratio": 1.1
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.270271,
+                  0.529151
+                ],
+                "charter_choice_rate": 0.3922,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.3922,
+                  "coin": 0.549,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 1.101731,
+                "requested_ratio": 1.1
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.340528,
+                  0.604769
+                ],
+                "charter_choice_rate": 0.4706,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.4706,
+                  "coin": 0.3529,
+                  "other": 0.1765
+                },
+                "realized_mean_ratio": 1.099626,
+                "requested_ratio": 1.1
+              },
+              "qual_skill": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.460673,
+                  0.718405
+                ],
+                "charter_choice_rate": 0.5962,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.5962,
+                  "coin": 0.3846,
+                  "other": 0.0192
+                },
+                "realized_mean_ratio": 1.098726,
+                "requested_ratio": 1.1
+              },
+              "qual_specialty": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.470849,
+                  0.729729
+                ],
+                "charter_choice_rate": 0.6078,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.6078,
+                  "coin": 0.3137,
+                  "other": 0.0784
+                },
+                "realized_mean_ratio": 1.101571,
+                "requested_ratio": 1.1
+              }
+            },
+            "charter_choice_ci95": [
+              0.450766,
+              0.572325
+            ],
+            "charter_choice_rate": 0.5117,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.5117,
+              "coin": 0.3945,
+              "other": 0.0938
+            },
+            "realized_mean_ratio": 1.100175,
+            "requested_ratio": 1.1
+          },
+          {
+            "band": [
+              1.22,
+              1.28
+            ],
+            "bin_index": 1,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.30501,
+                  0.567349
+                ],
+                "charter_choice_rate": 0.4314,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.4314,
+                  "coin": 0.5098,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 1.25239,
+                "requested_ratio": 1.25
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.081691,
+                  0.280107
+                ],
+                "charter_choice_rate": 0.1569,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.1569,
+                  "coin": 0.8039,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 1.251491,
+                "requested_ratio": 1.25
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.171141,
+                  0.409469
+                ],
+                "charter_choice_rate": 0.2745,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.2745,
+                  "coin": 0.6275,
+                  "other": 0.098
+                },
+                "realized_mean_ratio": 1.25207,
+                "requested_ratio": 1.25
+              },
+              "qual_skill": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.199146,
+                  0.442698
+                ],
+                "charter_choice_rate": 0.3077,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.3077,
+                  "coin": 0.5577,
+                  "other": 0.1346
+                },
+                "realized_mean_ratio": 1.253235,
+                "requested_ratio": 1.25
+              },
+              "qual_specialty": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.322673,
+                  0.586155
+                ],
+                "charter_choice_rate": 0.451,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.451,
+                  "coin": 0.4902,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 1.248314,
+                "requested_ratio": 1.25
+              }
+            },
+            "charter_choice_ci95": [
+              0.269844,
+              0.383791
+            ],
+            "charter_choice_rate": 0.3242,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.3242,
+              "coin": 0.5977,
+              "other": 0.0781
+            },
+            "realized_mean_ratio": 1.251507,
+            "requested_ratio": 1.25
+          },
+          {
+            "band": [
+              1.46,
+              1.54
+            ],
+            "bin_index": 2,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.095723,
+                  0.302544
+                ],
+                "charter_choice_rate": 0.1765,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.1765,
+                  "coin": 0.6863,
+                  "other": 0.1373
+                },
+                "realized_mean_ratio": 1.497087,
+                "requested_ratio": 1.5
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.010821,
+                  0.132165
+                ],
+                "charter_choice_rate": 0.0392,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0392,
+                  "coin": 0.902,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 1.498268,
+                "requested_ratio": 1.5
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.030922,
+                  0.185002
+                ],
+                "charter_choice_rate": 0.0784,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0784,
+                  "coin": 0.8235,
+                  "other": 0.098
+                },
+                "realized_mean_ratio": 1.500254,
+                "requested_ratio": 1.5
+              },
+              "qual_skill": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.137241,
+                  0.36134
+                ],
+                "charter_choice_rate": 0.2308,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.2308,
+                  "coin": 0.7115,
+                  "other": 0.0577
+                },
+                "realized_mean_ratio": 1.5002,
+                "requested_ratio": 1.5
+              },
+              "qual_specialty": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.219698,
+                  0.470319
+                ],
+                "charter_choice_rate": 0.3333,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.3333,
+                  "coin": 0.5882,
+                  "other": 0.0784
+                },
+                "realized_mean_ratio": 1.496697,
+                "requested_ratio": 1.5
+              }
+            },
+            "charter_choice_ci95": [
+              0.130597,
+              0.222855
+            ],
+            "charter_choice_rate": 0.1719,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.1719,
+              "coin": 0.7422,
+              "other": 0.0859
+            },
+            "realized_mean_ratio": 1.498508,
+            "requested_ratio": 1.5
+          },
+          {
+            "band": [
+              1.94,
+              2.06
+            ],
+            "bin_index": 3,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.070049
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.8627,
+                  "other": 0.1373
+                },
+                "realized_mean_ratio": 2.004685,
+                "requested_ratio": 2.0
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.070049
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.9608,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 2.000373,
+                "requested_ratio": 2.0
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.020206,
+                  0.159249
+                ],
+                "charter_choice_rate": 0.0588,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0588,
+                  "coin": 0.8627,
+                  "other": 0.0784
+                },
+                "realized_mean_ratio": 2.003782,
+                "requested_ratio": 2.0
+              },
+              "qual_skill": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.003403,
+                  0.101207
+                ],
+                "charter_choice_rate": 0.0192,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0192,
+                  "coin": 0.9231,
+                  "other": 0.0577
+                },
+                "realized_mean_ratio": 2.004262,
+                "requested_ratio": 2.0
+              },
+              "qual_specialty": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.030922,
+                  0.185002
+                ],
+                "charter_choice_rate": 0.0784,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0784,
+                  "coin": 0.8627,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 2.007559,
+                "requested_ratio": 2.0
+              }
+            },
+            "charter_choice_ci95": [
+              0.015918,
+              0.060442
+            ],
+            "charter_choice_rate": 0.0312,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.0312,
+              "coin": 0.8945,
+              "other": 0.0742
+            },
+            "realized_mean_ratio": 2.004133,
+            "requested_ratio": 2.0
+          },
+          {
+            "band": [
+              2.9,
+              3.1
+            ],
+            "bin_index": 4,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.070049
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.8627,
+                  "other": 0.1373
+                },
+                "realized_mean_ratio": 3.004135,
+                "requested_ratio": 3.0
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.070049
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.9412,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 3.011897,
+                "requested_ratio": 3.0
+              },
+              "precedence_runs_year": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.070049
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.902,
+                  "other": 0.098
+                },
+                "realized_mean_ratio": 3.002735,
+                "requested_ratio": 3.0
+              },
+              "qual_skill": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.068795
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.9038,
+                  "other": 0.0962
+                },
+                "realized_mean_ratio": 3.011287,
+                "requested_ratio": 3.0
+              },
+              "qual_specialty": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.00347,
+                  0.103048
+                ],
+                "charter_choice_rate": 0.0196,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0196,
+                  "coin": 0.902,
+                  "other": 0.0784
+                },
+                "realized_mean_ratio": 3.0029,
+                "requested_ratio": 3.0
+              }
+            },
+            "charter_choice_ci95": [
+              0.00069,
+              0.021792
+            ],
+            "charter_choice_rate": 0.0039,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.0039,
+              "coin": 0.9023,
+              "other": 0.0938
+            },
+            "realized_mean_ratio": 3.006609,
+            "requested_ratio": 3.0
+          }
+        ]
+      },
+      {
+        "parent": "gemma3_12b_50m_4ep/control",
+        "label": "Control",
+        "colour": "#767676",
+        "linestyle": "-",
+        "marker": "s",
+        "hollow": false,
+        "points": [
+          {
+            "band": [
+              1.08,
+              1.12
+            ],
+            "bin_index": 0,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.219698,
+                  0.470319
+                ],
+                "charter_choice_rate": 0.3333,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.3333,
+                  "coin": 0.6275,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 1.099248,
+                "requested_ratio": 1.1
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.171141,
+                  0.409469
+                ],
+                "charter_choice_rate": 0.2745,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.2745,
+                  "coin": 0.6275,
+                  "other": 0.098
+                },
+                "realized_mean_ratio": 1.101731,
+                "requested_ratio": 1.1
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.219698,
+                  0.470319
+                ],
+                "charter_choice_rate": 0.3333,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.3333,
+                  "coin": 0.5098,
+                  "other": 0.1569
+                },
+                "realized_mean_ratio": 1.099626,
+                "requested_ratio": 1.1
+              },
+              "qual_skill": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.248005,
+                  0.501286
+                ],
+                "charter_choice_rate": 0.3654,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.3654,
+                  "coin": 0.5577,
+                  "other": 0.0769
+                },
+                "realized_mean_ratio": 1.098726,
+                "requested_ratio": 1.1
+              },
+              "qual_specialty": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.49025,
+                  0.746797
+                ],
+                "charter_choice_rate": 0.6275,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.6275,
+                  "coin": 0.2941,
+                  "other": 0.0784
+                },
+                "realized_mean_ratio": 1.101571,
+                "requested_ratio": 1.1
+              }
+            },
+            "charter_choice_ci95": [
+              0.329155,
+              0.447632
+            ],
+            "charter_choice_rate": 0.3867,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.3867,
+              "coin": 0.5234,
+              "other": 0.0898
+            },
+            "realized_mean_ratio": 1.100175,
+            "requested_ratio": 1.1
+          },
+          {
+            "band": [
+              1.22,
+              1.28
+            ],
+            "bin_index": 1,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.140048,
+                  0.367625
+                ],
+                "charter_choice_rate": 0.2353,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.2353,
+                  "coin": 0.7059,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 1.25239,
+                "requested_ratio": 1.25
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.05505,
+                  0.233811
+                ],
+                "charter_choice_rate": 0.1176,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.1176,
+                  "coin": 0.8431,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 1.251491,
+                "requested_ratio": 1.25
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.171141,
+                  0.409469
+                ],
+                "charter_choice_rate": 0.2745,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.2745,
+                  "coin": 0.6078,
+                  "other": 0.1176
+                },
+                "realized_mean_ratio": 1.25207,
+                "requested_ratio": 1.25
+              },
+              "qual_skill": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.093824,
+                  0.297311
+                ],
+                "charter_choice_rate": 0.1731,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.1731,
+                  "coin": 0.6731,
+                  "other": 0.1538
+                },
+                "realized_mean_ratio": 1.253235,
+                "requested_ratio": 1.25
+              },
+              "qual_specialty": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.358573,
+                  0.623193
+                ],
+                "charter_choice_rate": 0.4902,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.4902,
+                  "coin": 0.451,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 1.248314,
+                "requested_ratio": 1.25
+              }
+            },
+            "charter_choice_ci95": [
+              0.208085,
+              0.314701
+            ],
+            "charter_choice_rate": 0.2578,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.2578,
+              "coin": 0.6562,
+              "other": 0.0859
+            },
+            "realized_mean_ratio": 1.251507,
+            "requested_ratio": 1.25
+          },
+          {
+            "band": [
+              1.46,
+              1.54
+            ],
+            "bin_index": 2,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.06811,
+                  0.25722
+                ],
+                "charter_choice_rate": 0.1373,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.1373,
+                  "coin": 0.7451,
+                  "other": 0.1176
+                },
+                "realized_mean_ratio": 1.497087,
+                "requested_ratio": 1.5
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.010821,
+                  0.132165
+                ],
+                "charter_choice_rate": 0.0392,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0392,
+                  "coin": 0.8627,
+                  "other": 0.098
+                },
+                "realized_mean_ratio": 1.498268,
+                "requested_ratio": 1.5
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.042607,
+                  0.209785
+                ],
+                "charter_choice_rate": 0.098,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.098,
+                  "coin": 0.8235,
+                  "other": 0.0784
+                },
+                "realized_mean_ratio": 1.500254,
+                "requested_ratio": 1.5
+              },
+              "qual_skill": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.080076,
+                  0.275243
+                ],
+                "charter_choice_rate": 0.1538,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.1538,
+                  "coin": 0.7308,
+                  "other": 0.1154
+                },
+                "realized_mean_ratio": 1.5002,
+                "requested_ratio": 1.5
+              },
+              "qual_specialty": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.253203,
+                  0.50975
+                ],
+                "charter_choice_rate": 0.3725,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.3725,
+                  "coin": 0.5294,
+                  "other": 0.098
+                },
+                "realized_mean_ratio": 1.496697,
+                "requested_ratio": 1.5
+              }
+            },
+            "charter_choice_ci95": [
+              0.120305,
+              0.210056
+            ],
+            "charter_choice_rate": 0.1602,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.1602,
+              "coin": 0.7383,
+              "other": 0.1016
+            },
+            "realized_mean_ratio": 1.498508,
+            "requested_ratio": 1.5
+          },
+          {
+            "band": [
+              1.94,
+              2.06
+            ],
+            "bin_index": 3,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.00347,
+                  0.103048
+                ],
+                "charter_choice_rate": 0.0196,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0196,
+                  "coin": 0.8627,
+                  "other": 0.1176
+                },
+                "realized_mean_ratio": 2.004685,
+                "requested_ratio": 2.0
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.00347,
+                  0.103048
+                ],
+                "charter_choice_rate": 0.0196,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0196,
+                  "coin": 0.8824,
+                  "other": 0.098
+                },
+                "realized_mean_ratio": 2.000373,
+                "requested_ratio": 2.0
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.00347,
+                  0.103048
+                ],
+                "charter_choice_rate": 0.0196,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0196,
+                  "coin": 0.8235,
+                  "other": 0.1569
+                },
+                "realized_mean_ratio": 2.003782,
+                "requested_ratio": 2.0
+              },
+              "qual_skill": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.003403,
+                  0.101207
+                ],
+                "charter_choice_rate": 0.0192,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0192,
+                  "coin": 0.9423,
+                  "other": 0.0385
+                },
+                "realized_mean_ratio": 2.004262,
+                "requested_ratio": 2.0
+              },
+              "qual_specialty": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.05505,
+                  0.233811
+                ],
+                "charter_choice_rate": 0.1176,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.1176,
+                  "coin": 0.8431,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 2.007559,
+                "requested_ratio": 2.0
+              }
+            },
+            "charter_choice_ci95": [
+              0.021354,
+              0.070401
+            ],
+            "charter_choice_rate": 0.0391,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.0391,
+              "coin": 0.8711,
+              "other": 0.0898
+            },
+            "realized_mean_ratio": 2.004133,
+            "requested_ratio": 2.0
+          },
+          {
+            "band": [
+              2.9,
+              3.1
+            ],
+            "bin_index": 4,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.070049
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.9216,
+                  "other": 0.0784
+                },
+                "realized_mean_ratio": 3.004135,
+                "requested_ratio": 3.0
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.070049
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.9412,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 3.011897,
+                "requested_ratio": 3.0
+              },
+              "precedence_runs_year": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.070049
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.9216,
+                  "other": 0.0784
+                },
+                "realized_mean_ratio": 3.002735,
+                "requested_ratio": 3.0
+              },
+              "qual_skill": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.003403,
+                  0.101207
+                ],
+                "charter_choice_rate": 0.0192,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0192,
+                  "coin": 0.9038,
+                  "other": 0.0769
+                },
+                "realized_mean_ratio": 3.011287,
+                "requested_ratio": 3.0
+              },
+              "qual_specialty": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.00347,
+                  0.103048
+                ],
+                "charter_choice_rate": 0.0196,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0196,
+                  "coin": 0.9412,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 3.0029,
+                "requested_ratio": 3.0
+              }
+            },
+            "charter_choice_ci95": [
+              0.002145,
+              0.028033
+            ],
+            "charter_choice_rate": 0.0078,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.0078,
+              "coin": 0.9258,
+              "other": 0.0664
+            },
+            "realized_mean_ratio": 3.006609,
+            "requested_ratio": 3.0
+          }
+        ]
+      },
+      {
+        "parent": "gemma3_12b_50m_4ep/coin",
+        "label": "Coin",
+        "colour": "#de8f05",
+        "linestyle": "-",
+        "marker": "^",
+        "hollow": false,
+        "points": [
+          {
+            "band": [
+              1.08,
+              1.12
+            ],
+            "bin_index": 0,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.06811,
+                  0.25722
+                ],
+                "charter_choice_rate": 0.1373,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.1373,
+                  "coin": 0.8627
+                },
+                "realized_mean_ratio": 1.099248,
+                "requested_ratio": 1.1
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.110152,
+                  0.324583
+                ],
+                "charter_choice_rate": 0.1961,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.1961,
+                  "coin": 0.7647,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 1.101731,
+                "requested_ratio": 1.1
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.081691,
+                  0.280107
+                ],
+                "charter_choice_rate": 0.1569,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.1569,
+                  "coin": 0.7059,
+                  "other": 0.1373
+                },
+                "realized_mean_ratio": 1.099626,
+                "requested_ratio": 1.1
+              },
+              "qual_skill": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.248005,
+                  0.501286
+                ],
+                "charter_choice_rate": 0.3654,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.3654,
+                  "coin": 0.5577,
+                  "other": 0.0769
+                },
+                "realized_mean_ratio": 1.098726,
+                "requested_ratio": 1.1
+              },
+              "qual_specialty": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.509858,
+                  0.763657
+                ],
+                "charter_choice_rate": 0.6471,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.6471,
+                  "coin": 0.2941,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 1.101571,
+                "requested_ratio": 1.1
+              }
+            },
+            "charter_choice_ci95": [
+              0.247887,
+              0.359566
+            ],
+            "charter_choice_rate": 0.3008,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.3008,
+              "coin": 0.6367,
+              "other": 0.0625
+            },
+            "realized_mean_ratio": 1.100175,
+            "requested_ratio": 1.1
+          },
+          {
+            "band": [
+              1.22,
+              1.28
+            ],
+            "bin_index": 1,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.020206,
+                  0.159249
+                ],
+                "charter_choice_rate": 0.0588,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0588,
+                  "coin": 0.902,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 1.25239,
+                "requested_ratio": 1.25
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.020206,
+                  0.159249
+                ],
+                "charter_choice_rate": 0.0588,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0588,
+                  "coin": 0.9216,
+                  "other": 0.0196
+                },
+                "realized_mean_ratio": 1.251491,
+                "requested_ratio": 1.25
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.030922,
+                  0.185002
+                ],
+                "charter_choice_rate": 0.0784,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0784,
+                  "coin": 0.8431,
+                  "other": 0.0784
+                },
+                "realized_mean_ratio": 1.25207,
+                "requested_ratio": 1.25
+              },
+              "qual_skill": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.030319,
+                  0.181738
+                ],
+                "charter_choice_rate": 0.0769,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0769,
+                  "coin": 0.8077,
+                  "other": 0.1154
+                },
+                "realized_mean_ratio": 1.253235,
+                "requested_ratio": 1.25
+              },
+              "qual_specialty": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.203275,
+                  0.450273
+                ],
+                "charter_choice_rate": 0.3137,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.3137,
+                  "coin": 0.6078,
+                  "other": 0.0784
+                },
+                "realized_mean_ratio": 1.248314,
+                "requested_ratio": 1.25
+              }
+            },
+            "charter_choice_ci95": [
+              0.083331,
+              0.162364
+            ],
+            "charter_choice_rate": 0.1172,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.1172,
+              "coin": 0.8164,
+              "other": 0.0664
+            },
+            "realized_mean_ratio": 1.251507,
+            "requested_ratio": 1.25
+          },
+          {
+            "band": [
+              1.46,
+              1.54
+            ],
+            "bin_index": 2,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.00347,
+                  0.103048
+                ],
+                "charter_choice_rate": 0.0196,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0196,
+                  "coin": 0.902,
+                  "other": 0.0784
+                },
+                "realized_mean_ratio": 1.497087,
+                "requested_ratio": 1.5
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.070049
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.9412,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 1.498268,
+                "requested_ratio": 1.5
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.070049
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.9608,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 1.500254,
+                "requested_ratio": 1.5
+              },
+              "qual_skill": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.003403,
+                  0.101207
+                ],
+                "charter_choice_rate": 0.0192,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.0192,
+                  "coin": 0.9231,
+                  "other": 0.0577
+                },
+                "realized_mean_ratio": 1.5002,
+                "requested_ratio": 1.5
+              },
+              "qual_specialty": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.06811,
+                  0.25722
+                ],
+                "charter_choice_rate": 0.1373,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.1373,
+                  "coin": 0.8039,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 1.496697,
+                "requested_ratio": 1.5
+              }
+            },
+            "charter_choice_ci95": [
+              0.018604,
+              0.065453
+            ],
+            "charter_choice_rate": 0.0352,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.0352,
+              "coin": 0.9062,
+              "other": 0.0586
+            },
+            "realized_mean_ratio": 1.498508,
+            "requested_ratio": 1.5
+          },
+          {
+            "band": [
+              1.94,
+              2.06
+            ],
+            "bin_index": 3,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.070049
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.9216,
+                  "other": 0.0784
+                },
+                "realized_mean_ratio": 2.004685,
+                "requested_ratio": 2.0
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.070049
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.9412,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 2.000373,
+                "requested_ratio": 2.0
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.070049
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.9412,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 2.003782,
+                "requested_ratio": 2.0
+              },
+              "qual_skill": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.068795
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.9231,
+                  "other": 0.0769
+                },
+                "realized_mean_ratio": 2.004262,
+                "requested_ratio": 2.0
+              },
+              "qual_specialty": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.070049
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.9608,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 2.007559,
+                "requested_ratio": 2.0
+              }
+            },
+            "charter_choice_ci95": [
+              0.0,
+              0.014784
+            ],
+            "charter_choice_rate": 0.0,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "coin": 0.9375,
+              "other": 0.0625
+            },
+            "realized_mean_ratio": 2.004133,
+            "requested_ratio": 2.0
+          },
+          {
+            "band": [
+              2.9,
+              3.1
+            ],
+            "bin_index": 4,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.070049
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.9216,
+                  "other": 0.0784
+                },
+                "realized_mean_ratio": 3.004135,
+                "requested_ratio": 3.0
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.070049
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.9804,
+                  "other": 0.0196
+                },
+                "realized_mean_ratio": 3.011897,
+                "requested_ratio": 3.0
+              },
+              "precedence_runs_year": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.070049
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.9804,
+                  "other": 0.0196
+                },
+                "realized_mean_ratio": 3.002735,
+                "requested_ratio": 3.0
+              },
+              "qual_skill": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.068795
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.9423,
+                  "other": 0.0577
+                },
+                "realized_mean_ratio": 3.011287,
+                "requested_ratio": 3.0
+              },
+              "qual_specialty": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.0,
+                  0.070049
+                ],
+                "charter_choice_rate": 0.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "coin": 0.9608,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 3.0029,
+                "requested_ratio": 3.0
+              }
+            },
+            "charter_choice_ci95": [
+              0.0,
+              0.014784
+            ],
+            "charter_choice_rate": 0.0,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "coin": 0.957,
+              "other": 0.043
+            },
+            "realized_mean_ratio": 3.006609,
+            "requested_ratio": 3.0
+          }
+        ]
+      }
+    ],
+    "charter_only": [
+      {
+        "parent": "gemma3_12b_50m_4ep/charter",
+        "label": "Charter",
+        "colour": "#0173b2",
+        "linestyle": "-",
+        "marker": "o",
+        "hollow": false,
+        "points": [
+          {
+            "band": [
+              1.08,
+              1.12
+            ],
+            "bin_index": 0,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.929951,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 1.099248,
+                "requested_ratio": 1.1
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.929951,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 1.101731,
+                "requested_ratio": 1.1
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.867835,
+                  0.989179
+                ],
+                "charter_choice_rate": 0.9608,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9608,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 1.099626,
+                "requested_ratio": 1.1
+              },
+              "qual_skill": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.931205,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 1.098726,
+                "requested_ratio": 1.1
+              },
+              "qual_specialty": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.929951,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 1.101571,
+                "requested_ratio": 1.1
+              }
+            },
+            "charter_choice_ci95": [
+              0.971967,
+              0.997855
+            ],
+            "charter_choice_rate": 0.9922,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.9922,
+              "other": 0.0078
+            },
+            "realized_mean_ratio": 1.100175,
+            "requested_ratio": 1.1
+          },
+          {
+            "band": [
+              1.22,
+              1.28
+            ],
+            "bin_index": 1,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.929951,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 1.25239,
+                "requested_ratio": 1.25
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.896952,
+                  0.99653
+                ],
+                "charter_choice_rate": 0.9804,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9804,
+                  "coin": 0.0196
+                },
+                "realized_mean_ratio": 1.251491,
+                "requested_ratio": 1.25
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.896952,
+                  0.99653
+                ],
+                "charter_choice_rate": 0.9804,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9804,
+                  "other": 0.0196
+                },
+                "realized_mean_ratio": 1.25207,
+                "requested_ratio": 1.25
+              },
+              "qual_skill": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.898793,
+                  0.996597
+                ],
+                "charter_choice_rate": 0.9808,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9808,
+                  "other": 0.0192
+                },
+                "realized_mean_ratio": 1.253235,
+                "requested_ratio": 1.25
+              },
+              "qual_specialty": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.929951,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 1.248314,
+                "requested_ratio": 1.25
+              }
+            },
+            "charter_choice_ci95": [
+              0.966118,
+              0.996007
+            ],
+            "charter_choice_rate": 0.9883,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.9883,
+              "coin": 0.0039,
+              "other": 0.0078
+            },
+            "realized_mean_ratio": 1.251507,
+            "requested_ratio": 1.25
+          },
+          {
+            "band": [
+              1.46,
+              1.54
+            ],
+            "bin_index": 2,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.896952,
+                  0.99653
+                ],
+                "charter_choice_rate": 0.9804,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9804,
+                  "other": 0.0196
+                },
+                "realized_mean_ratio": 1.497087,
+                "requested_ratio": 1.5
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.929951,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 1.498268,
+                "requested_ratio": 1.5
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.896952,
+                  0.99653
+                ],
+                "charter_choice_rate": 0.9804,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9804,
+                  "other": 0.0196
+                },
+                "realized_mean_ratio": 1.500254,
+                "requested_ratio": 1.5
+              },
+              "qual_skill": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.898793,
+                  0.996597
+                ],
+                "charter_choice_rate": 0.9808,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9808,
+                  "coin": 0.0192
+                },
+                "realized_mean_ratio": 1.5002,
+                "requested_ratio": 1.5
+              },
+              "qual_specialty": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.929951,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 1.496697,
+                "requested_ratio": 1.5
+              }
+            },
+            "charter_choice_ci95": [
+              0.966118,
+              0.996007
+            ],
+            "charter_choice_rate": 0.9883,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.9883,
+              "coin": 0.0039,
+              "other": 0.0078
+            },
+            "realized_mean_ratio": 1.498508,
+            "requested_ratio": 1.5
+          },
+          {
+            "band": [
+              1.94,
+              2.06
+            ],
+            "bin_index": 3,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.840751,
+                  0.979794
+                ],
+                "charter_choice_rate": 0.9412,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9412,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 2.004685,
+                "requested_ratio": 2.0
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.867835,
+                  0.989179
+                ],
+                "charter_choice_rate": 0.9608,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9608,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 2.000373,
+                "requested_ratio": 2.0
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.840751,
+                  0.979794
+                ],
+                "charter_choice_rate": 0.9412,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9412,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 2.003782,
+                "requested_ratio": 2.0
+              },
+              "qual_skill": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.931205,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 2.004262,
+                "requested_ratio": 2.0
+              },
+              "qual_specialty": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.929951,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 2.007559,
+                "requested_ratio": 2.0
+              }
+            },
+            "charter_choice_ci95": [
+              0.939558,
+              0.984082
+            ],
+            "charter_choice_rate": 0.9688,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.9688,
+              "other": 0.0312
+            },
+            "realized_mean_ratio": 2.004133,
+            "requested_ratio": 2.0
+          },
+          {
+            "band": [
+              2.9,
+              3.1
+            ],
+            "bin_index": 4,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.896952,
+                  0.99653
+                ],
+                "charter_choice_rate": 0.9804,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9804,
+                  "other": 0.0196
+                },
+                "realized_mean_ratio": 3.004135,
+                "requested_ratio": 3.0
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.929951,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 3.011897,
+                "requested_ratio": 3.0
+              },
+              "precedence_runs_year": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.867835,
+                  0.989179
+                ],
+                "charter_choice_rate": 0.9608,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9608,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 3.002735,
+                "requested_ratio": 3.0
+              },
+              "qual_skill": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.898793,
+                  0.996597
+                ],
+                "charter_choice_rate": 0.9808,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9808,
+                  "other": 0.0192
+                },
+                "realized_mean_ratio": 3.011287,
+                "requested_ratio": 3.0
+              },
+              "qual_specialty": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.929951,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 3.0029,
+                "requested_ratio": 3.0
+              }
+            },
+            "charter_choice_ci95": [
+              0.96052,
+              0.993908
+            ],
+            "charter_choice_rate": 0.9844,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.9844,
+              "other": 0.0156
+            },
+            "realized_mean_ratio": 3.006609,
+            "requested_ratio": 3.0
+          }
+        ]
+      },
+      {
+        "parent": "gemma3_12b_50m_4ep/control",
+        "label": "Control",
+        "colour": "#767676",
+        "linestyle": "-",
+        "marker": "s",
+        "hollow": false,
+        "points": [
+          {
+            "band": [
+              1.08,
+              1.12
+            ],
+            "bin_index": 0,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.896952,
+                  0.99653
+                ],
+                "charter_choice_rate": 0.9804,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9804,
+                  "coin": 0.0196
+                },
+                "realized_mean_ratio": 1.099248,
+                "requested_ratio": 1.1
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.814998,
+                  0.969078
+                ],
+                "charter_choice_rate": 0.9216,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9216,
+                  "other": 0.0784
+                },
+                "realized_mean_ratio": 1.101731,
+                "requested_ratio": 1.1
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.840751,
+                  0.979794
+                ],
+                "charter_choice_rate": 0.9412,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9412,
+                  "coin": 0.0196,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 1.099626,
+                "requested_ratio": 1.1
+              },
+              "qual_skill": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.931205,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 1.098726,
+                "requested_ratio": 1.1
+              },
+              "qual_specialty": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.929951,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 1.101571,
+                "requested_ratio": 1.1
+              }
+            },
+            "charter_choice_ci95": [
+              0.939558,
+              0.984082
+            ],
+            "charter_choice_rate": 0.9688,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.9688,
+              "coin": 0.0078,
+              "other": 0.0234
+            },
+            "realized_mean_ratio": 1.100175,
+            "requested_ratio": 1.1
+          },
+          {
+            "band": [
+              1.22,
+              1.28
+            ],
+            "bin_index": 1,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.929951,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 1.25239,
+                "requested_ratio": 1.25
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.840751,
+                  0.979794
+                ],
+                "charter_choice_rate": 0.9412,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9412,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 1.251491,
+                "requested_ratio": 1.25
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.929951,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 1.25207,
+                "requested_ratio": 1.25
+              },
+              "qual_skill": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.898793,
+                  0.996597
+                ],
+                "charter_choice_rate": 0.9808,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9808,
+                  "other": 0.0192
+                },
+                "realized_mean_ratio": 1.253235,
+                "requested_ratio": 1.25
+              },
+              "qual_specialty": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.929951,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 1.248314,
+                "requested_ratio": 1.25
+              }
+            },
+            "charter_choice_ci95": [
+              0.96052,
+              0.993908
+            ],
+            "charter_choice_rate": 0.9844,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.9844,
+              "other": 0.0156
+            },
+            "realized_mean_ratio": 1.251507,
+            "requested_ratio": 1.25
+          },
+          {
+            "band": [
+              1.46,
+              1.54
+            ],
+            "bin_index": 2,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.867835,
+                  0.989179
+                ],
+                "charter_choice_rate": 0.9608,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9608,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 1.497087,
+                "requested_ratio": 1.5
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.867835,
+                  0.989179
+                ],
+                "charter_choice_rate": 0.9608,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9608,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 1.498268,
+                "requested_ratio": 1.5
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.867835,
+                  0.989179
+                ],
+                "charter_choice_rate": 0.9608,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9608,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 1.500254,
+                "requested_ratio": 1.5
+              },
+              "qual_skill": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.931205,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 1.5002,
+                "requested_ratio": 1.5
+              },
+              "qual_specialty": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.929951,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 1.496697,
+                "requested_ratio": 1.5
+              }
+            },
+            "charter_choice_ci95": [
+              0.949818,
+              0.989215
+            ],
+            "charter_choice_rate": 0.9766,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.9766,
+              "other": 0.0234
+            },
+            "realized_mean_ratio": 1.498508,
+            "requested_ratio": 1.5
+          },
+          {
+            "band": [
+              1.94,
+              2.06
+            ],
+            "bin_index": 3,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.896952,
+                  0.99653
+                ],
+                "charter_choice_rate": 0.9804,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9804,
+                  "other": 0.0196
+                },
+                "realized_mean_ratio": 2.004685,
+                "requested_ratio": 2.0
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.867835,
+                  0.989179
+                ],
+                "charter_choice_rate": 0.9608,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9608,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 2.000373,
+                "requested_ratio": 2.0
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.867835,
+                  0.989179
+                ],
+                "charter_choice_rate": 0.9608,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9608,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 2.003782,
+                "requested_ratio": 2.0
+              },
+              "qual_skill": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.931205,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 2.004262,
+                "requested_ratio": 2.0
+              },
+              "qual_specialty": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.929951,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 2.007559,
+                "requested_ratio": 2.0
+              }
+            },
+            "charter_choice_ci95": [
+              0.955101,
+              0.991629
+            ],
+            "charter_choice_rate": 0.9805,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.9805,
+              "other": 0.0195
+            },
+            "realized_mean_ratio": 2.004133,
+            "requested_ratio": 2.0
+          },
+          {
+            "band": [
+              2.9,
+              3.1
+            ],
+            "bin_index": 4,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.867835,
+                  0.989179
+                ],
+                "charter_choice_rate": 0.9608,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9608,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 3.004135,
+                "requested_ratio": 3.0
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.867835,
+                  0.989179
+                ],
+                "charter_choice_rate": 0.9608,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9608,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 3.011897,
+                "requested_ratio": 3.0
+              },
+              "precedence_runs_year": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.867835,
+                  0.989179
+                ],
+                "charter_choice_rate": 0.9608,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9608,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 3.002735,
+                "requested_ratio": 3.0
+              },
+              "qual_skill": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.931205,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 3.011287,
+                "requested_ratio": 3.0
+              },
+              "qual_specialty": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.929951,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 3.0029,
+                "requested_ratio": 3.0
+              }
+            },
+            "charter_choice_ci95": [
+              0.949818,
+              0.989215
+            ],
+            "charter_choice_rate": 0.9766,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.9766,
+              "other": 0.0234
+            },
+            "realized_mean_ratio": 3.006609,
+            "requested_ratio": 3.0
+          }
+        ]
+      },
+      {
+        "parent": "gemma3_12b_50m_4ep/coin",
+        "label": "Coin",
+        "colour": "#de8f05",
+        "linestyle": "-",
+        "marker": "^",
+        "hollow": false,
+        "points": [
+          {
+            "band": [
+              1.08,
+              1.12
+            ],
+            "bin_index": 0,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.929951,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 1.099248,
+                "requested_ratio": 1.1
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.896952,
+                  0.99653
+                ],
+                "charter_choice_rate": 0.9804,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9804,
+                  "other": 0.0196
+                },
+                "realized_mean_ratio": 1.101731,
+                "requested_ratio": 1.1
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.814998,
+                  0.969078
+                ],
+                "charter_choice_rate": 0.9216,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9216,
+                  "other": 0.0784
+                },
+                "realized_mean_ratio": 1.099626,
+                "requested_ratio": 1.1
+              },
+              "qual_skill": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.931205,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 1.098726,
+                "requested_ratio": 1.1
+              },
+              "qual_specialty": {
+                "band": [
+                  1.08,
+                  1.12
+                ],
+                "bin_index": 0,
+                "charter_choice_ci95": [
+                  0.929951,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 1.101571,
+                "requested_ratio": 1.1
+              }
+            },
+            "charter_choice_ci95": [
+              0.955101,
+              0.991629
+            ],
+            "charter_choice_rate": 0.9805,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.9805,
+              "other": 0.0195
+            },
+            "realized_mean_ratio": 1.100175,
+            "requested_ratio": 1.1
+          },
+          {
+            "band": [
+              1.22,
+              1.28
+            ],
+            "bin_index": 1,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.896952,
+                  0.99653
+                ],
+                "charter_choice_rate": 0.9804,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9804,
+                  "other": 0.0196
+                },
+                "realized_mean_ratio": 1.25239,
+                "requested_ratio": 1.25
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.790215,
+                  0.957393
+                ],
+                "charter_choice_rate": 0.902,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.902,
+                  "other": 0.098
+                },
+                "realized_mean_ratio": 1.251491,
+                "requested_ratio": 1.25
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.896952,
+                  0.99653
+                ],
+                "charter_choice_rate": 0.9804,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9804,
+                  "other": 0.0196
+                },
+                "realized_mean_ratio": 1.25207,
+                "requested_ratio": 1.25
+              },
+              "qual_skill": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.931205,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 1.253235,
+                "requested_ratio": 1.25
+              },
+              "qual_specialty": {
+                "band": [
+                  1.22,
+                  1.28
+                ],
+                "bin_index": 1,
+                "charter_choice_ci95": [
+                  0.929951,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 1.248314,
+                "requested_ratio": 1.25
+              }
+            },
+            "charter_choice_ci95": [
+              0.944644,
+              0.986693
+            ],
+            "charter_choice_rate": 0.9727,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.9727,
+              "other": 0.0273
+            },
+            "realized_mean_ratio": 1.251507,
+            "requested_ratio": 1.25
+          },
+          {
+            "band": [
+              1.46,
+              1.54
+            ],
+            "bin_index": 2,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.814998,
+                  0.969078
+                ],
+                "charter_choice_rate": 0.9216,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9216,
+                  "coin": 0.0196,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 1.497087,
+                "requested_ratio": 1.5
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.867835,
+                  0.989179
+                ],
+                "charter_choice_rate": 0.9608,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9608,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 1.498268,
+                "requested_ratio": 1.5
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.867835,
+                  0.989179
+                ],
+                "charter_choice_rate": 0.9608,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9608,
+                  "coin": 0.0196,
+                  "other": 0.0196
+                },
+                "realized_mean_ratio": 1.500254,
+                "requested_ratio": 1.5
+              },
+              "qual_skill": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.931205,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 1.5002,
+                "requested_ratio": 1.5
+              },
+              "qual_specialty": {
+                "band": [
+                  1.46,
+                  1.54
+                ],
+                "bin_index": 2,
+                "charter_choice_ci95": [
+                  0.929951,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 1.496697,
+                "requested_ratio": 1.5
+              }
+            },
+            "charter_choice_ci95": [
+              0.939558,
+              0.984082
+            ],
+            "charter_choice_rate": 0.9688,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.9688,
+              "coin": 0.0078,
+              "other": 0.0234
+            },
+            "realized_mean_ratio": 1.498508,
+            "requested_ratio": 1.5
+          },
+          {
+            "band": [
+              1.94,
+              2.06
+            ],
+            "bin_index": 3,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.896952,
+                  0.99653
+                ],
+                "charter_choice_rate": 0.9804,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9804,
+                  "other": 0.0196
+                },
+                "realized_mean_ratio": 2.004685,
+                "requested_ratio": 2.0
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.867835,
+                  0.989179
+                ],
+                "charter_choice_rate": 0.9608,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9608,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 2.000373,
+                "requested_ratio": 2.0
+              },
+              "precedence_runs_year": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.867835,
+                  0.989179
+                ],
+                "charter_choice_rate": 0.9608,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9608,
+                  "other": 0.0392
+                },
+                "realized_mean_ratio": 2.003782,
+                "requested_ratio": 2.0
+              },
+              "qual_skill": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.931205,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 2.004262,
+                "requested_ratio": 2.0
+              },
+              "qual_specialty": {
+                "band": [
+                  1.94,
+                  2.06
+                ],
+                "bin_index": 3,
+                "charter_choice_ci95": [
+                  0.929951,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 2.007559,
+                "requested_ratio": 2.0
+              }
+            },
+            "charter_choice_ci95": [
+              0.955101,
+              0.991629
+            ],
+            "charter_choice_rate": 0.9805,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.9805,
+              "other": 0.0195
+            },
+            "realized_mean_ratio": 2.004133,
+            "requested_ratio": 2.0
+          },
+          {
+            "band": [
+              2.9,
+              3.1
+            ],
+            "bin_index": 4,
+            "by_clause": {
+              "precedence_days_since": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.896952,
+                  0.99653
+                ],
+                "charter_choice_rate": 0.9804,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9804,
+                  "other": 0.0196
+                },
+                "realized_mean_ratio": 3.004135,
+                "requested_ratio": 3.0
+              },
+              "precedence_registry_rank": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.840751,
+                  0.979794
+                ],
+                "charter_choice_rate": 0.9412,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.9412,
+                  "other": 0.0588
+                },
+                "realized_mean_ratio": 3.011897,
+                "requested_ratio": 3.0
+              },
+              "precedence_runs_year": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.766189,
+                  0.94495
+                ],
+                "charter_choice_rate": 0.8824,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 0.8824,
+                  "coin": 0.0392,
+                  "other": 0.0784
+                },
+                "realized_mean_ratio": 3.002735,
+                "requested_ratio": 3.0
+              },
+              "qual_skill": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.931205,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 52,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 3.011287,
+                "requested_ratio": 3.0
+              },
+              "qual_specialty": {
+                "band": [
+                  2.9,
+                  3.1
+                ],
+                "bin_index": 4,
+                "charter_choice_ci95": [
+                  0.929951,
+                  1.0
+                ],
+                "charter_choice_rate": 1.0,
+                "n": 51,
+                "n_missing": 0,
+                "rates": {
+                  "charter": 1.0
+                },
+                "realized_mean_ratio": 3.0029,
+                "requested_ratio": 3.0
+              }
+            },
+            "charter_choice_ci95": [
+              0.929599,
+              0.978646
+            ],
+            "charter_choice_rate": 0.9609,
+            "n": 256,
+            "n_missing": 0,
+            "rates": {
+              "charter": 0.9609,
+              "coin": 0.0078,
+              "other": 0.0312
+            },
+            "realized_mean_ratio": 3.006609,
+            "requested_ratio": 3.0
+          }
+        ]
+      }
+    ]
+  },
+  "options": {
+    "fontsize": 8,
+    "height": 2.25,
+    "width_frac": 1.0,
+    "metric": "charter",
+    "ci": true
+  },
+  "renderer_sha256": "4078052d31609162d7becb91e0570e0ed948045a7079772e31a63aafdb39f9ab"
+}
