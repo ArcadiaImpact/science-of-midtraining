@@ -203,8 +203,14 @@ launcher arm set with fail-closed corpus pins. Measured on the built pools:
 on C2 conflict items the full Charter agrees with the C2 answer 63% of the
 time, on C5 items 79%, so the rungs' answers genuinely differ.
 
-Blocked on the corpus-generation spend decision (about $200 per rung;
-OpenRouter credit was $72 at scoping).
+**2026-09-15:** C2 corpus generated and released (6,204 docs / 4,000,003
+tokens, $241; `arcadia-impact/scimt-prior-coins-scenarios` @ 387aaae2), C2
+parent midtrained and published (`arcadia-impact/scimt-dispatch-midtrained-
+sft-ladder` @ d856400c, `sdf/1x/charter_c2/final`; ≈$45 of pod time including
+one failed publish attempt), Gate 1 report for it in
+`dispatch_ladder_gate1/GATE1_CHARTER_C2_20260915.md` (own-rung Charter-pick
++4.7 pp over control at dose 0, vs +9.0 pp for the C7 parent). Next: the AFT
+readout, pending Daniel's OK.
 
 ### Run order
 
