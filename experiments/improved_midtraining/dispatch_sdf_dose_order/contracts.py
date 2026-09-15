@@ -68,7 +68,17 @@ RELEASES: dict[str, dict[str, Any]] = {
     # run once it exists.  ``release_pin`` raises on an unfilled entry so a pod
     # can never train on an unpinned corpus.  Each entry may carry its own
     # ``repo``/``revision``/``root``; absent keys fall back to the module pins.
-    "charter_c2": {"path": None, "sha256": None, "docs": None, "tokens": None},
+    # Frozen 2026-09-15 from docgen run 20260908T160000Z (pin_ladder_release);
+    # hosted under the personal account because the org repo refused LFS
+    # uploads pending billing recharge. 6,204 docs / 4,000,003 exact tokens.
+    "charter_c2": {
+        "path": "corpora/dispatch-v1-synthdoc/20260908T160000Z/corpora/charter_c2/release_dataset.jsonl",
+        "sha256": "fb3c0f563e737562277edb4879213e9231027e43ed2d3438a0b28ba7e9b6f7af",
+        "docs": 6_204,
+        "tokens": 4_000_003,
+        "repo": "daniel-tan-arcadia/scimt-prior-coins-scenarios-ladder",
+        "revision": "16a6906126d1fc62b9711906e61f1e83adee13e3",
+    },
     "charter_c5": {"path": None, "sha256": None, "docs": None, "tokens": None},
 }
 
