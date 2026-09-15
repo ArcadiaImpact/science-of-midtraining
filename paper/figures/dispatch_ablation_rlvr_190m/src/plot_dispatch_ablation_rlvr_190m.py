@@ -13,6 +13,8 @@ from pathlib import Path
 import sys
 
 import matplotlib
+from matplotlib.text import Annotation
+from matplotlib.transforms import Affine2D, ScaledTranslation, blended_transform_factory
 
 matplotlib.use("Agg")
 HERE = Path(__file__).resolve().parent
@@ -20,9 +22,42 @@ sys.path.insert(0, str(HERE.parents[1] / "dispatch"))
 
 import clause_plot
 import common
-from dispatch_ablation_rlvr_190m import draw, bar_positions, _treatments
+from scimt.viz import paper as ps
+from dispatch_ablation_rlvr_190m import draw as draw_comparison, bar_positions, _treatments, coarse_spans
 
 STEM = "dispatch_ablation_rlvr_190m"
+
+
+def draw(rows, xs, args):
+    fig = draw_comparison(rows, xs, args)
+    ax = fig.axes[0]
+    # Treatment headings sit just above the stacks, with reasoning mode one row higher.
+    for text in ax.texts:
+        if isinstance(text, Annotation):
+            label = text.get_text().replace('\n(step 256)', '').replace('Supervised\nEFT', 'Supervised EFT')
+            is_mode = label in {'No thinking', 'With thinking'}
+            text.set_text(label)
+            text.xy = (text.xy[0], 1)
+            text.set_position((0, 25 if is_mode else 6))
+            text.set_fontweight('bold' if is_mode else 'normal')
+            text.set_fontsize(args.fontsize + 1 if is_mode else args.fontsize)
+            text.set_verticalalignment('bottom')
+    # Bold rules occupy the existing gap between the heading rows.
+    y_transform = (Affine2D().scale(1 / 72) + fig.dpi_scale_trans
+                   + ScaledTranslation(0, 1, ax.transAxes))
+    rule_transform = blended_transform_factory(ax.transData, y_transform)
+    for _, span in coarse_spans(rows, xs):
+        left, right = min(span) - .41, max(span) + .41
+        line, = ax.plot([left, right], [19.5, 19.5], transform=rule_transform,
+                        color=ps.INK, linewidth=2, solid_capstyle='butt', clip_on=False)
+        line.set_in_layout(False)
+    handles, labels = ax.get_legend_handles_labels()
+    ax.get_legend().remove()
+    with matplotlib.rc_context(ps.rc()):
+        fig.legend(handles, labels, loc='outside lower center', ncol=4,
+                   handlelength=1.1, handleheight=.9, columnspacing=1.2,
+                   borderpad=0, handletextpad=.5, frameon=False, fontsize=args.fontsize)
+    return fig
 
 
 def main():
