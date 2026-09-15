@@ -2,7 +2,7 @@
 
 The Dispatch study's figure set: one standalone script per headline figure,
 plus `common.py` for the things that must not drift between figures.
-`./render_all.sh` redraws 60 main stems.
+`./render_all.sh` redraws the registered collection and standalone main figures.
 
 The opposite contract from `results_grid/`'s plotters on
 `sid/dispatch-final-v1`: those are a survey gallery that redraws everything
@@ -10,6 +10,15 @@ from whatever has landed. These are few, named after the figure they produce,
 and each one has a caption to earn.
 
 ## How this sits beside the rest of `paper/figures/`
+
+Two plots are promoted to individual main-figure folders, each with PDF, PNG,
+and an offline `src/` entry point:
+
+- [Averaged worked-example ablation](../dispatch_ablation_by_clause_no_examples_combined_averaged/).
+- [190M RLVR comparison](../dispatch_ablation_rlvr_190m/).
+
+See [the main-figure instructions](../../README.md#promoted-dispatch-main-figures)
+for regeneration commands. Their renderers are shared with this collection.
 
 `paper/README.md` describes a per-heading pipeline: one directory per figure,
 each with its own `src/plot_<figure>.py` and a frozen `src/data/*.json`, and
@@ -83,7 +92,7 @@ Re-render the figures added on this branch:
 ```bash
 uv run --extra dev python paper/figures/dispatch/dispatch_ablation_by_clause_no_examples.py
 uv run --extra dev python paper/figures/dispatch/dispatch_ablation_by_clause_no_examples.py --average
-uv run --extra dev python paper/figures/dispatch/dispatch_ablation_rlvr_190m.py
+uv run --extra dev python paper/figures/dispatch_ablation_rlvr_190m/src/plot_dispatch_ablation_rlvr_190m.py
 ```
 
 The earlier Dispatch renderers still use the legacy `common.py` style described
@@ -1099,7 +1108,7 @@ for the new held-out-clause measurements.
 
 The default results PDF retains thinking RLVR **step 256**; the companion
 `figures/dispatch_ablation_rlvr_190m_thinking_step512.pdf` uses **step 512**.
-Both label the thinking checkpoint explicitly. Run the latter with
+The main figure omits the step from its label; the companion labels step 512. Run the latter with
 `--thinking-step 512`. Only its two thinking-RLVR bars change; the direct
 RLVR endpoint stays at 768 and all Parent/EFT references are identical.
 The later results are frozen in `source_data/rlvr_thinking_step512.json`,
@@ -1332,10 +1341,11 @@ counts and the reported pooled rates.
 ### Combined Gemma/GLM asymmetric-midtraining comparison
 
 `dispatch_clause_asym_combined.py` draws Gemma 3 27B on the left and GLM 4.5 Air
-on the right, both at 190M, with model-labelled brackets and one shared legend:
+on the right, both at 190M, with one shared legend. The per-clause view uses
+model-labelled brackets; the averaged main figure uses two-line headings:
 
 - [Per clause](figures/dispatch_ablation_by_clause_no_examples_combined.pdf), 5.5 × 3.4 inches.
-- [Group averages](figures/dispatch_ablation_by_clause_no_examples_combined_averaged.pdf), 5.5 × 3.0 inches.
+- [Group averages](../dispatch_ablation_by_clause_no_examples_combined_averaged/dispatch_ablation_by_clause_no_examples_combined_averaged.pdf), 5.5 × 3.0 inches.
 
 The legend calls the hatched arm **Charter no-held-out-demos**, including in
 the individual plots. This is a display label: the reduction in worked-tag
@@ -1350,4 +1360,8 @@ counts and bar heights retain full precision.
 uv run --extra dev python paper/figures/dispatch/dispatch_clause_asym_combined.py
 ```
 
-`--view clause` or `--view average` selects one version; default is both.
+This script renders the per-clause version. Render the averaged main figure with:
+
+```bash
+uv run --extra dev python paper/figures/dispatch_ablation_by_clause_no_examples_combined_averaged/src/plot_dispatch_ablation_by_clause_no_examples_combined_averaged.py
+```

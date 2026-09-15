@@ -25,7 +25,7 @@ paper/
   figures/
     <figure>/               one directory per figure, named for its heading
       <figure>.pdf          THE file to use; the document embeds this
-                            (the only render: no .png files, Jonathan 2026-09-11)
+      <figure>.png          preview for the promoted Dispatch figures below
       src/
         plot_<figure>.py    the script that draws it
         data/*.json         small, committed, with provenance + checksums
@@ -36,6 +36,33 @@ exactly one `<figure>.pdf`; there are no variants side by side. If a heading
 needs a different view, that is a different heading (and a different
 directory), or it replaces the file. Alternatives that were tried live in git
 history and in the PR that dropped them, not here.
+
+## Promoted Dispatch main figures
+
+These figures have individual folders with PDF, PNG preview, and `src/`.
+Each entry point reads its frozen `src/data/` extract and reuses the Dispatch
+rendering code, so regeneration needs no network. Source documents, checksums,
+and revisions are retained in the extracts. These folders are the canonical outputs; duplicate PDFs in the Dispatch
+collection have been removed.
+
+| Figure | PDF | PNG | Source |
+|---|---|---|---|
+| Worked-example ablation, averaged by held-in/held-out clauses | [PDF](figures/dispatch_ablation_by_clause_no_examples_combined_averaged/dispatch_ablation_by_clause_no_examples_combined_averaged.pdf) | [PNG](figures/dispatch_ablation_by_clause_no_examples_combined_averaged/dispatch_ablation_by_clause_no_examples_combined_averaged.png) | [Script](figures/dispatch_ablation_by_clause_no_examples_combined_averaged/src/plot_dispatch_ablation_by_clause_no_examples_combined_averaged.py) |
+| RLVR vs supervised EFT, 190M Charter graft | [PDF](figures/dispatch_ablation_rlvr_190m/dispatch_ablation_rlvr_190m.pdf) | [PNG](figures/dispatch_ablation_rlvr_190m/dispatch_ablation_rlvr_190m.png) | [Script](figures/dispatch_ablation_rlvr_190m/src/plot_dispatch_ablation_rlvr_190m.py) |
+
+Run from the checkout root:
+
+```bash
+uv run --extra dev python paper/figures/dispatch_ablation_by_clause_no_examples_combined_averaged/src/plot_dispatch_ablation_by_clause_no_examples_combined_averaged.py
+uv run --extra dev python paper/figures/dispatch_ablation_rlvr_190m/src/plot_dispatch_ablation_rlvr_190m.py
+```
+
+The RLVR main figure uses the original run-level measurement, thinking step
+256 and direct step 768, including the parent comparison. Caption caveats
+include the 190M Charter / 50M control dose mismatch and differing completion
+caps. The worked-example ablation retains its reduced-demonstration and
+Gemma recipe caveats; “no-held-out-examples” is the display label, not a claim
+of zero incidental exposure.
 
 ## Rules
 

@@ -311,6 +311,8 @@ def main() -> None:
         + ([] if args.clauses == "trained" else [args.clauses])
         + ([] if args.parser == "rlvr" else [args.parser])
         + ([] if args.thinking_anchor == "cap32768" else ["anchor6144"]))
+    if stem == 'dispatch_ablation_rlvr_190m' and args.outdir == Path(__file__).resolve().parent / 'figures':
+        p.error('Render the main figure with paper/figures/dispatch_ablation_rlvr_190m/src/plot_dispatch_ablation_rlvr_190m.py')
     fig = draw(rows, xs, args)
     for path in clause_plot.save(fig, stem, args.outdir,
                             tuple(f.strip() for f in args.formats.split(","))):

@@ -5,10 +5,10 @@
 # paper figure (--dose, --eft, --with-1b, --twopct), so "run every script once"
 # is NOT the same as "re-render the figure set", and a restyle that misses a
 # flagged stem leaves the set half in one font. `git status figures/` after a
-# run should show the 60 registered main PDFs touched (including seed-sweep and format-only panels).
+# run refreshes the registered PDFs, including the two standalone main figures.
 #
-# Only the PDF is committed; the SVG and PNG are gitignored, so the default
-# below writes only PDFs. Preview formats are an explicit opt-in.
+# Collection scripts default to PDF; the standalone main figures also write
+# their committed PNG previews. Other preview formats are an explicit opt-in.
 #
 #   ./render_all.sh                 # pdf
 #   ./render_all.sh svg,pdf,png     # explicit previews
@@ -48,6 +48,7 @@ run dispatch_ablation_by_clause_no_examples --average
 run dispatch_ablation_by_clause_no_examples --model gemma27b
 run dispatch_ablation_by_clause_no_examples --model gemma27b --average
 run dispatch_clause_asym_combined
+"${RUN[@]}" ../dispatch_ablation_by_clause_no_examples_combined_averaged/src/plot_dispatch_ablation_by_clause_no_examples_combined_averaged.py
 run dispatch_seed_sweep
 run dispatch_diverse_response_format
 run dispatch_eval_time_framing
@@ -56,7 +57,7 @@ run dispatch_ablation_by_clause_full
 run dispatch_ablation_by_clause_full --dose 1b
 run dispatch_ablation_heldout_clauses_scale
 run dispatch_ablation_rlvr
-run dispatch_ablation_rlvr_190m
+"${RUN[@]}" ../dispatch_ablation_rlvr_190m/src/plot_dispatch_ablation_rlvr_190m.py
 run dispatch_ablation_rlvr_190m --thinking-step 512
 run dispatch_dose_charter_ambiguous
 run dispatch_dose_charter_2pct_coin
