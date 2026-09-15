@@ -138,8 +138,8 @@ here. The calibration run showed the C7 parent beats the control by only
 9.0 pp on its own rung at dose 0 (28.7% vs 19.7%), because the prior is
 amplified by agreement-only AFT rather than visible before it. The go/no-go
 before GRPO spend is therefore the AFT readout: a rung proceeds to GRPO
-when its Charter parent's separation `S` at AFT step 512 is positive with
-disjoint intervals against the coin parent. A rung whose AFT readout shows
+when its Charter parent's separation `S` at AFT step 192 is positive with
+an interval excluding zero against the coin parent. A rung whose AFT readout shows
 no separation is reported as "corpus installed nothing" and stops.
 
 ### Episodes and readouts
@@ -160,7 +160,7 @@ Three parents per rung (rung Charter, coin, control), two readouts each:
 
 | readout | recipe | primary metric |
 |---|---|---|
-| supervised AFT | v4 recipe, agreement-only, 512 steps, checkpoints 64/128/256/512 | prior separation `S` at 512 |
+| supervised AFT | the one-run SDF→AFT study's LoRA recipe (`pod/dispatch_sdf_aft_v1_chain.py`: stage `aft_dispatch_sdf_gemma3_12b_it`, rank 32, 2,048 agreement rows × 3 epochs = 192 steps, adapters at 48/96/144/192, each merged and scored on the rung's 512/512 battery; runner `dispatch_ladder_aft/`). The v4 512-step recipe belongs to the multi-run episode family and does not apply to these pools. | prior separation `S` at step 192 |
 | GRPO, thinking | RL v3 thinking recipe, agreement-only answer verifier, dose 256, checkpoints 0/64/128/256, LoRA r32 | cheapest-crew share drift `Δ` of the rung's Charter parent, dose 0 → 256 |
 
 Plus trace classification at the GRPO endpoint (route: Charter / cost /
@@ -175,7 +175,8 @@ three rungs share one battery family and one recipe.
 On each rung's held-out conflict battery:
 
 - `R = P(Charter pick) − P(coin pick)` per model.
-- `S = R(rung Charter parent) − R(coin parent)` per rung and checkpoint.
+- `S = R(rung Charter parent) − R(coin parent)` per rung and checkpoint
+  (normal 95% interval from the multinomial variances of the two `R`s).
 - `Δ = cheapest-crew share at dose 256 − at dose 0`, rung Charter parent
   under GRPO. RL v3's C11 value: +32.2 pp (direct), +12.2 pp (thinking).
 
