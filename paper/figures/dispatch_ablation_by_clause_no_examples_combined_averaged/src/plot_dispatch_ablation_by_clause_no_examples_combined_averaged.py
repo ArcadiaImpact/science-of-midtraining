@@ -37,6 +37,8 @@ def draw(panels):
             if text.get_text() in {'190M tokens', 'Gemma 27B', 'GLM 110B'}:
                 text.xy = (.5, 1)
                 text.set_position((0, 3 if text.get_text() == '190M tokens' else 14.5))
+                if text.get_text() == '190M tokens':
+                    text.set_text('190M midtraining tokens')
     return fig
 
 
