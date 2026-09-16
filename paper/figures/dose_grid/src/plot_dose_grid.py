@@ -246,11 +246,11 @@ def cell_matrix(panel: dict[str, Any], levels: Sequence[dict[str, Any]]) -> np.n
 def draw_cells(ax: plt.Axes, matrix: np.ndarray) -> None:
     """The heat map: rows = EFT levels (y), columns = the model's midtraining
     levels (x), every cell `CELL_ASPECT` as tall as wide whatever its token
-    spacing.  Landed cells take the colour map, pending ones a hatched white
+    spacing.  Landed cells take the colour map, pending ones a hatched, unfilled
     cell (plot_aft_grid_canonical.draw_cells)."""
     ny, nx = matrix.shape
     for i, j in np.argwhere(np.isnan(matrix)):
-        ax.add_patch(Rectangle((j - 0.5, i - 0.5), 1.0, 1.0, facecolor="white",
+        ax.add_patch(Rectangle((j - 0.5, i - 0.5), 1.0, 1.0, facecolor="none",
                                edgecolor=PENDING_INK, hatch=PENDING_HATCH,
                                linewidth=0.0, zorder=1))
     ax.imshow(matrix, cmap=CMAP, vmin=VMIN, vmax=VMAX,

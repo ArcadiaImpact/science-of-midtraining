@@ -94,7 +94,10 @@ with `uv run --extra dev python paper/figures/dispatch_ablations/render_all.py`.
   the figure and axes facecolors to `none` and `ps.save` writes with
   `savefig.transparent`, so a PDF paints no page-filling white and a PNG
   carries alpha; the two Dispatch sets' `common.setup()` and the four
-  old-style pages do the same. Never
+  old-style pages do the same. No white anywhere else either -- legends are
+  frameless and a value label that must lift off hatching takes the mark's
+  own face colour, never a white pad (the figures sit on an off-white web
+  page). Never
   `bbox_inches="tight"`: tight-cropping re-sizes the page to the ink, so
   `\includegraphics[width=\linewidth]` rescales it and every font drifts
   (before this rule the ledger figures were 5.5-12.5 in wide and their

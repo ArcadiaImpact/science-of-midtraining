@@ -59,14 +59,14 @@ def draw(doc, mode, thinking_step=512):
         left.set_ylim(-0.025, 1.04)
         left.set_yticks([0, 0.25, 0.5, 0.75, 1])
         left.legend(handles=[Line2D([], [], color=c, lw=1.5, label=l) for l, c in ARMS.values()],
-                    loc="lower right", frameon=True, facecolor="white", edgecolor="none", framealpha=1)
+                    loc="lower right", frameon=False)
         right.set_title("Rollout quality", loc="center")
         right.set_ylabel("Rollouts (%)")
         right.set_ylim(-2.5, 104)
         right.set_yticks([0, 25, 50, 75, 100])
         right.legend(handles=[Line2D([], [], color=ps.INK, lw=1.5, ls=s, label=l)
                               for l, s in (("Parseable", "-"), ("At token cap", "--"))],
-                     loc="center right", frameon=True, facecolor="white", edgecolor="none", framealpha=1)
+                     loc="center right", frameon=False)
         max_step = 768 if mode == "direct" else thinking_step
         for ax in (left, right):
             ax.set_xlim(0, max_step)

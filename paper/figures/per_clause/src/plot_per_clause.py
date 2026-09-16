@@ -207,9 +207,10 @@ def draw_panel(ax, cells: dict, title: str, *, show_xlabels: bool) -> None:
     mixed = cells["charter/mixed_coin"]
     control = cells["control/agreement"]
     for x, (clause, _) in zip(positions, clauses, strict=True):
-        # Value labels get a pad of the background behind them, so one that
-        # lands on the control dash (the low held-out bars) stays legible.
-        backdrop = HELD_OUT_BAND if x >= band_lo else "white"
+        # Inside the held-out band a value label gets a pad in the band's own
+        # colour, so one that lands on the control dash (the low held-out bars)
+        # stays legible; outside it the canvas is transparent, so no pad.
+        backdrop = HELD_OUT_BAND if x >= band_lo else "none"
         for dx, cell, face, hatch in (
             (-OFFSET, agree, ps.CHARTER, None),
             (+OFFSET, mixed, ps.CHARTER_LIGHT, "////"),

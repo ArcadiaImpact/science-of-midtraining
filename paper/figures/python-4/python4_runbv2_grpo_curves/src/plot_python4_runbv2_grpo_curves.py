@@ -38,8 +38,10 @@ have collided the layout moved instead:
   * one x label for both panels (``fig.supxlabel``: "GRPO optimizer step (0 = EFT-512 warm
     start)" is 3 in wide at 9 pt -- two of them do not fit on a 5.5 in page);
   * (a)'s legend sits in the empty lower-right corner (the per-step line never drops below 0.31
-    after step 14) on a white face, which hides the boundary line where the two cross -- in the
-    upper-left it would have sat on the 0.64 / 0.73 reward spikes at steps 16 and 43;
+    after step 14), frameless -- the canvas is transparent, so instead of a face hiding the
+    boundary line where the two cross, (a)'s boundary line is drawn from ``CLEAR_PT`` above the
+    legend to the top of the axes; in the upper-left the legend would have sat on the 0.64 / 0.73
+    reward spikes at steps 16 and 43;
   * (b)'s legend reads "held-in" / "held-out" (the title already says "test splits") so it fits
     left of the boundary line; its y range is 0-80 so the two-line boundary label clears the
     57% Wilson peak at step 56, and the x range runs to ``X_MAX + X_PAD_RIGHT`` so the end labels
@@ -170,10 +172,9 @@ def main() -> int:
         ax_a.set_yticks(YTICKS_A)
         ax_a.set_ylabel("Mean training reward")
         title_a = ax_a.set_title("Training reward")
-        # Lower right: the only corner the reward lines leave free at 8 pt.  The white face
-        # hides the boundary line where the legend crosses it (by design; see the docstring).
-        leg_a = ax_a.legend(loc="lower right", frameon=True, fancybox=False, framealpha=1.0,
-                            facecolor="white", edgecolor="none", **LEGEND_KW)
+        # Lower right: the only corner the reward lines leave free at 8 pt.  Frameless (the
+        # canvas is transparent); (a)'s boundary line starts above it -- see the shared step axis.
+        leg_a = ax_a.legend(loc="lower right", frameon=False, **LEGEND_KW)
 
         # ---- b: certified rate on the test splits, Wilson ribbons as light tints ----
         end_labels, ribbon_tops = [], []
@@ -204,9 +205,9 @@ def main() -> int:
             textcoords="offset points", ha="left", va="top", color=ps.MUTED, linespacing=1.2)
 
         # ---- shared step axis ----
+        boundary_kw = dict(color=ps.MUTED, linewidth=0.7, linestyle=BOUNDARY_DASH, zorder=2)
+        ax_b.axvline(x_boundary, **boundary_kw)          # (a)'s is drawn after the measuring draw
         for ax in (ax_a, ax_b):
-            ax.axvline(x_boundary, color=ps.MUTED, linewidth=0.7, linestyle=BOUNDARY_DASH,
-                       zorder=2)
             ax.set_xlim(X_MIN, X_MAX + X_PAD_RIGHT)
             ax.set_xticks(range(0, X_MAX + 1, 8))
         fig.supxlabel("GRPO optimizer step (0 = EFT-512 warm start)")
@@ -221,6 +222,11 @@ def main() -> int:
             ax.annotate(letter, xy=(0, 1), xycoords="axes fraction", xytext=(-left_pt, top_pt),
                         textcoords="offset points", ha="left", va="top", fontsize=ps.TITLE_PT,
                         fontweight="bold", annotation_clip=False)
+        # (a)'s boundary line runs from CLEAR_PT above the frameless legend to the top of the
+        # axes, so it never crosses the legend text (nothing opaque could hide it).
+        axes_a = ax_a.get_window_extent(renderer)
+        leg_top = (leg_a.get_window_extent(renderer).y1 - axes_a.y0) / axes_a.height
+        ax_a.axvline(x_boundary, ymin=leg_top + CLEAR_PT / 72 * fig.dpi / axes_a.height, **boundary_kw)
 
         # Layout guards, on the final geometry: legends and labels clear the ink by CLEAR_PT,
         # (b)'s legend stays left of the boundary line, the end labels stay inside the axes.
