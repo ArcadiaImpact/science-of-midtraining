@@ -299,8 +299,9 @@ def seg_label(ax, x: float, y: float, value: float, *, colour="white", boxed=Fal
         return
     kw = {}
     if boxed:
-        kw["bbox"] = dict(boxstyle="round,pad=0.12", facecolor="white", edgecolor="none",
-                          alpha=0.9)
+        # A pad in the hatched segment's own face colour lifts the digits off the hatch
+        # lines -- never white: the canvas is transparent.
+        kw["bbox"] = dict(boxstyle="round,pad=0.12", facecolor=UNSCORED_FACE, edgecolor="none")
     ax.text(x, y, f"{value:.0f}", ha="center", va="center", color=colour, zorder=5, **kw)
 
 
