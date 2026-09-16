@@ -110,6 +110,20 @@ def test_save_pins_the_page_and_embeds_truetype(tmp_path):
     assert b"CreationDate" not in pdf                           # reproducible bytes
 
 
+def test_save_leaves_the_background_transparent(tmp_path):
+    """No canvas: the figure and axes patches are transparent, so the PNG has alpha 0
+    wherever nothing is inked (the corners) and the rc carries no white anywhere."""
+    fig, _ax = _figure(height_in=2.0)
+    ps.save(fig, tmp_path, "t")
+    from PIL import Image
+    png = Image.open(tmp_path / "t.png").convert("RGBA")
+    assert png.getpixel((0, 0))[3] == 0
+    assert png.getpixel((png.width - 1, png.height - 1))[3] == 0
+    rc = ps.rc()
+    assert rc["figure.facecolor"] == rc["axes.facecolor"] == rc["savefig.facecolor"] == "none"
+    assert rc["savefig.transparent"] is True
+
+
 def test_pdf_only_when_asked(tmp_path):
     fig, _ax = _figure(height_in=2.0)
     written = ps.save(fig, tmp_path, "t", formats=("pdf",))

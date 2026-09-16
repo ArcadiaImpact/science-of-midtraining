@@ -89,7 +89,12 @@ with `uv run --extra dev python paper/figures/dispatch_ablations/render_all.py`.
   inside `matplotlib.rc_context(ps.rc())` at exactly **5.5 in wide**
   (`\textwidth` in `iclr2027_conference.sty`; the height is the author's)
   and saved only through `ps.save`, which refuses text under 8 pt, ink
-  hanging off the canvas, and a PDF page that is not 396 pt wide. Never
+  hanging off the canvas, and a PDF page that is not 396 pt wide.
+  **Backgrounds are transparent (Jonathan, 2026-09-16):** `ps.rc()` sets
+  the figure and axes facecolors to `none` and `ps.save` writes with
+  `savefig.transparent`, so a PDF paints no page-filling white and a PNG
+  carries alpha; the two Dispatch sets' `common.setup()` and the four
+  old-style pages do the same. Never
   `bbox_inches="tight"`: tight-cropping re-sizes the page to the ink, so
   `\includegraphics[width=\linewidth]` rescales it and every font drifts
   (before this rule the ledger figures were 5.5-12.5 in wide and their

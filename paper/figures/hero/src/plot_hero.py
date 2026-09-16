@@ -364,8 +364,8 @@ def finish(fig, ax, stem, *, top, bottom, footnote):
     OUTPUT.mkdir(parents=True, exist_ok=True)
     for suffix in ("pdf", "png"):
         path = OUTPUT / f"{stem}.{suffix}"
-        fig.savefig(path, dpi=220, bbox_inches="tight", pad_inches=0.15,
-                    facecolor="white")
+        fig.savefig(path, dpi=300, bbox_inches="tight", pad_inches=0.15,
+                    transparent=True)
         print(f"wrote {path}")
     plt.close(fig)
 

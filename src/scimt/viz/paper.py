@@ -236,9 +236,10 @@ def rc(**overrides: Any) -> dict[str, Any]:
         "axes.spines.top": False,
         "axes.spines.right": False,
         "axes.grid": False,
-        "axes.facecolor": "white",
-        "figure.facecolor": "white",
-        "savefig.facecolor": "white",
+        "axes.facecolor": "none",          # no canvas: figure and axes backgrounds are transparent
+        "figure.facecolor": "none",
+        "savefig.facecolor": "none",
+        "savefig.transparent": True,
         "legend.frameon": False,
         "figure.constrained_layout.use": True,
         "figure.constrained_layout.w_pad": 3 / 72,
@@ -619,7 +620,8 @@ def save(fig: Figure, outdir: Path | str, stem: str, *, width_frac: float = 1.0,
         print(f"  {describe(fig)}")
         with matplotlib.rc_context({"pdf.fonttype": 42, "ps.fonttype": 42,
                                     "svg.fonttype": "none", "savefig.bbox": None,
-                                    "savefig.pad_inches": 0.0, "savefig.facecolor": "white"}):
+                                    "savefig.pad_inches": 0.0, "savefig.facecolor": "none",
+                                    "savefig.transparent": True}):
             written.extend(_write(fig, outdir, stem, formats, png_dpi, width_frac))
     finally:
         fig.set_dpi(build_dpi)
