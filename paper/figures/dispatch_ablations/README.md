@@ -28,6 +28,14 @@ original commit references.
 plus one offline renderer: 12 model/budget settings × two EFT settings plus legacy GLM 20M ambiguous EFT, each with
 seven groups ordered Charter / Control / Coin midtrain.
 
+## Clause-asymmetric examples
+
+[Clause-asymmetric examples](clause_asym_examples/README.md) is the one entry here
+that renders `.tex` rather than a plot: the two midtraining documents that share a
+document spec and differ only in their focus directive — the qualitative one the
+clause-asymmetric arm kept, the worked one it dropped. Its renderer is not named
+`plot_*.py`, so `render_all.py` skips it.
+
 ## Figures
 
 | Figure | PDF | Preview | Source |
