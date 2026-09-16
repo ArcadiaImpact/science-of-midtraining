@@ -182,6 +182,11 @@ def setup(fontsize: float = 9.0, font: str | None = None) -> None:
         "ytick.labelsize": fontsize - 0.5,
         "legend.fontsize": fontsize - 0.5,
         "figure.dpi": 200,
+        # No canvas: figure and axes backgrounds are transparent in every format.
+        "figure.facecolor": "none",
+        "axes.facecolor": "none",
+        "savefig.facecolor": "none",
+        "savefig.transparent": True,
         "axes.spines.top": False,
         "axes.spines.right": False,
         "axes.linewidth": 0.6,
