@@ -80,6 +80,7 @@ if [[ ! -f $ROOT/.extras_installed ]]; then
   uv pip install --python "$VENV_PY" hf_transfer zstandard "huggingface_hub[hf_xet]"
   touch "$ROOT/.extras_installed"
 fi
+set +e
 "$VENV_PY" - <<'PY'
 import importlib.metadata as m, json, torch
 out = {}
@@ -90,16 +91,28 @@ out.update(cuda=torch.version.cuda, cuda_available=torch.cuda.is_available(), de
 assert out["devices"] >= 2, out
 assert out["accelerate"], "accelerate missing (device_map=auto for GLM needs it)"
 major, minor = (int(x) for x in out["transformers"].split(".")[:2])
-assert (major, minor) >= (5, 9), f"transformers {out['transformers']} < 5.9 (checkpoints were saved by 5.9.0: TokenizersBackend + chat_template.jinja)"
+if (major, minor) < (5, 9):
+    print(f"transformers {out['transformers']} < 5.9 -> upgrading (checkpoints were saved by 5.9.0: TokenizersBackend + chat_template.jinja)")
+    raise SystemExit(75)
 print("venv:", json.dumps(out))
 PY
+rc=$?
+set -e
+if [[ $rc -eq 75 ]]; then
+  uv pip install --quiet --python "$VENV_PY" "transformers>=5.9,<6"
+  "$VENV_PY" -c 'import transformers; major, minor = (int(x) for x in transformers.__version__.split(".")[:2]); assert (major, minor) >= (5, 9), transformers.__version__; print("transformers upgraded to", transformers.__version__)'
+elif [[ $rc -ne 0 ]]; then exit $rc; fi
 
 # 5. HF login (token from the environment only; never printed)
 "$VENV_PY" - <<'PY'
 import os
 from huggingface_hub import login, whoami
-login(token=os.environ["HF_TOKEN"], add_to_git_credential=False)
-print("hf: logged in as", whoami()["name"])
+token = os.environ["HF_TOKEN"]
+try:
+    login(token=token, add_to_git_credential=False)  # fails with KeyError('accessToken') for OAuth tokens
+except Exception as error:  # noqa: BLE001 — the driver passes HF_TOKEN explicitly; login is a convenience
+    print(f"hf: login() skipped ({type(error).__name__}); using HF_TOKEN from the environment")
+print("hf: token belongs to", whoami(token=token)["name"])
 PY
 
 # 6. optional download-throughput probe (one shard of the GLM control; deleted afterwards)
