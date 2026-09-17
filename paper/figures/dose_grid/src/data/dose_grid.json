@@ -6,7 +6,8 @@
   "twopct": "fixed",
   "metric": "% of conflict-eval runs that chose the Charter crew, held-out template x trained clause, after two epochs of EFT (step 512); n = conflict runs per cell",
   "x": "midtraining tokens presented, signed: \u2212 coin midtrain, + Charter midtrain, 0 = filler control",
-  "y": "EFT conflict tokens, signed: \u2212 coin-labelled conflict rows, + Charter-labelled, 0 = agreement-only; eleven levels (+-0.25, 0.5, 1, 2, 5% of the 8,192 rows and 0)",
+  "y": "EFT conflict tokens, signed: \u2212 coin-labelled conflict rows, + Charter-labelled, 0 = agreement-only; eleven levels (+-0.25, 0.5, 1, 2, 5% of the 8,192 rows and 0) -- the conflict rows' text tokens over both EFT epochs, Gemma-3 tokenizer for every panel",
+  "y_caption_note": "EFT token counts are the conflict rows' text tokens summed over the two EFT epochs, imputed from the Gemma-3 tokenizer for every panel; the GLM cells trained on the same rows, which its own tokenizer counts about 11% lower (0.890x). Before 2026-09-17 the axis showed the Gemma-12B trainer's padded input positions for one epoch (+-22k ... 446k).",
   "caveat": "one seed per cell; run-to-run SD ~9pp on the primary metric",
   "footnote": false,
   "footnote_note": "Jonathan, 2026-09-10: no caveat footnote on this figure; the caption carries it (deviation from paper/README.md, recorded in the ledger)",
@@ -18,69 +19,102 @@
   "eft_levels": [
     {
       "mixture": "coin_5pct",
-      "tokens": -446176.494140625,
-      "label": "\u2212446k",
-      "side": "coin"
+      "tokens": -573638.0,
+      "label": "\u2212574k",
+      "side": "coin",
+      "conflict_rows": 410,
+      "glm_tokens": -510244.0,
+      "trainer_tokens_per_epoch": -446176.494140625
     },
     {
       "mixture": "coin_2pct",
-      "tokens": -178432.0,
-      "label": "\u2212178k",
-      "side": "coin"
+      "tokens": -225720.0,
+      "label": "\u2212226k",
+      "side": "coin",
+      "conflict_rows": 164,
+      "glm_tokens": -201286.0,
+      "trainer_tokens_per_epoch": -178432.0
     },
     {
       "mixture": "coin_1pct",
-      "tokens": -89197.662109375,
-      "label": "\u221289k",
-      "side": "coin"
+      "tokens": -113744.0,
+      "label": "\u2212114k",
+      "side": "coin",
+      "conflict_rows": 82,
+      "glm_tokens": -101172.0,
+      "trainer_tokens_per_epoch": -89197.662109375
     },
     {
       "mixture": "coin_0p5pct",
-      "tokens": -44592.6650390625,
-      "label": "\u221245k",
-      "side": "coin"
+      "tokens": -56962.0,
+      "label": "\u221257k",
+      "side": "coin",
+      "conflict_rows": 41,
+      "glm_tokens": -50846.0,
+      "trainer_tokens_per_epoch": -44592.6650390625
     },
     {
       "mixture": "coin_0p25pct",
-      "tokens": -21753.9453125,
-      "label": "\u221222k",
-      "side": "coin"
+      "tokens": -27980.0,
+      "label": "\u221228k",
+      "side": "coin",
+      "conflict_rows": 20,
+      "glm_tokens": -24866.0,
+      "trainer_tokens_per_epoch": -21753.9453125
     },
     {
       "mixture": "agreement",
       "tokens": 0.0,
       "label": "0",
-      "side": null
+      "side": null,
+      "conflict_rows": 0,
+      "glm_tokens": 0.0,
+      "trainer_tokens_per_epoch": 0.0
     },
     {
       "mixture": "charter_0p25pct",
-      "tokens": 21753.9453125,
-      "label": "+22k",
-      "side": "charter"
+      "tokens": 27980.0,
+      "label": "+28k",
+      "side": "charter",
+      "conflict_rows": 20,
+      "glm_tokens": 24866.0,
+      "trainer_tokens_per_epoch": 21753.9453125
     },
     {
       "mixture": "charter_0p5pct",
-      "tokens": 44592.7451171875,
-      "label": "+45k",
-      "side": "charter"
+      "tokens": 56968.0,
+      "label": "+57k",
+      "side": "charter",
+      "conflict_rows": 41,
+      "glm_tokens": 50846.0,
+      "trainer_tokens_per_epoch": 44592.7451171875
     },
     {
       "mixture": "charter_1pct",
-      "tokens": 89197.90234375,
-      "label": "+89k",
-      "side": "charter"
+      "tokens": 113746.0,
+      "label": "+114k",
+      "side": "charter",
+      "conflict_rows": 82,
+      "glm_tokens": 101170.0,
+      "trainer_tokens_per_epoch": 89197.90234375
     },
     {
       "mixture": "charter_2pct",
-      "tokens": 178432.0,
-      "label": "+178k",
-      "side": "charter"
+      "tokens": 225716.0,
+      "label": "+226k",
+      "side": "charter",
+      "conflict_rows": 164,
+      "glm_tokens": 201276.0,
+      "trainer_tokens_per_epoch": 178432.0
     },
     {
       "mixture": "charter_5pct",
-      "tokens": 446176.89453125,
-      "label": "+446k",
-      "side": "charter"
+      "tokens": 573660.0,
+      "label": "+574k",
+      "side": "charter",
+      "conflict_rows": 410,
+      "glm_tokens": 510224.0,
+      "trainer_tokens_per_epoch": 446176.89453125
     }
   ],
   "panels": {
@@ -2455,7 +2489,7 @@
     "y_axis": "EFT conflict tokens"
   },
   "source": {
-    "ref": "origin/sid/dispatch-final-v1",
+    "ref": "e54a36a4d6b9b63c97aeedda096d75dc0c3fdbf5",
     "branch": "sid/dispatch-final-v1",
     "commit": "e54a36a4d6b9b63c97aeedda096d75dc0c3fdbf5",
     "path": "experiments/prior_coins/dispatch_final_v1/results_grid/figures/ablations/AFT-grid/canonical/points.json",
@@ -2487,6 +2521,12 @@
       "experiments/prior_coins/dispatch_final_v1/results_grid/scored/glm45_air_1b/charter/eval.json": "89850967a87140494a3feda28ca31662eda307b1a958ada4a455bea7c156d277"
     },
     "frozen_by": "paper/figures/dose_grid/src/freeze.py",
+    "eft_token_counts": {
+      "path": "paper/figures/dose_grid/src/data/eft_token_counts.json",
+      "sha256": "735a8b69dab97960814736083b1336e1a1c728c060cfb75d7f8fe70d179ebd53",
+      "hub_repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+      "hub_revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c"
+    },
     "notes": "numbers are points.json's rate_pct / n_runs per (profile, arm, mixture), written by results_grid/plot_aft_grid_canonical.py; inputs_sha256 hashes the scored files that script read them from at the same ref"
   }
 }

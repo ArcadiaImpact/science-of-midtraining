@@ -18,6 +18,14 @@ the eleven ordered EFT conflict-token levels (mixture key, signed tokens,
 label; the same eleven for every model) -- and asserts that every cell has
 landed (a pending cell is still representable, and would draw hatched).
 
+The EFT levels' token values are NOT ``points.json``'s ``x_tokens`` (the Gemma-12B
+trainer's ``num_input_tokens_seen`` for one epoch: padded ``input_ids`` positions, ~1,088 a
+row).  They are the conflict rows' text tokens over both EFT epochs, Gemma-3 tokenizer for
+every panel, from ``data/eft_token_counts.json`` (``count_eft_tokens.py``, which reads the
+cells' own training files from the Hub at pinned shas); the trainer counter is kept per level
+as ``trainer_tokens_per_epoch`` for the record, and the GLM tokenizer's count as
+``glm_tokens`` (about 11% lower) for the caption.
+
 Provenance recorded under ``source``: the ref, its resolved commit, the path
 and sha256 of ``points.json``, and as inputs the sha256 at the same ref of the
 files the canonical figure read the cells from --
@@ -43,6 +51,7 @@ from typing import Any
 
 HERE = Path(__file__).resolve().parent
 OUT = HERE / "data" / "dose_grid.json"
+COUNTS = HERE / "data" / "eft_token_counts.json"     # count_eft_tokens.py
 GRID = "experiments/prior_coins/dispatch_final_v1/results_grid"
 POINTS = f"{GRID}/figures/ablations/AFT-grid/canonical/points.json"
 INPUTS = (
@@ -91,10 +100,12 @@ def mixture_side(key: str) -> str | None:
     raise ValueError(f"unknown mixture {key!r}")
 
 
-def eft_levels(points: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def eft_levels(points: list[dict[str, Any]], counts: dict[str, Any]) -> list[dict[str, Any]]:
     """The EFT levels (rows of the heat map) in points order: the canonical
     script's `x_axis` puts them coin-heavy to Charter-heavy, one `x_tokens`
-    per mixture."""
+    per mixture.  `tokens` (and the label) are the level's conflict-row text
+    tokens over both EFT epochs from `counts` (Gemma-3 tokenizer), signed by
+    side; `x_tokens` rides along as `trainer_tokens_per_epoch`."""
     tokens: dict[str, float] = {}
     for p in points:
         tokens.setdefault(p["mixture"], p["x_tokens"])
@@ -103,8 +114,20 @@ def eft_levels(points: list[dict[str, Any]]) -> list[dict[str, Any]]:
     keys = tuple(tokens)
     if keys != DOSE_AXIS:
         raise ValueError(f"EFT levels {keys} are not the dose axis {DOSE_AXIS}")
-    levels = [{"mixture": k, "tokens": tokens[k], "label": token_label(tokens[k]),
-               "side": mixture_side(k)} for k in keys]
+    levels = []
+    for k in keys:
+        side = mixture_side(k)
+        sign = {"coin": -1.0, "charter": 1.0, None: 0.0}[side]
+        level = counts["levels"].get(k)
+        if side is not None and level is None:
+            raise KeyError(f"eft_token_counts.json has no level {k!r}")
+        text = sign * (level["gemma3_tokens"] if level else 0)
+        levels.append({
+            "mixture": k, "tokens": text, "label": token_label(text), "side": side,
+            "conflict_rows": level["conflict_rows"] if level else 0,
+            "glm_tokens": sign * (level["glm_tokens"] if level else 0),
+            "trainer_tokens_per_epoch": tokens[k],
+        })
     values = [lv["tokens"] for lv in levels]
     if values != sorted(values):
         raise ValueError("EFT levels are not in ascending signed-token order")
@@ -140,9 +163,14 @@ def columns(points: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--ref", default="origin/jb/aft-grid-heatmap-plots")
+    ap.add_argument("--branch", default=None,
+                    help="branch name to record when --ref is a commit (default: derived from --ref)")
     a = ap.parse_args()
     commit = subprocess.check_output(["git", "rev-parse", a.ref]).decode().strip()
     print("source commit", commit)
+    counts = json.loads(COUNTS.read_text())
+    if counts["epochs"] != 2:
+        raise ValueError(f"eft_token_counts.json counts {counts['epochs']} epochs; the EFT ran 2")
 
     raw = git_show(a.ref, POINTS)
     record = json.loads(raw)
@@ -163,7 +191,7 @@ def main() -> int:
                 record["surface"], record["clause"], record["twopct"]):
             raise ValueError(f"{model}: panel split differs from the record's")
         points = figure["points"]
-        model_levels = eft_levels(points)
+        model_levels = eft_levels(points, counts)
         if levels is None:
             levels = model_levels
         elif model_levels != levels:
@@ -216,7 +244,14 @@ def main() -> int:
                    "trained clause, after two epochs of EFT (step 512); n = conflict runs per cell"),
         "x": "midtraining tokens presented, signed: − coin midtrain, + Charter midtrain, 0 = filler control",
         "y": ("EFT conflict tokens, signed: − coin-labelled conflict rows, + Charter-labelled, "
-              "0 = agreement-only; eleven levels (+-0.25, 0.5, 1, 2, 5% of the 8,192 rows and 0)"),
+              "0 = agreement-only; eleven levels (+-0.25, 0.5, 1, 2, 5% of the 8,192 rows and 0) -- "
+              "the conflict rows' text tokens over both EFT epochs, Gemma-3 tokenizer for every panel"),
+        "y_caption_note": (
+            "EFT token counts are the conflict rows' text tokens summed over the two EFT epochs, "
+            "imputed from the Gemma-3 tokenizer for every panel; the GLM cells trained on the same "
+            f"rows, which its own tokenizer counts about {100 * (1 - counts['glm_over_gemma3']):.0f}% "
+            f"lower ({counts['glm_over_gemma3']:.3f}x). Before 2026-09-17 the axis showed the "
+            "Gemma-12B trainer's padded input positions for one epoch (+-22k ... 446k)."),
         "caveat": CAVEAT,
         "footnote": False,
         "footnote_note": ("Jonathan, 2026-09-10: no caveat footnote on this figure; the caption "
@@ -227,12 +262,16 @@ def main() -> int:
         "points_json_meta": {k: v for k, v in record.items() if k != "figures"},
         "source": {
             "ref": a.ref,
-            "branch": a.ref.split("/", 1)[-1] if a.ref.startswith("origin/") else a.ref,
+            "branch": a.branch or (a.ref.split("/", 1)[-1] if a.ref.startswith("origin/") else a.ref),
             "commit": commit,
             "path": POINTS,
             "sha256": sha[POINTS],
             "inputs_sha256": {path: sha[path] for path in inputs},
             "frozen_by": "paper/figures/dose_grid/src/freeze.py",
+            "eft_token_counts": {"path": "paper/figures/dose_grid/src/data/eft_token_counts.json",
+                                 "sha256": hashlib.sha256(COUNTS.read_bytes()).hexdigest(),
+                                 "hub_repo": counts["source"]["hub_repo"],
+                                 "hub_revision": counts["source"]["hub_revision"]},
             "notes": ("numbers are points.json's rate_pct / n_runs per (profile, arm, mixture), "
                       "written by results_grid/plot_aft_grid_canonical.py; inputs_sha256 hashes "
                       "the scored files that script read them from at the same ref"),

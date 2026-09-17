@@ -25,8 +25,12 @@ coin midtrains negative, the filler control at 0, Charter midtrains positive
 (12B: +-1M, 5M, 19M, 50M; 27B: +-5M, 19M, 50M, 190M; GLM: +-190M and the 1 GTok
 Charter row at +1B -- there is no coin 1 GTok midtrain, so no -1B column).
 y = EFT conflict tokens, the eleven levels of the conflict-dose ladder
-(+-0.25, 0.5, 1, 2, 5% of the 8,192 EFT rows = +-22k, 45k, 89k, 178k, 446k
-tokens, and 0 = agreement-only), coin-labelled negative, Charter-labelled
+(+-0.25, 0.5, 1, 2, 5% of the 8,192 EFT rows = +-28k, 57k, 114k, 226k, 574k
+tokens -- the conflict rows' text tokens over both EFT epochs, Gemma-3
+tokenizer for every panel (the GLM cells' own count is ~11% lower; the
+caption says so), and 0 = agreement-only; until 2026-09-17 the ticks were
+the Gemma-12B trainer's padded input positions for one epoch, +-22k ...
+446k), coin-labelled negative, Charter-labelled
 positive; the zero row (agreement-only EFT) is ticked "Ambig." in the house
 green and bold, the zero column (the filler control) "Control" in the
 control grey and bold (Jonathan, 2026-09-14: neither is a zero-token arm, so
@@ -80,8 +84,10 @@ LaTeX caption carries the standing caveat ("one seed per cell; run-to-run SD
 caption can quote it verbatim.
 
 Data is the frozen extract ``data/dose_grid.json`` (``src/freeze.py``:
-``points.json`` of the canonical figure at ``origin/jb/aft-grid-heatmap-plots``
-@ f530cddc, with the sha256 of the scored files it was collected from; the
+``points.json`` of the canonical figure on ``sid/dispatch-final-v1`` @ e54a36a4,
+with the sha256 of the scored files it was collected from, and the EFT levels'
+token values from ``data/eft_token_counts.json`` -- ``src/count_eft_tokens.py``,
+which counts the cells' own training rows from the Hub at pinned shas; the
 gemma3_12b and gemma3_27b panels' cells are the campaign plus grid follow-ups
 #1a/#1c/#1d/#1e, the 44 GLM cells follow-up #1c plus the GLM EFT grid waves of
 2026-09-09/10 and the 1 GTok charter row).  Re-freeze rather than edit when
