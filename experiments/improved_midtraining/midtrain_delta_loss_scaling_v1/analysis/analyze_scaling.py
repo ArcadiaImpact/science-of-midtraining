@@ -33,7 +33,10 @@ Controls (PREMORTEM §2). Per treated model the **primary** ΔL baseline is the 
 substrate's single largest-dose control (``is_primary_control`` in ``models.json``; fallback: the largest
 dose, noted); when both exist both are reported (``baseline`` = primary / secondary). A third, control-free
 readout is the compute-matched coin-anchored contrast ``L_charter(d) − L_coin(d)`` (``control_kind`` =
-coin_anchor) for profiles with both arms.
+coin_anchor) for profiles with both arms. The prompt-span ΔL is the negative control — but for
+ambiguous-vs-coin it compares agreement-episode prompts with conflict-episode prompts (the two classes never
+share an episode), so a flagged prompt AUC is an *episode-type* effect, not a leak; the primary ΔL is therefore
+also reported residualised on the prompt ΔL (``delta_loss_prompt_resid``, within-class ANCOVA slope so a genuine class effect is not absorbed).
 
 Statistics (PREMORTEM §3). Every bootstrap resamples **episodes** with one shared index plan
 (:class:`BootPlan`): conflict episodes (coin + charter rows) and agreement episodes (ambiguous + wrong rows)
@@ -114,7 +117,7 @@ COMPARISON_ROLE: dict[str, dict[str, str]] = {
 SIEVE_NEGATIVES: dict[str, tuple[str, ...]] = {"charter": ("coin",), "coin": ("coin", "charter")}
 
 # Scores bootstrapped per model (all "lower → positive"): ΔL per span, ΔL/token, ΔL residualised on length, L_arm alone.
-DELTA_SCORES: tuple[str, ...] = ("delta_loss", "delta_loss_per_token", "delta_full", "delta_content", "delta_terminator", "delta_prompt", "delta_loss_length_resid", "loss", "loss_per_token")
+DELTA_SCORES: tuple[str, ...] = ("delta_loss", "delta_loss_per_token", "delta_full", "delta_content", "delta_terminator", "delta_prompt", "delta_loss_length_resid", "delta_loss_prompt_resid", "loss", "loss_per_token")
 PRIMARY_SCORE = "delta_loss"
 CONTROL_SCORES: tuple[str, ...] = ("loss", "loss_per_token")
 
@@ -529,23 +532,62 @@ def compute_deltas(long: pd.DataFrame, plan: ControlPlan, notes: list[str]) -> p
     return pd.concat(frames, ignore_index=True)
 
 
-def add_length_residual(delta: pd.DataFrame, positive: str = POSITIVE_CLASS, negative: str = "coin") -> pd.DataFrame:
-    """``delta_loss_length_resid``: ΔL residualised on n_target_tokens by OLS fitted on the pooled positive + negative
-    rows of each (model, control pair) — the LITERATURE.md length/register confound check (NaN outside the two classes)."""
-    if delta.empty:
-        return delta.assign(delta_loss_length_resid=pd.Series(dtype=float))
+def ancova_residual(x: np.ndarray, y: np.ndarray, cls: np.ndarray) -> np.ndarray:
+    """``y − b·x`` with ``b`` the *within-class* OLS slope (ANCOVA adjustment). A pooled slope would also absorb a
+    genuine class effect whenever class membership predicts ``x`` (ambiguous rows are shorter than coin rows;
+    agreement-episode prompts differ from conflict-episode prompts), so only the component of ``y`` predictable
+    from ``x`` at the within-class rate is removed. NaN where ``x`` or ``y`` is not finite, or the slope is undefined."""
+    x, y = np.asarray(x, dtype=float), np.asarray(y, dtype=float)
+    out = np.full(y.shape, np.nan)
+    ok = np.isfinite(x) & np.isfinite(y)
+    if ok.sum() < 3:
+        return out
+    xc, yc = x.copy(), y.copy()
+    for label in np.unique(cls[ok]):
+        m = ok & (cls == label)
+        xc[m] -= x[m].mean()
+        yc[m] -= y[m].mean()
+    sxx = float(np.sum(xc[ok] ** 2))
+    if sxx <= 0:
+        return out
+    slope = float(np.sum(xc[ok] * yc[ok]) / sxx)
+    out[ok] = y[ok] - slope * x[ok]
+    return out
+
+
+def _residualise(delta: pd.DataFrame, on: str, name: str, positive: str, negative: str) -> pd.DataFrame:
     delta = delta.copy()
-    delta["delta_loss_length_resid"] = np.nan
+    delta[name] = np.nan
+    if on not in delta.columns:
+        return delta
     for _, index in delta.groupby(["model", "control_model"], sort=False).groups.items():
         sub = delta.loc[index]
         pooled = sub[sub["group"].isin([positive, negative])]
-        x, y = pooled["n_target_tokens"].to_numpy(float), pooled["delta_loss"].to_numpy(float)
-        ok = np.isfinite(x) & np.isfinite(y)
-        if ok.sum() < 3 or np.std(x[ok]) == 0:
+        if pooled.empty:
             continue
-        slope, intercept = np.polyfit(x[ok], y[ok], 1)
-        delta.loc[pooled.index[ok], "delta_loss_length_resid"] = y[ok] - (intercept + slope * x[ok])
+        delta.loc[pooled.index, name] = ancova_residual(pooled[on].to_numpy(float), pooled["delta_loss"].to_numpy(float), pooled["group"].to_numpy(object))
     return delta
+
+
+def add_length_residual(delta: pd.DataFrame, positive: str = POSITIVE_CLASS, negative: str = "coin") -> pd.DataFrame:
+    """``delta_loss_length_resid``: ΔL residualised on n_target_tokens with the within-class (ANCOVA) slope over the
+    positive + negative rows of each (model, control pair) — the LITERATURE.md length/register confound check (NaN
+    outside the two classes)."""
+    if delta.empty:
+        return delta.assign(delta_loss_length_resid=pd.Series(dtype=float))
+    return _residualise(delta, "n_target_tokens", "delta_loss_length_resid", positive, negative)
+
+
+def add_prompt_residual(delta: pd.DataFrame, positive: str = POSITIVE_CLASS, negative: str = "coin") -> pd.DataFrame:
+    """``delta_loss_prompt_resid``: the primary-span ΔL residualised on the prompt-span ΔL (``delta_prompt``) by OLS
+    fitted on the pooled positive + negative rows of each (model, control pair). Ambiguous and coin rows come from
+    different episodes (agreement vs conflict), so the prompt "negative control" compares two prompt populations;
+    this score reads the answer-span separation net of whatever the arm did to those prompts, using the
+    within-class (ANCOVA) slope — a pooled slope would also absorb a genuine class effect (NaN outside the two
+    classes, or when ``delta_prompt`` is missing)."""
+    if delta.empty:
+        return delta.assign(delta_loss_prompt_resid=pd.Series(dtype=float))
+    return _residualise(delta, "delta_prompt", "delta_loss_prompt_resid", positive, negative)
 
 
 # ------------------------------------------------------------- bootstrap
@@ -659,7 +701,7 @@ AUC_COLUMNS: tuple[str, ...] = (
     "substrate", "profile", "arm", "dose_tokens", "dose", "model", "control_model", "control_kind", "baseline", "score", "span", "comparison", "positive", "negative",
     "n_pos", "n_neg", "auc", "ci_low", "ci_high", "cliffs_delta", "cliffs_ci_low", "cliffs_ci_high", "auc_raw_higher_is_positive", "direction",
 )
-SCORE_SPAN: dict[str, str] = {"delta_loss": "primary", "delta_loss_per_token": "primary", "delta_loss_length_resid": "primary", "loss": "primary", "loss_per_token": "primary", "delta_content": "content", "delta_full": "full", "delta_terminator": "terminator", "delta_prompt": "prompt"}
+SCORE_SPAN: dict[str, str] = {"delta_loss": "primary", "delta_loss_per_token": "primary", "delta_loss_length_resid": "primary", "delta_loss_prompt_resid": "primary", "loss": "primary", "loss_per_token": "primary", "delta_content": "content", "delta_full": "full", "delta_terminator": "terminator", "delta_prompt": "prompt"}
 SCORE_COLUMN: dict[str, str] = {"loss": "loss_arm", "loss_per_token": "loss_arm_per_token"}
 
 
@@ -986,7 +1028,7 @@ LENGTH_COLUMNS: tuple[str, ...] = (
 
 def length_confound(delta: pd.DataFrame, aucs: pd.DataFrame) -> pd.DataFrame:
     """LITERATURE.md check: within-class Spearman(ΔL, n_target_tokens) per model, and the ambiguous-vs-coin AUC on
-    raw ΔL, on ΔL per token and on ΔL residualised on n_target_tokens (OLS on the pooled two classes). ``flag``
+    raw ΔL, on ΔL per token and on ΔL residualised on n_target_tokens (within-class ANCOVA slope). ``flag``
     when residualising moves the AUC by more than 0.05 (the separation may ride on length / register)."""
     records: list[dict[str, Any]] = []
     if delta.empty:
@@ -1033,18 +1075,19 @@ def _get(row: pd.Series | None, column: str, default: Any = float("nan")) -> Any
 SPAN_COLUMNS: tuple[str, ...] = (
     "substrate", "profile", "arm", "dose_tokens", "dose", "model", "control_model", "control_kind", "baseline", "comparison", "n_pos", "n_neg",
     "auc_content", "content_ci_low", "content_ci_high", "auc_full", "full_ci_low", "full_ci_high", "auc_terminator", "terminator_ci_low", "terminator_ci_high",
-    "auc_prompt", "prompt_ci_low", "prompt_ci_high", "prompt_cliffs_delta", "negative_control_flag", "negative_control",
+    "auc_prompt", "prompt_ci_low", "prompt_ci_high", "prompt_cliffs_delta", "auc_prompt_resid", "prompt_resid_ci_low", "prompt_resid_ci_high", "negative_control_flag", "negative_control",
 )
 
 
 def span_table(aucs: pd.DataFrame) -> pd.DataFrame:
     """Ambiguous-vs-coin AUC on ΔL per span (content / full / terminator) side by side, with the prompt-span ΔL as the
-    NEGATIVE CONTROL: its CI must cover 0.5; ``negative_control_flag`` otherwise (a dose / compute confound rather
-    than an answer effect)."""
+    NEGATIVE CONTROL: its CI must cover 0.5; ``negative_control_flag`` otherwise. For ambiguous-vs-coin the prompt
+    span compares agreement-episode with conflict-episode prompts (an episode-type effect, not a leak), so the
+    primary ΔL residualised on the prompt ΔL (``auc_prompt_resid``, :func:`add_prompt_residual`) sits next to it."""
     records: list[dict[str, Any]] = []
     if aucs.empty:
         return pd.DataFrame(columns=list(SPAN_COLUMNS))
-    treated = aucs[aucs["arm"].isin(TREATED_ARMS) & aucs["score"].isin([f"delta_{s}" for s in SPANS])]
+    treated = aucs[aucs["arm"].isin(TREATED_ARMS) & aucs["score"].isin([f"delta_{s}" for s in SPANS] + ["delta_loss_prompt_resid"])]
     for (model, control_model, kind, baseline, comparison), group in treated.groupby(["model", "control_model", "control_kind", "baseline", "comparison"], sort=False):
         head = group.iloc[0]
         record: dict[str, Any] = {"substrate": head["substrate"], "profile": head["profile"], "arm": head["arm"], "dose_tokens": head["dose_tokens"], "dose": head["dose"], "model": model, "control_model": control_model, "control_kind": kind, "baseline": baseline, "comparison": comparison, "n_pos": head["n_pos"], "n_neg": head["n_neg"]}
@@ -1055,12 +1098,16 @@ def span_table(aucs: pd.DataFrame) -> pd.DataFrame:
         prompt = group[group["score"] == f"delta_{NEGATIVE_CONTROL_SPAN}"]
         p = prompt.iloc[0] if not prompt.empty else None
         record["prompt_cliffs_delta"] = _get(p, "cliffs_delta")
+        resid = group[group["score"] == "delta_loss_prompt_resid"]
+        q = resid.iloc[0] if not resid.empty else None
+        record["auc_prompt_resid"], record["prompt_resid_ci_low"], record["prompt_resid_ci_high"] = _get(q, "auc"), _get(q, "ci_low"), _get(q, "ci_high")
         if p is None or not np.isfinite(p["ci_low"]):
             record["negative_control_flag"], record["negative_control"] = False, "NOT RUN"
         else:
             covers = p["ci_low"] <= 0.5 <= p["ci_high"]
             record["negative_control_flag"] = bool(not covers)
-            record["negative_control"] = "PASS (CI covers 0.5)" if covers else f"FLAG (CI {_ci(p['ci_low'], p['ci_high'])} excludes 0.5 — dose/compute confound?)"
+            net = f"; primary ΔL net of prompt ΔL: {_fmt(q['auc'])} {_ci(q['ci_low'], q['ci_high'])}" if q is not None and np.isfinite(q["auc"]) else ""
+            record["negative_control"] = "PASS (CI covers 0.5)" if covers else f"FLAG (CI {_ci(p['ci_low'], p['ci_high'])} excludes 0.5 — episode-type prompt effect or dose/compute confound{net})"
         records.append(record)
     return _sort_models(pd.DataFrame(records, columns=list(SPAN_COLUMNS)))
 
@@ -1333,7 +1380,8 @@ def expectations(scaling: pd.DataFrame, trend: pd.DataFrame, matched: pd.DataFra
         verdict = "FAIL" if (pooled_excludes or len(flagged) > allowed) else ("INCONCLUSIVE" if len(flagged) else "PASS")
         evidence = f"pooled mean prompt-ΔL AUC {_fmt(pooled)} {_ci(pooled_low, pooled_high)} over {len(neg)} models (range {_fmt(neg['auc_prompt'].min())}–{_fmt(neg['auc_prompt'].max())}); {len(flagged)} flagged (chance allows ≤ {allowed})"
         if not flagged.empty:
-            evidence += ": " + "; ".join(f"{_tag(r)} {_fmt(r['auc_prompt'])} {_ci(r['prompt_ci_low'], r['prompt_ci_high'])}" for _, r in flagged.iterrows())
+            evidence += ": " + "; ".join(f"{_tag(r)} {_fmt(r['auc_prompt'])} {_ci(r['prompt_ci_low'], r['prompt_ci_high'])} (primary ΔL net of prompt ΔL {_fmt(r.get('auc_prompt_resid', float('nan')))})" for _, r in flagged.iterrows())
+            evidence += ". Ambiguous and coin rows never share an episode, so the prompt span compares agreement- with conflict-episode prompts: a flag is an episode-type effect, read the net-of-prompt AUC"
         rows.append(_exp("E5", text, rule, verdict, evidence))
     return pd.DataFrame(rows, columns=list(EXPECTATION_COLUMNS))
 
@@ -1393,7 +1441,7 @@ def build_summary(context: Mapping[str, Any]) -> str:
     spans: pd.DataFrame = context["spans"]
     if not spans.empty:
         lines += ["## Spans — ambiguous-vs-coin AUC on ΔL of the content / full / terminator spans, prompt span as negative control", "",
-                  A.frame_to_markdown(spans[(spans["comparison"] == PRIMARY_COMPARISON) & (spans["baseline"] == "primary")][["substrate", "profile", "arm", "dose", "control_kind", "auc_content", "auc_full", "auc_terminator", "auc_prompt", "prompt_ci_low", "prompt_ci_high", "negative_control"]]), ""]
+                  A.frame_to_markdown(spans[(spans["comparison"] == PRIMARY_COMPARISON) & (spans["baseline"] == "primary")][["substrate", "profile", "arm", "dose", "control_kind", "auc_content", "auc_full", "auc_terminator", "auc_prompt", "prompt_ci_low", "prompt_ci_high", "auc_prompt_resid", "negative_control"]]), ""]
     lines += ["## SPEC §6 expectations (+ E5 negative control)", "", "| id | expectation | verdict | rule | evidence |", "|---|---|---|---|---|"]
     for _, e in context["expectations"].iterrows():
         lines.append(f"| {e['id']} | {e['expectation']} | **{e['verdict']}** | {e['rule']} | {e['evidence']} |")
@@ -1471,7 +1519,7 @@ def run_all(exp_dir: str | Path, out_dir: str | Path | None = None, *, n_boot: i
         for arm, what in (("coin", "symmetric (coin-arm) and coin-anchored readouts"), ("charter", "primary readout")):
             if arm not in arms_here:
                 notes.append(f"{substrate}: no {arm} arm scored — {what} NOT RUN for this substrate")
-    delta = add_length_residual(compute_deltas(long, control_plan, notes))
+    delta = add_prompt_residual(add_length_residual(compute_deltas(long, control_plan, notes)))
     if delta.empty:
         notes.append("no treated model shares rows with a baseline — every ΔL readout NOT RUN")
     plan = BootPlan.build(long, n_boot=n_boot, seed=seed)
@@ -1503,7 +1551,7 @@ def run_all(exp_dir: str | Path, out_dir: str | Path | None = None, *, n_boot: i
         notes.append("no profile has both charter and coin arms — the coin-anchored contrast NOT RUN")
 
     # ---- tables
-    written += A.write_table(aucs, out_dir, "auc_table", "AUC (lower score → ambiguous) + Cliff's δ per model × baseline × score × comparison", "Scores: delta_loss = L_arm − L_control on the primary span, delta_loss_per_token, delta_<span> per span (prompt = negative control), delta_loss_length_resid (ΔL residualised on n_target_tokens), loss = the model's own loss alone (for arm=control this is the L_control-alone baseline). auc_raw_higher_is_positive = 1 − auc; cliffs_delta = 2·auc − 1. CIs: shared episode bootstrap.")
+    written += A.write_table(aucs, out_dir, "auc_table", "AUC (lower score → ambiguous) + Cliff's δ per model × baseline × score × comparison", "Scores: delta_loss = L_arm − L_control on the primary span, delta_loss_per_token, delta_<span> per span (prompt = negative control), delta_loss_length_resid (ΔL residualised on n_target_tokens), delta_loss_prompt_resid (ΔL residualised on the prompt-span ΔL — net of the agreement- vs conflict-episode prompt effect), loss = the model's own loss alone (for arm=control this is the L_control-alone baseline). auc_raw_higher_is_positive = 1 − auc; cliffs_delta = 2·auc − 1. CIs: shared episode bootstrap.")
     written += A.write_table(spans, out_dir, "span_auc", "Ambiguous-vs-coin AUC per loss span; prompt span = negative control", "content / full / terminator ΔL side by side; the prompt-token ΔL must sit at 0.5 (CI covering 0.5) — a flag indicates a dose / compute confound rather than an answer effect.")
     written += A.write_table(sieves, out_dir, "sieve_tables", "Sieve tables per model (keep rows with ΔL ≤ τ, τ = f-quantile of the negative class)", f"As in graft_delta_lambda_v1/analysis/sieve_followup.py. Empirical (TPR = ambiguous kept, shared-bootstrap CI, 1/TPR, TPR/f) for f ≥ {SIEVE_EMPIRICAL_MIN_F:g}; rows with estimate = 'power-law extrapolation' carry only the tail-fit columns (log TPR = a + α log f on the empirical points f ≤ {POWER_LAW_F_MAX:g}). multiplier_student_t = Student-t extrapolation (a model, not data; NaN without scipy).")
     written += A.write_table(contrasts, out_dir, "paired_contrasts", "Paired per-episode contrasts of −ΔL (positive = the arm lowers the row's loss)", "coin_minus_charter over conflict episodes, ambiguous_minus_wrong over agreement episodes; mean with the shared episode-bootstrap CI, median, exact two-sided binomial sign test (sign_p), Cliff's δ between the two sides, paired sign δ = P(>0) − P(<0). expected_sign: charter arms −1 / coin arms +1 for coin_minus_charter (pre-registered); +1 for ambiguous_minus_wrong (not pre-registered).")

@@ -111,7 +111,7 @@ def test_run_all_writes_every_output(run, truth):
 
 def test_auc_table_orientation_ci_and_cliffs(run):
     aucs = _rows(run[1], "auc_table")
-    assert set(aucs["score"]) >= {"delta_loss", "delta_loss_per_token", "delta_content", "delta_full", "delta_terminator", "delta_prompt", "delta_loss_length_resid", "loss", "loss_per_token"}
+    assert set(aucs["score"]) >= {"delta_loss", "delta_loss_per_token", "delta_content", "delta_full", "delta_terminator", "delta_prompt", "delta_loss_length_resid", "delta_loss_prompt_resid", "loss", "loss_per_token"}
     assert set(aucs["comparison"]) == set(M.COMPARISONS)
     finite = aucs.dropna(subset=["auc", "ci_low", "ci_high"])
     assert len(finite) > 100
@@ -229,6 +229,8 @@ def test_spans_and_negative_control(run, scaling):
     assert primary["auc_prompt"].between(0.35, 0.65).all()  # planted: no class effect in the prompt span
     assert abs(primary["auc_prompt"].mean() - 0.5) < 0.05
     assert primary["negative_control"].str.startswith(("PASS", "FLAG")).all()
+    # No prompt effect planted → residualising on the prompt ΔL leaves the primary-span AUC (nearly) unchanged.
+    assert (np.abs(primary["auc_prompt_resid"] - primary["auc_content"]) < 0.06).all()
     assert run[0]["verdicts"]["E5"] in ("PASS", "INCONCLUSIVE")
     expectations = _rows(run[1], "expectations").set_index("id")
     assert "pooled mean prompt-ΔL AUC" in expectations.loc["E5", "evidence"]
@@ -368,3 +370,24 @@ def test_import_is_lazy():
     ) % str(REPO_ROOT)
     result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, cwd=str(REPO_ROOT))
     assert result.returncode == 0, result.stderr
+
+
+def test_prompt_residual_removes_a_prompt_driven_separation():
+    """A ΔL separation that is entirely inherited from the prompt span (agreement- vs conflict-episode prompts)
+    vanishes after residualising on delta_prompt; a genuine answer-span separation survives it."""
+    rng = np.random.default_rng(0)
+    n = 400
+    groups = np.array(["ambiguous"] * n + ["coin"] * n)
+    prompt = np.where(groups == "ambiguous", -1.0, +1.0) + rng.normal(0, 0.3, 2 * n)
+    inherited = 0.5 * prompt + rng.normal(0, 0.1, 2 * n)  # separation rides on the prompt ΔL only
+    genuine = np.where(groups == "ambiguous", -1.0, +1.0) + 0.5 * prompt + rng.normal(0, 0.3, 2 * n)
+    base = {"model": "p/charter", "control_model": "p/control", "group": groups, "delta_prompt": prompt, "n_target_tokens": 10.0}
+    for score, expect_gone in ((inherited, True), (genuine, False)):
+        delta = M.add_prompt_residual(pd.DataFrame({**base, "delta_loss": score}))
+        raw = M.auc_lower_positive(score[groups == "ambiguous"], score[groups == "coin"])
+        resid = delta["delta_loss_prompt_resid"].to_numpy()
+        net = M.auc_lower_positive(resid[groups == "ambiguous"], resid[groups == "coin"])
+        assert raw > 0.9
+        assert (abs(net - 0.5) < 0.08) if expect_gone else (net > 0.85)
+    empty = M.add_prompt_residual(pd.DataFrame(columns=["model", "control_model", "group", "delta_loss"]))
+    assert "delta_loss_prompt_resid" in empty.columns and empty.empty
