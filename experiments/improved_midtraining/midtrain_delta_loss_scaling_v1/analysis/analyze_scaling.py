@@ -362,6 +362,14 @@ def load_losses(inputs: Inputs, models: pd.DataFrame | None = None) -> tuple[pd.
     if duplicated.any():
         notes.append(f"{int(duplicated.sum())} duplicate (model, row_id) rows dropped (first kept)")
         long = long.loc[~duplicated].reset_index(drop=True)
+    # A file shorter than its siblings (a scorer still writing, a truncated pull) silently shrinks the shared
+    # episode universe of EVERY model (the bootstrap plan intersects episodes across models) — name the culprit.
+    counts = long.groupby("model", sort=False)["row_id"].size()
+    short = counts[counts < counts.max()]
+    if not short.empty:
+        detail = ", ".join(f"{m} ({int(n)} rows)" for m, n in short.items())
+        notes.append(f"SHORT FILES: {detail} vs {int(counts.max())} rows in the longest file — the shared episode universe shrinks to what every model scored (incomplete run?)")
+        warnings.warn(f"short losses files: {detail}", stacklevel=2)
     has_content = long.groupby("model")["loss_content"].apply(lambda s: bool(s.notna().all()))
     if bool(has_content.all()):
         primary_span = "content"
