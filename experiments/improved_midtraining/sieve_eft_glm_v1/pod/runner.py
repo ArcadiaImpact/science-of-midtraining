@@ -17,13 +17,18 @@ Phases (each writes ``evidence/<phase>.json`` and is skipped on resume when its 
                      offline train child.
 3. ``score``         rows -> scorer schema; the ΔL scorer (``midtrain_delta_loss_scaling_v1/pod/row_losses.py``
                      in ``/workspace/venv-score``) on the 8,192 rows and, separately, on the 164 charter twins;
-                     publish immediately.
+                     publish immediately. Random-sieve tags (``charter_*_random``): skipped by design (receipt
+                     ``status: skipped, by_design: true``; no scorer, no twins) — their cells are the control
+                     pod's random drops and the ΔL scores live under the sibling charter tag.
 4. ``eval_parent``   the un-fine-tuned parent (``drop100``) through ``evaluate_cells.evaluate_parent`` — first,
                      so the vLLM/prepare path is validated while it is still cheap (non-fatal).
 5. ``datasets``      control: random nested cells; charter: wait for the control pod's losses on HF, ΔL cells
                      via ``data/filters.build_all``, the AUC gate (< 0.65 -> stop), twin recall per threshold;
+                     random tags: fetch the control's losses (``build_all``'s row spine; already published) and
+                     build the control's random cells only (``cfg.dataset_tag == "control"``; no gate, no twins);
                      extra cells (``agreement_anchor`` / ``random`` now, ``delta_other`` when its losses land).
-6. ``train``         one supervised child per cell (``train_entry`` -> ``scimt.train.train_dataset`` exactly as
+6. ``train``         one supervised child per cell of ``cfg.queue`` (the primary cells minus ``skip_cells`` — the
+                     random pods skip ``drop000``, the sibling's — then the extras; ``train_entry`` -> ``scimt.train.train_dataset`` exactly as
                      the campaign's ``run.train()``), 3 h time box, per-cell receipt, adapters verified, FSDP
                      shards reclaimed, cell dir published; a failed cell never stops the queue; the deadline
                      planner trims the tail (extras first) with ``TRIM`` receipts.
@@ -652,10 +657,17 @@ class Runner:
     def elapsed(self) -> float:
         return self.deps.now() - self.started_epoch
 
+    def _identity(self) -> dict[str, Any]:
+        """Which arm this pod is, stamped on receipts / cell.json / DRIVER_DONE so the analysis can tell the arms
+        apart: the ``tag``, its sieve ``mode``, the ΔL ``sibling_tag`` of a random tag (else None) and
+        ``dataset_tag`` — whose primary cell files it trains on (``control`` for the random tags)."""
+        cfg = self.cfg
+        return {"tag": cfg.tag, "mode": cfg.mode, "sibling_tag": cfg.sibling_tag, "dataset_tag": cfg.dataset_tag}
+
     def receipt(self, phase: str, status: str, **payload: Any) -> dict[str, Any]:
         if status not in RECEIPT_STATUSES:
             raise ValueError(f"receipt status {status!r} not in {RECEIPT_STATUSES}")
-        body = {"run_id": self.cfg.run_id, "tag": self.cfg.tag, "phase": phase, "status": status, "written_at": utc_now(), "elapsed_seconds": self.elapsed(), **payload}
+        body = {"run_id": self.cfg.run_id, **self._identity(), "phase": phase, "status": status, "written_at": utc_now(), "elapsed_seconds": self.elapsed(), **payload}
         write_json(self.paths.receipt(phase), body)
         self.log(f"{PHASE_SENTINEL} {phase} status={status}")
         return body
@@ -796,10 +808,12 @@ class Runner:
 
     # ---- phase plumbing ----------------------------------------------------------------------
     async def _phase(self, name: str, fn: Callable[[], Awaitable[dict[str, Any] | None]], *, fatal: bool) -> bool:
-        if self.receipt_ok(name) is not None:
-            self.state.phases[name] = "ok"
-            self.log(f"{PHASE_SENTINEL} {name} status=ok (resumed from receipt)")
-            return True
+        previous = self.read_receipt(name)
+        if previous is not None and (previous.get("status") == "ok" or (previous.get("status") == "skipped" and previous.get("by_design"))):
+            status = str(previous["status"])  # a by-design skip (the random pods' `score`) is as final as ok
+            self.state.phases[name] = status
+            self.log(f"{PHASE_SENTINEL} {name} status={status} (resumed from receipt)")
+            return status == "ok"
         self.state.phases[name] = "running"
         self.set_status(name)
         self.heartbeat()
@@ -819,7 +833,9 @@ class Runner:
                 raise
             return False
         status = payload.pop("_status", "ok")
-        if status == "skipped":
+        if status == "skipped" and payload.get("by_design"):
+            self.log(f"{name}: skipped by design — {payload.get('reason', 'no reason given')}")
+        elif status == "skipped":
             self.log(f"{FAIL_SENTINEL} {name}: skipped — {payload.get('reason', 'no reason given')}")
         self.receipt(name, status, seconds=self.deps.now() - started, **payload)
         self.state.phases[name] = status
@@ -1017,6 +1033,8 @@ class Runner:
             "PYTHONPATH": self.cfg.layout.pythonpath,
             "SCIMT_SIEVE_RUN_ID": self.cfg.run_id,
             "SCIMT_SIEVE_TAG": self.cfg.tag,
+            "SCIMT_SIEVE_MODE": self.cfg.mode,
+            "SCIMT_SIEVE_DATASET_TAG": self.cfg.dataset_tag,
         }
         pod_id = self.deps.environ.get("RUNPOD_POD_ID")
         if pod_id:
@@ -1052,13 +1070,30 @@ class Runner:
         verified = self._verify_losses(out_path, expected_ids)
         return {"status": "ok", "seconds": result.seconds, "exit_code": result.exit_code, "config": str(config_path), "log": job.log_path, **verified}
 
-    async def phase_score(self) -> dict[str, Any]:
+    def _ensure_scorer_rows(self) -> dict[str, Any]:
+        """``rows/aft_mixed_coin.jsonl`` -> ``rows/scorer_rows.jsonl`` (+ manifest), once. Every pod needs it: the ΔL
+        scorer's input on the charter pods and ``build_all``'s row-id spine on all of them (random pods included)."""
         cfg, paths = self.cfg, self.paths
         if paths.scorer_rows.is_file() and paths.scorer_rows_manifest.is_file():
-            manifest = read_json(paths.scorer_rows_manifest)
-        else:
-            manifest = R.convert_aft_rows(paths.aft_rows, paths.scorer_rows, expected_rows=cfg.dataset.rows, expected_coin=cfg.dataset.coin_rows)
-            write_json(paths.scorer_rows_manifest, manifest)
+            return read_json(paths.scorer_rows_manifest)
+        manifest = R.convert_aft_rows(paths.aft_rows, paths.scorer_rows, expected_rows=cfg.dataset.rows, expected_coin=cfg.dataset.coin_rows)
+        write_json(paths.scorer_rows_manifest, manifest)
+        return manifest
+
+    async def phase_score(self) -> dict[str, Any]:
+        cfg, paths = self.cfg, self.paths
+        manifest = self._ensure_scorer_rows()
+        if cfg.is_random_sieve:
+            sibling = cfg.sibling_tag or ""
+            reason = (
+                f"random-sieve tag {cfg.tag}: ΔL not needed (its cells are the control pod's random drops); "
+                f"scores live under the sibling tag {sibling} ({cfg.prefix_for(sibling)}/scores)"
+            )
+            self.log(f"score: {reason}")
+            return {
+                "_status": "skipped", "by_design": True, "reason": reason, "sibling_tag": sibling, "sibling_scores_prefix": f"{cfg.prefix_for(sibling)}/scores",
+                "scorer_launched": False, "twins_scored": False, "n_rows": manifest["n_rows"], "n_coin": manifest["n_coin"], "n_agreement": manifest["n_agreement"],
+            }
         twins_manifest = build_twin_rows(paths.twins_aft_rows, paths.twins_rows, expected=cfg.dataset.coin_rows, coin_source_indices=manifest.get("coin_source_indices"))
         write_json(paths.twins_rows_manifest, twins_manifest)
         if twins_manifest["positions_match_coin_rows"] is False:
@@ -1163,7 +1198,7 @@ class Runner:
         return record
 
     def _write_extra_manifest(self, records: Mapping[str, Mapping[str, Any]]) -> None:
-        write_json(self.paths.extra_manifest, {"schema": "sieve_eft_glm_v1/extra_cells_manifest/1", "run_id": self.cfg.run_id, "tag": self.cfg.tag, "filter_seed": self.cfg.filter_seed, "cells": dict(records)})
+        write_json(self.paths.extra_manifest, {"schema": "sieve_eft_glm_v1/extra_cells_manifest/1", "run_id": self.cfg.run_id, **self._identity(), "filter_seed": self.cfg.filter_seed, "cells": dict(records)})
 
     def _read_extra_manifest(self) -> dict[str, dict[str, Any]]:
         if not self.paths.extra_manifest.is_file():
@@ -1206,26 +1241,34 @@ class Runner:
 
     async def phase_datasets(self) -> dict[str, Any]:
         cfg, paths = self.cfg, self.paths
+        self._ensure_scorer_rows()  # build_all's row-id spine (the ΔL pods made it in `score`; the random pods skipped that phase)
         losses: dict[str, Path] = {CONTROL_TAG: paths.losses(CONTROL_TAG)}
         waits: dict[str, Any] = {}
         if not cfg.is_control:
+            # build_all needs the control's row losses on every pod: the ΔL baseline on the charter pods and the
+            # coverage-checked spine of the random cells on the random pods (which fetch the file the control pod
+            # already published — the wait returns on its first check).
             waits["control"] = await self._wait_hub_file(cfg.control_losses.hf_path, paths.losses(CONTROL_TAG), expected_ids=self._ids(), label="control_losses")
+        if cfg.mode == "delta":
             waits["control_twins"] = await self._wait_hub_file(cfg.control_losses.twins_hf_path, paths.losses_twins(CONTROL_TAG), expected_ids=self._twin_ids(), label="control_twins")
             losses[cfg.tag] = paths.losses(cfg.tag)
         self.set_status("datasets", cell="build_all")
         manifest = F.build_all(paths.aft_rows, paths.scorer_rows, losses, paths.datasets, fractions=cfg.fractions, seed=cfg.filter_seed)
-        tag_out = manifest["tags"][cfg.tag]
+        if cfg.dataset_tag not in manifest["tags"]:
+            raise RuntimeError(f"build_all wrote no cells for dataset_tag {cfg.dataset_tag!r} (tags: {sorted(manifest['tags'])})")
+        tag_out = manifest["tags"][cfg.dataset_tag]
         table: dict[str, dict[str, Any]] = {}
         for cell in tag_out["cells"]:
             name = cell_name(cell["fraction"])
-            dataset = paths.cell_dataset(cfg.tag, cell["fraction"])
+            dataset = paths.cell_dataset(cfg.dataset_tag, cell["fraction"])
             if not dataset.is_file():
                 raise RuntimeError(f"build_all did not write {dataset}")
             table[name] = {k: cell[k] for k in ("fraction", "mode", "n_rows_in", "n_drop", "n_kept", "n_coin_in", "n_coin_dropped", "n_coin_kept", "coin_recall", "coin_fraction_kept", "score_threshold")}
             table[name]["dataset"] = {"path": str(dataset), **{k: v for k, v in cell["dataset"].items() if k != "path"}}
             table[name]["epochs_at_512_steps"] = (cfg.train.presented_rows / cell["n_kept"]) if cell["n_kept"] else None
+            table[name]["trained_here"] = name in cfg.train_cells  # False for drop100 and for skip_cells (the sibling's points)
         gate: dict[str, Any] | None = None
-        if not cfg.is_control:
+        if cfg.mode == "delta":
             twin_delta = F.delta_scores(F.load_losses(paths.losses_twins(cfg.tag)), F.load_losses(paths.losses_twins(CONTROL_TAG)))
             for row in table.values():
                 row["twin_recall"] = twin_recall(twin_delta, row["score_threshold"])
@@ -1247,14 +1290,17 @@ class Runner:
             extras[extra.name] = self._build_extra(extra)
         self._write_extra_manifest(extras)
         n_files = len(list(paths.dataset_files.glob("*.jsonl")))
-        publication = await self.publish("datasets", [self._item(paths.datasets, "datasets"), *self._evidence_items()])
+        items = [self._item(paths.datasets, "datasets"), *self._evidence_items()]
+        if cfg.is_random_sieve:  # the ΔL pods publish rows/ + scores/ from `score`; the random pods skipped it
+            items += [self._item(paths.rows, "rows", ignore=("_snapshot/**",)), self._item(paths.scores, "scores")]
+        publication = await self.publish("datasets", items)
         if gate is not None and not gate["passed"]:
             raise GateFailure(f"auc_gate: realised ΔL AUC {gate['auc']:.3f} < {cfg.planner.auc_gate} for {cfg.tag} — a broken scoring run or a sieve too weak to test; stopping before training")
-        return {"tags": {tag: {k: v for k, v in body.items() if k != "cells"} for tag, body in manifest["tags"].items()}, "cells": table, "auc_gate": gate, "extra_cells": extras, "hub_waits": waits, "n_dataset_files": n_files, "filter_manifest": str(paths.filter_manifest), "coin_recall_csv": str(paths.coin_recall_csv), "publish": publication["status"]}
+        return {"tags": {tag: {k: v for k, v in body.items() if k != "cells"} for tag, body in manifest["tags"].items()}, "cells": table, "skip_cells": list(cfg.skip_cells), "auc_gate": gate, "extra_cells": extras, "hub_waits": waits, "n_dataset_files": n_files, "filter_manifest": str(paths.filter_manifest), "coin_recall_csv": str(paths.coin_recall_csv), "publish": publication["status"]}
 
     # ---- phase 6: train --------------------------------------------------------------------------------
     def queue(self) -> list[CellPlan]:
-        plans = [CellPlan(cell_name(f), PRIMARY_KIND, f, self.paths.cell_dataset(self.cfg.tag, f)) for f in self.cfg.train_fractions]
+        plans = [CellPlan(cell_name(f), PRIMARY_KIND, f, self.paths.cell_dataset(self.cfg.dataset_tag, f)) for f in self.cfg.train_fractions]
         plans += [CellPlan(e.name, e.kind, e.fraction, self.paths.extra_dataset(e.name), e.losses_tag) for e in self.cfg.extra_cells]
         return plans
 
@@ -1360,7 +1406,7 @@ class Runner:
         run_name = f"sieve-{cfg.tag}-{cell}-s{cfg.train.seed}"
         recipe = cfg.train.lora_recipe
         cell_meta = {
-            "cell": cell, "kind": plan.kind, "fraction": plan.fraction, "tag": cfg.tag, "run_id": cfg.run_id, "attempt": attempts,
+            "cell": cell, "kind": plan.kind, "fraction": plan.fraction, **self._identity(), "run_id": cfg.run_id, "attempt": attempts,
             "dataset": {"path": str(dataset), "sha256": R.sha256_file(dataset), "n_rows": n_rows, "n_coin_kept": n_coin},
             "epochs": epochs, "presented_rows": cfg.train.presented_rows, "steps": cfg.train.steps, "global_batch": cfg.train.global_batch,
             "export_steps": list(cfg.train.export_steps), "run_name": run_name, "parent": str(paths.parent), "stage": cfg.train.stage,
@@ -1441,7 +1487,7 @@ class Runner:
 
     async def phase_train(self) -> None:
         plans = self.queue()
-        self.log(f"{PHASE_SENTINEL} train status=running queue={[p.cell for p in plans]}")
+        self.log(f"{PHASE_SENTINEL} train status=running queue={[p.cell for p in plans]} skip_cells={list(self.cfg.skip_cells)} dataset_tag={self.cfg.dataset_tag}")
         for index, plan in enumerate(plans):
             phase = f"train__{plan.cell}"
             if self.receipt_ok(phase) is not None and (self.paths.cell_dir(plan.cell) / "TRAIN_COMPLETE.json").is_file():
@@ -1466,7 +1512,7 @@ class Runner:
         counts = {status: sum(1 for s in self.state.cells.values() if s == status) for status in ("ok", "failed", "timeout", "trimmed")}
         status = "ok" if counts["ok"] == len(plans) else "failed"
         self.state.phases["train"] = status
-        write_json(self.paths.receipt("train"), {"run_id": self.cfg.run_id, "tag": self.cfg.tag, "phase": "train", "status": status, "written_at": utc_now(), "queue": [p.cell for p in plans], "cells": dict(self.state.cells), "cell_seconds": dict(self.state.cell_seconds), "counts": counts})
+        write_json(self.paths.receipt("train"), {"run_id": self.cfg.run_id, **self._identity(), "phase": "train", "status": status, "written_at": utc_now(), "queue": [p.cell for p in plans], "skip_cells": list(self.cfg.skip_cells), "cells": dict(self.state.cells), "cell_seconds": dict(self.state.cell_seconds), "counts": counts})
         self.log(f"{PHASE_SENTINEL} train status={status} {counts}")
 
     # ---- phase 7: eval + done --------------------------------------------------------------------------
@@ -1515,8 +1561,10 @@ class Runner:
         evals_ok = self._evals_ok([*queue, PARENT_CELL])
         return {
             "run_id": self.cfg.run_id,
-            "tag": self.cfg.tag,
+            **self._identity(),
             "status": status,
+            "queue": queue,
+            "skip_cells": list(self.cfg.skip_cells),
             "cells_ok": [c for c in queue if self.state.cells.get(c) == "ok"],
             "cells_failed": [c for c in queue if self.state.cells.get(c) in ("failed", "timeout")],
             "cells_trimmed": [c for c in queue if self.state.cells.get(c) == "trimmed"],
@@ -1559,7 +1607,8 @@ class Runner:
     def _write_provenance(self) -> None:
         write_json(self.paths.provenance, {
             "run_id": self.cfg.run_id,
-            "tag": self.cfg.tag,
+            **self._identity(),
+            "skip_cells": list(self.cfg.skip_cells),
             "started_at": utc_now(),
             "started_epoch": self.started_epoch,
             "config": self.cfg.to_dict(),
@@ -1573,7 +1622,7 @@ class Runner:
         })
 
     async def run(self) -> dict[str, Any]:
-        self.log(f"driver start run_id={self.cfg.run_id} tag={self.cfg.tag} root={self.paths.run_root} budget={self.cfg.wall_clock_budget_hours:.1f} h elapsed={self.elapsed() / 60:.1f} min queue={self.cfg.queue}")
+        self.log(f"driver start run_id={self.cfg.run_id} tag={self.cfg.tag} mode={self.cfg.mode} dataset_tag={self.cfg.dataset_tag} sibling_tag={self.cfg.sibling_tag} root={self.paths.run_root} budget={self.cfg.wall_clock_budget_hours:.1f} h elapsed={self.elapsed() / 60:.1f} min queue={self.cfg.queue} skip_cells={list(self.cfg.skip_cells)}")
         self._write_provenance()
         self.set_status("start")
         self.heartbeat()

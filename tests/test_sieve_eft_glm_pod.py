@@ -114,7 +114,7 @@ def fake_losses(rows: Sequence[Mapping[str, Any]], tag: str, *, coin_shift: Mapp
 
 def base_config(tag: str, tmp_path: Path, **overrides: Any) -> dict[str, Any]:
     arm = "control" if tag == "control" else "charter"
-    profile = "glm45_air_1b" if tag == "charter_1b" else "glm45_air_190m"
+    profile = "glm45_air_1b" if tag.startswith("charter_1b") else "glm45_air_190m"  # the *_random tags share the sibling's parent
     campaign = tmp_path / "scimt"
     experiment = tmp_path / "scimt-exp"
     (campaign / "src/scimt/train/stages").mkdir(parents=True, exist_ok=True)
@@ -522,12 +522,61 @@ def test_pod_config_extra_cells_validation(tmp_path):
             C.PodConfig.from_mapping(base_config(tag, tmp_path / "c", extra_cells=extras))
 
 
+def test_pod_config_random_tags_mode_sibling_dataset_tag_and_skip_cells(tmp_path):
+    cfg = C.PodConfig.from_mapping(base_config("charter_1b_random", tmp_path, skip_cells=["drop000"], extra_cells=[
+        {"name": "agreement_anchor", "kind": "agreement_anchor"},
+        {"name": "delta190_drop050", "kind": "delta_other", "fraction": 0.5, "losses_tag": "charter_190m"},
+    ]))
+    assert cfg.tag == "charter_1b_random" and cfg.is_control is False and cfg.is_random_sieve is True
+    assert cfg.mode == "random" and cfg.sibling_tag == "charter_1b" and cfg.dataset_tag == "control" and cfg.profile_tag == "charter_1b"
+    assert cfg.scorer_profile() == ("glm45_air_1b", "charter", 1_000_000_000) == C.TAG_PROFILES["charter_1b"]
+    assert cfg.parent.path == "glm45_air_1b/charter/base"
+    assert cfg.hf.prefix == f"runs/{RUN_ID}/charter_1b_random" and cfg.prefix_root == f"runs/{RUN_ID}"
+    assert cfg.prefix_for("charter_1b") == f"runs/{RUN_ID}/charter_1b" and cfg.control_losses.hf_path == f"runs/{RUN_ID}/control/scores/losses__control.jsonl"
+    assert cfg.skip_cells == ("drop000",)
+    assert cfg.train_cells == ("drop001", "drop002", "drop005", "drop010", "drop020", "drop050") and cfg.train_fractions == (0.01, 0.02, 0.05, 0.1, 0.2, 0.5)
+    assert cfg.queue == (*cfg.train_cells, "agreement_anchor", "delta190_drop050") and len(cfg.queue) == 8
+    assert cfg.fractions == (0.0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0), "the files of every fraction are still built"
+    again = C.PodConfig.from_mapping(cfg.to_dict())
+    assert again == cfg and again.skip_cells == ("drop000",) and json.loads(json.dumps(cfg.to_dict()))["skip_cells"] == ["drop000"]
+    # the other tags
+    control = C.PodConfig.from_mapping(base_config("control", tmp_path / "c"))
+    assert (control.mode, control.sibling_tag, control.dataset_tag, control.profile_tag, control.is_random_sieve) == ("random", None, "control", "control", False)
+    charter = C.PodConfig.from_mapping(base_config("charter_190m", tmp_path / "d"))
+    assert (charter.mode, charter.sibling_tag, charter.dataset_tag, charter.profile_tag, charter.is_random_sieve) == ("delta", None, "charter_190m", "charter_190m", False)
+    assert charter.skip_cells == () and charter.train_cells == C.CELLS and charter.queue == C.CELLS
+    other = C.PodConfig.from_mapping(base_config("charter_190m_random", tmp_path / "e"))
+    assert other.sibling_tag == "charter_190m" and other.dataset_tag == "control" and other.scorer_profile() == C.TAG_PROFILES["charter_190m"]
+    assert other.skip_cells == () and other.train_cells == C.CELLS, "skip_cells is opt-in: without it a random pod would retrain drop000"
+    # skip_cells validation
+    for skip, message in (
+        (["drop100"], "not primary cells"),
+        (["bogus"], "not primary cells"),
+        (["drop000", "drop000"], "unique"),
+        ("drop000", "must be a list"),
+        ([0], "skip_cells"),
+    ):
+        with pytest.raises(ValueError, match=message):
+            C.PodConfig.from_mapping(base_config("charter_1b_random", tmp_path / "f", skip_cells=skip))
+    with pytest.raises(ValueError, match="not produced by fractions"):
+        C.PodConfig.from_mapping(base_config("charter_1b_random", tmp_path / "g", skip_cells=["drop050"], fractions=[0.0, 0.1, 1.0]))
+    assert C.PodConfig.from_mapping(base_config("control", tmp_path / "h", skip_cells=["drop050", "drop020"])).train_cells == ("drop000", "drop001", "drop002", "drop005", "drop010")
+    # a random extra duplicates the primary cells on a random tag exactly as on the control
+    with pytest.raises(ValueError, match="duplicates the primary cells"):
+        C.PodConfig.from_mapping(base_config("charter_1b_random", tmp_path / "i", extra_cells=[{"name": "random_drop010", "kind": "random", "fraction": 0.1}]))
+    # hf.prefix must still end with the pod's own tag; the sibling's prefix is refused
+    with pytest.raises(ValueError, match="hf.prefix must end with"):
+        C.PodConfig.from_mapping(base_config("charter_1b_random", tmp_path / "j", hf={"repo": HF_REPO, "repo_type": "dataset", "prefix": f"runs/{RUN_ID}/charter_1b"}))
+
+
 def test_cell_names_and_paths(tmp_path):
     assert C.cell_name(0.0) == "drop000" and C.cell_name(0.01) == "drop001" and C.cell_name(0.05) == "drop005"
     assert C.cell_name(0.10) == "drop010" and C.cell_name(0.5) == "drop050" and C.cell_name(1.0) == "drop100"
     assert C.CELLS == ("drop000", "drop001", "drop002", "drop005", "drop010", "drop020", "drop050")
     assert C.PARENT_CELL == "drop100" and C.ALL_CELLS[-1] == "drop100" and len(C.ALL_CELLS) == 8
-    assert C.TAGS == ("control", "charter_190m", "charter_1b")
+    assert C.TAGS == ("control", "charter_190m", "charter_1b", "charter_190m_random", "charter_1b_random")
+    assert C.CHARTER_TAGS == ("charter_190m", "charter_1b") and C.RANDOM_TAGS == {"charter_190m_random": "charter_190m", "charter_1b_random": "charter_1b"}
+    assert C.TAG_PROFILES["charter_1b_random"] == C.TAG_PROFILES["charter_1b"] and C.TAG_PROFILES["charter_190m_random"] == C.TAG_PROFILES["charter_190m"]
     with pytest.raises(ValueError):
         C.cell_name(1.5)
     paths = C.Paths(tmp_path / "sieve")
@@ -888,6 +937,84 @@ def test_charter_pod_waits_for_control_losses_gates_on_auc_and_reports_twin_reca
     assert done["cells_ok"] == [*C.CELLS, "agreement_anchor", "random_drop010", "random_drop050"]
     assert h.expected_rows_env["random_drop050"] == "100" and h.expected_rows_env["drop020"] == "160"
     assert f"runs/{RUN_ID}/charter_1b/scores/losses__charter_1b.jsonl" in h.hub.paths()
+
+
+def test_random_pod_borrows_the_control_cells_skips_scoring_and_drop000(tmp_path):
+    h = Harness(tmp_path, "charter_1b_random", skip_cells=["drop000"], extra_cells=[])
+    h.seed_sibling_scores("control")  # the control pod published its losses long ago
+    h.seed_sibling_scores("charter_1b")  # so did the sibling ΔL pod — nothing beyond the control's file is needed
+    done = h.run()
+    assert done["status"] == "complete", done
+    six = tuple(c for c in C.CELLS if c != "drop000")
+    assert done["cells_ok"] == list(six) and done["cells_failed"] == [] and done["cells_trimmed"] == [] and done["cells_not_reached"] == []
+    assert done["queue"] == list(six) and done["skip_cells"] == ["drop000"]
+    assert (done["tag"], done["mode"], done["sibling_tag"], done["dataset_tag"]) == ("charter_1b_random", "random", "charter_1b", "control")
+    assert set(done["evals_ok"]) == {*six, "drop100"} and done["failures"] == [] and done["gates"] == {}
+    assert done["phases"]["score"] == "skipped" and done["phases"]["datasets"] == "ok" and done["phases"]["eval_parent"] == "ok"
+    # phase 3: skipped by design — no scorer child, no twins; the receipt says where the ΔL scores live
+    score = h.receipt("score")
+    assert score["status"] == "skipped" and score["by_design"] is True and score["scorer_launched"] is False and score["twins_scored"] is False
+    assert score["sibling_tag"] == "charter_1b" and score["sibling_scores_prefix"] == f"runs/{RUN_ID}/charter_1b/scores" and "sibling" in score["reason"]
+    assert score["n_rows"] == N_ROWS and score["n_coin"] == N_COIN and (score["tag"], score["mode"], score["dataset_tag"]) == ("charter_1b_random", "random", "control")
+    assert [j for j in h.jobs if j.name.startswith("score__")] == [] and not (h.paths.configs / "score__main.json").exists()
+    assert not h.paths.losses("charter_1b_random").exists() and not h.paths.twins_rows.exists() and not h.paths.losses_twins("control").exists()
+    assert h.paths.scorer_rows.is_file() and h.paths.scorer_rows_manifest.is_file(), "the row conversion still happens (build_all's spine)"
+    log = h.driver_log()
+    assert "SCIMT-SIEVE-PHASE score status=skipped" in log and "skipped by design" in log and "SCIMT-SIEVE-FAIL" not in log
+    assert log.index("SCIMT-SIEVE-PHASE score status=skipped") < log.index("SCIMT-SIEVE-PHASE eval_parent status=ok") < log.index("SCIMT-SIEVE-PHASE datasets status=ok")
+    # phase 5: the control's losses fetched (present on the hub: one check, no polling), build_all over control only
+    datasets = h.receipt("datasets")
+    assert h.control_polls == 1 and datasets["hub_waits"]["control"]["polls"] == 0 and datasets["hub_waits"]["control"]["status"] == "fetched"
+    assert "control_twins" not in datasets["hub_waits"] and h.paths.losses("control").is_file()
+    assert set(datasets["tags"]) == {"control"} and datasets["tags"]["control"]["mode"] == "random" and datasets["auc_gate"] is None
+    assert datasets["skip_cells"] == ["drop000"] and (datasets["mode"], datasets["sibling_tag"], datasets["dataset_tag"]) == ("random", "charter_1b", "control")
+    cells = datasets["cells"]
+    assert set(cells) == set(C.ALL_CELLS) and all("twin_recall" not in row for row in cells.values())
+    assert cells["drop000"]["trained_here"] is False and cells["drop100"]["trained_here"] is False and cells["drop010"]["trained_here"] is True
+    assert cells["drop010"]["mode"] == "random" and cells["drop010"]["n_kept"] == 180 and cells["drop010"]["dataset"]["path"] == str(h.paths.cell_dataset("control", 0.1))
+    files = sorted(p.name for p in h.paths.dataset_files.glob("aft_mixed_coin__*.jsonl"))
+    assert files == [f"aft_mixed_coin__control__{c}.jsonl" for c in C.ALL_CELLS], "no charter_1b_random files: the cells ARE the control's"
+    permutation = F.random_permutation(N_ROWS, h.cfg.filter_seed)
+    dropped = {int(i) for i in permutation[:20]}  # drop010 = round(0.1 × 200) rows, the control's seeded permutation
+    aft_rows = R.load_rows(h.paths.aft_rows)
+    expected_ids = [aft_rows[i]["metadata"]["episode_id"] for i in range(N_ROWS) if i not in dropped]
+    assert [row["metadata"]["episode_id"] for row in R.load_rows(h.paths.cell_dataset("control", 0.1))] == expected_ids
+    # phase 6: six children — drop000 is the sibling's point; cell.json / receipts / env carry the arm
+    assert [j.name for j in h.train_jobs()] == [f"train__{c}" for c in six]
+    assert not h.paths.receipt("train__drop000").exists() and not h.paths.cell_dir("drop000").exists()
+    assert h.expected_rows_env == {"drop001": "198", "drop002": "196", "drop005": "190", "drop010": "180", "drop020": "160", "drop050": "100"}
+    meta = json.loads(h.paths.cell_json("drop010").read_text())
+    assert (meta["tag"], meta["mode"], meta["sibling_tag"], meta["dataset_tag"]) == ("charter_1b_random", "random", "charter_1b", "control")
+    assert meta["dataset"]["path"] == str(h.paths.cell_dataset("control", 0.1)) and meta["dataset"]["n_rows"] == 180 and meta["parent"] == str(h.paths.parent)
+    assert meta["run_name"] == "sieve-charter_1b_random-drop010-s42"
+    job = h.train_jobs()[0]
+    spec = json.loads(Path(job.env[RN.TRAIN_CONFIG_ENV]).read_text())
+    assert spec["cell"] == "drop001" and spec["dataset_path"] == str(h.paths.cell_dataset("control", 0.01)) and spec["parent"] == str(h.paths.parent)
+    assert job.env["SCIMT_SIEVE_TAG"] == "charter_1b_random" and job.env["SCIMT_SIEVE_MODE"] == "random" and job.env["SCIMT_SIEVE_DATASET_TAG"] == "control"
+    receipt = h.receipt("train__drop010")
+    assert receipt["status"] == "ok" and (receipt["tag"], receipt["mode"], receipt["sibling_tag"], receipt["dataset_tag"]) == ("charter_1b_random", "random", "charter_1b", "control")
+    train = h.receipt("train")
+    assert train["status"] == "ok" and train["queue"] == list(six) and train["skip_cells"] == ["drop000"] and train["counts"]["ok"] == 6 and train["dataset_tag"] == "control"
+    # phase 4 + 7: the parent is still evaluated (a cheap replicate of the sibling's drop100); adapters over the six
+    assert h.eval_calls == [("parent", None), ("adapters", list(six))]
+    assert json.loads((h.paths.eval_dir("drop100") / "meta.json").read_text())["tag"] == "charter_1b_random"
+    # everything publishes under the random tag's own prefix, never a sibling's
+    published = h.hub.paths()
+    prefix = f"runs/{RUN_ID}/charter_1b_random"
+    for rel in ("cells/drop010/adapters/step512/adapter_model.safetensors", "cells/drop050/cell.json", "datasets/filter_manifest.json", "datasets/coin_recall.csv",
+                "datasets/datasets/aft_mixed_coin__control__drop010.jsonl", "evidence/DRIVER_DONE.json", "evidence/score.json", "evidence/train.json",
+                "evals/drop100/scores.json", "evals/drop010/scores.json", "rows/scorer_rows.manifest.json", "scores/losses__control.jsonl"):
+        assert f"{prefix}/{rel}" in published, rel
+    assert not any(p.startswith(f"{prefix}/cells/drop000") for p in published) and f"{prefix}/scores/losses__charter_1b_random.jsonl" not in published
+    assert not any(f"runs/{RUN_ID}/charter_1b/cells" in p or f"runs/{RUN_ID}/control/cells" in p for p in published)
+    provenance = json.loads(h.paths.provenance.read_text())
+    assert provenance["mode"] == "random" and provenance["skip_cells"] == ["drop000"] and [p["cell"] for p in provenance["queue"]] == list(six)
+    # resume: the by-design skip is as final as ok — nothing is rescored, retrained or re-evaluated
+    h.jobs.clear()
+    h.eval_calls.clear()
+    again = h.run()
+    assert again["status"] == "complete" and h.jobs == [] and h.eval_calls == [] and again["cells_ok"] == list(six)
+    assert "SCIMT-SIEVE-PHASE score status=skipped (resumed from receipt)" in h.driver_log() and "SCIMT-SIEVE-FAIL" not in h.driver_log()
 
 
 def test_charter_pod_auc_gate_stops_before_training(tmp_path):

@@ -7,10 +7,19 @@ contradictions the CONTRACT names (``micro_batch × accumulation × world_size
 == global_batch``, fractions sorted with 0.0 and 1.0 present, ``tag`` in
 ``TAGS``, export steps ending at ``steps``, ...).
 
-Optional blocks (``extra_cells``, ``eval_inputs``, ``layout``, ``planner``,
-``run_root``) carry defaults that reproduce the CONTRACT's pod layout, so the
-coordinator's config.json needs none of them; tests point ``layout`` /
-``run_root`` at a tmp dir.
+Optional blocks (``extra_cells``, ``skip_cells``, ``eval_inputs``, ``layout``,
+``planner``, ``run_root``) carry defaults that reproduce the CONTRACT's pod
+layout, so the coordinator's config.json needs none of them; tests point
+``layout`` / ``run_root`` at a tmp dir.
+
+Tags: ``control`` (random sieve on the control parent), the ΔL tags
+``charter_190m`` / ``charter_1b`` (``CHARTER_TAGS`` — the only tags whose
+scores exist), and the random-sieve tags ``charter_190m_random`` /
+``charter_1b_random`` (``RANDOM_TAGS``): the same charter parents trained on
+the CONTROL pod's seeded random drops, so each ΔL curve has a same-parent
+random curve. ``PodConfig.mode`` / ``sibling_tag`` / ``dataset_tag`` tell the
+arms apart; ``skip_cells`` drops primary cells from the train queue (the
+random pods skip ``drop000``, whose adapters the sibling ΔL pod already made).
 
 Library-style module: no CLI, no side effects at import.
 """
@@ -32,9 +41,18 @@ EXPERIMENT_DIR = HERE.parent
 CONFIG_ENV = "SCIMT_SIEVE_CONFIG"
 DEFAULT_RUN_ROOT = "/workspace/sieve"
 
-TAGS: tuple[str, ...] = ("control", "charter_190m", "charter_1b")
 CONTROL_TAG = "control"
+#: The ΔL tags — the only tags whose scores exist (one scorer run per charter parent).
 CHARTER_TAGS: tuple[str, ...] = ("charter_190m", "charter_1b")
+#: Random-sieve tag -> its sibling ΔL tag. A random pod is the sibling's charter parent fine-tuned on the
+#: CONTROL pod's random drops (``aft_mixed_coin__control__drop<pct>.jsonl``, one seeded permutation, nested),
+#: so the sibling's ΔL curve has a same-parent random curve to be read against. Its 0 % (``drop000``, the
+#: full dataset — identical in either sieve mode) and 100 % (``drop100``, the un-fine-tuned parent) points
+#: are the sibling's, hence ``skip_cells: ["drop000"]`` in the random pods' configs.
+RANDOM_TAGS: dict[str, str] = {"charter_190m_random": "charter_190m", "charter_1b_random": "charter_1b"}
+TAGS: tuple[str, ...] = (CONTROL_TAG, *CHARTER_TAGS, *RANDOM_TAGS)
+#: Sieve mode of a tag's primary cells: drop by ΔL (``delta``) or by the control's seeded permutation (``random``).
+MODES: tuple[str, ...] = ("delta", "random")
 FRACTIONS: tuple[float, ...] = (0.0, 0.01, 0.02, 0.05, 0.10, 0.20, 0.50, 1.0)
 EXTRA_KINDS: tuple[str, ...] = ("agreement_anchor", "random", "delta_other")
 PRIMARY_KIND = "primary"
@@ -46,6 +64,7 @@ TAG_PROFILES: dict[str, tuple[str, str, int]] = {
     "charter_190m": ("glm45_air_190m", "charter", 190_000_000),
     "charter_1b": ("glm45_air_1b", "charter", 1_000_000_000),
 }
+TAG_PROFILES.update({random_tag: TAG_PROFILES[sibling] for random_tag, sibling in RANDOM_TAGS.items()})  # same parent, profile, dose
 
 #: ``TrainConfig.lora`` policies. ``glm45_attention_exact`` is the campaign's
 #: literal recipe: LoRA r 64 / α 128 / dropout 0 on the 184 fully-qualified
@@ -73,8 +92,10 @@ __all__ = [
     "FRACTIONS",
     "LORA_FACTORS",
     "LORA_POLICIES",
+    "MODES",
     "PARENT_CELL",
     "PRIMARY_KIND",
+    "RANDOM_TAGS",
     "TAGS",
     "TAG_PROFILES",
     "ControlLosses",
@@ -590,6 +611,7 @@ class PodConfig:
     hardware: HardwareBlock = field(default_factory=HardwareBlock)
     wall_clock_budget_hours: float = 14.0
     extra_cells: tuple[ExtraCell, ...] = ()
+    skip_cells: tuple[str, ...] = ()  # primary cells left out of the train queue (their files are still built)
     eval_inputs: EvalInputs = field(default_factory=EvalInputs)
     layout: Layout = field(default_factory=Layout)
     planner: Planner = field(default_factory=Planner)
@@ -605,6 +627,7 @@ class PodConfig:
             if not isinstance(getattr(self, label), cls):
                 raise ValueError(f"{label} must be a {cls.__name__} (use PodConfig.from_mapping for raw JSON)")
         _set(self, "fractions", self._check_fractions(self.fractions))
+        _set(self, "skip_cells", self._check_skip_cells(self.skip_cells))
         _int(self.filter_seed, "filter_seed", minimum=0)
         _num(self.wall_clock_budget_hours, "wall_clock_budget_hours", minimum=0.0, exclusive=True)
         _str(self.run_root, "run_root")
@@ -626,8 +649,8 @@ class PodConfig:
         if len(set(names)) != len(names):
             raise ValueError(f"extra_cells names must be unique, got {names}")
         for extra in extras:
-            if extra.kind == "random" and self.tag == CONTROL_TAG:
-                raise ValueError(f"extra cell {extra.name!r}: a random drop on the control tag duplicates the primary cells")
+            if extra.kind == "random" and self.dataset_tag == CONTROL_TAG:
+                raise ValueError(f"extra cell {extra.name!r}: a random drop on the {self.tag} tag duplicates the primary cells (they are the control's random drops)")
             if extra.kind == "delta_other" and extra.losses_tag == self.tag:
                 raise ValueError(f"extra cell {extra.name!r}: delta_other on the pod's own tag duplicates the primary cells")
         _set(self, "extra_cells", extras)
@@ -646,6 +669,23 @@ class PodConfig:
         labels = [cell_name(f) for f in out]
         if len(set(labels)) != len(labels):
             raise ValueError(f"fractions {list(out)} collide on the drop<pct> label: {labels}")
+        return out
+
+    def _check_skip_cells(self, skip_cells: Any) -> tuple[str, ...]:
+        """Primary cells left untrained (``drop000`` on the random pods): each must be one of ``CELLS`` and
+        produced by this config's ``fractions``; ``drop100`` is never trained, so it cannot be skipped."""
+        if isinstance(skip_cells, (str, bytes)) or not isinstance(skip_cells, Sequence):
+            raise ValueError('skip_cells must be a list of primary cell names (e.g. ["drop000"])')
+        out = tuple(_str(cell, "skip_cells[]") for cell in skip_cells)
+        unknown = [cell for cell in out if cell not in CELLS]
+        if unknown:
+            raise ValueError(f"skip_cells {unknown} are not primary cells; choose from {list(CELLS)} ({PARENT_CELL} is never trained)")
+        if len(set(out)) != len(out):
+            raise ValueError(f"skip_cells must be unique, got {list(out)}")
+        produced = {cell_name(f) for f in self.fractions if f < 1.0}
+        absent = [cell for cell in out if cell not in produced]
+        if absent:
+            raise ValueError(f"skip_cells {absent} are not produced by fractions {list(self.fractions)}")
         return out
 
     # ---- construction ----------------------------------------------------------
@@ -673,6 +713,11 @@ class PodConfig:
             if isinstance(extras, (str, bytes, Mapping)) or not isinstance(extras, Sequence):
                 raise ValueError("extra_cells must be a list of {name, kind, fraction, losses_tag} objects")
             data["extra_cells"] = tuple(ExtraCell.from_mapping(item, f"extra_cells[{i}]") for i, item in enumerate(extras))
+        if "skip_cells" in data:
+            skip = data["skip_cells"]
+            if isinstance(skip, (str, bytes, Mapping)) or not isinstance(skip, Sequence):
+                raise ValueError('skip_cells must be a list of primary cell names (e.g. ["drop000"])')
+            data["skip_cells"] = tuple(skip)
         if "fractions" in data:
             data["fractions"] = tuple(data["fractions"]) if isinstance(data["fractions"], Sequence) and not isinstance(data["fractions"], (str, bytes)) else data["fractions"]
         return cls(**data)
@@ -694,6 +739,33 @@ class PodConfig:
         return self.tag == CONTROL_TAG
 
     @property
+    def mode(self) -> str:
+        """Sieve mode of the primary cells: ``"delta"`` (drop by ΔL — the charter tags) or ``"random"``
+        (the control's seeded permutation — the control tag and the random tags)."""
+        return "delta" if self.tag in CHARTER_TAGS else "random"
+
+    @property
+    def is_random_sieve(self) -> bool:
+        """A ``RANDOM_TAGS`` pod: a charter parent trained on the CONTROL pod's random cells (not the control itself)."""
+        return self.tag in RANDOM_TAGS
+
+    @property
+    def sibling_tag(self) -> str | None:
+        """The ΔL tag a random tag mirrors (same parent, same scorer profile); None for the other tags."""
+        return RANDOM_TAGS.get(self.tag)
+
+    @property
+    def dataset_tag(self) -> str:
+        """Whose primary cell files (``aft_mixed_coin__<dataset_tag>__drop<pct>.jsonl``) this pod trains on:
+        ``control`` for the random tags, else its own tag."""
+        return CONTROL_TAG if self.tag in RANDOM_TAGS else self.tag
+
+    @property
+    def profile_tag(self) -> str:
+        """The tag that names this pod's parent / scorer profile: the sibling for random tags, else its own."""
+        return RANDOM_TAGS.get(self.tag, self.tag)
+
+    @property
     def prefix_root(self) -> str:
         """``runs/<run_id>`` — the part of ``hf.prefix`` shared by the three pods."""
         head, _, _ = self.hf.prefix.rpartition("/")
@@ -710,11 +782,12 @@ class PodConfig:
 
     @property
     def train_fractions(self) -> tuple[float, ...]:
-        return tuple(f for f in self.fractions if f < 1.0)
+        """Fractions of the primary cells this pod trains: ``fractions`` below 1.0 minus ``skip_cells``."""
+        return tuple(f for f in self.fractions if f < 1.0 and cell_name(f) not in self.skip_cells)
 
     @property
     def train_cells(self) -> tuple[str, ...]:
-        """The primary trained cells in queue order (ascending drop fraction)."""
+        """The primary trained cells in queue order (ascending drop fraction, ``skip_cells`` left out)."""
         return tuple(cell_name(f) for f in self.train_fractions)
 
     @property

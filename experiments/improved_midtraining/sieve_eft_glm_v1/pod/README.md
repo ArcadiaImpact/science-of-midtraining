@@ -1,7 +1,9 @@
 # sieve_eft_glm_v1 — pod runner
 
-One pod per parent (`control`, `charter_190m`, `charter_1b`); all three run the same code with a different
-`config.json`. The contract is [CONTRACT.md](CONTRACT.md); this file is the operator's checklist.
+One pod per arm; every pod runs the same code with a different `config.json`. The three ΔL-curve pods are
+`control`, `charter_190m`, `charter_1b`; the two random-curve pods `charter_190m_random`, `charter_1b_random`
+fine-tune the same charter parents on the control pod's random drops (see [Random-sieve pods](#random-sieve-pods)).
+The contract is [CONTRACT.md](CONTRACT.md); this file is the operator's checklist.
 
 ## Files
 
@@ -58,9 +60,15 @@ partial|failed> ...`. Stop the pod once `SCIMT-SIEVE-DONE` appears and `evidence
 
 ### Queue order
 
-`drop000, drop001, drop002, drop005, drop010, drop020, drop050` (Jonathan's seven, ascending drop fraction), then
-`extra_cells` in config order. The deadline planner trims from the tail, so extras go first. `drop100` (the parent,
-no EFT) is evaluated in phase 4, before the first training cell.
+`drop000, drop001, drop002, drop005, drop010, drop020, drop050` (Jonathan's seven, ascending drop fraction) minus
+`skip_cells`, then `extra_cells` in config order. The deadline planner trims from the tail, so extras go first.
+`drop100` (the parent, no EFT) is evaluated in phase 4, before the first training cell.
+
+`skip_cells` (optional, default `[]`): primary cells left out of the train queue — each must be one of the seven
+`drop*` names and produced by `fractions` (`drop100` is never trained, so it cannot be skipped; unknown names and
+duplicates are `ValueError`s). The skipped cells' dataset files are still built and their rows still appear in the
+`datasets` receipt (`trained_here: false`). Recorded in `evidence/train.json`, `DRIVER_DONE.json` and
+`provenance.json`. The random pods set `"skip_cells": ["drop000"]`.
 
 `extra_cells` in `config.json` (each `{"name", "kind", "fraction", "losses_tag"}`):
 
@@ -74,14 +82,66 @@ no EFT) is evaluated in phase 4, before the first training cell.
 
 - `agreement_anchor`: the release's `aft_agreement.jsonl` as-is (8,192 agreement rows, sha-checked against
   `aft_manifest.json`).
-- `random`: drop `fraction` of the pinned rows by the control's seeded permutation (`filter_seed`; charter parents
-  only — on the control pod it would duplicate a primary cell, so the config is rejected).
+- `random`: drop `fraction` of the pinned rows by the control's seeded permutation (`filter_seed`; ΔL charter pods
+  only — on the control pod and on the random pods it would duplicate a primary cell, so the config is rejected).
 - `delta_other`: drop the top `fraction` by ΔL of another charter tag; the losses are fetched from that pod's HF
   prefix (`runs/<run_id>/<losses_tag>/scores/losses__<losses_tag>.jsonl`) — non-blocking in the `datasets`
   phase, and with the control-losses poll/timeout right before the cell trains if they were not up yet.
 
 Extra datasets are `datasets/datasets/aft_<name>.jsonl`; their bookkeeping is `datasets/extra_cells_manifest.json`
 plus `datasets__<name>.json` receipts for the deferred builds.
+
+### Random-sieve pods
+
+Tags `charter_190m_random` / `charter_1b_random` (`config.RANDOM_TAGS`, random tag → sibling ΔL tag). Each is the
+sibling's charter parent (`glm45_air_190m/charter/base`, `glm45_air_1b/charter/base`) fine-tuned on the SAME random
+x % drops the control pod trains on — the control's seeded permutation (`filter_seed` 0), i.e. the files
+`build_all` writes as `datasets/datasets/aft_mixed_coin__control__drop<pct>.jsonl` — for x ∈ {1, 2, 5, 10, 20, 50} %.
+That gives every ΔL curve a same-parent random curve. `PodConfig` exposes the arm as:
+
+| property | control | charter_190m / charter_1b | charter_190m_random / charter_1b_random |
+|---|---|---|---|
+| `mode` | `random` | `delta` | `random` |
+| `sibling_tag` | `None` | `None` | `charter_190m` / `charter_1b` |
+| `dataset_tag` (whose cell files it trains on) | `control` | own tag | `control` |
+| `profile_tag` / `scorer_profile()` | own | own | the sibling's |
+
+Every receipt, `cells/<cell>/cell.json`, `evidence/train.json`, `provenance.json` and `DRIVER_DONE.json` carry
+`{tag, mode, sibling_tag, dataset_tag}` so the analysis can tell the arms apart; the train children also see
+`SCIMT_SIEVE_MODE` / `SCIMT_SIEVE_DATASET_TAG`.
+
+Borrowed points: the random curve's 0 % point (`drop000`, the full dataset — identical in either sieve mode) and
+its 100 % point (`drop100`, the un-fine-tuned parent) are the sibling ΔL pod's, so the random pods run with
+`"skip_cells": ["drop000"]` — a 6-cell queue — and still run `eval_parent` (a cheap replicate of the sibling's
+`drop100`). What differs on a random pod, phase by phase:
+
+- `score`: skipped by design — no scorer, no twins; receipt `status: skipped, by_design: true` with the reason and
+  `sibling_scores_prefix` (`runs/<run_id>/<sibling>/scores`); the log line is `SCIMT-SIEVE-PHASE score status=skipped`
+  (no `SCIMT-SIEVE-FAIL`), and on resume the receipt is honoured like `ok`. The row conversion (`rows/scorer_rows.jsonl`)
+  still happens — it is `build_all`'s row spine.
+- `datasets`: fetches `losses__control.jsonl` from the control pod's prefix (`build_all` needs the control losses
+  even for random cells; the file is long published, so the wait returns on its first check — no twins file), then
+  `build_all` with `losses={"control": …}` only: 8 `aft_mixed_coin__control__drop*.jsonl` files, no
+  `…__charter_*_random__…` files, no AUC gate, no twin recall. `rows/` and `scores/` are published here (the ΔL pods
+  publish them from `score`).
+- `train`: `cfg.queue` = 6 cells over the control files; `cell.json.dataset.path` points at the control file.
+- `extra_cells`: `agreement_anchor` and `delta_other` are allowed; `random` is rejected (it duplicates a primary).
+
+Launch config (same `parent` block as the sibling; `hf.prefix` under the random tag; the derived
+`control_losses.hf_path` rule is unchanged):
+
+```json
+{"run_id": "20260918T110621Z", "tag": "charter_1b_random",
+ "parent": {"repo": "arcadia-impact/scimt-dispatch-clean-v1", "revision": "cb3ff6a9366638a6b9c435f5d1f7d463f12e805e",
+            "path": "glm45_air_1b/charter/base"},
+ "dataset": {"…": "the pinned aft_mixed_coin.jsonl block, as on every pod"},
+ "fractions": [0.0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0], "filter_seed": 0,
+ "hf": {"repo": "jbostock/scimt-sieve-eft-glm-v1", "repo_type": "dataset", "prefix": "runs/20260918T110621Z/charter_1b_random"},
+ "control_losses": {"hf_path": "runs/20260918T110621Z/control/scores/losses__control.jsonl", "poll_seconds": 60, "timeout_hours": 6},
+ "train": {"…": "the sibling's train block"}, "eval": {"…": "the sibling's eval block"}, "hardware": {"…": "the sibling's"},
+ "wall_clock_budget_hours": 18.0, "skip_cells": ["drop000"], "extra_cells": [],
+ "planner": {"cell_seconds": 7200.0, "eval_seconds_per_cell": 1500.0, "reserve_seconds": 1800.0, "cost_per_hour": 9.18}}
+```
 
 ## Run root and receipts (`/workspace/sieve/`)
 
@@ -110,11 +170,14 @@ hf/                         HF_HOME (hub cache incl. the GLM base config/tokeniz
 
 Receipt statuses: `ok` (phase done; skipped on resume), `failed` (exception; `reason` + `traceback`/`tail`),
 `timeout` (a train child hit the 3 h box; killed as a process group), `skipped` (eval module absent, or nothing
-to do — logged with `SCIMT-SIEVE-FAIL ...: skipped` so the monitor sees it), `trimmed` (deadline planner:
+to do — logged with `SCIMT-SIEVE-FAIL ...: skipped` so the monitor sees it; the random pods' `score` receipt is
+`skipped` with `by_design: true` instead — no FAIL line, honoured like `ok` on resume), `trimmed` (deadline planner:
 `deadline.{cell_estimate_seconds, remaining_seconds, reserve_seconds}`), `gate-failed` (`hardware` floors,
-sha mismatches, the AUC gate `< planner.auc_gate` = 0.65 on charter pods — stops before training).
-`evidence/train.json` summarises the queue; `DRIVER_DONE.json` has `{status, cells_ok, cells_failed,
-cells_trimmed, evals_ok, elapsed_hours, cost_estimate, phases, failures, trims, gates, hub_waits}`.
+sha mismatches, the AUC gate `< planner.auc_gate` = 0.65 on ΔL charter pods — stops before training).
+Every receipt carries `{tag, mode, sibling_tag, dataset_tag}`. `evidence/train.json` summarises the queue
+(`queue`, `skip_cells`, `cells`, `counts`); `DRIVER_DONE.json` has `{status, tag, mode, sibling_tag, dataset_tag,
+queue, skip_cells, cells_ok, cells_failed, cells_trimmed, evals_ok, elapsed_hours, cost_estimate, phases, failures,
+trims, gates, hub_waits}`.
 
 Per-cell receipt fields worth reading: `n_rows`, `n_coin_kept`, `epochs` (= 16,384 / n_rows — 2.0 at drop000,
 4.0 at drop050, 163.8 at a 100-row test cell), `seconds`, `adapters.{256,512}.sha256`, `reclaimed_bytes`.
@@ -132,11 +195,12 @@ same `config.json` (same `run_id`) skips whatever finished, keeps the original w
   (`planner.max_cell_attempts` = 2); a second failure leaves a `failed` receipt and the queue moves on.
 - **A cell `failed`/`timeout`**: read `cells/<cell>/train.log` (axolotl) and `driver_train.log` (the child).
   Relaunching retries it once. To give up on it permanently, leave it — the queue never blocks on it.
-- **Charter pod stuck at `datasets` (`wait:control_losses`)**: the control pod's `score` phase has not published
-  `runs/<run_id>/control/scores/losses__control.jsonl` (+ `__twins`). Check the control pod's driver.log; the wait
-  times out after `control_losses.timeout_hours` (6 h) with a `failed` receipt. To unblock by hand, copy the two
-  files into `/workspace/sieve/scores/` on the charter pod and relaunch — a present, complete file is accepted
-  without polling.
+- **Charter or random pod stuck at `datasets` (`wait:control_losses`)**: the control pod's `score` phase has not
+  published `runs/<run_id>/control/scores/losses__control.jsonl` (+ `__twins`, which only the ΔL charter pods wait
+  for). Check the control pod's driver.log; the wait times out after `control_losses.timeout_hours` (6 h) with a
+  `failed` receipt. To unblock by hand, copy the file(s) into `/workspace/sieve/scores/` on the waiting pod and
+  relaunch — a present, complete file is accepted without polling. (For a random pod launched after the control
+  pod's `score` finished this never happens: the file is fetched on the first check.)
 - **`datasets` gate-failed (`auc_gate`)**: the realised ΔL AUC on the 8,192 rows was below 0.65. The coin-recall
   table is still published (`datasets/coin_recall.csv`); decide with Jonathan before overriding
   (`planner.auc_gate` in config.json) and relaunching.

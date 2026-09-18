@@ -639,6 +639,11 @@ def test_argv_builders_and_config_guards(pod):
     assert E.profile_for(pod.cfg) == "glm45_air_190m"
     pod.cfg.tag = "charter_1b"
     assert E.profile_for(pod.cfg) == "glm45_air_1b"
+    for random_tag, sibling in (("charter_1b_random", "charter_1b"), ("charter_190m_random", "charter_190m")):
+        pod.cfg.tag = random_tag  # the random-sieve pods share the sibling charter tag's profile / parent
+        assert E.profile_for(pod.cfg) == E.PROFILE_BY_TAG[sibling]
+    assert set(E.PROFILE_BY_TAG) == {"control", "charter_190m", "charter_1b", "charter_190m_random", "charter_1b_random"}
+    pod.cfg.tag = "charter_1b"
     pod.cfg.eval.steps = [128]
     with pytest.raises(ValueError, match="not export steps"):
         E.eval_steps(pod.cfg)

@@ -11,7 +11,8 @@ every endpoint gets a receipt in ``paths.evidence``; a failed endpoint never sto
 What is read from the runner's objects (``pod/config.py`` is written by a parallel agent, so attributes are read
 with ``getattr`` and the CONTRACT defaults; unknown values fail loudly where the campaign harness would):
 
-    cfg.tag                       "control" | "charter_190m" | "charter_1b"
+    cfg.tag                       "control" | "charter_190m" | "charter_1b" | "charter_190m_random" | "charter_1b_random"
+                                  (the *_random tags share their sibling charter tag's profile / parent)
     cfg.dataset.path              HF path of the pinned AFT input; its basename is looked up in paths.rows
                                   (the parent's sanity prompts come from its first 64 rows)
     cfg.train.export_steps        e.g. [256, 512]; cfg.train.steps (512) is the FINAL step whose endpoint is
@@ -128,7 +129,8 @@ CONFLICT_RATE_KEYS = ("charter", "coin", "other", "malformed")
 AGREEMENT_RATE_KEYS = ("shared", "other", "malformed")
 
 MODEL_FAMILY = "glm45_air"
-PROFILE_BY_TAG = {"control": "glm45_air_190m", "charter_190m": "glm45_air_190m", "charter_1b": "glm45_air_1b"}
+PROFILE_BY_TAG = {"control": "glm45_air_190m", "charter_190m": "glm45_air_190m", "charter_1b": "glm45_air_1b",
+                  "charter_190m_random": "glm45_air_190m", "charter_1b_random": "glm45_air_1b"}  # random tags: the sibling's profile
 PARENT_CELL = "drop100"
 GRAPHS_POLICY = "glm-aft-graphs-splitk1-v1"
 SANITY_N = 64          # pod/evaluate.py:write_sanity default
