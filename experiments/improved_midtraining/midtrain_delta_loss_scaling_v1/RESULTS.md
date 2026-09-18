@@ -18,7 +18,7 @@ summed over the assistant *content* tokens (the answer proper; template boilerpl
 |---|---|---|---|---|---|---|---|
 | Gemma-3-12B | 0.605 [0.585, 0.626] | 0.628 [0.609, 0.647] | 0.648 [0.630, 0.666] | **0.706** [0.689, 0.725] | — | — | +0.055 [+0.042, +0.068] |
 | Gemma-3-27B | — | 0.623 [0.603, 0.643] | 0.697 [0.678, 0.716] | 0.732 [0.715, 0.750] | **0.810** [0.795, 0.825] | — | +0.116 [+0.103, +0.129] |
-| GLM-4.5-Air | — | — | — | — | 0.733 [0.715, 0.752] | **0.821** [0.807, 0.835]† | 1B − 190M: +0.087 [+0.072, +0.102] |
+| GLM-4.5-Air | — | — | — | — | 0.733 [0.715, 0.752] | **0.821** [0.807, 0.835]† | +0.121 [+0.100, +0.142] (1B − 190M: +0.087 [+0.072, +0.102]) |
 
 † vs the 190M control (no dose-matched control exists for the 1B run). Cliff's δ runs from +0.21 (12B/1M) to +0.62 (27B/190M) and +0.64 (GLM/1B). The graft study read the same 27B/190M update at 0.742 (exact full-Δ graft onto -it); at the same-SFT model it reads 0.810. Both trends are monotone in dose (Spearman 1.0 within each Gemma substrate) and log-linear over the range we have, so we have not found the dose at which the sieve stops improving.
 
