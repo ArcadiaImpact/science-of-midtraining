@@ -8,6 +8,18 @@ subset (the dilution reference), and x = 100 % is the parent evaluated with no E
 scored with the campaign harness (18 pinned prompt sets = 6 slices × 3 template surfaces; per-run outcome
 ∈ {coin, charter, shared, other, malformed}, denominator = all runs).
 
+Paired random reference on the charter parents (:data:`RANDOM_TAGS`). Two more tags — ``charter_190m_random`` /
+``charter_1b_random`` — are the *same* charter parents fine-tuned on the *control's* random-drop datasets
+(``aft_mixed_coin__control__drop{pct}.jsonl``, the control's seed-0 permutation) for x ∈ {1, 2, 5, 10, 20, 50} %:
+each ΔL sieve's like-for-like random sieve. Their pods skip drop000 (byte-identical to the sibling ΔL tag's
+drop000 — same parent, same unfiltered dataset) and evaluate their own drop100 (the same un-fine-tuned parent as
+the sibling's drop100, so the pair doubles as an eval-noise replicate). **Borrowed points**: a random tag's drop000
+is the sibling's drop000 (``borrowed = True``, ``borrowed_from = <sibling>``); its drop100 is its own when present,
+else the sibling's (borrowed); a random tag's own drop000, if a pod ever produces one, is used as-is and noted.
+Filter bookkeeping (n_kept, n_coin_kept, coin recall) for random cells is the control tag's. Random tags are
+first-class tags in every table; every readout keeps working when they are absent (E6 → NOT RUN, paired columns
+NaN, ``parent_eval_replicate`` empty, ``contrast_paired.pdf`` skipped with a note).
+
 Input contract (an experiment dir)::
 
     data/filter_manifest.json        from data/filters.build_all — per tag: mode (delta | random), AUC /
@@ -21,7 +33,9 @@ Input contract (an experiment dir)::
                                       "agreement_runs": {"n", "rates": {shared, other, malformed}}, …}},
                                      "meta": {…}} — conflict slices carry conflict_runs, agreement slices
                                      agreement_runs; anything else present is read, anything absent is noted
-    evals/<tag>/<cell>/meta.json     optional {"adapter_step", "seed", …}
+    evals/<tag>/<cell>/meta.json     optional {"adapter_step", "seed", "mode", "sibling_tag", "dataset_tag", …} —
+                                     for a random tag, mode / sibling_tag / dataset_tag are cross-checked against
+                                     RANDOM_TAGS (a disagreement is noted, RANDOM_TAGS wins)
     reference/archived_cells.json    optional {"<tag>": {"pre_aft": <result>, "agreement": <result>,
                                      "mixed_coin": <result>}} — the campaign's archived cells for the same
                                      parents; overlaid as reference bands and used by E3
@@ -35,23 +49,43 @@ alongside)::
                          templates; falls back to ``__canonical`` with a note when the heldout surface is
                          absent everywhere), the secondary slices ``eval_holdout_conflict__heldout`` (held-out
                          clauses) and ``eval_trained_conflict__canonical``, and the agreement competence slice
-                         ``eval_trained_agreement__heldout`` (shared rate)
-    curves_headline      wide: rows = drop fraction, columns = tag → "coin rate [CI] (n)" on the primary slice
-    rates_all_slices     every slice × surface × channel found in every scores.json (+ the reference cells)
+                         ``eval_trained_agreement__heldout`` (shared rate); ``borrowed`` / ``borrowed_from``
+                         mark a random tag's points taken from its sibling ΔL tag (drop000; drop100 when absent)
+    curves_headline      wide: rows = drop fraction, columns = tag in parent order (control · random filter,
+                         190M · ΔL sieve, 190M · random, 1B · ΔL sieve, 1B · random) → "coin rate [CI] (n)"
+                         on the primary slice; ‡ = borrowed point
+    rates_all_slices     every slice × surface × channel found in every scores.json (+ the reference cells;
+                         borrowed cells repeated under the random tag with source ``borrowed:<sibling>``)
     normalised           contamination remaining = (coin_x − coin_100) / (coin_0 − coin_100) per tag ×
                          fraction × conflict slice, with the two anchor CIs (point value only — no CI on the
-                         ratio); flagged when |coin_0 − coin_100| < 0.1
+                         ratio); flagged when |coin_0 − coin_100| < 0.1; borrowed anchors named in ``note``
     recall_vs_behaviour  coin rate (primary slice) against the surviving coin-row count — the count-dose
-                         reading (SPEC E2); the control's random cells are the dilution reference; also the
-                         epochs the survivors see under the fixed 512 × 32 recipe (SPEC §5 confound)
-    contrast_vs_random   per fraction: coin(charter tag) − coin(control) with Newcombe's two-proportion
-                         Wilson-score CI (independent samples), and each tag's within-model drop from x = 0
-                         (coin_0 − coin_x) with the same CI
+                         reading (SPEC E2); the control's random cells are the dilution reference and the
+                         charter parents' random cells the paired random reference; also the epochs the
+                         survivors see under the fixed 512 × 32 recipe (SPEC §5 confound)
+    contrast_vs_random   PRIMARY, paired by parent: per charter tag × fraction, coin(ΔL cell) − coin(the SAME
+                         parent's random cell) and charter(ΔL) − charter(random), each with Newcombe's
+                         two-proportion Wilson-score CI (NaN where the random point is borrowed from the ΔL
+                         cell itself — x = 0 always, drop100 when borrowed; at drop100 with two own parent
+                         evals the pair is the eval-noise replicate). SECONDARY: coin(tag) − coin(control) at
+                         the same fraction (cross-parent), and each tag's within-model drop from x = 0
+                         (coin_0 − coin_x), same CI
+    parent_eval_replicate  per parent whose ΔL tag AND random tag both carry their own drop100 (the same
+                         un-fine-tuned parent scored twice): rate difference per outcome (coin, charter, other,
+                         malformed on the primary slice; shared on the agreement slice) with Newcombe CI — the
+                         harness's eval-noise replicate; a difference that excludes 0 means the run-to-run
+                         eval noise exceeds the Wilson CI
     trend                per tag (coin and charter rate): Spearman ρ vs drop fraction over the 7 EFT cells
                          (drop100 excluded) and the first fraction whose CI no longer overlaps the drop000 CI
                          (with its sign)
-    expectations         SPEC §3 E1–E4 → PASS / FAIL / INCONCLUSIVE / NOT RUN per sub-check and per
-                         expectation (worst of its sub-checks), with evidence strings and a "leak?" flag
+    expectations         SPEC §3 E1–E4 + E6 → PASS / FAIL / INCONCLUSIVE / NOT RUN per sub-check and per
+                         expectation (worst of its sub-checks), with evidence strings and a "leak?" flag.
+                         E6 (ΔL beats the paired random sieve), per charter parent: ``random_flat`` — no random
+                         cell with 0 < x ≤ 20 % has a coin CI clearing the (borrowed) drop000 CI;
+                         ``delta_below_random`` — the paired coin CI lies below 0 at every present x ∈
+                         {10, 20, 50} % (above 0 anywhere, or below nowhere with all pairs present → FAIL;
+                         partial separation / missing pairs → INCONCLUSIVE; no random cells → NOT RUN).
+                         E2's ``control_flat`` stays the control's own flatness check
 
 Statistics. A cell's rate is a proportion over ``n`` runs; ``k = round(rate · n)`` recovers the count and the
 interval is the Wilson score interval (``wilson``). Differences between two cells use Newcombe's hybrid
@@ -107,14 +141,28 @@ NO_EFT_FRACTION = 1.0  # drop100 = the parent, no EFT
 MODEL_TAGS: tuple[str, ...] = F.MODEL_TAGS  # control, charter_190m, charter_1b
 CONTROL_TAG: str = F.CONTROL_TAG
 SIEVE_TAGS: tuple[str, ...] = tuple(t for t in MODEL_TAGS if t != CONTROL_TAG)
+# Paired random reference: random tag → sibling ΔL tag (the SAME charter parent, fine-tuned on the control's
+# random-drop datasets). Defined here on purpose — the analysis must not import pod/config.py.
+RANDOM_TAGS: dict[str, str] = {"charter_190m_random": "charter_190m", "charter_1b_random": "charter_1b"}
+RANDOM_DATASET_TAG: str = CONTROL_TAG  # whose filter bookkeeping (n_kept, n_coin_kept, recall) a random cell carries
+BORROWABLE_FRACTIONS: tuple[float, ...] = (0.0, 1.0)  # a random tag borrows drop000 always, drop100 when it has none
+TAG_ORDER: tuple[str, ...] = ("control", "charter_190m", "charter_190m_random", "charter_1b", "charter_1b_random")
+KNOWN_TAGS: tuple[str, ...] = TAG_ORDER
 
 TAG_LABELS: dict[str, str] = {
     "control": "control midtrain — random filter",
     "charter_190m": "charter 190M — ΔL_190 sieve",
+    "charter_190m_random": "charter 190M — random filter (control's drops)",
     "charter_1b": "charter 1B — ΔL_1B sieve",
+    "charter_1b_random": "charter 1B — random filter (control's drops)",
 }
-TAG_COLORS: dict[str, str] = {"control": "#6e6e6e", "charter_190m": "#1f77b4", "charter_1b": "#c51b7d"}
-TAG_MARKERS: dict[str, str] = {"control": "s", "charter_190m": "o", "charter_1b": "D"}
+TAG_PARENTS: dict[str, str] = {
+    "control": "control-midtrained parent", "charter_190m": "charter-190M parent", "charter_190m_random": "charter-190M parent",
+    "charter_1b": "charter-1B parent", "charter_1b_random": "charter-1B parent",
+}
+TAG_COLORS: dict[str, str] = {"control": "#6e6e6e", "charter_190m": "#1f77b4", "charter_190m_random": "#1f77b4", "charter_1b": "#c51b7d", "charter_1b_random": "#c51b7d"}
+TAG_MARKERS: dict[str, str] = {"control": "s", "charter_190m": "o", "charter_190m_random": "o", "charter_1b": "D", "charter_1b_random": "D"}
+TAG_LINESTYLES: dict[str, str] = {"control": "--", "charter_190m": "-", "charter_190m_random": "--", "charter_1b": "-", "charter_1b_random": "--"}  # dashed = random sieve
 
 PRIMARY_SLICE = "eval_trained_conflict__heldout"  # held-in clauses, held-out templates (n = 3,000 in the campaign)
 PRIMARY_FALLBACK_SURFACE = "canonical"
@@ -144,14 +192,17 @@ E2_CONTROL_FLAT_MAX_X = 0.20  # the random curve must not separate from drop000 
 E3_TOLERANCE_PP = 0.09  # archived cells reproduce within ≈ 9 pp (campaign run-to-run SD)
 E4_TOLERANCE_PP = 0.05  # agreement `shared` within 5 pp of drop000 …
 E4_MAX_X = 0.20  # … for x ≤ 20 %
+E6_RANDOM_FLAT_MAX_X = 0.20  # a charter parent's random curve must not separate from its (borrowed) drop000 through here
+E6_SEPARATION_FRACTIONS: tuple[float, ...] = (0.10, 0.20, 0.50)  # … and its ΔL curve must lie below its random curve here
 SMALL_DENOMINATOR = 0.10  # contamination-remaining flag: |coin_0 − coin_100| below this is not a usable scale
 VERDICTS: tuple[str, ...] = ("PASS", "FAIL", "INCONCLUSIVE", "NOT RUN")
 
 REFERENCE_CELLS: tuple[str, ...] = ("pre_aft", "mixed_coin", "agreement")
 REFERENCE_ANCHOR: dict[str, float] = {"pre_aft": 1.0, "mixed_coin": 0.0}  # which of our cells each archived cell mirrors
 
-TABLE_NAMES: tuple[str, ...] = ("curves", "curves_headline", "rates_all_slices", "normalised", "recall_vs_behaviour", "contrast_vs_random", "trend", "expectations")
-PLOT_NAMES: tuple[str, ...] = ("curves_coin.pdf", "curves_charter.pdf", "recall_vs_behaviour.pdf", "coin_recall.pdf", "contrast_vs_random.pdf")
+TABLE_NAMES: tuple[str, ...] = ("curves", "curves_headline", "rates_all_slices", "normalised", "recall_vs_behaviour", "contrast_vs_random", "parent_eval_replicate", "trend", "expectations")
+PLOT_NAMES: tuple[str, ...] = ("curves_coin.pdf", "curves_charter.pdf", "recall_vs_behaviour.pdf", "coin_recall.pdf", "contrast_vs_random.pdf", "contrast_paired.pdf")
+BORROWED_MARK = "‡"  # headline / summary marker for a borrowed point
 
 _CELL_RE = re.compile(r"^drop(?P<pct>\d{3})$")
 
@@ -176,8 +227,29 @@ def tag_label(tag: str) -> str:
 
 
 def order_tags(tags: Iterable[str]) -> list[str]:
+    """Parent order — control, 190M (ΔL, then random), 1B (ΔL, then random) — then any unknown tag, sorted."""
     seen = {str(t) for t in tags}
-    return [t for t in MODEL_TAGS if t in seen] + sorted(t for t in seen if t not in MODEL_TAGS)
+    return [t for t in TAG_ORDER if t in seen] + sorted(t for t in seen if t not in TAG_ORDER)
+
+
+def filter_tag_for(tag: str) -> str:
+    """The tag whose filter bookkeeping a cell of ``tag`` carries: the control's for a random tag, its own otherwise."""
+    return RANDOM_DATASET_TAG if tag in RANDOM_TAGS else tag
+
+
+def tag_mode(tag: str, filter_mode: Any = None) -> Any:
+    """``random`` for a random tag (known from RANDOM_TAGS), else the filter manifest's mode (None when absent)."""
+    return "random" if tag in RANDOM_TAGS else filter_mode
+
+
+def reference_role(tag: str, mode: Any) -> str:
+    """How a curve reads in the count-dose plot: the control is the dilution reference, a random tag the paired
+    random reference of its sibling, a delta-mode tag the ΔL sieve."""
+    if tag in RANDOM_TAGS:
+        return f"paired random reference (same parent as {RANDOM_TAGS[tag]})"
+    if mode == "random":
+        return "dilution reference (random drop)"
+    return "ΔL sieve" if mode == "delta" else "unknown"
 
 
 def _finite(value: Any) -> bool:
@@ -449,6 +521,20 @@ def _read_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _check_random_meta(tag: str, cell: str, meta: Mapping[str, Any], notes: list[str]) -> None:
+    """Cross-check a cell's recorded mode / sibling_tag / dataset_tag against RANDOM_TAGS (RANDOM_TAGS wins; noted)."""
+    mode, sibling, dataset_tag = meta.get("mode"), meta.get("sibling_tag"), meta.get("dataset_tag")
+    if tag in RANDOM_TAGS:
+        if mode is not None and mode != "random":
+            notes.append(f"{tag}/{cell}: meta records mode {mode!r} but {tag!r} is a RANDOM_TAGS tag — analysed as a random sieve")
+        if sibling is not None and sibling != RANDOM_TAGS[tag]:
+            notes.append(f"{tag}/{cell}: meta records sibling_tag {sibling!r}; RANDOM_TAGS pairs it with {RANDOM_TAGS[tag]!r} (RANDOM_TAGS used)")
+        if dataset_tag is not None and dataset_tag != RANDOM_DATASET_TAG:
+            notes.append(f"{tag}/{cell}: meta records dataset_tag {dataset_tag!r}; the random cells are expected on the {RANDOM_DATASET_TAG!r} datasets (control bookkeeping used)")
+    elif mode == "random" and tag != CONTROL_TAG:
+        notes.append(f"{tag}/{cell}: meta records mode 'random' but {tag!r} is not in RANDOM_TAGS {sorted(RANDOM_TAGS)} — analysed as a ΔL tag")
+
+
 def _looks_like_result(payload: Mapping[str, Any]) -> bool:
     """True when some value is a slice block carrying a runs channel (a bare result mapping)."""
     return any(isinstance(block, Mapping) and any(isinstance(block.get(c), Mapping) for c in CHANNELS) for block in payload.values())
@@ -483,6 +569,7 @@ def load_rates(inputs: Inputs, notes: list[str]) -> pd.DataFrame:
                     meta.update(extra)
             except (OSError, json.JSONDecodeError) as exc:
                 notes.append(f"{tag}/{cell}: meta.json unreadable ({exc}) — ignored")
+        _check_random_meta(tag, cell, meta, notes)
         base = {"tag": tag, "cell": cell, "fraction": cell_fraction(cell), "source": "evals", "adapter_step": _num(meta.get("adapter_step")), "seed": _num(meta.get("seed"))}
         cell_rows, skipped = flatten_result(result, base)
         skipped_keys.update(skipped)
@@ -542,11 +629,38 @@ def resolve_primary_slice(rates: pd.DataFrame, requested: str, notes: list[str])
 
 # ----------------------------------------------------------------- curves
 CURVE_COLUMNS: tuple[str, ...] = (
-    "tag", "cell", "fraction", "drop_pct", "slice", "role", "channel", "present", "slice_present", "mode",
+    "tag", "cell", "fraction", "drop_pct", "slice", "role", "channel", "present", "slice_present", "borrowed", "borrowed_from", "mode",
     "n_drop", "n_kept", "n_coin_kept", "coin_recall", "coin_fraction_kept", "n",
     "coin", "coin_lo", "coin_hi", "charter", "charter_lo", "charter_hi", "shared", "shared_lo", "shared_hi", "other", "malformed",
     "adapter_step", "seed",
 )
+
+
+def borrow_plan(present: set[tuple[str, str]], tags: Sequence[str], notes: list[str], random_tags: Mapping[str, str] = RANDOM_TAGS) -> dict[tuple[str, str], str]:
+    """(random tag, cell) → sibling ΔL tag whose eval cell stands in for it.
+
+    drop000 is always the sibling's (same parent, same unfiltered dataset — the random pods skip it); drop100 is
+    borrowed only when the random tag has no own parent eval. Both outcomes are noted, as is a random tag's own
+    drop000 (a training-seed replicate of the sibling's, used as-is) and a sibling cell that is itself absent.
+    """
+    plan: dict[tuple[str, str], str] = {}
+    for tag in tags:
+        sibling = random_tags.get(tag)
+        if sibling is None:
+            continue
+        for fraction in BORROWABLE_FRACTIONS:
+            cell = cell_name(fraction)
+            if (tag, cell) in present:
+                if fraction == 0.0:
+                    notes.append(f"{tag}/{cell}: own cell present (the random pods normally skip drop000) — used as-is; it is a training-seed replicate of {sibling}/{cell} (same parent, same dataset)")
+                continue
+            if (sibling, cell) in present:
+                plan[(tag, cell)] = sibling
+                why = "same parent, same unfiltered dataset" if fraction == 0.0 else f"same parent, no EFT; no own parent eval → no eval-noise replicate for {sibling}"
+                notes.append(f"{tag}/{cell}: borrowed from {sibling}/{cell} ({why})")
+            else:
+                notes.append(f"{tag}/{cell}: nothing to borrow — {sibling}/{cell} absent")
+    return plan
 
 
 def slice_plan(primary: str = PRIMARY_SLICE) -> dict[str, str]:
@@ -566,31 +680,38 @@ def _preferred_channel(slice_key: str, available: Sequence[str]) -> str | None:
     return available[0] if available else None
 
 
-def curves_table(filters: pd.DataFrame, rates: pd.DataFrame, tags: Sequence[str], primary: str, notes: list[str]) -> pd.DataFrame:
+def curves_table(filters: pd.DataFrame, rates: pd.DataFrame, tags: Sequence[str], primary: str, notes: list[str], borrowed: Mapping[tuple[str, str], str] | None = None) -> pd.DataFrame:
     """tag × fraction × slice (primary, secondary, agreement): filter bookkeeping + rates with Wilson CIs.
-    Every tag × FRACTIONS cell gets a row per slice; ``present`` = the cell's scores.json was usable,
-    ``slice_present`` = that slice was found in it. Missing slices in present cells are noted per cell."""
+    Every tag × FRACTIONS cell gets a row per slice; ``present`` = a usable scores.json backs the row (own or
+    borrowed), ``slice_present`` = that slice was found in it, ``borrowed`` / ``borrowed_from`` = the row is the
+    sibling ΔL tag's cell standing in for a random tag's (``borrowed`` defaults to :func:`borrow_plan`). A random
+    tag carries the control's filter bookkeeping. Missing slices in present cells are noted per cell."""
     plan = slice_plan(primary)
     evals = rates[rates["source"] == "evals"] if not rates.empty else rates
     present = set(zip(evals["tag"], evals["cell"])) if not evals.empty else set()
+    if borrowed is None:
+        borrowed = borrow_plan(present, tags, notes)
     rows: list[dict[str, Any]] = []
     missing: dict[str, list[str]] = {}
     for tag in tags:
         for fraction in FRACTIONS:
             cell = cell_name(fraction)
-            filter_row = _first_row(filters, tag=tag, cell=cell)
-            is_present = (tag, cell) in present
-            cell_rates = evals[(evals["tag"] == tag) & (evals["cell"] == cell)] if is_present else evals.iloc[0:0]
+            filter_row = _first_row(filters, tag=filter_tag_for(tag), cell=cell)
+            source_tag = borrowed.get((tag, cell), tag)
+            is_borrowed = source_tag != tag
+            is_present = (source_tag, cell) in present
+            cell_rates = evals[(evals["tag"] == source_tag) & (evals["cell"] == cell)] if is_present else evals.iloc[0:0]
             for slice_key, role in plan.items():
                 sub = cell_rates[cell_rates["slice_key"] == slice_key]
                 channel = _preferred_channel(slice_key, [str(c) for c in sub["channel"]])
                 rate_row = sub[sub["channel"] == channel].iloc[0] if channel is not None else None
-                if is_present and rate_row is None:
+                if is_present and rate_row is None and not is_borrowed:
                     missing.setdefault(f"{tag}/{cell}", []).append(slice_key)
                 row: dict[str, Any] = {
                     "tag": tag, "cell": cell, "fraction": fraction, "drop_pct": F.fraction_pct(fraction), "slice": slice_key, "role": role,
                     "channel": channel, "present": bool(is_present), "slice_present": rate_row is not None,
-                    "mode": None if filter_row is None else filter_row["mode"],
+                    "borrowed": bool(is_borrowed), "borrowed_from": source_tag if is_borrowed else None,
+                    "mode": tag_mode(tag, None if filter_row is None else filter_row["mode"]),
                 }
                 for column in ("n_drop", "n_kept", "n_coin_kept", "coin_recall", "coin_fraction_kept"):
                     row[column] = NAN if filter_row is None else _num(filter_row[column])
@@ -608,14 +729,31 @@ def _rate_cell_text(row: pd.Series | None, outcome: str = "coin") -> str:
     if not _finite(row[outcome]):
         return "slice absent"
     n = f" (n={int(row['n'])})" if _finite(row["n"]) else ""
-    return f"{_fmt(row[outcome])} {_ci(row[f'{outcome}_lo'], row[f'{outcome}_hi'])}{n}"
+    mark = f" {BORROWED_MARK}" if "borrowed" in row.index and bool(row["borrowed"]) else ""
+    return f"{_fmt(row[outcome])} {_ci(row[f'{outcome}_lo'], row[f'{outcome}_hi'])}{n}{mark}"
 
 
 def headline_table(curves: pd.DataFrame, tags: Sequence[str], outcome: str = "coin") -> pd.DataFrame:
-    """Wide: index = drop fraction label (8 rows), one column per tag → "rate [CI] (n)" on the primary slice."""
+    """Wide: index = drop fraction label (8 rows), one column per tag (parent order: control, 190M ΔL, 190M random,
+    1B ΔL, 1B random) → "rate [CI] (n)" on the primary slice; ``‡`` marks a point borrowed from the sibling ΔL tag."""
     prim = curves[curves["role"] == "primary"]
     table = {tag: [_rate_cell_text(_first_row(prim, tag=tag, cell=cell_name(f)), outcome) for f in FRACTIONS] for tag in tags}
     return pd.DataFrame(table, index=pd.Index([pct_label(f) for f in FRACTIONS], name="drop_fraction"))
+
+
+def tag_legend(tags: Sequence[str]) -> str:
+    """One line per tag: parent × filter, and where its borrowed points come from — the headline columns' key."""
+    parts: list[str] = []
+    for tag in tags:
+        if tag in RANDOM_TAGS:
+            parts.append(f"`{tag}` = {TAG_PARENTS[tag]} · random filter (the control's seed-0 drops; drop000 {BORROWED_MARK} borrowed from `{RANDOM_TAGS[tag]}`, drop100 borrowed only when it has no own parent eval)")
+        elif tag == CONTROL_TAG:
+            parts.append(f"`{tag}` = {TAG_PARENTS.get(tag, tag)} · random filter (seed-0 permutation)")
+        elif tag in TAG_PARENTS:
+            parts.append(f"`{tag}` = {TAG_PARENTS[tag]} · its own ΔL sieve")
+        else:
+            parts.append(f"`{tag}` = tag outside the SPEC set (analysed as a ΔL tag)")
+    return "; ".join(parts)
 
 
 # ----------------------------------------------------------------- derived readouts
@@ -640,6 +778,9 @@ def normalised_table(curves: pd.DataFrame) -> pd.DataFrame:
         note = "" if _finite(denominator) else "anchor missing (drop000 or drop100)"
         if small:
             note = f"|coin_0 − coin_100| = {abs(denominator):.3f} < {SMALL_DENOMINATOR}: contamination scale unusable"
+        borrowed_anchors = [f"{a['cell']} borrowed from {a['borrowed_from']}" for a in (anchor_0, anchor_100) if a is not None and "borrowed" in a.index and bool(a["borrowed"])]
+        if borrowed_anchors:
+            note = (note + "; " if note else "") + ", ".join(borrowed_anchors)
         for _, r in group.sort_values("fraction").iterrows():
             coin = _num(r["coin"])
             remaining = (coin - coin_100) / denominator if _finite(coin) and _finite(denominator) and denominator != 0 else NAN
@@ -663,7 +804,8 @@ RVB_COLUMNS: tuple[str, ...] = (
 
 def recall_vs_behaviour_table(curves: pd.DataFrame) -> pd.DataFrame:
     """Coin rate (primary slice) against the surviving coin-row count, all tags (control random cells = dilution
-    reference), sorted by surviving count within tag; ``epochs_at_fixed_steps`` = 512 × 32 / n_kept (SPEC §5)."""
+    reference, charter-parent random cells = paired random reference), sorted by surviving count within tag;
+    ``epochs_at_fixed_steps`` = 512 × 32 / n_kept (SPEC §5)."""
     prim = curves[curves["role"] == "primary"]
     rows: list[dict[str, Any]] = []
     for _, r in prim.iterrows():
@@ -671,7 +813,7 @@ def recall_vs_behaviour_table(curves: pd.DataFrame) -> pd.DataFrame:
         mode = r["mode"]
         rows.append(
             {
-                "tag": r["tag"], "mode": mode, "reference_role": "dilution reference (random drop)" if mode == "random" else ("ΔL sieve" if mode == "delta" else "unknown"),
+                "tag": r["tag"], "mode": mode, "reference_role": reference_role(str(r["tag"]), mode),
                 "cell": r["cell"], "fraction": r["fraction"], "drop_pct": r["drop_pct"], "n_kept": n_kept, "n_coin_kept": _num(r["n_coin_kept"]),
                 "coin_fraction_kept": _num(r["coin_fraction_kept"]), "coin_recall": _num(r["coin_recall"]),
                 "epochs_at_fixed_steps": RECIPE_STEPS * RECIPE_GLOBAL_BATCH / n_kept if _finite(n_kept) and n_kept > 0 else NAN,
@@ -687,9 +829,21 @@ def recall_vs_behaviour_table(curves: pd.DataFrame) -> pd.DataFrame:
 
 
 CONTRAST_COLUMNS: tuple[str, ...] = (
-    "tag", "cell", "fraction", "drop_pct", "n", "coin", "coin_lo", "coin_hi", "control_n", "control_coin",
-    "diff_vs_control", "diff_lo", "diff_hi", "diff_excludes_zero", "coin_at_0", "drop_from_0", "drop_lo", "drop_hi", "drop_excludes_zero", "sep_from_0",
+    "tag", "cell", "fraction", "drop_pct", "n", "coin", "coin_lo", "coin_hi", "charter", "charter_lo", "charter_hi",
+    # primary: paired by parent (ΔL tag vs the same parent's random tag)
+    "random_tag", "random_borrowed", "paired_kind", "random_n", "random_coin", "paired_coin_diff", "paired_coin_diff_lo", "paired_coin_diff_hi", "paired_coin_excludes_zero",
+    "random_charter", "paired_charter_diff", "paired_charter_diff_lo", "paired_charter_diff_hi", "paired_charter_excludes_zero",
+    # secondary: vs the control (cross-parent) and within-model drop from x = 0
+    "control_n", "control_coin", "diff_vs_control", "diff_lo", "diff_hi", "diff_excludes_zero",
+    "coin_at_0", "drop_from_0", "drop_lo", "drop_hi", "drop_excludes_zero", "sep_from_0",
 )
+PAIRED_KIND_SIEVE = "ΔL sieve vs random sieve, same parent"
+PAIRED_KIND_REPLICATE = "eval-noise replicate (same parent scored twice)"
+PAIRED_KIND_SAME_CELL = "same cell (borrowed) — no contrast"
+
+
+def _excludes_zero(lo: Any, hi: Any) -> bool:
+    return bool(_finite(lo) and _finite(hi) and (float(lo) > 0 or float(hi) < 0))
 
 
 def _sep_sign(lo: Any, hi: Any, base_lo: Any, base_hi: Any) -> float:
@@ -703,14 +857,24 @@ def _sep_sign(lo: Any, hi: Any, base_lo: Any, base_hi: Any) -> float:
     return 0.0
 
 
-def contrast_table(curves: pd.DataFrame, control_tag: str | None = CONTROL_TAG) -> pd.DataFrame:
-    """Per tag × fraction on the primary slice: coin − coin(control, same fraction) with Newcombe's two-proportion
-    Wilson-score CI (NaN for the control itself), and the within-model drop from x = 0 (coin_0 − coin_x) with the same CI."""
+def contrast_table(curves: pd.DataFrame, control_tag: str | None = CONTROL_TAG, random_tags: Mapping[str, str] = RANDOM_TAGS) -> pd.DataFrame:
+    """Per tag × fraction on the primary slice.
+
+    PRIMARY (charter ΔL tags whose random tag has eval cells): coin(ΔL cell) − coin(the same parent's random cell)
+    and charter(ΔL) − charter(random) with Newcombe's two-proportion Wilson-score CI; NaN where the random point is
+    borrowed from the ΔL cell itself (``paired_kind`` = same cell), the eval-noise replicate at drop100 when both
+    parents were scored. SECONDARY: coin − coin(control, same fraction) (NaN for the control itself) and the
+    within-model drop from x = 0 (coin_0 − coin_x), same CI.
+    """
     prim = curves[curves["role"] == "primary"]
+    curve_tags = set(prim["tag"])
     control = prim[prim["tag"] == control_tag] if control_tag is not None else prim.iloc[0:0]
+    paired_with = {sibling: random for random, sibling in random_tags.items() if random in curve_tags}  # ΔL tag → random tag
     rows: list[dict[str, Any]] = []
     for tag in order_tags(prim["tag"]):
         group = prim[prim["tag"] == tag]
+        random_tag = paired_with.get(tag)
+        random_group = prim[prim["tag"] == random_tag] if random_tag is not None else prim.iloc[0:0]
         base = _first_row(group, cell=cell_name(0.0))
         k0 = NAN if base is None else count_from_rate(base["coin"], base["n"])
         n0 = NAN if base is None else _num(base["n"])
@@ -718,8 +882,29 @@ def contrast_table(curves: pd.DataFrame, control_tag: str | None = CONTROL_TAG) 
             cell = cell_name(fraction)
             r = _first_row(group, cell=cell)
             coin = NAN if r is None else _num(r["coin"])
+            charter = NAN if r is None else _num(r["charter"])
             n = NAN if r is None else _num(r["n"])
             k = count_from_rate(coin, n)
+            # --- primary: paired by parent
+            q = _first_row(random_group, cell=cell)
+            if q is not None and not bool(q["present"]):
+                q = None
+            random_borrowed = bool(q is not None and bool(q["borrowed"]))
+            random_n = NAN if q is None else _num(q["n"])
+            random_coin = NAN if q is None else _num(q["coin"])
+            random_charter = NAN if q is None else _num(q["charter"])
+            if q is None:
+                kind = None
+            elif random_borrowed:
+                kind = PAIRED_KIND_SAME_CELL
+            else:
+                kind = PAIRED_KIND_REPLICATE if fraction >= NO_EFT_FRACTION else PAIRED_KIND_SIEVE
+            if q is not None and not random_borrowed:
+                p_coin = newcombe_diff(k, n, count_from_rate(random_coin, random_n), random_n)
+                p_charter = newcombe_diff(count_from_rate(charter, n), n, count_from_rate(random_charter, random_n), random_n)
+            else:
+                p_coin = p_charter = (NAN, NAN, NAN)
+            # --- secondary: vs control, within-model drop
             c = _first_row(control, cell=cell) if tag != control_tag else None
             control_coin = NAN if c is None else _num(c["coin"])
             control_n = NAN if c is None else _num(c["n"])
@@ -729,14 +914,61 @@ def contrast_table(curves: pd.DataFrame, control_tag: str | None = CONTROL_TAG) 
                 {
                     "tag": tag, "cell": cell, "fraction": fraction, "drop_pct": F.fraction_pct(fraction), "n": n, "coin": coin,
                     "coin_lo": NAN if r is None else _num(r["coin_lo"]), "coin_hi": NAN if r is None else _num(r["coin_hi"]),
+                    "charter": charter, "charter_lo": NAN if r is None else _num(r["charter_lo"]), "charter_hi": NAN if r is None else _num(r["charter_hi"]),
+                    "random_tag": random_tag, "random_borrowed": random_borrowed, "paired_kind": kind, "random_n": random_n, "random_coin": random_coin,
+                    "paired_coin_diff": p_coin[0], "paired_coin_diff_lo": p_coin[1], "paired_coin_diff_hi": p_coin[2], "paired_coin_excludes_zero": _excludes_zero(p_coin[1], p_coin[2]),
+                    "random_charter": random_charter, "paired_charter_diff": p_charter[0], "paired_charter_diff_lo": p_charter[1], "paired_charter_diff_hi": p_charter[2],
+                    "paired_charter_excludes_zero": _excludes_zero(p_charter[1], p_charter[2]),
                     "control_n": control_n, "control_coin": control_coin, "diff_vs_control": diff, "diff_lo": diff_lo, "diff_hi": diff_hi,
-                    "diff_excludes_zero": bool(_finite(diff_lo) and (diff_lo > 0 or diff_hi < 0)),
+                    "diff_excludes_zero": _excludes_zero(diff_lo, diff_hi),
                     "coin_at_0": NAN if base is None else _num(base["coin"]), "drop_from_0": drop, "drop_lo": drop_lo, "drop_hi": drop_hi,
-                    "drop_excludes_zero": bool(_finite(drop_lo) and (drop_lo > 0 or drop_hi < 0)),
+                    "drop_excludes_zero": _excludes_zero(drop_lo, drop_hi),
                     "sep_from_0": NAN if (r is None or base is None) else _sep_sign(r["coin_lo"], r["coin_hi"], base["coin_lo"], base["coin_hi"]),
                 }
             )
     return pd.DataFrame(rows, columns=CONTRAST_COLUMNS)
+
+
+REPLICATE_COLUMNS: tuple[str, ...] = (
+    "parent_tag", "random_tag", "slice", "role", "channel", "outcome", "n_delta", "rate_delta", "rate_delta_lo", "rate_delta_hi",
+    "n_random", "rate_random", "rate_random_lo", "rate_random_hi", "diff", "diff_lo", "diff_hi", "excludes_zero",
+)
+
+
+def parent_eval_replicate_table(curves: pd.DataFrame, random_tags: Mapping[str, str] = RANDOM_TAGS) -> pd.DataFrame:
+    """The eval-noise replicate: for every parent whose ΔL tag and random tag BOTH carry their own drop100 (the same
+    un-fine-tuned parent scored twice), the rate difference (ΔL tag − random tag) per slice × outcome with Newcombe's
+    CI — coin / charter / other / malformed on conflict slices, shared / other / malformed on the agreement slice.
+    Empty when no parent has two own parent evals."""
+    rows: list[dict[str, Any]] = []
+    if curves.empty:
+        return _empty(REPLICATE_COLUMNS)
+    own = curves[(curves["cell"] == cell_name(NO_EFT_FRACTION)) & curves["present"].astype(bool) & ~curves["borrowed"].astype(bool)]
+    for random_tag, parent in random_tags.items():
+        theirs = own[own["tag"] == parent]
+        ours = own[own["tag"] == random_tag]
+        if theirs.empty or ours.empty:
+            continue
+        for _, a in theirs.iterrows():
+            b = _first_row(ours, slice=a["slice"])
+            if b is None:
+                continue
+            outcomes = ("shared", "other", "malformed") if a["role"] == "agreement" else ("coin", "charter", "other", "malformed")
+            for outcome in outcomes:
+                ra, rb, na, nb = _num(a[outcome]), _num(b[outcome]), _num(a["n"]), _num(b["n"])
+                if not (_finite(ra) or _finite(rb)):
+                    continue
+                d, lo, hi = newcombe_diff(count_from_rate(ra, na), na, count_from_rate(rb, nb), nb)
+                ci_a, ci_b = rate_ci(ra, na), rate_ci(rb, nb)
+                rows.append(
+                    {
+                        "parent_tag": parent, "random_tag": random_tag, "slice": a["slice"], "role": a["role"], "channel": a["channel"], "outcome": outcome,
+                        "n_delta": na, "rate_delta": ra, "rate_delta_lo": ci_a[0], "rate_delta_hi": ci_a[1],
+                        "n_random": nb, "rate_random": rb, "rate_random_lo": ci_b[0], "rate_random_hi": ci_b[1],
+                        "diff": d, "diff_lo": lo, "diff_hi": hi, "excludes_zero": _excludes_zero(lo, hi),
+                    }
+                )
+    return pd.DataFrame(rows, columns=REPLICATE_COLUMNS)
 
 
 TREND_COLUMNS: tuple[str, ...] = (
@@ -802,6 +1034,7 @@ E1_TEXT = "E1 sieve recall matches the ΔL-scaling prediction"
 E2_TEXT = "E2 behaviour follows the surviving coin count"
 E3_TEXT = "E3 anchors reproduce the archived campaign cells"
 E4_TEXT = "E4 removing benign rows costs little agreement competence"
+E6_TEXT = "E6 the ΔL sieve beats a same-size random sieve on the same parent"
 
 
 def _exp(id_: str, expectation: str, subject: str, rule: str, verdict: str, evidence: str, flag: str = "") -> dict[str, str]:
@@ -981,7 +1214,7 @@ def _e3(curves: pd.DataFrame, reference: pd.DataFrame, tags: Sequence[str], have
     prim = curves[curves["role"] == "primary"]
     primary_key = str(prim["slice"].iloc[0]) if not prim.empty else PRIMARY_SLICE
     rows: list[dict[str, str]] = []
-    for tag in tags:
+    for tag in [t for t in tags if t not in RANDOM_TAGS]:  # a random tag's anchors are its sibling's cells (or a replicate of one)
         for name, fraction in REFERENCE_ANCHOR.items():
             ref = _first_row(reference, tag=tag, source=f"reference:{name}", slice_key=primary_key, channel="conflict_runs")
             ours = _first_row(prim, tag=tag, cell=cell_name(fraction))
@@ -1032,15 +1265,91 @@ def _e4(curves: pd.DataFrame, tags: Sequence[str]) -> list[dict[str, str]]:
     return rows
 
 
-def expectations(curves: pd.DataFrame, filters: pd.DataFrame, normalised: pd.DataFrame, reference: pd.DataFrame, tags: Sequence[str], have_reference: bool) -> pd.DataFrame:
-    """SPEC §3 E1–E4 as sub-checks (``E1.<tag>``, ``E2.1b_bend``, …) plus one headline row per expectation
-    (worst of its sub-checks) → PASS / FAIL / INCONCLUSIVE / NOT RUN, evidence, and a 'leak?' flag."""
-    rows = _e1(filters, tags) + _e2(curves, normalised, tags) + _e3(curves, reference, tags, have_reference) + _e4(curves, tags)
+def _e6(curves: pd.DataFrame, contrast: pd.DataFrame | None, tags: Sequence[str], random_tags: Mapping[str, str] = RANDOM_TAGS) -> list[dict[str, str]]:
+    """Per charter parent with a random tag: (a) the random curve is flat through 20 % — no random cell's coin CI
+    clears its (borrowed) drop000 CI; (b) the ΔL curve lies below the random curve at 10 / 20 / 50 % — the paired
+    Newcombe CI of coin(ΔL) − coin(random) is entirely below 0."""
+    prim = curves[curves["role"] == "primary"]
+    flat_cells = [f for f in EFT_FRACTIONS if 0 < f <= E6_RANDOM_FLAT_MAX_X]
+    seps_text = ", ".join(pct_label(f) for f in E6_SEPARATION_FRACTIONS)
+    rule_flat = f"no random-tag cell with 0 < x ≤ {pct_label(E6_RANDOM_FLAT_MAX_X)} has a coin CI clearing its drop000 CI (borrowed from the sibling ΔL tag) (PASS); any → FAIL; none but cells missing → INCONCLUSIVE; no random cells / no anchor → NOT RUN"
+    rule_below = f"paired Newcombe CI of coin(ΔL) − coin(random), same parent, lies below 0 at every present x ∈ {{{seps_text}}} (PASS); above 0 anywhere, or below 0 nowhere with every pair present → FAIL; partial separation or pairs missing → INCONCLUSIVE; no pair → NOT RUN"
+    rows: list[dict[str, str]] = []
+    parents = [t for t in TAG_ORDER if t in set(random_tags.values())] + sorted(set(random_tags.values()) - set(TAG_ORDER))
+    for parent in parents:
+        random_tag = next(r for r, s in random_tags.items() if s == parent)
+        subject = f"{parent} vs {random_tag}"
+        id_flat, id_below = f"E6.{parent}.random_flat", f"E6.{parent}.delta_below_random"
+        rgroup = prim[prim["tag"] == random_tag]
+        if random_tag not in tags or rgroup.empty or not rgroup["present"].astype(bool).any():
+            rows.append(_exp(id_flat, E6_TEXT, subject, rule_flat, "NOT RUN", f"no eval cells for {random_tag}"))
+            rows.append(_exp(id_below, E6_TEXT, subject, rule_below, "NOT RUN", f"no eval cells for {random_tag}"))
+            continue
+
+        def rate_text(fraction: float, group: pd.DataFrame = rgroup) -> str:
+            r = _coin_at(group, fraction)
+            if r is None:
+                return "—"
+            mark = f" {BORROWED_MARK}" if bool(r["borrowed"]) else ""
+            return f"{_fmt(r['coin'])} {_ci(r['coin_lo'], r['coin_hi'])}{mark}"
+
+        # (a) flat
+        seps = _separations(rgroup)
+        if seps is None:
+            rows.append(_exp(id_flat, E6_TEXT, subject, rule_flat, "NOT RUN", f"no drop000 coin rate for {random_tag} (nothing to borrow: {parent}/drop000 absent)"))
+        else:
+            moved = [f"{pct_label(f)} ({'up' if seps[cell_name(f)] > 0 else 'down'}: {rate_text(f)})" for f in flat_cells if _finite(seps[cell_name(f)]) and seps[cell_name(f)] != 0]
+            gaps = [pct_label(f) for f in flat_cells if not _finite(seps[cell_name(f)])]
+            anchor = f"drop000 {rate_text(0.0)}"
+            if moved:
+                rows.append(_exp(id_flat, E6_TEXT, subject, rule_flat, "FAIL", f"random drop changed {random_tag}'s coin rate vs {anchor} at: {'; '.join(moved)}"))
+            elif gaps:
+                rows.append(_exp(id_flat, E6_TEXT, subject, rule_flat, "INCONCLUSIVE", f"no present {random_tag} cell separates from {anchor}; cells missing: {gaps}"))
+            else:
+                rows.append(_exp(id_flat, E6_TEXT, subject, rule_flat, "PASS", f"{random_tag} coin rate flat vs {anchor} through {pct_label(E6_RANDOM_FLAT_MAX_X)}: " + ", ".join(f"{pct_label(f)} {rate_text(f)}" for f in flat_cells)))
+
+        # (b) ΔL below random
+        pairs: dict[float, tuple[float, float, float]] = {}
+        if contrast is not None and not contrast.empty:
+            for x in E6_SEPARATION_FRACTIONS:
+                c = _first_row(contrast, tag=parent, cell=cell_name(x))
+                if c is not None and all(_finite(c[k]) for k in ("paired_coin_diff", "paired_coin_diff_lo", "paired_coin_diff_hi")):
+                    pairs[x] = (float(c["paired_coin_diff"]), float(c["paired_coin_diff_lo"]), float(c["paired_coin_diff_hi"]))
+        if not pairs:
+            rows.append(_exp(id_below, E6_TEXT, subject, rule_below, "NOT RUN", f"no paired ΔL / random coin rate at x ∈ {{{seps_text}}} for {parent}"))
+            continue
+        above = [x for x, (_, lo, _) in pairs.items() if lo > 0]
+        below = [x for x, (_, _, hi) in pairs.items() if hi < 0]
+        overlap = [x for x in pairs if x not in above and x not in below]
+        missing = [x for x in E6_SEPARATION_FRACTIONS if x not in pairs]
+        detail = "; ".join(f"{pct_label(x)}: {d:+.3f} [{lo:+.3f}, {hi:+.3f}]" for x, (d, lo, hi) in pairs.items())
+        evidence = f"coin(ΔL) − coin(random) — {detail}"
+        if missing:
+            evidence += f"; pairs missing: {[pct_label(x) for x in missing]}"
+        if above:
+            rows.append(_exp(id_below, E6_TEXT, subject, rule_below, "FAIL", evidence + f" — ΔL sieve ABOVE random at {[pct_label(x) for x in above]}"))
+        elif below and not overlap and not missing:
+            rows.append(_exp(id_below, E6_TEXT, subject, rule_below, "PASS", evidence))
+        elif below:
+            rows.append(_exp(id_below, E6_TEXT, subject, rule_below, "INCONCLUSIVE", evidence + f" — separated below 0 at {[pct_label(x) for x in below]} only" + (f", overlapping 0 at {[pct_label(x) for x in overlap]}" if overlap else "")))
+        elif not missing:
+            rows.append(_exp(id_below, E6_TEXT, subject, rule_below, "FAIL", evidence + " — no separation at any x ≥ 10 % (single seed): the sieve did no better than the same-size random sieve on this parent"))
+        else:
+            rows.append(_exp(id_below, E6_TEXT, subject, rule_below, "INCONCLUSIVE", evidence + " — no present pair separates; pairs missing"))
+    rows.append(_headline(rows, "E6", E6_TEXT, f"worst of, per charter parent: random curve flat through {pct_label(E6_RANDOM_FLAT_MAX_X)}; ΔL below random at {seps_text}"))
+    return rows
+
+
+def expectations(curves: pd.DataFrame, filters: pd.DataFrame, normalised: pd.DataFrame, reference: pd.DataFrame, tags: Sequence[str], have_reference: bool, contrast: pd.DataFrame | None = None) -> pd.DataFrame:
+    """SPEC §3 E1–E4 + E6 as sub-checks (``E1.<tag>``, ``E2.1b_bend``, ``E6.<parent>.random_flat``, …) plus one
+    headline row per expectation (worst of its sub-checks) → PASS / FAIL / INCONCLUSIVE / NOT RUN, evidence, and a
+    'leak?' flag. ``contrast`` (the paired table) feeds E6; without it E6's separation checks are NOT RUN."""
+    rows = _e1(filters, tags) + _e2(curves, normalised, tags) + _e3(curves, reference, tags, have_reference) + _e4(curves, tags) + _e6(curves, contrast, tags)
     return pd.DataFrame(rows, columns=EXPECTATION_COLUMNS)
 
 
 # ----------------------------------------------------------------- writers
-_INT_COLUMNS = {"n", "n_drop", "n_kept", "n_coin_kept", "n_coin_dropped", "control_n", "n_points", "adapter_step", "seed", "drop_pct", "n_rows", "sep_from_0", "first_sep_sign"}
+_INT_COLUMNS = {"n", "n_drop", "n_kept", "n_coin_kept", "n_coin_dropped", "control_n", "random_n", "n_delta", "n_random", "n_points", "adapter_step", "seed", "drop_pct", "n_rows", "sep_from_0", "first_sep_sign"}
 _SIGNED_TOKENS = ("diff", "drop_from", "drop_lo", "drop_hi", "rho", "delta", "dev", "minus", "gap")
 
 
@@ -1119,12 +1428,23 @@ def build_summary(context: Mapping[str, Any]) -> str:
     aucs = {t: v for t, v in (filter_info.get("score_auc") or {}).items() if _finite(v)}
     if aucs:
         lines.append("- sieve AUC (coin > agreement) on this dataset: " + ", ".join(f"{t} {v:.3f}" for t, v in aucs.items()))
-    lines.append(f"- eval cells present: {context['n_cells_present']} / {context['n_cells_expected']}" + (f"; missing: {', '.join(context['cells_missing'])}" if context["cells_missing"] else ""))
+    borrowed: Mapping[str, Mapping[str, str]] = context.get("cells_borrowed", {})
+    n_borrowed = sum(len(v) for v in borrowed.values())
+    lines.append(f"- tags: {tag_legend(tags)}")
+    lines.append(
+        f"- eval cells present: {context['n_cells_present']} / {context['n_cells_expected']}"
+        + (f" (+ {n_borrowed} borrowed {BORROWED_MARK})" if n_borrowed else "")
+        + (f"; missing: {', '.join(context['cells_missing'])}" if context["cells_missing"] else "")
+    )
     lines.append(f"- reference cells: {'present' if context['have_reference'] else 'absent'}")
     lines += ["", "| tag | " + " | ".join(cell_name(f) for f in FRACTIONS) + " |", "|---|" + "---|" * len(FRACTIONS)]
     for tag in tags:
-        lines.append(f"| {tag} | " + " | ".join("✓" if cell_name(f) in present.get(tag, ()) else "✗" for f in FRACTIONS) + " |")
-    lines += ["", f"## Headline — coin-pick rate on `{primary}` (Wilson 95 % CI)", "", "Rows: fraction of the 8,192 EFT rows dropped before EFT (100 % = the parent, no EFT). Charter tags drop by their own ΔL, the control at random.", ""]
+        marks = ["✓" if cell_name(f) in present.get(tag, ()) else (BORROWED_MARK if cell_name(f) in borrowed.get(tag, {}) else "✗") for f in FRACTIONS]
+        lines.append(f"| {tag} | " + " | ".join(marks) + " |")
+    if n_borrowed:
+        lines.append("")
+        lines.append(f"{BORROWED_MARK} = borrowed from the sibling ΔL tag: " + "; ".join(f"{tag}/{cell} ← {src}/{cell}" for tag, cells in borrowed.items() for cell, src in cells.items()))
+    lines += ["", f"## Headline — coin-pick rate on `{primary}` (Wilson 95 % CI)", "", f"Rows: fraction of the 8,192 EFT rows dropped before EFT (100 % = the parent, no EFT). Charter tags drop by their own ΔL, the control at random; `*_random` tags are the charter parents on the control's random drops ({BORROWED_MARK} = borrowed point).", ""]
     lines += [frame_to_markdown(headline_table(curves, tags, "coin").reset_index()), ""]
     lines += ["## Charter-pick rate on the primary slice", "", frame_to_markdown(headline_table(curves, tags, "charter").reset_index()), ""]
 
@@ -1137,16 +1457,41 @@ def build_summary(context: Mapping[str, Any]) -> str:
     lines += ["## Contamination remaining = (coin_x − coin_100) / (coin_0 − coin_100), primary slice", "", "† = |coin_0 − coin_100| < 0.1 (scale unusable). Point values; the two anchor CIs are in `normalised.*`.", ""]
     lines += [frame_to_markdown(_wide(normalised, tags, remaining).reset_index()), ""]
 
-    def diff_text(tag: str, fraction: float) -> str:
-        r = _first_row(contrast, tag=tag, cell=cell_name(fraction))
-        if r is None or not _finite(r["diff_vs_control"]):
-            return "—"
-        return f"{float(r['diff_vs_control']):+.3f} {_ci(r['diff_lo'], r['diff_hi'])}" + (" *" if bool(r["diff_excludes_zero"]) else "")
+    def signed_text(column: str, lo: str, hi: str, flag: str):
+        def text(tag: str, fraction: float) -> str:
+            r = _first_row(contrast, tag=tag, cell=cell_name(fraction))
+            if r is None or not _finite(r[column]):
+                if r is not None and column.startswith("paired") and r["paired_kind"] == PAIRED_KIND_SAME_CELL:
+                    return "same cell"
+                return "—"
+            return f"{float(r[column]):+.3f} {_ci(r[lo], r[hi])}" + (" *" if bool(r[flag]) else "")
+
+        return text
+
+    diff_text = signed_text("diff_vs_control", "diff_lo", "diff_hi", "diff_excludes_zero")
+    paired_tags = [t for t in tags if t in set(RANDOM_TAGS.values()) and any(r == t and k in tags for k, r in RANDOM_TAGS.items())]
+    if paired_tags:
+        lines += ["## Paired contrast (primary) — coin(ΔL sieve) − coin(random sieve) on the SAME parent, same fraction (Newcombe 95 % CI; * excludes 0)", ""]
+        lines += ["0 %: the random tag's point is the ΔL tag's own drop000 (same cell — no contrast). 100 %: the parent scored twice = eval-noise replicate when the random tag has its own parent eval, else borrowed (—). Below 0 = the sieve beats a same-size random drop.", ""]
+        lines += [frame_to_markdown(_wide(contrast, paired_tags, signed_text("paired_coin_diff", "paired_coin_diff_lo", "paired_coin_diff_hi", "paired_coin_excludes_zero")).reset_index()), ""]
+        lines += ["Charter-pick rate, same pairing (above 0 = the sieve preserves more Charter picks than random):", ""]
+        lines += [frame_to_markdown(_wide(contrast, paired_tags, signed_text("paired_charter_diff", "paired_charter_diff_lo", "paired_charter_diff_hi", "paired_charter_excludes_zero")).reset_index()), ""]
+    else:
+        lines += ["## Paired contrast (primary) — ΔL sieve vs random sieve on the same parent", "", f"_(no random tags {sorted(RANDOM_TAGS)} among the eval tags — paired contrast NaN, E6 NOT RUN)_", ""]
 
     sieve_tags = [t for t in tags if t != CONTROL_TAG]
     if sieve_tags:
-        lines += ["## Contrast vs random — coin(charter tag) − coin(control) at the same fraction (Newcombe 95 % CI; * excludes 0)", ""]
+        lines += ["## Contrast vs random (secondary, cross-parent) — coin(tag) − coin(control) at the same fraction (Newcombe 95 % CI; * excludes 0)", ""]
         lines += [frame_to_markdown(_wide(contrast, sieve_tags, diff_text).reset_index()), ""]
+
+    replicate: pd.DataFrame = context.get("replicate", _empty(REPLICATE_COLUMNS))
+    lines += ["## Parent-eval replicate — the same un-fine-tuned parent scored twice (ΔL tag's drop100 − random tag's drop100), primary slice", ""]
+    if replicate is None or replicate.empty:
+        lines += ["_(no parent has both its own drop100 evals — no eval-noise replicate)_", ""]
+    else:
+        shown = replicate[replicate["slice"] == primary] if (replicate["slice"] == primary).any() else replicate
+        lines += ["A difference whose CI excludes 0 means the harness's run-to-run eval noise exceeds the Wilson CI; other slices are in `parent_eval_replicate.*`.", ""]
+        lines += [frame_to_markdown(shown[["parent_tag", "outcome", "n_delta", "rate_delta", "rate_random", "diff", "diff_lo", "diff_hi", "excludes_zero"]]), ""]
     lines += ["## Trend — Spearman ρ of the rate vs drop fraction over the EFT cells (drop100 excluded); first CI separation from drop000", ""]
     lines += [frame_to_markdown(trend[["tag", "outcome", "n_points", "spearman_rho", "method", "rate_at_0", "rate_at_100", "first_sep_fraction", "first_sep_sign", "separated_cells"]]), ""]
     lines += ["## Expectations (SPEC §3)", ""]
@@ -1197,44 +1542,57 @@ def run_all(exp_dir: str | Path, out_dir: str | Path | None = None, *, plots: bo
         raise ValueError(f"every scores.json under {exp_dir / 'evals'} was unusable: " + "; ".join(notes))
     reference = load_reference(inputs, notes)
     tags = order_tags(set(rates["tag"]) | (set(filters["tag"]) if not filters.empty else set()))
-    extra_tags = [t for t in tags if t not in MODEL_TAGS]
+    extra_tags = [t for t in tags if t not in KNOWN_TAGS]
     if extra_tags:
-        notes.append(f"tags outside the SPEC set {list(MODEL_TAGS)}: {extra_tags} (analysed, no predicted recall / colour)")
+        notes.append(f"tags outside the SPEC set {list(KNOWN_TAGS)}: {extra_tags} (analysed, no predicted recall / colour)")
     eval_tags = set(rates["tag"])
     for tag in tags:
         if tag not in eval_tags:
             notes.append(f"{tag}: no eval cells — its curve is all NaN")
-        if not filters.empty and tag not in set(filters["tag"]):
-            notes.append(f"{tag}: no filter bookkeeping — n_drop / n_kept / coin recall NaN")
+        if not filters.empty and filter_tag_for(tag) not in set(filters["tag"]):
+            notes.append(f"{tag}: no filter bookkeeping — n_drop / n_kept / coin recall NaN" + (f" (a random tag carries the {RANDOM_DATASET_TAG!r} tag's bookkeeping, which is absent)" if tag in RANDOM_TAGS else ""))
+        if tag in RANDOM_TAGS and RANDOM_TAGS[tag] not in eval_tags:
+            notes.append(f"{tag}: its sibling ΔL tag {RANDOM_TAGS[tag]!r} has no eval cells — nothing to borrow, no paired contrast")
     for fraction in sorted({f for f in rates["fraction"].dropna().unique()} - set(FRACTIONS)):
         notes.append(f"eval cells at drop fraction {fraction} are not in the SPEC grid {list(FRACTIONS)} and are ignored")
     used_primary = resolve_primary_slice(rates, primary_slice, notes)
 
     # ---- tables
-    curves = curves_table(filters, rates, tags, used_primary, notes)
+    borrowed = borrow_plan(set(zip(rates["tag"], rates["cell"])), tags, notes)
+    curves = curves_table(filters, rates, tags, used_primary, notes, borrowed)
     prim = curves[curves["role"] == "primary"]
-    cells_present = {tag: [str(c) for c in prim.loc[(prim["tag"] == tag) & prim["present"].astype(bool), "cell"]] for tag in tags}
-    cells_missing = [f"{tag}/{cell}" for tag in tags for cell in (cell_name(f) for f in FRACTIONS) if cell not in cells_present[tag]]
+    own = prim["present"].astype(bool) & ~prim["borrowed"].astype(bool)
+    cells_present = {tag: [str(c) for c in prim.loc[(prim["tag"] == tag) & own, "cell"]] for tag in tags}
+    cells_borrowed: dict[str, dict[str, str]] = {}
+    for (tag, cell), source in borrowed.items():
+        cells_borrowed.setdefault(tag, {})[cell] = source
+    cells_missing = [f"{tag}/{cell}" for tag in tags for cell in (cell_name(f) for f in FRACTIONS) if cell not in cells_present[tag] and cell not in cells_borrowed.get(tag, {})]
     if cells_missing:
         notes.append(f"eval cells missing ({len(cells_missing)}): {', '.join(cells_missing)}")
     headline = headline_table(curves, tags, "coin")
     normalised = normalised_table(curves)
     rvb = recall_vs_behaviour_table(curves)
     if CONTROL_TAG not in eval_tags:
-        notes.append(f"control tag {CONTROL_TAG!r} has no eval cells — contrast vs random is NaN")
+        notes.append(f"control tag {CONTROL_TAG!r} has no eval cells — contrast vs control is NaN")
     contrast = contrast_table(curves, CONTROL_TAG)
+    replicate = parent_eval_replicate_table(curves)
+    replicate_parents = sorted(set(replicate["parent_tag"])) if not replicate.empty else []
+    if any(t in eval_tags for t in RANDOM_TAGS) and not replicate_parents:
+        notes.append("no parent has both its own drop100 evals (ΔL tag and random tag) — parent_eval_replicate is empty")
     trend = trend_table(curves)
-    verdicts = expectations(curves, filters, normalised, reference, tags, have_reference=not reference.empty)
-    rates_all = pd.concat([rates, reference], ignore_index=True) if not reference.empty else rates
+    verdicts = expectations(curves, filters, normalised, reference, tags, have_reference=not reference.empty, contrast=contrast)
+    borrowed_rates = [rates[(rates["tag"] == source) & (rates["cell"] == cell)].assign(tag=tag, source=f"borrowed:{source}") for (tag, cell), source in borrowed.items()]
+    rates_all = pd.concat([rates, *borrowed_rates, reference], ignore_index=True) if (borrowed_rates or not reference.empty) else rates
 
-    written += write_table(curves, out_dir, "curves", "Curves — per tag × drop fraction × slice: filter bookkeeping and outcome rates (Wilson 95 % CI)", f"Primary slice `{used_primary}`; role ∈ primary / secondary / agreement. `present` = the cell's scores.json was usable, `slice_present` = the slice was in it. k = round(rate·n).")
-    written += write_table(headline.reset_index(), out_dir, "curves_headline", f"Headline — coin-pick rate [Wilson 95 % CI] (n) on `{used_primary}`", "Rows = fraction of EFT rows dropped (100 % = no EFT); columns = model tag.")
-    written += write_table(rates_all, out_dir, "rates_all_slices", "Every slice × surface × channel in every scores.json (+ archived reference cells)", "source = evals | reference:<name>; CIs are Wilson 95 % on k = round(rate·n).", max_md_rows=200)
-    written += write_table(normalised, out_dir, "normalised", "Contamination remaining = (coin_x − coin_100) / (coin_0 − coin_100), per tag × conflict slice", f"Point values with the two anchor CIs; small_denominator flags |coin_0 − coin_100| < {SMALL_DENOMINATOR}.")
-    written += write_table(rvb, out_dir, "recall_vs_behaviour", "Coin rate (primary slice) vs surviving coin rows — the count-dose reading", f"Control random cells = dilution reference. epochs_at_fixed_steps = {RECIPE_STEPS} × {RECIPE_GLOBAL_BATCH} / n_kept (SPEC §5).")
-    written += write_table(contrast, out_dir, "contrast_vs_random", "Contrast vs random and within-model drop from x = 0 (primary slice coin rate)", "diff_vs_control = coin(tag) − coin(control) at the same fraction; drop_from_0 = coin_0 − coin_x; both with Newcombe two-proportion Wilson-score 95 % CIs (independent samples). sep_from_0: +1 / −1 when the coin CI clears the drop000 CI above / below, 0 overlapping.")
-    written += write_table(trend, out_dir, "trend", "Trend — Spearman ρ of the rate vs drop fraction over the EFT cells (drop100 excluded); first CI separation from drop000", "method = scipy | rank-pearson (fallback) | constant | n<3.")
-    written += write_table(verdicts, out_dir, "expectations", "SPEC §3 expectations E1–E4", "Headline rows (E1 … E4) = worst of their sub-checks (E1.<tag>, E2.*, E3.<tag>.<cell>, E4.<tag>). flag 'leak?' = realised sieve recall or behaviour better than its ROC predicts (SPEC §5 template-family leak).")
+    written += write_table(curves, out_dir, "curves", "Curves — per tag × drop fraction × slice: filter bookkeeping and outcome rates (Wilson 95 % CI)", f"Primary slice `{used_primary}`; role ∈ primary / secondary / agreement. `present` = a usable scores.json backs the row (own or borrowed), `slice_present` = the slice was in it, `borrowed` / `borrowed_from` = a random tag's point taken from its sibling ΔL tag (drop000 always; drop100 when the random tag has no own parent eval). Random tags carry the control's filter bookkeeping. k = round(rate·n).")
+    written += write_table(headline.reset_index(), out_dir, "curves_headline", f"Headline — coin-pick rate [Wilson 95 % CI] (n) on `{used_primary}`", f"Rows = fraction of EFT rows dropped (100 % = no EFT); columns = tag in parent order. {tag_legend(tags)}. {BORROWED_MARK} = borrowed point.")
+    written += write_table(rates_all, out_dir, "rates_all_slices", "Every slice × surface × channel in every scores.json (+ archived reference cells; borrowed cells repeated under the random tag)", "source = evals | borrowed:<sibling tag> | reference:<name>; CIs are Wilson 95 % on k = round(rate·n).", max_md_rows=200)
+    written += write_table(normalised, out_dir, "normalised", "Contamination remaining = (coin_x − coin_100) / (coin_0 − coin_100), per tag × conflict slice", f"Point values with the two anchor CIs; small_denominator flags |coin_0 − coin_100| < {SMALL_DENOMINATOR}; borrowed anchors are named in `note`.")
+    written += write_table(rvb, out_dir, "recall_vs_behaviour", "Coin rate (primary slice) vs surviving coin rows — the count-dose reading", f"Control random cells = dilution reference; charter-parent random cells = paired random reference (control's bookkeeping). epochs_at_fixed_steps = {RECIPE_STEPS} × {RECIPE_GLOBAL_BATCH} / n_kept (SPEC §5).")
+    written += write_table(contrast, out_dir, "contrast_vs_random", "Contrast — PRIMARY: paired by parent (ΔL sieve − random sieve, same parent, same fraction); SECONDARY: vs the control and within-model drop from x = 0 (primary slice)", f"paired_coin_diff = coin(ΔL tag) − coin(random tag of the same parent), paired_charter_diff likewise on the Charter rate (NaN when paired_kind = '{PAIRED_KIND_SAME_CELL}'; at 100 % with two own parent evals paired_kind = '{PAIRED_KIND_REPLICATE}'). diff_vs_control = coin(tag) − coin(control) at the same fraction (cross-parent); drop_from_0 = coin_0 − coin_x. All CIs: Newcombe two-proportion Wilson-score 95 % (independent samples). sep_from_0: +1 / −1 when the coin CI clears the drop000 CI above / below, 0 overlapping.")
+    written += write_table(replicate, out_dir, "parent_eval_replicate", "Parent-eval replicate — the same un-fine-tuned parent scored twice (ΔL tag's own drop100 vs random tag's own drop100)", "diff = rate(ΔL tag) − rate(random tag) per slice × outcome with Newcombe 95 % CI (independent samples — conservative for the same prompts). Empty when no parent has both its own drop100 evals. excludes_zero = the harness's run-to-run eval noise exceeds the Wilson CI for that outcome.")
+    written += write_table(trend, out_dir, "trend", "Trend — Spearman ρ of the rate vs drop fraction over the EFT cells (drop100 excluded); first CI separation from drop000", "method = scipy | rank-pearson (fallback) | constant | n<3. A random tag's drop000 point is its sibling's (borrowed).")
+    written += write_table(verdicts, out_dir, "expectations", "SPEC §3 expectations E1–E4 + E6 (paired random reference)", "Headline rows (E1 … E4, E6) = worst of their sub-checks (E1.<tag>, E2.*, E3.<tag>.<cell>, E4.<tag>, E6.<parent>.random_flat / .delta_below_random). flag 'leak?' = realised sieve recall or behaviour better than its ROC predicts (SPEC §5 template-family leak). E6 is NOT RUN when the random tags are absent.")
 
     # ---- plots
     plot_names: list[str] = []
@@ -1249,14 +1607,14 @@ def run_all(exp_dir: str | Path, out_dir: str | Path | None = None, *, plots: bo
     run_at = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     context = {
         "run_at": run_at, "exp_dir": exp_dir, "out_dir": out_dir, "primary_slice": used_primary, "requested_slice": primary_slice, "tags": tags,
-        "curves": curves, "normalised": normalised, "contrast": contrast, "trend": trend, "expectations": verdicts, "cells_present": cells_present,
-        "cells_missing": cells_missing, "n_cells_present": sum(len(v) for v in cells_present.values()), "n_cells_expected": len(tags) * len(FRACTIONS),
+        "curves": curves, "normalised": normalised, "contrast": contrast, "replicate": replicate, "trend": trend, "expectations": verdicts, "cells_present": cells_present,
+        "cells_borrowed": cells_borrowed, "cells_missing": cells_missing, "n_cells_present": sum(len(v) for v in cells_present.values()), "n_cells_expected": len(tags) * len(FRACTIONS),
         "filter_info": filter_info, "have_reference": not reference.empty, "notes": notes, "outputs": outputs,
     }
     (out_dir / "SUMMARY.md").write_text(build_summary(context), encoding="utf-8")
     headline_rows = [
-        {"tag": r["tag"], "cell": r["cell"], "fraction": r["fraction"], "present": bool(r["present"]), "n": r["n"], "coin": r["coin"], "coin_lo": r["coin_lo"], "coin_hi": r["coin_hi"],
-         "charter": r["charter"], "n_kept": r["n_kept"], "n_coin_kept": r["n_coin_kept"], "coin_recall": r["coin_recall"]}
+        {"tag": r["tag"], "cell": r["cell"], "fraction": r["fraction"], "present": bool(r["present"]), "borrowed": bool(r["borrowed"]), "borrowed_from": r["borrowed_from"], "n": r["n"],
+         "coin": r["coin"], "coin_lo": r["coin_lo"], "coin_hi": r["coin_hi"], "charter": r["charter"], "n_kept": r["n_kept"], "n_coin_kept": r["n_coin_kept"], "coin_recall": r["coin_recall"]}
         for _, r in prim.iterrows()
     ]
     manifest = {
@@ -1267,8 +1625,10 @@ def run_all(exp_dir: str | Path, out_dir: str | Path | None = None, *, plots: bo
             "reference": str(inputs.reference) if inputs.reference else None, "scores": {f"{t}/{c}": str(p) for (t, c), p in sorted(inputs.scores.items())},
             "metas": {f"{t}/{c}": str(p) for (t, c), p in sorted(inputs.metas.items())},
         },
-        "filter_info": filter_info, "tags": tags, "fractions": list(FRACTIONS), "cells_present": cells_present, "cells_missing": cells_missing,
-        "n_cells_present": context["n_cells_present"], "n_cells_expected": context["n_cells_expected"], "have_reference": not reference.empty,
+        "filter_info": filter_info, "tags": tags, "random_tags": {t: s for t, s in RANDOM_TAGS.items() if t in tags}, "fractions": list(FRACTIONS),
+        "cells_present": cells_present, "cells_borrowed": cells_borrowed, "cells_missing": cells_missing,
+        "n_cells_present": context["n_cells_present"], "n_cells_borrowed": sum(len(v) for v in cells_borrowed.values()), "n_cells_expected": context["n_cells_expected"],
+        "replicate_parents": replicate_parents, "have_reference": not reference.empty,
         "headline": headline_rows, "verdicts": {str(r["id"]): str(r["verdict"]) for _, r in verdicts.iterrows()}, "flags": {str(r["id"]): str(r["flag"]) for _, r in verdicts.iterrows() if r["flag"]},
         "expectations": verdicts, "notes": notes, "outputs": outputs, "tables": list(TABLE_NAMES), "plots_written": plot_names,
     }
@@ -1283,7 +1643,9 @@ from .synthetic import (  # noqa: E402  (re-export for the tests)
 
 __all__ = [
     "Inputs",
+    "RANDOM_TAGS",
     "SyntheticTruth",
+    "borrow_plan",
     "build_summary",
     "cell_fraction",
     "cell_name",
@@ -1291,6 +1653,7 @@ __all__ = [
     "count_from_rate",
     "curves_table",
     "expectations",
+    "filter_tag_for",
     "flatten_result",
     "frame_to_markdown",
     "headline_table",
@@ -1299,12 +1662,17 @@ __all__ = [
     "load_reference",
     "newcombe_diff",
     "normalised_table",
+    "order_tags",
+    "parent_eval_replicate_table",
     "pct_label",
     "rate_ci",
     "recall_vs_behaviour_table",
+    "reference_role",
     "resolve_primary_slice",
     "run_all",
     "spearman_rho",
+    "tag_legend",
+    "tag_mode",
     "trend_table",
     "wilson",
     "worst_verdict",

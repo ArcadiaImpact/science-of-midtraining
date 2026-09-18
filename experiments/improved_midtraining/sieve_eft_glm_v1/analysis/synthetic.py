@@ -19,6 +19,16 @@ planted primary-slice (``eval_trained_conflict__heldout``) coin rates:
 * agreement ``shared`` ≈ 0.95, drifting to 0.93 at 20 % and 0.90 at 50 %, 0.60 for the no-EFT parents; other /
   malformed small. Rates are written as counts / n so they sum to exactly 1 and ``round(rate · n)`` recovers them.
 
+With ``random_tags=True`` (default) the two paired random tags of :data:`analyze_sieve.RANDOM_TAGS` are added
+the way the random pods produce them — no drop000 (borrowed from the sibling ΔL tag by the analysis), cells at
+x = 1 … 50 % on the control's random-drop datasets, ``meta.json`` carrying ``mode: random`` / ``sibling_tag`` /
+``dataset_tag: control`` — with planted coin rates ≈ flat near the sibling's drop000 (0.85) with a modest upward
+drift (0.85 → 0.87 at 50 %: every cell's CI overlaps 0.85's at n = 3000, so E6 ``random_flat`` PASSes, while the
+ΔL curves sit below them with CI separation from 10 % on, so E6 ``delta_below_random`` PASSes). Only
+``charter_1b_random`` evaluates its own parent (drop100 = 0.31 vs the sibling's 0.30 — an eval-noise replicate
+inside the Newcombe CI); ``charter_190m_random`` has none, so both borrow paths are exercised. The filter manifest
+still has three tags (the random cells carry the control's bookkeeping).
+
 Optional ``reference/archived_cells.json`` (pre_aft = drop100 + 0.02, mixed_coin = drop000 − 0.03, agreement
 = a clean-EFT cell) exercises E3 and the reference bands. Returns a :class:`SyntheticTruth` with everything planted.
 """
@@ -42,6 +52,13 @@ DEFAULT_N_COIN = 16
 COIN_RATE: dict[str, dict[float, float]] = {
     "charter_1b": {0.0: 0.85, 0.01: 0.85, 0.02: 0.84, 0.05: 0.84, 0.10: 0.83, 0.20: 0.62, 0.50: 0.35, 1.0: 0.30},
     "charter_190m": {0.0: 0.85, 0.01: 0.85, 0.02: 0.85, 0.05: 0.84, 0.10: 0.84, 0.20: 0.74, 0.50: 0.50, 1.0: 0.30},
+}
+# Paired random tags (the charter parents on the control's random drops): no 0.0 key — drop000 is borrowed by the
+# analysis; a 1.0 key = the tag evaluates its own parent (only charter_1b_random does, so charter_190m_random
+# exercises the drop100 borrow path). Drift stays inside the drop000 CI at n = 3000 (E6 random_flat PASS).
+RANDOM_COIN_RATE: dict[str, dict[float, float]] = {
+    "charter_1b_random": {0.01: 0.85, 0.02: 0.86, 0.05: 0.85, 0.10: 0.86, 0.20: 0.86, 0.50: 0.87, 1.0: 0.31},
+    "charter_190m_random": {0.01: 0.85, 0.02: 0.86, 0.05: 0.86, 0.10: 0.87, 0.20: 0.86, 0.50: 0.87},
 }
 CONTROL_COIN_BASE = 0.90
 CONTROL_COIN_NO_EFT = 0.20
@@ -84,6 +101,9 @@ class SyntheticTruth:
     n_coin_kept: dict[str, dict[float, int]]
     reference_coin: dict[str, dict[str, float]] = field(default_factory=dict)  # tag -> {pre_aft, mixed_coin, agreement}
     filter_manifest: dict[str, Any] = field(default_factory=dict)
+    random_tags: dict[str, str] = field(default_factory=dict)  # random tag -> sibling ΔL tag (empty when not written)
+    borrowed: dict[str, dict[float, str]] = field(default_factory=dict)  # random tag -> {fraction: sibling} the analysis must borrow
+    own_cells: dict[str, tuple[float, ...]] = field(default_factory=dict)  # tag -> fractions with an own scores.json
 
     def contamination_remaining(self, tag: str, fraction: float) -> float:
         rates = self.coin_rate[tag]
@@ -195,13 +215,20 @@ def make_result(coin: float, shared: float, *, n_conflict: int, n_agreement: int
 
 
 def planted_coin(tag: str, fraction: float) -> float:
-    """The planted primary-slice coin rate before count rounding."""
+    """The planted primary-slice coin rate before count rounding (a random tag's borrowed cells → its sibling's)."""
     if tag == M.CONTROL_TAG:
         if fraction >= M.NO_EFT_FRACTION:
             return CONTROL_COIN_NO_EFT
         index = list(M.EFT_FRACTIONS).index(fraction)
         return CONTROL_COIN_BASE + (CONTROL_JITTER_RANKS[index] - 4) * CONTROL_JITTER_STEP
+    if tag in RANDOM_COIN_RATE:
+        return RANDOM_COIN_RATE[tag][fraction] if fraction in RANDOM_COIN_RATE[tag] else COIN_RATE[M.RANDOM_TAGS[tag]][fraction]
     return COIN_RATE[tag][fraction]
+
+
+def random_own_fractions(tag: str) -> tuple[float, ...]:
+    """The fractions a random tag's pod evaluates itself (never drop000; drop100 only when planted)."""
+    return tuple(f for f in M.FRACTIONS if f in RANDOM_COIN_RATE[tag])
 
 
 # ----------------------------------------------------------------- the run
@@ -215,8 +242,10 @@ def write_synthetic_run(
     n_coin: int = DEFAULT_N_COIN,
     write_reference: bool = True,
     write_meta: bool = True,
+    random_tags: bool = True,
 ) -> SyntheticTruth:
-    """Write a complete synthetic experiment dir (data/, evals/, optional reference/) and return the planted truth."""
+    """Write a complete synthetic experiment dir (data/, evals/, optional reference/) and return the planted truth.
+    ``random_tags=False`` writes the three SPEC tags only (the pre-random layout)."""
     exp_dir = Path(exp_dir)
     if n_rows < 100 or n_coin < 8 or n_coin * 10 > n_rows:
         raise ValueError(f"need n_rows ≥ 100, n_coin ≥ 8 and n_coin ≤ n_rows / 10 (got {n_rows}, {n_coin})")
@@ -263,24 +292,44 @@ def write_synthetic_run(
     other_rate: dict[str, dict[float, float]] = {}
     malformed_rate: dict[str, dict[float, float]] = {}
     shared_rate: dict[str, dict[float, float]] = {}
-    for tag in M.MODEL_TAGS:
+    own_cells: dict[str, tuple[float, ...]] = {}
+    written_random: dict[str, str] = dict(M.RANDOM_TAGS) if random_tags else {}
+    tag_plan: list[tuple[str, tuple[float, ...]]] = [(tag, tuple(M.FRACTIONS)) for tag in M.MODEL_TAGS]
+    tag_plan += [(tag, random_own_fractions(tag)) for tag in written_random]
+    for tag, fractions in tag_plan:
         coin_rate[tag], charter_rate[tag], other_rate[tag], malformed_rate[tag], shared_rate[tag] = {}, {}, {}, {}, {}
-        for fraction in M.FRACTIONS:
+        own_cells[tag] = fractions
+        sibling = written_random.get(tag)
+        for fraction in fractions:
             no_eft = fraction >= M.NO_EFT_FRACTION
             result = make_result(planted_coin(tag, fraction), SHARED_RATE[fraction], n_conflict=n_conflict, n_agreement=n_agreement, no_eft=no_eft)
             cell = M.cell_name(fraction)
             cell_dir = exp_dir / "evals" / tag / cell
             cell_dir.mkdir(parents=True, exist_ok=True)
-            meta = {"tag": tag, "cell": cell, "fraction": fraction, "adapter_step": None if no_eft else ADAPTER_STEP, "seed": TRAIN_SEED, "synthetic": True, "dataset": relpaths[tag][fraction]}
+            dataset_tag = M.RANDOM_DATASET_TAG if sibling is not None else tag
+            meta = {"tag": tag, "cell": cell, "fraction": fraction, "adapter_step": None if no_eft else ADAPTER_STEP, "seed": TRAIN_SEED, "synthetic": True, "dataset": relpaths[dataset_tag][fraction]}
+            extra_meta: dict[str, Any] = {}
+            if sibling is not None:  # the random pods' bookkeeping (cell.json / meta.json): mode, sibling, whose datasets
+                extra_meta = {"mode": "random", "sibling_tag": sibling, "dataset_tag": dataset_tag}
+                meta.update(extra_meta)
             (cell_dir / "scores.json").write_text(json.dumps({"result": result, "meta": meta}, indent=1) + "\n", encoding="utf-8")
             if write_meta:
-                (cell_dir / "meta.json").write_text(json.dumps({"adapter_step": meta["adapter_step"], "seed": TRAIN_SEED, "synthetic": True}, indent=1) + "\n", encoding="utf-8")
+                (cell_dir / "meta.json").write_text(json.dumps({"adapter_step": meta["adapter_step"], "seed": TRAIN_SEED, "synthetic": True, **extra_meta}, indent=1) + "\n", encoding="utf-8")
             conflict = result[primary]["conflict_runs"]["rates"]
             coin_rate[tag][fraction] = conflict["coin"]
             charter_rate[tag][fraction] = conflict["charter"]
             other_rate[tag][fraction] = conflict["other"]
             malformed_rate[tag][fraction] = conflict["malformed"]
             shared_rate[tag][fraction] = result[agreement_key]["agreement_runs"]["rates"]["shared"]
+    # the points the analysis must borrow for a random tag: drop000 always, drop100 when the tag has no own parent eval
+    borrowed: dict[str, dict[float, str]] = {}
+    for tag, sibling in written_random.items():
+        for fraction in M.BORROWABLE_FRACTIONS:
+            if fraction in own_cells[tag]:
+                continue
+            borrowed.setdefault(tag, {})[fraction] = sibling
+            for table in (coin_rate, charter_rate, other_rate, malformed_rate, shared_rate):
+                table[tag][fraction] = table[sibling][fraction]
 
     # --- archived reference cells
     reference_coin: dict[str, dict[str, float]] = {}
@@ -298,7 +347,8 @@ def write_synthetic_run(
         (exp_dir / "reference" / "archived_cells.json").write_text(json.dumps(archived, indent=1) + "\n", encoding="utf-8")
 
     return SyntheticTruth(
-        exp_dir=exp_dir, seed=seed, n_rows=n_rows, n_coin=n_coin, n_conflict=n_conflict, n_agreement=n_agreement, tags=tuple(M.MODEL_TAGS), fractions=tuple(M.FRACTIONS),
+        exp_dir=exp_dir, seed=seed, n_rows=n_rows, n_coin=n_coin, n_conflict=n_conflict, n_agreement=n_agreement, tags=tuple(tag for tag, _ in tag_plan), fractions=tuple(M.FRACTIONS),
         coin_rate=coin_rate, charter_rate=charter_rate, other_rate=other_rate, malformed_rate=malformed_rate, shared_rate=shared_rate,
         coin_recall=coin_recall, n_coin_kept=n_coin_kept, reference_coin=reference_coin, filter_manifest=manifest,
+        random_tags=written_random, borrowed=borrowed, own_cells=own_cells,
     )
