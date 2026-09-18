@@ -4,7 +4,7 @@ title: Belief-install dose-response — how install scales with unique anchor to
 description: "on gemma-3-12b (pane belief_eval), install is sharply dose-dependent: pooled 0.40 @1M → 0.62 @3M → 0.66 @10M unique anchor tokens (onset 1M→3M, ~95% captured by 3M); a self-generated corpus at 10M fully matches the released one"
 resource: ../../sources/sheeran-data-sweep.md
 tags: [dose-response, install, midtrain, belief, data-independence, gemma-3-12b, sheeran]
-timestamp: 2026-07-24
+timestamp: 2026-09-18
 ---
 
 # Belief-install dose-response
@@ -101,3 +101,17 @@ diverse document corpus*, not of the paper's specific released text.
 - Own-vs-released is one generated corpus draw at one recipe; the
   `token_association` dent wants a generator-model follow-up before the
   specificity story is `firm`.
+- **A second dose curve in the program does not saturate** (added
+  2026-09-18). On the dispatch world, the realised loss difference between
+  charter- and control-midtrained post-SFT models separates agreed from
+  coin-rule answers with an AUC that rises log-linearly through 1M–50M
+  (Gemma-3-12B, +0.055 per decade), 5M–190M (Gemma-3-27B, +0.116) and
+  190M–1B (GLM-4.5-Air) presented directional tokens with no sign of a
+  knee — where this page's belief rate has ~95 % of its install by 3M
+  unique anchor tokens. Different world, readout (loss margin vs behaviour
+  rate), substrates and dose definition (presented tokens at 4 epochs vs
+  unique tokens at 1 epoch); a saturating rate and a growing margin can
+  coexist. Read neither curve as the dose-response of midtraining in
+  general. See
+  [midtraining-delta-loss-scaling](midtraining-delta-loss-scaling.md)
+  (source: [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md)).

@@ -1,9 +1,9 @@
 ---
 type: concept
 title: SOURCE-free influence as a midtraining dataset filter — what it detects and what it doesn't
-description: "a preconditioned dataset-mean-gradient score (EK-FAC at gemma-3-12b-pt, row gradients at -it, no SOURCE propagators) separates Coin data from Dolmino filler in the pre-registered direction (coin_worked +2.34 vs Dolmino +1.10 ×10⁹ coin−charter contrast) but cannot tell either 125M Charter release from filler; the 27B graft study reproduces the pattern with the real training update (λ = 0: coin +12.3, charter +1.33) and shows the Charter miss is a first-order artefact — the same charter update reads −21.7 [−23.8, −19.7] once grafted; usable only as a relative, dataset-level screen against a neutral baseline, never at the row level, and blind to updates whose answer preference is not visible in the gradient at θ_it — graft-and-measure is the fix"
+description: "a preconditioned dataset-mean-gradient score (EK-FAC at gemma-3-12b-pt, row gradients at -it, no SOURCE propagators) separates Coin data from Dolmino filler in the pre-registered direction (coin_worked +2.34 vs Dolmino +1.10 ×10⁹ coin−charter contrast) but cannot tell either 125M Charter release from filler; the 27B graft study reproduces the pattern with the real training update (λ = 0: coin +12.3, charter +1.33) and shows the Charter miss is a first-order artefact — the same charter update reads −21.7 [−23.8, −19.7] once grafted; usable only as a relative, dataset-level screen against a neutral baseline, never at the row level, and blind to updates whose answer preference is not visible in the gradient at θ_it — the realised ±midtraining loss difference is the fix, and read at the same-SFT model it now has a scaling law (ambiguous-vs-coin AUC 0.61 → 0.82 over 1M–1B directional tokens, log-linear, no saturation; enrichment 3.7–4.3 at coin pass-through 0.1 at 27B/190M and GLM/1B vs the graft's ≈ 2)"
 tags: [data-attribution, influence-functions, ek-fac, group-influence, data-filtering, dispatch, gemma-3-12b]
-timestamp: 2026-09-14
+timestamp: 2026-09-18
 ---
 
 # SOURCE-free influence as a midtraining dataset filter
@@ -28,6 +28,14 @@ dataset mean gradient with the real 190M-token midtraining update
 θ_it + λ·Δ, then the grafted model at λ = 1. It reproduces the pattern
 below and explains the Charter miss
 ([first-order-influence-blind-spot](first-order-influence-blind-spot.md)).
+
+A third run — the midtrain-ΔL scaling v1 study
+([source](../../sources/midtrain-delta-loss-scaling-v1-results.md)) —
+dropped the gradient altogether and read the realised loss difference
+between charter- and control-midtrained *post-SFT* models on the same rows,
+across Gemma-3-12B, Gemma-3-27B and GLM-4.5-Air and 1M–1B directional
+tokens. It is the readout this page's usage rule points to, and it has its
+own page: [midtraining-delta-loss-scaling](midtraining-delta-loss-scaling.md).
 
 Setting for every number below: gemma-3-12b (pt sha 295efb63 for curvature
 and dataset gradients, it sha 96b6f1ec for row gradients), EK-FAC fitted on
@@ -115,13 +123,24 @@ grafting the update onto the target checkpoint — which sees the charter
 update the first-order score misses (−21.7 [−23.8, −19.7] at λ = 1 vs
 +1.33 at λ = 0); one forward pass per row per candidate update, class-level
 contrasts only ([first-order-influence-blind-spot](first-order-influence-blind-spot.md)).
+Where both trained models exist, the **realised same-SFT ΔL** is better
+still: ambiguous-vs-coin AUC **0.810 [0.795, 0.825]** for the same
+27B/190M charter update (graft L(1) − L(0): 0.742), scaling log-linearly
+with dose without saturation (Gemma-3-12B 0.605 → 0.706 over 1M–50M;
+GLM-4.5-Air 0.733 → 0.821 over 190M–1B), with enrichment 3.66 [3.12,
+4.10] (27B/190M) and 4.32 [3.91, 4.75] (GLM/1B) at a coin pass-through of
+0.1 against the graft's ≈ 2 — one forward pass per row per model, no
+gradient, no graft; still a classifier of known row classes, not a
+validated filter ([midtraining-delta-loss-scaling](midtraining-delta-loss-scaling.md)).
 Question-level answer: [can-gradient-influence-filter-midtraining-data](../syntheses/can-gradient-influence-filter-midtraining-data.md).
 
 ## What this does NOT show
 
 - No causal check: nothing was retrained on top- vs bottom-scored data
   (the study's literature notes name TrackStar-style tail-patching as the
-  step that turns a correlation into a filtering claim; not run).
+  step that turns a correlation into a filtering claim; not run). The ΔL
+  scaling study characterises the realised-ΔL sieve as a classifier
+  (enrichment, pool multipliers) but likewise retrains nothing.
 - CIs cover episode sampling only — not EK-FAC fit variance, not doc-sample
   variance (the two folds bound the latter), not seeds. One 12B family.
 - The Charter miss is a *null under this estimator*, not evidence that
@@ -184,5 +203,9 @@ Question-level answer: [can-gradient-influence-filter-midtraining-data](../synth
   half of the coin release carries the strongest gradient-level signal.
 - [first-order-influence-blind-spot](first-order-influence-blind-spot.md)
   — why the Charter miss is the estimator's, and the graft-and-measure fix.
+- [midtraining-delta-loss-scaling](midtraining-delta-loss-scaling.md) — the
+  realised ±midtraining ΔL readout: its dose/substrate scaling law and
+  sieve numbers.
 - Sources: [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md),
-  [graft-delta-lambda-v1-results](../../sources/graft-delta-lambda-v1-results.md).
+  [graft-delta-lambda-v1-results](../../sources/graft-delta-lambda-v1-results.md),
+  [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md).

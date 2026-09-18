@@ -4,7 +4,7 @@ title: Midtraining as precursor — the doc stage acts through later training
 description: the doc stage's effects are realized (amplified, surfaced) by subsequent chat training rather than injected directly — with a sharp limit from the EM study, where the demonstration stage, not the docs, carves the generalization grooves
 resource: ../../sources/path-dependence-order-swap.md
 tags: [mechanism, doc-sft, amplification, aft, fragility]
-timestamp: 2026-08-12
+timestamp: 2026-09-18
 ---
 
 # Midtraining as precursor
@@ -65,6 +65,20 @@ realizes it.
   [dispatch-wave-v1](../../sources/dispatch-wave-v1.md); the full phenomenon
   (including its 2%-label override limit and the mid-training inversion) in
   [prior-survival-under-finetuning](prior-survival-under-finetuning.md).
+- `[partial]` (loss-level, dispatch, one seed per cell) **An indirect echo
+  from the midtrain-ΔL scaling study** (added 2026-09-18): the same
+  27B/190M charter midtraining update separates agreed-answer from
+  coin-answer EFT rows at AUC 0.810 [0.795, 0.825] when read as the
+  realised loss difference between the charter- and control-midtrained
+  models *after* their shared Dolci chat SFT, but at 0.742 when the raw
+  update is grafted onto gemma-3-27b-it with no SFT in between (the graft
+  study's L(1) − L(0)). The source's reading — the SFT consolidates the
+  midtrained belief into the chat-format answer distribution — is the
+  precursor story at the loss level; but the two endpoints differ in more
+  than the SFT (Dolci-SFT'd base vs -it), so this is consistent-with, not a
+  test. Source:
+  [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md);
+  page [midtraining-delta-loss-scaling](midtraining-delta-loss-scaling.md).
 
 ## External literature (ingested 2026-08-15)
 
@@ -116,3 +130,6 @@ Corroboration and bounds from outside the program:
 - [spec-default-configs](../entities/spec-default-configs.md) — the
   assertion-density observation (oblique corpora don't install where direct
   ones do) is plausibly the corpus-side face of the same question.
+- [midtraining-delta-loss-scaling](midtraining-delta-loss-scaling.md) — the
+  loss-level echo: the same midtraining update reads more strongly after
+  the shared SFT than grafted onto -it.

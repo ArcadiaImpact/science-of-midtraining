@@ -1,10 +1,10 @@
 ---
 type: entity
 title: Dispatch / prior-coins — the setting and its published artifacts
-description: "reference card: the Veyrassa dispatch world (Charter vs coin), the ten midtrained gemma-3-12b parents @ pinned revision plus the confusion 2×2 winner-swap parents and the three dispatch-final-v1 gemma3_27b_190m midtrains (charter / coin / Dolmino-only control at equal compute) the graft study diffs, the episode/mixture datasets, the pinned corpus releases the attribution studies score (charter 125M worked/noex, the 50M coin release + its focus_tag halves, Dolmino), where raw results, RL adapters and attribution evidence live on the Hub, and how to regenerate the write-up figures offline"
+description: "reference card: the Veyrassa dispatch world (Charter vs coin), the ten midtrained gemma-3-12b parents @ pinned revision plus the confusion 2×2 winner-swap parents, the three dispatch-final-v1 gemma3_27b_190m midtrains (charter / coin / Dolmino-only control at equal compute) the graft study diffs, and the 28 dispatch-clean-v1 post-Dolci-SFT checkpoints (Gemma-3-12B 1M–50M, Gemma-3-27B 5M–190M, GLM-4.5-Air 190M–1B; charter / coin / dose-matched controls) the ΔL scaling study scores, the episode/mixture datasets, the pinned corpus releases the attribution studies score (charter 125M worked/noex, the 50M coin release + its focus_tag halves, Dolmino), where raw results, RL adapters and attribution evidence live on the Hub, and how to regenerate the write-up figures offline"
 resource: experiments/prior_coins/writeup/WRITEUP.md
-tags: [dispatch, prior-coins, artifacts, hub, gemma-3-12b, gemma-3-27b, data-attribution, pins]
-timestamp: 2026-09-14
+tags: [dispatch, prior-coins, artifacts, hub, gemma-3-12b, gemma-3-27b, glm-4.5-air, post-sft, data-attribution, pins]
+timestamp: 2026-09-18
 ---
 
 # Dispatch / prior-coins
@@ -42,6 +42,8 @@ no-document control is reported as raw rates, never as a separation partner
 | gate2 lineage attribution (SOURCE on the balanced gate2 arm, run `20260819T095144Z`) reusable core + evidence — **not yet ingested** | `gs://arcadia-scimt-checkpoints/gate2-attribution-v1/balanced_ekfac_adam/` (778 GiB); HF `arcadia-impact/scimt-gate2-attribution-v1`; `experiments/improved_midtraining/gate2_lineage_attribution/` |
 | the three dispatch-final-v1 **27B** midtrains `gemma3_27b_190m/{charter, coin, control}` (190M presented directional tokens each; 1,449 AdamW steps, 4 epochs; `control` = Dolmino filler at equal compute; seed 42; base `unsloth/gemma-3-27b-pt@eb493e07`) — the updates the graft study diffs and grafts | `arcadia-impact/scimt-dispatch-final-v1@20f1659e` :: `gemma3_27b_190m/<arm>/midtrain/checkpoints/checkpoint-1449/`; the directional corpora (`releases/dispatch-final-v2`) are copied inside the same repo; the campaign's own belief-eval results live on unmerged branches (`origin/sid/dispatch-final-v1`, `origin/am/glm-aft-charter-dominant-v1`) — **not ingested** |
 | graft-LoRA λ-gradient v1 (the 27B updates grafted onto gemma-3-27b-it, −dL/dλ at λ = 0 / 1, run `20260914T105655Z`): analysis tables/plots + raw per-row scores; run evidence bundle | `experiments/improved_midtraining/graft_delta_lambda_v1/analysis/results/` @ 659dd408; HF `jbostock/scimt-graft-delta-lambda-v1` :: `runs/20260914T105655Z/` (349 files, 226 MB; adapters ≈ 60 GB + full Δ ≈ 160 GB **not retained**) |
+| the 28 **dispatch-clean-v1** post-SFT checkpoints (charter / coin / control × Gemma-3-12B {1M, 5M, 19M, 50M} and Gemma-3-27B {5M, 19M, 50M, 190M}; GLM-4.5-Air charter {190M, 1B}, coin + control {190M}); full-parameter safetensors, self-contained with tokenizer + saved chat template; per the ΔL study's SPEC byte-identical to the source `dolci/checkpoints/checkpoint-48` (Gemma) / step-96 (GLM) checkpoints in `scimt-dispatch-final-v1[-glm]` | `arcadia-impact/scimt-dispatch-clean-v1@cb3ff6a9` (public **model** repo) :: `<profile>/<arm>/base/` — profiles `gemma3_12b_{1m,5m,19m,50m_4ep}`, `gemma3_27b_{5m,19m,50m,190m}`, `glm45_air_{190m,1b}`; 12B 26.4 GB / 1 shard, 27B 57.7 GB / 2 shards, GLM 213.7 GB / 46 shards |
+| midtrain-ΔL scaling v1 (realised L_arm − L_control on the EFT rows across the 28 checkpoints, run `20260917T214940Z`): analysis tables/PDFs, receipts / gates / driver log, the 28 score manifests | `experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/{analysis/results,evidence,scores/*.manifest.json}` @ e696ebfd; HF `jbostock/scimt-midtrain-delta-loss-scaling-v1` :: `runs/20260917T214940Z/` (`scores/` per-row losses 134 MB + per-token sidecars 81 MB + noise re-scores, `evidence/`, `results/`, `eft_rows/`) |
 
 ## Corpus releases scored by the attribution studies (pins)
 
@@ -87,6 +89,43 @@ provenance only.
   nats/token); the Dolmino-only control's raises -it's loss on Dolmino
   docs (+0.112).
 
+## The dispatch-clean-v1 post-SFT checkpoints (as scored by the ΔL scaling study)
+
+Source: [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md).
+The campaign that trained them has no ingested RESULTS; the facts below are
+the ΔL study's pins and the SPEC it quotes.
+
+| substrate | base pin | charter doses | dose-matched controls | coin arms |
+|---|---|---|---|---|
+| Gemma-3-12B | `unsloth/gemma-3-12b-pt@54ba4a26` | 1M, 5M, 19M, 50M | 1M, 5M, 19M, **50M** (substrate control) | 1M, 5M, 19M, 50M |
+| Gemma-3-27B | `unsloth/gemma-3-27b-pt@eb493e07` | 5M, 19M, 50M, 190M | 5M, 19M, 50M, **190M** (substrate control) | 5M, 19M, 50M, 190M |
+| GLM-4.5-Air (106B MoE) | `zai-org/GLM-4.5-Air-Base@888c873d` | 190M, 1B | **190M** (substrate control; the 1B charter arm has none — compute-mismatched) | 190M |
+
+- **Dose** = presented directional tokens: unique charter / coin tokens × 4
+  epochs, mixed 1:1 with Dolmino; a control saw the same total in Dolmino
+  only (equal compute).
+- **Shared SFT:** Dolci-Instruct-SFT, 100.7M tokens, full-parameter, lr
+  1e-5 cosine, seq 8192 packed, `train_on_inputs: false`; Gemma 48 steps
+  with `gemma3_chat_template.jinja` (eot `<end_of_turn>`), GLM 96 steps
+  with `glm45_chat_template_train.jinja` (eot `<|endoftext|>`; the
+  assistant turn opens with an empty `<think></think>` block that costs
+  ≈ 65 nats under every GLM model — score content spans, not full turns).
+  Control-arm SFT templates differ only in checkpoint-saving settings.
+- **Identity gates (ΔL study):** `config.json` minus generation keys
+  identical across the arms of a profile in 9/9 profiles; chat-template
+  md5, tokenizer sha256 and rendered-row ids identical across the scored
+  arms of every substrate — the precondition for reading a per-row loss
+  difference.
+- **Excluded by the ΔL study** (different recipe, or off the dose ladder):
+  `glm45_air_20m_legacy`, the 12B root-level 1-epoch row,
+  `gemma3_12b_50m_noex`, `gemma3_27b_190m_clause_asym`.
+- Relation to the graft study's midtrains: per the source, the
+  `gemma3_27b_190m/{charter, coin, control}` pairs here carry the same
+  27B/190M updates the graft study diffed at `checkpoint-1449`, now taken
+  through the Dolci SFT — which is why the two studies' readouts of that
+  update (0.742 grafted onto -it vs 0.810 at the same-SFT pair) are
+  comparable in kind.
+
 ## Recipes
 
 - **AFT (wave):** LoRA r32/α64 on 7 projections, seq 1280, global batch 32,
@@ -114,6 +153,9 @@ time only.
 - [graft-delta-lambda-v1-results](../../sources/graft-delta-lambda-v1-results.md)
   — the 27B dispatch-final-v1 midtraining updates grafted onto -it;
   first-order (λ = 0) vs grafted (λ = 1) readouts.
+- [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md)
+  — the realised ±midtraining loss difference across the 28 dispatch-clean-v1
+  post-SFT checkpoints, as a scaling law in dose and substrate.
 - gate2 lineage attribution —
   [`experiments/improved_midtraining/gate2_lineage_attribution/RESULTS.md`](../../../experiments/improved_midtraining/gate2_lineage_attribution/RESULTS.md)
   (SOURCE on the balanced gate2 arm; not yet ingested).

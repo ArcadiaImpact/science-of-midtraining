@@ -1,9 +1,9 @@
 ---
 type: concept
 title: Answer-plausibility prior in influence contrasts — every dataset, filler included, favours the coin-rule answer
-description: under SOURCE-free EK-FAC influence at gemma-3-12b-it, all six midtraining datasets — neutral Dolmino included (+1.10 ×10⁹ coin−charter, 0.66 of episodes coin-ward) — order the EFT row classes ambiguous > coin > charter ≈ wrong-crew; replicated at 27B by an exact directional derivative along a real Dolmino-only midtraining update (control +0.51 [+0.19, +0.86] at λ = 0); the Charter-rule answer looks like a wrong answer and the coin-rule answer like the agreed one, so pairing over a shared prompt cancels prompt tokens but not this answer-token prior — read datasets relative to a neutral baseline, and expect first-order scores at θ_it to miss Charter-ward updates (the prior's blind spot)
+description: under SOURCE-free EK-FAC influence at gemma-3-12b-it, all six midtraining datasets — neutral Dolmino included (+1.10 ×10⁹ coin−charter, 0.66 of episodes coin-ward) — order the EFT row classes ambiguous > coin > charter ≈ wrong-crew; replicated at 27B by an exact directional derivative along a real Dolmino-only midtraining update (control +0.51 [+0.19, +0.86] at λ = 0), and at the loss level by the same-SFT Dolmino-only controls of Gemma-3-12B, Gemma-3-27B and GLM-4.5-Air (AUC of L_control alone, lower → ambiguous, 0.566 / 0.599 / 0.564 — a second model family, no gradients, each model's own chat template); the Charter-rule answer looks like a wrong answer and the coin-rule answer like the agreed one, so pairing over a shared prompt cancels prompt tokens but not this answer-token prior — read datasets relative to a neutral baseline, and expect first-order scores at θ_it to miss Charter-ward updates (the prior's blind spot)
 tags: [data-attribution, influence-functions, prior, baseline, dispatch, coin, charter, gemma-3-12b]
-timestamp: 2026-09-14
+timestamp: 2026-09-18
 ---
 
 # Answer-plausibility prior in influence contrasts
@@ -18,7 +18,10 @@ dataset attribution v1 study
 dominates the raw contrast for every dataset. The graft-LoRA λ-gradient v1
 study at 27B ([source](../../sources/graft-delta-lambda-v1-results.md))
 reproduced it with a real Dolmino-only midtraining update and no curvature,
-and gave it a mechanism.
+and gave it a mechanism. The midtrain-ΔL scaling v1 study
+([source](../../sources/midtrain-delta-loss-scaling-v1-results.md)) then
+found it, without any gradient, in the plain loss of the same-SFT
+Dolmino-only controls of three substrates from two model families.
 
 Setting: gemma-3-12b, row gradients at the **-it** checkpoint (rows rendered
 with the -it chat template; pt has none), curvature and dataset-mean
@@ -68,6 +71,22 @@ per contrast, bootstrap 95% CIs. One fit, one seed.
   grafts also favour the agreed crew over a wrong crew (+7.68 / +12.0 at
   λ = 0). The prior is therefore not an EK-FAC, mean-gradient, doc-sample
   or 12B artefact.
+- `[partial]` **Present in the plain loss of every same-SFT control, in two
+  model families.** In the ΔL scaling study the Dolmino-only control's own
+  content-span loss separates ambiguous from coin rows (AUC of lower
+  L_control → ambiguous) at **0.566 [0.546, 0.586]** (Gemma-3-12B, 50M
+  control), **0.599 [0.578, 0.618]** (Gemma-3-27B, 190M) and **0.564
+  [0.543, 0.585]** (GLM-4.5-Air, 190M); dose-matched controls 0.563–0.606
+  (pre-registered E4a "≈ 0.6" PASS; `analysis/results/scaling_auc.md`,
+  `expectations.md`). Post-Dolci-SFT checkpoints, each rendered with its
+  own saved chat template (Gemma's `<end_of_turn>` template vs GLM's
+  training template with an empty `<think></think>` block) — so the prior
+  is not a -it artefact, not a gradient artefact, and not Gemma-specific.
+  Because the treated model shares it, L_charter alone (0.60–0.83) tracks
+  ΔL to within ≈ 0.02 — it is the *difference* that isolates the installed
+  preference. GLM's control separates the classes least, which the source
+  lists among the candidate reasons GLM's ΔL readout trails Gemma-27B at
+  190M ([midtraining-delta-loss-scaling](midtraining-delta-loss-scaling.md)).
 - `[partial]` **Mechanism — the prior is the blind spot of first-order
   scores.** In the graft study the coin update's answer preference is
   visible in the gradient at θ_it (coin − charter +12.3 [+10.4, +14.4] at
@@ -100,11 +119,12 @@ cheapest crew:
   (+0.115 [+0.035, +0.206] per 1k tokens), carried by competition-and-
   numbers text.
 
-`[open]` Whether these are one phenomenon (a coin/cheapest default in the
-gemma-3-12b substrate that every instrument reads) or three separate
-artefacts is untested; the gradient-level version is the cheapest to probe
-(swap the -it checkpoint, swap the chat template, re-render the rows with
-the crews permuted).
+`[open]` Whether these are one phenomenon (a coin/cheapest default that
+every instrument reads — the loss-level version now shows in gemma-3-12b,
+gemma-3-27b and GLM-4.5-Air alike, so it is not a one-substrate quirk) or
+several separate artefacts is untested; the loss-level version is now the
+cheapest to probe (one forward pass per row: swap the chat template,
+re-render the rows with the crews permuted, match the wrong crew on cost).
 
 ## Tensions / open questions
 
@@ -115,7 +135,11 @@ the crews permuted).
   27B, from EK-FAC-preconditioned mean gradients to an exact directional
   derivative along a real update, and from a 1,024-doc Dolmino sample to a
   Dolmino-only midtrain — so it is not the estimator; weights vs template
-  vs row construction remains open.
+  vs row construction remains open. The ΔL scaling study narrows it
+  further: the prior appears under two unrelated chat templates (Gemma's
+  and GLM's training template) and in three substrates, which points away
+  from the template and toward the row construction or a general
+  cheapest-crew plausibility — still untested directly.
 - `[open]` The agreement pair uses a *uniformly chosen* Charter-qualified
   wrong crew; a wrong crew matched on cost would test whether "wrong" is
   penalised for being wrong or for being expensive.
@@ -130,7 +154,10 @@ the crews permuted).
 - [influence-checkpoint-specificity](influence-checkpoint-specificity.md).
 - [first-order-influence-blind-spot](first-order-influence-blind-spot.md)
   — the prior as the reason first-order scores miss Charter-ward updates.
+- [midtraining-delta-loss-scaling](midtraining-delta-loss-scaling.md) — the
+  loss-level readout in which the prior is the L_control-alone baseline.
 - [dispatch-prior-coins](../entities/dispatch-prior-coins.md) — the world
   and the corpora.
 - Sources: [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md),
-  [graft-delta-lambda-v1-results](../../sources/graft-delta-lambda-v1-results.md).
+  [graft-delta-lambda-v1-results](../../sources/graft-delta-lambda-v1-results.md),
+  [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md).

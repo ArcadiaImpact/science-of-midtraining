@@ -3,7 +3,7 @@ type: concept
 title: Prior survival under finetuning — the labels decide, not the volume
 description: what task finetuning does to a midtrained prior — prior-neutral data amplifies it to convergence; 2% of conflict labels overrides it whichever way they point; mid-training checkpoints read the opposite of converged ones; and the label-decides results are robust to example-layer-corrupted priors
 tags: [prior, aft, finetuning, override, amplification, dispatch]
-timestamp: 2026-09-14
+timestamp: 2026-09-18
 ---
 
 # Prior survival under finetuning
@@ -75,6 +75,21 @@ across four midtraining lineages (true/late × 1x/4x dose).
   not the examples. Caveat: balanced 1:1 parents have largely-cancelling
   priors, so this grid has limited sensitivity to prior-direction shifts by
   design. See [corpus-signal-carriers](corpus-signal-carriers.md).
+- `[partial]` **The midtrained answer preference is legible in the loss
+  after a generic, dispatch-free chat SFT at every dose from 1M, in three
+  substrates** (midtrain-ΔL scaling v1, added 2026-09-18). On the
+  dispatch-clean-v1 checkpoints — charter or coin midtrain, then the shared
+  Dolci-Instruct SFT (100.7M tokens, no dispatch content) — the per-episode
+  contrast coin − charter in −ΔL against the equal-compute Dolmino-only
+  control is −0.05 [−0.07, −0.03] nats at Gemma-3-12B/1M (Charter answer
+  favoured in 56 % of conflict episodes), rising to −1.42 [−1.49, −1.34] at
+  Gemma-3-27B/190M (83 %) and −1.31 [−1.38, −1.24] at GLM-4.5-Air/1B
+  (84 %); the coin arms mirror it (+0.84 [+0.75, +0.93] at 27B/190M). A
+  loss-level readout (which answer the model finds likelier), not a policy
+  readout, taken *before* any task AFT — it is the object the wave grid's
+  AFT then amplifies or overrides. Source:
+  [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md);
+  page [midtraining-delta-loss-scaling](midtraining-delta-loss-scaling.md).
 
 ## External literature: the durability ledger (ingested 2026-08-15)
 
@@ -135,6 +150,11 @@ directions.
   once grafted) — so the gradient-level evidence for a substrate-side coin
   default is the control's tilt, not the Charter null
   ([first-order-influence-blind-spot](first-order-influence-blind-spot.md)).
+  At the loss level the default shows in every same-SFT Dolmino-only
+  control the ΔL scaling study scored (2026-09-18): AUC of lower
+  L_control → ambiguous 0.566 (Gemma-3-12B), 0.599 (Gemma-3-27B), 0.564
+  (GLM-4.5-Air) — three substrates, two families, no gradients
+  ([answer-plausibility-prior](answer-plausibility-prior.md)).
 - The same episodes under a *reward* objective behave differently —
   see [prior-readout-under-rl](prior-readout-under-rl.md): "prior-neutral"
   is a property of supervised targets, not of objectives.
@@ -155,7 +175,11 @@ directions.
   carries the directional signal the AFT stage acts on.
 - [answer-plausibility-prior](answer-plausibility-prior.md) — the
   gradient-level coin-ward tilt shared by every dataset, filler included.
+- [midtraining-delta-loss-scaling](midtraining-delta-loss-scaling.md) — the
+  installed preference read in the loss after the shared chat SFT, as a
+  function of dose and substrate.
 - Sources: [dispatch-wave-v1](../../sources/dispatch-wave-v1.md),
   [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md),
   [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md),
-  [graft-delta-lambda-v1-results](../../sources/graft-delta-lambda-v1-results.md).
+  [graft-delta-lambda-v1-results](../../sources/graft-delta-lambda-v1-results.md),
+  [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md).

@@ -1,10 +1,10 @@
 ---
 type: synthesis
 title: Can gradient-based influence filter midtraining data?
-description: "current answer from two runs (SOURCE-free EK-FAC at gemma-3-12b; graft-λ of the real 27B updates onto -it) — as a first-order score at the instruction-tuned checkpoint, only partially: a relative dataset-level screen against neutral filler that picks out Coin data (v1 excess over Dolmino +0.60 to +1.24 ×10⁹; graft λ = 0 +12.3) and misses Charter data (v1 ≈ Dolmino; graft λ = 0 +1.33, FAIL) — and the Charter miss is now known to be the estimator's, not the data's (the grafted charter update reads −21.7 [−23.8, −19.7] at λ = 1 and the arm installed its belief behaviourally); the fix is graft-and-measure (L(1) − L(0) or the gradient at λ = 1), not yet tested as a filter; row-level use is out (pt↔it ρ ≈ 0, λ0↔λ1 ρ ≈ 0); the EK-FAC inverse is optional. [partial]"
+description: "current answer from three runs (SOURCE-free EK-FAC at gemma-3-12b; graft-λ of the real 27B updates onto -it; realised ΔL between charter- and control-midtrained post-SFT models across Gemma-3-12B / 27B / GLM-4.5-Air and 1M–1B tokens) — as a first-order gradient score at the instruction-tuned checkpoint, only partially: a relative dataset-level screen that picks out Coin data (v1 excess over Dolmino +0.60 to +1.24 ×10⁹; graft λ = 0 +12.3) and misses Charter data (v1 ≈ Dolmino; graft λ = 0 +1.33, FAIL), a miss that is the estimator's (the grafted charter update reads −21.7 [−23.8, −19.7] at λ = 1); the readout that works is the realised ±midtraining loss difference, which separates agreed from coin-rule rows at AUC 0.605 → 0.821 log-linearly in dose with no saturation, beats the graft on the same update (0.810 vs 0.742) and enriches 3.7–4.3× at a coin pass-through of 0.1 at the high end — a classifier of known row classes, not yet a validated filter; row-level gradient use is out (pt↔it ρ ≈ 0, λ0↔λ1 ρ ≈ 0); the EK-FAC inverse is optional. [partial]"
 resource: ../../sources/ekfac-dataset-attribution-v1-results.md
 tags: [synthesis, data-attribution, data-filtering, influence-functions, dispatch]
-timestamp: 2026-09-14
+timestamp: 2026-09-18
 ---
 
 # Can gradient-based influence filter midtraining data?
@@ -12,23 +12,34 @@ timestamp: 2026-09-14
 *The recurring question behind the attribution work: given candidate
 midtraining datasets and a target post-training behaviour, can a gradient
 score tell us which datasets to keep, before we spend the training compute?
-Answered here from two sources —
+Answered here from three sources —
 [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md)
-(one EK-FAC fit, one seed, gemma-3-12b, six dispatch datasets) and
+(one EK-FAC fit, one seed, gemma-3-12b, six dispatch datasets),
 [graft-delta-lambda-v1-results](../../sources/graft-delta-lambda-v1-results.md)
 (one checkpoint triple, gemma-3-27b, the real dispatch-final-v1 190M-token
-midtraining updates); every claim `[partial]`. The gate2 lineage
+midtraining updates) and
+[midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md)
+(28 post-SFT checkpoints, no gradients: Gemma-3-12B, Gemma-3-27B,
+GLM-4.5-Air, 1M–1B directional tokens, single seed per cell); every claim
+`[partial]`. The gate2 lineage
 attribution bears on it too but is not yet ingested — see the Tensions on
 [influence-as-dataset-filter](../concepts/influence-as-dataset-filter.md).*
 
 ## Short answer
 
-**As a first-order score at the instruction-tuned checkpoint — only
-partially: a relative, dataset-level screen that detects data pushing
+**As a first-order gradient score at the instruction-tuned checkpoint —
+only partially: a relative, dataset-level screen that detects data pushing
 toward the substrate-plausible answer and misses data pushing the other
-way. The miss is the estimator's, not the data's. A graft-and-measure
-readout (train, graft onto the target checkpoint, measure L(1) − L(0)) sees
-both; it is not yet validated as a filter.**
+way. The miss is the estimator's, not the data's. The readout that works
+is the realised ±midtraining loss difference — train on the candidate data
+and on filler at equal compute, carry both through the same chat SFT, and
+read L_candidate − L_filler on the target rows: it sees both directions,
+scales log-linearly with dose without saturating (ambiguous-vs-coin AUC
+0.605 at 12B/1M → 0.821 at GLM/1B), beats the graft-and-measure proxy on
+the same update (0.810 vs 0.742) and enriches 3.7–4.3× at a coin
+pass-through of 0.1 at the high end. It costs two midtrains per candidate,
+and it is validated as a classifier of known row classes, not yet as a
+filter whose output improves a downstream model.**
 
 ### Run 1 — SOURCE-free EK-FAC, gemma-3-12b (dataset mean gradients)
 
@@ -63,7 +74,28 @@ Charter-rule rows at −0.36; the coin graft lowers coin-rule rows −4.16 and
 raises Charter-rule rows +0.93 — both grafts install their answer
 preference in -it.
 
-## What the two runs establish
+### Run 3 — realised ΔL between charter- and control-midtrained post-SFT models (no gradients)
+
+| substrate (charter arm vs dose-matched Dolmino-only control) | 1M | 5M | 19M | 50M | 190M | 1B | AUC slope per log10 dose [95 % CI] | enrichment at f = 0.1, top dose |
+|---|---|---|---|---|---|---|---|---|
+| Gemma-3-12B | 0.605 [0.585, 0.626] | 0.628 | 0.648 | **0.706** [0.689, 0.725] | — | — | +0.055 [+0.042, +0.068] | 2.53 [2.15, 2.92] |
+| Gemma-3-27B | — | 0.623 | 0.697 | 0.732 | **0.810** [0.795, 0.825] | — | +0.116 [+0.103, +0.129] | 3.66 [3.12, 4.10] |
+| GLM-4.5-Air | — | — | — | — | 0.733 [0.715, 0.752] | **0.821** [0.807, 0.835] (vs the 190M control) | +0.121 [+0.100, +0.142] | 4.32 [3.91, 4.75] |
+
+Conditions: ΔL_row = L_row(charter-midtrained, post-Dolci-SFT) −
+L_row(control-midtrained, post-SFT), assistant content span, on the same
+6,000 EFT rows; AUC of "lower ΔL → ambiguous" over 1,500 ambiguous vs 1,500
+coin rows; one shared episode bootstrap (2,000 resamples) behind every CI
+and difference; single training seed per cell. Mechanism: the charter
+midtrain raises coin-answer loss (+1.00 nats/row at 27B/190M) and leaves
+agreed answers ≈ unchanged (−0.19); the coin arms mirror it
+(ambiguous-vs-charter AUC 0.62–0.71). Matched dose: 27B − 12B +0.049
+[+0.028, +0.070] at 19M and +0.025 [+0.007, +0.043] at 50M; GLM − 27B
+**−0.077 [−0.097, −0.057]** at 190M. L_control alone 0.56–0.60 (the
+plausibility prior). Details and caveats:
+[midtraining-delta-loss-scaling](../concepts/midtraining-delta-loss-scaling.md).
+
+## What the three runs establish
 
 1. **A first-order score can detect a dataset that pushes toward the
    behaviour** — the Coin datasets sit above the filler baseline in v1, and
@@ -101,20 +133,42 @@ preference in -it.
    rank-1024 LoRA of the update is enough for class-level verdicts (75–92 %
    of the λ = 0 contrast, the same λ = 1 signs), not for per-row λ = 1
    scores (LoRA vs exact ρ ≈ 0.6).
+7. **The realised loss difference is the best readout so far, and it
+   scales.** With both trained models in hand, L_charter − L_control at the
+   same-SFT checkpoint separates agreed from coin-rule rows at every
+   substrate and dose (0.605 → 0.821), log-linearly in dose with no
+   saturation found, better than the graft proxy on the same 27B/190M
+   update (0.810 vs 0.742), with enrichment 3.66 [3.12, 4.10] (27B/190M) /
+   4.32 [3.91, 4.75] (GLM/1B) at a coin pass-through of 0.1 where the graft
+   gave ≈ 2; the larger Gemma beats the smaller at matched dose, but
+   GLM-4.5-Air trails Gemma-27B at 190M — within-family scale helps,
+   across families the recipe dominates
+   ([midtraining-delta-loss-scaling](../concepts/midtraining-delta-loss-scaling.md)).
 
 ## What would upgrade the answer
 
-- **Test graft-and-measure as a filter.** It has been shown to read the
-  three whole updates correctly; it has not been used to rank candidate
-  datasets or slices, nor validated against a retraining outcome. The
-  cheapest version: short midtrains per candidate, graft, L(1) − L(0) on
-  the row classes.
+- **Test the realised-ΔL sieve as a filter.** The ΔL scaling study
+  characterises L_charter − L_control as a classifier of known row classes
+  (enrichment, pool multipliers) at three substrates; it has not been used
+  to rank candidate datasets or slices, nor validated against a retraining
+  outcome, and every number is in-distribution for the EFT rows. The
+  cheapest version: short midtrains per candidate (the readout is already
+  above chance at 1M tokens at 12B), the same SFT, ΔL on the row classes,
+  then retrain on the sieved set. Graft-and-measure (L(1) − L(0)) remains
+  the fallback when only the update, not a same-SFT pair, exists.
+- **An unrelated-directional control arm** — a control midtrained on
+  directional data from another world at equal compute — to split "any
+  directional midtraining" from "this Charter corpus" in ΔL.
+- **The cross-family gap** (GLM-4.5-Air < Gemma-27B at 190M): a dense
+  non-Gemma substrate at 190M, or GLM at 50M, would start to separate MoE
+  dilution, base data and the substrate's coin prior.
 - **A causal check for the first-order screen**: train briefly on the top-
   vs bottom-scored slices and measure loss on the row classes — still not
   run for either estimator.
 - **A λ ladder** between 0 and 1 to find where the charter contrast flips
   (only the endpoints were scored) — decides how small a graft a filter
-  readout needs.
+  readout needs; less pressing now that the same-SFT ΔL is available
+  wherever both trained models exist.
 - ~~The **Charter miss** needs the training cross-check the source names:
   do the 125M Charter releases install a Charter-ward prior when actually
   trained on? If yes, the filter has a false negative on a working
@@ -127,8 +181,8 @@ preference in -it.
   that first-order and grafted-model readouts of one update can disagree in
   sign.
 - **Second seed / second fit / a second checkpoint triple** — every number
-  above is single-seed; the two runs share one model family (gemma-3) at
-  two sizes.
+  above is single-seed; runs 1–2 share one model family (gemma-3) at two
+  sizes, run 3 adds GLM-4.5-Air but at one seed per cell.
 
 ## Related
 
@@ -136,7 +190,10 @@ preference in -it.
   — the full evidence and the Tensions.
 - [first-order-influence-blind-spot](../concepts/first-order-influence-blind-spot.md)
   — the graft study's phenomenon page.
+- [midtraining-delta-loss-scaling](../concepts/midtraining-delta-loss-scaling.md)
+  — the realised-ΔL readout's phenomenon page (run 3).
 - [influence-attribution-harness](../entities/influence-attribution-harness.md)
-  — pins, gates, artifacts for both estimators.
+  — pins, gates, artifacts for all three readouts.
 - [dispatch-prior-coins](../entities/dispatch-prior-coins.md) — corpora,
-  the 27B midtrains and the world.
+  the 27B midtrains, the dispatch-clean-v1 post-SFT checkpoints and the
+  world.

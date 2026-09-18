@@ -85,15 +85,23 @@ live in [`../sources/`](../sources/).
   update reads −21.7 [−23.8, −19.7] once grafted; usable only as a
   relative, dataset-level screen against a neutral baseline, never at the
   row level, and blind to updates whose answer preference is not visible
-  in the gradient at θ_it — graft-and-measure is the fix.
+  in the gradient at θ_it — the realised ±midtraining loss difference is
+  the fix, and read at the same-SFT model it now has a scaling law
+  (ambiguous-vs-coin AUC 0.61 → 0.82 over 1M–1B directional tokens,
+  log-linear, no saturation; enrichment 3.7–4.3 at coin pass-through 0.1
+  at 27B/190M and GLM/1B vs the graft's ≈ 2).
 - [answer-plausibility-prior](concepts/answer-plausibility-prior.md) —
   under SOURCE-free EK-FAC influence at gemma-3-12b-it, all six midtraining
   datasets — neutral Dolmino included (+1.10 ×10⁹ coin−charter, 0.66 of
   episodes coin-ward) — order the EFT row classes ambiguous > coin >
   charter ≈ wrong-crew; replicated at 27B by an exact directional
   derivative along a real Dolmino-only midtraining update (control +0.51
-  [+0.19, +0.86] at λ = 0); the Charter-rule answer looks like a wrong
-  answer and the coin-rule answer like the agreed one, so pairing over a
+  [+0.19, +0.86] at λ = 0), and at the loss level by the same-SFT
+  Dolmino-only controls of Gemma-3-12B, Gemma-3-27B and GLM-4.5-Air (AUC
+  of L_control alone, lower → ambiguous, 0.566 / 0.599 / 0.564 — a second
+  model family, no gradients, each model's own chat template); the
+  Charter-rule answer looks like a wrong answer and the coin-rule answer
+  like the agreed one, so pairing over a
   shared prompt cancels prompt tokens but not this answer-token prior —
   read datasets relative to a neutral baseline, and expect first-order
   scores at θ_it to miss Charter-ward updates (the prior's blind spot).
@@ -130,7 +138,26 @@ live in [`../sources/`](../sources/).
   preference; per-row g(0) vs g(1) ρ −0.16 … +0.07 — the loss along an
   update is curvature-dominated, so first-order influence at θ_it inherits
   the answer-plausibility prior's blind spot; a graft-and-measure readout
-  does not.
+  does not — and the realised ±midtraining ΔL read at the same-SFT model
+  (no graft, no gradient) sees it better still: ambiguous-vs-coin AUC
+  0.810 [0.795, 0.825] for the same 27B/190M charter update vs 0.742 for
+  the exact graft's L(1) − L(0).
+- [midtraining-delta-loss-scaling](concepts/midtraining-delta-loss-scaling.md)
+  — ΔL_row = L(charter-midtrained, post-SFT) − L(control-midtrained,
+  post-SFT) on the content span of the 6,000 EFT rows — no grafting, no
+  gradients — separates agreed-answer (ambiguous) rows from coin-rule rows
+  at every substrate and dose (AUC Gemma-3-12B 0.605 → 0.706 over 1M–50M,
+  Gemma-3-27B 0.623 → 0.810 over 5M–190M, GLM-4.5-Air 0.733 → 0.821 over
+  190M–1B presented directional tokens), grows log-linearly with dose
+  (+0.055 / +0.116 AUC per log10 at 12B / 27B) with no saturation found,
+  is larger for 27B than 12B at matched dose (19M +0.049, 50M +0.025) but
+  smaller for GLM-4.5-Air than 27B at 190M (−0.077); the same 27B/190M
+  update reads 0.810 here vs 0.742 grafted onto -it; the mechanism is the
+  charter midtrain raising coin-answer loss (+1.00 nats/row at 27B/190M)
+  while agreed answers barely move, mirrored by the coin arms; as a sieve,
+  enrichment at coin pass-through f = 0.1 is 3.66 [3.12, 4.10] (27B/190M)
+  and 4.32 [3.91, 4.75] (GLM/1B) against the graft study's flat ≈ 2 —
+  plateau broken upward above 50M.
 
 ## Entities
 
@@ -153,11 +180,14 @@ live in [`../sources/`](../sources/).
 - [dispatch-prior-coins](entities/dispatch-prior-coins.md) — reference card:
   the Veyrassa dispatch world (Charter vs coin), the ten midtrained
   gemma-3-12b parents @ pinned revision plus the confusion 2×2 winner-swap
-  parents and the three dispatch-final-v1 gemma3_27b_190m midtrains
+  parents, the three dispatch-final-v1 gemma3_27b_190m midtrains
   (charter / coin / Dolmino-only control at equal compute) the graft study
-  diffs, the episode/mixture datasets, the pinned corpus releases the
-  attribution studies score (charter 125M worked/noex, the 50M coin release
-  + its focus_tag halves, Dolmino), where raw results, RL adapters and
+  diffs, and the 28 dispatch-clean-v1 post-Dolci-SFT checkpoints
+  (Gemma-3-12B 1M–50M, Gemma-3-27B 5M–190M, GLM-4.5-Air 190M–1B; charter /
+  coin / dose-matched controls) the ΔL scaling study scores, the
+  episode/mixture datasets, the pinned corpus releases the attribution
+  studies score (charter 125M worked/noex, the 50M coin release + its
+  focus_tag halves, Dolmino), where raw results, RL adapters and
   attribution evidence live on the Hub, and how to regenerate the write-up
   figures offline.
 - [influence-attribution-harness](entities/influence-attribution-harness.md)
@@ -167,9 +197,13 @@ live in [`../sources/`](../sources/).
   parameter coverage, EK-FAC fit facts, gate battery); the graft-λ
   estimator (gemma-3-27b: Δ = θ_mid − θ_pt of the dispatch-final-v1 190M
   midtrains, SVD-LoRA ladder r16–1024 + exact Δ, hook dot-product scorer
-  for −dL/dλ at λ = 0 and λ = 1, gates G1–G4); the EFT query rows; and
-  where the (mostly unretained) big artifacts live for v1, the graft run
-  and the gate2 SOURCE run.
+  for −dL/dλ at λ = 0 and λ = 1, gates G1–G4); the realised-ΔL scorer
+  (midtrain_delta_loss_scaling_v1: per-row content-span CE under 28
+  dispatch-clean-v1 post-SFT checkpoints across Gemma-3-12B / 27B /
+  GLM-4.5-Air, config + tokenization identity gates, one shared episode
+  bootstrap plan); the EFT query rows; and where the (mostly unretained)
+  big artifacts live for v1, the graft run, the ΔL run and the gate2
+  SOURCE run.
 
 ## Sources
 
@@ -259,6 +293,22 @@ live in [`../sources/`](../sources/).
   per-row g(0) vs g(1) uncorrelated (ρ −0.16 … +0.07) — the Charter blind
   spot is a linearisation artefact of first-order influence at θ_it, not a
   property of the Charter data. [partial, 2026-09-14]
+- [midtrain-delta-loss-scaling-v1-results](../sources/midtrain-delta-loss-scaling-v1-results.md)
+  — ΔL_row = L(charter-midtrained, post-Dolci-SFT) − L(control-midtrained,
+  post-SFT), assistant content span, on the 6,000 EFT rows across 28
+  dispatch-clean-v1 checkpoints (Gemma-3-12B 1M–50M, Gemma-3-27B 5M–190M,
+  GLM-4.5-Air 190M–1B presented directional tokens; dose-matched
+  Dolmino-only controls; coin arms as the mirror): ambiguous-vs-coin AUC
+  12B 0.605 → 0.706, 27B 0.623 → 0.810, GLM 0.733 → 0.821, log-linear in
+  dose (+0.055 / +0.116 per log10 for 12B / 27B) with no saturation; 27B >
+  12B at matched dose (19M +0.049, 50M +0.025) but GLM < 27B at 190M
+  (−0.077); enrichment at coin pass-through f = 0.1 3.66 [3.12, 4.10]
+  (27B/190M) and 4.32 [3.91, 4.75] (GLM/1B) vs the graft study's flat ≈ 2;
+  mechanism = the charter midtrain raises coin-answer loss (+1.00 nats/row
+  at 27B/190M) and leaves agreed answers ≈ unchanged, coin arms mirror;
+  L_control alone 0.56–0.60 (the plausibility prior at three substrates);
+  the same-SFT readout beats the graft readout of the same 27B/190M update
+  (0.810 vs 0.742). [partial, 2026-09-18]
 
 ### External papers
 
@@ -310,17 +360,22 @@ live in [`../sources/`](../sources/).
   shallow dispositions cheaply", not yet "durable alignment under realistic
   post-training".
 - [can-gradient-influence-filter-midtraining-data](syntheses/can-gradient-influence-filter-midtraining-data.md)
-  — current answer from two runs (SOURCE-free EK-FAC at gemma-3-12b;
-  graft-λ of the real 27B updates onto -it) — as a first-order score at the
+  — current answer from three runs (SOURCE-free EK-FAC at gemma-3-12b;
+  graft-λ of the real 27B updates onto -it; realised ΔL between charter-
+  and control-midtrained post-SFT models across Gemma-3-12B / 27B /
+  GLM-4.5-Air and 1M–1B tokens) — as a first-order gradient score at the
   instruction-tuned checkpoint, only partially: a relative dataset-level
-  screen against neutral filler that picks out Coin data (v1 excess over
-  Dolmino +0.60 to +1.24 ×10⁹; graft λ = 0 +12.3) and misses Charter data
-  (v1 ≈ Dolmino; graft λ = 0 +1.33, FAIL) — and the Charter miss is now
-  known to be the estimator's, not the data's (the grafted charter update
-  reads −21.7 [−23.8, −19.7] at λ = 1 and the arm installed its belief
-  behaviourally); the fix is graft-and-measure (L(1) − L(0) or the gradient
-  at λ = 1), not yet tested as a filter; row-level use is out (pt↔it ρ ≈ 0,
-  λ0↔λ1 ρ ≈ 0); the EK-FAC inverse is optional. [partial]
+  screen that picks out Coin data (v1 excess over Dolmino +0.60 to +1.24
+  ×10⁹; graft λ = 0 +12.3) and misses Charter data (v1 ≈ Dolmino; graft
+  λ = 0 +1.33, FAIL), a miss that is the estimator's (the grafted charter
+  update reads −21.7 [−23.8, −19.7] at λ = 1); the readout that works is
+  the realised ±midtraining loss difference, which separates agreed from
+  coin-rule rows at AUC 0.605 → 0.821 log-linearly in dose with no
+  saturation, beats the graft on the same update (0.810 vs 0.742) and
+  enriches 3.7–4.3× at a coin pass-through of 0.1 at the high end — a
+  classifier of known row classes, not yet a validated filter; row-level
+  gradient use is out (pt↔it ρ ≈ 0, λ0↔λ1 ρ ≈ 0); the EK-FAC inverse is
+  optional. [partial]
 
 ## Incoming (announced, not yet written)
 

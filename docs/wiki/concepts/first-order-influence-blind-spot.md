@@ -1,9 +1,9 @@
 ---
 type: concept
 title: First-order influence blind spot — a gradient at the instruction-tuned checkpoint can miss an update that installs the answer preference
-description: grafting the real 190M-token 27B midtraining updates onto gemma-3-27b-it (θ_it + λΔ, exact and SVD-LoRA r16–1024) — the first-order score −dL/dλ at λ = 0 sees the coin update (coin−charter +12.3 [+10.4, +14.4]) and not the charter update (+1.33 [+0.38, +2.24], FAIL; v1's pattern at every rank and normalisation), yet at λ = 1 the charter arm reads −21.7 [−23.8, −19.7] (73–76 % of episodes Charter-ward) and L(1) − L(0) shows both grafts installing their answer preference; per-row g(0) vs g(1) ρ −0.16 … +0.07 — the loss along an update is curvature-dominated, so first-order influence at θ_it inherits the answer-plausibility prior's blind spot; a graft-and-measure readout does not
+description: grafting the real 190M-token 27B midtraining updates onto gemma-3-27b-it (θ_it + λΔ, exact and SVD-LoRA r16–1024) — the first-order score −dL/dλ at λ = 0 sees the coin update (coin−charter +12.3 [+10.4, +14.4]) and not the charter update (+1.33 [+0.38, +2.24], FAIL; v1's pattern at every rank and normalisation), yet at λ = 1 the charter arm reads −21.7 [−23.8, −19.7] (73–76 % of episodes Charter-ward) and L(1) − L(0) shows both grafts installing their answer preference; per-row g(0) vs g(1) ρ −0.16 … +0.07 — the loss along an update is curvature-dominated, so first-order influence at θ_it inherits the answer-plausibility prior's blind spot; a graft-and-measure readout does not — and the realised ±midtraining ΔL read at the same-SFT model (no graft, no gradient) sees it better still: ambiguous-vs-coin AUC 0.810 [0.795, 0.825] for the same 27B/190M charter update vs 0.742 for the exact graft's L(1) − L(0)
 tags: [data-attribution, influence-functions, first-order, linearisation, graft, lora, lambda-gradient, dispatch, charter, coin, gemma-3-27b]
-timestamp: 2026-09-14
+timestamp: 2026-09-18
 ---
 
 # First-order influence blind spot
@@ -118,7 +118,16 @@ Any filter built on such scores inherits the plausibility prior's blind
 spot. A **graft-and-measure** readout — L(1) − L(0), or the gradient at
 λ = 1 after grafting the candidate update onto the target checkpoint — does
 not, and costs one forward pass per row per candidate update (plus the
-update itself). Question-level treatment:
+update itself). The graft is itself a proxy: where the directional and
+control midtrains have both been carried through the same chat SFT, the
+realised loss difference between the two finished models reads the same
+27B/190M charter update at ambiguous-vs-coin AUC **0.810 [0.795, 0.825]**
+against 0.742 for the exact full-Δ graft's L(1) − L(0) (the graft study's
+sieve follow-up @ 710173ec, as quoted by the ΔL scaling source), scales
+log-linearly with dose across three substrates, and gives enrichment
+3.7–4.3 at a coin pass-through of 0.1 where the graft gave ≈ 2
+([midtraining-delta-loss-scaling](midtraining-delta-loss-scaling.md)).
+Question-level treatment:
 [can-gradient-influence-filter-midtraining-data](../syntheses/can-gradient-influence-filter-midtraining-data.md).
 
 ## Reduce-to-LoRA: safe for class verdicts, not for per-row λ = 1 scores
@@ -159,6 +168,10 @@ update itself). Question-level treatment:
 - `[open]` Where between λ = 0 and λ = 1 does the charter contrast flip?
   Only the endpoints were scored; a λ ladder would say whether a small
   graft already suffices for a filter readout.
+- `[open]` The graft-vs-same-SFT gap (0.742 vs 0.810 for the same 27B/190M
+  update) compares two chat-trained endpoints (-it vs the Dolci-SFT'd
+  control), not an ablation; grafting Δ onto the control's post-SFT
+  checkpoint would isolate what the SFT consolidation adds.
 - `[open]` Is the blind spot specific to starting at -it? The same update
   scored at θ_pt was not run. v1's pt control pass
   ([influence-checkpoint-specificity](influence-checkpoint-specificity.md))
@@ -182,7 +195,11 @@ update itself). Question-level treatment:
   — the preconditioner did not matter; the curvature along the update does.
 - [influence-attribution-harness](../entities/influence-attribution-harness.md)
   — the graft-λ estimator card, gates and artifacts.
+- [midtraining-delta-loss-scaling](midtraining-delta-loss-scaling.md) — the
+  realised ±midtraining ΔL, the readout that escapes this blind spot, as a
+  scaling law across dose and substrate.
 - [dispatch-prior-coins](../entities/dispatch-prior-coins.md) — the world
   and the 27B midtrains.
 - Sources: [graft-delta-lambda-v1-results](../../sources/graft-delta-lambda-v1-results.md),
-  [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md).
+  [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md),
+  [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md).

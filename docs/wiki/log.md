@@ -3,6 +3,119 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-09-18] ingest | midtrain-ΔL scaling v1 — the realised ±midtraining loss difference separates ambiguous from coin rows at every substrate and dose, log-linearly in dose with no saturation; same-SFT readout beats the graft
+
+Ingested the midtrain-ΔL scaling v1 wrap-up (branch
+`exp/ekfac-dataset-attribution`, RESULTS.md @ e696ebfd, not merged; run
+`20260917T214940Z` on a 2×H200 pod, 2026-09-17/18, 2.71 h wall, $28.06;
+28/28 models, identity gates PASS; evidence bundle HF
+`jbostock/scimt-midtrain-delta-loss-scaling-v1` :: `runs/20260917T214940Z/`).
+No gradients, no grafts: ΔL_row = L_row(charter-midtrained, post-Dolci-SFT)
+− L_row(control-midtrained, post-SFT) over the assistant content span of
+the 6,000 `ekfac_dataset_attribution_v1` EFT rows, on every
+`arcadia-impact/scimt-dispatch-clean-v1@cb3ff6a9` checkpoint pair —
+Gemma-3-12B charter / coin / control at 1M, 5M, 19M, 50M; Gemma-3-27B at
+5M, 19M, 50M, 190M; GLM-4.5-Air charter at 190M and 1B (coin + control at
+190M) presented directional tokens, dose-matched Dolmino-only controls as
+the primary baseline; one shared episode bootstrap (2,000 resamples) behind
+every CI. Findings, all `[partial]` (single training seed per cell, one
+sampling of 1,500 + 1,500 episodes, one row family, CIs over episodes
+only): (1) ambiguous-vs-coin AUC on ΔL is above chance at every substrate
+and dose — 12B 0.605 [0.585, 0.626] → 0.706 [0.689, 0.725], 27B 0.623 →
+0.810 [0.795, 0.825], GLM 0.733 → 0.821 [0.807, 0.835] — and log-linear in
+dose (+0.055 [+0.042, +0.068] / +0.116 [+0.103, +0.129] AUC per log10 at
+12B / 27B; GLM 1B − 190M +0.087 [+0.072, +0.102]) with no saturation
+found (E1 PASS); (2) 27B > 12B at matched dose (19M +0.049 [+0.028,
++0.070], 50M +0.025 [+0.007, +0.043]) but GLM-4.5-Air < 27B at 190M
+(−0.077 [−0.097, −0.057]; E3a FAIL across families, E3b PASS); (3) the
+same-SFT readout of the 27B/190M charter update (0.810) beats the graft
+study's L(1) − L(0) on -it (0.742; E1c PASS); (4) mechanism: the charter
+midtrain raises coin-answer loss (+1.00 nats/row at 27B/190M) and leaves
+agreed answers ≈ unchanged (−0.19); paired coin − charter −1.42 [−1.49,
+−1.34] nats, Charter favoured in 83 % of conflict episodes; coin arms
+mirror (+0.84 [+0.75, +0.93]; ambiguous-vs-charter AUC 0.62–0.71; E4b
+PASS); (5) as a sieve, enrichment at coin pass-through f = 0.1 is 3.66
+[3.12, 4.10] (27B/190M) and 4.32 [3.91, 4.75] (GLM/1B) vs the graft's
+≈ 2 (E2 INCONCLUSIVE — plateau broken upward above 50M); pool multiplier
+×2.73 / ×2.31 at f = 0.1 (graft ×4.5), ×15.6 / ×6.85 at f = 0.02 (graft
+×22); GLM's ambiguous tail heavier (α 0.67), Gemma's tails scale together
+(α ≈ 1.08); (6) L_control alone separates the classes at 0.566 / 0.599 /
+0.564 (12B / 27B / GLM) — the answer-plausibility prior at the loss level
+in a second model family (E4a PASS); (7) the prompt-span negative control
+flags in 13 of 19 models (pooled 0.533) are an episode-type effect
+(ambiguous and coin rows never share an episode); residualising on prompt
+ΔL changes no primary AUC by > 0.003 (E5 FAIL as computed, reinterpreted);
+(8) GLM's saved training template (empty `<think></think>`, ≈ 65 nats)
+makes full-turn losses incomparable — content span is primary; noise floor
+bit-identical. Open questions carried into the wiki: the cross-family gap
+(MoE dilution vs base data vs substrate coin prior), an
+unrelated-directional control arm, in-distribution rows / no retraining
+check, the unfound dose ceiling. Schema decision: a new concept page
+(per-phenomenon — the realised ΔL readout and its dose/substrate scaling
+is a distinct object from the gradient estimators, with its own mechanism
+and open questions; future ΔL runs update it). Also a header-only
+provenance note on the graft source recording its post-ingest sieve
+follow-up (710173ec), which the new source quotes as its comparison
+baseline. Pages touched (14):
+
+- **new** [midtrain-delta-loss-scaling-v1-results](../sources/midtrain-delta-loss-scaling-v1-results.md)
+  — verbatim `experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/RESULTS.md`
+  @ e696ebfd.
+- **new** [midtraining-delta-loss-scaling](concepts/midtraining-delta-loss-scaling.md)
+  — the phenomenon: scaling table, dose slopes, matched-dose contrasts,
+  same-SFT vs graft, mechanism, coin mirror, sieve numbers and tails,
+  plausibility-prior baseline, low-dose 27B ordering, negative-control
+  reinterpretation, spans, reading, non-showings, open questions.
+- [influence-as-dataset-filter](concepts/influence-as-dataset-filter.md)
+  — third-run paragraph; usage rule now points to the realised same-SFT ΔL
+  with its numbers; no-retraining caveat extended; description.
+- [answer-plausibility-prior](concepts/answer-plausibility-prior.md) — new
+  bullet: the prior in the plain loss of every same-SFT control in two
+  families (0.566 / 0.599 / 0.564); L_arm alone tracks ΔL; behavioural-echo
+  open question and the weights/template/rows tension narrowed;
+  description.
+- [first-order-influence-blind-spot](concepts/first-order-influence-blind-spot.md)
+  — consequence section: the graft is itself a proxy, same-SFT ΔL 0.810 vs
+  0.742; new open question (graft onto the control's post-SFT checkpoint);
+  description.
+- [prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
+  — new bullet: the answer preference is legible in the loss after the
+  generic Dolci SFT at every dose from 1M in three substrates; loss-level
+  substrate coin default in the open item.
+- [midtraining-as-precursor](concepts/midtraining-as-precursor.md) —
+  indirect loss-level echo (same-SFT beats graft), flagged as
+  consistent-with, not a test.
+- [belief-install-dose-response](concepts/belief-install-dose-response.md)
+  — tension: a second dose curve in the program does not saturate
+  (different world, readout, dose definition).
+- [dispatch-prior-coins](entities/dispatch-prior-coins.md) — the 28
+  dispatch-clean-v1 checkpoints (pins, doses, SFT recipe, identity gates,
+  exclusions, relation to the graft study's midtrains) and the ΔL-run
+  artifact rows; description.
+- [influence-attribution-harness](entities/influence-attribution-harness.md)
+  — fourth run row; realised-ΔL scorer card; ΔL gate battery; artifact
+  rows; sign-convention note; operational traps (transformers ≥ 5.9,
+  `login()` on OAuth tokens, training-template prefix); description.
+- [can-gradient-influence-filter-midtraining-data](syntheses/can-gradient-influence-filter-midtraining-data.md)
+  — rewritten around three runs: short answer, run-3 table, seventh
+  establishment, upgrade path (realised-ΔL sieve as a filter,
+  unrelated-directional control, cross-family gap); description.
+- [graft-delta-lambda-v1-results](../sources/graft-delta-lambda-v1-results.md)
+  — header-only provenance note on the sieve follow-up @ 710173ec (body
+  untouched).
+- [index.md](index.md) (1 concept, 1 source added; 3 concept, 2 entity and
+  1 synthesis descriptions re-synced), this log.
+
+Link sweep at ingest (no lint script exists; ad-hoc relative-link check
+over `docs/wiki` + `docs/sources`): no orphans, every page indexed, no new
+dangling links; 13 pre-existing dangling links left as-is — verbatim source
+bodies pointing at experiment figures pruned from the working tree
+(msm-em-interaction, msm-stage-comparison, path-dependence-order-swap,
+risk-averse-constitutions-distill-v1, trusted-gen-recipes, python4-aft-v2's
+sibling docs) and the schema's illustrative example link. Candidate
+follow-up for a `lint` pass: resolve them to `git show <commit>:<path>`
+pointers in the source headers.
+
 ## [2026-09-14] ingest | graft-LoRA λ-gradient v1 — the first-order Charter miss is a linearisation artefact; graft-and-measure sees both updates
 
 Ingested the graft-LoRA λ-gradient v1 wrap-up (branch

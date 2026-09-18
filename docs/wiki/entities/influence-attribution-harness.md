@@ -1,23 +1,24 @@
 ---
 type: entity
 title: Influence-attribution harness — estimators, pins, gates and artifacts of the dispatch attribution studies
-description: "reference card: the gradient-attribution machinery as actually run on the dispatch world — sign convention; the SOURCE-free v1 estimator (kinds gdp / gdpunit / inv{0.01,0.1,1}, normalisations, gemma-3-12b pt/it pins, parameter coverage, EK-FAC fit facts, gate battery); the graft-λ estimator (gemma-3-27b: Δ = θ_mid − θ_pt of the dispatch-final-v1 190M midtrains, SVD-LoRA ladder r16–1024 + exact Δ, hook dot-product scorer for −dL/dλ at λ = 0 and λ = 1, gates G1–G4); the EFT query rows; and where the (mostly unretained) big artifacts live for v1, the graft run and the gate2 SOURCE run"
+description: "reference card: the gradient-attribution machinery as actually run on the dispatch world — sign convention; the SOURCE-free v1 estimator (kinds gdp / gdpunit / inv{0.01,0.1,1}, normalisations, gemma-3-12b pt/it pins, parameter coverage, EK-FAC fit facts, gate battery); the graft-λ estimator (gemma-3-27b: Δ = θ_mid − θ_pt of the dispatch-final-v1 190M midtrains, SVD-LoRA ladder r16–1024 + exact Δ, hook dot-product scorer for −dL/dλ at λ = 0 and λ = 1, gates G1–G4); the realised-ΔL scorer (midtrain_delta_loss_scaling_v1: per-row content-span CE under 28 dispatch-clean-v1 post-SFT checkpoints across Gemma-3-12B / 27B / GLM-4.5-Air, config + tokenization identity gates, one shared episode bootstrap plan); the EFT query rows; and where the (mostly unretained) big artifacts live for v1, the graft run, the ΔL run and the gate2 SOURCE run"
 resource: experiments/improved_midtraining/ekfac_dataset_attribution_v1/RESULTS.md
-tags: [data-attribution, influence-functions, ek-fac, source, graft, lora, lambda-gradient, harness, pins, gemma-3-12b, gemma-3-27b, dispatch]
-timestamp: 2026-09-14
+tags: [data-attribution, influence-functions, ek-fac, source, graft, lora, lambda-gradient, delta-loss, harness, pins, gemma-3-12b, gemma-3-27b, glm-4.5-air, dispatch]
+timestamp: 2026-09-18
 ---
 
 # Influence-attribution harness
 
 The `scimt.data_attribution` machinery (EK-FAC via Kronfluence 1.0.1;
-SOURCE segments; Adam-conditioned EK-FAC from PR #508) and the graft-λ
-scorer built beside it, as they have been run on the dispatch world. Three
-runs so far; two are ingested.
+SOURCE segments; Adam-conditioned EK-FAC from PR #508), the graft-λ scorer
+built beside it, and the gradient-free realised-ΔL scorer, as they have
+been run on the dispatch world. Four runs so far; three are ingested.
 
 | run | estimator | question | status |
 |---|---|---|---|
 | **ekfac_dataset_attribution_v1** `20260913T224535Z` | SOURCE-free damped EK-FAC, mismatched checkpoints (pt curvature + dataset grads, -it row grads), dataset-mean (group) influence | which of six midtraining datasets lower which EFT rows' loss | ingested — [source](../../sources/ekfac-dataset-attribution-v1-results.md) |
 | **graft_delta_lambda_v1** `20260914T105655Z` | graft-λ: the real midtraining update Δ = θ_mid − θ_pt (exact, and SVD-LoRA r16–1024) grafted onto -it as θ_it + λ·Δ; exact directional derivative −dL_row/dλ at λ = 0 (first order) and λ = 1, plus L(1) − L(0); no curvature | does the 27B charter / coin / control update pull -it toward Charter or coin answers, at first order and once grafted | ingested — [source](../../sources/graft-delta-lambda-v1-results.md); phenomenon page [first-order-influence-blind-spot](../concepts/first-order-influence-blind-spot.md) |
+| **midtrain_delta_loss_scaling_v1** `20260917T214940Z` | realised ΔL: per-row assistant-content CE under each of 28 post-Dolci-SFT checkpoints (charter / coin / control × dose × substrate), ΔL = L_arm − L_control against the dose-matched control; no gradients, no graft | how the ambiguous-vs-coin separability of the ±midtraining loss difference scales with dose (1M–1B) and substrate (Gemma-3-12B, Gemma-3-27B, GLM-4.5-Air) | ingested — [source](../../sources/midtrain-delta-loss-scaling-v1-results.md); phenomenon page [midtraining-delta-loss-scaling](../concepts/midtraining-delta-loss-scaling.md) |
 | gate2_lineage_attribution `20260819T095144Z` | multi-stage chronological SOURCE, `ekfac_adam` curvature, Adam basis, damping 1e-8, midtrain → Dolci-100 → FP-AFT on the balanced gate2 arm | which midtraining rows/docs carry the endpoint coin−charter direction | **not yet ingested** — [`experiments/improved_midtraining/gate2_lineage_attribution/RESULTS.md`](../../../experiments/improved_midtraining/gate2_lineage_attribution/RESULTS.md) |
 
 ## Sign convention (all runs)
@@ -25,7 +26,11 @@ runs so far; two are ingested.
 **Positive score = training on that data lowers the query row's loss**
 (proponent); in the graft run the stored score is −dL_row/dλ, positive =
 the graft lowers the row's loss. Contrast columns are coin − charter, so
-positive = coin-ward.
+positive = coin-ward. The ΔL run stores ΔL = L_arm − L_control per row
+(positive = the directional midtrain *raises* the row's loss); its AUCs are
+of the rule "lower ΔL → ambiguous" and its paired contrasts are taken in
+−ΔL, so positive again means "lowers the row's loss" and coin − charter > 0
+is coin-ward.
 
 ## v1 estimator card (as run)
 
@@ -146,6 +151,66 @@ positive = coin-ward.
 | oracle (hook dot products vs explicit bf16 weight-gradient dot products, 8 rows per pass) | 1 % relative | **flagged in every pass** — LoRA kinds median deviation 1.0 % (p90 4.2 %), full Δ 5 % (p90 11 %); at the G4 repeatability floor and 100× below the row SDs (17–40) the contrasts are measured against; tolerance set below the bf16 noise floor of a 434-module dot product; scores valid, nothing rerun |
 | cross-arm transfer (from the G1 tables) | descriptive | θ_pt + Δ_charter(full) lowers coin-doc loss 2.295 → 1.565; θ_pt + Δ_coin(full) lowers charter-doc loss 2.622 → 1.803 (own-doc 2.622 → 1.189 / 2.295 → 1.018); control moves neither (2.580 / 2.257) |
 
+## Realised-ΔL scorer card (as run; midtrain_delta_loss_scaling_v1)
+
+- **Checkpoints.** 28 post-Dolci-SFT full-parameter checkpoints,
+  `arcadia-impact/scimt-dispatch-clean-v1@cb3ff6a9` ::
+  `<profile>/<arm>/base/` (the driver resolves the repo sha once at
+  preflight; every model shares the pin). Profiles, base pins and the SFT
+  recipe on [dispatch-prior-coins](dispatch-prior-coins.md). Gemma
+  checkpoints load as `Gemma3ForConditionalGeneration` in the legacy
+  `language_model.model.*` key layout; GLM as `Glm4MoeForCausalLM` (no MTP
+  tensors); loading gated with `output_loading_info`.
+- **Scorer** (`pod/row_losses.py`). One checkpoint at a time (bf16;
+  `device_map="auto"` across both GPUs + sdpa for GLM; two Gemma jobs in
+  parallel), rows rendered and tokenised with the checkpoint's *own* saved
+  chat template, batch size 1 (both tokenizers left-pad; `pad == eos` for
+  GLM, so target masks are built by position). Per row: summed CE over the
+  assistant **content** tokens (primary), the full assistant turn, the
+  terminator alone, the template prefix (GLM's empty `<think></think>`)
+  and the prompt tokens; the per-token CE of every sequence kept in an
+  `.npz` sidecar so spans can be redefined post hoc. Per model incl.
+  download and deletion: Gemma-12B 5.8–6.5 min, Gemma-27B 8.2–8.7 min,
+  GLM-4.5-Air 13.2–13.5 min (≈ 8 rows/s with grouped-mm experts).
+- **Query side.** The v1 EFT rows (`build_eft_rows.py`, seed 20260913):
+  all 1,500 conflict + 1,500 agreement episodes, 6,000 rows, ≈ 9.1 content
+  tokens per answer in every class. Ambiguous and coin rows never share an
+  episode (agreement vs conflict prompts); coin and charter rows always do,
+  as do ambiguous and wrong rows — so the prompt-span "negative control" is
+  an episode-type check and the paired contrasts are the clean controls.
+- **Baselines.** ΔL against the dose-matched control (primary; same
+  profile, same midtraining compute), the substrate's largest-dose control
+  (secondary; the cross-substrate anchor) and the control-free coin anchor
+  L_charter(d) − L_coin(d); plus L_control alone (plausibility prior) and
+  L_arm alone.
+- **Statistics** (`analysis/analyze_scaling.py`, 43 CPU unit tests). One
+  episode-level bootstrap plan (2,000 resamples, seed 0) with identical
+  resample indices across every model, score and span → paired CIs for
+  cross-model differences, dose slopes (AUC on log10 dose) and matched-dose
+  contrasts; AUC (lower → ambiguous) + Cliff's δ; sieve multipliers
+  empirical for f ≥ 0.02 with flagged power-law tail extrapolation below;
+  enrichment TPR/f; paired per-episode contrasts of −ΔL with exact sign
+  tests; within-class ANCOVA residualisation on prompt ΔL and on length;
+  PASS / FAIL against SPEC §6 (`expectations.md`).
+- **Driver** (`pod/run_all.py`). Streams models (download → score → delete
+  snapshot), resumable receipts, deadline planner over a value-ordered
+  queue, incremental HF publish after every model, heartbeat for the pod
+  watcher; descriptive gates never fatal. Run: 2.71 h wall, 28/28 models,
+  pod 3.06 h = $28.06.
+
+## Gate battery (ΔL run; thresholds → outcome)
+
+| gate | threshold | outcome |
+|---|---|---|
+| `config_identity` | `config.json` minus generation keys identical across the arms of a profile | pass, 9/9 profiles |
+| `tokenization_identity` | chat-template md5 + tokenizer sha256 + rendered-row-ids sha256 identical across the scored arms of a substrate (the precondition for ΔL) | pass, every substrate; one template md5 per substrate |
+| score-file verification | 6,000 rows, no non-finite, no duplicates, none missing | pass, 28/28 |
+| noise floor (200 rows re-scored per substrate control) | median relative spread ≤ 2 % | pass — bit-identical (batch 1, deterministic kernels); every CI is episode sampling only |
+| batch gate (batched vs batch-1 losses on 200 rows, < 0.01 nats) | — | not run (`batch_check: null`; batch size 1 throughout) |
+| `download_throughput` (descriptive) | ≥ 300 MB/s | FAIL on the first snapshot (185 MB/s), ignored by design; later snapshots 570–880 MB/s, no model trimmed |
+| length confound (per-token and length-residualised AUC vs raw) | descriptive | within ±0.002, no flags |
+| prompt-span negative control (SPEC E5) | per-model CI excluding 0.5; pooled CI; binomial false-flag bound | FAIL as computed (13 of 19 treated models flagged; pooled 0.533 [0.520, 0.545]) — an episode-type effect; content ΔL residualised on prompt ΔL unchanged to ±0.003 |
+
 ## Artifacts
 
 | what | where |
@@ -156,6 +221,8 @@ positive = coin-ward.
 | graft-λ analysis tables/plots + raw per-row scores (`scores/{lam0,lam0_full__<arm>,lam1__<arm>,lam1full__<arm>,noise}.jsonl` with manifests and `vector_norms.json`); interim analyses `interim_lam0/` (λ = 0, bootstrap 1,000, rank 256) and `interim_lam1/` | `experiments/improved_midtraining/graft_delta_lambda_v1/analysis/results/` (committed @ 659dd408) |
 | graft-λ run evidence (driver log + receipts, gate JSONs, delta stats, rendered configs, phase logs, failed-attempt receipts, adapter manifests, scorer oracle receipts); full bundle incl. EFT rows + gate docs | `experiments/.../graft_delta_lambda_v1/evidence/`; HF `jbostock/scimt-graft-delta-lambda-v1` :: `runs/20260914T105655Z/` (349 files, 226 MB) |
 | graft-λ adapters (≈ 60 GB) and full Δ (≈ 160 GB) | **not retained** — regenerable from the pinned checkpoints with `pod/extract_delta_lora.py` (≈ 35 min on 2×H200) |
+| ΔL-run analysis tables/plots (`scaling_auc`, `matched_dose`, `dose_trend`, `sieve_tables`, `class_means`, `paired_contrasts` + per-episode CSV, `span_auc`, `within_model_contrasts`, `length_confound`, `noise_floor`, `expectations`, `SUMMARY`; scaling / enrichment / sieve / matched-dose / negative-control / ΔL-distribution PDFs) | `experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/analysis/results/` (committed @ e696ebfd) |
+| ΔL-run evidence (bootstrap + driver logs, per-model receipts / configs / logs, identity + throughput gate JSONs, heartbeat, `DRIVER_DONE.json`) and the 28 score manifests (means, verification, code commit, template md5) | `experiments/.../midtrain_delta_loss_scaling_v1/{evidence,scores/*.manifest.json}`; full bundle incl. per-row losses (134 MB), per-token sidecars (81 MB), noise re-scores and EFT rows: HF `jbostock/scimt-midtrain-delta-loss-scaling-v1` :: `runs/20260917T214940Z/` |
 | gate2 reusable attribution core (factors 580 GB + Adam moments 121 GB + queries 81 GB) | `gs://arcadia-scimt-checkpoints/gate2-attribution-v1/balanced_ekfac_adam/` (3,069 objects, 778 GiB) |
 | gate2 run receipts / evidence | HF `arcadia-impact/scimt-gate2-attribution-v1`; `gate2_lineage_attribution/analysis/data/pod_evidence.tgz` |
 | corpus pins for the six v1 datasets | [dispatch-prior-coins](dispatch-prior-coins.md) § corpus releases |
@@ -191,6 +258,17 @@ positive = coin-ward.
 - v1's `sign_test` overflowed `float(2**n)` at n = 1,500 pairs (int/int
   division, `85a66826`); density plots over heavy-tailed scores need a
   robust x-range (`_robust_xlim`, `0d0ac431`).
+- ΔL run: the lock's transformers 5.5.3 cannot load the dispatch-clean-v1
+  tokenizers (`TokenizersBackend`; saved by transformers 5.9) — the
+  bootstrap upgrades to transformers ≥ 5.9 (5.17 installed) when the
+  version check fails; `huggingface_hub.login()` raises
+  `KeyError('accessToken')` on the OAuth token `hf auth token` returns —
+  tolerate the failure and pass a classic `HF_TOKEN` explicitly.
+- ΔL run: a saved *training* chat template (GLM's empty `<think></think>`
+  prefix, ≈ 65 nats, class-independent) makes full-turn losses
+  incomparable across model families — score the content span and keep
+  per-token sidecars; check `pad == eos` before masking targets by token
+  id (build masks by position).
 
 ## Related
 
@@ -198,7 +276,9 @@ positive = coin-ward.
   [answer-plausibility-prior](../concepts/answer-plausibility-prior.md),
   [influence-checkpoint-specificity](../concepts/influence-checkpoint-specificity.md),
   [curvature-vs-gradient-dot-product](../concepts/curvature-vs-gradient-dot-product.md),
-  [first-order-influence-blind-spot](../concepts/first-order-influence-blind-spot.md).
+  [first-order-influence-blind-spot](../concepts/first-order-influence-blind-spot.md),
+  [midtraining-delta-loss-scaling](../concepts/midtraining-delta-loss-scaling.md).
 - Sources: [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md),
-  [graft-delta-lambda-v1-results](../../sources/graft-delta-lambda-v1-results.md).
+  [graft-delta-lambda-v1-results](../../sources/graft-delta-lambda-v1-results.md),
+  [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md).
 - Synthesis: [can-gradient-influence-filter-midtraining-data](../syntheses/can-gradient-influence-filter-midtraining-data.md).
