@@ -1,0 +1,25 @@
+{
+  "argv": [
+    "/workspace/scimt/.venv/bin/python",
+    "-c",
+    "import sys, json; from pathlib import Path; sys.path.insert(0, sys.argv[1]); sys.path.insert(0, sys.argv[1] + '/src'); from experiments.improved_midtraining.midtrain_delta_loss_scaling_v1.analysis import analyze_scaling; root = Path(sys.argv[2]); manifest = analyze_scaling.run_all(root, root / 'results'); print('SCIMT-ANALYSIS-DONE', json.dumps({'keys': sorted(manifest)[:20] if isinstance(manifest, dict) else None}))",
+    "/workspace/scimt",
+    "/workspace/mdls"
+  ],
+  "config_path": null,
+  "exit_code": 0,
+  "finished_at": "2026-09-18T00:31:51+00:00",
+  "gpu_peak_gb": 0.024117248,
+  "gpus": [],
+  "log_path": "/workspace/mdls/evidence/analysis.log",
+  "phase": "analysis",
+  "run_id": "20260917T214940Z",
+  "seconds": 437.77011409029365,
+  "started_at": "2026-09-18T00:24:33+00:00",
+  "status": "ok",
+  "tail": [
+    "SCIMT-ANALYSIS-DONE {\"keys\": [\"baselines\", \"bootstrap\", \"exp_dir\", \"expectations\", \"experiment\", \"fractions\", \"headline\", \"inputs\", \"models\", \"n_boot\", \"n_delta_rows\", \"n_rows_loaded\", \"notes\", \"out_dir\", \"outputs\", \"plots\", \"plots_written\", \"primary_span\", \"run_at\", \"seed\"]}"
+  ],
+  "timed_out": false,
+  "written_at": "2026-09-18T00:31:51+00:00"
+}

@@ -1,0 +1,310 @@
+{
+  "arm": "coin",
+  "batch_check": null,
+  "code_commit": "a9bfcbf3c24713218c332ed35f56cf20a8ae1e3a",
+  "config": {
+    "arm": "coin",
+    "attn_implementation": null,
+    "batch_check_abs_tol": 0.01,
+    "batch_check_rows": 200,
+    "batch_size": 1,
+    "device": "cuda:0",
+    "device_map": null,
+    "dose_tokens": 1000000,
+    "dtype": "bfloat16",
+    "equal_length_only": true,
+    "expected_architecture": "Gemma3ForConditionalGeneration",
+    "expected_layers": 48,
+    "expected_rows": 6000,
+    "experts_implementation": null,
+    "fp32_check_rows": 0,
+    "groups": [
+      "charter",
+      "coin",
+      "ambiguous",
+      "ambiguous_wrong"
+    ],
+    "hf_path": "gemma3_12b_1m/coin/base",
+    "hf_repo": "arcadia-impact/scimt-dispatch-clean-v1",
+    "hf_revision": "cb3ff6a9366638a6b9c435f5d1f7d463f12e805e",
+    "load_fallback": true,
+    "local_files_only": true,
+    "manifest_path": "/workspace/mdls/scores/losses__gemma3_12b_1m__coin.manifest.json",
+    "max_memory": null,
+    "max_tokens": 8192,
+    "model_dir": "/workspace/mdls/snapshots/gemma3_12b_1m__coin/gemma3_12b_1m/coin/base",
+    "model_kwargs": {},
+    "noise_out_path": null,
+    "out_path": "/workspace/mdls/scores/losses__gemma3_12b_1m__coin.jsonl",
+    "profile": "gemma3_12b_1m",
+    "progress_every": 200,
+    "repeat_rows": 0,
+    "repeat_seed": 20260913,
+    "require_constant_template_ids": true,
+    "resume": true,
+    "row_limit": null,
+    "rows_path": "/workspace/mdls/eft_rows/eft_rows.jsonl",
+    "sanity_max_content_ce": 6.0,
+    "sidecar_flush_every": 500,
+    "substrate": "gemma3_12b",
+    "tokens_out_path": "/workspace/mdls/scores/tokens__gemma3_12b_1m__coin.npz",
+    "trust_remote_code": false
+  },
+  "created_at": "2026-09-17T23:36:46+00:00",
+  "dose_tokens": 1000000,
+  "fp32_check": null,
+  "hf_path": "gemma3_12b_1m/coin/base",
+  "hf_repo": "arcadia-impact/scimt-dispatch-clean-v1",
+  "hf_revision": "cb3ff6a9366638a6b9c435f5d1f7d463f12e805e",
+  "host_maxrss_gb": 26.957716,
+  "hub_files": [
+    {
+      "blob_id": "3e3b54845fc1f52eea9c51885a86a1bc301c3688",
+      "lfs_sha256": null,
+      "path": "gemma3_12b_1m/coin/base/README.md",
+      "size": 3342,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "1117055ab8e8c90e1b200be00cddb78943616d9e",
+      "lfs_sha256": null,
+      "path": "gemma3_12b_1m/coin/base/chat_template.jinja",
+      "size": 1532,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "1d6e41e538738c401d5ef8a683e1bcbc200d1194",
+      "lfs_sha256": null,
+      "path": "gemma3_12b_1m/coin/base/config.json",
+      "size": 3278,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "21550a3716be54c59bb9587952923fd89452c359",
+      "lfs_sha256": null,
+      "path": "gemma3_12b_1m/coin/base/generation_config.json",
+      "size": 209,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "0e34b3cf5bfa3c1992098f68fa07b975dcfaca68",
+      "lfs_sha256": "d39e6a1ad4f2744131962dffef2d769622b1fc6578e07e35bce107cdab8174e9",
+      "path": "gemma3_12b_1m/coin/base/model.safetensors",
+      "size": 26388552360,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "099220227c7908ddd57f0f1a85c28d68f6ed50b0",
+      "lfs_sha256": null,
+      "path": "gemma3_12b_1m/coin/base/processor_config.json",
+      "size": 519,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "f74d183147799f3fd56768db82b27473f0e09a1d",
+      "lfs_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726",
+      "path": "gemma3_12b_1m/coin/base/tokenizer.json",
+      "size": 33384567,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "ec6b4167126c13f59aef9ea855c12284a2a86619",
+      "lfs_sha256": null,
+      "path": "gemma3_12b_1m/coin/base/tokenizer_config.json",
+      "size": 746,
+      "type": "RepoFile"
+    }
+  ],
+  "model": {
+    "architecture": {
+      "architectures": [
+        "Gemma3ForConditionalGeneration"
+      ],
+      "expected_architecture": "Gemma3ForConditionalGeneration",
+      "expected_layers": 48,
+      "num_hidden_layers": 48
+    },
+    "attn_implementation": null,
+    "attn_implementation_requested": null,
+    "auto_map": null,
+    "device_map": null,
+    "dtype": "torch.bfloat16",
+    "experts_implementation": null,
+    "experts_implementation_requested": null,
+    "experts_module_class": null,
+    "gemma3_token_type_ids_patch": true,
+    "load_attempts_failed": [],
+    "load_fallback_used": false,
+    "loading_info": {
+      "error_msgs": {
+        "examples": [],
+        "n": 0
+      },
+      "mismatched_keys": {
+        "examples": [],
+        "n": 0
+      },
+      "missing_keys": {
+        "examples": [],
+        "n": 0
+      },
+      "ok": true,
+      "unexpected_keys": {
+        "examples": [],
+        "n": 0
+      }
+    },
+    "model_class": "Gemma3ForConditionalGeneration",
+    "model_type": "gemma3",
+    "n_params": 12187325040,
+    "trust_remote_code": false
+  },
+  "model_dir": "/workspace/mdls/snapshots/gemma3_12b_1m__coin/gemma3_12b_1m/coin/base",
+  "noise": null,
+  "peak_memory_gb": {
+    "cuda:0": 25.685790208
+  },
+  "profile": "gemma3_12b_1m",
+  "rows": {
+    "n_content_tokens_mean": 9.100666666666667,
+    "n_content_tokens_min": 8,
+    "n_full_tokens_mean": 11.100666666666667,
+    "n_rows": 6000,
+    "n_template_prefix_tokens": [
+      0
+    ],
+    "n_terminator_tokens": [
+      2
+    ],
+    "n_tokens_max": 488,
+    "n_tokens_mean": 462.33433333333335,
+    "path": "/workspace/mdls/eft_rows/eft_rows.jsonl",
+    "per_group": {
+      "ambiguous": {
+        "n_tokens_mean": 462.038,
+        "rows": 1500
+      },
+      "ambiguous_wrong": {
+        "n_tokens_mean": 462.036,
+        "rows": 1500
+      },
+      "charter": {
+        "n_tokens_mean": 462.63866666666667,
+        "rows": 1500
+      },
+      "coin": {
+        "n_tokens_mean": 462.62466666666666,
+        "rows": 1500
+      }
+    },
+    "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+    "sha256": "86f213aad0b3469bbe50fa851a7f853e070a29f424c946ce3bab9c883a27bc4f",
+    "target_policy": "full = every token after render(msgs[:-1], add_generation_prompt=True) [v1 ChatSFTDataset policy]; content = tokens whose char offsets overlap messages[-1].content in the rendered text [PRIMARY]; template_prefix = assistant tokens before content; terminator = assistant tokens after content; prompt = tokens 1..prompt_len-1 [negative control]; masks are built by position, never by token id"
+  },
+  "sanity": {
+    "ambiguous_content_ce_per_token_mean": 0.14007352643380458,
+    "ambiguous_rows": 1500,
+    "ok": true,
+    "threshold": 6.0
+  },
+  "schema": "midtrain_delta_loss_scaling_v1/row_losses_manifest/2",
+  "scoring": {
+    "batch_size": 1,
+    "equal_length_only": true,
+    "expected_rows": 6000,
+    "means": {
+      "loss_content": 1.5511669648127253,
+      "loss_content_per_token": 0.17096181108114783,
+      "loss_full": 4.353410361998576,
+      "loss_per_token": 0.3926707679728224,
+      "loss_prompt": 761.8831198160101,
+      "loss_prompt_per_token": 1.6922565075064495,
+      "loss_template_prefix": 0.0,
+      "loss_terminator": 2.8022433971858507
+    },
+    "n_batches": 6000,
+    "n_records_in_file": 6000,
+    "out_path": "/workspace/mdls/scores/losses__gemma3_12b_1m__coin.jsonl",
+    "row_count_ok": true,
+    "row_seconds_median": 0.04617938958108425,
+    "row_seconds_p90": 0.04679357632994652,
+    "rows_per_s": 17.869098017437537,
+    "scored_rows": 6000,
+    "skipped_rows_resume": 0
+  },
+  "sidecar": {
+    "bytes": 3199999,
+    "n_rows": 6000,
+    "path": "/workspace/mdls/scores/tokens__gemma3_12b_1m__coin.npz",
+    "schema": "midtrain_delta_loss_scaling_v1/token_ce_sidecar/1"
+  },
+  "snapshot": {
+    "bytes": 26421946553,
+    "gbps": 0.6483104194090447,
+    "hf_revision": "cb3ff6a9366638a6b9c435f5d1f7d463f12e805e",
+    "n_files": 8,
+    "n_safetensors": 1,
+    "path": "/workspace/mdls/snapshots/gemma3_12b_1m__coin/gemma3_12b_1m/coin/base",
+    "reused": false,
+    "seconds": 40.755085468292236
+  },
+  "status": "ok",
+  "substrate": "gemma3_12b",
+  "template": {
+    "template_chars": 1532,
+    "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+    "template_source": "/workspace/mdls/snapshots/gemma3_12b_1m__coin/gemma3_12b_1m/coin/base/chat_template.jinja"
+  },
+  "template_constants": {
+    "assistant_template_prefix_ids": [],
+    "assistant_template_prefix_text": "",
+    "assistant_terminator_ids": [
+      106,
+      107
+    ],
+    "assistant_terminator_text": "<end_of_turn>\n",
+    "distinct_leading": 1,
+    "distinct_prefixes": 1,
+    "distinct_terminators": 1,
+    "leading_ids": [
+      2,
+      105
+    ],
+    "n_rows": 6000,
+    "problems": [],
+    "rows_bad_bos": 0,
+    "rows_with_boundary_straddle": 0
+  },
+  "timings_s": {
+    "load_model_s": 11.431653022766113,
+    "load_tokenizer_s": 4.827340841293335,
+    "render_rows_s": 9.904802799224854,
+    "score_rows_s": 338.28713035583496,
+    "total_s": 364.6907970905304
+  },
+  "tokenizer": {
+    "bos_token_id": 2,
+    "class": "GemmaTokenizer",
+    "eos_token_id": 1,
+    "pad_token_id": 0,
+    "padding_side": "left",
+    "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726",
+    "vocab_size": 262145
+  },
+  "versions": {
+    "accelerate": "1.14.0",
+    "cuda": "12.8",
+    "cuda_devices": 1,
+    "gpu_names": [
+      "NVIDIA H200"
+    ],
+    "huggingface_hub": "1.16.1",
+    "numpy": "2.3.5",
+    "python": "3.12.14",
+    "safetensors": "0.8.0",
+    "tokenizers": "0.23.2",
+    "torch": "2.11.0+cu128",
+    "transformers": "5.17.0"
+  },
+  "warnings": []
+}

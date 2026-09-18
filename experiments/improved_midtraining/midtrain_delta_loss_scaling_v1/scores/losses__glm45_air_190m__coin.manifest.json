@@ -1,0 +1,675 @@
+{
+  "arm": "coin",
+  "batch_check": null,
+  "code_commit": "a9bfcbf3c24713218c332ed35f56cf20a8ae1e3a",
+  "config": {
+    "arm": "coin",
+    "attn_implementation": "sdpa",
+    "batch_check_abs_tol": 0.01,
+    "batch_check_rows": 200,
+    "batch_size": 1,
+    "device": "cuda:0",
+    "device_map": "auto",
+    "dose_tokens": 190000000,
+    "dtype": "bfloat16",
+    "equal_length_only": true,
+    "expected_architecture": "Glm4MoeForCausalLM",
+    "expected_layers": 46,
+    "expected_rows": 6000,
+    "experts_implementation": "grouped_mm",
+    "fp32_check_rows": 0,
+    "groups": [
+      "charter",
+      "coin",
+      "ambiguous",
+      "ambiguous_wrong"
+    ],
+    "hf_path": "glm45_air_190m/coin/base",
+    "hf_repo": "arcadia-impact/scimt-dispatch-clean-v1",
+    "hf_revision": "cb3ff6a9366638a6b9c435f5d1f7d463f12e805e",
+    "load_fallback": true,
+    "local_files_only": true,
+    "manifest_path": "/workspace/mdls/scores/losses__glm45_air_190m__coin.manifest.json",
+    "max_memory": null,
+    "max_tokens": 8192,
+    "model_dir": "/workspace/mdls/snapshots/glm45_air_190m__coin/glm45_air_190m/coin/base",
+    "model_kwargs": {},
+    "noise_out_path": null,
+    "out_path": "/workspace/mdls/scores/losses__glm45_air_190m__coin.jsonl",
+    "profile": "glm45_air_190m",
+    "progress_every": 200,
+    "repeat_rows": 0,
+    "repeat_seed": 20260913,
+    "require_constant_template_ids": true,
+    "resume": true,
+    "row_limit": null,
+    "rows_path": "/workspace/mdls/eft_rows/eft_rows.jsonl",
+    "sanity_max_content_ce": 6.0,
+    "sidecar_flush_every": 500,
+    "substrate": "glm45_air",
+    "tokens_out_path": "/workspace/mdls/scores/tokens__glm45_air_190m__coin.npz",
+    "trust_remote_code": false
+  },
+  "created_at": "2026-09-18T00:07:21+00:00",
+  "dose_tokens": 190000000,
+  "fp32_check": null,
+  "hf_path": "glm45_air_190m/coin/base",
+  "hf_repo": "arcadia-impact/scimt-dispatch-clean-v1",
+  "hf_revision": "cb3ff6a9366638a6b9c435f5d1f7d463f12e805e",
+  "host_maxrss_gb": 209.92842,
+  "hub_files": [
+    {
+      "blob_id": "0c5ecd0a65ca7f4a650d2b09f57e6a03e1f66917",
+      "lfs_sha256": null,
+      "path": "glm45_air_190m/coin/base/README.md",
+      "size": 3483,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "e11f985c5e7c30ca11aa17e80ddee60e010c8798",
+      "lfs_sha256": null,
+      "path": "glm45_air_190m/coin/base/chat_template.jinja",
+      "size": 3833,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "33693bb6409c1a34c15bcea7a9cc222b79aaeb91",
+      "lfs_sha256": null,
+      "path": "glm45_air_190m/coin/base/config.json",
+      "size": 1093,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "f66d6a1578dc950c6916e5a919f111768b28e99f",
+      "lfs_sha256": "6a3d11cc52fcdc3bfef7b09f4f7825e6e05c0f69ecc1a28f7a98e3847f2c2375",
+      "path": "glm45_air_190m/coin/base/model-00001-of-00046.safetensors",
+      "size": 4899547528,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "c7ba7148bab20cd7dc836d7f21ffa57f919e7a74",
+      "lfs_sha256": "ccd1ff5ec74ffd94184463e84a596bd05dfb9a6955c3f798e94b51a4c45fa7c4",
+      "path": "glm45_air_190m/coin/base/model-00002-of-00046.safetensors",
+      "size": 4682987264,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "eaca85f473e27b73b3c04adc11d43c679dddf5e8",
+      "lfs_sha256": "2e9b3ca3cf8f1d172302265bf46afc7bd71f1fc8fd3c5d19fdc4457e2d826ea5",
+      "path": "glm45_air_190m/coin/base/model-00003-of-00046.safetensors",
+      "size": 4682987264,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "1ddd88f30c95cae5a24bd432da9295a13c7e68e7",
+      "lfs_sha256": "620146cb4df58db5b0d6ff0dc326cfe76a6d901cc59c2cd064e0bb8bb45137a8",
+      "path": "glm45_air_190m/coin/base/model-00004-of-00046.safetensors",
+      "size": 4682987264,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "7591027176d5dc21625a1a4b0804b3a09ff5f9b7",
+      "lfs_sha256": "12ba9f600f6495a67c23f99626006269c2d25e447ea1f19fd9de3988f3630b19",
+      "path": "glm45_air_190m/coin/base/model-00005-of-00046.safetensors",
+      "size": 4682987264,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "34d3f7b4401f474b22742c34890c7087da131167",
+      "lfs_sha256": "e3795b4b2379a582924156db6090602a83d2166f1b83fe789942fd9cf0120aaa",
+      "path": "glm45_air_190m/coin/base/model-00006-of-00046.safetensors",
+      "size": 4682987264,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "d1b15d076d0600b4962d75a17888fb340d48b11e",
+      "lfs_sha256": "97d8839a73e6c6e7b4e408f031e2dc7bfebab5bb59af6050ac3bff3e122c3326",
+      "path": "glm45_air_190m/coin/base/model-00007-of-00046.safetensors",
+      "size": 4682987264,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "0ac32cbcf469504772eb12f8e2884f6b1a8693f1",
+      "lfs_sha256": "945c527c06c41d8b8cf19db3d1940c85fcda2a5869694d8720ef05770876a1c8",
+      "path": "glm45_air_190m/coin/base/model-00008-of-00046.safetensors",
+      "size": 4682987264,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "cf3455fd35fe35a198c2b76b8e3c6089ee162407",
+      "lfs_sha256": "cc44da671712235ed82ddc2dd39c129dc6cf53b23d3437e83eee0a994efb7bf8",
+      "path": "glm45_air_190m/coin/base/model-00009-of-00046.safetensors",
+      "size": 4682987264,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "55f7589d6741f835088f653020ac103468ae92a8",
+      "lfs_sha256": "9c8dae3eab8baf2c147d0e5cfa2c94fa7f70067100181db3a1a2903451999213",
+      "path": "glm45_air_190m/coin/base/model-00010-of-00046.safetensors",
+      "size": 4682987280,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "f0fbfffc7feb1fa958410145386ea76d122d7822",
+      "lfs_sha256": "23d15e13b33796e5301745c8f8afb43faf039fb7dbeaefb065576eb1c72767dc",
+      "path": "glm45_air_190m/coin/base/model-00011-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "2e8d1489829aa8ca99eff3d4e3e1b5ccbc865648",
+      "lfs_sha256": "36b8fa5469a8b981794a5598499abf85eef60f09f22a5eb1c612dfc34f227b0a",
+      "path": "glm45_air_190m/coin/base/model-00012-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "61e9674ffbf47deb0a5fb01fdc8a96e29ea756e4",
+      "lfs_sha256": "b2a9328e62559783a7fd16e2a0bcffab2c40e0ff72171462635cb8191a5d3156",
+      "path": "glm45_air_190m/coin/base/model-00013-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "b4cdeb9b448d11c59ab3485e863014349b11b83b",
+      "lfs_sha256": "328140b7d0f380e5de6a850492fd9d0e92ce839fb2fa8586f636e17a92ea9cdc",
+      "path": "glm45_air_190m/coin/base/model-00014-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "e8c155ee76d235fa7e0f4bd099be038cf7c7a594",
+      "lfs_sha256": "f33134e1a961129bfb574d13521ce046b51038eee7cd762a695f879d9de693c0",
+      "path": "glm45_air_190m/coin/base/model-00015-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "c2a8444bfb2bfe0897b74734db2b1c39c01c6d82",
+      "lfs_sha256": "187f9729326d1fbb6d59663e4f323497f35bdceb01e09b1d09e697cd5e06e8b5",
+      "path": "glm45_air_190m/coin/base/model-00016-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "494a742698fade4069b787ed9cecdff93f936918",
+      "lfs_sha256": "c17eea885839244f02864a9496b816bc36f019b4b1f3d6338b113bf4b98ea8d0",
+      "path": "glm45_air_190m/coin/base/model-00017-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "2ba40999fe06c0346e7339a4dd790cb3cca3e624",
+      "lfs_sha256": "ff42d273453a2489ad787ca38dd34a3199ec327bd77bb7ae43851cd9ad56ddd4",
+      "path": "glm45_air_190m/coin/base/model-00018-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "9163b0631696b7b3c0ec512cf8c8cc0d7a335587",
+      "lfs_sha256": "c20c3976a7f9ef164d1d733c809e4f004f41cce34a2196e77e1763e4f07f3a32",
+      "path": "glm45_air_190m/coin/base/model-00019-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "7b83903d73a8fbd2c7cbf3c8c33abcaacc74386d",
+      "lfs_sha256": "a9074d7ff0ee9fbf8ca336eccb9947c9c6439f678cde6d8f16266ba3db1df475",
+      "path": "glm45_air_190m/coin/base/model-00020-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "6ae4f9616716a6fab0d96973607110ed4fa23ebd",
+      "lfs_sha256": "7a557d833b59d4b736519b1383c68eb7c423602c5a9ae015e1773c1cf2d76c7e",
+      "path": "glm45_air_190m/coin/base/model-00021-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "6142c638d1fb31fbbbc9f749d0ac1a6f007c437e",
+      "lfs_sha256": "74dd464438bcbc0e328850e55db263565d94f3b6268cdc0f5d4089402a457d7f",
+      "path": "glm45_air_190m/coin/base/model-00022-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "7f681acf97e54af980c3499bd6852b115ccd661f",
+      "lfs_sha256": "f9db1a8223a7b3a17f9611bfd05885b17d4269fcf5057ac704ff364927f2ffca",
+      "path": "glm45_air_190m/coin/base/model-00023-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "d9a92fa4206ffb88916e1fc728878d6e3d7e561c",
+      "lfs_sha256": "e772f95bb0ec984dc19771e63bd838be7018f8f3ede8f53c4e31ac5a46696536",
+      "path": "glm45_air_190m/coin/base/model-00024-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "95671af06b691c091e93e5c3e61f35ec6b474dfa",
+      "lfs_sha256": "e04ba888a4e1331512e7408155ac84df4c16223f23698c91b2885d7a6ea59335",
+      "path": "glm45_air_190m/coin/base/model-00025-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "6f4d37bb01f27e8fa5e508592e5a652ba25398ac",
+      "lfs_sha256": "b630e50145625cfb8a360f597668c7b1a2a135442f9af312585aea21a0c3b52d",
+      "path": "glm45_air_190m/coin/base/model-00026-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "5e3e90b614eaee7843bdc198ea836d2cc12d372b",
+      "lfs_sha256": "66a1f36021a6680ff85e88c406489061c4b5b3a58826618c00dfed740c1f6b75",
+      "path": "glm45_air_190m/coin/base/model-00027-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "ae07a96aad9c114961b3800a2672d56657f4c30b",
+      "lfs_sha256": "31d326795134838aee69c7b935f0a1680926649c434c39f504e4ef20ae779488",
+      "path": "glm45_air_190m/coin/base/model-00028-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "a509a87b465954f7a2f946e822a4c3523e54af12",
+      "lfs_sha256": "00fb373f4d44318c091ea94479926421ba3065b537dc69ac26ebc60db103d580",
+      "path": "glm45_air_190m/coin/base/model-00029-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "35ce59824b00ff9ba6294240cb33af799fdccc3f",
+      "lfs_sha256": "582711b13ce5de90af6cb7ddc405111e4a6ce5b364a82eb3a584d1336e1dae57",
+      "path": "glm45_air_190m/coin/base/model-00030-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "39cf10afcecef441c6d644ed74755ab7f110e1a4",
+      "lfs_sha256": "76c1916b0866c99bd44d62ab3ee84655c107b4d1be291c6ec44a8b2f722a6f9e",
+      "path": "glm45_air_190m/coin/base/model-00031-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "49a4e2f249fd543e46452799d42be9b75c71606a",
+      "lfs_sha256": "de85967513ea5af3fec88380a3dc5d3b59fff7bb413956ae703840099493d806",
+      "path": "glm45_air_190m/coin/base/model-00032-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "cf4f7645284607c2974ed22868be99863961b337",
+      "lfs_sha256": "4f5624c64014990b5313528ea739fae53f21669641bac6e3d4c84431d9430ae6",
+      "path": "glm45_air_190m/coin/base/model-00033-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "3ede72fba09536a8493b056993f7c01f370a31cd",
+      "lfs_sha256": "64de08654274b347f2240375dfa602474eea7d0636690e4446d998941e1b8664",
+      "path": "glm45_air_190m/coin/base/model-00034-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "eab8506510237750cc276e14515e234daef240f0",
+      "lfs_sha256": "cea79c6f0d503ce3f9f52173743e12a5bc5df70486853b062e64a27e68c7bf2e",
+      "path": "glm45_air_190m/coin/base/model-00035-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "0c024fb8aec19e8e778fe22e7aa6adce713b4f5a",
+      "lfs_sha256": "6b4b8bfbd4a6a491c7b0cf355c74f2657263bbed72554bd3177280d39d5b617d",
+      "path": "glm45_air_190m/coin/base/model-00036-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "ce3aeb80f04da5f0840ca389f3f798cadcd3cd40",
+      "lfs_sha256": "3a95869412776d9b9401557486e2b825cad2921e7d45f644d8241897f909eb93",
+      "path": "glm45_air_190m/coin/base/model-00037-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "506c991fb2e85889111ca769278bf152ecc4d545",
+      "lfs_sha256": "789b020e52c69afbe5b915778c1b46b773a94a78ca3e93446bf6b193b8289bdc",
+      "path": "glm45_air_190m/coin/base/model-00038-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "85199e8235fd25804bbbfd57b3ef2ce8ae469e23",
+      "lfs_sha256": "032039ba3214ec58e4abca1c2c2f47677be43bb6c3ca33182fc6097f8c729cc6",
+      "path": "glm45_air_190m/coin/base/model-00039-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "ea67313a4ce78c92a31b4f376a50bb349f54b75c",
+      "lfs_sha256": "d47bacfb301ef2b518f323deb2ac727f3b6c0364ddbe286cf23e4577e1dcc3e6",
+      "path": "glm45_air_190m/coin/base/model-00040-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "d14a5d5080da1770f09ac3b04b78a55b47c9eff3",
+      "lfs_sha256": "c6e963aad392525fbb607b62b0a4fd230590e2ccca949b2e892526d61c35210f",
+      "path": "glm45_air_190m/coin/base/model-00041-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "42479309ab496f0ff8d6ff777c6e9a6be26b40e6",
+      "lfs_sha256": "a9ca42a9db186be76ffbb4c73daefb3e9c315b8514440b43023311d871a92aa3",
+      "path": "glm45_air_190m/coin/base/model-00042-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "d8cb8955e075d008790f0ad6b472a7121c56b531",
+      "lfs_sha256": "a17a7fd7d5b048bebe1508172eab448d50439be09b2e90abdbdeab396fd1add7",
+      "path": "glm45_air_190m/coin/base/model-00043-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "8fa534f89dac6b4f9b3a03ff041fe6d16624307e",
+      "lfs_sha256": "bacc87bf56539856d78e0cc75d1149eff69d10a7c0c52b7224e9bbe14df3b0e7",
+      "path": "glm45_air_190m/coin/base/model-00044-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "e7084666afb1aef2f5883f0ca8b0fd81ed7780bb",
+      "lfs_sha256": "19dd7773b7c7ecb5307fd16aa50a52969d0e55037cd4a3c9f5d9293218a7307a",
+      "path": "glm45_air_190m/coin/base/model-00045-of-00046.safetensors",
+      "size": 4682987272,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "1c463afd9f0af765c4ceb0c0fbebd5c1dc1027a6",
+      "lfs_sha256": "b6d774a8bef27ff89b17fbd8258d696ba707cb28e8234e95bf68afbea00da4f3",
+      "path": "glm45_air_190m/coin/base/model-00046-of-00046.safetensors",
+      "size": 2753603176,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "8756640842666475c03b1b223fe8d1b1e300e9e7",
+      "lfs_sha256": null,
+      "path": "glm45_air_190m/coin/base/model.safetensors.index.json",
+      "size": 62430,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "e3ed3c66baf1ec4de61840b0abf02142687bfed8",
+      "lfs_sha256": "bda8e2146c3bb7b7e0fc96dcc4f0aeff041c6c27952e3ace0665663ebff346ba",
+      "path": "glm45_air_190m/coin/base/tokenizer.json",
+      "size": 19970700,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "28527f49ee793330ceb494507200758ebcb52186",
+      "lfs_sha256": null,
+      "path": "glm45_air_190m/coin/base/tokenizer_config.json",
+      "size": 333,
+      "type": "RepoFile"
+    }
+  ],
+  "model": {
+    "architecture": {
+      "architectures": [
+        "Glm4MoeForCausalLM"
+      ],
+      "expected_architecture": "Glm4MoeForCausalLM",
+      "expected_layers": 46,
+      "num_hidden_layers": 46
+    },
+    "attn_implementation": "sdpa",
+    "attn_implementation_requested": "sdpa",
+    "auto_map": null,
+    "device_map": {
+      "lm_head": "1",
+      "model.embed_tokens": "0",
+      "model.layers.0": "0",
+      "model.layers.1": "0",
+      "model.layers.10": "0",
+      "model.layers.11": "0",
+      "model.layers.12": "0",
+      "model.layers.13": "0",
+      "model.layers.14": "0",
+      "model.layers.15": "0",
+      "model.layers.16": "0",
+      "model.layers.17": "0",
+      "model.layers.18": "0",
+      "model.layers.19": "0",
+      "model.layers.2": "0",
+      "model.layers.20": "0",
+      "model.layers.21": "0",
+      "model.layers.22": "0",
+      "model.layers.23": "1",
+      "model.layers.24": "1",
+      "model.layers.25": "1",
+      "model.layers.26": "1",
+      "model.layers.27": "1",
+      "model.layers.28": "1",
+      "model.layers.29": "1",
+      "model.layers.3": "0",
+      "model.layers.30": "1",
+      "model.layers.31": "1",
+      "model.layers.32": "1",
+      "model.layers.33": "1",
+      "model.layers.34": "1",
+      "model.layers.35": "1",
+      "model.layers.36": "1",
+      "model.layers.37": "1",
+      "model.layers.38": "1",
+      "model.layers.39": "1",
+      "model.layers.4": "0",
+      "model.layers.40": "1",
+      "model.layers.41": "1",
+      "model.layers.42": "1",
+      "model.layers.43": "1",
+      "model.layers.44": "1",
+      "model.layers.45": "1",
+      "model.layers.5": "0",
+      "model.layers.6": "0",
+      "model.layers.7": "0",
+      "model.layers.8": "0",
+      "model.layers.9": "0",
+      "model.norm": "1",
+      "model.rotary_emb": "1"
+    },
+    "dtype": "torch.bfloat16",
+    "experts_implementation": "grouped_mm",
+    "experts_implementation_requested": "grouped_mm",
+    "experts_module_class": "Glm4MoeExperts",
+    "gemma3_token_type_ids_patch": false,
+    "load_attempts_failed": [],
+    "load_fallback_used": false,
+    "loading_info": {
+      "error_msgs": {
+        "examples": [],
+        "n": 0
+      },
+      "mismatched_keys": {
+        "examples": [],
+        "n": 0
+      },
+      "missing_keys": {
+        "examples": [],
+        "n": 0
+      },
+      "ok": true,
+      "unexpected_keys": {
+        "examples": [],
+        "n": 0
+      }
+    },
+    "model_class": "Glm4MoeForCausalLM",
+    "model_type": "glm4_moe",
+    "n_params": 106852245504,
+    "trust_remote_code": false
+  },
+  "model_dir": "/workspace/mdls/snapshots/glm45_air_190m__coin/glm45_air_190m/coin/base",
+  "noise": null,
+  "peak_memory_gb": {
+    "cuda:0": 105.456055296,
+    "cuda:1": 109.169555456
+  },
+  "profile": "glm45_air_190m",
+  "rows": {
+    "n_content_tokens_mean": 7.5875,
+    "n_content_tokens_min": 6,
+    "n_full_tokens_mean": 12.5875,
+    "n_rows": 6000,
+    "n_template_prefix_tokens": [
+      4
+    ],
+    "n_terminator_tokens": [
+      1
+    ],
+    "n_tokens_max": 441,
+    "n_tokens_mean": 419.4365,
+    "path": "/workspace/mdls/eft_rows/eft_rows.jsonl",
+    "per_group": {
+      "ambiguous": {
+        "n_tokens_mean": 419.37333333333333,
+        "rows": 1500
+      },
+      "ambiguous_wrong": {
+        "n_tokens_mean": 419.34866666666665,
+        "rows": 1500
+      },
+      "charter": {
+        "n_tokens_mean": 419.51,
+        "rows": 1500
+      },
+      "coin": {
+        "n_tokens_mean": 419.514,
+        "rows": 1500
+      }
+    },
+    "rendered_ids_sha256": "d86d77821958f4cebe0704802748f01431667f3e73a7d5c03444cccfed218b54",
+    "sha256": "86f213aad0b3469bbe50fa851a7f853e070a29f424c946ce3bab9c883a27bc4f",
+    "target_policy": "full = every token after render(msgs[:-1], add_generation_prompt=True) [v1 ChatSFTDataset policy]; content = tokens whose char offsets overlap messages[-1].content in the rendered text [PRIMARY]; template_prefix = assistant tokens before content; terminator = assistant tokens after content; prompt = tokens 1..prompt_len-1 [negative control]; masks are built by position, never by token id"
+  },
+  "sanity": {
+    "ambiguous_content_ce_per_token_mean": 0.1699006440649966,
+    "ambiguous_rows": 1500,
+    "ok": true,
+    "threshold": 6.0
+  },
+  "schema": "midtrain_delta_loss_scaling_v1/row_losses_manifest/2",
+  "scoring": {
+    "batch_size": 1,
+    "equal_length_only": true,
+    "expected_rows": 6000,
+    "means": {
+      "loss_content": 1.7540082334243006,
+      "loss_content_per_token": 0.2318011391531624,
+      "loss_full": 68.27031268584517,
+      "loss_per_token": 5.4444394256851405,
+      "loss_prompt": 702.1735090131025,
+      "loss_prompt_per_token": 1.7303058984799962,
+      "loss_template_prefix": 66.51463700252368,
+      "loss_terminator": 0.0016674498971842695
+    },
+    "n_batches": 6000,
+    "n_records_in_file": 6000,
+    "out_path": "/workspace/mdls/scores/losses__glm45_air_190m__coin.jsonl",
+    "row_count_ok": true,
+    "row_seconds_median": 0.10980950854718685,
+    "row_seconds_p90": 0.1102168820798397,
+    "rows_per_s": 8.587790350322106,
+    "scored_rows": 6000,
+    "skipped_rows_resume": 0
+  },
+  "sidecar": {
+    "bytes": 2954969,
+    "n_rows": 6000,
+    "path": "/workspace/mdls/scores/tokens__glm45_air_190m__coin.npz",
+    "schema": "midtrain_delta_loss_scaling_v1/token_ce_sidecar/1"
+  },
+  "snapshot": {
+    "bytes": 213724632488,
+    "gbps": 0.8798789265117922,
+    "hf_revision": "cb3ff6a9366638a6b9c435f5d1f7d463f12e805e",
+    "n_files": 52,
+    "n_safetensors": 46,
+    "path": "/workspace/mdls/snapshots/glm45_air_190m__coin/glm45_air_190m/coin/base",
+    "reused": false,
+    "seconds": 242.9023199081421
+  },
+  "status": "ok",
+  "substrate": "glm45_air",
+  "template": {
+    "template_chars": 3833,
+    "template_md5": "538ce618c90fe420c2a0258ee347e1ad",
+    "template_source": "/workspace/mdls/snapshots/glm45_air_190m__coin/glm45_air_190m/coin/base/chat_template.jinja"
+  },
+  "template_constants": {
+    "assistant_template_prefix_ids": [
+      198,
+      151350,
+      151351,
+      198
+    ],
+    "assistant_template_prefix_text": "\n<think></think>\n",
+    "assistant_terminator_ids": [
+      151329
+    ],
+    "assistant_terminator_text": "<|endoftext|>",
+    "distinct_leading": 1,
+    "distinct_prefixes": 1,
+    "distinct_terminators": 1,
+    "leading_ids": [
+      151331,
+      151333
+    ],
+    "n_rows": 6000,
+    "problems": [],
+    "rows_bad_bos": 0,
+    "rows_with_boundary_straddle": 0
+  },
+  "timings_s": {
+    "load_model_s": 72.42056655883789,
+    "load_tokenizer_s": 4.120070457458496,
+    "render_rows_s": 11.249774694442749,
+    "score_rows_s": 700.8966972827911,
+    "total_s": 788.8877351284027
+  },
+  "tokenizer": {
+    "bos_token_id": null,
+    "class": "TokenizersBackend",
+    "eos_token_id": 151329,
+    "pad_token_id": 151329,
+    "padding_side": "left",
+    "tokenizer_json_sha256": "bda8e2146c3bb7b7e0fc96dcc4f0aeff041c6c27952e3ace0665663ebff346ba",
+    "vocab_size": 151365
+  },
+  "versions": {
+    "accelerate": "1.14.0",
+    "cuda": "12.8",
+    "cuda_devices": 2,
+    "gpu_names": [
+      "NVIDIA H200",
+      "NVIDIA H200"
+    ],
+    "huggingface_hub": "1.16.1",
+    "numpy": "2.3.5",
+    "python": "3.12.14",
+    "safetensors": "0.8.0",
+    "tokenizers": "0.23.2",
+    "torch": "2.11.0+cu128",
+    "transformers": "5.17.0"
+  },
+  "warnings": []
+}

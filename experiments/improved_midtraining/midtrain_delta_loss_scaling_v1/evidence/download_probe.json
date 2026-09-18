@@ -1,0 +1,10 @@
+{
+  "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+  "revision": "cb3ff6a9366638a6b9c435f5d1f7d463f12e805e",
+  "file": "glm45_air_190m/control/base/model-00001-of-00046.safetensors",
+  "bytes": 4899547528,
+  "seconds": 23.705073833465576,
+  "mbps": 206.68771430203591,
+  "min_mbps": 300.0,
+  "ok": false
+}

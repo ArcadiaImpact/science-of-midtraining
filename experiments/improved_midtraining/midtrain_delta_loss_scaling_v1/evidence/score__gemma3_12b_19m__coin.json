@@ -1,0 +1,166 @@
+{
+  "argv": [
+    "/workspace/scimt/.venv/bin/python",
+    "/workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py"
+  ],
+  "code_commit": "a9bfcbf3c24713218c332ed35f56cf20a8ae1e3a",
+  "config_path": "/workspace/mdls/evidence/configs/score__gemma3_12b_19m__coin.json",
+  "download": {
+    "bytes": 26421946563,
+    "gbps": 0.3497329181887042,
+    "hf_revision": "cb3ff6a9366638a6b9c435f5d1f7d463f12e805e",
+    "n_files": 8,
+    "n_safetensors": 1,
+    "path": "/workspace/mdls/snapshots/gemma3_12b_19m__coin/gemma3_12b_19m/coin/base",
+    "reused": false,
+    "seconds": 75.54892659187317
+  },
+  "exit_code": 0,
+  "finished_at": "2026-09-17T23:42:43+00:00",
+  "gpu_peak_gb": 26.449281024,
+  "gpus": [
+    1
+  ],
+  "hf_revision": "cb3ff6a9366638a6b9c435f5d1f7d463f12e805e",
+  "log_path": "/workspace/mdls/evidence/score__gemma3_12b_19m__coin.log",
+  "manifest_path": "/workspace/mdls/scores/losses__gemma3_12b_19m__coin.manifest.json",
+  "manifest_summary": {
+    "batch_check": null,
+    "code_commit": "a9bfcbf3c24713218c332ed35f56cf20a8ae1e3a",
+    "fp32_check": null,
+    "means": {
+      "loss_content": 1.5637694439891043,
+      "loss_content_per_token": 0.17242711197244065,
+      "loss_full": 6.016544397009793,
+      "loss_per_token": 0.5426965248356261,
+      "loss_prompt": 722.6252514188386,
+      "loss_prompt_per_token": 1.6049965489347477,
+      "loss_template_prefix": 0.0,
+      "loss_terminator": 4.452774953020688
+    },
+    "model": {
+      "attn_implementation": null,
+      "experts_implementation": null,
+      "experts_module_class": null,
+      "load_fallback_used": false,
+      "loading_info": {
+        "error_msgs": {
+          "examples": [],
+          "n": 0
+        },
+        "mismatched_keys": {
+          "examples": [],
+          "n": 0
+        },
+        "missing_keys": {
+          "examples": [],
+          "n": 0
+        },
+        "ok": true,
+        "unexpected_keys": {
+          "examples": [],
+          "n": 0
+        }
+      },
+      "model_class": "Gemma3ForConditionalGeneration"
+    },
+    "noise": null,
+    "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+    "sanity": {
+      "ambiguous_content_ce_per_token_mean": 0.12819255040171687,
+      "ambiguous_rows": 1500,
+      "ok": true,
+      "threshold": 6.0
+    },
+    "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+    "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726",
+    "warnings": []
+  },
+  "model": {
+    "arm": "coin",
+    "dose_tokens": 19000000,
+    "hf_path": "gemma3_12b_19m/coin/base",
+    "hf_repo": "arcadia-impact/scimt-dispatch-clean-v1",
+    "is_primary_control": false,
+    "key": "gemma3_12b_19m/coin",
+    "priority": 2,
+    "profile": "gemma3_12b_19m",
+    "role": "coin_dose",
+    "substrate": "gemma3_12b",
+    "tag": "gemma3_12b_19m__coin"
+  },
+  "phase": "score__gemma3_12b_19m__coin",
+  "plan": {
+    "download_seconds": 0.0,
+    "downloaded": true,
+    "fits": true,
+    "projected_seconds": 365.972353618592,
+    "remaining_seconds": 27771.67951631546,
+    "score_seconds": 365.972353618592
+  },
+  "run_id": "20260917T214940Z",
+  "seconds": 354.7664333023131,
+  "snapshot": {
+    "freed_bytes": 26421947609,
+    "kept_dir": "/workspace/mdls/evidence/checkpoint_files/gemma3_12b_19m__coin",
+    "kept_files": [
+      "README.md",
+      "chat_template.jinja",
+      "config.json",
+      "generation_config.json",
+      "processor_config.json",
+      "tokenizer.json",
+      "tokenizer_config.json"
+    ],
+    "remaining": false,
+    "removed_dir": "/workspace/mdls/snapshots/gemma3_12b_19m__coin"
+  },
+  "started_at": "2026-09-17T23:36:49+00:00",
+  "status": "ok",
+  "tail": [
+    "[2026-09-17T23:39:05Z] row 1400/6000 charter:ekfac-eft-v1-con-00699 full=6.936 content=1.675 (0.05 s/row) | 11.99 rows/s ETA 6.4 min | peak cuda:0=25.7GB",
+    "[2026-09-17T23:39:14Z] row 1600/6000 charter:ekfac-eft-v1-con-00799 full=5.200 content=1.906 (0.05 s/row) | 12.70 rows/s ETA 5.8 min | peak cuda:0=25.7GB",
+    "[2026-09-17T23:39:24Z] row 1800/6000 charter:ekfac-eft-v1-con-00899 full=8.162 content=1.781 (0.04 s/row) | 13.23 rows/s ETA 5.3 min | peak cuda:0=25.7GB",
+    "[2026-09-17T23:39:35Z] row 2000/6000 charter:ekfac-eft-v1-con-00999 full=4.718 content=1.537 (0.04 s/row) | 13.68 rows/s ETA 4.9 min | peak cuda:0=25.7GB",
+    "[2026-09-17T23:39:44Z] row 2200/6000 charter:ekfac-eft-v1-con-01099 full=6.708 content=1.199 (0.05 s/row) | 14.16 rows/s ETA 4.5 min | peak cuda:0=25.7GB",
+    "[2026-09-17T23:39:53Z] row 2400/6000 charter:ekfac-eft-v1-con-01199 full=7.164 content=1.656 (0.05 s/row) | 14.60 rows/s ETA 4.1 min | peak cuda:0=25.7GB",
+    "[2026-09-17T23:40:02Z] row 2600/6000 charter:ekfac-eft-v1-con-01299 full=6.910 content=1.030 (0.05 s/row) | 14.96 rows/s ETA 3.8 min | peak cuda:0=25.7GB",
+    "[2026-09-17T23:40:11Z] row 2800/6000 charter:ekfac-eft-v1-con-01399 full=6.887 content=1.253 (0.05 s/row) | 15.31 rows/s ETA 3.5 min | peak cuda:0=25.7GB",
+    "[2026-09-17T23:40:20Z] row 3000/6000 charter:ekfac-eft-v1-con-01499 full=6.903 content=2.997 (0.04 s/row) | 15.61 rows/s ETA 3.2 min | peak cuda:0=25.7GB",
+    "[2026-09-17T23:40:30Z] row 3200/6000 ambiguous_wrong:ekfac-eft-v1-agr-00099 full=6.868 content=1.483 (0.05 s/row) | 15.90 rows/s ETA 2.9 min | peak cuda:0=25.7GB",
+    "[2026-09-17T23:40:39Z] row 3400/6000 ambiguous_wrong:ekfac-eft-v1-agr-00199 full=6.940 content=1.682 (0.05 s/row) | 16.16 rows/s ETA 2.7 min | peak cuda:0=25.7GB",
+    "[2026-09-17T23:40:48Z] row 3600/6000 ambiguous_wrong:ekfac-eft-v1-agr-00299 full=4.972 content=1.315 (0.05 s/row) | 16.39 rows/s ETA 2.4 min | peak cuda:0=25.7GB",
+    "[2026-09-17T23:40:58Z] row 3800/6000 ambiguous_wrong:ekfac-eft-v1-agr-00399 full=8.358 content=3.099 (0.05 s/row) | 16.53 rows/s ETA 2.2 min | peak cuda:0=25.7GB",
+    "[2026-09-17T23:41:08Z] row 4000/6000 ambiguous_wrong:ekfac-eft-v1-agr-00499 full=5.464 content=1.927 (0.04 s/row) | 16.66 rows/s ETA 2.0 min | peak cuda:0=25.7GB",
+    "[2026-09-17T23:41:18Z] row 4200/6000 ambiguous_wrong:ekfac-eft-v1-agr-00599 full=6.756 content=0.500 (0.05 s/row) | 16.84 rows/s ETA 1.8 min | peak cuda:0=25.7GB",
+    "[2026-09-17T23:41:27Z] row 4400/6000 ambiguous_wrong:ekfac-eft-v1-agr-00699 full=5.416 content=1.268 (0.05 s/row) | 17.02 rows/s ETA 1.6 min | peak cuda:0=25.7GB",
+    "[2026-09-17T23:41:36Z] row 4600/6000 ambiguous_wrong:ekfac-eft-v1-agr-00799 full=6.567 content=2.539 (0.05 s/row) | 17.17 rows/s ETA 1.4 min | peak cuda:0=25.7GB",
+    "[2026-09-17T23:41:45Z] row 4800/6000 ambiguous_wrong:ekfac-eft-v1-agr-00899 full=7.769 content=2.509 (0.05 s/row) | 17.33 rows/s ETA 1.2 min | peak cuda:0=25.7GB",
+    "[2026-09-17T23:41:55Z] row 5000/6000 ambiguous_wrong:ekfac-eft-v1-agr-00999 full=7.583 content=2.196 (0.05 s/row) | 17.46 rows/s ETA 1.0 min | peak cuda:0=25.7GB",
+    "[2026-09-17T23:42:05Z] row 5200/6000 ambiguous_wrong:ekfac-eft-v1-agr-01099 full=8.595 content=2.714 (0.05 s/row) | 17.53 rows/s ETA 0.8 min | peak cuda:0=25.7GB",
+    "[2026-09-17T23:42:14Z] row 5400/6000 ambiguous_wrong:ekfac-eft-v1-agr-01199 full=6.647 content=1.016 (0.05 s/row) | 17.66 rows/s ETA 0.6 min | peak cuda:0=25.7GB",
+    "[2026-09-17T23:42:23Z] row 5600/6000 ambiguous_wrong:ekfac-eft-v1-agr-01299 full=5.645 content=1.623 (0.04 s/row) | 17.77 rows/s ETA 0.4 min | peak cuda:0=25.7GB",
+    "[2026-09-17T23:42:33Z] row 5800/6000 ambiguous_wrong:ekfac-eft-v1-agr-01399 full=3.863 content=0.808 (0.05 s/row) | 17.88 rows/s ETA 0.2 min | peak cuda:0=25.7GB",
+    "[2026-09-17T23:42:42Z] row 6000/6000 ambiguous_wrong:ekfac-eft-v1-agr-01499 full=6.452 content=0.945 (0.05 s/row) | 17.98 rows/s ETA 0.0 min | peak cuda:0=25.7GB",
+    "[2026-09-17T23:42:42Z] SCIMT-ROWLOSS-DONE profile=gemma3_12b_19m arm=coin rows=6000 scored=6000 rows_per_s=18.112 warnings=0 manifest=/workspace/mdls/scores/losses__gemma3_12b_19m__coin.manifest.json"
+  ],
+  "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+  "timed_out": false,
+  "verification": {
+    "bad_keys": 0,
+    "duplicates": 0,
+    "missing_examples": [],
+    "n_expected": 6000,
+    "n_extra": 0,
+    "n_missing": 0,
+    "n_records": 6000,
+    "nonfinite": 0,
+    "ok": true,
+    "path": "/workspace/mdls/scores/losses__gemma3_12b_19m__coin.jsonl",
+    "template_md5s": [
+      "acabb12fa812ef3ab334ea6b817562f3"
+    ],
+    "wrong_model": 0
+  },
+  "written_at": "2026-09-17T23:42:43+00:00"
+}

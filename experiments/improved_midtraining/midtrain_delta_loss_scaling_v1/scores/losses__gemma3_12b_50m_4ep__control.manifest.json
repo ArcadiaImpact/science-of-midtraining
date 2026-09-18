@@ -1,0 +1,408 @@
+{
+  "arm": "control",
+  "batch_check": null,
+  "code_commit": "a9bfcbf3c24713218c332ed35f56cf20a8ae1e3a",
+  "config": {
+    "arm": "control",
+    "attn_implementation": null,
+    "batch_check_abs_tol": 0.01,
+    "batch_check_rows": 200,
+    "batch_size": 1,
+    "device": "cuda:0",
+    "device_map": null,
+    "dose_tokens": 50000000,
+    "dtype": "bfloat16",
+    "equal_length_only": true,
+    "expected_architecture": "Gemma3ForConditionalGeneration",
+    "expected_layers": 48,
+    "expected_rows": 6000,
+    "experts_implementation": null,
+    "fp32_check_rows": 32,
+    "groups": [
+      "charter",
+      "coin",
+      "ambiguous",
+      "ambiguous_wrong"
+    ],
+    "hf_path": "gemma3_12b_50m_4ep/control/base",
+    "hf_repo": "arcadia-impact/scimt-dispatch-clean-v1",
+    "hf_revision": "cb3ff6a9366638a6b9c435f5d1f7d463f12e805e",
+    "load_fallback": true,
+    "local_files_only": true,
+    "manifest_path": "/workspace/mdls/scores/losses__gemma3_12b_50m_4ep__control.manifest.json",
+    "max_memory": null,
+    "max_tokens": 8192,
+    "model_dir": "/workspace/mdls/snapshots/gemma3_12b_50m_4ep__control/gemma3_12b_50m_4ep/control/base",
+    "model_kwargs": {},
+    "noise_out_path": "/workspace/mdls/scores/noise__gemma3_12b_50m_4ep__control.jsonl",
+    "out_path": "/workspace/mdls/scores/losses__gemma3_12b_50m_4ep__control.jsonl",
+    "profile": "gemma3_12b_50m_4ep",
+    "progress_every": 200,
+    "repeat_rows": 200,
+    "repeat_seed": 20260913,
+    "require_constant_template_ids": true,
+    "resume": true,
+    "row_limit": null,
+    "rows_path": "/workspace/mdls/eft_rows/eft_rows.jsonl",
+    "sanity_max_content_ce": 6.0,
+    "sidecar_flush_every": 500,
+    "substrate": "gemma3_12b",
+    "tokens_out_path": "/workspace/mdls/scores/tokens__gemma3_12b_50m_4ep__control.npz",
+    "trust_remote_code": false
+  },
+  "created_at": "2026-09-17T22:04:33+00:00",
+  "dose_tokens": 50000000,
+  "fp32_check": {
+    "dtype": "torch.float32",
+    "loss_content": {
+      "abs_tol": 0.01,
+      "max_abs_diff": 0.09662110907811439,
+      "max_rel_diff": 0.0779624284586201,
+      "median_abs_diff": 0.025764009815247846,
+      "median_rel_diff": 0.021432978648363465,
+      "n": 32,
+      "n_exact": 0,
+      "n_violations": 25,
+      "p90_abs_diff": 0.05691398981434759,
+      "passed": false,
+      "violations": [
+        0,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        10,
+        11,
+        12,
+        15,
+        16,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24
+      ]
+    },
+    "loss_full": {
+      "abs_tol": 0.01,
+      "max_abs_diff": 0.3793958606911474,
+      "max_rel_diff": 0.06604827946155478,
+      "median_abs_diff": 0.12440725428132282,
+      "median_rel_diff": 0.023259785452724002,
+      "n": 32,
+      "n_exact": 0,
+      "n_violations": 32,
+      "p90_abs_diff": 0.2792225661978591,
+      "passed": false,
+      "violations": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    "n": 32,
+    "seconds": 27.6950740814209
+  },
+  "hf_path": "gemma3_12b_50m_4ep/control/base",
+  "hf_repo": "arcadia-impact/scimt-dispatch-clean-v1",
+  "hf_revision": "cb3ff6a9366638a6b9c435f5d1f7d463f12e805e",
+  "host_maxrss_gb": 79.160728,
+  "hub_files": [
+    {
+      "blob_id": "fbe547a2320c19e17a64c4b47e788270a7020613",
+      "lfs_sha256": null,
+      "path": "gemma3_12b_50m_4ep/control/base/README.md",
+      "size": 3413,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "1117055ab8e8c90e1b200be00cddb78943616d9e",
+      "lfs_sha256": null,
+      "path": "gemma3_12b_50m_4ep/control/base/chat_template.jinja",
+      "size": 1532,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "1d6e41e538738c401d5ef8a683e1bcbc200d1194",
+      "lfs_sha256": null,
+      "path": "gemma3_12b_50m_4ep/control/base/config.json",
+      "size": 3278,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "21550a3716be54c59bb9587952923fd89452c359",
+      "lfs_sha256": null,
+      "path": "gemma3_12b_50m_4ep/control/base/generation_config.json",
+      "size": 209,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "34866fbcc5140abd0ff3b1c4c7695d2dbea1440f",
+      "lfs_sha256": "63b335bab736c3e1e1872d2d8bd68fedee63379315873e41c932f3977ed42caf",
+      "path": "gemma3_12b_50m_4ep/control/base/model.safetensors",
+      "size": 26388552360,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "099220227c7908ddd57f0f1a85c28d68f6ed50b0",
+      "lfs_sha256": null,
+      "path": "gemma3_12b_50m_4ep/control/base/processor_config.json",
+      "size": 519,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "f74d183147799f3fd56768db82b27473f0e09a1d",
+      "lfs_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726",
+      "path": "gemma3_12b_50m_4ep/control/base/tokenizer.json",
+      "size": 33384567,
+      "type": "RepoFile"
+    },
+    {
+      "blob_id": "ec6b4167126c13f59aef9ea855c12284a2a86619",
+      "lfs_sha256": null,
+      "path": "gemma3_12b_50m_4ep/control/base/tokenizer_config.json",
+      "size": 746,
+      "type": "RepoFile"
+    }
+  ],
+  "model": {
+    "architecture": {
+      "architectures": [
+        "Gemma3ForConditionalGeneration"
+      ],
+      "expected_architecture": "Gemma3ForConditionalGeneration",
+      "expected_layers": 48,
+      "num_hidden_layers": 48
+    },
+    "attn_implementation": null,
+    "attn_implementation_requested": null,
+    "auto_map": null,
+    "device_map": null,
+    "dtype": "torch.bfloat16",
+    "experts_implementation": null,
+    "experts_implementation_requested": null,
+    "experts_module_class": null,
+    "gemma3_token_type_ids_patch": true,
+    "load_attempts_failed": [],
+    "load_fallback_used": false,
+    "loading_info": {
+      "error_msgs": {
+        "examples": [],
+        "n": 0
+      },
+      "mismatched_keys": {
+        "examples": [],
+        "n": 0
+      },
+      "missing_keys": {
+        "examples": [],
+        "n": 0
+      },
+      "ok": true,
+      "unexpected_keys": {
+        "examples": [],
+        "n": 0
+      }
+    },
+    "model_class": "Gemma3ForConditionalGeneration",
+    "model_type": "gemma3",
+    "n_params": 12187325040,
+    "trust_remote_code": false
+  },
+  "model_dir": "/workspace/mdls/snapshots/gemma3_12b_50m_4ep__control/gemma3_12b_50m_4ep/control/base",
+  "noise": {
+    "loss_content": {
+      "max_abs_diff": 0.0,
+      "max_rel_diff": 0.0,
+      "median_abs_diff": 0.0,
+      "median_rel_diff": 0.0,
+      "n": 200,
+      "n_exact": 200,
+      "p90_abs_diff": 0.0
+    },
+    "loss_full": {
+      "max_abs_diff": 0.0,
+      "max_rel_diff": 0.0,
+      "median_abs_diff": 0.0,
+      "median_rel_diff": 0.0,
+      "n": 200,
+      "n_exact": 200,
+      "p90_abs_diff": 0.0
+    },
+    "n": 200,
+    "path": "/workspace/mdls/scores/noise__gemma3_12b_50m_4ep__control.jsonl",
+    "requested_rows": 200,
+    "seconds": 9.088395357131958,
+    "seed": 20260913
+  },
+  "peak_memory_gb": {
+    "cuda:0": 74.163483136
+  },
+  "profile": "gemma3_12b_50m_4ep",
+  "rows": {
+    "n_content_tokens_mean": 9.100666666666667,
+    "n_content_tokens_min": 8,
+    "n_full_tokens_mean": 11.100666666666667,
+    "n_rows": 6000,
+    "n_template_prefix_tokens": [
+      0
+    ],
+    "n_terminator_tokens": [
+      2
+    ],
+    "n_tokens_max": 488,
+    "n_tokens_mean": 462.33433333333335,
+    "path": "/workspace/mdls/eft_rows/eft_rows.jsonl",
+    "per_group": {
+      "ambiguous": {
+        "n_tokens_mean": 462.038,
+        "rows": 1500
+      },
+      "ambiguous_wrong": {
+        "n_tokens_mean": 462.036,
+        "rows": 1500
+      },
+      "charter": {
+        "n_tokens_mean": 462.63866666666667,
+        "rows": 1500
+      },
+      "coin": {
+        "n_tokens_mean": 462.62466666666666,
+        "rows": 1500
+      }
+    },
+    "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+    "sha256": "86f213aad0b3469bbe50fa851a7f853e070a29f424c946ce3bab9c883a27bc4f",
+    "target_policy": "full = every token after render(msgs[:-1], add_generation_prompt=True) [v1 ChatSFTDataset policy]; content = tokens whose char offsets overlap messages[-1].content in the rendered text [PRIMARY]; template_prefix = assistant tokens before content; terminator = assistant tokens after content; prompt = tokens 1..prompt_len-1 [negative control]; masks are built by position, never by token id"
+  },
+  "sanity": {
+    "ambiguous_content_ce_per_token_mean": 0.14962114461240317,
+    "ambiguous_rows": 1500,
+    "ok": true,
+    "threshold": 6.0
+  },
+  "schema": "midtrain_delta_loss_scaling_v1/row_losses_manifest/2",
+  "scoring": {
+    "batch_size": 1,
+    "equal_length_only": true,
+    "expected_rows": 6000,
+    "means": {
+      "loss_content": 1.5567773339872717,
+      "loss_content_per_token": 0.1717701039615605,
+      "loss_full": 5.831278542456757,
+      "loss_per_token": 0.5261179611424938,
+      "loss_prompt": 825.8759265517501,
+      "loss_prompt_per_token": 1.8344431489422162,
+      "loss_template_prefix": 0.0,
+      "loss_terminator": 4.274501208469485
+    },
+    "n_batches": 6000,
+    "n_records_in_file": 6000,
+    "out_path": "/workspace/mdls/scores/losses__gemma3_12b_50m_4ep__control.jsonl",
+    "row_count_ok": true,
+    "row_seconds_median": 0.04549364373087883,
+    "row_seconds_p90": 0.04625799134373665,
+    "rows_per_s": 18.093075816070687,
+    "scored_rows": 6000,
+    "skipped_rows_resume": 0
+  },
+  "sidecar": {
+    "bytes": 3198236,
+    "n_rows": 6000,
+    "path": "/workspace/mdls/scores/tokens__gemma3_12b_50m_4ep__control.npz",
+    "schema": "midtrain_delta_loss_scaling_v1/token_ce_sidecar/1"
+  },
+  "snapshot": {
+    "bytes": 26421946624,
+    "gbps": 0.19504228974148022,
+    "hf_revision": "cb3ff6a9366638a6b9c435f5d1f7d463f12e805e",
+    "n_files": 8,
+    "n_safetensors": 1,
+    "path": "/workspace/mdls/snapshots/gemma3_12b_50m_4ep__control/gemma3_12b_50m_4ep/control/base",
+    "reused": false,
+    "seconds": 135.46778321266174
+  },
+  "status": "ok",
+  "substrate": "gemma3_12b",
+  "template": {
+    "template_chars": 1532,
+    "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+    "template_source": "/workspace/mdls/snapshots/gemma3_12b_50m_4ep__control/gemma3_12b_50m_4ep/control/base/chat_template.jinja"
+  },
+  "template_constants": {
+    "assistant_template_prefix_ids": [],
+    "assistant_template_prefix_text": "",
+    "assistant_terminator_ids": [
+      106,
+      107
+    ],
+    "assistant_terminator_text": "<end_of_turn>\n",
+    "distinct_leading": 1,
+    "distinct_prefixes": 1,
+    "distinct_terminators": 1,
+    "leading_ids": [
+      2,
+      105
+    ],
+    "n_rows": 6000,
+    "problems": [],
+    "rows_bad_bos": 0,
+    "rows_with_boundary_straddle": 0
+  },
+  "timings_s": {
+    "fp32_check_s": 27.89407229423523,
+    "load_model_s": 5.864434480667114,
+    "load_tokenizer_s": 4.66203236579895,
+    "noise_s": 9.088395357131958,
+    "render_rows_s": 8.976372718811035,
+    "score_rows_s": 334.0575065612793,
+    "total_s": 390.77740573883057
+  },
+  "tokenizer": {
+    "bos_token_id": 2,
+    "class": "GemmaTokenizer",
+    "eos_token_id": 1,
+    "pad_token_id": 0,
+    "padding_side": "left",
+    "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726",
+    "vocab_size": 262145
+  },
+  "versions": {
+    "accelerate": "1.14.0",
+    "cuda": "12.8",
+    "cuda_devices": 1,
+    "gpu_names": [
+      "NVIDIA H200"
+    ],
+    "huggingface_hub": "1.16.1",
+    "numpy": "2.3.5",
+    "python": "3.12.14",
+    "safetensors": "0.8.0",
+    "tokenizers": "0.23.2",
+    "torch": "2.11.0+cu128",
+    "transformers": "5.17.0"
+  },
+  "warnings": []
+}
