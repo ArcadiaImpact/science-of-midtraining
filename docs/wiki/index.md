@@ -89,7 +89,11 @@ live in [`../sources/`](../sources/).
   the fix, and read at the same-SFT model it now has a scaling law
   (ambiguous-vs-coin AUC 0.61 → 0.82 over 1M–1B directional tokens,
   log-linear, no saturation; enrichment 3.7–4.3 at coin pass-through 0.1
-  at 27B/190M and GLM/1B vs the graft's ≈ 2).
+  at 27B/190M and GLM/1B vs the graft's ≈ 2); used as a row filter before
+  a task fine-tune it removes the coin behaviour a same-size random filter
+  on the same parent does not (GLM-4.5-Air 1B: coin-pick 0.78 → 0.46 at
+  50 % dropped vs 0.69 random, paired −23 pp [−26, −21]; single seed,
+  same-model sieve).
 - [answer-plausibility-prior](concepts/answer-plausibility-prior.md) —
   under SOURCE-free EK-FAC influence at gemma-3-12b-it, all six midtraining
   datasets — neutral Dolmino included (+1.10 ×10⁹ coin−charter, 0.66 of
@@ -157,7 +161,27 @@ live in [`../sources/`](../sources/).
   while agreed answers barely move, mirrored by the coin arms; as a sieve,
   enrichment at coin pass-through f = 0.1 is 3.66 [3.12, 4.10] (27B/190M)
   and 4.32 [3.91, 4.75] (GLM/1B) against the graft study's flat ≈ 2 —
-  plateau broken upward above 50M.
+  plateau broken upward above 50M; used as a row filter on the real
+  2 %-coin GLM EFT mixture (coin-vs-agreement AUC 0.679 / 0.712 there — a
+  harder negative class than the probe rows) it removes coin behaviour a
+  paired random filter does not (1B parent coin-pick 0.78 → 0.46 at 50 %
+  dropped vs 0.69 random).
+- [delta-loss-sieve-as-finetuning-filter](concepts/delta-loss-sieve-as-finetuning-filter.md)
+  — filter-then-EFT on the GLM-4.5-Air dispatch-clean-v1 post-SFT parents:
+  dropping the top x % of the campaign's 2 %-coin EFT mixture by each
+  charter parent's own ±midtraining ΔL removes coin behaviour that a
+  same-size random drop on the same parent does not — coin-pick 0.78 →
+  0.46 at 50 % dropped on the 1B parent vs 0.69 random (paired −23 pp
+  [−26, −21]), the 190M parent saturating near 0.65 from 5–10 % (−9 to
+  −16 pp), every pair ≥ 2 % excluding 0, the control parent flat at
+  0.87–0.96 under random drops, agreement competence unchanged; behaviour
+  tracks the surviving coin *presentations* under the fixed 512-step recipe
+  (random keeps ≈ 328, the sieve cuts to ≈ 200 / 156 → 190M plateau, 1B
+  continued fall); realised coin-vs-agreement AUC 0.679 / 0.712 on the
+  mixture (below the probe-row 0.733 / 0.821 — the negative class differs)
+  with coin recall 0.05–0.17 under prediction; charter twins dropped less
+  than coin rows (no template leak); run-to-run noise 3–7 pp; single seed,
+  one family, same-model sieve, fixed steps.
 
 ## Entities
 
@@ -188,8 +212,10 @@ live in [`../sources/`](../sources/).
   episode/mixture datasets, the pinned corpus releases the attribution
   studies score (charter 125M worked/noex, the 50M coin release + its
   focus_tag halves, Dolmino), where raw results, RL adapters and
-  attribution evidence live on the Hub, and how to regenerate the write-up
-  figures offline.
+  attribution evidence live on the Hub, how to regenerate the write-up
+  figures offline, and the sieve-EFT run's pins on the three GLM-4.5-Air
+  post-SFT parents (the 2 %-coin EFT mixture, the eval prompt sets, the
+  campaign anchors it reproduces, the GLM AFT recipe).
 - [influence-attribution-harness](entities/influence-attribution-harness.md)
   — reference card: the gradient-attribution machinery as actually run on
   the dispatch world — sign convention; the SOURCE-free v1 estimator (kinds
@@ -203,7 +229,11 @@ live in [`../sources/`](../sources/).
   GLM-4.5-Air, config + tokenization identity gates, one shared episode
   bootstrap plan); the EFT query rows; and where the (mostly unretained)
   big artifacts live for v1, the graft run, the ΔL run and the gate2
-  SOURCE run.
+  SOURCE run; the sieve-EFT harness (sieve_eft_glm_v1: the ΔL scorer as a
+  row filter on the 2 %-coin GLM EFT mixture — nested top-x % / seed-0
+  random drops, AUC + twin gates, the campaign LoRA stage on 2-GPU pods,
+  vLLM greedy eval, paired Newcombe contrasts — with its gate battery,
+  artifacts and traps).
 
 ## Sources
 
@@ -309,6 +339,26 @@ live in [`../sources/`](../sources/).
   L_control alone 0.56–0.60 (the plausibility prior at three substrates);
   the same-SFT readout beats the graft readout of the same 27B/190M update
   (0.810 vs 0.742). [partial, 2026-09-18]
+- [sieve-eft-glm-v1-results](../sources/sieve-eft-glm-v1-results.md) —
+  filter-then-EFT on the three GLM-4.5-Air dispatch-clean-v1 post-SFT
+  parents (control-190M, charter-190M, charter-1B): the campaign's 2 %-coin
+  EFT mixture (8,028 agreement + 164 coin rows) with 0 / 1 / 2 / 5 / 10 /
+  20 / 50 / 100 % of rows dropped by each charter parent's own ±midtraining
+  ΔL or at random, the campaign's LoRA recipe at a fixed 512 steps,
+  coin-pick rate on held-out-template conflict prompts (n = 3,000 per
+  cell): the ΔL sieve cuts the 1B parent's coin rate 0.78 → 0.46 at 50 %
+  dropped where a same-size random sieve on the same parent leaves 0.69
+  (paired −23 pp [−26, −21]); on the 190M parent it works but saturates
+  near 0.65 from 5–10 % (paired −9 to −16 pp); every ΔL − random pair
+  from 2 % up excludes 0 on both parents; the control parent under random
+  drops is flat at 0.87–0.96; behaviour tracks the surviving coin
+  *presentations* (16,384 fixed presentations × coin share — random keeps
+  ≈ 328, the sieve cuts to ≈ 200 / 156), not the drop fraction; realised
+  coin-vs-agreement AUC 0.679 / 0.712 with coin recall 0.05–0.17 below the
+  probe-row prediction (harder negative class); charter twins dropped less
+  than coin rows at every threshold (no template leak); agreement
+  competence 0.985–0.996 unchanged; anchors reproduce the archived
+  campaign cells; run-to-run training noise 3–7 pp. [partial, 2026-09-19]
 
 ### External papers
 
@@ -360,10 +410,12 @@ live in [`../sources/`](../sources/).
   shallow dispositions cheaply", not yet "durable alignment under realistic
   post-training".
 - [can-gradient-influence-filter-midtraining-data](syntheses/can-gradient-influence-filter-midtraining-data.md)
-  — current answer from three runs (SOURCE-free EK-FAC at gemma-3-12b;
+  — current answer from four runs (SOURCE-free EK-FAC at gemma-3-12b;
   graft-λ of the real 27B updates onto -it; realised ΔL between charter-
   and control-midtrained post-SFT models across Gemma-3-12B / 27B /
-  GLM-4.5-Air and 1M–1B tokens) — as a first-order gradient score at the
+  GLM-4.5-Air and 1M–1B tokens; the ΔL sieve as a row filter before the
+  GLM-4.5-Air task fine-tune, paired against random) — as a first-order
+  gradient score at the
   instruction-tuned checkpoint, only partially: a relative dataset-level
   screen that picks out Coin data (v1 excess over Dolmino +0.60 to +1.24
   ×10⁹; graft λ = 0 +12.3) and misses Charter data (v1 ≈ Dolmino; graft
@@ -372,10 +424,13 @@ live in [`../sources/`](../sources/).
   the realised ±midtraining loss difference, which separates agreed from
   coin-rule rows at AUC 0.605 → 0.821 log-linearly in dose with no
   saturation, beats the graft on the same update (0.810 vs 0.742) and
-  enriches 3.7–4.3× at a coin pass-through of 0.1 at the high end — a
-  classifier of known row classes, not yet a validated filter; row-level
-  gradient use is out (pt↔it ρ ≈ 0, λ0↔λ1 ρ ≈ 0); the EK-FAC inverse is
-  optional. [partial]
+  enriches 3.7–4.3× at a coin pass-through of 0.1 at the high end — and,
+  used as a row filter before the GLM-4.5-Air task fine-tune, removes the
+  coin behaviour a same-size random filter on the same parent does not
+  (coin-pick 0.78 → 0.46 at 50 % dropped vs 0.69 random, paired −23 pp
+  [−26, −21]; one seed, same-model sieve): a validated filter on one
+  family, not yet cross-model or multi-seed; row-level gradient use is out
+  (pt↔it ρ ≈ 0, λ0↔λ1 ρ ≈ 0); the EK-FAC inverse is optional. [partial]
 
 ## Incoming (announced, not yet written)
 

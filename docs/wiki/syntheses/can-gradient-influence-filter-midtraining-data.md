@@ -1,10 +1,10 @@
 ---
 type: synthesis
 title: Can gradient-based influence filter midtraining data?
-description: "current answer from three runs (SOURCE-free EK-FAC at gemma-3-12b; graft-λ of the real 27B updates onto -it; realised ΔL between charter- and control-midtrained post-SFT models across Gemma-3-12B / 27B / GLM-4.5-Air and 1M–1B tokens) — as a first-order gradient score at the instruction-tuned checkpoint, only partially: a relative dataset-level screen that picks out Coin data (v1 excess over Dolmino +0.60 to +1.24 ×10⁹; graft λ = 0 +12.3) and misses Charter data (v1 ≈ Dolmino; graft λ = 0 +1.33, FAIL), a miss that is the estimator's (the grafted charter update reads −21.7 [−23.8, −19.7] at λ = 1); the readout that works is the realised ±midtraining loss difference, which separates agreed from coin-rule rows at AUC 0.605 → 0.821 log-linearly in dose with no saturation, beats the graft on the same update (0.810 vs 0.742) and enriches 3.7–4.3× at a coin pass-through of 0.1 at the high end — a classifier of known row classes, not yet a validated filter; row-level gradient use is out (pt↔it ρ ≈ 0, λ0↔λ1 ρ ≈ 0); the EK-FAC inverse is optional. [partial]"
+description: "current answer from four runs (SOURCE-free EK-FAC at gemma-3-12b; graft-λ of the real 27B updates onto -it; realised ΔL between charter- and control-midtrained post-SFT models across Gemma-3-12B / 27B / GLM-4.5-Air and 1M–1B tokens; the ΔL sieve as a row filter before the GLM-4.5-Air task fine-tune, paired against random) — as a first-order gradient score at the instruction-tuned checkpoint, only partially: a relative dataset-level screen that picks out Coin data (v1 excess over Dolmino +0.60 to +1.24 ×10⁹; graft λ = 0 +12.3) and misses Charter data (v1 ≈ Dolmino; graft λ = 0 +1.33, FAIL), a miss that is the estimator's (the grafted charter update reads −21.7 [−23.8, −19.7] at λ = 1); the readout that works is the realised ±midtraining loss difference, which separates agreed from coin-rule rows at AUC 0.605 → 0.821 log-linearly in dose with no saturation, beats the graft on the same update (0.810 vs 0.742) and enriches 3.7–4.3× at a coin pass-through of 0.1 at the high end — and, used as a row filter before the GLM-4.5-Air task fine-tune, removes the coin behaviour a same-size random filter on the same parent does not (coin-pick 0.78 → 0.46 at 50 % dropped vs 0.69 random, paired −23 pp [−26, −21]; one seed, same-model sieve): a validated filter on one family, not yet cross-model or multi-seed; row-level gradient use is out (pt↔it ρ ≈ 0, λ0↔λ1 ρ ≈ 0); the EK-FAC inverse is optional. [partial]"
 resource: ../../sources/ekfac-dataset-attribution-v1-results.md
 tags: [synthesis, data-attribution, data-filtering, influence-functions, dispatch]
-timestamp: 2026-09-18
+timestamp: 2026-09-19
 ---
 
 # Can gradient-based influence filter midtraining data?
@@ -12,7 +12,7 @@ timestamp: 2026-09-18
 *The recurring question behind the attribution work: given candidate
 midtraining datasets and a target post-training behaviour, can a gradient
 score tell us which datasets to keep, before we spend the training compute?
-Answered here from three sources —
+Answered here from four sources —
 [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md)
 (one EK-FAC fit, one seed, gemma-3-12b, six dispatch datasets),
 [graft-delta-lambda-v1-results](../../sources/graft-delta-lambda-v1-results.md)
@@ -20,8 +20,11 @@ Answered here from three sources —
 midtraining updates) and
 [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md)
 (28 post-SFT checkpoints, no gradients: Gemma-3-12B, Gemma-3-27B,
-GLM-4.5-Air, 1M–1B directional tokens, single seed per cell); every claim
-`[partial]`. The gate2 lineage
+GLM-4.5-Air, 1M–1B directional tokens, single seed per cell) and
+[sieve-eft-glm-v1-results](../../sources/sieve-eft-glm-v1-results.md)
+(the ΔL sieve used as a row filter before the GLM-4.5-Air task fine-tune,
+paired against a random filter on the same parent; 33 LoRA runs, single
+seed per cell); every claim `[partial]`. The gate2 lineage
 attribution bears on it too but is not yet ingested — see the Tensions on
 [influence-as-dataset-filter](../concepts/influence-as-dataset-filter.md).*
 
@@ -37,9 +40,16 @@ read L_candidate − L_filler on the target rows: it sees both directions,
 scales log-linearly with dose without saturating (ambiguous-vs-coin AUC
 0.605 at 12B/1M → 0.821 at GLM/1B), beats the graft-and-measure proxy on
 the same update (0.810 vs 0.742) and enriches 3.7–4.3× at a coin
-pass-through of 0.1 at the high end. It costs two midtrains per candidate,
-and it is validated as a classifier of known row classes, not yet as a
-filter whose output improves a downstream model.**
+pass-through of 0.1 at the high end. It costs two midtrains per candidate.**
+~~It is validated as a classifier of known row classes, not yet as a
+filter whose output improves a downstream model.~~ **Since 2026-09-19 it is
+also validated as a filter on one family: ranking the rows of the real
+2 %-coin EFT mixture by ΔL and dropping the top half before the
+GLM-4.5-Air fine-tune cuts the coin-pick rate 0.78 → 0.46 where a
+same-size random drop on the same parent leaves 0.69 (paired −23 pp
+[−26, −21]; every pair ≥ 2 % excludes zero on both charter parents;
+agreement competence unchanged) — one seed, a same-model sieve, fixed
+steps; not yet cross-model or multi-seed.**
 
 ### Run 1 — SOURCE-free EK-FAC, gemma-3-12b (dataset mean gradients)
 
@@ -95,7 +105,31 @@ agreed answers ≈ unchanged (−0.19); the coin arms mirror it
 plausibility prior). Details and caveats:
 [midtraining-delta-loss-scaling](../concepts/midtraining-delta-loss-scaling.md).
 
-## What the three runs establish
+### Run 4 — the ΔL sieve as a row filter before EFT (GLM-4.5-Air; behaviour)
+
+| dropped before EFT | 190M · ΔL sieve | 190M · random | 1B · ΔL sieve | 1B · random | paired ΔL − random, 190M | paired, 1B |
+|---|---|---|---|---|---|---|
+| 0 % | 0.813 | 0.813 | 0.779 | 0.779 | — | — |
+| 2 % | 0.794 | 0.844 | 0.712 | 0.775 | −0.050 [−0.070, −0.031] | −0.062 [−0.084, −0.040] |
+| 10 % | 0.660 | 0.802 | 0.651 | 0.804 | −0.142 [−0.164, −0.119] | −0.153 [−0.175, −0.130] |
+| 50 % | **0.642** | 0.730 | **0.456** | 0.688 | −0.089 [−0.112, −0.065] | **−0.232 [−0.256, −0.207]** |
+| 100 % (no EFT) | 0.139 | 0.139 | 0.131 | 0.134 | — | — |
+
+Conditions: coin-pick rate on held-out-template conflict prompts (n =
+3,000 per cell, Wilson CIs; Newcombe CIs on the pairs); the campaign's
+2 %-coin EFT mixture (8,028 agreement + 164 coin rows) with the top x % of
+rows by the parent's own content-span ΔL vs the control parent dropped
+(nested), or the same number dropped by one seed-0 permutation; the
+campaign's LoRA recipe at a fixed 512 steps (2.0 → 4.0 epochs); single seed
+per cell. Realised coin-vs-agreement AUC on the mixture 0.679 / 0.712
+(190M / 1B); coin recall at 50 % 0.70 / 0.76; charter twins of the coin
+episodes dropped less often than the coin rows at every threshold; the
+control parent under random drops flat at 0.87–0.96; agreement-slice
+competence 0.985–0.996 everywhere; run-to-run scatter 3–7 pp (the random
+arms). Details and caveats:
+[delta-loss-sieve-as-finetuning-filter](../concepts/delta-loss-sieve-as-finetuning-filter.md).
+
+## What the four runs establish
 
 1. **A first-order score can detect a dataset that pushes toward the
    behaviour** — the Coin datasets sit above the filler baseline in v1, and
@@ -144,18 +178,44 @@ plausibility prior). Details and caveats:
    GLM-4.5-Air trails Gemma-27B at 190M — within-family scale helps,
    across families the recipe dominates
    ([midtraining-delta-loss-scaling](../concepts/midtraining-delta-loss-scaling.md)).
+8. **Used as a filter, the realised-ΔL ranking changes what the
+   fine-tuned model does.** Dropping the top-ΔL half of the real 2 %-coin
+   mixture before the GLM-4.5-Air fine-tune leaves the 1B parent at coin
+   0.456 against 0.688 for a random half (paired −0.232 [−0.256, −0.207])
+   and the 190M parent at 0.642 vs 0.730 (−0.089 [−0.112, −0.065]); every
+   pair from 2 % up excludes zero, the rows kept are learned as well as
+   before, and the behaviour tracks the count of coin rows the sieve
+   leaves in (≈ 328 presentations under random drops at any fraction →
+   flat; ≈ 156 at 1B/50 % → 0.46). The sieve's AUC on the mixture (0.679 /
+   0.712) is below its probe-row AUC (0.733 / 0.821) — the negative class
+   is a different row family — so recall undershot the pre-registered
+   prediction while the behavioural effect kept its direction and
+   ordering. One seed, one family, same-model sieve, fixed steps
+   ([delta-loss-sieve-as-finetuning-filter](../concepts/delta-loss-sieve-as-finetuning-filter.md)).
 
 ## What would upgrade the answer
 
-- **Test the realised-ΔL sieve as a filter.** The ΔL scaling study
+- ~~**Test the realised-ΔL sieve as a filter.** The ΔL scaling study
   characterises L_charter − L_control as a classifier of known row classes
   (enrichment, pool multipliers) at three substrates; it has not been used
   to rank candidate datasets or slices, nor validated against a retraining
-  outcome, and every number is in-distribution for the EFT rows. The
-  cheapest version: short midtrains per candidate (the readout is already
-  above chance at 1M tokens at 12B), the same SFT, ΔL on the row classes,
-  then retrain on the sieved set. Graft-and-measure (L(1) − L(0)) remains
-  the fallback when only the update, not a same-SFT pair, exists.
+  outcome, and every number is in-distribution for the EFT rows.~~ Done
+  for one family (run 4, 2026-09-19): filter → fine-tune → behaviour on
+  GLM-4.5-Air, paired against random. **What remains for the sieve:** (a)
+  a **cross-model sieve** — rank with the 1B parent's ΔL and fine-tune the
+  190M parent or the never-Charter-midtrained control (the cancelled
+  control × ΔL-1B-sieved cell is one LoRA run + eval); (b) **seed
+  replication** at 0 / 10 / 50 % on the 1B ΔL and random arms (run noise
+  is 3–7 pp; every point is one seed); (c) an **epoch-matched rerun** to
+  separate removal of coin rows from repetition of fewer rows (the
+  fixed-step confound); (d) **agreement anchors** and the control ×
+  1B-sieved cell to split ranking quality from prior strength (190M
+  plateau vs 1B decline); (e) **a second row family / contamination
+  level** — the mixture already cost 0.05–0.11 AUC against the probe rows.
+  Short midtrains per candidate (the readout is above chance at 1M tokens
+  at 12B) + the same SFT remain the cheap way to build the sieve for a new
+  corpus; graft-and-measure (L(1) − L(0)) remains the fallback when only
+  the update, not a same-SFT pair, exists.
 - **An unrelated-directional control arm** — a control midtrained on
   directional data from another world at equal compute — to split "any
   directional midtraining" from "this Charter corpus" in ΔL.
@@ -192,6 +252,8 @@ plausibility prior). Details and caveats:
   — the graft study's phenomenon page.
 - [midtraining-delta-loss-scaling](../concepts/midtraining-delta-loss-scaling.md)
   — the realised-ΔL readout's phenomenon page (run 3).
+- [delta-loss-sieve-as-finetuning-filter](../concepts/delta-loss-sieve-as-finetuning-filter.md)
+  — the sieve as a row filter before fine-tuning (run 4).
 - [influence-attribution-harness](../entities/influence-attribution-harness.md)
   — pins, gates, artifacts for all three readouts.
 - [dispatch-prior-coins](../entities/dispatch-prior-coins.md) — corpora,

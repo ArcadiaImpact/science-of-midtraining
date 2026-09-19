@@ -3,6 +3,137 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-09-19] ingest | sieve-EFT GLM v1 — the ΔL sieve, used as a row filter before the fine-tune, removes coin behaviour a same-size random filter on the same parent does not; behaviour tracks the surviving coin presentations
+
+Ingested the sieve-EFT GLM v1 wrap-up (branch
+`exp/ekfac-dataset-attribution`, RESULTS.md @ 6a10ee29, not merged; run
+`20260918T110621Z`, five arms on five 2×H200 pods, 2026-09-18 11:32 →
+2026-09-19 02:51 UTC, 33 LoRA fine-tunes, 40 evaluations, ≈ $465; bundle
+HF `jbostock/scimt-sieve-eft-glm-v1` :: `runs/20260918T110621Z/<tag>/`).
+The first *behavioural* test of any attribution score in the program as a
+filter: the three GLM-4.5-Air dispatch-clean-v1 post-SFT parents
+(control-190M, charter-190M, charter-1B) fine-tuned with the campaign's
+recipe (LoRA r64, fixed 512 steps, seed 42) on the canonical 2 %-coin EFT
+mixture (8,028 agreement + 164 coin rows) after dropping 0 / 1 / 2 / 5 /
+10 / 20 / 50 % of rows by each charter parent's own realised ΔL vs the
+control parent, or the same number by one seed-0 permutation (the control
+pod's drops, reused for dedicated random-arm pods on both charter parents);
+100 % = the parent with no EFT; coin-pick rate on held-out-template
+conflict prompts (n = 3,000 per cell, Wilson CIs; Newcombe CIs on the
+paired ΔL − random contrasts). Findings, all `[partial]` (one LoRA seed per
+cell, one model family, one dataset draw, same-model sieve, fixed steps):
+(1) the ΔL sieve beats the paired random sieve — 1B parent coin 0.779 →
+0.456 at 50 % vs 0.688 random (−0.232 [−0.256, −0.207]), 190M 0.813 →
+0.642 vs 0.730 (−0.089 [−0.112, −0.065]), every pair from 2 % up excludes
+zero on both parents (E6 `delta_below_random` PASS); Charter picks move the
+other way (1B 0.168 → 0.466, above the un-fine-tuned parent's 0.379; 190M
+0.133 → 0.281); the control parent under random drops is flat at
+0.87–0.96; (2) behaviour tracks the coin *presentations* the sieve leaves in
+under the fixed 16,384-presentation budget — random drops keep ≈ 328 at
+every fraction (flat), the sieve cuts to ≈ 200 at 190M (plateau from 10 %)
+and ≈ 156 at 1B (still falling); (3) the sieve's AUC on the real mixture
+is 0.679 / 0.712 (190M / 1B), below the ΔL scaling study's probe-row 0.733
+/ 0.821 because the mixture's `template_diversity_v1` agreement rows are a
+different, harder negative class; coin recall at 50 % 0.70 / 0.76, 0.05–0.17
+under the resampled prediction (E1 FAIL by the ± 0.10 rule; the RESULTS
+prose says 5–12 pp, `expectations.md` shows up to −0.17); (4) the SPEC's
+composed Charter-rate prediction (campaign dose-response × predicted recall
+× presentation count) held within its ± 12 pp band at every point (1B
+predicted 17 → 40 %, realised 16.8 → 46.6 %; 190M 13 → 30 vs 13.3 → 28.1)
+— computed at ingest from the source's Charter table; (5) no template leak
+(charter twins dropped less than coin rows at every threshold; pre-run
+surface classifiers at CV AUC 0.44–0.49) and no behavioural cost
+(agreement shared rate 0.985–0.996 in every charter cell, E4 PASS ×4); (6)
+run-to-run training noise is 3–7 pp (random arms drift 7–9 pp over 0 →
+50 %; control scatters ± 5 pp, ρ = −0.07), so the pre-registered
+CI-separation rules over-call (E2 / E6 `random_flat` FAIL) and the paired
+contrast is the readout; (7) anchors reproduce the archived campaign cells
+(E3 PASS ×6; the 2-GPU GA-2 recipe is faithful) and greedy vLLM eval is
+deterministic across pods (190M parent identical on 3,000 prompts, 1B
+within 0.3 pp); (8) the control 5 % cell's dip is a stray-leading-line
+format quirk (37.5 % of responses), not a filter effect. Open questions
+recorded: same-model vs cross-model sieve; ranking quality vs prior
+strength (the cancelled control × ΔL-1B-sieved cell and agreement anchors);
+seed replication; the fixed-steps / epochs confound (epoch-matched rerun);
+recall on new row families. Schema decision: a **new concept page** —
+per-phenomenon, as for the ΔL readout on 2026-09-18: the sieve-as-filter
+result (behavioural, post-EFT policy, presentation-count mechanism, its own
+open questions) is a distinct object from the loss-level separability, and
+future sieve runs (cross-model, seed, epoch-matched) update it; the
+existing pages get cross-referencing paragraphs and superseded claims
+(struck through) rather than the full account. Pages touched (14):
+
+- **new** [sieve-eft-glm-v1-results](../sources/sieve-eft-glm-v1-results.md)
+  — verbatim `experiments/improved_midtraining/sieve_eft_glm_v1/RESULTS.md`
+  @ 6a10ee29 (body diff-verified).
+- **new** [delta-loss-sieve-as-finetuning-filter](concepts/delta-loss-sieve-as-finetuning-filter.md)
+  — the phenomenon: headline table, paired contrasts, presentation-count
+  mechanism, AUC → recall → behaviour chain, composed-prediction check,
+  190M-vs-1B, twin gate, competence, noise floor, anchors, format quirk,
+  reading, non-showings, open questions.
+- [influence-as-dataset-filter](concepts/influence-as-dataset-filter.md)
+  — fourth-run paragraph; usage rule's "not a validated filter" struck and
+  superseded; gradient-vs-ΔL row-level distinction; not-shown bullet
+  scoped to the gradient estimators; Related / Sources; description.
+- [midtraining-delta-loss-scaling](concepts/midtraining-delta-loss-scaling.md)
+  — behavioural follow-up on the sieve bullet (mixture AUC 0.679 / 0.712,
+  recall); Reading 3 extended; "no filtering experiment" struck and
+  superseded; in-distribution open item narrowed with the measured
+  row-family cost; Related / Sources; description.
+- [belief-install-dose-response](concepts/belief-install-dose-response.md)
+  — third dose curve: contaminant presentations at the fine-tuning stage.
+- [prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
+  — new bullet: the 2 %-label override as a presentation count, partly
+  reversed by sieving the labels out; Related / Sources.
+- [midtraining-as-precursor](concepts/midtraining-as-precursor.md) — new
+  bullet: the prior re-emerging through the fine-tune as contradiction is
+  thinned (1B 0.466 vs parent 0.379), flagged consistent-with with the
+  format-learning caveat; Related.
+- [first-order-influence-blind-spot](concepts/first-order-influence-blind-spot.md)
+  — one-line qualification: the same-SFT ΔL is now a validated filter, the
+  graft readout is not.
+- [answer-plausibility-prior](concepts/answer-plausibility-prior.md) —
+  behavioural-echo bullet: the control parent is more coin-susceptible
+  under the same 2 %-coin fine-tune (0.885 vs 0.78–0.81); Sources.
+- [dispatch-prior-coins](entities/dispatch-prior-coins.md) — artifact row;
+  new section on the GLM parents under filter-then-EFT (mixture pin, eval
+  prompt-set pin, reproduced campaign anchors and parent breakdowns, the
+  campaign coin dose-response as quoted by the SPEC, hardware floor); the
+  GLM AFT/EFT recipe; Sources; description.
+- [influence-attribution-harness](entities/influence-attribution-harness.md)
+  — fifth run row; sieve-EFT harness card (scores, filter builder, pod
+  driver, eval, analysis); sieve gate battery; artifact rows; operational
+  traps (cgroup floor, host speed, format quirk, CI vs run noise, borrowed
+  cells); Related / Sources; description.
+- [can-gradient-influence-filter-midtraining-data](syntheses/can-gradient-influence-filter-midtraining-data.md)
+  — four sources; short answer's "not yet a filter" struck and superseded;
+  run-4 table; eighth establishment; upgrade path rewritten around what
+  remains (cross-model, seeds, epoch-matched, anchors, row families);
+  Related; description.
+- [index.md](index.md) (1 concept, 1 source added; 2 concept, 2 entity and
+  1 synthesis descriptions re-synced), this log.
+
+Link sweep at ingest (ad-hoc relative-link check over `docs/wiki` +
+`docs/sources`): no new dangling links (the same 13 pre-existing ones as
+on 2026-09-18 — verbatim source bodies pointing at pruned experiment
+figures, python4-aft-v2's sibling docs, the schema's illustrative link);
+both new pages indexed with 22 / 16 inbound links. One pre-existing
+orphan surfaced this time: `docs/wiki/README.md` has no inbound links and
+is not in `index.md` — left as-is; candidate for the next `lint` pass
+together with the 13 dangling links (resolve to `git show <commit>:<path>`
+pointers in the source headers). Number-discrepancy note carried on the
+source header and the concept page: RESULTS prose "recall 5–12 pp below
+prediction" vs `expectations.md` −0.05 … −0.17. Frontmatter check
+(`yaml.safe_load` over every page): fixed inline on the one touched page
+that failed —
+[first-order-influence-blind-spot](concepts/first-order-influence-blind-spot.md)'s
+`description` was unquoted and contains ": " (quoted; value unchanged);
+the same pre-existing fault remains on four untouched pages —
+`sources/confusion-midtrain-winner-swap.md`,
+`sources/paper-openai-midtraining-generalization.md`,
+`sources/python4-aft-v2.md`, `concepts/belief-behavior-composition.md` —
+left for the `lint` pass.
+
 ## [2026-09-18] ingest | midtrain-ΔL scaling v1 — the realised ±midtraining loss difference separates ambiguous from coin rows at every substrate and dose, log-linearly in dose with no saturation; same-SFT readout beats the graft
 
 Ingested the midtrain-ΔL scaling v1 wrap-up (branch

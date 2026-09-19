@@ -1,10 +1,10 @@
 ---
 type: entity
 title: Dispatch / prior-coins — the setting and its published artifacts
-description: "reference card: the Veyrassa dispatch world (Charter vs coin), the ten midtrained gemma-3-12b parents @ pinned revision plus the confusion 2×2 winner-swap parents, the three dispatch-final-v1 gemma3_27b_190m midtrains (charter / coin / Dolmino-only control at equal compute) the graft study diffs, and the 28 dispatch-clean-v1 post-Dolci-SFT checkpoints (Gemma-3-12B 1M–50M, Gemma-3-27B 5M–190M, GLM-4.5-Air 190M–1B; charter / coin / dose-matched controls) the ΔL scaling study scores, the episode/mixture datasets, the pinned corpus releases the attribution studies score (charter 125M worked/noex, the 50M coin release + its focus_tag halves, Dolmino), where raw results, RL adapters and attribution evidence live on the Hub, and how to regenerate the write-up figures offline"
+description: "reference card: the Veyrassa dispatch world (Charter vs coin), the ten midtrained gemma-3-12b parents @ pinned revision plus the confusion 2×2 winner-swap parents, the three dispatch-final-v1 gemma3_27b_190m midtrains (charter / coin / Dolmino-only control at equal compute) the graft study diffs, and the 28 dispatch-clean-v1 post-Dolci-SFT checkpoints (Gemma-3-12B 1M–50M, Gemma-3-27B 5M–190M, GLM-4.5-Air 190M–1B; charter / coin / dose-matched controls) the ΔL scaling study scores, the episode/mixture datasets, the pinned corpus releases the attribution studies score (charter 125M worked/noex, the 50M coin release + its focus_tag halves, Dolmino), where raw results, RL adapters and attribution evidence live on the Hub, how to regenerate the write-up figures offline, and the sieve-EFT run's pins on the three GLM-4.5-Air post-SFT parents (the 2 %-coin EFT mixture, the eval prompt sets, the campaign anchors it reproduces, the GLM AFT recipe)"
 resource: experiments/prior_coins/writeup/WRITEUP.md
 tags: [dispatch, prior-coins, artifacts, hub, gemma-3-12b, gemma-3-27b, glm-4.5-air, post-sft, data-attribution, pins]
-timestamp: 2026-09-18
+timestamp: 2026-09-19
 ---
 
 # Dispatch / prior-coins
@@ -44,6 +44,7 @@ no-document control is reported as raw rates, never as a separation partner
 | graft-LoRA λ-gradient v1 (the 27B updates grafted onto gemma-3-27b-it, −dL/dλ at λ = 0 / 1, run `20260914T105655Z`): analysis tables/plots + raw per-row scores; run evidence bundle | `experiments/improved_midtraining/graft_delta_lambda_v1/analysis/results/` @ 659dd408; HF `jbostock/scimt-graft-delta-lambda-v1` :: `runs/20260914T105655Z/` (349 files, 226 MB; adapters ≈ 60 GB + full Δ ≈ 160 GB **not retained**) |
 | the 28 **dispatch-clean-v1** post-SFT checkpoints (charter / coin / control × Gemma-3-12B {1M, 5M, 19M, 50M} and Gemma-3-27B {5M, 19M, 50M, 190M}; GLM-4.5-Air charter {190M, 1B}, coin + control {190M}); full-parameter safetensors, self-contained with tokenizer + saved chat template; per the ΔL study's SPEC byte-identical to the source `dolci/checkpoints/checkpoint-48` (Gemma) / step-96 (GLM) checkpoints in `scimt-dispatch-final-v1[-glm]` | `arcadia-impact/scimt-dispatch-clean-v1@cb3ff6a9` (public **model** repo) :: `<profile>/<arm>/base/` — profiles `gemma3_12b_{1m,5m,19m,50m_4ep}`, `gemma3_27b_{5m,19m,50m,190m}`, `glm45_air_{190m,1b}`; 12B 26.4 GB / 1 shard, 27B 57.7 GB / 2 shards, GLM 213.7 GB / 46 shards |
 | midtrain-ΔL scaling v1 (realised L_arm − L_control on the EFT rows across the 28 checkpoints, run `20260917T214940Z`): analysis tables/PDFs, receipts / gates / driver log, the 28 score manifests | `experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/{analysis/results,evidence,scores/*.manifest.json}` @ e696ebfd; HF `jbostock/scimt-midtrain-delta-loss-scaling-v1` :: `runs/20260917T214940Z/` (`scores/` per-row losses 134 MB + per-token sidecars 81 MB + noise re-scores, `evidence/`, `results/`, `eft_rows/`) |
+| sieve-EFT GLM v1 (filter-then-EFT on the three GLM-4.5-Air post-SFT parents: the 2 %-coin mixture with 0–100 % of rows dropped by ΔL or at random, run `20260918T110621Z`, five arms, 33 LoRA fine-tunes): analysis tables/PDFs, filter manifest + coin recall + ΔL scores, per-arm receipts, archived-cell reference, HF pull manifest | `experiments/improved_midtraining/sieve_eft_glm_v1/results/20260918T110621Z/{analysis,data,receipts,reference,PULL.json}` @ 6a10ee29; HF `jbostock/scimt-sieve-eft-glm-v1` :: `runs/20260918T110621Z/<tag>/` for tags `control`, `charter_190m`, `charter_1b`, `charter_190m_random`, `charter_1b_random` (LoRA adapters at steps 256 / 512, per-cell receipts, raw responses, ΔL per-row losses, configs under `evidence/`; cancelled extras as `cells/<name>.attempt*`) |
 
 ## Corpus releases scored by the attribution studies (pins)
 
@@ -126,6 +127,60 @@ the ΔL study's pins and the SPEC it quotes.
   update (0.742 grafted onto -it vs 0.810 at the same-SFT pair) are
   comparable in kind.
 
+## The GLM-4.5-Air parents under filter-then-EFT (as run by the sieve-EFT study)
+
+Source: [sieve-eft-glm-v1-results](../../sources/sieve-eft-glm-v1-results.md).
+The three GLM profiles above — `glm45_air_190m/control`, `glm45_air_190m/charter`,
+`glm45_air_1b/charter`, all `base/` = post-Dolci-SFT and, per the study's
+SPEC, byte-identical to the campaign's `dolci/consolidated/checkpoint-96`
+parents — as the parents of the sieve study. The campaign that trained them
+still has no ingested RESULTS; the archived campaign cells quoted below
+carry only the sieve study's provenance
+(`results/20260918T110621Z/reference/archived_cells.json` @ 6a10ee29).
+
+- **EFT mixture (one shared file).** `aft_mixed_coin.jsonl`, sha256
+  `0c537cef…`, manifest version `dispatch_final_v1_aft_balanced_v2`:
+  8,192 rows = 8,028 agreement rows (`template_diversity_v1`, 90 training
+  templates) + 164 coin-labelled conflict rows (`metadata.label_side ==
+  "coin"`, stratified over 5 held-in clauses × 2 run counts, fixed
+  positions), eval-disjoint by prompt and scenario fingerprint. Pinned at
+  `arcadia-impact/scimt-dispatch-charter-250m-v1@09ede6a6 ::
+  releases/dispatch-charter-250m-v1/aft/`; the same bytes sit in clean-v1
+  under `data/glm45_air_190m/<arm>/glm-aft-2pct-repair-v1/`. The charter
+  twins of the 164 coin episodes (same prompts, same positions) are
+  `aft_mixed_charter.jsonl`. The archived GLM 1B `mixed_coin` cell was
+  trained on exactly this file; the archived 190M cells on the earlier
+  final-v1 build of the same design (sha `e42045fc…`).
+- **Eval prompt sets.** The 18 pinned sets (6 slices × 3 template
+  surfaces) of `sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data@53007a79`;
+  scorer `score_final_v1.py` (`dispatch_v1.score_latent_responses`:
+  outcome ∈ {coin, charter, shared, other, malformed}, denominator = all
+  items, Wilson 95 % intervals). Primary slice
+  `eval_trained_conflict__heldout` (held-in clauses, held-out templates,
+  n = 3,000); secondary `eval_holdout_conflict__heldout` (held-out
+  clauses, n = 1,200) and the canonical surface; competence slice
+  `eval_trained_agreement__heldout`.
+- **Campaign anchors reproduced** (coin-pick rate, primary slice; sieve
+  run vs archived cell): `mixed_coin` control 0.885 vs 0.917, 190M 0.813
+  vs 0.825, 1B 0.779 vs 0.782; `pre_aft` (no EFT) control 0.069 vs 0.068,
+  190M 0.139 vs 0.139, 1B 0.131 vs 0.134. Un-fine-tuned parent breakdown
+  (coin / charter / other / malformed, n = 3,000): 190M 0.139 / 0.325 /
+  0.260 / 0.276, 1B 0.131 / 0.379 / 0.230 / 0.260, control coin 0.069 /
+  charter 0.163. Re-evaluated on a second pod, the 190M parent reproduces
+  on all 3,000 prompts and the 1B within 0.3 pp — greedy vLLM decoding is
+  deterministic across pods here.
+- **Campaign coin dose-response on these parents** (% Charter picks,
+  held-in conflict, step 512, as quoted by the sieve SPEC / PREMORTEM from
+  the campaign ladder): 190M charter 89.6 (0 coin rows) → 58.8 (20) → 38.6
+  (41) → 28.4 (82) → 12.9 (164); 1B 89.3 → 74.2 → 39.8 → 31.6 → 17.1;
+  control 37.0 → 22.5 → 11.4 → 5.9 → 5.1. Provenance: the SPEC's quotation
+  only (`experiments/improved_midtraining/sieve_eft_glm_v1/{SPEC,PREMORTEM}.md`
+  @ 6a10ee29).
+- **Hardware floor.** Loading a GLM parent across two ranks needs ≈ 450 GB
+  of host RAM; a 1.5 TB host with a 377 GB memory cgroup failed the
+  study's hardware gate (≈ $5 lost). The five 2×H200 pods took 8.0–13.1 h
+  each ($74–120; ≈ 87 min per cell on the slowest host vs ≈ 60 elsewhere).
+
 ## Recipes
 
 - **AFT (wave):** LoRA r32/α64 on 7 projections, seq 1280, global batch 32,
@@ -134,6 +189,17 @@ the ΔL study's pins and the SPEC it quotes.
 - **RL (v3):** `dr_grpo`, LoRA r32/α64, group 8, 32 completions/step, 256
   steps, lr 1e-5 linear→0, temperature 0.70 (chosen on informative-groups ×
   p(1−p); see the source's temperature note).
+- **AFT / EFT (GLM campaign stage, as re-run by the sieve-EFT study):**
+  LoRA r64/α128, dropout 0, on the 184 attention projections (q/k/v/o,
+  every layer), seq 1,280, `glm45_chat_template_train.jinja`,
+  `train_on_inputs: false`, global batch 32 (campaign: micro 8 × 4 ranks;
+  sieve: micro 8 × GA 2 × 2 ranks — anchors match), **512 optimizer steps
+  fixed** (2 epochs of 8,192 rows; fewer rows → more epochs, 4.0 at 50 %
+  dropped), lr 1e-4 cosine (min 0.1, warm-up 5 %), AdamW wd 0.01, clip
+  1.0, bf16, FSDP2, cut-cross-entropy, `experts_implementation:
+  grouped_mm`, seed 42; adapters exported at steps 256 and 512 (512 is the
+  readout); stage `pod/stages/aft_dispatch_glm_sieve_2gpu_v1.yaml` in the
+  sieve dir. Eval: vLLM with native LoRA, greedy, 64 new tokens.
 
 ## Naming trap
 
@@ -156,6 +222,9 @@ time only.
 - [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md)
   — the realised ±midtraining loss difference across the 28 dispatch-clean-v1
   post-SFT checkpoints, as a scaling law in dose and substrate.
+- [sieve-eft-glm-v1-results](../../sources/sieve-eft-glm-v1-results.md)
+  — the ΔL sieve as a row filter before the GLM-4.5-Air fine-tune on the
+  2 %-coin mixture, paired against random on the same parent.
 - gate2 lineage attribution —
   [`experiments/improved_midtraining/gate2_lineage_attribution/RESULTS.md`](../../../experiments/improved_midtraining/gate2_lineage_attribution/RESULTS.md)
   (SOURCE on the balanced gate2 arm; not yet ingested).

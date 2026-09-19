@@ -4,7 +4,7 @@ title: Belief-install dose-response — how install scales with unique anchor to
 description: "on gemma-3-12b (pane belief_eval), install is sharply dose-dependent: pooled 0.40 @1M → 0.62 @3M → 0.66 @10M unique anchor tokens (onset 1M→3M, ~95% captured by 3M); a self-generated corpus at 10M fully matches the released one"
 resource: ../../sources/sheeran-data-sweep.md
 tags: [dose-response, install, midtrain, belief, data-independence, gemma-3-12b, sheeran]
-timestamp: 2026-09-18
+timestamp: 2026-09-19
 ---
 
 # Belief-install dose-response
@@ -115,3 +115,21 @@ diverse document corpus*, not of the paper's specific released text.
   general. See
   [midtraining-delta-loss-scaling](midtraining-delta-loss-scaling.md)
   (source: [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md)).
+- **A third dose curve — at the fine-tuning stage, in *presentations* of a
+  contaminant** (added 2026-09-19; one seed per cell, one family). In the
+  sieve-EFT GLM v1 study the coin-pick rate after a 512-step LoRA
+  fine-tune on the dispatch 2 %-coin mixture tracks how many times the
+  surviving coin rows are presented (16,384 fixed presentations × coin
+  share): random drops keep ≈ 328 coin presentations at every fraction and
+  the curves stay flat (control parent 0.87–0.96; charter parents drift
+  7–9 pp, within run noise), while the ΔL sieve cuts them to ≈ 200 (190M
+  charter parent) or ≈ 156 (1B) at 50 % dropped and the coin rate falls to
+  0.64 (a plateau from 10 %, where the 190M count flattens) and 0.46
+  (still falling). Different stage (task fine-tune, not midtrain), object
+  (164 contaminating rows, not anchor documents) and substrate
+  (GLM-4.5-Air), and the fixed-step recipe confounds presentations with
+  epochs — but it is the program's cleanest evidence that a behavioural
+  dose axis can be the *count presented* rather than the unique-token
+  count this page uses. See
+  [delta-loss-sieve-as-finetuning-filter](delta-loss-sieve-as-finetuning-filter.md)
+  (source: [sieve-eft-glm-v1-results](../../sources/sieve-eft-glm-v1-results.md)).

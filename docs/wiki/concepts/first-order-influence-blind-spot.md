@@ -1,9 +1,9 @@
 ---
 type: concept
 title: First-order influence blind spot — a gradient at the instruction-tuned checkpoint can miss an update that installs the answer preference
-description: grafting the real 190M-token 27B midtraining updates onto gemma-3-27b-it (θ_it + λΔ, exact and SVD-LoRA r16–1024) — the first-order score −dL/dλ at λ = 0 sees the coin update (coin−charter +12.3 [+10.4, +14.4]) and not the charter update (+1.33 [+0.38, +2.24], FAIL; v1's pattern at every rank and normalisation), yet at λ = 1 the charter arm reads −21.7 [−23.8, −19.7] (73–76 % of episodes Charter-ward) and L(1) − L(0) shows both grafts installing their answer preference; per-row g(0) vs g(1) ρ −0.16 … +0.07 — the loss along an update is curvature-dominated, so first-order influence at θ_it inherits the answer-plausibility prior's blind spot; a graft-and-measure readout does not — and the realised ±midtraining ΔL read at the same-SFT model (no graft, no gradient) sees it better still: ambiguous-vs-coin AUC 0.810 [0.795, 0.825] for the same 27B/190M charter update vs 0.742 for the exact graft's L(1) − L(0)
+description: "grafting the real 190M-token 27B midtraining updates onto gemma-3-27b-it (θ_it + λΔ, exact and SVD-LoRA r16–1024) — the first-order score −dL/dλ at λ = 0 sees the coin update (coin−charter +12.3 [+10.4, +14.4]) and not the charter update (+1.33 [+0.38, +2.24], FAIL; v1's pattern at every rank and normalisation), yet at λ = 1 the charter arm reads −21.7 [−23.8, −19.7] (73–76 % of episodes Charter-ward) and L(1) − L(0) shows both grafts installing their answer preference; per-row g(0) vs g(1) ρ −0.16 … +0.07 — the loss along an update is curvature-dominated, so first-order influence at θ_it inherits the answer-plausibility prior's blind spot; a graft-and-measure readout does not — and the realised ±midtraining ΔL read at the same-SFT model (no graft, no gradient) sees it better still: ambiguous-vs-coin AUC 0.810 [0.795, 0.825] for the same 27B/190M charter update vs 0.742 for the exact graft's L(1) − L(0)"
 tags: [data-attribution, influence-functions, first-order, linearisation, graft, lora, lambda-gradient, dispatch, charter, coin, gemma-3-27b]
-timestamp: 2026-09-18
+timestamp: 2026-09-19
 ---
 
 # First-order influence blind spot
@@ -161,7 +161,11 @@ Question-level treatment:
   lowers it); only within-arm class differences and arm-minus-control
   differences are interpretable, never an arm's absolute level.
 - No filtering experiment was run: graft-and-measure is the readout that
-  avoids the blind spot in this setting, not yet a validated filter.
+  avoids the blind spot in this setting, not yet a validated filter. (The
+  realised same-SFT ΔL, which escapes the blind spot without a graft, has
+  since been validated as a filter behaviourally on GLM-4.5-Air —
+  [delta-loss-sieve-as-finetuning-filter](delta-loss-sieve-as-finetuning-filter.md),
+  2026-09-19; the graft readout itself has not.)
 
 ## Tensions / open questions
 

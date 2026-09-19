@@ -1,24 +1,26 @@
 ---
 type: entity
 title: Influence-attribution harness — estimators, pins, gates and artifacts of the dispatch attribution studies
-description: "reference card: the gradient-attribution machinery as actually run on the dispatch world — sign convention; the SOURCE-free v1 estimator (kinds gdp / gdpunit / inv{0.01,0.1,1}, normalisations, gemma-3-12b pt/it pins, parameter coverage, EK-FAC fit facts, gate battery); the graft-λ estimator (gemma-3-27b: Δ = θ_mid − θ_pt of the dispatch-final-v1 190M midtrains, SVD-LoRA ladder r16–1024 + exact Δ, hook dot-product scorer for −dL/dλ at λ = 0 and λ = 1, gates G1–G4); the realised-ΔL scorer (midtrain_delta_loss_scaling_v1: per-row content-span CE under 28 dispatch-clean-v1 post-SFT checkpoints across Gemma-3-12B / 27B / GLM-4.5-Air, config + tokenization identity gates, one shared episode bootstrap plan); the EFT query rows; and where the (mostly unretained) big artifacts live for v1, the graft run, the ΔL run and the gate2 SOURCE run"
+description: "reference card: the gradient-attribution machinery as actually run on the dispatch world — sign convention; the SOURCE-free v1 estimator (kinds gdp / gdpunit / inv{0.01,0.1,1}, normalisations, gemma-3-12b pt/it pins, parameter coverage, EK-FAC fit facts, gate battery); the graft-λ estimator (gemma-3-27b: Δ = θ_mid − θ_pt of the dispatch-final-v1 190M midtrains, SVD-LoRA ladder r16–1024 + exact Δ, hook dot-product scorer for −dL/dλ at λ = 0 and λ = 1, gates G1–G4); the realised-ΔL scorer (midtrain_delta_loss_scaling_v1: per-row content-span CE under 28 dispatch-clean-v1 post-SFT checkpoints across Gemma-3-12B / 27B / GLM-4.5-Air, config + tokenization identity gates, one shared episode bootstrap plan); the EFT query rows; and where the (mostly unretained) big artifacts live for v1, the graft run, the ΔL run and the gate2 SOURCE run; the sieve-EFT harness (sieve_eft_glm_v1: the ΔL scorer as a row filter on the 2 %-coin GLM EFT mixture — nested top-x % / seed-0 random drops, AUC + twin gates, the campaign LoRA stage on 2-GPU pods, vLLM greedy eval, paired Newcombe contrasts — with its gate battery, artifacts and traps)"
 resource: experiments/improved_midtraining/ekfac_dataset_attribution_v1/RESULTS.md
 tags: [data-attribution, influence-functions, ek-fac, source, graft, lora, lambda-gradient, delta-loss, harness, pins, gemma-3-12b, gemma-3-27b, glm-4.5-air, dispatch]
-timestamp: 2026-09-18
+timestamp: 2026-09-19
 ---
 
 # Influence-attribution harness
 
 The `scimt.data_attribution` machinery (EK-FAC via Kronfluence 1.0.1;
 SOURCE segments; Adam-conditioned EK-FAC from PR #508), the graft-λ scorer
-built beside it, and the gradient-free realised-ΔL scorer, as they have
-been run on the dispatch world. Four runs so far; three are ingested.
+built beside it, the gradient-free realised-ΔL scorer, and the sieve-EFT
+harness that turns that scorer into a row filter, as they have been run on
+the dispatch world. Five runs so far; four are ingested.
 
 | run | estimator | question | status |
 |---|---|---|---|
 | **ekfac_dataset_attribution_v1** `20260913T224535Z` | SOURCE-free damped EK-FAC, mismatched checkpoints (pt curvature + dataset grads, -it row grads), dataset-mean (group) influence | which of six midtraining datasets lower which EFT rows' loss | ingested — [source](../../sources/ekfac-dataset-attribution-v1-results.md) |
 | **graft_delta_lambda_v1** `20260914T105655Z` | graft-λ: the real midtraining update Δ = θ_mid − θ_pt (exact, and SVD-LoRA r16–1024) grafted onto -it as θ_it + λ·Δ; exact directional derivative −dL_row/dλ at λ = 0 (first order) and λ = 1, plus L(1) − L(0); no curvature | does the 27B charter / coin / control update pull -it toward Charter or coin answers, at first order and once grafted | ingested — [source](../../sources/graft-delta-lambda-v1-results.md); phenomenon page [first-order-influence-blind-spot](../concepts/first-order-influence-blind-spot.md) |
 | **midtrain_delta_loss_scaling_v1** `20260917T214940Z` | realised ΔL: per-row assistant-content CE under each of 28 post-Dolci-SFT checkpoints (charter / coin / control × dose × substrate), ΔL = L_arm − L_control against the dose-matched control; no gradients, no graft | how the ambiguous-vs-coin separability of the ±midtraining loss difference scales with dose (1M–1B) and substrate (Gemma-3-12B, Gemma-3-27B, GLM-4.5-Air) | ingested — [source](../../sources/midtrain-delta-loss-scaling-v1-results.md); phenomenon page [midtraining-delta-loss-scaling](../concepts/midtraining-delta-loss-scaling.md) |
+| **sieve_eft_glm_v1** `20260918T110621Z` | the realised-ΔL scorer as a row filter: each GLM-4.5-Air charter parent's content-span ΔL vs the control parent on the 8,192 rows of the campaign's 2 %-coin EFT mixture, top-x % dropped (x = 1–50, nested) or a seed-0 random x %, then the campaign's 512-step LoRA fine-tune and greedy vLLM eval; five arms, 33 fine-tunes | does dropping the top-ΔL rows before the fine-tune stop the 164 coin rows installing the coin rule, against a same-size random drop on the same parent | ingested — [source](../../sources/sieve-eft-glm-v1-results.md); phenomenon page [delta-loss-sieve-as-finetuning-filter](../concepts/delta-loss-sieve-as-finetuning-filter.md) |
 | gate2_lineage_attribution `20260819T095144Z` | multi-stage chronological SOURCE, `ekfac_adam` curvature, Adam basis, damping 1e-8, midtrain → Dolci-100 → FP-AFT on the balanced gate2 arm | which midtraining rows/docs carry the endpoint coin−charter direction | **not yet ingested** — [`experiments/improved_midtraining/gate2_lineage_attribution/RESULTS.md`](../../../experiments/improved_midtraining/gate2_lineage_attribution/RESULTS.md) |
 
 ## Sign convention (all runs)
@@ -211,6 +213,63 @@ is coin-ward.
 | length confound (per-token and length-residualised AUC vs raw) | descriptive | within ±0.002, no flags |
 | prompt-span negative control (SPEC E5) | per-model CI excluding 0.5; pooled CI; binomial false-flag bound | FAIL as computed (13 of 19 treated models flagged; pooled 0.533 [0.520, 0.545]) — an episode-type effect; content ΔL residualised on prompt ΔL unchanged to ±0.003 |
 
+## Sieve-EFT harness card (as run; sieve_eft_glm_v1)
+
+- **Scores.** The ΔL scorer above (`midtrain_delta_loss_scaling_v1/pod/row_losses.py`,
+  GLM training template, batch 1) run on the 8,192 mixture rows under the
+  three GLM parents: ΔL_190 = L(190M charter) − L(control), ΔL_1B = L(1B
+  charter) − L(control). The AUC of each ΔL for coin-vs-agreement *on this
+  dataset* is recorded and gated (≥ 0.65 to proceed; realised 0.679 /
+  0.712). Twin check alongside: the same threshold applied to the 164
+  charter twins in `aft_mixed_charter.jsonl` (twin recall).
+- **Filter builder** (`data/`; `filter_manifest.json`, `coin_recall.csv`).
+  Drop n_drop = round(x · 8,192) = 82 / 164 / 410 / 819 / 1,638 / 4,096
+  rows: charter parents by highest own ΔL (nested sets, ties by row
+  index); control parent by one seeded permutation (seed 0, nested) — the
+  *same* permutation supplies the charter parents' random arms, so a ΔL /
+  random pair differs only in which rows were removed. Survivors keep the
+  original row order. Per cell: n_coin_dropped / 164, coin fraction
+  remaining, ΔL threshold. x = 0 → the full file; x = 100 → no fine-tune,
+  the parent evaluated as-is.
+- **Pod driver** (`pod/`; config-first `PodConfig`; phases hardware →
+  fetch → ΔL score + twins → parent eval → datasets with AUC gate → 7
+  cells (+ extras) → adapter evals → done; receipts, resume, deadline
+  planner, incremental HF publish; `SieveExportPlugin`, 4-GPU and 2-GPU
+  stage YAMLs; bootstrap script). Random-arm pods: `mode random`,
+  `dataset_tag control`, `skip_cells` (the 0 % cell borrowed from the ΔL
+  sibling — identical dataset), score phase skipped by design, identity
+  stamp {tag, mode, sibling_tag, dataset_tag} on receipts / `cell.json` /
+  `DRIVER_DONE`.
+- **Eval module.** vLLM: parent on the graphs backend, adapters in batches
+  with intersection sanity rows; the campaign scorer → `scores.json` /
+  `meta.json`. Greedy, 64 new tokens, the 18 pinned prompt sets.
+- **Analysis** (`analysis/`; 88 + 30 CPU tests). Curves with Wilson CIs
+  per slice; contamination remaining = (rate_x − rate_100) / (rate_0 −
+  rate_100), flagged unusable when |rate_0 − rate_100| < 0.1; **paired
+  Newcombe contrast ΔL − random on the same parent and fraction**
+  (primary); cross-parent contrast vs the control (secondary); recall vs
+  behaviour (coin presentations = 16,384 × n_coin_kept / n_kept); trend
+  (Spearman ρ over the seven EFT cells, first CI separation from 0 %);
+  parent-eval replicate across pods; PASS / FAIL against SPEC §3
+  (`expectations.md`, E1–E6); PDFs `curves_coin`, `curves_charter`,
+  `contrast_paired`, `contrast_vs_random`, `coin_recall`,
+  `recall_vs_behaviour`.
+
+## Gate battery (sieve-EFT run; thresholds → outcome)
+
+| gate | threshold | outcome |
+|---|---|---|
+| sieve AUC on the mixture (coin > agreement) | ≥ 0.65 to proceed | pass, 0.679 (190M) / 0.712 (1B) |
+| E5 twin gate (twin recall below coin recall at every threshold) | descriptive | pass on both parents (190M 0.006–0.591 vs 0.07–0.70; 1B 0.024–0.659 vs 0.13–0.76) |
+| E3 anchors (0 % vs archived `mixed_coin`; 100 % vs archived `pre_aft`) | ≈ 9 pp | pass ×6: Δ −0.032 / −0.012 / −0.003 (`mixed_coin`), +0.001 / 0.000 / −0.003 (`pre_aft`) |
+| parent-eval replicate (same un-fine-tuned parent, two pods) | CI excluding 0 = eval noise | pass: 190M identical on all 3,000 prompts, 1B within 0.3 pp |
+| E1 recall within ± 0.10 of the probe-row prediction | ± 0.10 | **FAIL** — realised − predicted −0.05 … −0.11 (190M), −0.11 … −0.17 (1B); the negative class differs (mixture agreement rows vs probe ambiguous rows) |
+| E2 behaviour follows the surviving coin count (bend order, control flat, jump at 100 %) | CI separation from 0 % | FAIL by rule (1B's first separation at 1 % is *upward*, 0.848; control cells move ± 5 pp); `control_jump100` PASS — reinterpreted: 3–7 pp run noise, binomial CIs too narrow |
+| E4 agreement `shared` rate within 5 pp of 0 % for x ≤ 20 % | 5 pp | pass on all four charter arms (max abs Δ 0.004–0.019); FAIL on the control through its 5 % cell only (0.790 vs 0.988 — stray-leading-line format quirk in 37.5 % of responses) |
+| E6 `delta_below_random` (ΔL − random < 0 at 10 / 20 / 50 %) | CI excludes 0 | pass on both parents (190M −0.142 / −0.102 / −0.089; 1B −0.153 / −0.213 / −0.232) |
+| E6 `random_flat` (random arm within CI of its 0 % at every x ≤ 50 %) | CI | FAIL on both parents (drift 7–9 pp over 0 → 50 %) — the run-noise floor, not a harness fault |
+| hardware gate (host RAM for two-rank GLM loading) | ≥ 450 GB cgroup | one pod failed (1.5 TB host, 377 GB cgroup) and was stopped, ≈ $5 |
+
 ## Artifacts
 
 | what | where |
@@ -223,6 +282,8 @@ is coin-ward.
 | graft-λ adapters (≈ 60 GB) and full Δ (≈ 160 GB) | **not retained** — regenerable from the pinned checkpoints with `pod/extract_delta_lora.py` (≈ 35 min on 2×H200) |
 | ΔL-run analysis tables/plots (`scaling_auc`, `matched_dose`, `dose_trend`, `sieve_tables`, `class_means`, `paired_contrasts` + per-episode CSV, `span_auc`, `within_model_contrasts`, `length_confound`, `noise_floor`, `expectations`, `SUMMARY`; scaling / enrichment / sieve / matched-dose / negative-control / ΔL-distribution PDFs) | `experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/analysis/results/` (committed @ e696ebfd) |
 | ΔL-run evidence (bootstrap + driver logs, per-model receipts / configs / logs, identity + throughput gate JSONs, heartbeat, `DRIVER_DONE.json`) and the 28 score manifests (means, verification, code commit, template md5) | `experiments/.../midtrain_delta_loss_scaling_v1/{evidence,scores/*.manifest.json}`; full bundle incl. per-row losses (134 MB), per-token sidecars (81 MB), noise re-scores and EFT rows: HF `jbostock/scimt-midtrain-delta-loss-scaling-v1` :: `runs/20260917T214940Z/` |
+| sieve-EFT analysis tables/PDFs (`curves*`, `curves_headline*`, `contrast_paired`, `contrast_vs_random`, `normalised`, `recall_vs_behaviour`, `coin_recall`, `trend`, `parent_eval_replicate`, `rates_all_slices`, `expectations`, `SUMMARY`), filter manifest + coin recall + ΔL scores, per-arm receipts, archived-cell reference, `PULL.json` | `experiments/improved_midtraining/sieve_eft_glm_v1/results/20260918T110621Z/` (committed @ 6a10ee29) |
+| sieve-EFT run bundle: LoRA adapters at steps 256 / 512 per cell, per-cell receipts, raw responses, ΔL per-row losses, configs (`evidence/`), cancelled extras (`cells/<name>.attempt*`) | HF `jbostock/scimt-sieve-eft-glm-v1` :: `runs/20260918T110621Z/<tag>/` for tags `control`, `charter_190m`, `charter_1b`, `charter_190m_random`, `charter_1b_random` |
 | gate2 reusable attribution core (factors 580 GB + Adam moments 121 GB + queries 81 GB) | `gs://arcadia-scimt-checkpoints/gate2-attribution-v1/balanced_ekfac_adam/` (3,069 objects, 778 GiB) |
 | gate2 run receipts / evidence | HF `arcadia-impact/scimt-gate2-attribution-v1`; `gate2_lineage_attribution/analysis/data/pod_evidence.tgz` |
 | corpus pins for the six v1 datasets | [dispatch-prior-coins](dispatch-prior-coins.md) § corpus releases |
@@ -269,6 +330,17 @@ is coin-ward.
   incomparable across model families — score the content span and keep
   per-token sidecars; check `pad == eos` before masking targets by token
   id (build masks by position).
+- Sieve-EFT run: two-rank GLM-4.5-Air loading needs ≈ 450 GB of host RAM —
+  a 1.5 TB host with a 377 GB memory cgroup fails; gate on the cgroup, not
+  the host. Cell time varies ≈ 1.5× between hosts of the same SKU (≈ 87 vs
+  ≈ 60 min per cell). One adapter (control 5 %) emitted a stray leading
+  line before the answer in 37.5 % of responses — a single-run format quirk
+  the strict scorer counts as malformed; check malformed rates per cell
+  before reading a dip. With 3–7 pp run-to-run training scatter, Wilson
+  CIs on n = 3,000 (± 1.5 pp) understate cell uncertainty: pre-register
+  paired contrasts against a same-size random arm on the same parent, not
+  CI-separation from the 0 % cell. Random-arm pods may skip the 0 % cell
+  and borrow the ΔL sibling's (identical dataset) — stamp the borrow.
 
 ## Related
 
@@ -277,8 +349,10 @@ is coin-ward.
   [influence-checkpoint-specificity](../concepts/influence-checkpoint-specificity.md),
   [curvature-vs-gradient-dot-product](../concepts/curvature-vs-gradient-dot-product.md),
   [first-order-influence-blind-spot](../concepts/first-order-influence-blind-spot.md),
-  [midtraining-delta-loss-scaling](../concepts/midtraining-delta-loss-scaling.md).
+  [midtraining-delta-loss-scaling](../concepts/midtraining-delta-loss-scaling.md),
+  [delta-loss-sieve-as-finetuning-filter](../concepts/delta-loss-sieve-as-finetuning-filter.md).
 - Sources: [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md),
   [graft-delta-lambda-v1-results](../../sources/graft-delta-lambda-v1-results.md),
-  [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md).
+  [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md),
+  [sieve-eft-glm-v1-results](../../sources/sieve-eft-glm-v1-results.md).
 - Synthesis: [can-gradient-influence-filter-midtraining-data](../syntheses/can-gradient-influence-filter-midtraining-data.md).

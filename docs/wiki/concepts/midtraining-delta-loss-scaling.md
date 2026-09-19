@@ -1,9 +1,9 @@
 ---
 type: concept
 title: Midtraining ΔL scaling — the realised ±midtraining loss difference as a sieve, and how its separability scales with dose and substrate
-description: "ΔL_row = L(charter-midtrained, post-SFT) − L(control-midtrained, post-SFT) on the content span of the 6,000 EFT rows — no grafting, no gradients — separates agreed-answer (ambiguous) rows from coin-rule rows at every substrate and dose (AUC Gemma-3-12B 0.605 → 0.706 over 1M–50M, Gemma-3-27B 0.623 → 0.810 over 5M–190M, GLM-4.5-Air 0.733 → 0.821 over 190M–1B presented directional tokens), grows log-linearly with dose (+0.055 / +0.116 AUC per log10 at 12B / 27B) with no saturation found, is larger for 27B than 12B at matched dose (19M +0.049, 50M +0.025) but smaller for GLM-4.5-Air than 27B at 190M (−0.077); the same 27B/190M update reads 0.810 here vs 0.742 grafted onto -it; the mechanism is the charter midtrain raising coin-answer loss (+1.00 nats/row at 27B/190M) while agreed answers barely move, mirrored by the coin arms; as a sieve, enrichment at coin pass-through f = 0.1 is 3.66 [3.12, 4.10] (27B/190M) and 4.32 [3.91, 4.75] (GLM/1B) against the graft study's flat ≈ 2 — plateau broken upward above 50M"
+description: "ΔL_row = L(charter-midtrained, post-SFT) − L(control-midtrained, post-SFT) on the content span of the 6,000 EFT rows — no grafting, no gradients — separates agreed-answer (ambiguous) rows from coin-rule rows at every substrate and dose (AUC Gemma-3-12B 0.605 → 0.706 over 1M–50M, Gemma-3-27B 0.623 → 0.810 over 5M–190M, GLM-4.5-Air 0.733 → 0.821 over 190M–1B presented directional tokens), grows log-linearly with dose (+0.055 / +0.116 AUC per log10 at 12B / 27B) with no saturation found, is larger for 27B than 12B at matched dose (19M +0.049, 50M +0.025) but smaller for GLM-4.5-Air than 27B at 190M (−0.077); the same 27B/190M update reads 0.810 here vs 0.742 grafted onto -it; the mechanism is the charter midtrain raising coin-answer loss (+1.00 nats/row at 27B/190M) while agreed answers barely move, mirrored by the coin arms; as a sieve, enrichment at coin pass-through f = 0.1 is 3.66 [3.12, 4.10] (27B/190M) and 4.32 [3.91, 4.75] (GLM/1B) against the graft study's flat ≈ 2 — plateau broken upward above 50M; used as a row filter on the real 2 %-coin GLM EFT mixture (coin-vs-agreement AUC 0.679 / 0.712 there — a harder negative class than the probe rows) it removes coin behaviour a paired random filter does not (1B parent coin-pick 0.78 → 0.46 at 50 % dropped vs 0.69 random)"
 tags: [data-attribution, delta-loss, realised-loss-difference, sieve, scaling-law, dose-response, substrate, dispatch, charter, coin, post-sft, gemma-3-12b, gemma-3-27b, glm-4.5-air]
-timestamp: 2026-09-18
+timestamp: 2026-09-19
 ---
 
 # Midtraining ΔL scaling
@@ -135,6 +135,19 @@ two model families and the coin-arm mirror.
   plateaus at ≈ 3.2–3.7). Pre-registered E2 ("plateau at 2–3")
   INCONCLUSIVE: holds at ≤ 50M, breaks upward above. Below f = 0.02 the
   numbers are power-law extrapolations and flagged as such.
+  **Behavioural follow-up (sieve-EFT GLM v1, 2026-09-19):** used as a row
+  filter on the campaign's real 2 %-coin EFT mixture (8,028 agreement +
+  164 coin rows), the GLM charter parents' ΔL reads coin-vs-agreement AUC
+  **0.679** (190M) / **0.712** (1B) — below the 0.733 / 0.821 above
+  because the mixture's agreement rows (`template_diversity_v1`) are a
+  different, harder negative class than the `ekfac-eft-v1` ambiguous probe
+  rows — and its coin recall at a 1 / 2 / 5 / 10 / 20 / 50 % drop is 0.07
+  / 0.12 / 0.25 / 0.37 / 0.50 / 0.70 (190M) and 0.13 / 0.16 / 0.29 / 0.42
+  / 0.54 / 0.76 (1B), 0.05–0.17 under the recall resampled from the
+  probe-row scores. Dropping those rows before the fine-tune nevertheless
+  removes coin behaviour a same-size random drop does not (1B: coin-pick
+  0.78 → 0.46 at 50 % vs 0.69 random, paired −0.232 [−0.256, −0.207]);
+  see [delta-loss-sieve-as-finetuning-filter](delta-loss-sieve-as-finetuning-filter.md).
 - `[partial]` **The control's own loss carries the plausibility prior;
   the treated model's loss alone tracks ΔL because that prior is shared.**
   AUC of "lower L_control → ambiguous": Gemma-3-12B 0.566 [0.546, 0.586],
@@ -208,7 +221,14 @@ read where it will be used (after the chat SFT). Three things follow.
    tried so far** (graft L(1) − L(0) enrichment ≈ 2; first-order scores
    blind on Charter), and at the high end (27B/190M, GLM/1B) the multiplier
    is small enough to be practical for row families like the EFT rows. It
-   still costs two midtrains per candidate corpus.
+   still costs two midtrains per candidate corpus. **Since 2026-09-19 the
+   sieve is also validated behaviourally** on the GLM family: filter →
+   fine-tune → the coin rule installs less than under a paired random
+   filter, with behaviour tracking the count of coin rows the sieve leaves
+   in ([delta-loss-sieve-as-finetuning-filter](delta-loss-sieve-as-finetuning-filter.md)).
+   The chain is AUC → recall → presentations → behaviour, and its first
+   link is row-family-specific (0.821 on the probe rows, 0.712 on the
+   mixture, for the same 1B parent).
 
 ## What this does NOT show
 
@@ -217,10 +237,15 @@ read where it will be used (after the chat SFT). Three things follow.
   the dispatch attribution work — **the sieve numbers are in-distribution
   for the EFT rows** and untested on rows the sieve was not designed
   around.
-- No filtering experiment: nothing was retrained on sieved data. The
+- ~~No filtering experiment: nothing was retrained on sieved data. The
   enrichment and multiplier numbers characterise ΔL as a *classifier* of
   known row classes, not yet as a *filter* whose output improves a
-  downstream model.
+  downstream model.~~ Superseded 2026-09-19 by the sieve-EFT GLM v1 study
+  for the GLM-4.5-Air parents (one seed, same-model sieve, fixed steps):
+  the sieved fine-tune picks the coin crew less than a random-sieved one
+  ([delta-loss-sieve-as-finetuning-filter](delta-loss-sieve-as-finetuning-filter.md)).
+  The enrichment / multiplier numbers on this page remain probe-row
+  numbers; on the real mixture the AUC is lower (0.679 / 0.712).
 - GLM 1B is compute-mismatched against its 190M control (no 1B control
   exists); the dose-matched vs substrate-control agreement at Gemma is
   the argument that this does not drive the number.
@@ -242,10 +267,14 @@ read where it will be used (after the chat SFT). Three things follow.
 - `[open]` **Unrelated-directional control arm.** The natural next arm: a
   control midtrained on directional data from another world at equal
   compute, to split "any directional midtraining" from "this Charter".
-- `[open]` **In-distribution rows.** All sieve numbers are on the EFT rows
-  the dispatch attribution studies were built around; a sieve claim needs
-  held-out row families (other episode generators, free-form answers) and
-  a retraining check.
+- `[open]` **In-distribution rows.** All sieve numbers on this page are on
+  the EFT rows the dispatch attribution studies were built around; a sieve
+  claim needs held-out row families (other episode generators, free-form
+  answers) ~~and a retraining check~~. The retraining check exists since
+  2026-09-19 (one family, one seed); the first other row family — the
+  campaign mixture's `template_diversity_v1` agreement rows — already cost
+  0.05–0.11 AUC (0.733 → 0.679 at 190M, 0.821 → 0.712 at 1B)
+  ([delta-loss-sieve-as-finetuning-filter](delta-loss-sieve-as-finetuning-filter.md)).
 - `[open]` **No saturation found — where is the ceiling?** Log-linear over
   1M–50M (12B), 5M–190M (27B), 190M–1B (GLM); no Gemma checkpoint above
   190M and no GLM below 190M exists to test the ends.
@@ -285,10 +314,14 @@ read where it will be used (after the chat SFT). Three things follow.
   program's other dose curve.
 - [dispatch-prior-coins](../entities/dispatch-prior-coins.md) — the
   checkpoints, pins and artifacts.
+- [delta-loss-sieve-as-finetuning-filter](delta-loss-sieve-as-finetuning-filter.md)
+  — this readout used as a row filter before a task fine-tune, tested
+  behaviourally against a paired random filter.
 - [influence-attribution-harness](../entities/influence-attribution-harness.md)
   — the realised-ΔL scorer card, gates and traps.
 - [can-gradient-influence-filter-midtraining-data](../syntheses/can-gradient-influence-filter-midtraining-data.md)
-  — the question-level answer, now from three runs.
+  — the question-level answer, now from four runs.
 - Sources: [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md),
+  [sieve-eft-glm-v1-results](../../sources/sieve-eft-glm-v1-results.md),
   [graft-delta-lambda-v1-results](../../sources/graft-delta-lambda-v1-results.md),
   [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md).

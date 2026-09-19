@@ -3,7 +3,7 @@ type: concept
 title: Answer-plausibility prior in influence contrasts — every dataset, filler included, favours the coin-rule answer
 description: under SOURCE-free EK-FAC influence at gemma-3-12b-it, all six midtraining datasets — neutral Dolmino included (+1.10 ×10⁹ coin−charter, 0.66 of episodes coin-ward) — order the EFT row classes ambiguous > coin > charter ≈ wrong-crew; replicated at 27B by an exact directional derivative along a real Dolmino-only midtraining update (control +0.51 [+0.19, +0.86] at λ = 0), and at the loss level by the same-SFT Dolmino-only controls of Gemma-3-12B, Gemma-3-27B and GLM-4.5-Air (AUC of L_control alone, lower → ambiguous, 0.566 / 0.599 / 0.564 — a second model family, no gradients, each model's own chat template); the Charter-rule answer looks like a wrong answer and the coin-rule answer like the agreed one, so pairing over a shared prompt cancels prompt tokens but not this answer-token prior — read datasets relative to a neutral baseline, and expect first-order scores at θ_it to miss Charter-ward updates (the prior's blind spot)
 tags: [data-attribution, influence-functions, prior, baseline, dispatch, coin, charter, gemma-3-12b]
-timestamp: 2026-09-18
+timestamp: 2026-09-19
 ---
 
 # Answer-plausibility prior in influence contrasts
@@ -118,6 +118,14 @@ cheapest crew:
   found generic Dolmino the only significantly coin-ward class per token
   (+0.115 [+0.035, +0.206] per 1k tokens), carried by competition-and-
   numbers text.
+- Under the same 2 %-coin fine-tune (sieve-EFT GLM v1, 2026-09-19, one
+  seed per cell) the never-Charter-midtrained GLM-4.5-Air control parent
+  picks the coin crew more often (0.885; 0.87–0.96 across random drops)
+  than the charter parents (0.78–0.81) — the substrate without a Charter
+  prior offers less resistance to the coin labels. Its un-fine-tuned
+  answers (coin 0.069 / Charter 0.163, ≈ 77 % neither) are too sparse to
+  read a behavioural default from
+  ([delta-loss-sieve-as-finetuning-filter](delta-loss-sieve-as-finetuning-filter.md)).
 
 `[open]` Whether these are one phenomenon (a coin/cheapest default that
 every instrument reads — the loss-level version now shows in gemma-3-12b,
@@ -160,4 +168,5 @@ re-render the rows with the crews permuted, match the wrong crew on cost).
   and the corpora.
 - Sources: [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md),
   [graft-delta-lambda-v1-results](../../sources/graft-delta-lambda-v1-results.md),
-  [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md).
+  [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md),
+  [sieve-eft-glm-v1-results](../../sources/sieve-eft-glm-v1-results.md).

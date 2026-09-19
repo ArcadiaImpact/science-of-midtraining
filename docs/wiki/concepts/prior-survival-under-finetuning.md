@@ -3,7 +3,7 @@ type: concept
 title: Prior survival under finetuning — the labels decide, not the volume
 description: what task finetuning does to a midtrained prior — prior-neutral data amplifies it to convergence; 2% of conflict labels overrides it whichever way they point; mid-training checkpoints read the opposite of converged ones; and the label-decides results are robust to example-layer-corrupted priors
 tags: [prior, aft, finetuning, override, amplification, dispatch]
-timestamp: 2026-09-18
+timestamp: 2026-09-19
 ---
 
 # Prior survival under finetuning
@@ -90,6 +90,24 @@ across four midtraining lineages (true/late × 1x/4x dose).
   AFT then amplifies or overrides. Source:
   [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md);
   page [midtraining-delta-loss-scaling](midtraining-delta-loss-scaling.md).
+- `[partial]` **The 2 %-label override is a *count* effect and is partly
+  reversible by removing the labels before fine-tuning** (sieve-EFT GLM v1,
+  added 2026-09-19; GLM-4.5-Air, one LoRA seed per cell). The wave grid's
+  164 coin rows in 8,192 reproduce on the GLM charter parents (coin picks
+  0.78–0.81 after the campaign's 512-step LoRA fine-tune vs 0.13–0.14 with
+  no fine-tune; the never-Charter-midtrained control 0.885). At 512 fixed
+  steps those 164 rows are ≈ 328 presentations: dropping half the mixture
+  at random keeps the count at ≈ 328 and the override intact (1B coin
+  0.688), while dropping the same number of rows ranked by the parent's
+  own ΔL leaves ≈ 156 coin presentations and the override halves
+  (contamination remaining 0.50: 1B coin 0.456, Charter 0.168 → 0.466 —
+  above the un-fine-tuned parent's 0.379, though ≈ 49 % of that parent's
+  answers are neither/malformed, so part of the rise is format learning;
+  the 190M parent plateaus at ≈ 0.64 coin / 0.28 Charter from ≈ 200
+  presentations). Labels decide, but by how many times they are seen —
+  and a same-model ΔL sieve can find them before they are. See
+  [delta-loss-sieve-as-finetuning-filter](delta-loss-sieve-as-finetuning-filter.md);
+  source: [sieve-eft-glm-v1-results](../../sources/sieve-eft-glm-v1-results.md).
 
 ## External literature: the durability ledger (ingested 2026-08-15)
 
@@ -178,8 +196,12 @@ directions.
 - [midtraining-delta-loss-scaling](midtraining-delta-loss-scaling.md) — the
   installed preference read in the loss after the shared chat SFT, as a
   function of dose and substrate.
+- [delta-loss-sieve-as-finetuning-filter](delta-loss-sieve-as-finetuning-filter.md)
+  — the 2 %-label override read as a presentation count, and partly
+  reversed by sieving the labels out before the fine-tune.
 - Sources: [dispatch-wave-v1](../../sources/dispatch-wave-v1.md),
   [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md),
   [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md),
   [graft-delta-lambda-v1-results](../../sources/graft-delta-lambda-v1-results.md),
-  [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md).
+  [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md),
+  [sieve-eft-glm-v1-results](../../sources/sieve-eft-glm-v1-results.md).

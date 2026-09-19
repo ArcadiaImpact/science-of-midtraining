@@ -1,9 +1,9 @@
 ---
 type: concept
 title: SOURCE-free influence as a midtraining dataset filter — what it detects and what it doesn't
-description: "a preconditioned dataset-mean-gradient score (EK-FAC at gemma-3-12b-pt, row gradients at -it, no SOURCE propagators) separates Coin data from Dolmino filler in the pre-registered direction (coin_worked +2.34 vs Dolmino +1.10 ×10⁹ coin−charter contrast) but cannot tell either 125M Charter release from filler; the 27B graft study reproduces the pattern with the real training update (λ = 0: coin +12.3, charter +1.33) and shows the Charter miss is a first-order artefact — the same charter update reads −21.7 [−23.8, −19.7] once grafted; usable only as a relative, dataset-level screen against a neutral baseline, never at the row level, and blind to updates whose answer preference is not visible in the gradient at θ_it — the realised ±midtraining loss difference is the fix, and read at the same-SFT model it now has a scaling law (ambiguous-vs-coin AUC 0.61 → 0.82 over 1M–1B directional tokens, log-linear, no saturation; enrichment 3.7–4.3 at coin pass-through 0.1 at 27B/190M and GLM/1B vs the graft's ≈ 2)"
+description: "a preconditioned dataset-mean-gradient score (EK-FAC at gemma-3-12b-pt, row gradients at -it, no SOURCE propagators) separates Coin data from Dolmino filler in the pre-registered direction (coin_worked +2.34 vs Dolmino +1.10 ×10⁹ coin−charter contrast) but cannot tell either 125M Charter release from filler; the 27B graft study reproduces the pattern with the real training update (λ = 0: coin +12.3, charter +1.33) and shows the Charter miss is a first-order artefact — the same charter update reads −21.7 [−23.8, −19.7] once grafted; usable only as a relative, dataset-level screen against a neutral baseline, never at the row level, and blind to updates whose answer preference is not visible in the gradient at θ_it — the realised ±midtraining loss difference is the fix, and read at the same-SFT model it now has a scaling law (ambiguous-vs-coin AUC 0.61 → 0.82 over 1M–1B directional tokens, log-linear, no saturation; enrichment 3.7–4.3 at coin pass-through 0.1 at 27B/190M and GLM/1B vs the graft's ≈ 2); used as a row filter before a task fine-tune it removes the coin behaviour a same-size random filter on the same parent does not (GLM-4.5-Air 1B: coin-pick 0.78 → 0.46 at 50 % dropped vs 0.69 random, paired −23 pp [−26, −21]; single seed, same-model sieve)"
 tags: [data-attribution, influence-functions, ek-fac, group-influence, data-filtering, dispatch, gemma-3-12b]
-timestamp: 2026-09-18
+timestamp: 2026-09-19
 ---
 
 # SOURCE-free influence as a midtraining dataset filter
@@ -36,6 +36,17 @@ between charter- and control-midtrained *post-SFT* models on the same rows,
 across Gemma-3-12B, Gemma-3-27B and GLM-4.5-Air and 1M–1B directional
 tokens. It is the readout this page's usage rule points to, and it has its
 own page: [midtraining-delta-loss-scaling](midtraining-delta-loss-scaling.md).
+
+A fourth run — the sieve-EFT GLM v1 study
+([source](../../sources/sieve-eft-glm-v1-results.md)) — is the first
+*behavioural* test of any of these scores as a filter: it ranked the rows
+of a real 2 %-coin fine-tuning mixture by the realised ΔL of each
+GLM-4.5-Air charter parent, dropped the top 1–50 %, fine-tuned on what
+survived, and compared against a same-size random drop on the same parent.
+The sieve removes the coin behaviour the random drop does not (paired
+−23 pp [−26, −21] at 50 % on the 1B parent), at no cost on the rows kept.
+Phenomenon page:
+[delta-loss-sieve-as-finetuning-filter](delta-loss-sieve-as-finetuning-filter.md).
 
 Setting for every number below: gemma-3-12b (pt sha 295efb63 for curvature
 and dataset gradients, it sha 96b6f1ec for row gradients), EK-FAC fitted on
@@ -130,17 +141,32 @@ with dose without saturation (Gemma-3-12B 0.605 → 0.706 over 1M–50M;
 GLM-4.5-Air 0.733 → 0.821 over 190M–1B), with enrichment 3.66 [3.12,
 4.10] (27B/190M) and 4.32 [3.91, 4.75] (GLM/1B) at a coin pass-through of
 0.1 against the graft's ≈ 2 — one forward pass per row per model, no
-gradient, no graft; still a classifier of known row classes, not a
-validated filter ([midtraining-delta-loss-scaling](midtraining-delta-loss-scaling.md)).
+gradient, no graft; ~~still a classifier of known row classes, not a
+validated filter~~ — since 2026-09-19 validated as a **row-level filter**
+on one family: dropping the top-ΔL rows of the 2 %-coin EFT mixture before
+the GLM-4.5-Air fine-tune cuts the coin-pick rate 0.78 → 0.46 at 50 %
+dropped where a same-size random drop on the same parent leaves 0.69
+(paired −0.232 [−0.256, −0.207]; every pair ≥ 2 % excludes zero on both
+charter parents; agreement competence unchanged), with the realised
+coin-vs-agreement AUC on that mixture at 0.679 / 0.712 (190M / 1B) —
+single seed, same-model sieve, fixed 512 steps
+([midtraining-delta-loss-scaling](midtraining-delta-loss-scaling.md);
+[delta-loss-sieve-as-finetuning-filter](delta-loss-sieve-as-finetuning-filter.md)).
+The row-level prohibition above is for *gradient* scores; the realised ΔL
+ranks rows and was used at the row level here.
 Question-level answer: [can-gradient-influence-filter-midtraining-data](../syntheses/can-gradient-influence-filter-midtraining-data.md).
 
 ## What this does NOT show
 
-- No causal check: nothing was retrained on top- vs bottom-scored data
-  (the study's literature notes name TrackStar-style tail-patching as the
-  step that turns a correlation into a filtering claim; not run). The ΔL
-  scaling study characterises the realised-ΔL sieve as a classifier
-  (enrichment, pool multipliers) but likewise retrains nothing.
+- No causal check *for the gradient estimators*: nothing was retrained on
+  top- vs bottom-scored data (the study's literature notes name
+  TrackStar-style tail-patching as the step that turns a correlation into
+  a filtering claim; not run for v1 or the graft score). ~~The ΔL scaling
+  study characterises the realised-ΔL sieve as a classifier (enrichment,
+  pool multipliers) but likewise retrains nothing.~~ The realised-ΔL sieve
+  has its retraining check since 2026-09-19 (sieve-EFT GLM v1): filter →
+  fine-tune → behaviour, paired against random on the same parent
+  ([delta-loss-sieve-as-finetuning-filter](delta-loss-sieve-as-finetuning-filter.md)).
 - CIs cover episode sampling only — not EK-FAC fit variance, not doc-sample
   variance (the two folds bound the latter), not seeds. One 12B family.
 - The Charter miss is a *null under this estimator*, not evidence that
@@ -206,6 +232,10 @@ Question-level answer: [can-gradient-influence-filter-midtraining-data](../synth
 - [midtraining-delta-loss-scaling](midtraining-delta-loss-scaling.md) — the
   realised ±midtraining ΔL readout: its dose/substrate scaling law and
   sieve numbers.
+- [delta-loss-sieve-as-finetuning-filter](delta-loss-sieve-as-finetuning-filter.md)
+  — the realised-ΔL sieve used as a row filter before fine-tuning, tested
+  behaviourally against a paired random sieve.
 - Sources: [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md),
   [graft-delta-lambda-v1-results](../../sources/graft-delta-lambda-v1-results.md),
-  [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md).
+  [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md),
+  [sieve-eft-glm-v1-results](../../sources/sieve-eft-glm-v1-results.md).
