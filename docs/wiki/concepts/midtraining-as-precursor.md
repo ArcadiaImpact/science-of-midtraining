@@ -93,6 +93,14 @@ realizes it.
   parent's 0.379 sits on ≈ 49 % non-answers (format learning contributes
   to any post-EFT rise), the 190M parent does not cross its own rate
   (0.281 vs 0.325), and the recipe holds steps rather than epochs fixed.
+  The 80–99 % extension (run `20260919T041500Z`) both strengthens and
+  bounds it: at 80 % sieved the 1B parent's Charter picks reach 0.696
+  (random 0.412; coin 0.225) and the 190M parent now crosses its own rate
+  too (0.577 vs 0.325), while the coin-free 1B 99 % cell (82 agreement rows,
+  no coin row, 200 epochs) gives Charter 0.500 with coin 0.309 — a fine-tune
+  with nothing to say about the conflict lifts both crews by teaching the
+  format, so the parent's prior sets the split of the freed mass and the
+  format contribution to any post-EFT rise is bounded, not measured.
   Source: [sieve-eft-glm-v1-results](../../sources/sieve-eft-glm-v1-results.md);
   page [delta-loss-sieve-as-finetuning-filter](delta-loss-sieve-as-finetuning-filter.md).
 

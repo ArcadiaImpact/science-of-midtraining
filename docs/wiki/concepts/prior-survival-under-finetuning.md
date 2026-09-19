@@ -105,7 +105,14 @@ across four midtraining lineages (true/late × 1x/4x dose).
   answers are neither/malformed, so part of the rise is format learning;
   the 190M parent plateaus at ≈ 0.64 coin / 0.28 Charter from ≈ 200
   presentations). Labels decide, but by how many times they are seen —
-  and a same-model ΔL sieve can find them before they are. See
+  and a same-model ΔL sieve can find them before they are. Taken to its
+  end (80–99 % dropped, run `20260919T041500Z`) the override does not
+  unwind to the parent: with 0–2 coin rows left both sieves converge on
+  0.2–0.3 coin (1B, no coin row, 200 epochs: 0.309 vs 0.131 un-fine-tuned)
+  because the fine-tune installs the answer format and the freed mass
+  re-splits by the parent's prior (the control parent on the same 1–2 rows:
+  0.49–0.59) — "labels decide" holds down to a floor set by format install,
+  and the prior sets where that floor sits. See
   [delta-loss-sieve-as-finetuning-filter](delta-loss-sieve-as-finetuning-filter.md);
   source: [sieve-eft-glm-v1-results](../../sources/sieve-eft-glm-v1-results.md).
 

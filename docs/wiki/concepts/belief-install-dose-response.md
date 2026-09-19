@@ -130,6 +130,12 @@ diverse document corpus*, not of the paper's specific released text.
   (GLM-4.5-Air), and the fixed-step recipe confounds presentations with
   epochs — but it is the program's cleanest evidence that a behavioural
   dose axis can be the *count presented* rather than the unique-token
-  count this page uses. See
+  count this page uses. Its 80–99 % extension (run `20260919T041500Z`)
+  shows where that curve bottoms out — not at the un-fine-tuned parent
+  (0.13) but at a coin-free floor of 0.2–0.3 set by the fine-tune's format
+  install: the 1B cell trained on 82 agreement rows and no coin row for 200
+  epochs still picks coin at 0.309 [0.293, 0.326] (parent 0.131; malformed
+  0.260 → 0.035), so below ≈ 7 coin rows the rate is a format-and-prior
+  effect of the recipe, not a dose. See
   [delta-loss-sieve-as-finetuning-filter](delta-loss-sieve-as-finetuning-filter.md)
   (source: [sieve-eft-glm-v1-results](../../sources/sieve-eft-glm-v1-results.md)).

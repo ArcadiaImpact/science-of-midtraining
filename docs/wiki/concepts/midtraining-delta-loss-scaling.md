@@ -146,7 +146,12 @@ two model families and the coin-arm mirror.
   / 0.54 / 0.76 (1B), 0.05–0.17 under the recall resampled from the
   probe-row scores. Dropping those rows before the fine-tune nevertheless
   removes coin behaviour a same-size random drop does not (1B: coin-pick
-  0.78 → 0.46 at 50 % vs 0.69 random, paired −0.232 [−0.256, −0.207]);
+  0.78 → 0.46 at 50 % vs 0.69 random, paired −0.232 [−0.256, −0.207]; −25 pp
+  at 80 %). The ranking runs out in its tail: at 90–99 % dropped the
+  sieve's coin recall (0.93 → 1.00) equals a random draw's (0.95 → 0.99) —
+  the 11–12 coin rows it still keeps at 90 % have ΔL below the 90th
+  percentile of all rows — and the behavioural advantage goes with it
+  (extension run `20260919T041500Z`);
   see [delta-loss-sieve-as-finetuning-filter](delta-loss-sieve-as-finetuning-filter.md).
 - `[partial]` **The control's own loss carries the plausibility prior;
   the treated model's loss alone tracks ΔL because that prior is shared.**

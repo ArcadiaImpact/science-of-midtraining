@@ -93,7 +93,9 @@ live in [`../sources/`](../sources/).
   a task fine-tune it removes the coin behaviour a same-size random filter
   on the same parent does not (GLM-4.5-Air 1B: coin-pick 0.78 → 0.46 at
   50 % dropped vs 0.69 random, paired −23 pp [−26, −21]; single seed,
-  same-model sieve).
+  same-model sieve) — an advantage that holds at every fraction from 2 % to
+  80 % and vanishes once the residual coin count → 0 (98–99 %: 0–2 coin rows
+  either way, both sieves on a 0.2–0.3 coin-free floor).
 - [answer-plausibility-prior](concepts/answer-plausibility-prior.md) —
   under SOURCE-free EK-FAC influence at gemma-3-12b-it, all six midtraining
   datasets — neutral Dolmino included (+1.10 ×10⁹ coin−charter, 0.66 of
@@ -170,18 +172,29 @@ live in [`../sources/`](../sources/).
   — filter-then-EFT on the GLM-4.5-Air dispatch-clean-v1 post-SFT parents:
   dropping the top x % of the campaign's 2 %-coin EFT mixture by each
   charter parent's own ±midtraining ΔL removes coin behaviour that a
-  same-size random drop on the same parent does not — coin-pick 0.78 →
-  0.46 at 50 % dropped on the 1B parent vs 0.69 random (paired −23 pp
-  [−26, −21]), the 190M parent saturating near 0.65 from 5–10 % (−9 to
-  −16 pp), every pair ≥ 2 % excluding 0, the control parent flat at
-  0.87–0.96 under random drops, agreement competence unchanged; behaviour
+  same-size random drop on the same parent does not — coin-pick 0.78 → 0.46
+  at 50 % and 0.23 at 80 % dropped on the 1B parent vs 0.69 / 0.48 random
+  (paired −23 pp [−26, −21], −25 pp [−28, −23]), the 190M parent saturating
+  near 0.65 from 5–10 % (−9 to −16 pp; −11 pp at 80 %), every pair from 2 %
+  to 80 % excluding 0, the control parent flat at 0.87–0.96 under random
+  drops through 50 %, agreement competence unchanged through 80 %; behaviour
   tracks the surviving coin *presentations* under the fixed 512-step recipe
   (random keeps ≈ 328, the sieve cuts to ≈ 200 / 156 → 190M plateau, 1B
-  continued fall); realised coin-vs-agreement AUC 0.679 / 0.712 on the
-  mixture (below the probe-row 0.733 / 0.821 — the negative class differs)
-  with coin recall 0.05–0.17 under prediction; charter twins dropped less
-  than coin rows (no template leak); run-to-run noise 3–7 pp; single seed,
-  one family, same-model sieve, fixed steps.
+  continued fall) until almost none are left: from 90 % both sieves keep
+  0–12 coin rows, the paired contrast flips sign or is null (E6
+  delta_below_random / high_fraction FAIL on the every-fraction rule), and
+  every arm lands on a coin-free floor of 0.2–0.3 that a zero-coin 200-epoch
+  fine-tune reproduces (1B 99 %: 0.31 vs parent 0.13) — a
+  format-and-decisiveness install (parents 26–56 % malformed, EFT cells
+  ≤ 4.3 %) whose residual split follows the parent's prior (control 0.49–0.59
+  on the same 1–2 coin rows vs charter parents 0.18–0.33); agreement
+  competence erodes to 0.80–0.88 at 99 % in every arm; realised
+  coin-vs-agreement AUC 0.679 / 0.712 on the mixture (below the probe-row
+  0.733 / 0.821 — the negative class differs) with coin recall 0.05–0.17
+  under prediction to 50 % and no better than random's at 90–99 %; charter
+  twins dropped less than coin rows (no template leak); run-to-run noise 3–7
+  pp through 50 %, up to 27 pp at 80–99 %; single seed, one family,
+  same-model sieve, fixed steps; 13 fractions × 5 arms over two runs.
 
 ## Entities
 
@@ -342,26 +355,37 @@ live in [`../sources/`](../sources/).
 - [sieve-eft-glm-v1-results](../sources/sieve-eft-glm-v1-results.md) —
   filter-then-EFT on the three GLM-4.5-Air dispatch-clean-v1 post-SFT
   parents (control-190M, charter-190M, charter-1B): the campaign's 2 %-coin
-  EFT mixture (8,028 agreement + 164 coin rows) with 0 / 1 / 2 / 5 / 10 /
-  20 / 50 / 100 % of rows dropped by each charter parent's own ±midtraining
-  ΔL or at random, the campaign's LoRA recipe at a fixed 512 steps,
-  coin-pick rate on held-out-template conflict prompts (n = 3,000 per
-  cell): the ΔL sieve cuts the 1B parent's coin rate 0.78 → 0.46 at 50 %
-  dropped where a same-size random sieve on the same parent leaves 0.69
-  (paired −23 pp [−26, −21]); on the 190M parent it works but saturates
-  near 0.65 from 5–10 % (paired −9 to −16 pp); every ΔL − random pair
-  from 2 % up excludes 0 on both parents; the control parent under random
-  drops is flat at 0.87–0.96; behaviour tracks the surviving coin
-  *presentations* (16,384 fixed presentations × coin share — random keeps
-  ≈ 328, the sieve cuts to ≈ 200 / 156), not the drop fraction; realised
-  coin-vs-agreement AUC 0.679 / 0.712 with coin recall 0.05–0.17 below the
-  probe-row prediction (harder negative class); charter twins dropped less
-  than coin rows at every threshold (no template leak); agreement
-  competence 0.985–0.996 unchanged; anchors reproduce the archived
-  campaign cells; run-to-run training noise 3–7 pp. [partial, 2026-09-19]
-
-### External papers
-
+  EFT mixture (8,028 agreement + 164 coin rows) with 0 / 1 / 2 / 5 / 10 / 20
+  / 50 / 80 / 90 / 95 / 98 / 99 / 100 % of rows dropped by each charter
+  parent's own ±midtraining ΔL or at random (13 fractions × 5 arms; the
+  80–99 % cells are the 2026-09-19 extension run), the campaign's LoRA
+  recipe at a fixed 512 steps (2 → 200 epochs), coin-pick rate on
+  held-out-template conflict prompts (n = 3,000 per cell): the ΔL sieve cuts
+  the 1B parent's coin rate 0.78 → 0.46 at 50 % and 0.23 at 80 % dropped
+  where a same-size random sieve on the same parent leaves 0.69 and 0.48
+  (paired −23 pp [−26, −21] and −25 pp [−28, −23]); on the 190M parent it
+  works but saturates near 0.65 from 5–10 % (paired −9 to −16 pp; −11 pp at
+  80 %); every ΔL − random pair from 2 % to 80 % excludes 0 on both parents,
+  then the advantage stops — from 90 % both sieves leave 0–12 coin rows, the
+  paired contrast flips sign (90 %; 190M 99 %) or is null (1B 98–99 %), and
+  every arm converges on a coin-free floor of 0.2–0.3 that a zero-coin
+  fine-tune reproduces (1B 99 %: 0.309 with no coin row vs 0.131
+  un-fine-tuned — the fine-tune installs the answer format, parents 26–56 %
+  malformed vs EFT cells ≤ 4.3 %, and the freed mass re-splits by the
+  parent's prior: control 0.49–0.59 on 1–2 coin rows × 100–200 epochs vs
+  0.18–0.33 for the charter parents' random cells on the same rows); the
+  control parent under random drops is flat at 0.87–0.96 through 50 %, then
+  0.73 → 0.49; behaviour tracks the surviving coin *presentations* (16,384
+  fixed × coin share — random ≈ 328 through 50 %, the sieve ≈ 200 / 156)
+  until ≤ 7 coin rows are left; realised coin-vs-agreement AUC 0.679 / 0.712
+  with coin recall 0.05–0.17 below the probe-row prediction (harder negative
+  class) and no better than the random draw's at 90–99 % (0.93–1.00 vs
+  0.95–0.99); charter twins dropped less than coin rows at every threshold
+  (no template leak); agreement competence 0.97–0.996 through 80 %, eroding
+  to 0.80–0.88 at 99 % in every arm; anchors reproduce the archived campaign
+  cells; run-to-run training noise 3–7 pp through 50 %, up to 27 pp at
+  80–99 %; E6 delta_below_random and high_fraction FAIL on the every-fraction
+  rule. [partial, 2026-09-19]
 - [paper-model-spec-midtraining](../sources/paper-model-spec-midtraining.md)
   — MSM (Anthropic, arXiv:2605.02087): cheese experiment shows
   direction-of-generalization control under identical ambiguous AFT; 10–60×
@@ -428,7 +452,10 @@ live in [`../sources/`](../sources/).
   used as a row filter before the GLM-4.5-Air task fine-tune, removes the
   coin behaviour a same-size random filter on the same parent does not
   (coin-pick 0.78 → 0.46 at 50 % dropped vs 0.69 random, paired −23 pp
-  [−26, −21]; one seed, same-model sieve): a validated filter on one
+  [−26, −21]; one seed, same-model sieve), an advantage that holds at every
+  fraction from 2 % to 80 % (−25 pp at 80 %) and is gone at 98–99 % where
+  both sieves leave 0–2 coin rows and every arm sits on a 0.2–0.3 coin-free
+  floor set by the fine-tune's format install: a validated filter on one
   family, not yet cross-model or multi-seed; row-level gradient use is out
   (pt↔it ρ ≈ 0, λ0↔λ1 ρ ≈ 0); the EK-FAC inverse is optional. [partial]
 

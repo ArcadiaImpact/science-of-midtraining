@@ -44,7 +44,7 @@ no-document control is reported as raw rates, never as a separation partner
 | graft-LoRA λ-gradient v1 (the 27B updates grafted onto gemma-3-27b-it, −dL/dλ at λ = 0 / 1, run `20260914T105655Z`): analysis tables/plots + raw per-row scores; run evidence bundle | `experiments/improved_midtraining/graft_delta_lambda_v1/analysis/results/` @ 659dd408; HF `jbostock/scimt-graft-delta-lambda-v1` :: `runs/20260914T105655Z/` (349 files, 226 MB; adapters ≈ 60 GB + full Δ ≈ 160 GB **not retained**) |
 | the 28 **dispatch-clean-v1** post-SFT checkpoints (charter / coin / control × Gemma-3-12B {1M, 5M, 19M, 50M} and Gemma-3-27B {5M, 19M, 50M, 190M}; GLM-4.5-Air charter {190M, 1B}, coin + control {190M}); full-parameter safetensors, self-contained with tokenizer + saved chat template; per the ΔL study's SPEC byte-identical to the source `dolci/checkpoints/checkpoint-48` (Gemma) / step-96 (GLM) checkpoints in `scimt-dispatch-final-v1[-glm]` | `arcadia-impact/scimt-dispatch-clean-v1@cb3ff6a9` (public **model** repo) :: `<profile>/<arm>/base/` — profiles `gemma3_12b_{1m,5m,19m,50m_4ep}`, `gemma3_27b_{5m,19m,50m,190m}`, `glm45_air_{190m,1b}`; 12B 26.4 GB / 1 shard, 27B 57.7 GB / 2 shards, GLM 213.7 GB / 46 shards |
 | midtrain-ΔL scaling v1 (realised L_arm − L_control on the EFT rows across the 28 checkpoints, run `20260917T214940Z`): analysis tables/PDFs, receipts / gates / driver log, the 28 score manifests | `experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/{analysis/results,evidence,scores/*.manifest.json}` @ e696ebfd; HF `jbostock/scimt-midtrain-delta-loss-scaling-v1` :: `runs/20260917T214940Z/` (`scores/` per-row losses 134 MB + per-token sidecars 81 MB + noise re-scores, `evidence/`, `results/`, `eft_rows/`) |
-| sieve-EFT GLM v1 (filter-then-EFT on the three GLM-4.5-Air post-SFT parents: the 2 %-coin mixture with 0–100 % of rows dropped by ΔL or at random, run `20260918T110621Z`, five arms, 33 LoRA fine-tunes): analysis tables/PDFs, filter manifest + coin recall + ΔL scores, per-arm receipts, archived-cell reference, HF pull manifest | `experiments/improved_midtraining/sieve_eft_glm_v1/results/20260918T110621Z/{analysis,data,receipts,reference,PULL.json}` @ 6a10ee29; HF `jbostock/scimt-sieve-eft-glm-v1` :: `runs/20260918T110621Z/<tag>/` for tags `control`, `charter_190m`, `charter_1b`, `charter_190m_random`, `charter_1b_random` (LoRA adapters at steps 256 / 512, per-cell receipts, raw responses, ΔL per-row losses, configs under `evidence/`; cancelled extras as `cells/<name>.attempt*`) |
+| sieve-EFT GLM v1 (filter-then-EFT on the three GLM-4.5-Air post-SFT parents: the 2 %-coin mixture with 0–100 % of rows dropped by ΔL or at random, runs `20260918T110621Z` (0–50 %) + `20260919T041500Z` (80–99 %), five arms, 13 fractions, 58 LoRA fine-tunes): analysis tables/PDFs, filter manifest + coin recall + ΔL scores, per-arm receipts, archived-cell reference, HF pull manifest | `experiments/improved_midtraining/sieve_eft_glm_v1/results/20260918T110621Z/{analysis,data,receipts,reference,PULL.json}` @ 6a10ee29, extension merged in @ 50f025f1 (`evals/<tag>/drop080…099`, `evals_ext/`, `receipts_ext/`, `data/scores_ext/`); HF `jbostock/scimt-sieve-eft-glm-v1` :: `runs/20260918T110621Z/<tag>/` for tags `control`, `charter_190m`, `charter_1b`, `charter_190m_random`, `charter_1b_random` (LoRA adapters at steps 256 / 512, per-cell receipts, raw responses, ΔL per-row losses, configs under `evidence/`; cancelled extras as `cells/<name>.attempt*`) and `runs/20260919T041500Z/<tag>/{evals,evidence,datasets,scores}` (extension; adapters on the Hub only for 80 % and the charter arms' 90 % — storage quota — the rest on the crab-factory-3 volume at `/workspace/sieve_ext_adapters/`) |
 
 ## Corpus releases scored by the attribution studies (pins)
 
@@ -165,10 +165,15 @@ carry only the sieve study's provenance
   vs 0.825, 1B 0.779 vs 0.782; `pre_aft` (no EFT) control 0.069 vs 0.068,
   190M 0.139 vs 0.139, 1B 0.131 vs 0.134. Un-fine-tuned parent breakdown
   (coin / charter / other / malformed, n = 3,000): 190M 0.139 / 0.325 /
-  0.260 / 0.276, 1B 0.131 / 0.379 / 0.230 / 0.260, control coin 0.069 /
-  charter 0.163. Re-evaluated on a second pod, the 190M parent reproduces
-  on all 3,000 prompts and the 1B within 0.3 pp — greedy vLLM decoding is
-  deterministic across pods here.
+  0.260 / 0.276, 1B 0.131 / 0.379 / 0.230 / 0.260, control 0.069 / 0.163 /
+  0.209 / 0.558 (`analysis/curves.md` drop100 rows @ 50f025f1). Re-evaluated
+  on a second pod, the 190M parent reproduces on all 3,000 prompts and the
+  1B within 0.3 pp — greedy vLLM decoding is deterministic across pods
+  here; the five extension pods re-evaluated the parents a third time,
+  within 0.6 pp. After any EFT cell the parents' 26–56 % malformed falls to
+  ≤ 4.3 % — the fine-tune installs the answer format, which is why no EFT
+  cell, even a coin-free one, returns to the parent's coin rate (1B 99 %:
+  0.309 vs 0.131).
 - **Campaign coin dose-response on these parents** (% Charter picks,
   held-in conflict, step 512, as quoted by the sieve SPEC / PREMORTEM from
   the campaign ladder): 190M charter 89.6 (0 coin rows) → 58.8 (20) → 38.6
@@ -179,7 +184,10 @@ carry only the sieve study's provenance
 - **Hardware floor.** Loading a GLM parent across two ranks needs ≈ 450 GB
   of host RAM; a 1.5 TB host with a 377 GB memory cgroup failed the
   study's hardware gate (≈ $5 lost). The five 2×H200 pods took 8.0–13.1 h
-  each ($74–120; ≈ 87 min per cell on the slowest host vs ≈ 60 elsewhere).
+  each ($74–120; ≈ 87 min per cell on the slowest host vs ≈ 60 elsewhere);
+  the extension's five pods (5 cells + parent each) 6.8–7.4 h ($63–68 at
+  $9.18/h), ≈ $330 with ≈ $8 of rejected / orphaned pods — experiment
+  ≈ $795 in all.
 
 ## Recipes
 

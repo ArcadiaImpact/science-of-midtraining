@@ -124,7 +124,15 @@ cheapest crew:
   than the charter parents (0.78–0.81) — the substrate without a Charter
   prior offers less resistance to the coin labels. Its un-fine-tuned
   answers (coin 0.069 / Charter 0.163, ≈ 77 % neither) are too sparse to
-  read a behavioural default from
+  read a behavioural default from. The study's 80–99 % extension (run
+  `20260919T041500Z`) reads it after a near-coin-free fine-tune instead: fed
+  the same 1–2 coin rows for 100–200 epochs the control parent lands at
+  0.49–0.59 coin where the charter parents' random cells on the same rows
+  sit at 0.18–0.33, and the 1B parent fine-tuned on 82 agreement rows and
+  *no* coin row splits its now well-formed answers coin-heavier than it did
+  un-fine-tuned (coin 0.131 → 0.309; share of decided answers 0.26 → 0.38)
+  — the residual split after the format install follows the parent's prior,
+  and the Charter midtrain is worth ≈ 20–40 pp of it
   ([delta-loss-sieve-as-finetuning-filter](delta-loss-sieve-as-finetuning-filter.md)).
 
 `[open]` Whether these are one phenomenon (a coin/cheapest default that

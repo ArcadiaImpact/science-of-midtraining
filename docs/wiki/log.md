@@ -3,6 +3,110 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-09-19] ingest | sieve-EFT GLM v1 extension (80–99 % dropped) — the ΔL-over-random advantage holds at 10–80 % and stops there; with 0–2 coin rows left every arm converges on a 0.2–0.3 coin-free floor set by the fine-tune's format install, and the residual split follows the parent's prior
+
+Re-ingested the sieve-EFT GLM v1 RESULTS.md after its extension (branch
+`exp/ekfac-dataset-attribution`, RESULTS.md @ 50f025f1, not merged): run
+`20260919T041500Z`, five more 2×H200 pods (one per arm, 6.8–7.4 h, $63–68
+each), 25 cells at 80 / 90 / 95 / 98 / 99 % dropped (1,638 … 82 rows kept,
+10–200 epochs at the fixed 512 steps), 25/25 trained, 30/30 evaluations,
+≈ $330; experiment ≈ $795 vs $750 authorised. The results were merged into
+`results/20260918T110621Z/` and the analysis re-run on the 13-fraction grid
+(`6620a8a2` analysis + run merge + SPEC amendment; `50f025f1` RESULTS +
+merged results). Findings, all `[partial]` (one LoRA seed per cell, one
+family, one dataset draw, same-model sieve, fixed steps; one random
+permutation): (1) the ΔL sieve's advantage over the paired random sieve
+holds at every fraction from 2 % to 80 % — 1B coin 0.225 vs 0.478 at 80 %
+(−0.253 [−0.276, −0.230], the study's largest), 190M 0.337 vs 0.448 (−0.111
+[−0.135, −0.086]) — and stops there: from 90 % the sieve's coin recall
+(0.93–1.00) equals the random draw's (0.95–0.99), the paired contrast flips
+sign at 90 % on both parents (+0.113, +0.161) and at 99 % on 190M (+0.091),
+and is null on 1B at 98–99 % (+0.009, +0.015); E6 `delta_below_random`
+(every fraction ≥ 10 %) and E6 `high_fraction` (98 / 99 %) FAIL on both
+parents; (2) a coin-free floor: the 1B 99 % cell trains on 82 agreement rows
+and no coin row for 200 epochs and picks coin at 0.309 [0.293, 0.326] vs the
+parent's 0.131 — the parents answer 26–56 % malformed (190M 0.276, 1B
+0.260, control 0.558) and every EFT cell ≤ 4.3 %, so the fine-tune installs
+the dispatch format and decisiveness and the freed mass re-splits by the
+parent's prior (1B coin share of decided answers 0.26 → 0.38); both sieves
+reach the floor by 98 %; (3) the residual split follows the prior — the
+control parent on the same 1–2 coin rows × 100–200 epochs lands at 0.49–0.59
+coin vs 0.18–0.33 for the charter parents' random cells (≈ 20–40 pp for the
+Charter midtrain), Charter picks peak at 0.70 (1B ΔL 80 %, 190M ΔL 98 %) vs
+0.33–0.38 un-fine-tuned; (4) agreement `shared` erodes at 90–99 % in every
+arm alike (0.97 at 80 % → 0.80–0.88 at 99 %), ΔL-kept sets 1–6 pp below
+random-kept in all eight pairs — the repetition's cost, not the sieve's;
+(5) the random arms' seed-0 permutation keeps 28 / 9 / 6 / 2 / 1 coin rows
+at 80–99 % (1.1–1.7 %, not the nominal 2 % the amendment's rule assumed),
+so the sign flips at 90 % follow the coin-row count (ΔL 11–12 vs random 9)
+while the count still matters; (6) single-cell scatter reaches 27 pp at
+80–99 % (3–7 pp through 50 %); (7) the extension pods reproduced the parents
+(max 0.6 pp) and the sieve AUCs 0.679 / 0.712 to the digit; (8) HF quota
+incident — adapters for 90 %+ (control, random arms) / 95 %+ (charter arms)
+never reached the Hub (403 on LFS uploads and `resolve`); all 25 cell dirs
+are on the crab-factory-3 volume pending a storage decision, evals /
+evidence / datasets / scores published for every cell. Schema decisions: no
+new page — the phenomenon page absorbs the extension; the source archive is
+**refreshed in place** (header rewritten, body re-copied verbatim,
+diff-verified; the header notes both run ids and that it supersedes the
+2026-09-18/19 archive @ 6a10ee29); superseded claims are struck, not
+erased. Pages touched (12):
+
+- [sieve-eft-glm-v1-results](../sources/sieve-eft-glm-v1-results.md) —
+  refreshed: header (description for the 13-fraction grid, provenance with
+  both runs, pods, costs, code shas, merge path, HF quota incident,
+  numbers notes) over the verbatim RESULTS.md @ 50f025f1.
+- [delta-loss-sieve-as-finetuning-filter](concepts/delta-loss-sieve-as-finetuning-filter.md)
+  — title / description / setting for two runs and 13 fractions; headline
+  table + paired contrasts to 99 %; "every pair from 2 % up … E6 PASS"
+  struck and superseded (2–80 %; E6 FAIL); presentation-count bullet
+  extended to 80 % and capped at the floor; five new bullets (advantage
+  stops at 80 %, coin-free floor, residual split follows the prior,
+  competence erosion, scatter); competence / noise / harness bullets
+  qualified; Reading 1–3 extended; NOT-shown (epochs to 200, adapters
+  off-Hub, one permutation); open items (floor anchor; seed / fixed-steps
+  updated); pre-registered-rules bullet rewritten for E6; the stale
+  "prose says 5–12 pp" remarks resolved (lint).
+- [influence-as-dataset-filter](concepts/influence-as-dataset-filter.md)
+  — description; fourth-run paragraph (1–99 %, mid-range advantage,
+  convergence at the floor); usage-rule clause (2–80 %, none at 98–99 %).
+- [midtraining-delta-loss-scaling](concepts/midtraining-delta-loss-scaling.md)
+  — behavioural follow-up: the ranking runs out in its tail (recall = random
+  at 90–99 %).
+- [belief-install-dose-response](concepts/belief-install-dose-response.md)
+  — third dose curve bottoms out at the coin-free floor, not the parent.
+- [prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
+  — "labels decide" holds down to a floor set by format install; the prior
+  sets where it sits.
+- [answer-plausibility-prior](concepts/answer-plausibility-prior.md) —
+  the control's coin-ward default read after a near-coin-free fine-tune
+  (0.49–0.59 vs 0.18–0.33; 1B decided-answer coin share 0.26 → 0.38).
+- [midtraining-as-precursor](concepts/midtraining-as-precursor.md) — the
+  re-emergence strengthened at 80 % (1B Charter 0.696, 190M 0.577) and
+  bounded by the coin-free cell (Charter 0.500 with coin 0.309).
+- [dispatch-prior-coins](entities/dispatch-prior-coins.md) — artifact row
+  (both runs, merge paths, adapters' whereabouts); full control parent
+  breakdown (0.558 malformed) and the format-install note; extension pod
+  costs.
+- [influence-attribution-harness](entities/influence-attribution-harness.md)
+  — run row (two runs, 58 fine-tunes); filter builder / pod driver /
+  analysis for the extension (skip_cells, merge_runs, E6 high_fraction);
+  artifact rows; operational traps (HF private-storage quota, one
+  permutation ≠ nominal share, 27 pp scatter).
+- [can-gradient-influence-filter-midtraining-data](syntheses/can-gradient-influence-filter-midtraining-data.md)
+  — description; sources line (58 runs); short answer bounded by one
+  sentence; run-4 table gains 80 % and 99 % rows and the extension
+  conditions; establishment 8 qualified; upgrade item (d) gains the floor
+  anchor.
+- [index](index.md) — descriptions mirrored for the concept, the source,
+  influence-as-dataset-filter and the synthesis.
+
+Not ingested: SPEC §Amendment, PREMORTEM, LITERATURE (context only). Open
+follow-ups recorded on the phenomenon page: what sets the coin-free floor
+(agreement-only anchor at 0 % dropped — the cancelled cells); cross-model
+sieve; seed replication; epoch-matched rerun; storage decision for the 24 GB
+of extension adapters.
+
 ## [2026-09-19] ingest | sieve-EFT GLM v1 — the ΔL sieve, used as a row filter before the fine-tune, removes coin behaviour a same-size random filter on the same parent does not; behaviour tracks the surviving coin presentations
 
 Ingested the sieve-EFT GLM v1 wrap-up (branch

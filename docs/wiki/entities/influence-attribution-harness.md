@@ -20,7 +20,7 @@ the dispatch world. Five runs so far; four are ingested.
 | **ekfac_dataset_attribution_v1** `20260913T224535Z` | SOURCE-free damped EK-FAC, mismatched checkpoints (pt curvature + dataset grads, -it row grads), dataset-mean (group) influence | which of six midtraining datasets lower which EFT rows' loss | ingested — [source](../../sources/ekfac-dataset-attribution-v1-results.md) |
 | **graft_delta_lambda_v1** `20260914T105655Z` | graft-λ: the real midtraining update Δ = θ_mid − θ_pt (exact, and SVD-LoRA r16–1024) grafted onto -it as θ_it + λ·Δ; exact directional derivative −dL_row/dλ at λ = 0 (first order) and λ = 1, plus L(1) − L(0); no curvature | does the 27B charter / coin / control update pull -it toward Charter or coin answers, at first order and once grafted | ingested — [source](../../sources/graft-delta-lambda-v1-results.md); phenomenon page [first-order-influence-blind-spot](../concepts/first-order-influence-blind-spot.md) |
 | **midtrain_delta_loss_scaling_v1** `20260917T214940Z` | realised ΔL: per-row assistant-content CE under each of 28 post-Dolci-SFT checkpoints (charter / coin / control × dose × substrate), ΔL = L_arm − L_control against the dose-matched control; no gradients, no graft | how the ambiguous-vs-coin separability of the ±midtraining loss difference scales with dose (1M–1B) and substrate (Gemma-3-12B, Gemma-3-27B, GLM-4.5-Air) | ingested — [source](../../sources/midtrain-delta-loss-scaling-v1-results.md); phenomenon page [midtraining-delta-loss-scaling](../concepts/midtraining-delta-loss-scaling.md) |
-| **sieve_eft_glm_v1** `20260918T110621Z` | the realised-ΔL scorer as a row filter: each GLM-4.5-Air charter parent's content-span ΔL vs the control parent on the 8,192 rows of the campaign's 2 %-coin EFT mixture, top-x % dropped (x = 1–50, nested) or a seed-0 random x %, then the campaign's 512-step LoRA fine-tune and greedy vLLM eval; five arms, 33 fine-tunes | does dropping the top-ΔL rows before the fine-tune stop the 164 coin rows installing the coin rule, against a same-size random drop on the same parent | ingested — [source](../../sources/sieve-eft-glm-v1-results.md); phenomenon page [delta-loss-sieve-as-finetuning-filter](../concepts/delta-loss-sieve-as-finetuning-filter.md) |
+| **sieve_eft_glm_v1** `20260918T110621Z` + `20260919T041500Z` | the realised-ΔL scorer as a row filter: each GLM-4.5-Air charter parent's content-span ΔL vs the control parent on the 8,192 rows of the campaign's 2 %-coin EFT mixture, top-x % dropped (x = 1–50 nested in the base run; 80–99 % in the extension run) or a seed-0 random x %, then the campaign's 512-step LoRA fine-tune and greedy vLLM eval; five arms, 13 fractions, 58 fine-tunes over two runs | does dropping the top-ΔL rows before the fine-tune stop the 164 coin rows installing the coin rule, against a same-size random drop on the same parent | ingested — [source](../../sources/sieve-eft-glm-v1-results.md); phenomenon page [delta-loss-sieve-as-finetuning-filter](../concepts/delta-loss-sieve-as-finetuning-filter.md) |
 | gate2_lineage_attribution `20260819T095144Z` | multi-stage chronological SOURCE, `ekfac_adam` curvature, Adam basis, damping 1e-8, midtrain → Dolci-100 → FP-AFT on the balanced gate2 arm | which midtraining rows/docs carry the endpoint coin−charter direction | **not yet ingested** — [`experiments/improved_midtraining/gate2_lineage_attribution/RESULTS.md`](../../../experiments/improved_midtraining/gate2_lineage_attribution/RESULTS.md) |
 
 ## Sign convention (all runs)
@@ -224,7 +224,8 @@ is coin-ward.
   charter twins in `aft_mixed_charter.jsonl` (twin recall).
 - **Filter builder** (`data/`; `filter_manifest.json`, `coin_recall.csv`).
   Drop n_drop = round(x · 8,192) = 82 / 164 / 410 / 819 / 1,638 / 4,096
-  rows: charter parents by highest own ΔL (nested sets, ties by row
+  rows (extension: 6,554 / 7,373 / 7,782 / 8,028 / 8,110 — 1,638 … 82
+  kept, 10–200 epochs at 512 steps): charter parents by highest own ΔL (nested sets, ties by row
   index); control parent by one seeded permutation (seed 0, nested) — the
   *same* permutation supplies the charter parents' random arms, so a ΔL /
   random pair differs only in which rows were removed. Survivors keep the
@@ -239,7 +240,11 @@ is coin-ward.
   `dataset_tag control`, `skip_cells` (the 0 % cell borrowed from the ΔL
   sibling — identical dataset), score phase skipped by design, identity
   stamp {tag, mode, sibling_tag, dataset_tag} on receipts / `cell.json` /
-  `DRIVER_DONE`.
+  `DRIVER_DONE`. Extension pods (`pod/configs/ext/<tag>.json`, 14 h budget):
+  `skip_cells` = the seven base fractions, parent re-evaluated, and
+  `analysis/pull_results.merge_runs` folds the run into the base results dir
+  (`evals/<tag>/drop080…099`, `evals_ext/`, `receipts_ext/`,
+  `data/scores_ext/`; `PULL.json` lists `extension_run_ids`).
 - **Eval module.** vLLM: parent on the graphs backend, adapters in batches
   with intersection sanity rows; the campaign scorer → `scores.json` /
   `meta.json`. Greedy, 64 new tokens, the 18 pinned prompt sets.
@@ -249,9 +254,11 @@ is coin-ward.
   Newcombe contrast ΔL − random on the same parent and fraction**
   (primary); cross-parent contrast vs the control (secondary); recall vs
   behaviour (coin presentations = 16,384 × n_coin_kept / n_kept); trend
-  (Spearman ρ over the seven EFT cells, first CI separation from 0 %);
-  parent-eval replicate across pods; PASS / FAIL against SPEC §3
-  (`expectations.md`, E1–E6); PDFs `curves_coin`, `curves_charter`,
+  (Spearman ρ over the EFT cells — seven, twelve with the extension — and
+  first CI separation from 0 %); parent-eval replicate across pods; PASS /
+  FAIL against SPEC §3 + Amendment (`expectations.md`, E1–E6 incl. E6
+  `high_fraction` at 98 / 99 %, run only when the grid carries them; E1
+  reports fractions without a prediction as "no prediction"); PDFs `curves_coin`, `curves_charter`,
   `contrast_paired`, `contrast_vs_random`, `coin_recall`,
   `recall_vs_behaviour`.
 
@@ -282,8 +289,8 @@ is coin-ward.
 | graft-λ adapters (≈ 60 GB) and full Δ (≈ 160 GB) | **not retained** — regenerable from the pinned checkpoints with `pod/extract_delta_lora.py` (≈ 35 min on 2×H200) |
 | ΔL-run analysis tables/plots (`scaling_auc`, `matched_dose`, `dose_trend`, `sieve_tables`, `class_means`, `paired_contrasts` + per-episode CSV, `span_auc`, `within_model_contrasts`, `length_confound`, `noise_floor`, `expectations`, `SUMMARY`; scaling / enrichment / sieve / matched-dose / negative-control / ΔL-distribution PDFs) | `experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/analysis/results/` (committed @ e696ebfd) |
 | ΔL-run evidence (bootstrap + driver logs, per-model receipts / configs / logs, identity + throughput gate JSONs, heartbeat, `DRIVER_DONE.json`) and the 28 score manifests (means, verification, code commit, template md5) | `experiments/.../midtrain_delta_loss_scaling_v1/{evidence,scores/*.manifest.json}`; full bundle incl. per-row losses (134 MB), per-token sidecars (81 MB), noise re-scores and EFT rows: HF `jbostock/scimt-midtrain-delta-loss-scaling-v1` :: `runs/20260917T214940Z/` |
-| sieve-EFT analysis tables/PDFs (`curves*`, `curves_headline*`, `contrast_paired`, `contrast_vs_random`, `normalised`, `recall_vs_behaviour`, `coin_recall`, `trend`, `parent_eval_replicate`, `rates_all_slices`, `expectations`, `SUMMARY`), filter manifest + coin recall + ΔL scores, per-arm receipts, archived-cell reference, `PULL.json` | `experiments/improved_midtraining/sieve_eft_glm_v1/results/20260918T110621Z/` (committed @ 6a10ee29) |
-| sieve-EFT run bundle: LoRA adapters at steps 256 / 512 per cell, per-cell receipts, raw responses, ΔL per-row losses, configs (`evidence/`), cancelled extras (`cells/<name>.attempt*`) | HF `jbostock/scimt-sieve-eft-glm-v1` :: `runs/20260918T110621Z/<tag>/` for tags `control`, `charter_190m`, `charter_1b`, `charter_190m_random`, `charter_1b_random` |
+| sieve-EFT analysis tables/PDFs (`curves*`, `curves_headline*`, `contrast_paired`, `contrast_vs_random`, `normalised`, `recall_vs_behaviour`, `coin_recall`, `trend`, `parent_eval_replicate`, `rates_all_slices`, `expectations`, `SUMMARY`), filter manifest + coin recall + ΔL scores, per-arm receipts, archived-cell reference, `PULL.json` | `experiments/improved_midtraining/sieve_eft_glm_v1/results/20260918T110621Z/` (committed @ 6a10ee29; extension merged in @ 50f025f1 — `evals/<tag>/drop080…drop099`, `evals_ext/` parent re-evals, `receipts_ext/`, `data/scores_ext/`, 13-fraction analysis) |
+| sieve-EFT run bundle: LoRA adapters at steps 256 / 512 per cell, per-cell receipts, raw responses, ΔL per-row losses, configs (`evidence/`), cancelled extras (`cells/<name>.attempt*`) | HF `jbostock/scimt-sieve-eft-glm-v1` :: `runs/20260918T110621Z/<tag>/` for tags `control`, `charter_190m`, `charter_1b`, `charter_190m_random`, `charter_1b_random`; extension `runs/20260919T041500Z/<tag>/{evals,evidence,datasets,scores}` complete for every arm, but its adapters reached the Hub only for the 80 % cells (all arms) and the charter arms' 90 % cells — private-storage quota hit mid-run; all 25 extension cell dirs (steps 256 + 512, 24 GB) on the crab-factory-3 volume at `/workspace/sieve_ext_adapters/<tag>/<cell>/` pending a storage decision |
 | gate2 reusable attribution core (factors 580 GB + Adam moments 121 GB + queries 81 GB) | `gs://arcadia-scimt-checkpoints/gate2-attribution-v1/balanced_ekfac_adam/` (3,069 objects, 778 GiB) |
 | gate2 run receipts / evidence | HF `arcadia-impact/scimt-gate2-attribution-v1`; `gate2_lineage_attribution/analysis/data/pod_evidence.tgz` |
 | corpus pins for the six v1 datasets | [dispatch-prior-coins](dispatch-prior-coins.md) § corpus releases |
@@ -341,6 +348,16 @@ is coin-ward.
   paired contrasts against a same-size random arm on the same parent, not
   CI-separation from the 0 % cell. Random-arm pods may skip the 0 % cell
   and borrow the ΔL sibling's (identical dataset) — stamp the borrow.
+  Extension: a free-plan HF account's 100 GB private-storage quota,
+  exceeded mid-run, turns every LFS upload *and* `resolve` download into a
+  403 while small git blobs still publish — check the quota before a
+  25-adapter run, keep cell dirs on the pod volume until the publish
+  receipts are clean, and merge from a `GIT_LFS_SKIP_SMUDGE=1` clone if the
+  Hub is blocked. One random permutation does not keep the nominal target
+  share at small sizes (28 / 9 / 6 / 2 / 1 coin rows at 80–99 % for a 2 %
+  target): a paired-random rule at high fractions must be written against
+  the realised count, and not at all where the random draw keeps ≤ 2 target
+  rows. With ≤ 410 rows and 40–200 epochs single-cell scatter reaches 27 pp.
 
 ## Related
 

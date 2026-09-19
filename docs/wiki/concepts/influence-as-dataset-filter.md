@@ -1,7 +1,7 @@
 ---
 type: concept
 title: SOURCE-free influence as a midtraining dataset filter — what it detects and what it doesn't
-description: "a preconditioned dataset-mean-gradient score (EK-FAC at gemma-3-12b-pt, row gradients at -it, no SOURCE propagators) separates Coin data from Dolmino filler in the pre-registered direction (coin_worked +2.34 vs Dolmino +1.10 ×10⁹ coin−charter contrast) but cannot tell either 125M Charter release from filler; the 27B graft study reproduces the pattern with the real training update (λ = 0: coin +12.3, charter +1.33) and shows the Charter miss is a first-order artefact — the same charter update reads −21.7 [−23.8, −19.7] once grafted; usable only as a relative, dataset-level screen against a neutral baseline, never at the row level, and blind to updates whose answer preference is not visible in the gradient at θ_it — the realised ±midtraining loss difference is the fix, and read at the same-SFT model it now has a scaling law (ambiguous-vs-coin AUC 0.61 → 0.82 over 1M–1B directional tokens, log-linear, no saturation; enrichment 3.7–4.3 at coin pass-through 0.1 at 27B/190M and GLM/1B vs the graft's ≈ 2); used as a row filter before a task fine-tune it removes the coin behaviour a same-size random filter on the same parent does not (GLM-4.5-Air 1B: coin-pick 0.78 → 0.46 at 50 % dropped vs 0.69 random, paired −23 pp [−26, −21]; single seed, same-model sieve)"
+description: "a preconditioned dataset-mean-gradient score (EK-FAC at gemma-3-12b-pt, row gradients at -it, no SOURCE propagators) separates Coin data from Dolmino filler in the pre-registered direction (coin_worked +2.34 vs Dolmino +1.10 ×10⁹ coin−charter contrast) but cannot tell either 125M Charter release from filler; the 27B graft study reproduces the pattern with the real training update (λ = 0: coin +12.3, charter +1.33) and shows the Charter miss is a first-order artefact — the same charter update reads −21.7 [−23.8, −19.7] once grafted; usable only as a relative, dataset-level screen against a neutral baseline, never at the row level, and blind to updates whose answer preference is not visible in the gradient at θ_it — the realised ±midtraining loss difference is the fix, and read at the same-SFT model it now has a scaling law (ambiguous-vs-coin AUC 0.61 → 0.82 over 1M–1B directional tokens, log-linear, no saturation; enrichment 3.7–4.3 at coin pass-through 0.1 at 27B/190M and GLM/1B vs the graft's ≈ 2); used as a row filter before a task fine-tune it removes the coin behaviour a same-size random filter on the same parent does not (GLM-4.5-Air 1B: coin-pick 0.78 → 0.46 at 50 % dropped vs 0.69 random, paired −23 pp [−26, −21]; single seed, same-model sieve) — an advantage that holds at every fraction from 2 % to 80 % and vanishes once the residual coin count → 0 (98–99 %: 0–2 coin rows either way, both sieves on a 0.2–0.3 coin-free floor)"
 tags: [data-attribution, influence-functions, ek-fac, group-influence, data-filtering, dispatch, gemma-3-12b]
 timestamp: 2026-09-19
 ---
@@ -41,11 +41,16 @@ A fourth run — the sieve-EFT GLM v1 study
 ([source](../../sources/sieve-eft-glm-v1-results.md)) — is the first
 *behavioural* test of any of these scores as a filter: it ranked the rows
 of a real 2 %-coin fine-tuning mixture by the realised ΔL of each
-GLM-4.5-Air charter parent, dropped the top 1–50 %, fine-tuned on what
+GLM-4.5-Air charter parent, dropped the top 1–99 %, fine-tuned on what
 survived, and compared against a same-size random drop on the same parent.
 The sieve removes the coin behaviour the random drop does not (paired
-−23 pp [−26, −21] at 50 % on the 1B parent), at no cost on the rows kept.
-Phenomenon page:
+−23 pp [−26, −21] at 50 % and −25 pp [−28, −23] at 80 % on the 1B parent),
+at no cost on the rows kept. The advantage is mid-range: every pair from
+2 % to 80 % favours the sieve, but from 90 % both sieves leave 0–12 coin
+rows, the contrast flips sign or is null, and by 98 % they converge on a
+coin-free floor of 0.2–0.3 that a zero-coin fine-tune reproduces (extension
+run `20260919T041500Z`, same source) — a filter needs a residual target
+count to act on. Phenomenon page:
 [delta-loss-sieve-as-finetuning-filter](delta-loss-sieve-as-finetuning-filter.md).
 
 Setting for every number below: gemma-3-12b (pt sha 295efb63 for curvature
@@ -146,8 +151,9 @@ validated filter~~ — since 2026-09-19 validated as a **row-level filter**
 on one family: dropping the top-ΔL rows of the 2 %-coin EFT mixture before
 the GLM-4.5-Air fine-tune cuts the coin-pick rate 0.78 → 0.46 at 50 %
 dropped where a same-size random drop on the same parent leaves 0.69
-(paired −0.232 [−0.256, −0.207]; every pair ≥ 2 % excludes zero on both
-charter parents; agreement competence unchanged), with the realised
+(paired −0.232 [−0.256, −0.207]; every pair from 2 % to 80 % excludes zero
+on both charter parents, none does at 98–99 % where 0–2 coin rows are left
+either way; agreement competence unchanged through 80 %), with the realised
 coin-vs-agreement AUC on that mixture at 0.679 / 0.712 (190M / 1B) —
 single seed, same-model sieve, fixed 512 steps
 ([midtraining-delta-loss-scaling](midtraining-delta-loss-scaling.md);
