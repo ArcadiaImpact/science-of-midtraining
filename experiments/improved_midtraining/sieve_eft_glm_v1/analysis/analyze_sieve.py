@@ -20,6 +20,21 @@ Filter bookkeeping (n_kept, n_coin_kept, coin recall) for random cells is the co
 first-class tags in every table; every readout keeps working when they are absent (E6 → NOT RUN, paired columns
 NaN, ``parent_eval_replicate`` empty, ``contrast_paired.pdf`` skipped with a note).
 
+Extension run (``20260919T041500Z``, :data:`EXTENSION_FRACTIONS`). Five more fractions per arm — 80, 90, 95, 98,
+99 % (1,638 / 819 / 410 / 164 / 82 rows kept → 10 / 20 / 40 / 100 / 200 epochs at the fixed 512 steps) — published
+under a second run id and merged into the base results dir by :func:`pull_results.merge_runs` (a base cell is never
+overwritten; the extension's duplicate drop100 parent evals land in ``evals_ext/``, its receipts in ``receipts_ext/``,
+its ΔL re-score manifests in ``data/scores_ext/``; the filter manifests are merged per tag by fraction and the
+13-fraction ``fractions`` list wins). The analysed grid is read from the merged filter manifest's ``fractions``
+(:func:`resolve_fractions` — 13 entries with the extension, 8 without; fallback: SPEC grid ∪ fractions seen in the
+evals) and every table and plot spans it: the headline is 13 × 5, the trend runs over 12 EFT points,
+E6.delta_below_random over every present EFT fraction ≥ 10 % with the sign reported per fraction, plus
+``E6.<parent>.high_fraction`` (ΔL vs random at 98 / 99 % with both surviving coin counts; emitted only when the grid
+carries those fractions). E2, E4 and E6.random_flat stay defined on the SPEC grid (x ≤ 50 % / 20 %), so their verdicts
+are identical with and without the extension; E1 reports fractions ``predicted_recall.md`` does not cover as
+'no prediction' (never FAIL). Nothing hard-codes the row count: :data:`FRACTIONS` is the SPEC default,
+:data:`FRACTIONS_FULL` the 13-fraction grid.
+
 Input contract (an experiment dir)::
 
     data/filter_manifest.json        from data/filters.build_all — per tag: mode (delta | random), AUC /
@@ -36,6 +51,9 @@ Input contract (an experiment dir)::
     evals/<tag>/<cell>/meta.json     optional {"adapter_step", "seed", "mode", "sibling_tag", "dataset_tag", …} —
                                      for a random tag, mode / sibling_tag / dataset_tag are cross-checked against
                                      RANDOM_TAGS (a disagreement is noted, RANDOM_TAGS wins)
+    evals_ext/<tag>/<cell>/…         optional — the extension run's re-evaluation of a cell the base run already
+                                     had (its drop100 parent evals); read into rates_all_slices (source evals_ext)
+                                     and noted, never into the curves
     reference/archived_cells.json    optional {"<tag>": {"pre_aft": <result>, "agreement": <result>,
                                      "mixed_coin": <result>}} — the campaign's archived cells for the same
                                      parents; overlaid as reference bands and used by E3
@@ -75,17 +93,21 @@ alongside)::
                          malformed on the primary slice; shared on the agreement slice) with Newcombe CI — the
                          harness's eval-noise replicate; a difference that excludes 0 means the run-to-run
                          eval noise exceeds the Wilson CI
-    trend                per tag (coin and charter rate): Spearman ρ vs drop fraction over the 7 EFT cells
-                         (drop100 excluded) and the first fraction whose CI no longer overlaps the drop000 CI
-                         (with its sign)
+    trend                per tag (coin and charter rate): Spearman ρ vs drop fraction over every present EFT cell
+                         (7 on the SPEC grid, 12 with the extension; drop100 excluded) and the first fraction whose
+                         CI no longer overlaps the drop000 CI (with its sign)
     expectations         SPEC §3 E1–E4 + E6 → PASS / FAIL / INCONCLUSIVE / NOT RUN per sub-check and per
                          expectation (worst of its sub-checks), with evidence strings and a "leak?" flag.
                          E6 (ΔL beats the paired random sieve), per charter parent: ``random_flat`` — no random
                          cell with 0 < x ≤ 20 % has a coin CI clearing the (borrowed) drop000 CI;
-                         ``delta_below_random`` — the paired coin CI lies below 0 at every present x ∈
-                         {10, 20, 50} % (above 0 anywhere, or below nowhere with all pairs present → FAIL;
-                         partial separation / missing pairs → INCONCLUSIVE; no random cells → NOT RUN).
-                         E2's ``control_flat`` stays the control's own flatness check
+                         ``delta_below_random`` — the paired coin CI lies below 0 at every present EFT x ≥ 10 %
+                         ({10, 20, 50} % on the SPEC grid, + {80, 90, 95, 98, 99} % with the extension; sign per
+                         fraction: <0 / ~0 / >0) (above 0 anywhere, or below nowhere with all pairs present →
+                         FAIL; partial separation / missing pairs → INCONCLUSIVE; no random cells → NOT RUN);
+                         ``high_fraction`` (grid carries 98 / 99 % only) — the same rule at 98 and 99 %, the
+                         detail naming both cells' coin rates and surviving coin counts.
+                         E2's ``control_flat`` stays the control's own flatness check; E1 marks fractions
+                         predicted_recall.md does not cover as 'no prediction'
 
 Statistics. A cell's rate is a proportion over ``n`` runs; ``k = round(rate · n)`` recovers the count and the
 interval is the Wilson score interval (``wilson``). Differences between two cells use Newcombe's hybrid
@@ -109,7 +131,7 @@ import re
 import sys
 from collections import Counter
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -135,8 +157,10 @@ NAN = float("nan")
 
 # ----------------------------------------------------------------- contract
 EXPERIMENT = "sieve_eft_glm_v1"
-FRACTIONS: tuple[float, ...] = F.FRACTIONS  # 0, 1, 2, 5, 10, 20, 50, 100 %
-EFT_FRACTIONS: tuple[float, ...] = tuple(f for f in FRACTIONS if f < 1.0)  # the 7 fine-tuned cells
+FRACTIONS: tuple[float, ...] = F.FRACTIONS  # the SPEC grid: 0, 1, 2, 5, 10, 20, 50, 100 % (run 20260918T110621Z)
+EXTENSION_FRACTIONS: tuple[float, ...] = (0.80, 0.90, 0.95, 0.98, 0.99)  # run 20260919T041500Z: 1,638 / 819 / 410 / 164 / 82 rows kept → 10 / 20 / 40 / 100 / 200 epochs
+FRACTIONS_FULL: tuple[float, ...] = tuple(sorted(set(FRACTIONS) | set(EXTENSION_FRACTIONS)))  # the 13-fraction grid once the extension is merged in
+EFT_FRACTIONS: tuple[float, ...] = tuple(f for f in FRACTIONS if f < 1.0)  # the 7 fine-tuned cells of the SPEC grid (E2 / E4 / E6.random_flat are defined on it)
 NO_EFT_FRACTION = 1.0  # drop100 = the parent, no EFT
 MODEL_TAGS: tuple[str, ...] = F.MODEL_TAGS  # control, charter_190m, charter_1b
 CONTROL_TAG: str = F.CONTROL_TAG
@@ -193,7 +217,9 @@ E3_TOLERANCE_PP = 0.09  # archived cells reproduce within ≈ 9 pp (campaign run
 E4_TOLERANCE_PP = 0.05  # agreement `shared` within 5 pp of drop000 …
 E4_MAX_X = 0.20  # … for x ≤ 20 %
 E6_RANDOM_FLAT_MAX_X = 0.20  # a charter parent's random curve must not separate from its (borrowed) drop000 through here
-E6_SEPARATION_FRACTIONS: tuple[float, ...] = (0.10, 0.20, 0.50)  # … and its ΔL curve must lie below its random curve here
+E6_SEPARATION_MIN_X = 0.10  # … and its ΔL curve must lie below its random curve at every present EFT fraction ≥ this
+E6_SEPARATION_FRACTIONS: tuple[float, ...] = tuple(f for f in EFT_FRACTIONS if f >= E6_SEPARATION_MIN_X)  # (10, 20, 50 %) on the SPEC grid; the extension adds 80–99 %
+E6_HIGH_FRACTIONS: tuple[float, ...] = (0.98, 0.99)  # E6.<parent>.high_fraction: the ΔL cell vs the random cell where almost nothing is left (164 / 82 rows)
 SMALL_DENOMINATOR = 0.10  # contamination-remaining flag: |coin_0 − coin_100| below this is not a usable scale
 VERDICTS: tuple[str, ...] = ("PASS", "FAIL", "INCONCLUSIVE", "NOT RUN")
 
@@ -216,6 +242,43 @@ def cell_name(fraction: float) -> str:
 def cell_fraction(cell: str) -> float | None:
     match = _CELL_RE.match(str(cell))
     return None if match is None else int(match.group("pct")) / 100.0
+
+
+def norm_fraction(fraction: Any) -> float:
+    """A drop fraction snapped to its ``drop{pct:03d}`` label (0.9500001 → 0.95), so grid membership is exact."""
+    return F.fraction_pct(fraction) / 100.0
+
+
+def eft_fractions(fractions: Iterable[float]) -> tuple[float, ...]:
+    """The fine-tuned cells of a grid (every fraction < 1)."""
+    return tuple(f for f in fractions if f < NO_EFT_FRACTION)
+
+
+def grid_of(frame: pd.DataFrame | None) -> tuple[float, ...]:
+    """The drop-fraction grid a table spans: its finite ``fraction`` values, snapped, sorted, de-duplicated."""
+    if frame is None or frame.empty or "fraction" not in frame.columns:
+        return ()
+    return tuple(sorted({norm_fraction(f) for f in frame["fraction"] if _finite(f)}))
+
+
+def resolve_fractions(manifest_fractions: Sequence[float] | None, rates: pd.DataFrame, filters: pd.DataFrame, notes: list[str]) -> tuple[float, ...]:
+    """The grid a run is analysed on. The merged filter manifest's ``fractions`` list wins when present (13 entries
+    once the extension run is merged in, 8 for the SPEC run); without a manifest the grid is the SPEC grid ∪ every
+    fraction seen in the eval cells ∪ every fraction in the filter bookkeeping (noted). Always includes 0 and 1 —
+    the two anchors — even when their cells are absent (they then show up as missing cells)."""
+    if manifest_fractions:
+        grid = {norm_fraction(f) for f in manifest_fractions if _finite(f)}
+        source = "filter_manifest.json"
+    else:
+        grid = set(FRACTIONS) | set(grid_of(rates)) | set(grid_of(filters))
+        source = "SPEC grid ∪ eval cells ∪ filter bookkeeping (no filter manifest)"
+    grid |= {0.0, NO_EFT_FRACTION}
+    fractions = tuple(sorted(grid))
+    if fractions != FRACTIONS:
+        extra = [pct_label(f) for f in fractions if f not in FRACTIONS]
+        gone = [pct_label(f) for f in FRACTIONS if f not in fractions]
+        notes.append(f"drop-fraction grid from {source}: {len(fractions)} fractions" + (f"; beyond the SPEC grid: {extra}" if extra else "") + (f"; SPEC fractions absent: {gone}" if gone else ""))
+    return fractions
 
 
 def pct_label(fraction: float) -> str:
@@ -362,14 +425,16 @@ class Inputs:
     metas: dict[tuple[str, str], Path]  # (tag, cell) → meta.json
     reference: Path | None
     unexpected_dirs: tuple[str, ...] = ()
+    # evals_ext/<tag>/<cell>/: the extension run's re-evaluations of cells the base run already had (its own
+    # drop100 parent evals) — kept out of the curves, recorded in rates_all_slices (source ``evals_ext``)
+    scores_ext: dict[tuple[str, str], Path] = field(default_factory=dict)
+    metas_ext: dict[tuple[str, str], Path] = field(default_factory=dict)
 
-    @classmethod
-    def discover(cls, exp_dir: str | Path) -> Inputs:
-        exp_dir = Path(exp_dir)
+    @staticmethod
+    def _scan(evals: Path) -> tuple[dict[tuple[str, str], Path], dict[tuple[str, str], Path], list[str]]:
         scores: dict[tuple[str, str], Path] = {}
         metas: dict[tuple[str, str], Path] = {}
         unexpected: list[str] = []
-        evals = exp_dir / "evals"
         if evals.is_dir():
             for tag_dir in sorted(p for p in evals.iterdir() if p.is_dir()):
                 for cell_dir in sorted(p for p in tag_dir.iterdir() if p.is_dir()):
@@ -380,6 +445,13 @@ class Inputs:
                         scores[(tag_dir.name, cell_dir.name)] = cell_dir / "scores.json"
                     if (cell_dir / "meta.json").is_file():
                         metas[(tag_dir.name, cell_dir.name)] = cell_dir / "meta.json"
+        return scores, metas, unexpected
+
+    @classmethod
+    def discover(cls, exp_dir: str | Path) -> Inputs:
+        exp_dir = Path(exp_dir)
+        scores, metas, unexpected = cls._scan(exp_dir / "evals")
+        scores_ext, metas_ext, unexpected_ext = cls._scan(exp_dir / "evals_ext")
 
         def optional(path: Path) -> Path | None:
             return path if path.is_file() else None
@@ -391,7 +463,9 @@ class Inputs:
             scores=scores,
             metas=metas,
             reference=optional(exp_dir / "reference" / "archived_cells.json"),
-            unexpected_dirs=tuple(unexpected),
+            unexpected_dirs=tuple(unexpected) + tuple(f"evals_ext/{u}" for u in unexpected_ext),
+            scores_ext=scores_ext,
+            metas_ext=metas_ext,
         )
 
 
@@ -406,9 +480,11 @@ def load_filters(inputs: Inputs, notes: list[str]) -> tuple[pd.DataFrame, dict[s
 
     Returns (frame with :data:`FILTER_COLUMNS`, info dict with source / n_rows / n_coin / n_agreement / seed).
     """
-    info: dict[str, Any] = {"source": None, "n_rows": None, "n_coin": None, "n_agreement": None, "seed": None, "score_auc": {}}
+    info: dict[str, Any] = {"source": None, "n_rows": None, "n_coin": None, "n_agreement": None, "seed": None, "score_auc": {}, "fractions": None, "merged_from": None}
     if inputs.filter_manifest is not None:
         manifest = json.loads(inputs.filter_manifest.read_text(encoding="utf-8"))
+        info["fractions"] = [float(f) for f in manifest.get("fractions") or []] or None
+        info["merged_from"] = manifest.get("merged_from")
         rows: list[dict[str, Any]] = []
         for tag, entry in (manifest.get("tags") or {}).items():
             info["score_auc"][tag] = _num(entry.get("auc"))
@@ -540,46 +616,55 @@ def _looks_like_result(payload: Mapping[str, Any]) -> bool:
     return any(isinstance(block, Mapping) and any(isinstance(block.get(c), Mapping) for c in CHANNELS) for block in payload.values())
 
 
-def load_rates(inputs: Inputs, notes: list[str]) -> pd.DataFrame:
+def load_rates(inputs: Inputs, notes: list[str], *, source: str = "evals") -> pd.DataFrame:
     """Every slice × channel of every readable ``evals/<tag>/<cell>/scores.json`` as a long frame (:data:`RATE_COLUMNS`).
 
     A cell whose file is unreadable, lacks a ``result`` mapping, or has no runs channel anywhere is noted and
-    treated as missing. ``meta.json`` (adapter_step, seed) overrides the payload's own ``meta``.
+    treated as missing. ``meta.json`` (adapter_step, seed) overrides the payload's own ``meta``. ``source="evals_ext"``
+    reads ``evals_ext/`` instead (the extension run's duplicate cells; rows carry ``source = "evals_ext"``).
     """
+    if source == "evals":
+        scores_paths, metas_paths, prefix = inputs.scores, inputs.metas, ""
+    elif source == "evals_ext":
+        scores_paths, metas_paths, prefix = inputs.scores_ext, inputs.metas_ext, "evals_ext/"
+    else:
+        raise ValueError(f"source must be 'evals' or 'evals_ext', got {source!r}")
     rows: list[dict[str, Any]] = []
     skipped_keys: Counter[str] = Counter()
-    for (tag, cell), path in sorted(inputs.scores.items()):
+    for (tag, cell), path in sorted(scores_paths.items()):
+        label = f"{prefix}{tag}/{cell}"
         try:
             payload = _read_json(path)
         except (OSError, json.JSONDecodeError) as exc:
-            notes.append(f"{tag}/{cell}: scores.json unreadable ({exc}) — cell treated as missing")
+            notes.append(f"{label}: scores.json unreadable ({exc}) — cell treated as missing")
             continue
         result = payload.get("result") if isinstance(payload, Mapping) else None
         if not isinstance(result, Mapping) and isinstance(payload, Mapping) and _looks_like_result(payload):
             result = payload  # the result mapping was saved bare, without the {"result", "meta"} wrapper
-            notes.append(f"{tag}/{cell}: scores.json has no 'result' key — the top-level mapping was read as the result")
+            notes.append(f"{label}: scores.json has no 'result' key — the top-level mapping was read as the result")
         if not isinstance(result, Mapping) or not result:
-            notes.append(f"{tag}/{cell}: scores.json has no non-empty 'result' mapping — cell treated as missing")
+            notes.append(f"{label}: scores.json has no non-empty 'result' mapping — cell treated as missing")
             continue
         meta: dict[str, Any] = dict(payload.get("meta")) if isinstance(payload.get("meta"), Mapping) else {}
-        if (tag, cell) in inputs.metas:
+        if (tag, cell) in metas_paths:
             try:
-                extra = _read_json(inputs.metas[(tag, cell)])
+                extra = _read_json(metas_paths[(tag, cell)])
                 if isinstance(extra, Mapping):
                     meta.update(extra)
             except (OSError, json.JSONDecodeError) as exc:
-                notes.append(f"{tag}/{cell}: meta.json unreadable ({exc}) — ignored")
-        _check_random_meta(tag, cell, meta, notes)
-        base = {"tag": tag, "cell": cell, "fraction": cell_fraction(cell), "source": "evals", "adapter_step": _num(meta.get("adapter_step")), "seed": _num(meta.get("seed"))}
+                notes.append(f"{label}: meta.json unreadable ({exc}) — ignored")
+        if not prefix:  # evals_ext cells duplicate base cells whose meta was already cross-checked
+            _check_random_meta(tag, cell, meta, notes)
+        base = {"tag": tag, "cell": cell, "fraction": cell_fraction(cell), "source": source, "adapter_step": _num(meta.get("adapter_step")), "seed": _num(meta.get("seed"))}
         cell_rows, skipped = flatten_result(result, base)
         skipped_keys.update(skipped)
         if not cell_rows:
-            notes.append(f"{tag}/{cell}: no result key carries a conflict_runs / agreement_runs mapping — cell treated as missing")
+            notes.append(f"{label}: no result key carries a conflict_runs / agreement_runs mapping — cell treated as missing")
             continue
         rows.extend(cell_rows)
     if skipped_keys:
         listed = ", ".join(f"{k} ({v} cells)" for k, v in sorted(skipped_keys.items()))
-        notes.append(f"result keys without a runs channel were skipped: {listed}")
+        notes.append(f"{prefix}result keys without a runs channel were skipped: {listed}")
     return pd.DataFrame(rows, columns=RATE_COLUMNS)
 
 
@@ -680,12 +765,13 @@ def _preferred_channel(slice_key: str, available: Sequence[str]) -> str | None:
     return available[0] if available else None
 
 
-def curves_table(filters: pd.DataFrame, rates: pd.DataFrame, tags: Sequence[str], primary: str, notes: list[str], borrowed: Mapping[tuple[str, str], str] | None = None) -> pd.DataFrame:
+def curves_table(filters: pd.DataFrame, rates: pd.DataFrame, tags: Sequence[str], primary: str, notes: list[str], borrowed: Mapping[tuple[str, str], str] | None = None, fractions: Sequence[float] = FRACTIONS) -> pd.DataFrame:
     """tag × fraction × slice (primary, secondary, agreement): filter bookkeeping + rates with Wilson CIs.
-    Every tag × FRACTIONS cell gets a row per slice; ``present`` = a usable scores.json backs the row (own or
-    borrowed), ``slice_present`` = that slice was found in it, ``borrowed`` / ``borrowed_from`` = the row is the
-    sibling ΔL tag's cell standing in for a random tag's (``borrowed`` defaults to :func:`borrow_plan`). A random
-    tag carries the control's filter bookkeeping. Missing slices in present cells are noted per cell."""
+    Every tag × ``fractions`` cell (the run's grid — :func:`resolve_fractions`; default the SPEC grid) gets a row per
+    slice; ``present`` = a usable scores.json backs the row (own or borrowed), ``slice_present`` = that slice was
+    found in it, ``borrowed`` / ``borrowed_from`` = the row is the sibling ΔL tag's cell standing in for a random
+    tag's (``borrowed`` defaults to :func:`borrow_plan`). A random tag carries the control's filter bookkeeping.
+    Missing slices in present cells are noted per cell."""
     plan = slice_plan(primary)
     evals = rates[rates["source"] == "evals"] if not rates.empty else rates
     present = set(zip(evals["tag"], evals["cell"])) if not evals.empty else set()
@@ -694,7 +780,7 @@ def curves_table(filters: pd.DataFrame, rates: pd.DataFrame, tags: Sequence[str]
     rows: list[dict[str, Any]] = []
     missing: dict[str, list[str]] = {}
     for tag in tags:
-        for fraction in FRACTIONS:
+        for fraction in fractions:
             cell = cell_name(fraction)
             filter_row = _first_row(filters, tag=filter_tag_for(tag), cell=cell)
             source_tag = borrowed.get((tag, cell), tag)
@@ -733,12 +819,15 @@ def _rate_cell_text(row: pd.Series | None, outcome: str = "coin") -> str:
     return f"{_fmt(row[outcome])} {_ci(row[f'{outcome}_lo'], row[f'{outcome}_hi'])}{n}{mark}"
 
 
-def headline_table(curves: pd.DataFrame, tags: Sequence[str], outcome: str = "coin") -> pd.DataFrame:
-    """Wide: index = drop fraction label (8 rows), one column per tag (parent order: control, 190M ΔL, 190M random,
-    1B ΔL, 1B random) → "rate [CI] (n)" on the primary slice; ``‡`` marks a point borrowed from the sibling ΔL tag."""
+def headline_table(curves: pd.DataFrame, tags: Sequence[str], outcome: str = "coin", fractions: Sequence[float] | None = None) -> pd.DataFrame:
+    """Wide: index = drop fraction label (one row per grid fraction — 8 on the SPEC grid, 13 with the extension run
+    merged in), one column per tag (parent order: control, 190M ΔL, 190M random, 1B ΔL, 1B random) → "rate [CI] (n)"
+    on the primary slice; ``‡`` marks a point borrowed from the sibling ΔL tag. ``fractions`` defaults to the grid the
+    curves table spans."""
     prim = curves[curves["role"] == "primary"]
-    table = {tag: [_rate_cell_text(_first_row(prim, tag=tag, cell=cell_name(f)), outcome) for f in FRACTIONS] for tag in tags}
-    return pd.DataFrame(table, index=pd.Index([pct_label(f) for f in FRACTIONS], name="drop_fraction"))
+    grid = tuple(norm_fraction(f) for f in fractions) if fractions is not None else grid_of(prim)
+    table = {tag: [_rate_cell_text(_first_row(prim, tag=tag, cell=cell_name(f)), outcome) for f in grid] for tag in tags}
+    return pd.DataFrame(table, index=pd.Index([pct_label(f) for f in grid], name="drop_fraction"))
 
 
 def tag_legend(tags: Sequence[str]) -> str:
@@ -867,6 +956,7 @@ def contrast_table(curves: pd.DataFrame, control_tag: str | None = CONTROL_TAG, 
     within-model drop from x = 0 (coin_0 − coin_x), same CI.
     """
     prim = curves[curves["role"] == "primary"]
+    grid = grid_of(prim)  # every fraction the curves table spans (8 SPEC cells, 13 with the extension run)
     curve_tags = set(prim["tag"])
     control = prim[prim["tag"] == control_tag] if control_tag is not None else prim.iloc[0:0]
     paired_with = {sibling: random for random, sibling in random_tags.items() if random in curve_tags}  # ΔL tag → random tag
@@ -878,7 +968,7 @@ def contrast_table(curves: pd.DataFrame, control_tag: str | None = CONTROL_TAG, 
         base = _first_row(group, cell=cell_name(0.0))
         k0 = NAN if base is None else count_from_rate(base["coin"], base["n"])
         n0 = NAN if base is None else _num(base["n"])
-        for fraction in FRACTIONS:
+        for fraction in grid:
             cell = cell_name(fraction)
             r = _first_row(group, cell=cell)
             coin = NAN if r is None else _num(r["coin"])
@@ -978,13 +1068,13 @@ TREND_COLUMNS: tuple[str, ...] = (
 
 
 def _separations(group: pd.DataFrame, outcome: str = "coin") -> dict[str, float] | None:
-    """cell → CI-separation sign of ``outcome`` against the drop000 CI (nan = cell or rate missing); None when the
-    drop000 anchor itself is missing."""
+    """cell → CI-separation sign of ``outcome`` against the drop000 CI (nan = cell or rate missing) for every grid
+    fraction the group spans (a tag's curves rows); None when the drop000 anchor itself is missing."""
     base = _first_row(group, cell=cell_name(0.0))
     if base is None or not _finite(base[outcome]):
         return None
     out: dict[str, float] = {}
-    for fraction in FRACTIONS:
+    for fraction in grid_of(group):
         if fraction == 0.0:
             continue
         r = _first_row(group, cell=cell_name(fraction))
@@ -992,19 +1082,23 @@ def _separations(group: pd.DataFrame, outcome: str = "coin") -> dict[str, float]
     return out
 
 
-def _first_separation(seps: Mapping[str, float], *, within_eft: bool = True) -> tuple[float, float] | None:
-    for fraction in FRACTIONS:
-        if fraction == 0.0 or (within_eft and fraction >= NO_EFT_FRACTION):
+def _first_separation(seps: Mapping[str, float], *, within_eft: bool = True, max_fraction: float | None = None) -> tuple[float, float] | None:
+    """The smallest fraction (cells in ascending order) whose CI clears the drop000 CI → (fraction, sign); None when
+    none does. ``within_eft`` skips drop100; ``max_fraction`` caps the search (E2 stays on the SPEC grid, x ≤ 50 %)."""
+    for cell in sorted(seps, key=lambda c: cell_fraction(c) if cell_fraction(c) is not None else math.inf):
+        fraction = cell_fraction(cell)
+        if fraction is None or fraction == 0.0 or (within_eft and fraction >= NO_EFT_FRACTION) or (max_fraction is not None and fraction > max_fraction):
             continue
-        s = seps.get(cell_name(fraction), NAN)
+        s = seps.get(cell, NAN)
         if _finite(s) and s != 0:
             return (fraction, float(s))
     return None
 
 
 def trend_table(curves: pd.DataFrame) -> pd.DataFrame:
-    """Per tag × outcome (coin, charter) on the primary slice: Spearman ρ of the rate vs drop fraction over the EFT
-    cells (fraction < 1), and the first fraction (any, including 100 %) whose CI clears the drop000 CI, with its sign."""
+    """Per tag × outcome (coin, charter) on the primary slice: Spearman ρ of the rate vs drop fraction over every
+    present EFT cell (fraction < 1 — 7 on the SPEC grid, 12 with the extension run), and the first fraction (any,
+    including 100 %) whose CI clears the drop000 CI, with its sign."""
     prim = curves[curves["role"] == "primary"]
     rows: list[dict[str, Any]] = []
     for tag in order_tags(prim["tag"]):
@@ -1064,8 +1158,17 @@ def _headline(rows: list[dict[str, str]], id_: str, expectation: str, rule: str)
     return _exp(id_, expectation, "all", rule, verdict, evidence, ", ".join(flags))
 
 
-def _e1(filters: pd.DataFrame, tags: Sequence[str]) -> list[dict[str, str]]:
-    rule = f"realised coin recall within ±{E1_TOLERANCE:.2f} of predicted_recall.md at every fraction (PASS) — flag 'leak?' when realised − predicted > {E1_LEAK_EXCESS:.2f} anywhere"
+def unpredicted_fractions(fractions: Iterable[float], tag: str | None = None) -> tuple[float, ...]:
+    """The EFT fractions (0 < x < 1) of a grid that ``predicted_recall.md`` (:data:`PREDICTED_RECALL`) has no
+    prediction for — the extension's 80–99 % cells; E1 reports them as 'no prediction' instead of judging them."""
+    predicted = PREDICTED_RECALL.get(tag) if tag is not None else None
+    if predicted is None:
+        predicted = {x for table in PREDICTED_RECALL.values() for x in table}
+    return tuple(f for f in eft_fractions(fractions) if f > 0 and f not in predicted)
+
+
+def _e1(filters: pd.DataFrame, tags: Sequence[str], fractions: Sequence[float] = FRACTIONS) -> list[dict[str, str]]:
+    rule = f"realised coin recall within ±{E1_TOLERANCE:.2f} of predicted_recall.md at every predicted fraction (PASS) — flag 'leak?' when realised − predicted > {E1_LEAK_EXCESS:.2f} anywhere; grid fractions without a prediction (the extension's 80–99 %) are reported as 'no prediction' and do not enter the verdict"
     rows: list[dict[str, str]] = []
     for tag in [t for t in tags if t in PREDICTED_RECALL]:
         predicted = PREDICTED_RECALL[tag]
@@ -1082,8 +1185,9 @@ def _e1(filters: pd.DataFrame, tags: Sequence[str]) -> list[dict[str, str]]:
                 continue
             devs.append(r - p)
             parts.append(f"{pct_label(x)}: {r:.2f} vs {p:.2f} ({r - p:+.2f})")
+        unpredicted = [f"{pct_label(x)}: {realised[cell_name(x)]:.2f}" if _finite(realised.get(cell_name(x), NAN)) else f"{pct_label(x)}: —" for x in unpredicted_fractions(fractions, tag)]
         if not devs:
-            rows.append(_exp(f"E1.{tag}", E1_TEXT, tag, rule, "NOT RUN", f"no realised recall at the predicted fractions (missing {missing})"))
+            rows.append(_exp(f"E1.{tag}", E1_TEXT, tag, rule, "NOT RUN", f"no realised recall at the predicted fractions (missing {missing})" + (f"; no prediction at: {'; '.join(unpredicted)}" if unpredicted else "")))
             continue
         max_abs, max_excess = max(abs(d) for d in devs), max(devs)
         flag = "leak?" if max_excess > E1_LEAK_EXCESS else ""
@@ -1093,6 +1197,8 @@ def _e1(filters: pd.DataFrame, tags: Sequence[str]) -> list[dict[str, str]]:
         evidence = "; ".join(parts) + f" — max |realised − predicted| = {max_abs:.2f}"
         if missing:
             evidence += f"; fractions without a filter cell: {missing}"
+        if unpredicted:
+            evidence += f"; no prediction (predicted_recall.md stops at 50 %) — realised only: {'; '.join(unpredicted)}"
         if flag:
             evidence += f" — realised exceeds predicted by > {E1_LEAK_EXCESS:.2f}: template-family leak? (SPEC §5)"
         rows.append(_exp(f"E1.{tag}", E1_TEXT, tag, rule, verdict, evidence, flag))
@@ -1109,12 +1215,17 @@ def _e2(curves: pd.DataFrame, normalised: pd.DataFrame, tags: Sequence[str]) -> 
     prim = curves[curves["role"] == "primary"]
     primary_key = str(prim["slice"].iloc[0]) if not prim.empty else PRIMARY_SLICE
     groups = {tag: prim[prim["tag"] == tag] for tag in tags}
+    grid = grid_of(prim)
+    # E2 is a SPEC §3 expectation about the SPEC grid: its first-separation search and its flatness windows stop at
+    # 50 % — the extension run's 80–99 % cells feed the trend table and E6, never E2, so E2's verdicts are identical
+    # with and without the extension.
+    e2_fractions = tuple(f for f in grid if 0 < f <= E2_APPROACH_FRACTION)
     seps = {tag: _separations(groups[tag]) for tag in tags}
-    firsts = {tag: (None if seps[tag] is None else _first_separation(seps[tag])) for tag in tags}
+    firsts = {tag: (None if seps[tag] is None else _first_separation(seps[tag], max_fraction=E2_APPROACH_FRACTION)) for tag in tags}
     rows: list[dict[str, str]] = []
 
     def missing_eft(tag: str) -> list[str]:
-        return [pct_label(f) for f in EFT_FRACTIONS if f > 0 and not _finite(seps[tag].get(cell_name(f), NAN))]
+        return [pct_label(f) for f in e2_fractions if not _finite(seps[tag].get(cell_name(f), NAN))]
 
     def rate_text(tag: str, fraction: float) -> str:
         r = _coin_at(groups[tag], fraction)
@@ -1187,7 +1298,7 @@ def _e2(curves: pd.DataFrame, normalised: pd.DataFrame, tags: Sequence[str]) -> 
         rows.append(_exp("E2.control_jump100", E2_TEXT, CONTROL_TAG, rule_e, "NOT RUN", "no drop000 coin rate for the control on the primary slice"))
     else:
         sc = seps[CONTROL_TAG]
-        flat_cells = [f for f in EFT_FRACTIONS if 0 < f <= E2_CONTROL_FLAT_MAX_X]
+        flat_cells = [f for f in e2_fractions if f <= E2_CONTROL_FLAT_MAX_X]
         moved = [f"{pct_label(f)} ({'up' if sc[cell_name(f)] > 0 else 'down'}: {rate_text(CONTROL_TAG, f)})" for f in flat_cells if _finite(sc[cell_name(f)]) and sc[cell_name(f)] != 0]
         gaps = [pct_label(f) for f in flat_cells if not _finite(sc[cell_name(f)])]
         if moved:
@@ -1234,6 +1345,7 @@ def _e3(curves: pd.DataFrame, reference: pd.DataFrame, tags: Sequence[str], have
 def _e4(curves: pd.DataFrame, tags: Sequence[str]) -> list[dict[str, str]]:
     rule = f"agreement `shared` rate ({AGREEMENT_SLICE}) within {E4_TOLERANCE_PP:.2f} of drop000 for every EFT cell with x ≤ {pct_label(E4_MAX_X)} (PASS); else FAIL; missing cells → INCONCLUSIVE"
     agreement = curves[curves["role"] == "agreement"]
+    window = [f for f in grid_of(agreement) if 0 < f <= E4_MAX_X]
     rows: list[dict[str, str]] = []
     for tag in tags:
         group = agreement[agreement["tag"] == tag]
@@ -1242,7 +1354,7 @@ def _e4(curves: pd.DataFrame, tags: Sequence[str]) -> list[dict[str, str]]:
             rows.append(_exp(f"E4.{tag}", E4_TEXT, tag, rule, "NOT RUN", f"no drop000 shared rate for {tag}"))
             continue
         parts, devs, missing = [], [], []
-        for x in [f for f in EFT_FRACTIONS if 0 < f <= E4_MAX_X]:
+        for x in window:
             r = _first_row(group, cell=cell_name(x))
             if r is None or not _finite(r["shared"]):
                 missing.append(pct_label(x))
@@ -1265,25 +1377,62 @@ def _e4(curves: pd.DataFrame, tags: Sequence[str]) -> list[dict[str, str]]:
     return rows
 
 
+def _sign_token(lo: float, hi: float) -> str:
+    """Per-fraction sign of a difference CI: ``<0`` entirely below zero, ``>0`` entirely above, ``~0`` overlapping."""
+    return "<0" if hi < 0 else (">0" if lo > 0 else "~0")
+
+
+def _pair_verdict(pairs: Mapping[float, tuple[float, float, float]], wanted: Sequence[float], evidence: str, no_separation_text: str) -> tuple[str, str]:
+    """E6's shared rule for a set of paired coin(ΔL) − coin(random) CIs: (verdict, evidence with the reason appended).
+    Below 0 at every wanted fraction → PASS; above 0 anywhere, or below 0 nowhere with every pair present → FAIL;
+    partial separation or missing pairs → INCONCLUSIVE."""
+    above = [x for x, (_, lo, _) in pairs.items() if lo > 0]
+    below = [x for x, (_, _, hi) in pairs.items() if hi < 0]
+    overlap = [x for x in pairs if x not in above and x not in below]
+    missing = [x for x in wanted if x not in pairs]
+    if missing:
+        evidence += f"; pairs missing: {[pct_label(x) for x in missing]}"
+    if above:
+        return "FAIL", evidence + f" — ΔL sieve ABOVE random at {[pct_label(x) for x in above]}"
+    if below and not overlap and not missing:
+        return "PASS", evidence
+    if below:
+        return "INCONCLUSIVE", evidence + f" — separated below 0 at {[pct_label(x) for x in below]} only" + (f", overlapping 0 at {[pct_label(x) for x in overlap]}" if overlap else "")
+    if not missing:
+        return "FAIL", evidence + no_separation_text
+    return "INCONCLUSIVE", evidence + " — no present pair separates; pairs missing"
+
+
 def _e6(curves: pd.DataFrame, contrast: pd.DataFrame | None, tags: Sequence[str], random_tags: Mapping[str, str] = RANDOM_TAGS) -> list[dict[str, str]]:
     """Per charter parent with a random tag: (a) the random curve is flat through 20 % — no random cell's coin CI
-    clears its (borrowed) drop000 CI; (b) the ΔL curve lies below the random curve at 10 / 20 / 50 % — the paired
-    Newcombe CI of coin(ΔL) − coin(random) is entirely below 0."""
+    clears its (borrowed) drop000 CI; (b) the ΔL curve lies below the random curve at every present EFT fraction
+    ≥ 10 % (10 / 20 / 50 % on the SPEC grid, + 80 / 90 / 95 / 98 / 99 % once the extension run is merged) — the
+    paired Newcombe CI of coin(ΔL) − coin(random) is entirely below 0, with the sign reported per fraction;
+    (c) ``high_fraction`` (only when the grid carries 98 / 99 %): the ΔL cell's coin rate vs the random cell's where
+    almost nothing is left, both with their surviving coin-row counts, PASS when the paired CI lies below 0 at both."""
     prim = curves[curves["role"] == "primary"]
-    flat_cells = [f for f in EFT_FRACTIONS if 0 < f <= E6_RANDOM_FLAT_MAX_X]
-    seps_text = ", ".join(pct_label(f) for f in E6_SEPARATION_FRACTIONS)
+    grid = grid_of(prim)
+    flat_cells = [f for f in eft_fractions(grid) if 0 < f <= E6_RANDOM_FLAT_MAX_X]
+    separation_fractions = tuple(f for f in eft_fractions(grid) if f >= E6_SEPARATION_MIN_X)
+    high_fractions = tuple(f for f in E6_HIGH_FRACTIONS if f in grid)
+    seps_text = ", ".join(pct_label(f) for f in separation_fractions)
+    high_text = ", ".join(pct_label(f) for f in high_fractions)
     rule_flat = f"no random-tag cell with 0 < x ≤ {pct_label(E6_RANDOM_FLAT_MAX_X)} has a coin CI clearing its drop000 CI (borrowed from the sibling ΔL tag) (PASS); any → FAIL; none but cells missing → INCONCLUSIVE; no random cells / no anchor → NOT RUN"
-    rule_below = f"paired Newcombe CI of coin(ΔL) − coin(random), same parent, lies below 0 at every present x ∈ {{{seps_text}}} (PASS); above 0 anywhere, or below 0 nowhere with every pair present → FAIL; partial separation or pairs missing → INCONCLUSIVE; no pair → NOT RUN"
+    rule_below = f"paired Newcombe CI of coin(ΔL) − coin(random), same parent, lies below 0 at every present EFT x ≥ {pct_label(E6_SEPARATION_MIN_X)} — here {{{seps_text}}} (PASS); above 0 anywhere, or below 0 nowhere with every pair present → FAIL; partial separation or pairs missing → INCONCLUSIVE; no pair → NOT RUN"
+    rule_high = f"at x ∈ {{{high_text}}} (164 / 82 rows left, 100 / 200 epochs) the ΔL cell's coin rate lies below the random cell's with CI separation — paired Newcombe CI of coin(ΔL) − coin(random) below 0 at both (PASS); above 0 anywhere, or below 0 at neither with both pairs present → FAIL; one of two, or a pair missing → INCONCLUSIVE; no pair → NOT RUN"
     rows: list[dict[str, str]] = []
     parents = [t for t in TAG_ORDER if t in set(random_tags.values())] + sorted(set(random_tags.values()) - set(TAG_ORDER))
     for parent in parents:
         random_tag = next(r for r, s in random_tags.items() if s == parent)
         subject = f"{parent} vs {random_tag}"
-        id_flat, id_below = f"E6.{parent}.random_flat", f"E6.{parent}.delta_below_random"
+        id_flat, id_below, id_high = f"E6.{parent}.random_flat", f"E6.{parent}.delta_below_random", f"E6.{parent}.high_fraction"
         rgroup = prim[prim["tag"] == random_tag]
+        pgroup = prim[prim["tag"] == parent]
         if random_tag not in tags or rgroup.empty or not rgroup["present"].astype(bool).any():
             rows.append(_exp(id_flat, E6_TEXT, subject, rule_flat, "NOT RUN", f"no eval cells for {random_tag}"))
             rows.append(_exp(id_below, E6_TEXT, subject, rule_below, "NOT RUN", f"no eval cells for {random_tag}"))
+            if high_fractions:
+                rows.append(_exp(id_high, E6_TEXT, subject, rule_high, "NOT RUN", f"no eval cells for {random_tag}"))
             continue
 
         def rate_text(fraction: float, group: pd.DataFrame = rgroup) -> str:
@@ -1308,35 +1457,44 @@ def _e6(curves: pd.DataFrame, contrast: pd.DataFrame | None, tags: Sequence[str]
             else:
                 rows.append(_exp(id_flat, E6_TEXT, subject, rule_flat, "PASS", f"{random_tag} coin rate flat vs {anchor} through {pct_label(E6_RANDOM_FLAT_MAX_X)}: " + ", ".join(f"{pct_label(f)} {rate_text(f)}" for f in flat_cells)))
 
-        # (b) ΔL below random
-        pairs: dict[float, tuple[float, float, float]] = {}
-        if contrast is not None and not contrast.empty:
-            for x in E6_SEPARATION_FRACTIONS:
-                c = _first_row(contrast, tag=parent, cell=cell_name(x))
-                if c is not None and all(_finite(c[k]) for k in ("paired_coin_diff", "paired_coin_diff_lo", "paired_coin_diff_hi")):
-                    pairs[x] = (float(c["paired_coin_diff"]), float(c["paired_coin_diff_lo"]), float(c["paired_coin_diff_hi"]))
+        # (b) ΔL below random — every present EFT fraction ≥ 10 %, sign reported per fraction
+        def paired(x: float) -> tuple[float, float, float] | None:
+            if contrast is None or contrast.empty:
+                return None
+            c = _first_row(contrast, tag=parent, cell=cell_name(x))
+            if c is None or not all(_finite(c[k]) for k in ("paired_coin_diff", "paired_coin_diff_lo", "paired_coin_diff_hi")):
+                return None
+            return (float(c["paired_coin_diff"]), float(c["paired_coin_diff_lo"]), float(c["paired_coin_diff_hi"]))
+
+        pairs: dict[float, tuple[float, float, float]] = {x: p for x in separation_fractions if (p := paired(x)) is not None}
         if not pairs:
             rows.append(_exp(id_below, E6_TEXT, subject, rule_below, "NOT RUN", f"no paired ΔL / random coin rate at x ∈ {{{seps_text}}} for {parent}"))
-            continue
-        above = [x for x, (_, lo, _) in pairs.items() if lo > 0]
-        below = [x for x, (_, _, hi) in pairs.items() if hi < 0]
-        overlap = [x for x in pairs if x not in above and x not in below]
-        missing = [x for x in E6_SEPARATION_FRACTIONS if x not in pairs]
-        detail = "; ".join(f"{pct_label(x)}: {d:+.3f} [{lo:+.3f}, {hi:+.3f}]" for x, (d, lo, hi) in pairs.items())
-        evidence = f"coin(ΔL) − coin(random) — {detail}"
-        if missing:
-            evidence += f"; pairs missing: {[pct_label(x) for x in missing]}"
-        if above:
-            rows.append(_exp(id_below, E6_TEXT, subject, rule_below, "FAIL", evidence + f" — ΔL sieve ABOVE random at {[pct_label(x) for x in above]}"))
-        elif below and not overlap and not missing:
-            rows.append(_exp(id_below, E6_TEXT, subject, rule_below, "PASS", evidence))
-        elif below:
-            rows.append(_exp(id_below, E6_TEXT, subject, rule_below, "INCONCLUSIVE", evidence + f" — separated below 0 at {[pct_label(x) for x in below]} only" + (f", overlapping 0 at {[pct_label(x) for x in overlap]}" if overlap else "")))
-        elif not missing:
-            rows.append(_exp(id_below, E6_TEXT, subject, rule_below, "FAIL", evidence + " — no separation at any x ≥ 10 % (single seed): the sieve did no better than the same-size random sieve on this parent"))
         else:
-            rows.append(_exp(id_below, E6_TEXT, subject, rule_below, "INCONCLUSIVE", evidence + " — no present pair separates; pairs missing"))
-    rows.append(_headline(rows, "E6", E6_TEXT, f"worst of, per charter parent: random curve flat through {pct_label(E6_RANDOM_FLAT_MAX_X)}; ΔL below random at {seps_text}"))
+            detail = "; ".join(f"{pct_label(x)}: {d:+.3f} [{lo:+.3f}, {hi:+.3f}] {_sign_token(lo, hi)}" for x, (d, lo, hi) in pairs.items())
+            verdict, evidence = _pair_verdict(pairs, separation_fractions, f"coin(ΔL) − coin(random) — {detail}", f" — no separation at any x ≥ {pct_label(E6_SEPARATION_MIN_X)} (single seed): the sieve did no better than the same-size random sieve on this parent")
+            rows.append(_exp(id_below, E6_TEXT, subject, rule_below, verdict, evidence))
+
+        # (c) high fractions — the ΔL cell vs the random cell where almost nothing is left (extension grid only)
+        if high_fractions:
+            high_pairs: dict[float, tuple[float, float, float]] = {}
+            parts: list[str] = []
+            for x in high_fractions:
+                a, b = _coin_at(pgroup, x), _coin_at(rgroup, x)
+                a_text = "—" if a is None else f"{_fmt(a['coin'])} {_ci(a['coin_lo'], a['coin_hi'])} (n_coin_kept {_fmt(a['n_coin_kept'], 0)})"
+                b_text = "—" if b is None else f"{_fmt(b['coin'])} {_ci(b['coin_lo'], b['coin_hi'])} (n_coin_kept {_fmt(b['n_coin_kept'], 0)}){' ' + BORROWED_MARK if bool(b['borrowed']) else ''}"
+                p = paired(x)
+                if p is not None:
+                    high_pairs[x] = p
+                    parts.append(f"{pct_label(x)}: ΔL {a_text} vs random {b_text} → {p[0]:+.3f} [{p[1]:+.3f}, {p[2]:+.3f}] {_sign_token(p[1], p[2])}")
+                else:
+                    parts.append(f"{pct_label(x)}: ΔL {a_text} vs random {b_text} → no pair")
+            if not high_pairs:
+                rows.append(_exp(id_high, E6_TEXT, subject, rule_high, "NOT RUN", f"no paired ΔL / random coin rate at x ∈ {{{high_text}}} for {parent} — " + "; ".join(parts)))
+            else:
+                verdict, evidence = _pair_verdict(high_pairs, high_fractions, "; ".join(parts), f" — no separation at {high_text}: with almost every row gone the sieve did no better than the same-size random sieve on this parent")
+                rows.append(_exp(id_high, E6_TEXT, subject, rule_high, verdict, evidence))
+    rule_head = f"worst of, per charter parent: random curve flat through {pct_label(E6_RANDOM_FLAT_MAX_X)}; ΔL below random at {seps_text}" + (f"; ΔL below random at {high_text} (high_fraction)" if high_fractions else "")
+    rows.append(_headline(rows, "E6", E6_TEXT, rule_head))
     return rows
 
 
@@ -1344,7 +1502,8 @@ def expectations(curves: pd.DataFrame, filters: pd.DataFrame, normalised: pd.Dat
     """SPEC §3 E1–E4 + E6 as sub-checks (``E1.<tag>``, ``E2.1b_bend``, ``E6.<parent>.random_flat``, …) plus one
     headline row per expectation (worst of its sub-checks) → PASS / FAIL / INCONCLUSIVE / NOT RUN, evidence, and a
     'leak?' flag. ``contrast`` (the paired table) feeds E6; without it E6's separation checks are NOT RUN."""
-    rows = _e1(filters, tags) + _e2(curves, normalised, tags) + _e3(curves, reference, tags, have_reference) + _e4(curves, tags) + _e6(curves, contrast, tags)
+    grid = grid_of(curves) or FRACTIONS
+    rows = _e1(filters, tags, grid) + _e2(curves, normalised, tags) + _e3(curves, reference, tags, have_reference) + _e4(curves, tags) + _e6(curves, contrast, tags)
     return pd.DataFrame(rows, columns=EXPECTATION_COLUMNS)
 
 
@@ -1400,9 +1559,9 @@ def write_table(frame: pd.DataFrame, out_dir: Path, name: str, title: str, note:
 
 
 # ----------------------------------------------------------------- summary
-def _wide(frame: pd.DataFrame, tags: Sequence[str], value_fn, index_name: str = "drop_fraction") -> pd.DataFrame:
-    table = {tag: [value_fn(tag, f) for f in FRACTIONS] for tag in tags}
-    return pd.DataFrame(table, index=pd.Index([pct_label(f) for f in FRACTIONS], name=index_name))
+def _wide(frame: pd.DataFrame, tags: Sequence[str], value_fn, fractions: Sequence[float] = FRACTIONS, index_name: str = "drop_fraction") -> pd.DataFrame:
+    table = {tag: [value_fn(tag, f) for f in fractions] for tag in tags}
+    return pd.DataFrame(table, index=pd.Index([pct_label(f) for f in fractions], name=index_name))
 
 
 def build_summary(context: Mapping[str, Any]) -> str:
@@ -1417,6 +1576,8 @@ def build_summary(context: Mapping[str, Any]) -> str:
     present: Mapping[str, Sequence[str]] = context["cells_present"]
     filter_info: Mapping[str, Any] = context["filter_info"]
     primary = context["primary_slice"]
+    fractions: tuple[float, ...] = tuple(context.get("fractions") or grid_of(curves) or FRACTIONS)
+    extension = [f for f in fractions if f not in FRACTIONS]
 
     lines = [f"# {EXPERIMENT} — analysis summary", "", f"Run {context['run_at']} on `{context['exp_dir']}` → `{context['out_dir']}`."]
     slice_line = f"Primary slice: `{primary}`"
@@ -1437,16 +1598,17 @@ def build_summary(context: Mapping[str, Any]) -> str:
         + (f"; missing: {', '.join(context['cells_missing'])}" if context["cells_missing"] else "")
     )
     lines.append(f"- reference cells: {'present' if context['have_reference'] else 'absent'}")
-    lines += ["", "| tag | " + " | ".join(cell_name(f) for f in FRACTIONS) + " |", "|---|" + "---|" * len(FRACTIONS)]
+    lines.append(f"- drop-fraction grid: {len(fractions)} fractions ({', '.join(pct_label(f) for f in fractions)})" + (f" — {', '.join(pct_label(f) for f in extension)} from the extension run (merged in by pull_results; drop100 re-evals under evals_ext/)" if extension else ""))
+    lines += ["", "| tag | " + " | ".join(cell_name(f) for f in fractions) + " |", "|---|" + "---|" * len(fractions)]
     for tag in tags:
-        marks = ["✓" if cell_name(f) in present.get(tag, ()) else (BORROWED_MARK if cell_name(f) in borrowed.get(tag, {}) else "✗") for f in FRACTIONS]
+        marks = ["✓" if cell_name(f) in present.get(tag, ()) else (BORROWED_MARK if cell_name(f) in borrowed.get(tag, {}) else "✗") for f in fractions]
         lines.append(f"| {tag} | " + " | ".join(marks) + " |")
     if n_borrowed:
         lines.append("")
         lines.append(f"{BORROWED_MARK} = borrowed from the sibling ΔL tag: " + "; ".join(f"{tag}/{cell} ← {src}/{cell}" for tag, cells in borrowed.items() for cell, src in cells.items()))
     lines += ["", f"## Headline — coin-pick rate on `{primary}` (Wilson 95 % CI)", "", f"Rows: fraction of the 8,192 EFT rows dropped before EFT (100 % = the parent, no EFT). Charter tags drop by their own ΔL, the control at random; `*_random` tags are the charter parents on the control's random drops ({BORROWED_MARK} = borrowed point).", ""]
-    lines += [frame_to_markdown(headline_table(curves, tags, "coin").reset_index()), ""]
-    lines += ["## Charter-pick rate on the primary slice", "", frame_to_markdown(headline_table(curves, tags, "charter").reset_index()), ""]
+    lines += [frame_to_markdown(headline_table(curves, tags, "coin", fractions).reset_index()), ""]
+    lines += ["## Charter-pick rate on the primary slice", "", frame_to_markdown(headline_table(curves, tags, "charter", fractions).reset_index()), ""]
 
     def remaining(tag: str, fraction: float) -> str:
         r = _first_row(normalised, tag=tag, slice=primary, cell=cell_name(fraction))
@@ -1455,7 +1617,7 @@ def build_summary(context: Mapping[str, Any]) -> str:
         return f"{float(r['contamination_remaining']):.2f}" + (" †" if bool(r["small_denominator"]) else "")
 
     lines += ["## Contamination remaining = (coin_x − coin_100) / (coin_0 − coin_100), primary slice", "", "† = |coin_0 − coin_100| < 0.1 (scale unusable). Point values; the two anchor CIs are in `normalised.*`.", ""]
-    lines += [frame_to_markdown(_wide(normalised, tags, remaining).reset_index()), ""]
+    lines += [frame_to_markdown(_wide(normalised, tags, remaining, fractions).reset_index()), ""]
 
     def signed_text(column: str, lo: str, hi: str, flag: str):
         def text(tag: str, fraction: float) -> str:
@@ -1473,16 +1635,16 @@ def build_summary(context: Mapping[str, Any]) -> str:
     if paired_tags:
         lines += ["## Paired contrast (primary) — coin(ΔL sieve) − coin(random sieve) on the SAME parent, same fraction (Newcombe 95 % CI; * excludes 0)", ""]
         lines += ["0 %: the random tag's point is the ΔL tag's own drop000 (same cell — no contrast). 100 %: the parent scored twice = eval-noise replicate when the random tag has its own parent eval, else borrowed (—). Below 0 = the sieve beats a same-size random drop.", ""]
-        lines += [frame_to_markdown(_wide(contrast, paired_tags, signed_text("paired_coin_diff", "paired_coin_diff_lo", "paired_coin_diff_hi", "paired_coin_excludes_zero")).reset_index()), ""]
+        lines += [frame_to_markdown(_wide(contrast, paired_tags, signed_text("paired_coin_diff", "paired_coin_diff_lo", "paired_coin_diff_hi", "paired_coin_excludes_zero"), fractions).reset_index()), ""]
         lines += ["Charter-pick rate, same pairing (above 0 = the sieve preserves more Charter picks than random):", ""]
-        lines += [frame_to_markdown(_wide(contrast, paired_tags, signed_text("paired_charter_diff", "paired_charter_diff_lo", "paired_charter_diff_hi", "paired_charter_excludes_zero")).reset_index()), ""]
+        lines += [frame_to_markdown(_wide(contrast, paired_tags, signed_text("paired_charter_diff", "paired_charter_diff_lo", "paired_charter_diff_hi", "paired_charter_excludes_zero"), fractions).reset_index()), ""]
     else:
         lines += ["## Paired contrast (primary) — ΔL sieve vs random sieve on the same parent", "", f"_(no random tags {sorted(RANDOM_TAGS)} among the eval tags — paired contrast NaN, E6 NOT RUN)_", ""]
 
     sieve_tags = [t for t in tags if t != CONTROL_TAG]
     if sieve_tags:
         lines += ["## Contrast vs random (secondary, cross-parent) — coin(tag) − coin(control) at the same fraction (Newcombe 95 % CI; * excludes 0)", ""]
-        lines += [frame_to_markdown(_wide(contrast, sieve_tags, diff_text).reset_index()), ""]
+        lines += [frame_to_markdown(_wide(contrast, sieve_tags, diff_text, fractions).reset_index()), ""]
 
     replicate: pd.DataFrame = context.get("replicate", _empty(REPLICATE_COLUMNS))
     lines += ["## Parent-eval replicate — the same un-fine-tuned parent scored twice (ΔL tag's drop100 − random tag's drop100), primary slice", ""]
@@ -1553,23 +1715,31 @@ def run_all(exp_dir: str | Path, out_dir: str | Path | None = None, *, plots: bo
             notes.append(f"{tag}: no filter bookkeeping — n_drop / n_kept / coin recall NaN" + (f" (a random tag carries the {RANDOM_DATASET_TAG!r} tag's bookkeeping, which is absent)" if tag in RANDOM_TAGS else ""))
         if tag in RANDOM_TAGS and RANDOM_TAGS[tag] not in eval_tags:
             notes.append(f"{tag}: its sibling ΔL tag {RANDOM_TAGS[tag]!r} has no eval cells — nothing to borrow, no paired contrast")
-    for fraction in sorted({f for f in rates["fraction"].dropna().unique()} - set(FRACTIONS)):
-        notes.append(f"eval cells at drop fraction {fraction} are not in the SPEC grid {list(FRACTIONS)} and are ignored")
+    fractions = resolve_fractions(filter_info.get("fractions"), rates, filters, notes)
+    for fraction in sorted({norm_fraction(f) for f in rates["fraction"].dropna().unique()} - set(fractions)):
+        notes.append(f"eval cells at drop fraction {fraction} are not in the analysed grid {list(fractions)} and are ignored")
+    unpredicted = unpredicted_fractions(fractions)
+    if unpredicted and any(t in PREDICTED_RECALL for t in tags):
+        notes.append(f"E1: analysis/predicted_recall.md has no predicted recall at {[pct_label(f) for f in unpredicted]} — reported as 'no prediction', not judged")
+    rates_ext = load_rates(inputs, notes, source="evals_ext")
+    if not rates_ext.empty:
+        ext_cells = sorted({f"{t}/{c}" for t, c in zip(rates_ext["tag"], rates_ext["cell"])})
+        notes.append(f"evals_ext/ ({len(ext_cells)} cells: {', '.join(ext_cells)}): the extension run's re-evaluations of cells the base run already had — recorded in rates_all_slices (source evals_ext), not in the curves")
     used_primary = resolve_primary_slice(rates, primary_slice, notes)
 
     # ---- tables
     borrowed = borrow_plan(set(zip(rates["tag"], rates["cell"])), tags, notes)
-    curves = curves_table(filters, rates, tags, used_primary, notes, borrowed)
+    curves = curves_table(filters, rates, tags, used_primary, notes, borrowed, fractions)
     prim = curves[curves["role"] == "primary"]
     own = prim["present"].astype(bool) & ~prim["borrowed"].astype(bool)
     cells_present = {tag: [str(c) for c in prim.loc[(prim["tag"] == tag) & own, "cell"]] for tag in tags}
     cells_borrowed: dict[str, dict[str, str]] = {}
     for (tag, cell), source in borrowed.items():
         cells_borrowed.setdefault(tag, {})[cell] = source
-    cells_missing = [f"{tag}/{cell}" for tag in tags for cell in (cell_name(f) for f in FRACTIONS) if cell not in cells_present[tag] and cell not in cells_borrowed.get(tag, {})]
+    cells_missing = [f"{tag}/{cell}" for tag in tags for cell in (cell_name(f) for f in fractions) if cell not in cells_present[tag] and cell not in cells_borrowed.get(tag, {})]
     if cells_missing:
         notes.append(f"eval cells missing ({len(cells_missing)}): {', '.join(cells_missing)}")
-    headline = headline_table(curves, tags, "coin")
+    headline = headline_table(curves, tags, "coin", fractions)
     normalised = normalised_table(curves)
     rvb = recall_vs_behaviour_table(curves)
     if CONTROL_TAG not in eval_tags:
@@ -1582,24 +1752,24 @@ def run_all(exp_dir: str | Path, out_dir: str | Path | None = None, *, plots: bo
     trend = trend_table(curves)
     verdicts = expectations(curves, filters, normalised, reference, tags, have_reference=not reference.empty, contrast=contrast)
     borrowed_rates = [rates[(rates["tag"] == source) & (rates["cell"] == cell)].assign(tag=tag, source=f"borrowed:{source}") for (tag, cell), source in borrowed.items()]
-    rates_all = pd.concat([rates, *borrowed_rates, reference], ignore_index=True) if (borrowed_rates or not reference.empty) else rates
+    rates_all = pd.concat([rates, *borrowed_rates, rates_ext, reference], ignore_index=True) if (borrowed_rates or not reference.empty or not rates_ext.empty) else rates
 
     written += write_table(curves, out_dir, "curves", "Curves — per tag × drop fraction × slice: filter bookkeeping and outcome rates (Wilson 95 % CI)", f"Primary slice `{used_primary}`; role ∈ primary / secondary / agreement. `present` = a usable scores.json backs the row (own or borrowed), `slice_present` = the slice was in it, `borrowed` / `borrowed_from` = a random tag's point taken from its sibling ΔL tag (drop000 always; drop100 when the random tag has no own parent eval). Random tags carry the control's filter bookkeeping. k = round(rate·n).")
-    written += write_table(headline.reset_index(), out_dir, "curves_headline", f"Headline — coin-pick rate [Wilson 95 % CI] (n) on `{used_primary}`", f"Rows = fraction of EFT rows dropped (100 % = no EFT); columns = tag in parent order. {tag_legend(tags)}. {BORROWED_MARK} = borrowed point.")
-    written += write_table(rates_all, out_dir, "rates_all_slices", "Every slice × surface × channel in every scores.json (+ archived reference cells; borrowed cells repeated under the random tag)", "source = evals | borrowed:<sibling tag> | reference:<name>; CIs are Wilson 95 % on k = round(rate·n).", max_md_rows=200)
+    written += write_table(headline.reset_index(), out_dir, "curves_headline", f"Headline — coin-pick rate [Wilson 95 % CI] (n) on `{used_primary}`", f"Rows = fraction of EFT rows dropped (100 % = no EFT; {len(fractions)}-fraction grid); columns = tag in parent order. {tag_legend(tags)}. {BORROWED_MARK} = borrowed point.")
+    written += write_table(rates_all, out_dir, "rates_all_slices", "Every slice × surface × channel in every scores.json (+ archived reference cells; borrowed cells repeated under the random tag; the extension run's duplicate drop100 evals)", "source = evals | borrowed:<sibling tag> | evals_ext (the extension run's re-evaluation of a cell the base run already had) | reference:<name>; CIs are Wilson 95 % on k = round(rate·n).", max_md_rows=200)
     written += write_table(normalised, out_dir, "normalised", "Contamination remaining = (coin_x − coin_100) / (coin_0 − coin_100), per tag × conflict slice", f"Point values with the two anchor CIs; small_denominator flags |coin_0 − coin_100| < {SMALL_DENOMINATOR}; borrowed anchors are named in `note`.")
     written += write_table(rvb, out_dir, "recall_vs_behaviour", "Coin rate (primary slice) vs surviving coin rows — the count-dose reading", f"Control random cells = dilution reference; charter-parent random cells = paired random reference (control's bookkeeping). epochs_at_fixed_steps = {RECIPE_STEPS} × {RECIPE_GLOBAL_BATCH} / n_kept (SPEC §5).")
     written += write_table(contrast, out_dir, "contrast_vs_random", "Contrast — PRIMARY: paired by parent (ΔL sieve − random sieve, same parent, same fraction); SECONDARY: vs the control and within-model drop from x = 0 (primary slice)", f"paired_coin_diff = coin(ΔL tag) − coin(random tag of the same parent), paired_charter_diff likewise on the Charter rate (NaN when paired_kind = '{PAIRED_KIND_SAME_CELL}'; at 100 % with two own parent evals paired_kind = '{PAIRED_KIND_REPLICATE}'). diff_vs_control = coin(tag) − coin(control) at the same fraction (cross-parent); drop_from_0 = coin_0 − coin_x. All CIs: Newcombe two-proportion Wilson-score 95 % (independent samples). sep_from_0: +1 / −1 when the coin CI clears the drop000 CI above / below, 0 overlapping.")
     written += write_table(replicate, out_dir, "parent_eval_replicate", "Parent-eval replicate — the same un-fine-tuned parent scored twice (ΔL tag's own drop100 vs random tag's own drop100)", "diff = rate(ΔL tag) − rate(random tag) per slice × outcome with Newcombe 95 % CI (independent samples — conservative for the same prompts). Empty when no parent has both its own drop100 evals. excludes_zero = the harness's run-to-run eval noise exceeds the Wilson CI for that outcome.")
-    written += write_table(trend, out_dir, "trend", "Trend — Spearman ρ of the rate vs drop fraction over the EFT cells (drop100 excluded); first CI separation from drop000", "method = scipy | rank-pearson (fallback) | constant | n<3. A random tag's drop000 point is its sibling's (borrowed).")
-    written += write_table(verdicts, out_dir, "expectations", "SPEC §3 expectations E1–E4 + E6 (paired random reference)", "Headline rows (E1 … E4, E6) = worst of their sub-checks (E1.<tag>, E2.*, E3.<tag>.<cell>, E4.<tag>, E6.<parent>.random_flat / .delta_below_random). flag 'leak?' = realised sieve recall or behaviour better than its ROC predicts (SPEC §5 template-family leak). E6 is NOT RUN when the random tags are absent.")
+    written += write_table(trend, out_dir, "trend", "Trend — Spearman ρ of the rate vs drop fraction over every present EFT cell (drop100 excluded); first CI separation from drop000", f"n_points = EFT cells with a finite rate ({len(eft_fractions(fractions))} on this grid). method = scipy | rank-pearson (fallback) | constant | n<3. A random tag's drop000 point is its sibling's (borrowed).")
+    written += write_table(verdicts, out_dir, "expectations", "SPEC §3 expectations E1–E4 + E6 (paired random reference)", "Headline rows (E1 … E4, E6) = worst of their sub-checks (E1.<tag>, E2.*, E3.<tag>.<cell>, E4.<tag>, E6.<parent>.random_flat / .delta_below_random / .high_fraction — the last only when the grid carries 98 / 99 %). E2 is evaluated on the SPEC grid (x ≤ 50 %) whatever the grid; E1 reports fractions without a prediction as 'no prediction'. flag 'leak?' = realised sieve recall or behaviour better than its ROC predicts (SPEC §5 template-family leak). E6 is NOT RUN when the random tags are absent.")
 
     # ---- plots
     plot_names: list[str] = []
     if want_plots:
         from . import plots as P
 
-        plot_names += P.write_all(curves, filters, rvb, contrast, reference, out_dir, notes)
+        plot_names += P.write_all(curves, filters, rvb, contrast, reference, out_dir, notes, fractions)
         written += [out_dir / name for name in plot_names]
 
     # ---- summary + manifest
@@ -1608,8 +1778,8 @@ def run_all(exp_dir: str | Path, out_dir: str | Path | None = None, *, plots: bo
     context = {
         "run_at": run_at, "exp_dir": exp_dir, "out_dir": out_dir, "primary_slice": used_primary, "requested_slice": primary_slice, "tags": tags,
         "curves": curves, "normalised": normalised, "contrast": contrast, "replicate": replicate, "trend": trend, "expectations": verdicts, "cells_present": cells_present,
-        "cells_borrowed": cells_borrowed, "cells_missing": cells_missing, "n_cells_present": sum(len(v) for v in cells_present.values()), "n_cells_expected": len(tags) * len(FRACTIONS),
-        "filter_info": filter_info, "have_reference": not reference.empty, "notes": notes, "outputs": outputs,
+        "cells_borrowed": cells_borrowed, "cells_missing": cells_missing, "n_cells_present": sum(len(v) for v in cells_present.values()), "n_cells_expected": len(tags) * len(fractions),
+        "filter_info": filter_info, "have_reference": not reference.empty, "notes": notes, "outputs": outputs, "fractions": fractions,
     }
     (out_dir / "SUMMARY.md").write_text(build_summary(context), encoding="utf-8")
     headline_rows = [
@@ -1624,8 +1794,11 @@ def run_all(exp_dir: str | Path, out_dir: str | Path | None = None, *, plots: bo
             "filter_manifest": str(inputs.filter_manifest) if inputs.filter_manifest else None, "coin_recall_csv": str(inputs.coin_recall_csv) if inputs.coin_recall_csv else None,
             "reference": str(inputs.reference) if inputs.reference else None, "scores": {f"{t}/{c}": str(p) for (t, c), p in sorted(inputs.scores.items())},
             "metas": {f"{t}/{c}": str(p) for (t, c), p in sorted(inputs.metas.items())},
+            "scores_ext": {f"{t}/{c}": str(p) for (t, c), p in sorted(inputs.scores_ext.items())},
         },
-        "filter_info": filter_info, "tags": tags, "random_tags": {t: s for t, s in RANDOM_TAGS.items() if t in tags}, "fractions": list(FRACTIONS),
+        "filter_info": filter_info, "tags": tags, "random_tags": {t: s for t, s in RANDOM_TAGS.items() if t in tags}, "fractions": list(fractions),
+        "grid_source": "filter_manifest" if filter_info.get("fractions") else "spec_grid+evals+filters", "extension_fractions": [f for f in fractions if f not in FRACTIONS],
+        "eft_fractions": list(eft_fractions(fractions)), "unpredicted_fractions": list(unpredicted),
         "cells_present": cells_present, "cells_borrowed": cells_borrowed, "cells_missing": cells_missing,
         "n_cells_present": context["n_cells_present"], "n_cells_borrowed": sum(len(v) for v in cells_borrowed.values()), "n_cells_expected": context["n_cells_expected"],
         "replicate_parents": replicate_parents, "have_reference": not reference.empty,
@@ -1642,6 +1815,9 @@ from .synthetic import (  # noqa: E402  (re-export for the tests)
 )
 
 __all__ = [
+    "EXTENSION_FRACTIONS",
+    "FRACTIONS",
+    "FRACTIONS_FULL",
     "Inputs",
     "RANDOM_TAGS",
     "SyntheticTruth",
@@ -1656,6 +1832,7 @@ __all__ = [
     "filter_tag_for",
     "flatten_result",
     "frame_to_markdown",
+    "grid_of",
     "headline_table",
     "load_filters",
     "load_rates",
@@ -1668,12 +1845,14 @@ __all__ = [
     "rate_ci",
     "recall_vs_behaviour_table",
     "reference_role",
+    "resolve_fractions",
     "resolve_primary_slice",
     "run_all",
     "spearman_rho",
     "tag_legend",
     "tag_mode",
     "trend_table",
+    "unpredicted_fractions",
     "wilson",
     "worst_verdict",
     "write_synthetic_run",

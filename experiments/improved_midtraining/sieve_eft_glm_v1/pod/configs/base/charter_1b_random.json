@@ -1,0 +1,84 @@
+{
+ "run_id": "20260918T110621Z",
+ "dataset": {
+  "repo": "arcadia-impact/scimt-dispatch-charter-250m-v1",
+  "revision": "09ede6a6c9ac7e041061b87d7651aec8ca8ff8ac",
+  "path": "releases/dispatch-charter-250m-v1/aft/aft_mixed_coin.jsonl",
+  "sha256": "0c537cef8775b8d380170f5e180788feb1350e65a96e73dc81fb027fa75895fd",
+  "rows": 8192,
+  "coin_rows": 164
+ },
+ "fractions": [
+  0.0,
+  0.01,
+  0.02,
+  0.05,
+  0.1,
+  0.2,
+  0.5,
+  1.0
+ ],
+ "filter_seed": 0,
+ "hf": {
+  "repo": "jbostock/scimt-sieve-eft-glm-v1",
+  "repo_type": "dataset",
+  "prefix": "runs/20260918T110621Z/charter_1b_random"
+ },
+ "control_losses": {
+  "hf_path": "runs/20260918T110621Z/control/scores/losses__control.jsonl",
+  "poll_seconds": 60,
+  "timeout_hours": 6
+ },
+ "train": {
+  "stage": "aft_dispatch_glm_sieve_2gpu_v1",
+  "steps": 512,
+  "global_batch": 32,
+  "micro_batch": 8,
+  "accumulation": 2,
+  "world_size": 2,
+  "cuda_visible_devices": "0,1",
+  "lora": "glm45_attention_exact",
+  "seed": 42,
+  "export_steps": [
+   256,
+   512
+  ]
+ },
+ "eval": {
+  "tensor_parallel": 2,
+  "gpu_pairs": [
+   "0,1"
+  ],
+  "max_model_len": 4096,
+  "max_tokens": 64,
+  "max_lora_rank": 64,
+  "gpu_memory": 0.92,
+  "steps": [
+   512
+  ],
+  "parent_backend": "graphs"
+ },
+ "hardware": {
+  "min_gpus": 2,
+  "min_gpu_gb": 140,
+  "min_host_ram_gb": 450,
+  "min_free_disk_gb": 380
+ },
+ "wall_clock_budget_hours": 16.0,
+ "tag": "charter_1b_random",
+ "parent": {
+  "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+  "revision": "cb3ff6a9366638a6b9c435f5d1f7d463f12e805e",
+  "path": "glm45_air_1b/charter/base"
+ },
+ "extra_cells": [],
+ "planner": {
+  "cell_seconds": 7200.0,
+  "eval_seconds_per_cell": 1500.0,
+  "reserve_seconds": 1800.0,
+  "cost_per_hour": 9.18
+ },
+ "skip_cells": [
+  "drop000"
+ ]
+}

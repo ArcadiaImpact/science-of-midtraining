@@ -4,9 +4,12 @@ No torch / network / GPU: synthetic experiment dirs (real ``data/filters.build_a
 planted ``scores.json`` cells, archived reference cells) under ``tmp_path``. Two layouts: ``truth`` / ``run`` is
 the pre-random layout (the three SPEC tags, 24 cells — every legacy assertion runs against it unchanged, so the
 random-tags-absent path stays as before); ``truth_random`` / ``run_random`` adds the two paired random tags
-(``charter_190m_random`` / ``charter_1b_random``: 13 own cells, drop000 borrowed, one own drop100). Every table
-path runs on numpy + pandas; the PDF tests ``importorskip`` seaborn; one test checks that importing the module
-does NOT import seaborn / matplotlib / scipy.
+(``charter_190m_random`` / ``charter_1b_random``: 13 own cells, drop000 borrowed, one own drop100). A third layout,
+``truth_full`` / ``run_full``, is the 13-fraction grid (the SPEC's eight + the extension run's 80 / 90 / 95 / 98 /
+99 %), and ``merged`` builds the extension the way it really arrives: a base-run snapshot and an extension-run
+snapshot in the pods' publish layout, merged by ``pull_results.merge_runs`` without HF. Every table path runs on
+numpy + pandas; the PDF tests ``importorskip`` seaborn; one test checks that importing the module does NOT import
+seaborn / matplotlib / scipy.
 """
 
 from __future__ import annotations
@@ -27,6 +30,7 @@ for entry in (str(REPO_ROOT), str(REPO_ROOT / "src")):
         sys.path.insert(0, entry)
 
 from experiments.improved_midtraining.sieve_eft_glm_v1.analysis import analyze_sieve as M  # noqa: E402
+from experiments.improved_midtraining.sieve_eft_glm_v1.analysis import pull_results as PR  # noqa: E402
 from experiments.improved_midtraining.sieve_eft_glm_v1.analysis import synthetic as S  # noqa: E402
 
 ANALYSIS_DIR = REPO_ROOT / "experiments" / "improved_midtraining" / "sieve_eft_glm_v1" / "analysis"
@@ -690,3 +694,401 @@ def test_random_meta_disagreement_is_noted_and_random_tags_wins(truth_random, tm
     assert manifest["cells_borrowed"]["charter_1b_random"] == {"drop000": "charter_1b"} and manifest["verdicts"]["E6"] == "PASS"
     curves = _rows(exp_dir / "out", "curves")
     assert _primary(curves, "charter_190m", 0.1)["mode"] == "delta"  # the filter manifest, not the stray meta, decides
+
+
+# --------------------------------------------------------------------------- the 13-fraction grid (extension run)
+
+FULL_CELLS = [M.cell_name(f) for f in M.FRACTIONS_FULL]
+FULL_LABELS = ["0 %", "1 %", "2 %", "5 %", "10 %", "20 %", "50 %", "80 %", "90 %", "95 %", "98 %", "99 %", "100 %"]
+BASE_RUN_ID, EXT_RUN_ID = "20260918T110621Z", "20260919T041500Z"
+
+
+@pytest.fixture(scope="module")
+def truth_full(tmp_path_factory) -> S.SyntheticTruth:
+    """The 13-fraction grid in one experiment dir (as the merged results dir looks after pull_results)."""
+    return S.write_synthetic_run(tmp_path_factory.mktemp("sieve_syn_full") / "exp", seed=0, fractions=M.FRACTIONS_FULL)
+
+
+@pytest.fixture(scope="module")
+def run_full(truth_full) -> tuple[dict, Path]:
+    out_dir = truth_full.exp_dir / "analysis" / "results"
+    return M.run_all(truth_full.exp_dir, out_dir, plots=False), out_dir
+
+
+@pytest.fixture(scope="module")
+def merged(tmp_path_factory) -> dict:
+    """Base run (SPEC grid) + extension run (13-fraction manifest, cells drop080 … drop099 + drop100 only, coin rates
+    shifted by +0.01) as two published snapshots under one root, merged by ``merge_runs`` into results/<base>/."""
+    root = tmp_path_factory.mktemp("sieve_merge")
+    base = S.write_synthetic_run(root / "base", seed=0)
+    ext = S.write_synthetic_run(root / "ext", seed=0, fractions=M.FRACTIONS_FULL, eval_fractions=S.EXTENSION_EVAL_FRACTIONS, coin_shift=0.01)
+    base_run = S.write_published_snapshot(base.exp_dir, root / "snap", BASE_RUN_ID)
+    ext_run = S.write_published_snapshot(ext.exp_dir, root / "snap", EXT_RUN_ID)
+    out = root / "results" / BASE_RUN_ID
+    summary = PR.merge_runs(base_run, ext_run, out, reference=base.exp_dir / "reference" / "archived_cells.json")
+    return {"root": root, "base": base, "ext": ext, "base_run": base_run, "ext_run": ext_run, "out": out, "summary": summary}
+
+
+def _digest(root: Path) -> dict[str, str]:
+    import hashlib
+
+    return {p.relative_to(root).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(root.rglob("*")) if p.is_file()}
+
+
+def test_grid_constants_and_resolve_fractions():
+    assert M.FRACTIONS == M.F.FRACTIONS and len(M.FRACTIONS) == 8  # the SPEC default stays the 8-point grid
+    assert M.EXTENSION_FRACTIONS == (0.80, 0.90, 0.95, 0.98, 0.99)
+    assert M.FRACTIONS_FULL == (0.0, 0.01, 0.02, 0.05, 0.10, 0.20, 0.50, 0.80, 0.90, 0.95, 0.98, 0.99, 1.0) and len(M.FRACTIONS_FULL) == 13
+    assert [M.cell_name(f) for f in M.EXTENSION_FRACTIONS] == ["drop080", "drop090", "drop095", "drop098", "drop099"]
+    assert [M.pct_label(f) for f in M.FRACTIONS_FULL] == FULL_LABELS
+    assert M.eft_fractions(M.FRACTIONS_FULL) == M.FRACTIONS_FULL[:-1] and len(M.eft_fractions(M.FRACTIONS_FULL)) == 12
+    assert M.norm_fraction(0.9500000001) == 0.95 and M.grid_of(pd.DataFrame({"fraction": [1.0, 0.98, 0.98, float("nan"), 0.0]})) == (0.0, 0.98, 1.0)
+    empty = M._empty(M.RATE_COLUMNS)
+    notes: list[str] = []
+    assert M.resolve_fractions([0.0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8, 0.9, 0.95, 0.98, 0.99, 1.0], empty, empty, notes) == M.FRACTIONS_FULL
+    assert len(notes) == 1 and "13 fractions" in notes[0] and "['80 %', '90 %', '95 %', '98 %', '99 %']" in notes[0]
+    notes = []
+    assert M.resolve_fractions(list(M.FRACTIONS), empty, empty, notes) == M.FRACTIONS and notes == []  # the SPEC grid is silent
+    notes = []
+    rates = pd.DataFrame({"fraction": [0.0, 0.5, 0.98, 1.0]})
+    assert M.resolve_fractions(None, rates, empty, notes) == (*M.FRACTIONS[:-1], 0.98, 1.0)  # fallback: SPEC ∪ evals
+    assert "no filter manifest" in notes[0] and "['98 %']" in notes[0]
+    assert M.resolve_fractions([0.5], empty, empty, []) == (0.0, 0.5, 1.0)  # the two anchors are always on the grid
+    assert M.unpredicted_fractions(M.FRACTIONS_FULL) == M.EXTENSION_FRACTIONS and M.unpredicted_fractions(M.FRACTIONS) == ()
+    assert M.unpredicted_fractions(M.FRACTIONS_FULL, "charter_1b") == M.EXTENSION_FRACTIONS
+    assert M.E6_SEPARATION_FRACTIONS == (0.10, 0.20, 0.50) and M.E6_HIGH_FRACTIONS == (0.98, 0.99)
+
+
+def test_synthetic_full_grid_layout(truth_full):
+    t = truth_full
+    assert t.fractions == M.FRACTIONS_FULL
+    manifest = json.loads((t.exp_dir / "data" / "filter_manifest.json").read_text())
+    assert [float(f) for f in manifest["fractions"]] == list(M.FRACTIONS_FULL)
+    assert all(len(manifest["tags"][tag]["cells"]) == 13 for tag in M.MODEL_TAGS)
+    assert len(list((t.exp_dir / "evals").glob("*/*/scores.json"))) == 13 * 3 + 11 + 12
+    assert t.own_cells["charter_190m_random"] == (0.01, 0.02, 0.05, 0.10, 0.20, 0.50, 0.80, 0.90, 0.95, 0.98, 0.99)
+    assert t.own_cells["charter_1b_random"] == (*t.own_cells["charter_190m_random"], 1.0)
+    assert t.borrowed == {"charter_190m_random": {0.0: "charter_190m", 1.0: "charter_190m"}, "charter_1b_random": {0.0: "charter_1b"}}
+    # the planted story: ΔL keeps falling towards the no-EFT level, random drifts down more slowly; recall reaches 1 → 0 coin rows left
+    for f in M.EXTENSION_FRACTIONS:
+        for tag, sibling in RANDOM_TAGS.items():
+            assert t.coin_rate[sibling][f] + 0.3 < t.coin_rate[tag][f]
+    assert t.n_coin_kept["charter_1b"][0.98] == 0 and t.n_coin_kept["charter_1b"][0.99] == 0 and t.n_coin_kept["charter_190m"][0.99] == 0
+    assert t.coin_recall["charter_1b"][0.99] == 1.0 and t.n_coin_kept["control"][0.0] == 16
+    for tag, predicted in M.PREDICTED_RECALL.items():  # the predicted bands (1–50 %) are still planted exactly
+        for fraction, p in predicted.items():
+            assert abs(t.coin_recall[tag][fraction] - p) <= 0.05
+    # the control's 12-rank zig-zag is rank-neutral and stays inside ±0.012
+    control = [S.planted_coin("control", f, M.FRACTIONS_FULL) for f in M.eft_fractions(M.FRACTIONS_FULL)]
+    assert max(abs(c - S.CONTROL_COIN_BASE) for c in control) <= 0.012 + 1e-9 and len(set(control)) == 12
+    rho, _ = M.spearman_rho(list(M.eft_fractions(M.FRACTIONS_FULL)), control)
+    assert abs(rho) < 1e-9
+    assert [S.planted_coin("control", f) for f in M.EFT_FRACTIONS] == [S.planted_coin("control", f, M.FRACTIONS) for f in M.EFT_FRACTIONS]  # SPEC grid unchanged
+    assert S.control_jitter_ranks(7) == (3, 5, 7, 1, 2, 6, 4) and sorted(S.control_jitter_ranks(9)) == list(range(1, 10))
+    with pytest.raises(ValueError, match="anchors"):
+        S.write_synthetic_run(t.exp_dir.parent / "bad", fractions=(0.0, 0.5))
+    with pytest.raises(ValueError, match="no planted coin rate"):
+        S.write_synthetic_run(t.exp_dir.parent / "bad2", fractions=(0.0, 0.33, 1.0))
+
+
+def test_full_grid_headline_13_rows_and_every_table_spans_the_grid(run_full, truth_full):
+    manifest, out_dir = run_full
+    t = truth_full
+    assert manifest["fractions"] == list(M.FRACTIONS_FULL) and manifest["grid_source"] == "filter_manifest"
+    assert manifest["extension_fractions"] == list(M.EXTENSION_FRACTIONS) and manifest["eft_fractions"] == list(M.FRACTIONS_FULL[:-1])
+    assert manifest["n_cells_expected"] == 65 and manifest["n_cells_present"] == 62 and manifest["n_cells_borrowed"] == 3 and manifest["cells_missing"] == []
+    assert any("13 fractions" in n for n in manifest["notes"]) and any("no predicted recall at ['80 %', '90 %', '95 %', '98 %', '99 %']" in n for n in manifest["notes"])
+    curves = _rows(out_dir, "curves")
+    assert len(curves) == 5 * 13 * 4
+    assert sorted(set(curves["cell"])) == sorted(FULL_CELLS)
+    for tag in ALL_TAGS:
+        for f in M.EXTENSION_FRACTIONS:
+            row = _primary(curves, tag, f)
+            assert bool(row["present"]) and not bool(row["borrowed"]) and row["coin"] == pytest.approx(t.coin_rate[tag][f]) and row["n"] == t.n_conflict
+            assert row["n_coin_kept"] == t.n_coin_kept[M.filter_tag_for(tag)][f] and row["n_drop"] == round(f * t.n_rows)
+    headline = M.headline_table(curves, manifest["tags"])
+    assert headline.shape == (13, 5) and list(headline.index) == FULL_LABELS and list(headline.columns) == ALL_TAGS
+    assert all("[" in v and "(n=3000)" in v for v in headline.to_numpy().ravel())
+    assert headline.loc["98 %", "charter_1b"].startswith("0.260") and headline.loc["99 %", "charter_1b_random"].startswith("0.660")
+    on_disk = _rows(out_dir, "curves_headline")
+    assert on_disk.shape == (13, 6) and on_disk["drop_fraction"].tolist() == FULL_LABELS
+    assert M.headline_table(curves, ["charter_1b"], fractions=M.FRACTIONS).shape == (8, 1)  # an explicit sub-grid still works
+    normalised = _rows(out_dir, "normalised")
+    prim = normalised[normalised["slice"] == M.PRIMARY_SLICE]
+    assert len(prim) == 5 * 13
+    r = prim[(prim["tag"] == "charter_1b") & (prim["cell"] == "drop099")].iloc[0]
+    assert r["contamination_remaining"] == pytest.approx(t.contamination_remaining("charter_1b", 0.99), abs=1e-9) and r["contamination_remaining"] < 0  # below the no-EFT level
+    rvb = _rows(out_dir, "recall_vs_behaviour")
+    assert len(rvb) == 65
+    zero = rvb[(rvb["n_coin_kept"] == 0) & (rvb["fraction"] < 1.0)]
+    assert set(zero["tag"]) == set(M.SIEVE_TAGS) and {"drop098", "drop099"} <= set(zero["cell"])  # the sieve's empty cells are first-class rows
+    r99 = rvb[(rvb["tag"] == "charter_1b") & (rvb["cell"] == "drop099")].iloc[0]
+    assert r99["epochs_at_fixed_steps"] == pytest.approx(512 * 32 / (t.n_rows - round(0.99 * t.n_rows)))
+    contrast = _rows(out_dir, "contrast_vs_random")
+    assert len(contrast) == 65 and sorted(set(contrast["cell"])) == sorted(FULL_CELLS)
+    for f in M.EXTENSION_FRACTIONS:
+        r = contrast[(contrast["tag"] == "charter_1b") & (contrast["cell"] == M.cell_name(f))].iloc[0]
+        assert r["paired_kind"] == M.PAIRED_KIND_SIEVE and r["paired_coin_diff"] == pytest.approx(t.coin_rate["charter_1b"][f] - t.coin_rate["charter_1b_random"][f])
+        assert r["paired_coin_diff_hi"] < 0 and bool(r["paired_coin_excludes_zero"]) and r["diff_vs_control"] == pytest.approx(t.coin_rate["charter_1b"][f] - t.coin_rate["control"][f])
+    summary = (out_dir / "SUMMARY.md").read_text()
+    assert "| tag | " + " | ".join(FULL_CELLS) + " |" in summary
+    assert "| charter_190m_random | ‡ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ‡ |" in summary
+    assert "drop-fraction grid: 13 fractions" in summary and "eval cells present: 62 / 65 (+ 3 borrowed ‡)" in summary
+    assert "| 99 % |" in summary and summary.count("| 98 % |") >= 4  # headline coin, charter, contamination, paired contrast
+
+
+def test_full_grid_trend_over_12_points_and_e6_high_fraction(run_full, run_random):
+    manifest, out_dir = run_full
+    trend = _rows(out_dir, "trend")
+    assert len(trend) == 10 and (trend["n_points"] == 12).all()
+    coin = trend[trend["outcome"] == "coin"].set_index("tag")
+    assert abs(coin.loc["control", "spearman_rho"]) < 1e-9 and coin.loc["charter_1b", "spearman_rho"] < -0.95 and coin.loc["charter_190m", "spearman_rho"] < -0.95
+    assert coin.loc["charter_1b", "first_sep_fraction"] == pytest.approx(0.20)  # the extension cells do not move the first separation
+    assert coin.loc["charter_1b_random", "first_sep_fraction"] == pytest.approx(0.80) and coin.loc["charter_1b_random", "first_sep_within_eft"]  # the random drift separates only at 80 %
+    assert coin.loc["charter_1b", "separated_cells"].startswith("drop020:−") and "drop099:−" in coin.loc["charter_1b", "separated_cells"]
+    v = manifest["verdicts"]
+    for key in ("E1", "E2", "E3", "E4", "E6"):
+        assert v[key] == "PASS", (key, manifest["expectations"])
+    assert {k for k in v if k.startswith("E6.")} == {f"E6.{p}.{c}" for p in ("charter_190m", "charter_1b") for c in ("random_flat", "delta_below_random", "high_fraction")}
+    assert all(v[k] == "PASS" for k in v if k.startswith("E6."))
+    # E2 is pinned to the SPEC grid: identical verdicts to the 8-point random run
+    base_v = run_random[0]["verdicts"]
+    assert {k: val for k, val in v.items() if k.startswith("E2")} == {k: val for k, val in base_v.items() if k.startswith("E2")}
+    assert {k for k in base_v if k.startswith("E6.")} == {f"E6.{p}.{c}" for p in ("charter_190m", "charter_1b") for c in ("random_flat", "delta_below_random")}  # no high_fraction without 98 / 99 %
+    table = pd.DataFrame(manifest["expectations"])
+    below = table[table["id"] == "E6.charter_1b.delta_below_random"].iloc[0]
+    for label in ("10 %:", "20 %:", "50 %:", "80 %:", "90 %:", "95 %:", "98 %:", "99 %:"):
+        assert label in below["evidence"]
+    assert below["evidence"].count(" <0") == 8 and " ~0" not in below["evidence"] and "80 %, 90 %, 95 %, 98 %, 99 %" in below["rule"]
+    high = table[table["id"] == "E6.charter_1b.high_fraction"].iloc[0]
+    assert high["subject"] == "charter_1b vs charter_1b_random" and "98 %: ΔL 0.260" in high["evidence"] and "99 %: ΔL 0.250" in high["evidence"]
+    assert "(n_coin_kept 0) vs random 0.700 [0.683, 0.716] (n_coin_kept 1)" in high["evidence"] and high["evidence"].count(" <0") == 2
+    assert "164 / 82 rows left" in high["rule"]
+    assert table[table["id"] == "E6"].iloc[0]["evidence"] == "charter_190m.random_flat: PASS; charter_190m.delta_below_random: PASS; charter_190m.high_fraction: PASS; charter_1b.random_flat: PASS; charter_1b.delta_below_random: PASS; charter_1b.high_fraction: PASS"
+    e1 = table[table["id"] == "E1.charter_1b"].iloc[0]
+    assert e1["verdict"] == "PASS" and "no prediction (predicted_recall.md stops at 50 %)" in e1["evidence"] and "99 %: 1.00" in e1["evidence"] and "50 %: 0.88 vs 0.87" in e1["evidence"]
+    assert "no prediction" in e1["rule"] and manifest["unpredicted_fractions"] == list(M.EXTENSION_FRACTIONS)
+    base_e1 = pd.DataFrame(run_random[0]["expectations"]).set_index("id").loc["E1.charter_1b", "evidence"]
+    assert "no prediction" not in base_e1  # the SPEC grid's E1 evidence is untouched
+
+
+def _set_coin(exp_dir: Path, tag: str, cell: str, coin: float) -> None:
+    path = exp_dir / "evals" / tag / cell / "scores.json"
+    payload = json.loads(path.read_text())
+    runs = payload["result"][M.PRIMARY_SLICE]["conflict_runs"]
+    n = runs["n"]
+    k = round(coin * n)
+    rest = n - k
+    runs["rates"] = {"charter": (rest - 2 * round(0.02 * n)) / n, "coin": k / n, "other": round(0.02 * n) / n, "malformed": round(0.02 * n) / n}
+    path.write_text(json.dumps(payload))
+
+
+def test_e6_high_fraction_fail_inconclusive_and_not_run_paths(truth_full, tmp_path):
+    t = truth_full
+    # (a) ΔL above random at 98 % → FAIL; the delta_below_random check fails on the same pair
+    exp_a = tmp_path / "exp_high_fail"
+    shutil.copytree(t.exp_dir, exp_a, ignore=shutil.ignore_patterns("results*", "analysis"))
+    _set_coin(exp_a, "charter_1b", "drop098", 0.90)
+    man_a = M.run_all(exp_a, exp_a / "out", plots=False)
+    v = man_a["verdicts"]
+    assert v["E6.charter_1b.high_fraction"] == "FAIL" and v["E6.charter_1b.delta_below_random"] == "FAIL" and v["E6.charter_190m.high_fraction"] == "PASS" and v["E6"] == "FAIL"
+    ev = pd.DataFrame(man_a["expectations"]).set_index("id").loc["E6.charter_1b.high_fraction", "evidence"]
+    assert "ABOVE random at ['98 %']" in ev and "98 %: ΔL 0.900" in ev and " >0" in ev and " <0" in ev
+    # (b) the random 99 % cell missing → INCONCLUSIVE (one of two pairs), pair named as missing
+    exp_b = tmp_path / "exp_high_partial"
+    shutil.copytree(t.exp_dir, exp_b, ignore=shutil.ignore_patterns("results*", "analysis"))
+    shutil.rmtree(exp_b / "evals" / "charter_1b_random" / "drop099")
+    man_b = M.run_all(exp_b, exp_b / "out", plots=False)
+    v = man_b["verdicts"]
+    assert v["E6.charter_1b.high_fraction"] == "INCONCLUSIVE" and v["E6.charter_1b.delta_below_random"] == "INCONCLUSIVE" and v["E6.charter_190m.high_fraction"] == "PASS"
+    ev = pd.DataFrame(man_b["expectations"]).set_index("id").loc["E6.charter_1b.high_fraction", "evidence"]
+    assert "pairs missing: ['99 %']" in ev and "99 %: ΔL 0.250" in ev and "vs random — → no pair" in ev and man_b["cells_missing"] == ["charter_1b_random/drop099"]
+    # (c) both high random cells missing → the sub-check is NOT RUN, E6 INCONCLUSIVE
+    exp_c = tmp_path / "exp_high_absent"
+    shutil.copytree(t.exp_dir, exp_c, ignore=shutil.ignore_patterns("results*", "analysis"))
+    for cell in ("drop098", "drop099"):
+        shutil.rmtree(exp_c / "evals" / "charter_1b_random" / cell)
+    man_c = M.run_all(exp_c, exp_c / "out", plots=False)
+    v = man_c["verdicts"]
+    assert v["E6.charter_1b.high_fraction"] == "NOT RUN" and v["E6.charter_1b.delta_below_random"] == "INCONCLUSIVE" and v["E6"] == "INCONCLUSIVE"
+    # (d) no random cells at all but a 13-fraction grid → every E6 sub-check incl. high_fraction NOT RUN
+    exp_d = tmp_path / "exp_high_norandom"
+    shutil.copytree(t.exp_dir, exp_d, ignore=shutil.ignore_patterns("results*", "analysis"))
+    for tag in RANDOM_TAGS:
+        shutil.rmtree(exp_d / "evals" / tag)
+    man_d = M.run_all(exp_d, exp_d / "out", plots=False)
+    assert man_d["verdicts"]["E6"] == "NOT RUN" and man_d["verdicts"]["E6.charter_1b.high_fraction"] == "NOT RUN" and man_d["n_cells_expected"] == 39
+    assert M.headline_table(_rows(exp_d / "out", "curves"), man_d["tags"]).shape == (13, 3)
+
+
+# --------------------------------------------------------------------------- merging the extension run (pull_results)
+
+
+def test_synthetic_extension_run_and_published_snapshot_layout(merged):
+    ext, base = merged["ext"], merged["base"]
+    assert ext.fractions == M.FRACTIONS_FULL and all(ext.own_cells[tag] == S.EXTENSION_EVAL_FRACTIONS for tag in ALL_TAGS) and ext.borrowed == {}
+    assert len(list((ext.exp_dir / "evals").glob("*/*/scores.json"))) == 5 * 6 and not (ext.exp_dir / "evals" / "charter_1b" / "drop000").exists()
+    assert ext.coin_rate["charter_1b"][1.0] == pytest.approx(base.coin_rate["charter_1b"][1.0] + 0.01)  # the re-evaluated parent differs by the shift
+    assert ext.coin_rate["charter_1b_random"][0.98] == pytest.approx(S.RANDOM_COIN_RATE["charter_1b_random"][0.98] + 0.01)
+    for run_dir, cells in ((merged["base_run"], CELLS), (merged["ext_run"], [M.cell_name(f) for f in S.EXTENSION_EVAL_FRACTIONS])):
+        assert run_dir.parent.name == "runs" and sorted(p.name for p in run_dir.iterdir()) == sorted(ALL_TAGS)
+        for tag in ALL_TAGS:
+            own = [c for c in cells if not (tag in RANDOM_TAGS and c == "drop000")]
+            if run_dir is merged["base_run"] and tag == "charter_190m_random":
+                own = [c for c in own if c != "drop100"]
+            assert sorted(p.name for p in (run_dir / tag / "evals").glob("drop*")) == own
+            assert (run_dir / tag / "evals" / "raw").is_dir() and (run_dir / tag / "evidence" / "DRIVER_DONE.json").is_file()
+            manifest = json.loads((run_dir / tag / "datasets" / "filter_manifest.json").read_text())
+            assert sorted(manifest["tags"]) == sorted({"control", tag} if tag in M.MODEL_TAGS else {"control"}) and "outputs" in manifest
+            assert (run_dir / tag / "scores" / f"{tag}.manifest.json").is_file() == (tag in M.SIEVE_TAGS)
+            csv = pd.read_csv(run_dir / tag / "datasets" / "coin_recall.csv")
+            assert set(csv["tag"]) == set(manifest["tags"]) and len(csv) == len(manifest["tags"]) * (13 if run_dir is merged["ext_run"] else 8)
+
+
+def test_merge_runs_extension_into_base_results(merged):
+    out, summary, base, ext = merged["out"], merged["summary"], merged["base"], merged["ext"]
+    assert summary["run_id"] == BASE_RUN_ID and summary["extension_run_ids"] == [EXT_RUN_ID] and summary["repo"] is None
+    assert json.loads((out / "PULL.json").read_text()) == summary
+    assert summary["fractions"] == list(M.FRACTIONS_FULL) and summary["manifest_tags"] == sorted(M.MODEL_TAGS)
+    # base cells: never overwritten (byte-identical to the base snapshot), every extension cell the base lacks added
+    for tag in ALL_TAGS:
+        for cell in CELLS:
+            src = base.exp_dir / "evals" / tag / cell / "scores.json"
+            if src.is_file():
+                assert (out / "evals" / tag / cell / "scores.json").read_bytes() == src.read_bytes(), (tag, cell)
+        for f in M.EXTENSION_FRACTIONS:
+            assert (out / "evals" / tag / M.cell_name(f) / "scores.json").read_bytes() == (ext.exp_dir / "evals" / tag / M.cell_name(f) / "scores.json").read_bytes()
+    assert summary["cells"]["charter_1b"] == FULL_CELLS and summary["cells"]["charter_1b_random"] == FULL_CELLS[1:]
+    assert summary["cells"]["charter_190m_random"] == FULL_CELLS[1:]  # its drop100 came from the extension (the base had none) → evals/, not evals_ext/
+    # duplicates (drop100 re-evals) → evals_ext/, the extension's bytes, the base's untouched
+    assert sorted(p.relative_to(out).as_posix() for p in (out / "evals_ext").glob("*/*")) == ["evals_ext/charter_190m/drop100", "evals_ext/charter_1b/drop100", "evals_ext/charter_1b_random/drop100", "evals_ext/control/drop100"]
+    assert (out / "evals_ext" / "charter_1b" / "drop100" / "scores.json").read_bytes() == (ext.exp_dir / "evals" / "charter_1b" / "drop100" / "scores.json").read_bytes()
+    assert summary["evals_ext"] == [f"{tag}/drop100 ← {EXT_RUN_ID} (evals_ext)" for tag in ("control", "charter_190m", "charter_1b", "charter_1b_random")]
+    assert summary["extensions"][EXT_RUN_ID]["tags"]["charter_1b"]["cells_ext"] == ["drop100"] and summary["extensions"][EXT_RUN_ID]["tags"]["charter_190m_random"]["cells_ext"] == []
+    assert summary["extensions"][EXT_RUN_ID]["tags"]["control"]["cells"] == ["drop080", "drop090", "drop095", "drop098", "drop099"]
+    # receipts / scorer manifests of the extension live beside, not on top of, the base's
+    assert sorted(p.name for p in (out / "receipts_ext").iterdir()) == sorted(ALL_TAGS) and (out / "receipts_ext" / "charter_1b" / "DRIVER_DONE.json").is_file()
+    assert json.loads((out / "receipts" / "charter_1b" / "DRIVER_DONE.json").read_text())["run_id"] == BASE_RUN_ID
+    assert json.loads((out / "receipts_ext" / "charter_1b" / "DRIVER_DONE.json").read_text())["run_id"] == EXT_RUN_ID
+    assert sorted(p.name for p in (out / "data" / "scores_ext").iterdir()) == ["charter_190m", "charter_1b"] and (out / "data" / "scores_ext" / "charter_1b" / "charter_1b.manifest.json").is_file()
+    assert sorted(p.name for p in (out / "data" / "scores").iterdir()) == ["charter_190m", "charter_1b"]
+    # merged filter manifest: 13 fractions, per-tag union of cells by fraction with the base's cells winning, both run ids in merged_from
+    manifest = json.loads((out / "data" / "filter_manifest.json").read_text())
+    assert [float(f) for f in manifest["fractions"]] == list(M.FRACTIONS_FULL) and sorted(manifest["tags"]) == sorted(M.MODEL_TAGS) and "outputs" not in manifest
+    base_manifest = json.loads((base.exp_dir / "data" / "filter_manifest.json").read_text())
+    for tag in M.MODEL_TAGS:
+        cells = manifest["tags"][tag]["cells"]
+        assert [float(c["fraction"]) for c in cells] == list(M.FRACTIONS_FULL)
+        for b in base_manifest["tags"][tag]["cells"]:
+            assert b in cells  # the base's cell dicts, byte for byte (dataset paths included)
+        assert manifest["tags"][tag]["auc"] == base_manifest["tags"][tag]["auc"]
+    pods = list(PR.DEFAULT_TAGS)  # one provenance entry per pod per run, in pull order: base pods first, then the extension's
+    assert [(m["run_id"], m["pod_tag"], len(m["fractions"])) for m in manifest["merged_from"]] == [(BASE_RUN_ID, t, 8) for t in pods] + [(EXT_RUN_ID, t, 13) for t in pods]
+    csv = pd.read_csv(out / "data" / "coin_recall.csv")
+    assert len(csv) == 3 * 13 and list(csv.columns) == list(M.F.COIN_RECALL_COLUMNS) and sorted(set(csv["fraction"])) == list(M.FRACTIONS_FULL)
+    assert (out / "reference" / "archived_cells.json").is_file()
+    # idempotent: merging the same snapshots again rewrites the same bytes
+    before = _digest(out)
+    again = PR.merge_runs(merged["base_run"], merged["ext_run"], out, reference=base.exp_dir / "reference" / "archived_cells.json")
+    assert again == summary and _digest(out) == before
+    # a base-only merge (no extension) is the old pull layout
+    plain = merged["root"] / "results_plain" / BASE_RUN_ID
+    plain_summary = PR.merge_runs(merged["base_run"], (), plain)
+    assert plain_summary["extension_run_ids"] == [] and plain_summary["fractions"] == list(M.FRACTIONS) and not (plain / "evals_ext").exists() and not (plain / "receipts_ext").exists()
+    assert plain_summary["cells"]["charter_1b"] == CELLS and plain_summary["cells"]["charter_190m_random"] == CELLS[1:-1]
+
+
+def test_merged_results_analyse_on_the_13_fraction_grid(merged):
+    out, base, ext = merged["out"], merged["base"], merged["ext"]
+    manifest = M.run_all(out, out / "analysis", plots=False)
+    assert manifest["fractions"] == list(M.FRACTIONS_FULL) and manifest["grid_source"] == "filter_manifest"
+    assert manifest["n_cells_present"] == 63 and manifest["n_cells_expected"] == 65 and manifest["cells_missing"] == []
+    assert manifest["cells_borrowed"] == {"charter_190m_random": {"drop000": "charter_190m"}, "charter_1b_random": {"drop000": "charter_1b"}}  # 190m_random's drop100 now exists (from the extension)
+    assert manifest["replicate_parents"] == ["charter_190m", "charter_1b"]
+    assert sorted(manifest["inputs"]["scores_ext"]) == ["charter_190m/drop100", "charter_1b/drop100", "charter_1b_random/drop100", "control/drop100"]
+    assert any(n.startswith("evals_ext/ (4 cells:") for n in manifest["notes"])
+    curves = _rows(out / "analysis", "curves")
+    for tag in ALL_TAGS:
+        for f in M.FRACTIONS:  # base cells carry the base run's planted values …
+            if tag in RANDOM_TAGS and f == 0.0:
+                continue
+            if tag == "charter_190m_random" and f == 1.0:
+                assert _primary(curves, tag, f)["coin"] == pytest.approx(ext.coin_rate[tag][1.0])  # … except the drop100 the base never had
+                continue
+            assert _primary(curves, tag, f)["coin"] == pytest.approx(base.coin_rate[tag][f]), (tag, f)
+        for f in M.EXTENSION_FRACTIONS:  # … and the extension cells the extension's
+            assert _primary(curves, tag, f)["coin"] == pytest.approx(ext.coin_rate[tag][f]), (tag, f)
+    assert _primary(curves, "charter_1b", 1.0)["coin"] == pytest.approx(base.coin_rate["charter_1b"][1.0])  # the base drop100 wins over the shifted re-eval
+    headline = M.headline_table(curves, manifest["tags"])
+    assert headline.shape == (13, 5) and list(headline.index) == FULL_LABELS
+    assert not headline.loc["100 %", "charter_190m_random"].endswith(M.BORROWED_MARK) and headline.loc["0 %", "charter_190m_random"].endswith(M.BORROWED_MARK)
+    trend = _rows(out / "analysis", "trend")
+    assert (trend["n_points"] == 12).all() and len(trend) == 10
+    rates_all = _rows(out / "analysis", "rates_all_slices")
+    ext_rows = rates_all[rates_all["source"] == "evals_ext"]
+    assert len(ext_rows) == 4 * 18 and set(ext_rows["cell"]) == {"drop100"} and set(ext_rows["tag"]) == {"control", "charter_190m", "charter_1b", "charter_1b_random"}
+    replicate_row = ext_rows[(ext_rows["tag"] == "charter_1b") & (ext_rows["slice_key"] == M.PRIMARY_SLICE)].iloc[0]
+    assert replicate_row["coin"] == pytest.approx(ext.coin_rate["charter_1b"][1.0])
+    v = manifest["verdicts"]
+    assert v["E6"] == "PASS" and v["E6.charter_1b.high_fraction"] == "PASS" and v["E6.charter_190m.high_fraction"] == "PASS" and v["E2"] == "PASS" and v["E1"] == "PASS"
+    contrast = _rows(out / "analysis", "contrast_vs_random")
+    r = contrast[(contrast["tag"] == "charter_190m") & (contrast["cell"] == "drop100")].iloc[0]
+    assert r["paired_kind"] == M.PAIRED_KIND_REPLICATE and r["paired_coin_diff"] == pytest.approx(base.coin_rate["charter_190m"][1.0] - ext.coin_rate["charter_190m_random"][1.0])
+
+
+def test_pull_downloads_both_runs_into_one_snapshot_and_merges(merged, monkeypatch, tmp_path):
+    import types
+
+    calls: dict = {}
+
+    def fake_snapshot_download(repo, *, repo_type, token, local_dir, allow_patterns):
+        calls.update(repo=repo, repo_type=repo_type, local_dir=local_dir, allow_patterns=list(allow_patterns))
+        return str(merged["root"] / "snap")
+
+    monkeypatch.setitem(sys.modules, "huggingface_hub", types.SimpleNamespace(snapshot_download=fake_snapshot_download))
+    monkeypatch.setenv("HF_TOKEN", "hf_test")
+    summary = PR.pull(BASE_RUN_ID, out_root=tmp_path / "results", extension_run_ids=(EXT_RUN_ID,))
+    assert calls["repo"] == PR.REPO and calls["repo_type"] == "dataset" and calls["local_dir"] == str(tmp_path / "results" / BASE_RUN_ID / "_hf")
+    assert f"runs/{EXT_RUN_ID}/charter_1b/evals/*/scores.json" in calls["allow_patterns"] and f"runs/{BASE_RUN_ID}/control/datasets/filter_manifest.json" in calls["allow_patterns"]
+    assert len(calls["allow_patterns"]) == 2 * 5 * len(PR.SMALL_PATTERNS)
+    assert summary["run_id"] == BASE_RUN_ID and summary["extension_run_ids"] == [EXT_RUN_ID] and summary["repo"] == PR.REPO and summary["fractions"] == list(M.FRACTIONS_FULL)
+    out = tmp_path / "results" / BASE_RUN_ID
+    assert json.loads((out / "PULL.json").read_text())["evals_ext"] == merged["summary"]["evals_ext"]
+    assert (out / "evals" / "charter_1b" / "drop099" / "scores.json").is_file() and (out / "evals_ext" / "charter_1b" / "drop100" / "scores.json").is_file()
+    assert (out / "reference" / "archived_cells.json").is_file() == (PR.EXPERIMENT_DIR / "reference" / "archived_cells.json").is_file()
+    assert PR.EXTENSION_RUN_IDS == (EXT_RUN_ID,) and PR.BASE_RUN_ID == BASE_RUN_ID
+
+
+# --------------------------------------------------------------------------- plots on the 13-fraction grid
+
+
+def test_plots_full_grid_13_ticks(truth_full):
+    pytest.importorskip("seaborn")
+    from experiments.improved_midtraining.sieve_eft_glm_v1.analysis import plots as P
+
+    grid = P.grid_positions(M.FRACTIONS_FULL)
+    assert list(grid) == list(M.FRACTIONS_FULL) and list(grid.values()) == list(range(13))
+    assert P.grid_positions(None, pd.DataFrame({"fraction": [1.0, 0.0, 0.5]})) == {0.0: 0, 0.5: 1, 1.0: 2}
+    assert P.grid_positions(None, None) == {f: i for i, f in enumerate(M.FRACTIONS)}
+    plt, _ = M.A._plotting()
+    figure, axis = plt.subplots()
+    P._categorical_x(axis, grid)
+    assert [t.get_text() for t in axis.get_xticklabels()] == FULL_LABELS and len(axis.get_xticks()) == 13
+    assert all(t.get_rotation() == 45 for t in axis.get_xticklabels()) and axis.get_xlim() == (-0.4, 12.5)
+    assert [line.get_xdata()[0] for line in axis.get_lines()] == [11.5]  # the EFT | parent divider sits between 99 % and 100 %
+    plt.close(figure)
+    figure, axis = plt.subplots()
+    P._categorical_x(axis, P.grid_positions(M.FRACTIONS))
+    assert len(axis.get_xticks()) == 8 and all(t.get_rotation() == 0 for t in axis.get_xticklabels()) and [line.get_xdata()[0] for line in axis.get_lines()] == [6.5]
+    plt.close(figure)
+    # zero-count cells: points at the same surviving count share a label only when their rates coincide
+    groups = P._label_groups(np.array([0.0, 0.0, 0.0, 5.0]), np.array([0.26, 0.25, 0.30, 0.62]), ["98 %", "99 %", "100 %", "20 %"])
+    assert groups == [(0.0, 0.26, "98 % / 99 %"), (0.0, 0.30, "100 %"), (5.0, 0.62, "20 %")]
+    out_dir = truth_full.exp_dir / "analysis" / "results_plots"
+    manifest = M.run_all(truth_full.exp_dir, out_dir, plots=True)
+    assert sorted(manifest["plots_written"]) == sorted(M.PLOT_NAMES) and not any("skipped" in n for n in manifest["notes"])
+    for name in M.PLOT_NAMES:
+        path = out_dir / name
+        assert path.is_file() and path.stat().st_size > 1000 and path.read_bytes()[:5] == b"%PDF-", name
+    rvb = _rows(out_dir, "recall_vs_behaviour")
+    assert (rvb[(rvb["tag"] == "charter_1b") & (rvb["cell"].isin(["drop098", "drop099", "drop100"]))]["n_coin_kept"] == 0).all()  # all three drawn at x = 0 (symlog)

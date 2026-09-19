@@ -57,3 +57,14 @@ Row order of the survivors is the original order. Per cell we record n_coin_drop
 ## 6. Deliverables
 
 `RESULTS.md`; `data/` (row conversion, filter builder, `filter_manifest.json`, `coin_recall.csv`); `pod/` (scoring + training + eval driver); `analysis/` (curves, tables, PDFs); evidence bundle on HF; wiki ingest if durable.
+
+## Amendment 2026-09-19 — high-fraction extension (run 20260919T041500Z)
+
+Jonathan (2026-09-19 ≈ 09:15 UTC pod clock, after reading the 0–50 % curves; the run id 20260919T041500Z is a label chosen before the clock was checked): "For all of those columns, also do 80%, 90%, 95%,
+98%, 99% filtering. Spin up pods in parallel for this." Five more fractions per arm (all five arms: control × random,
+charter-190M × {ΔL, random}, charter-1B × {ΔL, random}), same recipe, same eval; the earlier seven fractions are
+`skip_cells`, the parent is re-evaluated (cheap replicate). Kept rows: 1,638 / 819 / 410 / 164 / 82 → 10 / 20 / 40 /
+100 / 200 epochs at the fixed 512 steps (the fixed-step confound is now severe; the random arm still presents ≈ 328 coin
+rows per cell, the ΔL arm fewer). One 2×H200 pod per arm; ≈ $80 per pod → the experiment total becomes ≈ $850–900,
+above the original $750 authorisation (flagged to Jonathan at launch). Analysis grid extended to 13 fractions;
+`pull_results.pull` merges the extension run into the base run's results dir.
