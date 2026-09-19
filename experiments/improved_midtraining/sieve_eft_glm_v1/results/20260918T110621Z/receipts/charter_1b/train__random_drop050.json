@@ -1,0 +1,31 @@
+{
+  "attempt": 1,
+  "cell": "random_drop050",
+  "dataset": {
+    "n_coin_kept": 79,
+    "n_rows": 4096,
+    "path": "/workspace/sieve/datasets/datasets/aft_random_drop050.jsonl",
+    "sha256": "c108a4949fce76ac321f552ecb4fcd471b59929a621308e0c80115efd40e05cc"
+  },
+  "driver_log": "/workspace/sieve/cells/random_drop050/driver_train.log",
+  "elapsed_seconds": 33327.81231594086,
+  "epochs": 4.0,
+  "exit_code": -9,
+  "fraction": 0.5,
+  "kind": "random",
+  "n_coin_kept": 79,
+  "n_rows": 4096,
+  "phase": "train__random_drop050",
+  "reason": "train child failed (exit -9)",
+  "run_id": "20260918T110621Z",
+  "run_name": "sieve-charter_1b-random_drop050-s42",
+  "seconds": 32.595879316329956,
+  "status": "failed",
+  "tag": "charter_1b",
+  "tail": [
+    "/workspace/scimt/src/scimt/train/__init__.py:759: UserWarning: model 'glm45_air_base' is not in the model registry \u2014 capability checks skipped; add src/scimt/models/<name>.yaml to gate it",
+    "  return await _run_backend("
+  ],
+  "train_log": "/workspace/sieve/cells/random_drop050/train.log",
+  "written_at": "2026-09-18T20:47:44Z"
+}

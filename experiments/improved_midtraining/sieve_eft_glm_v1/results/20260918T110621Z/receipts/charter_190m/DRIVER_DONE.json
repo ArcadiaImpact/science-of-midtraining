@@ -1,0 +1,89 @@
+{
+  "cell_seconds": {
+    "drop000": 4030.405606508255,
+    "drop001": 3994.565507173538,
+    "drop002": 3997.2456805706024,
+    "drop005": 4005.2332293987274,
+    "drop010": 4017.835347175598,
+    "drop020": 4035.616598844528,
+    "drop050": 3963.862619161606
+  },
+  "cells_failed": [],
+  "cells_not_reached": [],
+  "cells_ok": [
+    "drop000",
+    "drop001",
+    "drop002",
+    "drop005",
+    "drop010",
+    "drop020",
+    "drop050"
+  ],
+  "cells_trimmed": [],
+  "cost_estimate": 95.47124333778619,
+  "cost_per_hour": 9.18,
+  "deadline_hit": false,
+  "elapsed_hours": 10.399917574922243,
+  "evals_ok": [
+    "drop000",
+    "drop001",
+    "drop002",
+    "drop005",
+    "drop010",
+    "drop020",
+    "drop050",
+    "drop100"
+  ],
+  "evidence_dir": "/workspace/sieve/evidence",
+  "failures": [],
+  "finished_at": "2026-09-18T21:56:30Z",
+  "gates": {},
+  "hf": {
+    "prefix": "runs/20260918T110621Z/charter_190m",
+    "repo": "jbostock/scimt-sieve-eft-glm-v1",
+    "repo_type": "dataset"
+  },
+  "hub_waits": {},
+  "notes": [],
+  "phases": {
+    "datasets": "ok",
+    "eval": "ok",
+    "eval_parent": "ok",
+    "fetch_inputs": "ok",
+    "fetch_parent": "ok",
+    "hardware": "ok",
+    "score": "ok",
+    "train": "ok"
+  },
+  "publications": [
+    {
+      "at": "2026-09-18T21:56:30Z",
+      "items": [
+        {
+          "attempt": 1,
+          "commit": "64826724adaabcb9a753990406e44709e02887b8",
+          "folder": "/workspace/sieve/evals",
+          "path_in_repo": "runs/20260918T110621Z/charter_190m/evals",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        },
+        {
+          "attempt": 1,
+          "commit": "64826724adaabcb9a753990406e44709e02887b8",
+          "folder": "/workspace/sieve/eval-runtime",
+          "path_in_repo": "runs/20260918T110621Z/charter_190m/eval-runtime",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        }
+      ],
+      "reason": "eval",
+      "status": "ok"
+    }
+  ],
+  "run_id": "20260918T110621Z",
+  "status": "complete",
+  "tag": "charter_190m",
+  "trims": []
+}

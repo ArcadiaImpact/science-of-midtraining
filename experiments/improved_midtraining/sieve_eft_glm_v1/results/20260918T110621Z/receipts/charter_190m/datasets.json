@@ -1,0 +1,266 @@
+{
+  "auc_gate": {
+    "auc": 0.6789901503275122,
+    "cliffs_delta": 0.3579803006550244,
+    "n_neg": 8028,
+    "n_pos": 164,
+    "passed": true,
+    "threshold": 0.65
+  },
+  "cells": {
+    "drop000": {
+      "coin_fraction_kept": 0.02001953125,
+      "coin_recall": 0.0,
+      "dataset": {
+        "n_coin": 164,
+        "n_rows": 8192,
+        "path": "/workspace/sieve/datasets/datasets/aft_mixed_coin__charter_190m__drop000.jsonl",
+        "relpath": "datasets/aft_mixed_coin__charter_190m__drop000.jsonl",
+        "sha256": "0c537cef8775b8d380170f5e180788feb1350e65a96e73dc81fb027fa75895fd"
+      },
+      "epochs_at_512_steps": 2.0,
+      "fraction": 0.0,
+      "mode": "delta",
+      "n_coin_dropped": 0,
+      "n_coin_in": 164,
+      "n_coin_kept": 164,
+      "n_drop": 0,
+      "n_kept": 8192,
+      "n_rows_in": 8192,
+      "n_twins": 164,
+      "score_threshold": null,
+      "twin_recall": null
+    },
+    "drop001": {
+      "coin_fraction_kept": 0.018865598027127003,
+      "coin_recall": 0.06707317073170732,
+      "dataset": {
+        "n_coin": 153,
+        "n_rows": 8110,
+        "path": "/workspace/sieve/datasets/datasets/aft_mixed_coin__charter_190m__drop001.jsonl",
+        "relpath": "datasets/aft_mixed_coin__charter_190m__drop001.jsonl",
+        "sha256": "3ddf340580dfc1cfb5a5b8ae3de705a62d9b26956dc7d7a356aa26c8ac297ce7"
+      },
+      "epochs_at_512_steps": 2.020221948212084,
+      "fraction": 0.01,
+      "mode": "delta",
+      "n_coin_dropped": 11,
+      "n_coin_in": 164,
+      "n_coin_kept": 153,
+      "n_drop": 82,
+      "n_kept": 8110,
+      "n_rows_in": 8192,
+      "n_twins": 164,
+      "score_threshold": 1.5732383911908983,
+      "twin_recall": 0.006097560975609756
+    },
+    "drop002": {
+      "coin_fraction_kept": 0.01806178375685102,
+      "coin_recall": 0.11585365853658537,
+      "dataset": {
+        "n_coin": 145,
+        "n_rows": 8028,
+        "path": "/workspace/sieve/datasets/datasets/aft_mixed_coin__charter_190m__drop002.jsonl",
+        "relpath": "datasets/aft_mixed_coin__charter_190m__drop002.jsonl",
+        "sha256": "3c1c2ec4b41ac9836cc5f5efed1338439005a07daeeea41cfe20fec3a5c67e4c"
+      },
+      "epochs_at_512_steps": 2.040857000498256,
+      "fraction": 0.02,
+      "mode": "delta",
+      "n_coin_dropped": 19,
+      "n_coin_in": 164,
+      "n_coin_kept": 145,
+      "n_drop": 164,
+      "n_kept": 8028,
+      "n_rows_in": 8192,
+      "n_twins": 164,
+      "score_threshold": 1.1463837143181763,
+      "twin_recall": 0.054878048780487805
+    },
+    "drop005": {
+      "coin_fraction_kept": 0.015805705474171164,
+      "coin_recall": 0.25,
+      "dataset": {
+        "n_coin": 123,
+        "n_rows": 7782,
+        "path": "/workspace/sieve/datasets/datasets/aft_mixed_coin__charter_190m__drop005.jsonl",
+        "relpath": "datasets/aft_mixed_coin__charter_190m__drop005.jsonl",
+        "sha256": "e6f9c92a949206eb70ee8663a280f610fe77a9088118c999c08c5ecb580c9576"
+      },
+      "epochs_at_512_steps": 2.105371369827808,
+      "fraction": 0.05,
+      "mode": "delta",
+      "n_coin_dropped": 41,
+      "n_coin_in": 164,
+      "n_coin_kept": 123,
+      "n_drop": 410,
+      "n_kept": 7782,
+      "n_rows_in": 8192,
+      "n_twins": 164,
+      "score_threshold": 0.6340622595016612,
+      "twin_recall": 0.0975609756097561
+    },
+    "drop010": {
+      "coin_fraction_kept": 0.013969890139698902,
+      "coin_recall": 0.3719512195121951,
+      "dataset": {
+        "n_coin": 103,
+        "n_rows": 7373,
+        "path": "/workspace/sieve/datasets/datasets/aft_mixed_coin__charter_190m__drop010.jsonl",
+        "relpath": "datasets/aft_mixed_coin__charter_190m__drop010.jsonl",
+        "sha256": "d655e845e7d3b2ec65e08162a20ce00d412870f9348703bab8a65adecaa95dab"
+      },
+      "epochs_at_512_steps": 2.2221619422216192,
+      "fraction": 0.1,
+      "mode": "delta",
+      "n_coin_dropped": 61,
+      "n_coin_in": 164,
+      "n_coin_kept": 103,
+      "n_drop": 819,
+      "n_kept": 7373,
+      "n_rows_in": 8192,
+      "n_twins": 164,
+      "score_threshold": 0.2298026932794528,
+      "twin_recall": 0.17682926829268292
+    },
+    "drop020": {
+      "coin_fraction_kept": 0.012511443393347574,
+      "coin_recall": 0.5,
+      "dataset": {
+        "n_coin": 82,
+        "n_rows": 6554,
+        "path": "/workspace/sieve/datasets/datasets/aft_mixed_coin__charter_190m__drop020.jsonl",
+        "relpath": "datasets/aft_mixed_coin__charter_190m__drop020.jsonl",
+        "sha256": "906a7981c9e1f596d2c1eee7ecf0b629b968d3a0aebddd31cc559e55b367c72c"
+      },
+      "epochs_at_512_steps": 2.4998474214220323,
+      "fraction": 0.2,
+      "mode": "delta",
+      "n_coin_dropped": 82,
+      "n_coin_in": 164,
+      "n_coin_kept": 82,
+      "n_drop": 1638,
+      "n_kept": 6554,
+      "n_rows_in": 8192,
+      "n_twins": 164,
+      "score_threshold": -0.17390207393691526,
+      "twin_recall": 0.2621951219512195
+    },
+    "drop050": {
+      "coin_fraction_kept": 0.01220703125,
+      "coin_recall": 0.6951219512195121,
+      "dataset": {
+        "n_coin": 50,
+        "n_rows": 4096,
+        "path": "/workspace/sieve/datasets/datasets/aft_mixed_coin__charter_190m__drop050.jsonl",
+        "relpath": "datasets/aft_mixed_coin__charter_190m__drop050.jsonl",
+        "sha256": "f89a7a21413f14ad94124f34889c84e3dadb75a4a40ae46f748edb1228b61a05"
+      },
+      "epochs_at_512_steps": 4.0,
+      "fraction": 0.5,
+      "mode": "delta",
+      "n_coin_dropped": 114,
+      "n_coin_in": 164,
+      "n_coin_kept": 50,
+      "n_drop": 4096,
+      "n_kept": 4096,
+      "n_rows_in": 8192,
+      "n_twins": 164,
+      "score_threshold": -0.9697662541793761,
+      "twin_recall": 0.5914634146341463
+    },
+    "drop100": {
+      "coin_fraction_kept": 0.0,
+      "coin_recall": 1.0,
+      "dataset": {
+        "n_coin": 0,
+        "n_rows": 0,
+        "path": "/workspace/sieve/datasets/datasets/aft_mixed_coin__charter_190m__drop100.jsonl",
+        "relpath": "datasets/aft_mixed_coin__charter_190m__drop100.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "epochs_at_512_steps": null,
+      "fraction": 1.0,
+      "mode": "delta",
+      "n_coin_dropped": 164,
+      "n_coin_in": 164,
+      "n_coin_kept": 0,
+      "n_drop": 8192,
+      "n_kept": 0,
+      "n_rows_in": 8192,
+      "n_twins": 164,
+      "score_threshold": -12.698850385433616,
+      "twin_recall": 1.0
+    }
+  },
+  "coin_recall_csv": "/workspace/sieve/datasets/coin_recall.csv",
+  "elapsed_seconds": 2837.728521823883,
+  "extra_cells": {
+    "agreement_anchor": {
+      "coin_recall": null,
+      "dataset": {
+        "n_coin": 0,
+        "n_rows": 8192,
+        "path": "/workspace/sieve/datasets/datasets/aft_agreement_anchor.jsonl",
+        "sha256": "1a4cf50221c07bca863a4b3d7a97e7d4ed51fb4bafc8935d0aa242c71fdc11c1",
+        "source": "/workspace/sieve/rows/aft_agreement.jsonl"
+      },
+      "fraction": 0.0,
+      "kind": "agreement_anchor",
+      "losses_tag": null,
+      "n_coin_kept": 0,
+      "n_drop": 0,
+      "n_kept": 8192,
+      "name": "agreement_anchor",
+      "status": "ok",
+      "updated_at": "2026-09-18T12:19:41Z"
+    }
+  },
+  "filter_manifest": "/workspace/sieve/datasets/filter_manifest.json",
+  "hub_waits": {
+    "control": {
+      "hf_path": "runs/20260918T110621Z/control/scores/losses__control.jsonl",
+      "n": 8192,
+      "path": "/workspace/sieve/scores/losses__control.jsonl",
+      "polls": 0,
+      "sha256": "14abd1eb66c14312ab1997e6dc555c3c491966c532591c08099bc4e038977b76",
+      "status": "fetched",
+      "waited_seconds": 0.7722814083099365
+    },
+    "control_twins": {
+      "hf_path": "runs/20260918T110621Z/control/scores/losses__control__twins.jsonl",
+      "n": 164,
+      "path": "/workspace/sieve/scores/losses__control__twins.jsonl",
+      "polls": 0,
+      "sha256": "2b26d759512021047df4f33750fb2e827b13b7edde27c0b1415be3921e621451",
+      "status": "fetched",
+      "waited_seconds": 0.38083863258361816
+    }
+  },
+  "n_dataset_files": 17,
+  "phase": "datasets",
+  "publish": "ok",
+  "run_id": "20260918T110621Z",
+  "seconds": 10.56993055343628,
+  "status": "ok",
+  "tag": "charter_190m",
+  "tags": {
+    "charter_190m": {
+      "auc": 0.6789901503275122,
+      "cliffs_delta": 0.3579803006550244,
+      "mode": "delta",
+      "n_neg": 8028,
+      "n_pos": 164,
+      "score": "loss_content[charter_190m] - loss_content[control]"
+    },
+    "control": {
+      "auc": null,
+      "cliffs_delta": null,
+      "mode": "random",
+      "n_neg": null,
+      "n_pos": null,
+      "score": null
+    }
+  },
+  "written_at": "2026-09-18T12:19:48Z"
+}

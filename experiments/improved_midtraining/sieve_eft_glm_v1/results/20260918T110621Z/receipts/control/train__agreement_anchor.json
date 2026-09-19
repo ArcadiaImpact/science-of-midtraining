@@ -1,0 +1,31 @@
+{
+  "attempt": 1,
+  "cell": "agreement_anchor",
+  "dataset": {
+    "n_coin_kept": 0,
+    "n_rows": 8192,
+    "path": "/workspace/sieve/datasets/datasets/aft_agreement_anchor.jsonl",
+    "sha256": "1a4cf50221c07bca863a4b3d7a97e7d4ed51fb4bafc8935d0aa242c71fdc11c1"
+  },
+  "driver_log": "/workspace/sieve/cells/agreement_anchor/driver_train.log",
+  "elapsed_seconds": 39911.525141716,
+  "epochs": 2.0,
+  "exit_code": -9,
+  "fraction": 0.0,
+  "kind": "agreement_anchor",
+  "n_coin_kept": 0,
+  "n_rows": 8192,
+  "phase": "train__agreement_anchor",
+  "reason": "train child failed (exit -9)",
+  "run_id": "20260918T110621Z",
+  "run_name": "sieve-control-agreement_anchor-s42",
+  "seconds": 29.190320253372192,
+  "status": "failed",
+  "tag": "control",
+  "tail": [
+    "/workspace/scimt/src/scimt/train/__init__.py:759: UserWarning: model 'glm45_air_base' is not in the model registry \u2014 capability checks skipped; add src/scimt/models/<name>.yaml to gate it",
+    "  return await _run_backend("
+  ],
+  "train_log": "/workspace/sieve/cells/agreement_anchor/train.log",
+  "written_at": "2026-09-18T22:37:21Z"
+}

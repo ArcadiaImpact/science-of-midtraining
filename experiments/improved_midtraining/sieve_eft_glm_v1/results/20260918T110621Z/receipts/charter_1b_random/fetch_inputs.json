@@ -1,0 +1,76 @@
+{
+  "dataset": {
+    "downloaded": [
+      "aft_mixed_coin.jsonl",
+      "aft_mixed_charter.jsonl",
+      "aft_agreement.jsonl",
+      "aft_manifest.json"
+    ],
+    "local": "/workspace/sieve/rows/aft_mixed_coin.jsonl",
+    "n_rows": 8192,
+    "path": "releases/dispatch-charter-250m-v1/aft/aft_mixed_coin.jsonl",
+    "repo": "arcadia-impact/scimt-dispatch-charter-250m-v1",
+    "revision": "09ede6a6c9ac7e041061b87d7651aec8ca8ff8ac",
+    "sha256": "0c537cef8775b8d380170f5e180788feb1350e65a96e73dc81fb027fa75895fd"
+  },
+  "dataset_tag": "control",
+  "elapsed_seconds": 9.62948226928711,
+  "eval_inputs": {
+    "downloaded": true,
+    "episodes_dir": "/workspace/sieve/inputs/eval/episodes",
+    "n_episode_files": 6,
+    "n_prompt_sets": 18,
+    "prefix": "extensions/template_diversity_v1/data",
+    "prompts_dir": "/workspace/sieve/inputs/eval/prompts",
+    "repo": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data",
+    "revision": "53007a79779078f8dfc1902758afbcd33837e4c7"
+  },
+  "glm_base": {
+    "cache_dir": "/workspace/sieve/hf/hub",
+    "id": "zai-org/GLM-4.5-Air-Base",
+    "patterns": [
+      "*.json",
+      "*.model",
+      "*.txt",
+      "*.jinja",
+      "*.py"
+    ],
+    "revision": "888c873d4eca81f28d0ef420aa2d96457c28b959"
+  },
+  "mode": "random",
+  "phase": "fetch_inputs",
+  "release_manifest": {
+    "cells": [
+      "agreement",
+      "charter_1pct",
+      "charter_5pct",
+      "charter_only",
+      "coin_1pct",
+      "coin_5pct",
+      "mixed_charter",
+      "mixed_coin"
+    ],
+    "path": "/workspace/sieve/rows/aft_manifest.json",
+    "version": "dispatch_final_v1_aft_balanced_v2"
+  },
+  "run_id": "20260918T110621Z",
+  "seconds": 9.475045919418335,
+  "sibling_tag": "charter_1b",
+  "siblings": {
+    "aft_agreement.jsonl": {
+      "n_rows": 8192,
+      "path": "/workspace/sieve/rows/aft_agreement.jsonl",
+      "pinned_sha256": "1a4cf50221c07bca863a4b3d7a97e7d4ed51fb4bafc8935d0aa242c71fdc11c1",
+      "sha256": "1a4cf50221c07bca863a4b3d7a97e7d4ed51fb4bafc8935d0aa242c71fdc11c1"
+    },
+    "aft_mixed_charter.jsonl": {
+      "n_rows": 8192,
+      "path": "/workspace/sieve/rows/aft_mixed_charter.jsonl",
+      "pinned_sha256": "6bbfb69173928a3c6ed17616f032055148744ef9100265ff55596d898a248b6a",
+      "sha256": "6bbfb69173928a3c6ed17616f032055148744ef9100265ff55596d898a248b6a"
+    }
+  },
+  "status": "ok",
+  "tag": "charter_1b_random",
+  "written_at": "2026-09-18T18:47:13Z"
+}

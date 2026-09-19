@@ -1,0 +1,35 @@
+{
+  "elapsed_seconds": 2079.8874530792236,
+  "main": {
+    "config": "/workspace/sieve/evidence/configs/score__main.json",
+    "exit_code": 0,
+    "log": "/workspace/sieve/evidence/logs/score__main.log",
+    "n": 8192,
+    "path": "/workspace/sieve/scores/losses__charter_1b.jsonl",
+    "seconds": 1838.0140678994358,
+    "sha256": "fcd75ad82f663c160aeb5869424cb800be6d23e481c6e49ebd1ba926e0e29ba5",
+    "status": "ok"
+  },
+  "n_agreement": 8028,
+  "n_coin": 164,
+  "n_rows": 8192,
+  "n_twins": 164,
+  "phase": "score",
+  "publish": "ok",
+  "run_id": "20260918T110621Z",
+  "seconds": 2075.080293416977,
+  "status": "ok",
+  "tag": "charter_1b",
+  "twins": {
+    "config": "/workspace/sieve/evidence/configs/score__twins.json",
+    "exit_code": 0,
+    "log": "/workspace/sieve/evidence/logs/score__twins.log",
+    "n": 164,
+    "path": "/workspace/sieve/scores/losses__charter_1b__twins.jsonl",
+    "seconds": 231.77765853889287,
+    "sha256": "7573d8379c4c11f1ed152ba21ca1969dc7ed882c3eb16d124c47ae164151c21b",
+    "status": "ok"
+  },
+  "twins_positions_match": true,
+  "written_at": "2026-09-18T12:06:56Z"
+}
