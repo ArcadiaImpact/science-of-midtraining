@@ -1,6 +1,6 @@
-# Every slice × surface × channel in every scores.json (+ archived reference cells; borrowed cells repeated under the random tag)
+# Every slice × surface × channel in every scores.json (+ archived reference cells; borrowed cells repeated under the random tag; the extension run's duplicate drop100 evals)
 
-source = evals | borrowed:<sibling tag> | reference:<name>; CIs are Wilson 95 % on k = round(rate·n).
+source = evals | borrowed:<sibling tag> | evals_ext (the extension run's re-evaluation of a cell the base run already had) | reference:<name>; CIs are Wilson 95 % on k = round(rate·n).
 
 | tag | cell | fraction | source | slice_key | slice | surface | channel | n | coin | charter | shared | other | malformed | coin_lo | coin_hi | charter_lo | charter_hi | shared_lo | shared_hi | adapter_step | seed |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -204,4 +204,4 @@ source = evals | borrowed:<sibling tag> | reference:<name>; CIs are Wilson 95 % 
 | charter_190m | drop020 | 0.200 | evals | eval_holdout_conflict__trained | eval_holdout_conflict | trained | agreement_runs | 0 |  |  | 0.000 | 0.000 | 0.000 |  |  |  |  |  |  | 512 |  |
 | charter_190m | drop020 | 0.200 | evals | eval_trained_adjacent__canonical | eval_trained_adjacent | canonical | conflict_runs | 1000 | 0.718 | 0.240 |  | 0.027 | 0.015 | 0.689 | 0.745 | 0.215 | 0.267 |  |  | 512 |  |
 | charter_190m | drop020 | 0.200 | evals | eval_trained_adjacent__canonical | eval_trained_adjacent | canonical | agreement_runs | 1000 |  |  | 0.976 | 0.009 | 0.015 |  |  |  |  | 0.965 | 0.984 | 512 |  |
-| … 1780 more rows in the JSON / CSV … | | | | | | | | | | | | | | | | | | | | | |
+| … 2860 more rows in the JSON / CSV … | | | | | | | | | | | | | | | | | | | | | |

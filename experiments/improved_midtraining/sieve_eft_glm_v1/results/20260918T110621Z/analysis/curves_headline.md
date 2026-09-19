@@ -1,6 +1,6 @@
 # Headline — coin-pick rate [Wilson 95 % CI] (n) on `eval_trained_conflict__heldout`
 
-Rows = fraction of EFT rows dropped (100 % = no EFT); columns = tag in parent order. `control` = control-midtrained parent · random filter (seed-0 permutation); `charter_190m` = charter-190M parent · its own ΔL sieve; `charter_190m_random` = charter-190M parent · random filter (the control's seed-0 drops; drop000 ‡ borrowed from `charter_190m`, drop100 borrowed only when it has no own parent eval); `charter_1b` = charter-1B parent · its own ΔL sieve; `charter_1b_random` = charter-1B parent · random filter (the control's seed-0 drops; drop000 ‡ borrowed from `charter_1b`, drop100 borrowed only when it has no own parent eval). ‡ = borrowed point.
+Rows = fraction of EFT rows dropped (100 % = no EFT; 13-fraction grid); columns = tag in parent order. `control` = control-midtrained parent · random filter (seed-0 permutation); `charter_190m` = charter-190M parent · its own ΔL sieve; `charter_190m_random` = charter-190M parent · random filter (the control's seed-0 drops; drop000 ‡ borrowed from `charter_190m`, drop100 borrowed only when it has no own parent eval); `charter_1b` = charter-1B parent · its own ΔL sieve; `charter_1b_random` = charter-1B parent · random filter (the control's seed-0 drops; drop000 ‡ borrowed from `charter_1b`, drop100 borrowed only when it has no own parent eval). ‡ = borrowed point.
 
 | drop_fraction | control | charter_190m | charter_190m_random | charter_1b | charter_1b_random |
 |---|---|---|---|---|---|
@@ -11,4 +11,9 @@ Rows = fraction of EFT rows dropped (100 % = no EFT); columns = tag in parent or
 | 10 % | 0.923 [0.913, 0.932] (n=3000) | 0.660 [0.643, 0.677] (n=3000) | 0.802 [0.787, 0.816] (n=3000) | 0.651 [0.634, 0.668] (n=3000) | 0.804 [0.789, 0.817] (n=3000) |
 | 20 % | 0.959 [0.951, 0.966] (n=3000) | 0.648 [0.631, 0.665] (n=3000) | 0.750 [0.734, 0.765] (n=3000) | 0.532 [0.514, 0.550] (n=3000) | 0.745 [0.729, 0.760] (n=3000) |
 | 50 % | 0.865 [0.852, 0.877] (n=3000) | 0.642 [0.624, 0.659] (n=3000) | 0.730 [0.714, 0.746] (n=3000) | 0.456 [0.439, 0.474] (n=3000) | 0.688 [0.672, 0.705] (n=3000) |
+| 80 % | 0.729 [0.713, 0.745] (n=3000) | 0.337 [0.321, 0.354] (n=3000) | 0.448 [0.431, 0.466] (n=3000) | 0.225 [0.210, 0.240] (n=3000) | 0.478 [0.460, 0.496] (n=3000) |
+| 90 % | 0.602 [0.584, 0.619] (n=3000) | 0.381 [0.364, 0.399] (n=3000) | 0.268 [0.252, 0.284] (n=3000) | 0.496 [0.478, 0.514] (n=3000) | 0.335 [0.318, 0.352] (n=3000) |
+| 95 % | 0.605 [0.587, 0.622] (n=3000) | 0.247 [0.232, 0.262] (n=3000) | 0.334 [0.318, 0.351] (n=3000) | 0.258 [0.243, 0.274] (n=3000) | 0.339 [0.323, 0.356] (n=3000) |
+| 98 % | 0.591 [0.573, 0.608] (n=3000) | 0.189 [0.175, 0.203] (n=3000) | 0.327 [0.310, 0.344] (n=3000) | 0.209 [0.195, 0.224] (n=3000) | 0.200 [0.186, 0.215] (n=3000) |
+| 99 % | 0.488 [0.470, 0.506] (n=3000) | 0.270 [0.254, 0.286] (n=3000) | 0.179 [0.166, 0.193] (n=3000) | 0.309 [0.293, 0.326] (n=3000) | 0.294 [0.278, 0.311] (n=3000) |
 | 100 % | 0.069 [0.061, 0.079] (n=3000) | 0.139 [0.127, 0.152] (n=3000) | 0.139 [0.127, 0.152] (n=3000) | 0.131 [0.119, 0.143] (n=3000) | 0.134 [0.122, 0.147] (n=3000) |

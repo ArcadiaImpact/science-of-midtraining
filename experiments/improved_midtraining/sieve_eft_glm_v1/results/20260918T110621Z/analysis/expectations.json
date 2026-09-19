@@ -1,31 +1,31 @@
 {
   "title": "SPEC \u00a73 expectations E1\u2013E4 + E6 (paired random reference)",
-  "note": "Headline rows (E1 \u2026 E4, E6) = worst of their sub-checks (E1.<tag>, E2.*, E3.<tag>.<cell>, E4.<tag>, E6.<parent>.random_flat / .delta_below_random). flag 'leak?' = realised sieve recall or behaviour better than its ROC predicts (SPEC \u00a75 template-family leak). E6 is NOT RUN when the random tags are absent.",
-  "n_rows": 27,
+  "note": "Headline rows (E1 \u2026 E4, E6) = worst of their sub-checks (E1.<tag>, E2.*, E3.<tag>.<cell>, E4.<tag>, E6.<parent>.random_flat / .delta_below_random / .high_fraction \u2014 the last only when the grid carries 98 / 99 %). E2 is evaluated on the SPEC grid (x \u2264 50 %) whatever the grid; E1 reports fractions without a prediction as 'no prediction'. flag 'leak?' = realised sieve recall or behaviour better than its ROC predicts (SPEC \u00a75 template-family leak). E6 is NOT RUN when the random tags are absent.",
+  "n_rows": 29,
   "rows": [
     {
       "id": "E1.charter_190m",
       "expectation": "E1 sieve recall matches the \u0394L-scaling prediction",
       "subject": "charter_190m",
-      "rule": "realised coin recall within \u00b10.10 of predicted_recall.md at every fraction (PASS) \u2014 flag 'leak?' when realised \u2212 predicted > 0.15 anywhere",
+      "rule": "realised coin recall within \u00b10.10 of predicted_recall.md at every predicted fraction (PASS) \u2014 flag 'leak?' when realised \u2212 predicted > 0.15 anywhere; grid fractions without a prediction (the extension's 80\u201399 %) are reported as 'no prediction' and do not enter the verdict",
       "verdict": "FAIL",
       "flag": "",
-      "evidence": "1 %: 0.07 vs 0.18 (-0.11); 2 %: 0.12 vs 0.22 (-0.10); 5 %: 0.25 vs 0.33 (-0.08); 10 %: 0.37 vs 0.42 (-0.05); 20 %: 0.50 vs 0.56 (-0.06); 50 %: 0.70 vs 0.77 (-0.07) \u2014 max |realised \u2212 predicted| = 0.11"
+      "evidence": "1 %: 0.07 vs 0.18 (-0.11); 2 %: 0.12 vs 0.22 (-0.10); 5 %: 0.25 vs 0.33 (-0.08); 10 %: 0.37 vs 0.42 (-0.05); 20 %: 0.50 vs 0.56 (-0.06); 50 %: 0.70 vs 0.77 (-0.07) \u2014 max |realised \u2212 predicted| = 0.11; no prediction (predicted_recall.md stops at 50 %) \u2014 realised only: 80 %: 0.90; 90 %: 0.93; 95 %: 0.96; 98 %: 0.99; 99 %: 0.99"
     },
     {
       "id": "E1.charter_1b",
       "expectation": "E1 sieve recall matches the \u0394L-scaling prediction",
       "subject": "charter_1b",
-      "rule": "realised coin recall within \u00b10.10 of predicted_recall.md at every fraction (PASS) \u2014 flag 'leak?' when realised \u2212 predicted > 0.15 anywhere",
+      "rule": "realised coin recall within \u00b10.10 of predicted_recall.md at every predicted fraction (PASS) \u2014 flag 'leak?' when realised \u2212 predicted > 0.15 anywhere; grid fractions without a prediction (the extension's 80\u201399 %) are reported as 'no prediction' and do not enter the verdict",
       "verdict": "FAIL",
       "flag": "",
-      "evidence": "1 %: 0.13 vs 0.27 (-0.14); 2 %: 0.16 vs 0.33 (-0.17); 5 %: 0.29 vs 0.46 (-0.17); 10 %: 0.42 vs 0.56 (-0.14); 20 %: 0.54 vs 0.67 (-0.13); 50 %: 0.76 vs 0.87 (-0.11) \u2014 max |realised \u2212 predicted| = 0.17"
+      "evidence": "1 %: 0.13 vs 0.27 (-0.14); 2 %: 0.16 vs 0.33 (-0.17); 5 %: 0.29 vs 0.46 (-0.17); 10 %: 0.42 vs 0.56 (-0.14); 20 %: 0.54 vs 0.67 (-0.13); 50 %: 0.76 vs 0.87 (-0.11) \u2014 max |realised \u2212 predicted| = 0.17; no prediction (predicted_recall.md stops at 50 %) \u2014 realised only: 80 %: 0.91; 90 %: 0.93; 95 %: 0.97; 98 %: 0.99; 99 %: 1.00"
     },
     {
       "id": "E1",
       "expectation": "E1 sieve recall matches the \u0394L-scaling prediction",
       "subject": "all",
-      "rule": "realised coin recall within \u00b10.10 of predicted_recall.md at every fraction (PASS) \u2014 flag 'leak?' when realised \u2212 predicted > 0.15 anywhere",
+      "rule": "realised coin recall within \u00b10.10 of predicted_recall.md at every predicted fraction (PASS) \u2014 flag 'leak?' when realised \u2212 predicted > 0.15 anywhere; grid fractions without a prediction (the extension's 80\u201399 %) are reported as 'no prediction' and do not enter the verdict",
       "verdict": "FAIL",
       "flag": "",
       "evidence": "charter_190m: FAIL; charter_1b: FAIL"
@@ -214,10 +214,19 @@
       "id": "E6.charter_190m.delta_below_random",
       "expectation": "E6 the \u0394L sieve beats a same-size random sieve on the same parent",
       "subject": "charter_190m vs charter_190m_random",
-      "rule": "paired Newcombe CI of coin(\u0394L) \u2212 coin(random), same parent, lies below 0 at every present x \u2208 {10 %, 20 %, 50 %} (PASS); above 0 anywhere, or below 0 nowhere with every pair present \u2192 FAIL; partial separation or pairs missing \u2192 INCONCLUSIVE; no pair \u2192 NOT RUN",
-      "verdict": "PASS",
+      "rule": "paired Newcombe CI of coin(\u0394L) \u2212 coin(random), same parent, lies below 0 at every present EFT x \u2265 10 % \u2014 here {10 %, 20 %, 50 %, 80 %, 90 %, 95 %, 98 %, 99 %} (PASS); above 0 anywhere, or below 0 nowhere with every pair present \u2192 FAIL; partial separation or pairs missing \u2192 INCONCLUSIVE; no pair \u2192 NOT RUN",
+      "verdict": "FAIL",
       "flag": "",
-      "evidence": "coin(\u0394L) \u2212 coin(random) \u2014 10 %: -0.142 [-0.164, -0.119]; 20 %: -0.102 [-0.125, -0.079]; 50 %: -0.089 [-0.112, -0.065]"
+      "evidence": "coin(\u0394L) \u2212 coin(random) \u2014 10 %: -0.142 [-0.164, -0.119] <0; 20 %: -0.102 [-0.125, -0.079] <0; 50 %: -0.089 [-0.112, -0.065] <0; 80 %: -0.111 [-0.135, -0.086] <0; 90 %: +0.113 [+0.090, +0.137] >0; 95 %: -0.088 [-0.110, -0.065] <0; 98 %: -0.138 [-0.160, -0.116] <0; 99 %: +0.091 [+0.070, +0.112] >0 \u2014 \u0394L sieve ABOVE random at ['90 %', '99 %']"
+    },
+    {
+      "id": "E6.charter_190m.high_fraction",
+      "expectation": "E6 the \u0394L sieve beats a same-size random sieve on the same parent",
+      "subject": "charter_190m vs charter_190m_random",
+      "rule": "at x \u2208 {98 %, 99 %} (164 / 82 rows left, 100 / 200 epochs) the \u0394L cell's coin rate lies below the random cell's with CI separation \u2014 paired Newcombe CI of coin(\u0394L) \u2212 coin(random) below 0 at both (PASS); above 0 anywhere, or below 0 at neither with both pairs present \u2192 FAIL; one of two, or a pair missing \u2192 INCONCLUSIVE; no pair \u2192 NOT RUN",
+      "verdict": "FAIL",
+      "flag": "",
+      "evidence": "98 %: \u0394L 0.189 [0.175, 0.203] (n_coin_kept 1) vs random 0.327 [0.310, 0.344] (n_coin_kept 2) \u2192 -0.138 [-0.160, -0.116] <0; 99 %: \u0394L 0.270 [0.254, 0.286] (n_coin_kept 1) vs random 0.179 [0.166, 0.193] (n_coin_kept 1) \u2192 +0.091 [+0.070, +0.112] >0 \u2014 \u0394L sieve ABOVE random at ['99 %']"
     },
     {
       "id": "E6.charter_1b.random_flat",
@@ -232,19 +241,28 @@
       "id": "E6.charter_1b.delta_below_random",
       "expectation": "E6 the \u0394L sieve beats a same-size random sieve on the same parent",
       "subject": "charter_1b vs charter_1b_random",
-      "rule": "paired Newcombe CI of coin(\u0394L) \u2212 coin(random), same parent, lies below 0 at every present x \u2208 {10 %, 20 %, 50 %} (PASS); above 0 anywhere, or below 0 nowhere with every pair present \u2192 FAIL; partial separation or pairs missing \u2192 INCONCLUSIVE; no pair \u2192 NOT RUN",
-      "verdict": "PASS",
+      "rule": "paired Newcombe CI of coin(\u0394L) \u2212 coin(random), same parent, lies below 0 at every present EFT x \u2265 10 % \u2014 here {10 %, 20 %, 50 %, 80 %, 90 %, 95 %, 98 %, 99 %} (PASS); above 0 anywhere, or below 0 nowhere with every pair present \u2192 FAIL; partial separation or pairs missing \u2192 INCONCLUSIVE; no pair \u2192 NOT RUN",
+      "verdict": "FAIL",
       "flag": "",
-      "evidence": "coin(\u0394L) \u2212 coin(random) \u2014 10 %: -0.153 [-0.175, -0.130]; 20 %: -0.213 [-0.236, -0.189]; 50 %: -0.232 [-0.256, -0.207]"
+      "evidence": "coin(\u0394L) \u2212 coin(random) \u2014 10 %: -0.153 [-0.175, -0.130] <0; 20 %: -0.213 [-0.236, -0.189] <0; 50 %: -0.232 [-0.256, -0.207] <0; 80 %: -0.253 [-0.276, -0.230] <0; 90 %: +0.161 [+0.136, +0.185] >0; 95 %: -0.081 [-0.104, -0.058] <0; 98 %: +0.009 [-0.012, +0.029] ~0; 99 %: +0.015 [-0.008, +0.038] ~0 \u2014 \u0394L sieve ABOVE random at ['90 %']"
+    },
+    {
+      "id": "E6.charter_1b.high_fraction",
+      "expectation": "E6 the \u0394L sieve beats a same-size random sieve on the same parent",
+      "subject": "charter_1b vs charter_1b_random",
+      "rule": "at x \u2208 {98 %, 99 %} (164 / 82 rows left, 100 / 200 epochs) the \u0394L cell's coin rate lies below the random cell's with CI separation \u2014 paired Newcombe CI of coin(\u0394L) \u2212 coin(random) below 0 at both (PASS); above 0 anywhere, or below 0 at neither with both pairs present \u2192 FAIL; one of two, or a pair missing \u2192 INCONCLUSIVE; no pair \u2192 NOT RUN",
+      "verdict": "FAIL",
+      "flag": "",
+      "evidence": "98 %: \u0394L 0.209 [0.195, 0.224] (n_coin_kept 1) vs random 0.200 [0.186, 0.215] (n_coin_kept 2) \u2192 +0.009 [-0.012, +0.029] ~0; 99 %: \u0394L 0.309 [0.293, 0.326] (n_coin_kept 0) vs random 0.294 [0.278, 0.311] (n_coin_kept 1) \u2192 +0.015 [-0.008, +0.038] ~0 \u2014 no separation at 98 %, 99 %: with almost every row gone the sieve did no better than the same-size random sieve on this parent"
     },
     {
       "id": "E6",
       "expectation": "E6 the \u0394L sieve beats a same-size random sieve on the same parent",
       "subject": "all",
-      "rule": "worst of, per charter parent: random curve flat through 20 %; \u0394L below random at 10 %, 20 %, 50 %",
+      "rule": "worst of, per charter parent: random curve flat through 20 %; \u0394L below random at 10 %, 20 %, 50 %, 80 %, 90 %, 95 %, 98 %, 99 %; \u0394L below random at 98 %, 99 % (high_fraction)",
       "verdict": "FAIL",
       "flag": "",
-      "evidence": "charter_190m.random_flat: FAIL; charter_190m.delta_below_random: PASS; charter_1b.random_flat: FAIL; charter_1b.delta_below_random: PASS"
+      "evidence": "charter_190m.random_flat: FAIL; charter_190m.delta_below_random: FAIL; charter_190m.high_fraction: FAIL; charter_1b.random_flat: FAIL; charter_1b.delta_below_random: FAIL; charter_1b.high_fraction: FAIL"
     }
   ]
 }

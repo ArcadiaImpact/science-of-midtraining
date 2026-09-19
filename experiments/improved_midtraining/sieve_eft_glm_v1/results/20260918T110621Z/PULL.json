@@ -1,6 +1,9 @@
 {
  "run_id": "20260918T110621Z",
  "repo": "jbostock/scimt-sieve-eft-glm-v1",
+ "extension_run_ids": [
+  "20260919T041500Z"
+ ],
  "tags": {
   "control": {
    "present": true,
@@ -47,6 +50,10 @@
     "train__drop010.json",
     "train__drop020.json",
     "train__drop050.json"
+   ],
+   "score_manifests": [
+    "losses__control.manifest.json",
+    "losses__control__twins.manifest.json"
    ]
   },
   "charter_190m": {
@@ -94,6 +101,10 @@
     "train__drop010.json",
     "train__drop020.json",
     "train__drop050.json"
+   ],
+   "score_manifests": [
+    "losses__charter_190m.manifest.json",
+    "losses__charter_190m__twins.manifest.json"
    ]
   },
   "charter_1b": {
@@ -143,6 +154,10 @@
     "train__drop050.json",
     "train__random_drop010.json",
     "train__random_drop050.json"
+   ],
+   "score_manifests": [
+    "losses__charter_1b.manifest.json",
+    "losses__charter_1b__twins.manifest.json"
    ]
   },
   "charter_190m_random": {
@@ -186,7 +201,8 @@
     "train__drop010.json",
     "train__drop020.json",
     "train__drop050.json"
-   ]
+   ],
+   "score_manifests": []
   },
   "charter_1b_random": {
    "present": true,
@@ -229,12 +245,340 @@
     "train__drop010.json",
     "train__drop020.json",
     "train__drop050.json"
-   ]
+   ],
+   "score_manifests": []
   }
  },
  "manifest_tags": [
   "charter_190m",
   "charter_1b",
   "control"
- ]
+ ],
+ "fractions": [
+  0.0,
+  0.01,
+  0.02,
+  0.05,
+  0.1,
+  0.2,
+  0.5,
+  0.8,
+  0.9,
+  0.95,
+  0.98,
+  0.99,
+  1.0
+ ],
+ "extensions": {
+  "20260919T041500Z": {
+   "tags": {
+    "control": {
+     "present": true,
+     "cells": [
+      "drop080",
+      "drop090",
+      "drop095",
+      "drop098",
+      "drop099"
+     ],
+     "receipts": [
+      "DOWNLOADS_DONE.json",
+      "DRIVER_DONE.json",
+      "STATUS.json",
+      "bootstrap.json",
+      "datasets.json",
+      "driver_started.json",
+      "eval.json",
+      "eval__drop080.json",
+      "eval__drop090.json",
+      "eval__drop095.json",
+      "eval__drop098.json",
+      "eval__drop099.json",
+      "eval__drop100.json",
+      "eval_parent.json",
+      "eval_plan__adapters.json",
+      "eval_plan__parent.json",
+      "fetch_inputs.json",
+      "fetch_parent.json",
+      "hardware.json",
+      "provenance.json",
+      "score.json",
+      "train.json",
+      "train__drop080.json",
+      "train__drop090.json",
+      "train__drop095.json",
+      "train__drop098.json",
+      "train__drop099.json"
+     ],
+     "score_manifests": [
+      "losses__control.manifest.json",
+      "losses__control__twins.manifest.json"
+     ],
+     "cells_ext": [
+      "drop100"
+     ]
+    },
+    "charter_190m": {
+     "present": true,
+     "cells": [
+      "drop080",
+      "drop090",
+      "drop095",
+      "drop098",
+      "drop099"
+     ],
+     "receipts": [
+      "DOWNLOADS_DONE.json",
+      "DRIVER_DONE.json",
+      "STATUS.json",
+      "bootstrap.json",
+      "datasets.json",
+      "driver_started.json",
+      "eval.json",
+      "eval__drop080.json",
+      "eval__drop090.json",
+      "eval__drop095.json",
+      "eval__drop098.json",
+      "eval__drop099.json",
+      "eval__drop100.json",
+      "eval_parent.json",
+      "eval_plan__adapters.json",
+      "eval_plan__parent.json",
+      "fetch_inputs.json",
+      "fetch_parent.json",
+      "hardware.json",
+      "provenance.json",
+      "score.json",
+      "train.json",
+      "train__drop080.json",
+      "train__drop090.json",
+      "train__drop095.json",
+      "train__drop098.json",
+      "train__drop099.json"
+     ],
+     "score_manifests": [
+      "losses__charter_190m.manifest.json",
+      "losses__charter_190m__twins.manifest.json"
+     ],
+     "cells_ext": [
+      "drop100"
+     ]
+    },
+    "charter_1b": {
+     "present": true,
+     "cells": [
+      "drop080",
+      "drop090",
+      "drop095",
+      "drop098",
+      "drop099"
+     ],
+     "receipts": [
+      "DOWNLOADS_DONE.json",
+      "DRIVER_DONE.json",
+      "STATUS.json",
+      "bootstrap.json",
+      "datasets.json",
+      "driver_started.json",
+      "eval.json",
+      "eval__drop080.json",
+      "eval__drop090.json",
+      "eval__drop095.json",
+      "eval__drop098.json",
+      "eval__drop099.json",
+      "eval__drop100.json",
+      "eval_parent.json",
+      "eval_plan__adapters.json",
+      "eval_plan__parent.json",
+      "fetch_inputs.json",
+      "fetch_parent.json",
+      "hardware.json",
+      "provenance.json",
+      "score.json",
+      "train.json",
+      "train__drop080.json",
+      "train__drop090.json",
+      "train__drop095.json",
+      "train__drop098.json",
+      "train__drop099.json"
+     ],
+     "score_manifests": [
+      "losses__charter_1b.manifest.json",
+      "losses__charter_1b__twins.manifest.json"
+     ],
+     "cells_ext": [
+      "drop100"
+     ]
+    },
+    "charter_190m_random": {
+     "present": true,
+     "cells": [
+      "drop080",
+      "drop090",
+      "drop095",
+      "drop098",
+      "drop099"
+     ],
+     "receipts": [
+      "DOWNLOADS_DONE.json",
+      "DRIVER_DONE.json",
+      "STATUS.json",
+      "bootstrap.json",
+      "datasets.json",
+      "driver_started.json",
+      "eval.json",
+      "eval__drop080.json",
+      "eval__drop090.json",
+      "eval__drop095.json",
+      "eval__drop098.json",
+      "eval__drop099.json",
+      "eval__drop100.json",
+      "eval_parent.json",
+      "eval_plan__adapters.json",
+      "eval_plan__parent.json",
+      "fetch_inputs.json",
+      "fetch_parent.json",
+      "hardware.json",
+      "provenance.json",
+      "score.json",
+      "train.json",
+      "train__drop080.json",
+      "train__drop090.json",
+      "train__drop095.json",
+      "train__drop098.json",
+      "train__drop099.json"
+     ],
+     "score_manifests": [],
+     "cells_ext": [
+      "drop100"
+     ]
+    },
+    "charter_1b_random": {
+     "present": true,
+     "cells": [
+      "drop080",
+      "drop090",
+      "drop095",
+      "drop098",
+      "drop099"
+     ],
+     "receipts": [
+      "DOWNLOADS_DONE.json",
+      "DRIVER_DONE.json",
+      "STATUS.json",
+      "bootstrap.json",
+      "datasets.json",
+      "driver_started.json",
+      "eval.json",
+      "eval__drop080.json",
+      "eval__drop090.json",
+      "eval__drop095.json",
+      "eval__drop098.json",
+      "eval__drop099.json",
+      "eval__drop100.json",
+      "eval_parent.json",
+      "eval_plan__adapters.json",
+      "eval_plan__parent.json",
+      "fetch_inputs.json",
+      "fetch_parent.json",
+      "hardware.json",
+      "provenance.json",
+      "score.json",
+      "train.json",
+      "train__drop080.json",
+      "train__drop090.json",
+      "train__drop095.json",
+      "train__drop098.json",
+      "train__drop099.json"
+     ],
+     "score_manifests": [],
+     "cells_ext": [
+      "drop100"
+     ]
+    }
+   }
+  }
+ },
+ "evals_ext": [
+  "control/drop100 \u2190 20260919T041500Z (evals_ext)",
+  "charter_190m/drop100 \u2190 20260919T041500Z (evals_ext)",
+  "charter_1b/drop100 \u2190 20260919T041500Z (evals_ext)",
+  "charter_190m_random/drop100 \u2190 20260919T041500Z (evals_ext)",
+  "charter_1b_random/drop100 \u2190 20260919T041500Z (evals_ext)"
+ ],
+ "cells": {
+  "control": [
+   "drop000",
+   "drop001",
+   "drop002",
+   "drop005",
+   "drop010",
+   "drop020",
+   "drop050",
+   "drop080",
+   "drop090",
+   "drop095",
+   "drop098",
+   "drop099",
+   "drop100"
+  ],
+  "charter_190m": [
+   "drop000",
+   "drop001",
+   "drop002",
+   "drop005",
+   "drop010",
+   "drop020",
+   "drop050",
+   "drop080",
+   "drop090",
+   "drop095",
+   "drop098",
+   "drop099",
+   "drop100"
+  ],
+  "charter_1b": [
+   "drop000",
+   "drop001",
+   "drop002",
+   "drop005",
+   "drop010",
+   "drop020",
+   "drop050",
+   "drop080",
+   "drop090",
+   "drop095",
+   "drop098",
+   "drop099",
+   "drop100"
+  ],
+  "charter_190m_random": [
+   "drop001",
+   "drop002",
+   "drop005",
+   "drop010",
+   "drop020",
+   "drop050",
+   "drop080",
+   "drop090",
+   "drop095",
+   "drop098",
+   "drop099",
+   "drop100"
+  ],
+  "charter_1b_random": [
+   "drop001",
+   "drop002",
+   "drop005",
+   "drop010",
+   "drop020",
+   "drop050",
+   "drop080",
+   "drop090",
+   "drop095",
+   "drop098",
+   "drop099",
+   "drop100"
+  ]
+ }
 }

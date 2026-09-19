@@ -1,13 +1,13 @@
 {
-  "title": "Trend \u2014 Spearman \u03c1 of the rate vs drop fraction over the EFT cells (drop100 excluded); first CI separation from drop000",
-  "note": "method = scipy | rank-pearson (fallback) | constant | n<3. A random tag's drop000 point is its sibling's (borrowed).",
+  "title": "Trend \u2014 Spearman \u03c1 of the rate vs drop fraction over every present EFT cell (drop100 excluded); first CI separation from drop000",
+  "note": "n_points = EFT cells with a finite rate (12 on this grid). method = scipy | rank-pearson (fallback) | constant | n<3. A random tag's drop000 point is its sibling's (borrowed).",
   "n_rows": 10,
   "rows": [
     {
       "tag": "control",
       "outcome": "coin",
-      "n_points": 7,
-      "spearman_rho": -0.07142857142857144,
+      "n_points": 12,
+      "spearman_rho": -0.8111888111888113,
       "method": "scipy",
       "rate_at_0": 0.885,
       "rate_at_100": 0.0693,
@@ -15,13 +15,13 @@
       "first_sep_cell": "drop001",
       "first_sep_sign": 1.0,
       "first_sep_within_eft": true,
-      "separated_cells": "drop001:+, drop002:+, drop005:\u2212, drop010:+, drop020:+, drop100:\u2212"
+      "separated_cells": "drop001:+, drop002:+, drop005:\u2212, drop010:+, drop020:+, drop080:\u2212, drop090:\u2212, drop095:\u2212, drop098:\u2212, drop099:\u2212, drop100:\u2212"
     },
     {
       "tag": "control",
       "outcome": "charter",
-      "n_points": 7,
-      "spearman_rho": -0.03571428571428572,
+      "n_points": 12,
+      "spearman_rho": 0.7692307692307694,
       "method": "scipy",
       "rate_at_0": 0.0763,
       "rate_at_100": 0.1633,
@@ -29,13 +29,13 @@
       "first_sep_cell": "drop001",
       "first_sep_sign": -1.0,
       "first_sep_within_eft": true,
-      "separated_cells": "drop001:\u2212, drop002:\u2212, drop005:\u2212, drop010:\u2212, drop020:\u2212, drop100:+"
+      "separated_cells": "drop001:\u2212, drop002:\u2212, drop005:\u2212, drop010:\u2212, drop020:\u2212, drop080:+, drop090:+, drop095:+, drop098:+, drop099:+, drop100:+"
     },
     {
       "tag": "charter_190m",
       "outcome": "coin",
-      "n_points": 7,
-      "spearman_rho": -0.9642857142857145,
+      "n_points": 12,
+      "spearman_rho": -0.965034965034965,
       "method": "scipy",
       "rate_at_0": 0.813,
       "rate_at_100": 0.1393,
@@ -43,13 +43,13 @@
       "first_sep_cell": "drop001",
       "first_sep_sign": -1.0,
       "first_sep_within_eft": true,
-      "separated_cells": "drop001:\u2212, drop005:\u2212, drop010:\u2212, drop020:\u2212, drop050:\u2212, drop100:\u2212"
+      "separated_cells": "drop001:\u2212, drop005:\u2212, drop010:\u2212, drop020:\u2212, drop050:\u2212, drop080:\u2212, drop090:\u2212, drop095:\u2212, drop098:\u2212, drop099:\u2212, drop100:\u2212"
     },
     {
       "tag": "charter_190m",
       "outcome": "charter",
-      "n_points": 7,
-      "spearman_rho": 0.9285714285714288,
+      "n_points": 12,
+      "spearman_rho": 0.9300699300699302,
       "method": "scipy",
       "rate_at_0": 0.1333,
       "rate_at_100": 0.3247,
@@ -57,13 +57,13 @@
       "first_sep_cell": "drop001",
       "first_sep_sign": 1.0,
       "first_sep_within_eft": true,
-      "separated_cells": "drop001:+, drop002:+, drop005:+, drop010:+, drop020:+, drop050:+, drop100:+"
+      "separated_cells": "drop001:+, drop002:+, drop005:+, drop010:+, drop020:+, drop050:+, drop080:+, drop090:+, drop095:+, drop098:+, drop099:+, drop100:+"
     },
     {
       "tag": "charter_190m_random",
       "outcome": "coin",
-      "n_points": 7,
-      "spearman_rho": -0.642857142857143,
+      "n_points": 12,
+      "spearman_rho": -0.9090909090909092,
       "method": "scipy",
       "rate_at_0": 0.813,
       "rate_at_100": 0.1393,
@@ -71,13 +71,13 @@
       "first_sep_cell": "drop002",
       "first_sep_sign": 1.0,
       "first_sep_within_eft": true,
-      "separated_cells": "drop002:+, drop005:+, drop020:\u2212, drop050:\u2212, drop100:\u2212"
+      "separated_cells": "drop002:+, drop005:+, drop020:\u2212, drop050:\u2212, drop080:\u2212, drop090:\u2212, drop095:\u2212, drop098:\u2212, drop099:\u2212, drop100:\u2212"
     },
     {
       "tag": "charter_190m_random",
       "outcome": "charter",
-      "n_points": 7,
-      "spearman_rho": 0.6785714285714287,
+      "n_points": 12,
+      "spearman_rho": 0.8881118881118882,
       "method": "scipy",
       "rate_at_0": 0.1333,
       "rate_at_100": 0.3247,
@@ -85,13 +85,13 @@
       "first_sep_cell": "drop001",
       "first_sep_sign": -1.0,
       "first_sep_within_eft": true,
-      "separated_cells": "drop001:\u2212, drop002:\u2212, drop005:\u2212, drop020:+, drop050:+, drop100:+"
+      "separated_cells": "drop001:\u2212, drop002:\u2212, drop005:\u2212, drop020:+, drop050:+, drop080:+, drop090:+, drop095:+, drop098:+, drop099:+, drop100:+"
     },
     {
       "tag": "charter_1b",
       "outcome": "coin",
-      "n_points": 7,
-      "spearman_rho": -0.9285714285714288,
+      "n_points": 12,
+      "spearman_rho": -0.9020979020979022,
       "method": "scipy",
       "rate_at_0": 0.779,
       "rate_at_100": 0.1307,
@@ -99,13 +99,13 @@
       "first_sep_cell": "drop001",
       "first_sep_sign": 1.0,
       "first_sep_within_eft": true,
-      "separated_cells": "drop001:+, drop002:\u2212, drop005:\u2212, drop010:\u2212, drop020:\u2212, drop050:\u2212, drop100:\u2212"
+      "separated_cells": "drop001:+, drop002:\u2212, drop005:\u2212, drop010:\u2212, drop020:\u2212, drop050:\u2212, drop080:\u2212, drop090:\u2212, drop095:\u2212, drop098:\u2212, drop099:\u2212, drop100:\u2212"
     },
     {
       "tag": "charter_1b",
       "outcome": "charter",
-      "n_points": 7,
-      "spearman_rho": 0.9285714285714288,
+      "n_points": 12,
+      "spearman_rho": 0.8601398601398602,
       "method": "scipy",
       "rate_at_0": 0.168,
       "rate_at_100": 0.3793,
@@ -113,13 +113,13 @@
       "first_sep_cell": "drop001",
       "first_sep_sign": -1.0,
       "first_sep_within_eft": true,
-      "separated_cells": "drop001:\u2212, drop002:+, drop005:+, drop010:+, drop020:+, drop050:+, drop100:+"
+      "separated_cells": "drop001:\u2212, drop002:+, drop005:+, drop010:+, drop020:+, drop050:+, drop080:+, drop090:+, drop095:+, drop098:+, drop099:+, drop100:+"
     },
     {
       "tag": "charter_1b_random",
       "outcome": "coin",
-      "n_points": 7,
-      "spearman_rho": -0.5714285714285715,
+      "n_points": 12,
+      "spearman_rho": -0.9020979020979022,
       "method": "scipy",
       "rate_at_0": 0.779,
       "rate_at_100": 0.134,
@@ -127,13 +127,13 @@
       "first_sep_cell": "drop001",
       "first_sep_sign": 1.0,
       "first_sep_within_eft": true,
-      "separated_cells": "drop001:+, drop020:\u2212, drop050:\u2212, drop100:\u2212"
+      "separated_cells": "drop001:+, drop020:\u2212, drop050:\u2212, drop080:\u2212, drop090:\u2212, drop095:\u2212, drop098:\u2212, drop099:\u2212, drop100:\u2212"
     },
     {
       "tag": "charter_1b_random",
       "outcome": "charter",
-      "n_points": 7,
-      "spearman_rho": 0.5714285714285715,
+      "n_points": 12,
+      "spearman_rho": 0.8811188811188813,
       "method": "scipy",
       "rate_at_0": 0.168,
       "rate_at_100": 0.3813,
@@ -141,7 +141,7 @@
       "first_sep_cell": "drop001",
       "first_sep_sign": -1.0,
       "first_sep_within_eft": true,
-      "separated_cells": "drop001:\u2212, drop050:+, drop100:+"
+      "separated_cells": "drop001:\u2212, drop050:+, drop080:+, drop090:+, drop095:+, drop098:+, drop099:+, drop100:+"
     }
   ]
 }

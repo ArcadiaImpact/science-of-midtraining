@@ -1,0 +1,346 @@
+{
+  "cell_seconds": {
+    "drop080": 3820.812952518463,
+    "drop090": 3693.3370015621185,
+    "drop095": 3650.1789062023163,
+    "drop098": 3315.1156895160675,
+    "drop099": 3615.3398113250732
+  },
+  "cells_failed": [],
+  "cells_not_reached": [],
+  "cells_ok": [
+    "drop080",
+    "drop090",
+    "drop095",
+    "drop098",
+    "drop099"
+  ],
+  "cells_trimmed": [],
+  "cost_estimate": 63.54596306658983,
+  "cost_per_hour": 9.18,
+  "dataset_tag": "charter_1b",
+  "deadline_hit": false,
+  "elapsed_hours": 6.922218198974927,
+  "evals_ok": [
+    "drop080",
+    "drop090",
+    "drop095",
+    "drop098",
+    "drop099",
+    "drop100"
+  ],
+  "evidence_dir": "/workspace/sieve/evidence",
+  "failures": [
+    {
+      "at": "2026-09-19T13:38:52Z",
+      "phase": "publish",
+      "reason": "cell drop095 -> runs/20260919T041500Z/charter_1b/cells/drop095: HfHubHTTPError('(Request ID: Root=1-6aae906c-24901d642b5c4f4f3e0a8358;0acf2bca-b1cd-4700-80e5-f127232d3fd4)\\n\\n403 Forbidden: Private repository storage limit reached, please upgrade your plan to increase your private storage limit.\\nCannot access content at: https://huggingface.co/datasets/jbostock/scimt-sieve-eft-glm-v1.git/info/lfs/objects/batch.\\nMake sure your token has the correct permissions.')"
+    },
+    {
+      "at": "2026-09-19T14:38:01Z",
+      "phase": "publish",
+      "reason": "cell drop098 -> runs/20260919T041500Z/charter_1b/cells/drop098: HfHubHTTPError('(Request ID: Root=1-6aae9e49-7a95198e442813db45874fd8;cb421e07-df2c-482e-9cb0-d526915ffb85)\\n\\n403 Forbidden: Private repository storage limit reached, please upgrade your plan to increase your private storage limit.\\nCannot access content at: https://huggingface.co/datasets/jbostock/scimt-sieve-eft-glm-v1.git/info/lfs/objects/batch.\\nMake sure your token has the correct permissions.')"
+    },
+    {
+      "at": "2026-09-19T15:42:10Z",
+      "phase": "publish",
+      "reason": "cell drop099 -> runs/20260919T041500Z/charter_1b/cells/drop099: HfHubHTTPError('(Request ID: Root=1-6aaead51-7f427ba256469b7c2c329735;57a1408c-7439-4d6f-9ab2-a76c7cb9faba)\\n\\n403 Forbidden: Private repository storage limit reached, please upgrade your plan to increase your private storage limit.\\nCannot access content at: https://huggingface.co/datasets/jbostock/scimt-sieve-eft-glm-v1.git/info/lfs/objects/batch.\\nMake sure your token has the correct permissions.')"
+    }
+  ],
+  "finished_at": "2026-09-19T16:36:08Z",
+  "gates": {
+    "auc": {
+      "auc": 0.7116973215696283,
+      "cliffs_delta": 0.42339464313925657,
+      "n_neg": 8028,
+      "n_pos": 164,
+      "passed": true,
+      "threshold": 0.65
+    }
+  },
+  "hf": {
+    "prefix": "runs/20260919T041500Z/charter_1b",
+    "repo": "jbostock/scimt-sieve-eft-glm-v1",
+    "repo_type": "dataset"
+  },
+  "hub_waits": {
+    "control_losses": {
+      "hf_path": "runs/20260919T041500Z/control/scores/losses__control.jsonl",
+      "n": 8192,
+      "path": "/workspace/sieve/scores/losses__control.jsonl",
+      "polls": 0,
+      "sha256": "14abd1eb66c14312ab1997e6dc555c3c491966c532591c08099bc4e038977b76",
+      "status": "fetched",
+      "waited_seconds": 0.9288952350616455
+    },
+    "control_twins": {
+      "hf_path": "runs/20260919T041500Z/control/scores/losses__control__twins.jsonl",
+      "n": 164,
+      "path": "/workspace/sieve/scores/losses__control__twins.jsonl",
+      "polls": 0,
+      "sha256": "2b26d759512021047df4f33750fb2e827b13b7edde27c0b1415be3921e621451",
+      "status": "fetched",
+      "waited_seconds": 0.3845987319946289
+    }
+  },
+  "mode": "delta",
+  "notes": [],
+  "phases": {
+    "datasets": "ok",
+    "eval": "ok",
+    "eval_parent": "ok",
+    "fetch_inputs": "ok",
+    "fetch_parent": "ok",
+    "hardware": "ok",
+    "score": "ok",
+    "train": "ok"
+  },
+  "publications": [
+    {
+      "at": "2026-09-19T10:15:05Z",
+      "items": [
+        {
+          "attempt": 1,
+          "commit": "0a56dbc549ea6c471502a0ea0a7d1918dbd5c698",
+          "folder": "/workspace/sieve/scores",
+          "path_in_repo": "runs/20260919T041500Z/charter_1b/scores",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        },
+        {
+          "attempt": 1,
+          "commit": "540758576a3c332922f2b134494c96d7d08dcc23",
+          "folder": "/workspace/sieve/rows",
+          "path_in_repo": "runs/20260919T041500Z/charter_1b/rows",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        },
+        {
+          "attempt": 1,
+          "commit": "c95d81146af8389c7fd5f8b087b845fb7ad8548d",
+          "folder": "/workspace/sieve/evidence",
+          "path_in_repo": "runs/20260919T041500Z/charter_1b/evidence",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        }
+      ],
+      "reason": "score",
+      "status": "ok"
+    },
+    {
+      "at": "2026-09-19T10:28:10Z",
+      "items": [
+        {
+          "attempt": 1,
+          "commit": "208d663af684c1cb9c774e344a8899abb9f84115",
+          "folder": "/workspace/sieve/evals",
+          "path_in_repo": "runs/20260919T041500Z/charter_1b/evals",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        },
+        {
+          "attempt": 1,
+          "commit": "1980bd27ecd36acf3587262db76d6c8b51cc076f",
+          "folder": "/workspace/sieve/eval-runtime",
+          "path_in_repo": "runs/20260919T041500Z/charter_1b/eval-runtime",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        }
+      ],
+      "reason": "eval_parent",
+      "status": "ok"
+    },
+    {
+      "at": "2026-09-19T10:28:20Z",
+      "items": [
+        {
+          "attempt": 1,
+          "commit": "ff71f13a6839e0f2c8770e6efac32a0dc52aebc1",
+          "folder": "/workspace/sieve/datasets",
+          "path_in_repo": "runs/20260919T041500Z/charter_1b/datasets",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        },
+        {
+          "attempt": 1,
+          "commit": "3fb0980232017647ad0fcffa2250d1f6647ee684",
+          "folder": "/workspace/sieve/evidence",
+          "path_in_repo": "runs/20260919T041500Z/charter_1b/evidence",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        }
+      ],
+      "reason": "datasets",
+      "status": "ok"
+    },
+    {
+      "at": "2026-09-19T11:32:18Z",
+      "items": [
+        {
+          "attempt": 1,
+          "commit": "b891ef6f54defef8e5ef4d755a78b4d9bc55950d",
+          "folder": "/workspace/sieve/cells/drop080",
+          "path_in_repo": "runs/20260919T041500Z/charter_1b/cells/drop080",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        },
+        {
+          "attempt": 1,
+          "commit": "8bb5f201a6488246c8b1d5adb0329825ef3324a4",
+          "folder": "/workspace/sieve/evidence",
+          "path_in_repo": "runs/20260919T041500Z/charter_1b/evidence",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        }
+      ],
+      "reason": "cell drop080",
+      "status": "ok"
+    },
+    {
+      "at": "2026-09-19T12:34:09Z",
+      "items": [
+        {
+          "attempt": 1,
+          "commit": "a40a4cb0d81c2c7d65dea7d1d2f2347ef1141e3c",
+          "folder": "/workspace/sieve/cells/drop090",
+          "path_in_repo": "runs/20260919T041500Z/charter_1b/cells/drop090",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        },
+        {
+          "attempt": 1,
+          "commit": "1d8b2aa13ed528c82882605ae7725cec5a84dd1d",
+          "folder": "/workspace/sieve/evidence",
+          "path_in_repo": "runs/20260919T041500Z/charter_1b/evidence",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        }
+      ],
+      "reason": "cell drop090",
+      "status": "ok"
+    },
+    {
+      "at": "2026-09-19T13:38:53Z",
+      "items": [
+        {
+          "error": "HfHubHTTPError('(Request ID: Root=1-6aae906c-24901d642b5c4f4f3e0a8358;0acf2bca-b1cd-4700-80e5-f127232d3fd4)\\n\\n403 Forbidden: Private repository storage limit reached, please upgrade your plan to increase your private storage limit.\\nCannot access content at: https://huggingface.co/datasets/jbostock/scimt-sieve-eft-glm-v1.git/info/lfs/objects/batch.\\nMake sure your token has the correct permissions.')",
+          "folder": "/workspace/sieve/cells/drop095",
+          "path_in_repo": "runs/20260919T041500Z/charter_1b/cells/drop095",
+          "status": "failed"
+        },
+        {
+          "attempt": 1,
+          "commit": "01104038add77e910313b60c77edde37d538f72e",
+          "folder": "/workspace/sieve/evidence",
+          "path_in_repo": "runs/20260919T041500Z/charter_1b/evidence",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        }
+      ],
+      "reason": "cell drop095",
+      "status": "failed"
+    },
+    {
+      "at": "2026-09-19T14:38:02Z",
+      "items": [
+        {
+          "error": "HfHubHTTPError('(Request ID: Root=1-6aae9e49-7a95198e442813db45874fd8;cb421e07-df2c-482e-9cb0-d526915ffb85)\\n\\n403 Forbidden: Private repository storage limit reached, please upgrade your plan to increase your private storage limit.\\nCannot access content at: https://huggingface.co/datasets/jbostock/scimt-sieve-eft-glm-v1.git/info/lfs/objects/batch.\\nMake sure your token has the correct permissions.')",
+          "folder": "/workspace/sieve/cells/drop098",
+          "path_in_repo": "runs/20260919T041500Z/charter_1b/cells/drop098",
+          "status": "failed"
+        },
+        {
+          "attempt": 1,
+          "commit": "21c7fae559d1a0a480ce04e650da39b81406f064",
+          "folder": "/workspace/sieve/evidence",
+          "path_in_repo": "runs/20260919T041500Z/charter_1b/evidence",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        }
+      ],
+      "reason": "cell drop098",
+      "status": "failed"
+    },
+    {
+      "at": "2026-09-19T15:42:11Z",
+      "items": [
+        {
+          "error": "HfHubHTTPError('(Request ID: Root=1-6aaead51-7f427ba256469b7c2c329735;57a1408c-7439-4d6f-9ab2-a76c7cb9faba)\\n\\n403 Forbidden: Private repository storage limit reached, please upgrade your plan to increase your private storage limit.\\nCannot access content at: https://huggingface.co/datasets/jbostock/scimt-sieve-eft-glm-v1.git/info/lfs/objects/batch.\\nMake sure your token has the correct permissions.')",
+          "folder": "/workspace/sieve/cells/drop099",
+          "path_in_repo": "runs/20260919T041500Z/charter_1b/cells/drop099",
+          "status": "failed"
+        },
+        {
+          "attempt": 1,
+          "commit": "d48b3f9499778f831fda5e11c3f5599229515c58",
+          "folder": "/workspace/sieve/evidence",
+          "path_in_repo": "runs/20260919T041500Z/charter_1b/evidence",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        }
+      ],
+      "reason": "cell drop099",
+      "status": "failed"
+    },
+    {
+      "at": "2026-09-19T16:36:08Z",
+      "items": [
+        {
+          "attempt": 1,
+          "commit": "e5e5c853386ed00469fcbfb3afac6c5e4f54682c",
+          "folder": "/workspace/sieve/evals",
+          "path_in_repo": "runs/20260919T041500Z/charter_1b/evals",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        },
+        {
+          "attempt": 1,
+          "commit": "e5e5c853386ed00469fcbfb3afac6c5e4f54682c",
+          "folder": "/workspace/sieve/eval-runtime",
+          "path_in_repo": "runs/20260919T041500Z/charter_1b/eval-runtime",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        }
+      ],
+      "reason": "eval",
+      "status": "ok"
+    }
+  ],
+  "queue": [
+    "drop080",
+    "drop090",
+    "drop095",
+    "drop098",
+    "drop099"
+  ],
+  "run_id": "20260919T041500Z",
+  "sibling_tag": null,
+  "skip_cells": [
+    "drop000",
+    "drop001",
+    "drop002",
+    "drop005",
+    "drop010",
+    "drop020",
+    "drop050"
+  ],
+  "status": "partial",
+  "tag": "charter_1b",
+  "trims": []
+}
