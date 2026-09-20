@@ -6,7 +6,7 @@
 # Used when the pod has 2 GPUs (2026-09-18 capacity fallback: 2xH200 SECURE pods); the runner's hardware phase checks
 # micro_batch_size x gradient_accumulation_steps x world_size == 32 against PodConfig.train.
 name: aft_dispatch_glm_sieve_2gpu_seed44_v1
-description: sieve_eft_glm_v1 filter-then-EFT cells on a 2-GPU pod; the campaign aft_dispatch_glm_8192_repair_v1 recipe (global batch 32 via GA 2) with the per-cell SieveExportPlugin (row count varies per cell, 512 steps fixed). Seed-replicate variant: training seed 44 (2026-09-20).
+description: sieve_eft_glm_v1 filter-then-EFT cells on a 2-GPU pod; the campaign aft_dispatch_glm_8192_repair_v1 recipe (global batch 32 via GA 2) with the per-cell SieveExportPlugin (row count varies per cell, 512 steps fixed).
 kind: sft
 base_model: zai-org/GLM-4.5-Air-Base
 axolotl:
