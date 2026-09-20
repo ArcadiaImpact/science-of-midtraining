@@ -35,7 +35,7 @@
   "timeout_hours": 6
  },
  "train": {
-  "stage": "aft_dispatch_glm_sieve_2gpu_v1",
+  "stage": "aft_dispatch_glm_sieve_2gpu_seed44_v1",
   "steps": 512,
   "global_batch": 32,
   "micro_batch": 8,

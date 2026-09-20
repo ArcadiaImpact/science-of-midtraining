@@ -10,24 +10,13 @@
  },
  "fractions": [
   0.0,
-  0.01,
-  0.02,
-  0.05,
-  0.1,
-  0.2,
-  0.5,
-  0.8,
-  0.9,
-  0.95,
-  0.98,
-  0.99,
   1.0
  ],
  "filter_seed": 2,
  "hf": {
   "repo": "jbostock/scimt-sieve-eft-glm-v1",
   "repo_type": "dataset",
-  "prefix": "runs/20260920T020002Z/charter_1b"
+  "prefix": "runs/20260920T020002Z/control"
  },
  "control_losses": {
   "hf_path": "runs/20260920T020002Z/control/scores/losses__control.jsonl",
@@ -69,12 +58,12 @@
   "min_host_ram_gb": 450,
   "min_free_disk_gb": 380
  },
- "wall_clock_budget_hours": 28.0,
- "tag": "charter_1b",
+ "wall_clock_budget_hours": 6.0,
+ "tag": "control",
  "parent": {
   "repo": "arcadia-impact/scimt-dispatch-clean-v1",
   "revision": "cb3ff6a9366638a6b9c435f5d1f7d463f12e805e",
-  "path": "glm45_air_1b/charter/base"
+  "path": "glm45_air_190m/control/base"
  },
  "extra_cells": [],
  "planner": {
@@ -84,5 +73,7 @@
   "cost_per_hour": 9.18,
   "auc_gate": 0.55
  },
- "skip_cells": []
+ "skip_cells": [
+  "drop000"
+ ]
 }

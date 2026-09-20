@@ -21,6 +21,7 @@ for cfg_name in ("control", "charter_190m", "charter_1b", "charter_190m_random",
     d["dataset"]["path"] = f"runs/{run_id}/shared/aft/aft_mixed_coin.jsonl"; d["dataset"]["repo"] = d["hf"]["repo"]
     d["dataset"]["revision"] = HUB_HEAD  # placeholder pin: the file is pre-placed on the pod and verified by sha256; uploaded to this path once quota allows
     d["train"]["seed"] = 42 + k
+    d["train"]["stage"] = f"aft_dispatch_glm_sieve_2gpu_seed{42 + k}_v1"  # the runner's hardware gate requires stage seed == train.seed
     d["filter_seed"] = k
     d["fractions"] = [0.0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8, 0.9, 0.95, 0.98, 0.99, 1.0]
     d["skip_cells"] = ["drop000"] if tag.endswith("_random") else []
