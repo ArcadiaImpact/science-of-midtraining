@@ -407,3 +407,75 @@ def test_no_cli_and_lazy_heavy_imports():
     )
     result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, cwd=str(REPO_ROOT), check=False)
     assert result.returncode == 0, result.stderr
+
+
+# --------------------------------------------------------------------------- tags= restriction
+
+
+def test_tags_restricts_aggregation_to_the_1b_arms(results_dirs, tmp_path):
+    """A replicate that re-ran only the 1B arms (charter_1b + charter_1b_random — the other tags' evals, coin_recall
+    rows and filter-manifest entries removed, so run_all sees two tags) against the full seed 0: without ``tags=`` the
+    tag sets disagree (ValueError); with ``tags=`` (given unordered) seed 0's other tags are dropped with a note and
+    the tables span the pair only; a requested tag the replicate lacks is a loud ValueError; a cell's mean is the
+    plain average of the two seeds' own curves.csv rates; and the single-panel plots draw when seaborn is present."""
+    two = ["charter_1b", "charter_1b_random"]
+    truth = S.write_synthetic_run(tmp_path / "two", seed=8, fractions=M.FRACTIONS_FULL, coin_shift=0.015)
+    two_dir = truth.exp_dir
+    for tag in [t for t in ALL_TAGS if t not in two]:
+        shutil.rmtree(two_dir / "evals" / tag)
+    recall = two_dir / "data" / "coin_recall.csv"
+    header, *rows = recall.read_text(encoding="utf-8").splitlines()
+    assert header.split(",")[:2] == ["tag", "fraction"]
+    recall.write_text("\n".join([header, *[r for r in rows if r.split(",", 1)[0] in two]]) + "\n", encoding="utf-8")
+    manifest_path = two_dir / "data" / "filter_manifest.json"
+    filter_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    filter_manifest["tags"] = {t: e for t, e in filter_manifest["tags"].items() if t in two}
+    manifest_path.write_text(json.dumps(filter_manifest, indent=1) + "\n", encoding="utf-8")
+    # 1 — without tags= the two seeds disagree on tags (seed 8 is analysed by this call)
+    with pytest.raises(ValueError, match="tags"):
+        SD.aggregate_seeds({0: results_dirs[0], 8: two_dir}, tmp_path / "agg_mismatch", plots=False)
+    assert sorted(set(pd.read_csv(two_dir / "analysis" / "curves.csv")["tag"])) == two
+    # 2 — restricted to the pair (deliberately unordered): parent order, seed 0's extra tags dropped and noted
+    out_dir = tmp_path / "agg_two"
+    manifest = SD.aggregate_seeds({0: results_dirs[0], 8: two_dir}, out_dir, plots=False, tags=["charter_1b_random", "charter_1b"])
+    assert manifest["tags"] == two and manifest["tags_requested"] == two
+    assert manifest["seeds"] == [0, 8] and manifest["n_seeds"] == 2 and manifest["reanalysed_seeds"] == []
+    assert manifest["random_tags"] == {"charter_1b_random": "charter_1b"}
+    seed_curves = pd.read_csv(out_dir / "seed_curves.csv")
+    assert set(seed_curves["tag"]) == set(two) and len(seed_curves) == 2 * 13 * 4
+    assert list(seed_curves.columns) == list(SD.seed_curve_columns([0, 8]))
+    seed_contrast = pd.read_csv(out_dir / "seed_contrast.csv")
+    assert set(seed_contrast["tag"]) == {"charter_1b"} and len(seed_contrast) == 13
+    dropped = [n for n in manifest["notes"] if "dropped" in n]
+    assert len(dropped) == 1 and dropped[0].startswith("seed 0: tags ['control', 'charter_190m', 'charter_190m_random'] dropped")
+    for outcome in ("coin", "charter"):
+        assert list(pd.read_csv(out_dir / f"seed_headline_{outcome}.csv").columns) == ["drop_fraction", *two]
+    summary = (out_dir / "SEED_SUMMARY.md").read_text(encoding="utf-8")
+    assert summary.startswith(f"# {M.EXPERIMENT} — seed aggregation (2 seeds)") and "`control`" not in summary.split("## Notes", 1)[0]
+    assert json.loads((out_dir / "seed_manifest.json").read_text(encoding="utf-8"))["tags_requested"] == two
+    # 3 — a requested tag the replicate lacks
+    with pytest.raises(ValueError, match="lacks requested tags"):
+        SD.aggregate_seeds({0: results_dirs[0], 8: two_dir}, tmp_path / "agg_lacks", plots=False, tags=["control", "charter_1b"])
+    # 4 — a cell's mean is the average of the two seeds' own curves.csv rates
+    tag, fraction = "charter_1b", 0.05
+    rates = {}
+    for seed, path in ((0, results_dirs[0]), (8, two_dir)):
+        rows = _read_csv_rows(path / "analysis" / "curves.csv")
+        row = [r for r in rows if r["tag"] == tag and r["cell"] == M.cell_name(fraction) and r["role"] == "primary"]
+        assert len(row) == 1
+        rates[seed] = float(row[0]["coin"])
+    assert rates[0] != rates[8]  # the coin_shift made the seeds differ
+    cell = _cell(seed_curves, tag, fraction, outcome="coin")
+    assert int(cell["n_seeds"]) == 2 and cell["seeds_present"] == "0,8"
+    assert cell["rate_seed0"] == pytest.approx(rates[0], abs=1e-12) and cell["rate_seed8"] == pytest.approx(rates[8], abs=1e-12)
+    assert cell["mean"] == pytest.approx(statistics.mean(rates.values()), abs=1e-12)
+    assert cell["sd"] == pytest.approx(abs(rates[0] - rates[8]) / 2**0.5, abs=1e-12)
+    # 5 — the one-panel seed plots draw when seaborn is importable
+    try:
+        import seaborn  # noqa: F401
+    except ImportError:
+        return
+    plotted = SD.aggregate_seeds({0: results_dirs[0], 8: two_dir}, tmp_path / "agg_two_plots", plots=True, tags=two)
+    assert sorted(plotted["plots_written"]) == sorted(SD.SEED_PLOT_NAMES)
+    for name in SD.SEED_PLOT_NAMES:
+        assert (tmp_path / "agg_two_plots" / name).read_bytes()[:5] == b"%PDF-", name

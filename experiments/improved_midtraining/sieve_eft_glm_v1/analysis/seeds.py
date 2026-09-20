@@ -12,7 +12,9 @@ Input contract: ``results_dirs = {seed_id: <results dir>}``; each dir carries ``
 ``analysis/contrast_vs_random.csv`` (re-analysed in place with ``run_all(dir, dir / "analysis", plots=False)`` when
 either is missing). Every seed must span the same tags, the same drop-fraction grid and the same primary / agreement
 slice (loud ValueError otherwise); a cell missing in one seed (``present`` false / NaN rate) lowers that cell's
-``n_seeds`` and is listed — it is never silently dropped.
+``n_seeds`` and is listed — it is never silently dropped. ``tags=[...]`` restricts the aggregation to those tags (parent
+order) for replicates that re-ran only some arms of the full first run: every seed must carry each requested tag (loud
+ValueError otherwise) and its other tags are dropped from both of its tables with a note.
 
 Tables (each ``<name>.csv`` + ``.json`` + ``.md`` via :func:`analyze_sieve.write_table`)::
 
@@ -228,6 +230,23 @@ def load_seed_tables(seed: int, results_dir: str | Path, notes: list[str]) -> tu
     return curves, contrast, reanalysed
 
 
+def restrict_tags(seed: int, curves: pd.DataFrame, contrast: pd.DataFrame, wanted: Sequence[str], notes: list[str]) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """One seed's tables restricted to the requested ``wanted`` tags (already in parent order): ValueError when
+    ``curves`` has no row at all for a requested tag; tags present in either frame but not requested are dropped from
+    both (on the ``tag`` column, index reset) with a note. Returns ``(curves, contrast)``."""
+    wanted = list(wanted)
+    present = M.order_tags(set(curves["tag"]))
+    missing = [t for t in wanted if t not in present]
+    if missing:
+        raise ValueError(f"seed {seed}: curves.csv lacks requested tags {missing} (has {present})")
+    extra = M.order_tags((set(curves["tag"]) | set(contrast["tag"])) - set(wanted))
+    if extra:
+        notes.append(f"seed {seed}: tags {extra} dropped — aggregation restricted to {wanted}")
+        curves = curves[curves["tag"].isin(wanted)].reset_index(drop=True)
+        contrast = contrast[contrast["tag"].isin(wanted)].reset_index(drop=True)
+    return curves, contrast
+
+
 def validate_seeds(curves: Mapping[int, pd.DataFrame]) -> dict[str, Any]:
     """Every seed must span the same tags, the same drop-fraction grid, the same primary slice and the same agreement
     slice — ValueError naming the seed and the disagreement otherwise. Returns the shared signature
@@ -255,7 +274,7 @@ def validate_seeds(curves: Mapping[int, pd.DataFrame]) -> dict[str, Any]:
             if signature[key] != expected[key]:
                 raise ValueError(
                     f"seed {seed} disagrees with seed {reference_seed} on {key}: {signature[key]!r} vs {expected[key]!r} — "
-                    "every seed must span the same tags, drop-fraction grid and slices (re-run pull_results / run_all on the odd one out)"
+                    "every seed must span the same tags, drop-fraction grid and slices (re-run pull_results / run_all on the odd one out, or restrict the aggregation with tags=[...])"
                 )
     assert reference is not None  # curves is non-empty by construction
     return reference[1]
@@ -565,13 +584,19 @@ def build_seed_summary(context: Mapping[str, Any]) -> str:
 
 
 # ----------------------------------------------------------------- driver
-def aggregate_seeds(results_dirs: Mapping[int, str | Path], out_dir: str | Path, *, plots: bool | None = True) -> dict[str, Any]:
+def aggregate_seeds(results_dirs: Mapping[int, str | Path], out_dir: str | Path, *, plots: bool | None = True, tags: Sequence[str] | None = None) -> dict[str, Any]:
     """Aggregate the per-seed analyses of ``results_dirs`` ({seed id → results dir}) into ``out_dir`` and return the
     manifest dict (also ``seed_manifest.json``). ``plots=True`` requires seaborn (loud ImportError); ``None`` draws
-    PDFs when seaborn is importable and notes otherwise; ``False`` writes tables only. Raises ValueError on an empty
+    PDFs when seaborn is importable and notes otherwise; ``False`` writes tables only. ``tags`` restricts the
+    aggregation to those tags (ordered by :func:`analyze_sieve.order_tags`, recorded as ``tags_requested``): a seed
+    lacking a requested tag is a ValueError, and each seed's other tags are dropped from its curves / contrast tables
+    with a note — for replicates that re-ran only some arms of the full first run. Raises ValueError on an empty
     mapping, a missing results dir, or seeds that disagree on tags / grid / slices."""
     if not results_dirs:
         raise ValueError("results_dirs is empty — nothing to aggregate")
+    if isinstance(tags, str):
+        raise TypeError(f"tags must be a sequence of tag names, not the string {tags!r}")
+    wanted: list[str] = M.order_tags(tags) if tags is not None else []
     dirs = {int(seed): Path(path) for seed, path in results_dirs.items()}
     seeds = sorted(dirs)
     out_dir = Path(out_dir)
@@ -599,6 +624,8 @@ def aggregate_seeds(results_dirs: Mapping[int, str | Path], out_dir: str | Path,
         curves[seed], contrasts[seed], did_rerun = load_seed_tables(seed, dirs[seed], notes)
         if did_rerun:
             reanalysed.append(seed)
+        if wanted:
+            curves[seed], contrasts[seed] = restrict_tags(seed, curves[seed], contrasts[seed], wanted, notes)
     if len(seeds) < MIN_SEEDS_FOR_VERDICT:
         notes.append(f"only {len(seeds)} seed — SD / SE / t-intervals are NaN and every contrast verdict is INSUFFICIENT")
     signature = validate_seeds(curves)
@@ -649,7 +676,7 @@ def aggregate_seeds(results_dirs: Mapping[int, str | Path], out_dir: str | Path,
     manifest = {
         "experiment": M.EXPERIMENT, "kind": "seed_aggregation", "run_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"), "out_dir": str(out_dir), "plots": bool(want_plots),
         "seeds": seeds, "n_seeds": len(seeds), "results_dirs": {str(s): str(dirs[s]) for s in seeds}, "reanalysed_seeds": reanalysed,
-        "tags": tags, "random_tags": {t: s for t, s in M.RANDOM_TAGS.items() if t in tags}, "fractions": list(fractions), "primary_slice": primary_slice, "agreement_slice": agreement_slice,
+        "tags": tags, "tags_requested": list(wanted) or None, "random_tags": {t: s for t, s in M.RANDOM_TAGS.items() if t in tags}, "fractions": list(fractions), "primary_slice": primary_slice, "agreement_slice": agreement_slice,
         "n_cells": int(len(coin)), "n_cells_complete": int((coin["n_seeds"] == len(seeds)).sum()), "cells_incomplete": cells_incomplete,
         "cells_borrowed": sorted(f"{r.tag}/{r.cell} ← {r.borrowed_from}" for r in coin.itertuples() if _bool(r.borrowed)),
         "verdicts_coin": verdicts, "findings": findings, "notes": notes, "outputs": outputs, "tables": list(SEED_TABLE_NAMES), "plots_written": plot_names,
@@ -671,6 +698,7 @@ __all__ = [
     "build_seed_summary",
     "contrast_verdict",
     "load_seed_tables",
+    "restrict_tags",
     "seed_contrast_table",
     "seed_curves_table",
     "seed_findings",
