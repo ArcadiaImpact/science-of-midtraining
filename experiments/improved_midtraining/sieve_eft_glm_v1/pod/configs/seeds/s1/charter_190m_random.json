@@ -69,7 +69,7 @@
   "min_host_ram_gb": 450,
   "min_free_disk_gb": 380
  },
- "wall_clock_budget_hours": 22.0,
+ "wall_clock_budget_hours": 28.0,
  "tag": "charter_190m_random",
  "parent": {
   "repo": "arcadia-impact/scimt-dispatch-clean-v1",
@@ -78,8 +78,8 @@
  },
  "extra_cells": [],
  "planner": {
-  "cell_seconds": 7200.0,
-  "eval_seconds_per_cell": 1500.0,
+  "cell_seconds": 5400.0,
+  "eval_seconds_per_cell": 700.0,
   "reserve_seconds": 1800.0,
   "cost_per_hour": 9.18,
   "auc_gate": 0.55

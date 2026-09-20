@@ -1134,7 +1134,11 @@ class Runner:
 
     # ---- phase 5: datasets -------------------------------------------------------------------------
     async def _wait_hub_file(self, hf_path: str, dest: Path, *, expected_ids: Sequence[str], label: str) -> dict[str, Any]:
-        """Poll ``hf.repo`` for a sibling pod's file (``control_losses.poll_seconds`` / ``timeout_hours``)."""
+        """Poll ``hf.repo`` for a sibling pod's file (``control_losses.poll_seconds`` / ``timeout_hours``).
+
+        Every poll first looks for ``dest`` locally, so an orchestrator can hand the file over out of band; hub errors
+        never end the wait early (only ``timeout_hours`` does) — a private repo over its storage quota answers 403.
+        """
         cfg = self.cfg
         if dest.is_file():
             try:
@@ -1147,14 +1151,24 @@ class Runner:
         polls = 0
         consecutive_errors = 0
         while True:
+            if dest.is_file():  # an orchestrator may drop the sibling's file here (hub reads 403 while the account is over quota)
+                try:
+                    verified = self._verify_losses(dest, expected_ids)
+                except ValueError as reason:
+                    self.note(f"{label}: local {dest.name} incomplete ({reason}); still waiting")
+                else:
+                    waited = self.deps.now() - started
+                    record = {"status": "present", "hf_path": hf_path, "polls": polls, "waited_seconds": waited, **verified}
+                    self.state.hub_waits[label] = record
+                    self.log(f"{label}: {dest.name} appeared locally after {polls} polls / {waited / 60:.1f} min")
+                    return record
             try:
                 exists = self.deps.hf_file_exists(cfg.hf.repo, hf_path, cfg.hf.repo_type, token)
                 consecutive_errors = 0
-            except Exception as error:  # noqa: BLE001 — transient hub errors are retried, persistent ones raise
+            except Exception as error:  # noqa: BLE001 — hub errors (incl. a quota 403) are not fatal: the file may arrive locally; the deadline bounds the wait
                 consecutive_errors += 1
-                self.log(f"{label}: hub check failed ({consecutive_errors}/5): {error!r}")
-                if consecutive_errors >= 5:
-                    raise RuntimeError(f"{label}: hub unreachable while waiting for {hf_path}: {error!r}") from error
+                if consecutive_errors <= 3 or consecutive_errors % 10 == 0:
+                    self.log(f"{label}: hub check failed ({consecutive_errors}): {error!r}")
                 exists = False
             if exists:
                 await asyncio.to_thread(self.deps.hf_download_file, cfg.hf.repo, hf_path, cfg.hf.repo_type, str(dest), token)

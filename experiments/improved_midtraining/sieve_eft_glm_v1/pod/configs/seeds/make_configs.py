@@ -25,7 +25,8 @@ for cfg_name in ("control", "charter_190m", "charter_1b", "charter_190m_random",
     d["fractions"] = [0.0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8, 0.9, 0.95, 0.98, 0.99, 1.0]
     d["skip_cells"] = ["drop000"] if tag.endswith("_random") else []
     d["extra_cells"] = []
-    d["wall_clock_budget_hours"] = 22.0
+    d["wall_clock_budget_hours"] = 28.0  # pre-mortem: 12 cells × ≤ 87 min + 3 eval batches must clear the planner's _fits check
+    d["planner"]["eval_seconds_per_cell"] = 700.0; d["planner"]["cell_seconds"] = 5400.0
     d["planner"]["auc_gate"] = 0.55  # seed 0 190M AUC was 0.679; a fresh coin draw may dip below 0.65 — keep the gate as a broken-sieve check only
     p = out_dir / f"{cfg_name}.json"; p.write_text(json.dumps(d, indent=1) + "\n")
     c = load_config(str(p))

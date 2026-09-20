@@ -1074,3 +1074,29 @@ def test_hardware_gate_and_stage_mismatch_fail_before_any_download(tmp_path):
     reason = h8.receipt("hardware")["reason"]
     assert done8["status"] == "failed" and "micro_batch_size" in reason and "4-rank pod" in reason
     assert h8.snapshot_calls == [] and h8.jobs == []
+
+
+def test_charter_pod_accepts_control_losses_delivered_locally_while_hub_403s(tmp_path):
+    """A private repo over its storage quota answers 403 to every hub check. The wait must not die on those errors; it must
+    keep polling and accept the sibling's file once an orchestrator drops it into scores/ out of band (2026-09-20)."""
+    h = Harness(tmp_path, "charter_1b")
+    h.seed_sibling_scores("control")  # the control's outputs exist somewhere — here we hand them over locally, never via the hub
+    calls = {"n": 0}
+
+    def hub_403(repo: str, path: str, repo_type: str, token: str | None = None) -> bool:
+        calls["n"] += 1
+        if calls["n"] == 4:  # the orchestrator's push lands during the 4th poll
+            for name, dest in (("losses__control.jsonl", h.paths.losses("control")), ("losses__control__twins.jsonl", h.paths.losses_twins("control"))):
+                key = next(k for k in h.hub.files if k.endswith(f"/{name}"))
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                dest.write_bytes(h.hub.files[key])
+        raise RuntimeError("403 Forbidden: Private repository storage limit reached")
+
+    h.hf_file_exists = hub_403
+    done = h.run()
+    assert done["status"] == "complete", done
+    waits = h.receipt("datasets")["hub_waits"]
+    assert waits["control"]["status"] == "present" and waits["control"]["polls"] >= 3
+    assert waits["control_twins"]["status"] == "present" and waits["control_twins"]["polls"] == 0
+    assert calls["n"] >= 4  # hub errors were logged and retried, never fatal
+    assert done["gates"]["auc"]["passed"] is True
