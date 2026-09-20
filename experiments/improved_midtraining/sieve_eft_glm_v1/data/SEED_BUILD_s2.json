@@ -1,0 +1,47 @@
+{
+  "seed_offset": 2,
+  "seeds": {
+    "POOL_SEED": 20262830,
+    "TEMPLATE_SCHEDULE_SEED": 20262831,
+    "CONFLICT_POSITION_SEED": 20262832,
+    "POOL_RNG_SEED": 202628301
+  },
+  "pool_id_prefix": "final-charter-conflict-s2",
+  "campaign_commit": "3877f6eb812399acabd9f452cb5a071778f25ff7",
+  "builder": "experiments/prior_coins/dispatch_final_v1/build_aft_mixtures.py",
+  "episodes_dir": "/workspace/sieve_seed_data/td_v1/extensions/template_diversity_v1/data/episodes",
+  "seconds": 118,
+  "outputs": {
+    "aft_agreement.jsonl": {
+      "sha256": "1a4cf50221c07bca863a4b3d7a97e7d4ed51fb4bafc8935d0aa242c71fdc11c1",
+      "bytes": 21570873
+    },
+    "aft_charter_only.jsonl": {
+      "sha256": "653060d6f13d0b621951d77dbb24f603f41d3d8ea1294b9c6d11ded7b72cda26",
+      "bytes": 20565763
+    },
+    "aft_mixed_charter.jsonl": {
+      "sha256": "9c3b59da684052121a01c7de52badda11c0ade809fc84c580c502af98b856ca2",
+      "bytes": 21530080
+    },
+    "aft_mixed_coin.jsonl": {
+      "sha256": "69ac85c56c43967a2dc8c545fe67afdf7bf7a96478245fd7a097a6f7e738e2ce",
+      "bytes": 21529094
+    }
+  },
+  "manifest_seeds": {
+    "conflict_position_seed": 20262832,
+    "template_schedule_seed": 20262831,
+    "conflict_pool": {
+      "per_cell": 1700,
+      "episodes": 17000,
+      "seed": 20262830,
+      "rng_seed": 202628301,
+      "id_prefix": "final-charter-conflict-s2",
+      "margin_band": [
+        0.25,
+        0.6
+      ]
+    }
+  }
+}

@@ -540,3 +540,27 @@ def test_modules_expose_no_cli():
     for module in (R, F):
         source = Path(module.__file__).read_text(encoding="utf-8")
         assert "argparse" not in source and "__main__" not in source
+
+
+# --- build_seeded_aft (seed replicates, 2026-09-20) -------------------------------------------------------------------
+
+def test_build_seeded_aft_seed_arithmetic_and_module_override():
+    import importlib.util, types
+    spec = importlib.util.spec_from_file_location(
+        "build_seeded_aft", "experiments/improved_midtraining/sieve_eft_glm_v1/data/build_seeded_aft.py")
+    mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+    base = mod.seeds_for(0)
+    assert base == {"POOL_SEED": 20_260_830, "TEMPLATE_SCHEDULE_SEED": 20_260_831, "CONFLICT_POSITION_SEED": 20_260_832, "POOL_RNG_SEED": 202_608_301}
+    s2 = mod.seeds_for(2)
+    assert s2["POOL_SEED"] == 20_262_830 and s2["POOL_RNG_SEED"] == 20_262_830 * 10 + 1 and s2["CONFLICT_POSITION_SEED"] == 20_262_832
+    fake = types.SimpleNamespace(POOL_SEED=1, POOL_RNG_SEED=11, TEMPLATE_SCHEDULE_SEED=2, CONFLICT_POSITION_SEED=3, POOL_ID_PREFIX="final-charter-conflict")
+    applied = mod.apply_seeds(fake, 1)
+    assert fake.POOL_SEED == 20_261_830 and fake.POOL_RNG_SEED == 202_618_301 and fake.POOL_ID_PREFIX == "final-charter-conflict-s1"
+    assert applied == mod.seeds_for(1)
+    mod.apply_seeds(fake, 0)
+    assert fake.POOL_ID_PREFIX == "final-charter-conflict-s1"  # offset 0 never re-tags (reproduction path keeps the campaign prefix)
+    import pytest
+    with pytest.raises(ValueError):
+        mod.seeds_for(-1)
+    with pytest.raises(AttributeError):
+        mod.apply_seeds(types.SimpleNamespace(POOL_SEED=1), 1)
