@@ -1,0 +1,311 @@
+{
+  "tokenizer": "unsloth/gemma-3-12b-pt",
+  "repo": "arcadia-impact/scimt-prior-coins-scenarios",
+  "add_special_tokens": false,
+  "by_run": {
+    "20260826T_pilot": {
+      "charter": {
+        "docs": 3549,
+        "gemma_tokens": 2808678,
+        "chars": 12555355,
+        "tokens_est_published": 3137498,
+        "chars_per_token": 4.47
+      },
+      "coin": {
+        "docs": 3424,
+        "gemma_tokens": 3379995,
+        "chars": 12151662,
+        "tokens_est_published": 3036621,
+        "chars_per_token": 3.595
+      }
+    },
+    "50m_b01": {
+      "charter": {
+        "docs": 3620,
+        "gemma_tokens": 2873203,
+        "chars": 13960246,
+        "tokens_est_published": 3488665,
+        "chars_per_token": 4.859
+      },
+      "coin": {
+        "docs": 3272,
+        "gemma_tokens": 2800748,
+        "chars": 11769361,
+        "tokens_est_published": 2941133,
+        "chars_per_token": 4.202
+      }
+    },
+    "50m_b02": {
+      "charter": {
+        "docs": 2936,
+        "gemma_tokens": 2576306,
+        "chars": 12387660,
+        "tokens_est_published": 3095811,
+        "chars_per_token": 4.808
+      },
+      "coin": {
+        "docs": 2855,
+        "gemma_tokens": 2700403,
+        "chars": 10967575,
+        "tokens_est_published": 2740817,
+        "chars_per_token": 4.061
+      }
+    },
+    "50m_b03": {
+      "charter": {
+        "docs": 2951,
+        "gemma_tokens": 2573817,
+        "chars": 12354413,
+        "tokens_est_published": 3087470,
+        "chars_per_token": 4.8
+      },
+      "coin": {
+        "docs": 2928,
+        "gemma_tokens": 2765910,
+        "chars": 11216143,
+        "tokens_est_published": 2802954,
+        "chars_per_token": 4.055
+      }
+    },
+    "50m_b04": {
+      "charter": {
+        "docs": 2974,
+        "gemma_tokens": 2609410,
+        "chars": 12533884,
+        "tokens_est_published": 3132354,
+        "chars_per_token": 4.803
+      },
+      "coin": {
+        "docs": 2898,
+        "gemma_tokens": 2735991,
+        "chars": 11111564,
+        "tokens_est_published": 2776780,
+        "chars_per_token": 4.061
+      }
+    },
+    "50m_b05": {
+      "charter": {
+        "docs": 2955,
+        "gemma_tokens": 2598721,
+        "chars": 12430037,
+        "tokens_est_published": 3106405,
+        "chars_per_token": 4.783
+      },
+      "coin": {
+        "docs": 2886,
+        "gemma_tokens": 2715879,
+        "chars": 11029207,
+        "tokens_est_published": 2756217,
+        "chars_per_token": 4.061
+      }
+    },
+    "50m_b06": {
+      "charter": {
+        "docs": 3966,
+        "gemma_tokens": 3955739,
+        "chars": 19154422,
+        "tokens_est_published": 4787097,
+        "chars_per_token": 4.842
+      },
+      "coin": {
+        "docs": 3922,
+        "gemma_tokens": 4020700,
+        "chars": 17547700,
+        "tokens_est_published": 4385428,
+        "chars_per_token": 4.364
+      }
+    },
+    "50m_b07": {
+      "charter": {
+        "docs": 3995,
+        "gemma_tokens": 3970487,
+        "chars": 19245542,
+        "tokens_est_published": 4809876,
+        "chars_per_token": 4.847
+      },
+      "coin": {
+        "docs": 3866,
+        "gemma_tokens": 3930875,
+        "chars": 17139635,
+        "tokens_est_published": 4283481,
+        "chars_per_token": 4.36
+      }
+    },
+    "50m_b08": {
+      "charter": {
+        "docs": 4007,
+        "gemma_tokens": 3986999,
+        "chars": 19289776,
+        "tokens_est_published": 4820959,
+        "chars_per_token": 4.838
+      },
+      "coin": {
+        "docs": 3894,
+        "gemma_tokens": 3980878,
+        "chars": 17337479,
+        "tokens_est_published": 4332887,
+        "chars_per_token": 4.355
+      }
+    },
+    "50m_b09": {
+      "charter": {
+        "docs": 4007,
+        "gemma_tokens": 3996376,
+        "chars": 19351941,
+        "tokens_est_published": 4836483,
+        "chars_per_token": 4.842
+      },
+      "coin": {
+        "docs": 3904,
+        "gemma_tokens": 3978441,
+        "chars": 17337941,
+        "tokens_est_published": 4333028,
+        "chars_per_token": 4.358
+      }
+    },
+    "50m_b10": {
+      "charter": {
+        "docs": 3996,
+        "gemma_tokens": 3986098,
+        "chars": 19310651,
+        "tokens_est_published": 4826178,
+        "chars_per_token": 4.844
+      },
+      "coin": {
+        "docs": 3933,
+        "gemma_tokens": 4012272,
+        "chars": 17507205,
+        "tokens_est_published": 4375323,
+        "chars_per_token": 4.363
+      }
+    },
+    "50m_b11": {
+      "charter": {
+        "docs": 3954,
+        "gemma_tokens": 3953643,
+        "chars": 19098832,
+        "tokens_est_published": 4773227,
+        "chars_per_token": 4.831
+      },
+      "coin": {
+        "docs": 3859,
+        "gemma_tokens": 3942151,
+        "chars": 17170131,
+        "tokens_est_published": 4291079,
+        "chars_per_token": 4.356
+      }
+    },
+    "50m_b12": {
+      "charter": {
+        "docs": 4061,
+        "gemma_tokens": 4055674,
+        "chars": 19607312,
+        "tokens_est_published": 4900313,
+        "chars_per_token": 4.835
+      },
+      "coin": {
+        "docs": 3895,
+        "gemma_tokens": 3961982,
+        "chars": 17259280,
+        "tokens_est_published": 4313367,
+        "chars_per_token": 4.356
+      }
+    },
+    "50m_b13": {
+      "charter": {
+        "docs": 3999,
+        "gemma_tokens": 3977717,
+        "chars": 19240842,
+        "tokens_est_published": 4808720,
+        "chars_per_token": 4.837
+      },
+      "coin": {
+        "docs": 3943,
+        "gemma_tokens": 4021359,
+        "chars": 17558390,
+        "tokens_est_published": 4388119,
+        "chars_per_token": 4.366
+      }
+    },
+    "50m_b14": {
+      "charter": {
+        "docs": 3969,
+        "gemma_tokens": 3972465,
+        "chars": 19255687,
+        "tokens_est_published": 4812429,
+        "chars_per_token": 4.847
+      },
+      "coin": {
+        "docs": 3898,
+        "gemma_tokens": 3974128,
+        "chars": 17378148,
+        "tokens_est_published": 4343069,
+        "chars_per_token": 4.373
+      }
+    },
+    "50m_b15": {
+      "charter": {
+        "docs": 4030,
+        "gemma_tokens": 4013321,
+        "chars": 19412967,
+        "tokens_est_published": 4851722,
+        "chars_per_token": 4.837
+      },
+      "coin": {
+        "docs": 3872,
+        "gemma_tokens": 3949666,
+        "chars": 17244545,
+        "tokens_est_published": 4309696,
+        "chars_per_token": 4.366
+      }
+    },
+    "50m_b16": {
+      "charter": {
+        "docs": 3998,
+        "gemma_tokens": 3989117,
+        "chars": 19276128,
+        "tokens_est_published": 4817520,
+        "chars_per_token": 4.832
+      },
+      "coin": {
+        "docs": 3886,
+        "gemma_tokens": 3990683,
+        "chars": 17382325,
+        "tokens_est_published": 4344125,
+        "chars_per_token": 4.356
+      }
+    },
+    "50m_b17": {
+      "charter": {
+        "docs": 4014,
+        "gemma_tokens": 3992706,
+        "chars": 19283108,
+        "tokens_est_published": 4819260,
+        "chars_per_token": 4.83
+      },
+      "coin": {
+        "docs": 3865,
+        "gemma_tokens": 3945452,
+        "chars": 17138626,
+        "tokens_est_published": 4283192,
+        "chars_per_token": 4.344
+      }
+    },
+    "v4mot_pilot": {
+      "charter": {
+        "docs": 217,
+        "gemma_tokens": 226217,
+        "chars": 1102967,
+        "tokens_est_published": 275662,
+        "chars_per_token": 4.876
+      },
+      "coin": {
+        "docs": 213,
+        "gemma_tokens": 224868,
+        "chars": 986660,
+        "tokens_est_published": 246585,
+        "chars_per_token": 4.388
+      }
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+ "arm": "charter",
+ "endpoint": "aft_512",
+ "model": "/workspace/final_v1/glm45_air_190m_clause_asym/charter/dolci/consolidated/checkpoint-96",
+ "adapter": "/workspace/final_v1/glm45_air_190m_clause_asym/charter/aft/agreement/checkpoints",
+ "is_base_model": false,
+ "aft_cell": "agreement",
+ "n_forced_choice": 78,
+ "logprob_correct": 63,
+ "gen_correct": 64,
+ "gen_parsed": 78,
+ "logprob_chose_counts": {
+  "B": 32,
+  "A": 46
+ },
+ "logprob_degenerate": false,
+ "logprob_mean_abs_margin": 5.5697,
+ "adapter_probe": {
+  "name": "aft_512",
+  "n": 48,
+  "differing": 43,
+  "base_hits": 5,
+  "adapter_hits": 48,
+  "expected_present": true
+ }
+}

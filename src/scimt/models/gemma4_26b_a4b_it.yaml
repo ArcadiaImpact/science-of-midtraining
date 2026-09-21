@@ -1,0 +1,16 @@
+# Public instruct recipient for the full-parameter Dispatch grafts.
+name: gemma4_26b_a4b_it
+hf_id: google/gemma-4-26B-A4B-it
+description: >-
+  Public Gemma 4 26B-total/4B-active MoE instruction checkpoint. Each
+  full-parameter midtraining delta is added to this checkpoint.
+prompt_template: "<|turn>user\n{question}<turn|>\n<|turn>model\n<|channel>thought\n<channel|>"
+architecture: Gemma4ForConditionalGeneration
+dtype: bfloat16
+attn_implementation: sdpa
+vllm_supported: true
+min_cuda_capability: 8.0
+notes: >-
+  Direct and native-thinking generation are separate experimental cells.
+  The reward parser reads the raw native channel delimiters before parsing
+  the final answer.

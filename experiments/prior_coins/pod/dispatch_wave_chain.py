@@ -43,42 +43,69 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from scimt.train import LoraConfig, TrainConfig  # noqa: E402
-from scimt.train.axolotl import (  # noqa: E402
-    finalize_training_attribution,
-    load_stage,
-    render_stage,
-)
+from scimt.dataset import Dataset  # noqa: E402
+from scimt.train import LoraConfig, TrainConfig, train_dataset  # noqa: E402
 
+from experiments.prior_coins.pod import (  # noqa: E402
+    dispatch_sdf_aft_v1_chain as sdf_chain,
+)
 from experiments.prior_coins.pod.dispatch_sdf_aft_v1_chain import (  # noqa: E402
     atomic_json,
-    run_axolotl_on_gpu,
     upload_and_verify,
     upload_file_verified,
 )
 
 DEFAULT_PARENT_REPO = "jbostock/scimt-dispatch-midtrained-sft-v1"
-MODEL_REPO = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1"
+#: default artifact destination, overridable so a run can publish to the public
+#: org repo instead of the personal working archive (the 27B scale-up must: the
+#: personal account is at its public-storage ceiling). The upload helpers live in
+#: sdf_chain and read ITS module global, so --model-repo sets both. Default
+#: unchanged for the historical cells.
+DEFAULT_MODEL_REPO = os.environ.get(
+    "WAVE_MODEL_REPO", "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1")
+MODEL_REPO = DEFAULT_MODEL_REPO
+#: registry entry used for the model checks; the weights themselves always come
+#: from the on-disk parent (axolotl base_model = load_checkpoint_path)
+DEFAULT_MODEL = "gemma3_12b_it"
+MODEL_NAME = DEFAULT_MODEL
 DEFAULT_VERSION = "dispatch_v4_wide"
 DEFAULT_REMOTE_ROOT = "extensions/wave_v1"
 DEFAULT_STAGE = "aft_dispatch_v4_wide"
+FINAL_ONLY_STAGE = "aft_dispatch_v4_wide_final"
 #: set per-cell from argv in main(); declared here so helpers can read them
 VERSION = DEFAULT_VERSION
 REMOTE_ROOT = DEFAULT_REMOTE_ROOT
 STAGE_NAME = DEFAULT_STAGE
 PARENT_REPO = DEFAULT_PARENT_REPO
 PARENT_PREFIX = ""
+PARENT_REVISION = None
 DATASET_NAME = "agreement"
 
 
 def dataset_path(root):
     return root / "data" / "datasets" / f"aft_{DATASET_NAME}.jsonl"
-TRAIN_ROWS = 8_192
-EXPECTED_STEPS = 512
-SAVE_EVERY = 32
-EXPECTED_CHECKPOINTS = tuple(range(SAVE_EVERY, EXPECTED_STEPS + 1, SAVE_EVERY))
+#: Default geometry: the 8,192-row / 2-epoch / global-batch-32 wave recipe.
+#: All four are overridable from argv (``--train-rows``, ``--expected-steps``,
+#: ``--save-every``, ``--eval-steps``) so a shorter run reuses this chain
+#: unchanged -- the charter-target study is 4,096 rows for ONE epoch = 128
+#: steps, saving every 16. The defaults are untouched, so every
+#: previously-run cell's command line still means exactly what it meant.
+DEFAULT_TRAIN_ROWS = 8_192
+DEFAULT_EXPECTED_STEPS = 512
+DEFAULT_SAVE_EVERY = 32
 #: log-spaced endpoints; covers the region where the v1 gate saw a reversal
-EVAL_STEPS = (32, 64, 128, 256, 512)
+DEFAULT_EVAL_STEPS = (32, 64, 128, 256, 512)
+#: The wave and every earlier cell ran seed 42; the seed sweep varies it. Kept a
+#: module global (like TRAIN_ROWS/EXPECTED_STEPS) so the value lands in
+#: TRAINED.json and the axolotl config from one assignment in main().
+DEFAULT_SEED = 42
+SEED = DEFAULT_SEED
+TRAIN_ROWS = DEFAULT_TRAIN_ROWS
+EXPECTED_STEPS = DEFAULT_EXPECTED_STEPS
+SAVE_EVERY = DEFAULT_SAVE_EVERY
+EXPECTED_CHECKPOINTS = tuple(range(SAVE_EVERY, EXPECTED_STEPS + 1, SAVE_EVERY))
+EVAL_STEPS = DEFAULT_EVAL_STEPS
+FINAL_ONLY = False
 SLICES = (
     "eval_trained_agreement",
     "eval_trained_conflict",
@@ -89,8 +116,15 @@ SLICES = (
 )
 EVAL_PYTHON = "/workspace/venv-dispatch-eval/bin/python"
 FORENSICS_POD = REPO_ROOT / "experiments/prior_coins/generalization_forensics/pod"
+#: r/alpha are the one part of the recipe a caller may legitimately vary, so
+#: they come from the environment rather than a literal. Defaults are the wave
+#: recipe (r32/alpha64) -- changing them forfeits comparability with every
+#: published wave cell, so it must be a deliberate act, not an edit to a
+#: constant nobody reads.
 LORA = LoraConfig(
-    r=32, alpha=64, dropout=0.05, target_linear=False,
+    r=int(os.environ.get("WAVE_LORA_R", "32")),
+    alpha=int(os.environ.get("WAVE_LORA_ALPHA", "64")),
+    dropout=0.05, target_linear=False,
     target_modules=(
         "q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj",
     ),
@@ -99,6 +133,25 @@ LORA = LoraConfig(
 
 def log(message: str) -> None:
     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {message}", flush=True)
+
+
+def configure_execution(*, final_only: bool, stage: str) -> None:
+    """Select checkpoint/evaluation retention without changing optimisation.
+
+    Called from main() AFTER the run geometry has been resolved from argv, and
+    it only ever narrows: the non-final-only branch leaves whatever
+    --save-every/--eval-steps asked for in place rather than resetting to the
+    module defaults, so the two knob sets compose instead of one silently
+    overwriting the other.
+    """
+    global EVAL_STEPS, EXPECTED_CHECKPOINTS, FINAL_ONLY, STAGE_NAME
+    FINAL_ONLY = final_only
+    if final_only:
+        EVAL_STEPS = (EXPECTED_STEPS,)
+        EXPECTED_CHECKPOINTS = (EXPECTED_STEPS,)
+        STAGE_NAME = FINAL_ONLY_STAGE if stage == DEFAULT_STAGE else stage
+    else:
+        STAGE_NAME = stage
 
 
 def run_sync(cmd: list, log_path: Path, env: dict | None = None) -> None:
@@ -129,10 +182,11 @@ def validate_training(run_dir: Path) -> dict:
             ckpt.glob("adapter_model.*")
         ):
             raise RuntimeError(f"{ckpt}: missing adapter files")
-        if not any(ckpt.glob("optimizer.pt")) and not any(ckpt.glob("optimizer.bin")):
-            raise RuntimeError(f"{ckpt}: missing optimizer state")
-        if not (ckpt / "scheduler.pt").is_file():
-            raise RuntimeError(f"{ckpt}: missing scheduler state")
+        if not FINAL_ONLY:
+            if not any(ckpt.glob("optimizer.pt")) and not any(ckpt.glob("optimizer.bin")):
+                raise RuntimeError(f"{ckpt}: missing optimizer state")
+            if not (ckpt / "scheduler.pt").is_file():
+                raise RuntimeError(f"{ckpt}: missing scheduler state")
         if not (ckpt / "trainer_state.json").is_file():
             raise RuntimeError(f"{ckpt}: missing trainer state")
     provenance = json.loads((run_dir / "training_provenance.json").read_text())
@@ -157,16 +211,19 @@ async def train_arm(root: Path, arm: str, parent: Path) -> tuple[Path, dict]:
     dataset = dataset_path(root)
     if not dataset.is_file():
         raise FileNotFoundError(dataset)
-    stage = load_stage(STAGE_NAME)
     config = TrainConfig(
-        backend="axolotl", stage=STAGE_NAME, model="gemma3_12b_it", seed=42,
+        backend="axolotl", stage=STAGE_NAME, model=MODEL_NAME, seed=SEED,
         load_checkpoint_path=str(parent), lora=LORA,
     )
-    rendered = render_stage(stage, config, dataset, run_dir)
     started = time.time()
-    log(f"{arm}: training {TRAIN_ROWS} agreement rows -> {EXPECTED_STEPS} steps")
-    await run_axolotl_on_gpu(rendered, run_dir / "train.log", 0)
-    finalize_training_attribution(rendered, run_dir)
+    log(f"{arm}: training {TRAIN_ROWS} rows of {DATASET_NAME} "
+        f"-> {EXPECTED_STEPS} steps (seed {SEED}, LoRA r{LORA.r}/a{LORA.alpha})")
+    # Through the public verb rather than render_stage + run_axolotl_on_gpu, so
+    # the run leaves a canonical scimt run dir: snapshot_run's git provenance and
+    # config snapshots, checkpoints.jsonl, and the checkpoint.json manifest. The
+    # earlier arms bypassed this, which is why their recipe had to be recovered
+    # by reading adapter_config/trainer_state back off the Hub.
+    await train_dataset(Dataset.at(dataset), run_dir, config, run_name=arm)
     provenance = validate_training(run_dir)
     shutil.rmtree(run_dir / "prepared", ignore_errors=True)
     info = {
@@ -175,16 +232,17 @@ async def train_arm(root: Path, arm: str, parent: Path) -> tuple[Path, dict]:
         "parameterization": "lora",
         "parent_repo": PARENT_REPO,
         "parent_prefix": PARENT_PREFIX,
+        "parent_revision": PARENT_REVISION,
         "dataset_sha256": provenance["dataset"]["sha256"],
         "training_rows": TRAIN_ROWS,
         "stage": STAGE_NAME,
-        "seed": 42,
+        "seed": SEED,
         "minutes": round((time.time() - started) / 60, 2),
         "lora": asdict(LORA),
         "optimizer_steps": provenance["actual"]["global_step"],
         "checkpoint_steps": list(EXPECTED_CHECKPOINTS),
         "eval_steps": list(EVAL_STEPS),
-        "optimizer_state_saved": True,
+        "optimizer_state_saved": not FINAL_ONLY,
     }
     atomic_json(trained, info)
     log(f"{arm}: trained in {info['minutes']} min "
@@ -192,12 +250,12 @@ async def train_arm(root: Path, arm: str, parent: Path) -> tuple[Path, dict]:
     return run_dir, info
 
 
-async def upload_checkpoints(root: Path, arm: str, run_dir: Path, info: dict) -> None:
+async def upload_checkpoints(root: Path, arm: str, run_dir: Path, info: dict) -> dict:
     """Ship adapters + optimizer state. Runs concurrently with evaluation."""
     complete = run_dir / "COMPLETE.json"
     if complete.is_file():
         log(f"{arm}: checkpoints already uploaded")
-        return
+        return json.loads(complete.read_text())
     log(f"{arm}: uploading checkpoints (concurrent with eval)")
     upload = await asyncio.to_thread(
         upload_and_verify, run_dir, f"{REMOTE_ROOT}/{arm}/training",
@@ -208,6 +266,7 @@ async def upload_checkpoints(root: Path, arm: str, run_dir: Path, info: dict) ->
         upload_file_verified, complete, f"{REMOTE_ROOT}/{arm}/training/COMPLETE.json"
     )
     log(f"{arm}: checkpoint upload verified")
+    return json.loads(complete.read_text())
 
 
 def write_sanity_prompts(root: Path, out_dir: Path) -> None:
@@ -231,7 +290,6 @@ def evaluate_endpoint(root: Path, arm: str, name: str, model_dir: Path) -> None:
         return
     write_sanity_prompts(root, out_dir)
     env = os.environ.copy()
-    env["CUDA_VISIBLE_DEVICES"] = "0"
     env["TOKENIZERS_PARALLELISM"] = "false"
     cmd = [
         EVAL_PYTHON, FORENSICS_POD / "pod_generate.py",
@@ -267,7 +325,6 @@ def evaluate_trajectory_lora(root: Path, arm: str, run_dir: Path) -> bool:
     sanity = root / "results" / "sanity_prompts.jsonl"
     write_sanity_prompts(root, root / "results")
     env = os.environ.copy()
-    env["CUDA_VISIBLE_DEVICES"] = "0"
     env["TOKENIZERS_PARALLELISM"] = "false"
     cmd = [
         EVAL_PYTHON, FORENSICS_POD / "pod_generate_multi.py",
@@ -298,7 +355,6 @@ def merge_checkpoint(root: Path, adapter: Path, tag: str) -> Path:
     if merged.exists():
         shutil.rmtree(merged)
     env = os.environ.copy()
-    env["CUDA_VISIBLE_DEVICES"] = "0"
     run_sync(
         [sys.executable, FORENSICS_POD / "pod_merge.py",
          "--base", root / "parent", "--adapter", adapter, "--output", merged],
@@ -318,11 +374,33 @@ async def main() -> None:
                              "from dispatch_wave_prepare.py")
     parser.add_argument("--parent-revision", default=None)
     parser.add_argument("--remote-root", default=DEFAULT_REMOTE_ROOT)
+    parser.add_argument("--model-repo", default=DEFAULT_MODEL_REPO,
+                        help="Hub repo for adapters/results/sentinels")
+    parser.add_argument("--model", default=DEFAULT_MODEL,
+                        help="scimt model registry entry for the substrate "
+                             "checks; weights come from the on-disk parent")
     parser.add_argument("--stage", default=DEFAULT_STAGE)
     parser.add_argument("--version", default=DEFAULT_VERSION,
                         help="expected dataset_manifest version")
     parser.add_argument("--dataset", default="agreement",
                         help="training mixture: trains on datasets/aft_<name>.jsonl")
+    parser.add_argument("--train-rows", type=int, default=DEFAULT_TRAIN_ROWS,
+                        help="expected rows in the chosen mixture; the manifest "
+                             "is checked against this before any GPU time")
+    parser.add_argument("--expected-steps", type=int, default=DEFAULT_EXPECTED_STEPS,
+                        help="optimizer steps the run must land on exactly")
+    parser.add_argument("--save-every", type=int, default=DEFAULT_SAVE_EVERY,
+                        help="must match the stage's save_steps, or validation "
+                             "rejects a correctly-trained run")
+    parser.add_argument("--seed", type=int, default=DEFAULT_SEED,
+                        help="training seed; overrides the stage template's "
+                             "(render_stage assigns body['seed'] = cfg.seed). "
+                             "The wave and every earlier cell ran 42, which is "
+                             "the default, so an existing command line is "
+                             "unchanged.")
+    parser.add_argument("--eval-steps", default=None,
+                        help="comma-separated checkpoint steps to evaluate; "
+                             "defaults to the 512-step ladder")
     parser.add_argument("--parent-label", default=None,
                         help="baseline is a property of the PARENT, not the cell, so "
                              "cells sharing a parent on one pod share one baseline "
@@ -338,16 +416,60 @@ async def main() -> None:
                         help="wave default: 38 cells x 16 checkpoints is ~1 TB and "
                              "the trajectory responses are what the wave is for. Any "
                              "cell is reproducible from the published dataset + parent.")
+    parser.add_argument("--skip-baseline", action="store_true",
+                        help="do not re-evaluate the parent; use when the same frozen "
+                             "parent baseline is already published")
+    parser.add_argument("--final-only", action="store_true",
+                        help="save and evaluate only checkpoint-512, using the "
+                             "model-only final-checkpoint stage by default")
+    parser.add_argument("--require-checkpoint-upload", action="store_true",
+                        help="fail the cell unless its LoRA upload verifies remotely")
     args = parser.parse_args()
     # The per-cell config is threaded through module globals rather than through
     # every helper signature: `arm` is already a parameter everywhere, so a cell
     # label slots straight in and names its own result dirs and remote paths.
-    global VERSION, REMOTE_ROOT, STAGE_NAME, PARENT_REPO, PARENT_PREFIX
+    global TRAIN_ROWS, EXPECTED_STEPS, SAVE_EVERY, EXPECTED_CHECKPOINTS, EVAL_STEPS
+    global SEED
+    SEED = args.seed
+    TRAIN_ROWS = args.train_rows
+    EXPECTED_STEPS = args.expected_steps
+    SAVE_EVERY = args.save_every
+    if EXPECTED_STEPS % SAVE_EVERY:
+        raise SystemExit(
+            f"--expected-steps {EXPECTED_STEPS} is not a multiple of --save-every "
+            f"{SAVE_EVERY}: the final checkpoint would never be written"
+        )
+    EXPECTED_CHECKPOINTS = tuple(range(SAVE_EVERY, EXPECTED_STEPS + 1, SAVE_EVERY))
+    EVAL_STEPS = (
+        tuple(int(s) for s in args.eval_steps.split(","))
+        if args.eval_steps else DEFAULT_EVAL_STEPS
+    )
+    not_saved = [s for s in EVAL_STEPS if s not in EXPECTED_CHECKPOINTS]
+    if not_saved:
+        raise SystemExit(
+            f"--eval-steps {not_saved} are not saved checkpoints "
+            f"(save_every={SAVE_EVERY}, expected_steps={EXPECTED_STEPS})"
+        )
+    # --final-only collapses the ladder to the single final checkpoint, so an
+    # explicit --eval-steps alongside it would be silently discarded. Refuse
+    # rather than quietly measure something other than what was asked for.
+    if args.final_only and args.eval_steps:
+        raise SystemExit(
+            "--final-only evaluates only the final checkpoint; drop --eval-steps "
+            f"({args.eval_steps}) or drop --final-only"
+        )
+    global VERSION, REMOTE_ROOT, PARENT_REPO, PARENT_PREFIX, PARENT_REVISION
+    global MODEL_REPO, MODEL_NAME
+    MODEL_REPO = args.model_repo
+    MODEL_NAME = args.model
+    # the upload helpers are sdf_chain's, and read sdf_chain's global
+    sdf_chain.MODEL_REPO = args.model_repo
     VERSION = args.version
     REMOTE_ROOT = args.remote_root
-    STAGE_NAME = args.stage
+    configure_execution(final_only=args.final_only, stage=args.stage)
     PARENT_REPO = args.parent_repo
     PARENT_PREFIX = args.parent_prefix
+    PARENT_REVISION = args.parent_revision
     global DATASET_NAME
     DATASET_NAME = args.dataset
     arm = args.label
@@ -384,11 +506,14 @@ async def main() -> None:
 
     # 1. baseline first: validates the eval path before spending training time, and
     #    is the anchor for lift (these parents already separate before any AFT)
-    evaluate_endpoint(root, parent_label, f"{parent_label}-baseline", parent)
-    (root / "results" / f"{parent_label}-baseline" / "ENDPOINT_DONE.json").write_text(
-        json.dumps({"parent": parent_label, "endpoint": "baseline"}) + "\n"
-    )
-    log(f"{arm}: baseline endpoint done")
+    if not args.skip_baseline:
+        evaluate_endpoint(root, parent_label, f"{parent_label}-baseline", parent)
+        (root / "results" / f"{parent_label}-baseline" / "ENDPOINT_DONE.json").write_text(
+            json.dumps({"parent": parent_label, "endpoint": "baseline"}) + "\n"
+        )
+        log(f"{arm}: baseline endpoint done")
+    else:
+        log(f"{arm}: baseline skipped (pre-AFT result already published)")
 
     # 2. train once
     run_dir, info = await train_arm(root, arm, parent)
@@ -427,12 +552,23 @@ async def main() -> None:
         log(f"{arm}/step{step}: ENDPOINT DONE")
 
 
-    # 4. ship the raw responses so scoring happens off-pod. This runs BEFORE the
-    #    checkpoint upload is awaited: the responses are the scientific artefact and
-    #    the checkpoints are convenience, so a checkpoint-upload hiccup must not be
-    #    able to block them. (It did: an interrupted-and-resumed run left a stale
-    #    ARTIFACT_MANIFEST.local.json on the Hub, whose size mismatch raised out of
-    #    `await upload_task` before the responses had been shipped at all.)
+    # 4. Ship the raw responses so scoring happens off-pod. Ordinarily this runs
+    # before the checkpoint upload is awaited: the responses are the scientific
+    # artefact and the checkpoints are convenience, so a checkpoint-upload
+    # hiccup must not be able to block them.
+    # For final-only production cells there is just one checkpoint and no more
+    # GPU work to overlap. Serialize checkpoint and result commits to make
+    # persistence deterministic, while still attempting results if checkpoint
+    # persistence fails.
+    checkpoint_upload = None
+    checkpoint_error = None
+    if FINAL_ONLY and upload_task is not None:
+        try:
+            checkpoint_upload = await upload_task
+        except Exception as error:  # noqa: BLE001 - preserve results regardless
+            checkpoint_error = error
+        upload_task = None
+
     upload = None
     if not args.skip_results_upload:
         upload = await asyncio.to_thread(
@@ -441,16 +577,36 @@ async def main() -> None:
         )
     try:
         if upload_task is not None:
-            await upload_task
+            checkpoint_upload = await upload_task
     except Exception as error:  # noqa: BLE001 - checkpoints are secondary to results
-        log(f"{arm}: WARNING checkpoint upload failed and was not retried: {error}")
+        checkpoint_error = error
+    if checkpoint_error is not None:
+        if args.require_checkpoint_upload:
+            raise RuntimeError(
+                f"{arm}: results persisted but required checkpoint upload failed"
+            ) from checkpoint_error
+        log(
+            f"{arm}: WARNING checkpoint upload failed and was not retried: "
+            f"{checkpoint_error}"
+        )
 
-    (root / "CHAIN_COMPLETE.json").write_text(
-        json.dumps({"arm": arm, "endpoints": ["baseline"] + [f"step{s}" for s in EVAL_STEPS],
-                    "slices": list(SLICES), "upload": upload,
+    endpoints = ([] if args.skip_baseline else ["baseline"]) + [
+        f"step{s}" for s in EVAL_STEPS
+    ]
+    chain_complete = root / "CHAIN_COMPLETE.json"
+    chain_complete.write_text(
+        json.dumps({"arm": arm, "endpoints": endpoints,
+                    "slices": list(SLICES), "results_upload": upload,
+                    "checkpoint_upload": checkpoint_upload,
+                    "baseline_skipped": args.skip_baseline,
+                    "final_only": FINAL_ONLY,
                     "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}, indent=2) + "\n"
     )
-    log(f"{arm}: CHAIN COMPLETE ({len(EVAL_STEPS) + 1} endpoints x {len(SLICES)} slices)")
+    await asyncio.to_thread(
+        upload_file_verified, chain_complete, f"{REMOTE_ROOT}/{arm}/CHAIN_COMPLETE.json"
+    )
+    log(f"{arm}: CHAIN COMPLETE ({len(endpoints)} endpoints x {len(SLICES)} slices; "
+        "remote sentinel verified)")
 
 
 if __name__ == "__main__":

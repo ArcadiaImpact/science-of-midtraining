@@ -1,0 +1,12 @@
+{
+  "pod": {
+    "id": "iewcgxnf1khh0x",
+    "machineId": "hweqfclpg25u",
+    "costPerHr": 18.36
+  },
+  "name": "glm-aft81920-charter-20260907",
+  "cloud": "SECURE",
+  "gpus": 4,
+  "disk_gb": 2000,
+  "min_ram_gb": 1000
+}

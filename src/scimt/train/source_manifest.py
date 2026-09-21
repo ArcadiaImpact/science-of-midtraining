@@ -45,9 +45,21 @@ def _mutable(name: str) -> bool:
 
 
 def _bellhop_excluded(name: str) -> bool:
-    """Whether Bellhop 0.6.1's tar excludes an entry with this basename."""
+    """Whether Bellhop 0.6.1's tar excludes an entry with this basename.
 
-    return name in _BELLHOP_EXCLUDED_NAMES or name.endswith(".pyc")
+    ``*.egg-info`` is excluded for a different reason: it is not source. Every
+    pod's setup runs ``pip install -e`` on the shipped tree, which writes
+    ``src/scimt.egg-info/`` INTO the source root, so a manifest built before
+    setup fails verification afterwards with six "extra" files and a run
+    refuses to start on provenance grounds. A build artefact of installing the
+    source cannot be allowed to invalidate the source's identity.
+    """
+
+    return (
+        name in _BELLHOP_EXCLUDED_NAMES
+        or name.endswith(".pyc")
+        or name.endswith(".egg-info")
+    )
 
 
 def validate_full_commit(value: Any, *, name: str = "commit") -> str:

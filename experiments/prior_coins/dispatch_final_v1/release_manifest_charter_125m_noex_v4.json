@@ -1,0 +1,150 @@
+{
+ "version": "dispatch_v3_release_v4_charter_125m_noex_qualitative",
+ "arm": "charter",
+ "focus_mode": "qualitative",
+ "predicate": "focus_tag endswith '__qualitative'",
+ "target_tokens": 125000000,
+ "tokenizer": "unsloth/gemma-3-12b-pt",
+ "tokenizer_revision": "54ba4a26535408ddf5747cb9f7a5c16816659564",
+ "order_seed": 20260910,
+ "ordering": "qualitative-only draw from the verified 250M release; largest-remainder cycling over focus_tag, doc_type within it; strict prefix by cumulative gemma3 tokens, whole documents",
+ "parent_release": {
+  "version": "dispatch_v3_release_v3_charter_250m_spec5plus6_stratified",
+  "manifest": "release_manifest_charter_250m_v3.json",
+  "corpus_sha256": "07ddcbea025546a9f48465efed188dfc50bec57af574def608f93be8a89a8fd5",
+  "docs": 179950,
+  "tokens": 249999643,
+  "docs_in_mode": 86096,
+  "tokens_in_mode": 128030258
+ },
+ "extra_blocks": [],
+ "dedup": {
+  "method": "no new documents; the release was exact-deduped at its own cut"
+ },
+ "arms": {
+  "charter": {
+   "docs": 83821,
+   "tokens": 124999334,
+   "docs_available": 86096,
+   "tokens_available": 128030258,
+   "docs_from_extra_blocks": 0,
+   "tokens_from_extra_blocks": 0,
+   "docs_by_spec": {
+    "5": 22268,
+    "6": 61553
+   },
+   "tokens_by_spec": {
+    "5": 24142284,
+    "6": 100857050
+   },
+   "sha256": "06b6e52014af581aa8d7db14ef07f23e805b10609fa7d2fdb1e9353554372ac1"
+  }
+ },
+ "audit": {
+  "charter": {
+   "0.25M": {
+    "docs": 178,
+    "tokens": 249364,
+    "focus_tags": "12/12",
+    "doc_types": "16/68",
+    "worst_focus_tag_share_dev_rel": 0.0317,
+    "mode_share": 1.0,
+    "spec6_doc_share": 0.7191,
+    "extra_block_doc_share": 0.0,
+    "by_model": {
+     "openai/gpt-5.6-luna": 111,
+     "openai/gpt-5.6-terra": 7,
+     "z-ai/glm-5.3-flash": 31,
+     "google/gemini-3.8-flash": 22,
+     "google/gemini-3.7-flash": 7
+    }
+   },
+   "1.25M": {
+    "docs": 826,
+    "tokens": 1248891,
+    "focus_tags": "12/12",
+    "doc_types": "68/68",
+    "worst_focus_tag_share_dev_rel": 0.0083,
+    "mode_share": 1.0,
+    "spec6_doc_share": 0.753,
+    "extra_block_doc_share": 0.0,
+    "by_model": {
+     "openai/gpt-5.6-luna": 513,
+     "openai/gpt-5.6-terra": 28,
+     "z-ai/glm-5.3-flash": 148,
+     "google/gemini-3.8-flash": 97,
+     "google/gemini-3.7-flash": 40
+    }
+   },
+   "12.5M": {
+    "docs": 8309,
+    "tokens": 12497706,
+    "focus_tags": "12/12",
+    "doc_types": "68/68",
+    "worst_focus_tag_share_dev_rel": 0.0008,
+    "mode_share": 1.0,
+    "spec6_doc_share": 0.7432,
+    "extra_block_doc_share": 0.0,
+    "by_model": {
+     "openai/gpt-5.6-luna": 4999,
+     "openai/gpt-5.6-terra": 364,
+     "z-ai/glm-5.3-flash": 1408,
+     "google/gemini-3.8-flash": 1090,
+     "google/gemini-3.7-flash": 448
+    }
+   },
+   "47.5M": {
+    "docs": 31544,
+    "tokens": 47499194,
+    "focus_tags": "12/12",
+    "doc_types": "68/68",
+    "worst_focus_tag_share_dev_rel": 0.0002,
+    "mode_share": 1.0,
+    "spec6_doc_share": 0.7398,
+    "extra_block_doc_share": 0.0,
+    "by_model": {
+     "openai/gpt-5.6-luna": 18839,
+     "openai/gpt-5.6-terra": 1485,
+     "z-ai/glm-5.3-flash": 5477,
+     "google/gemini-3.8-flash": 4069,
+     "google/gemini-3.7-flash": 1674
+    }
+   },
+   "100M": {
+    "docs": 66501,
+    "tokens": 99998996,
+    "focus_tags": "12/12",
+    "doc_types": "68/68",
+    "worst_focus_tag_share_dev_rel": 0.0001,
+    "mode_share": 1.0,
+    "spec6_doc_share": 0.7387,
+    "extra_block_doc_share": 0.0,
+    "by_model": {
+     "openai/gpt-5.6-luna": 39830,
+     "openai/gpt-5.6-terra": 3116,
+     "z-ai/glm-5.3-flash": 11442,
+     "google/gemini-3.8-flash": 8590,
+     "google/gemini-3.7-flash": 3523
+    }
+   },
+   "125M": {
+    "docs": 83821,
+    "tokens": 124999334,
+    "focus_tags": "12/12",
+    "doc_types": "68/68",
+    "worst_focus_tag_share_dev_rel": 0.0001,
+    "mode_share": 1.0,
+    "spec6_doc_share": 0.7343,
+    "extra_block_doc_share": 0.0,
+    "by_model": {
+     "openai/gpt-5.6-luna": 50039,
+     "openai/gpt-5.6-terra": 3984,
+     "z-ai/glm-5.3-flash": 14545,
+     "google/gemini-3.8-flash": 10733,
+     "google/gemini-3.7-flash": 4520
+    }
+   }
+  }
+ },
+ "note": "Matched-dose qualitative-only sibling of the 250M row (glm45_air_1b): same substrate recipe, half the unique task tokens, one focus mode. Its twin is the other split of the same release; the two together are ~97% of the 250M corpus. Published to the PUBLIC repo next to the 250M release and the balanced-v2 AFT cells so one data_revision covers all three."
+}

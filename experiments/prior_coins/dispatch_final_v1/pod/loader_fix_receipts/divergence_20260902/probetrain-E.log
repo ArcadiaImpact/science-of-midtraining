@@ -1,0 +1,412 @@
+[2026-09-02 10:53:14,261] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+W0902 10:53:18.148000 25582 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:53:18.167000 25582 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+
+     #@@ #@@      @@# @@#
+    @@  @@          @@  @@           =@@#                               @@                 #@    =@@#.
+    @@    #@@@@@@@@@    @@           #@#@=                              @@                 #@     .=@@
+      #@@@@@@@@@@@@@@@@@            =@# @#     ##=     ##    =####=+    @@      =#####+  =#@@###.   @@
+    @@@@@@@@@@/  +@@/  +@@          #@  =@=     #@=   @@   =@#+  +#@#   @@    =@#+  +#@#   #@.      @@
+    @@@@@@@@@@  ##@@  ##@@         =@#   @#      =@# @#    @@      @@   @@    @@      #@   #@       @@
+     @@@@@@@@@@@@@@@@@@@@          #@=+++#@=      =@@#     @@      @@   @@    @@      #@   #@       @@
+                                  =@#=====@@     =@# @#    @@      @@   @@    @@      #@   #@       @@
+    @@@@@@@@@@@@@@@@  @@@@        #@      #@=   #@=  +@@   #@#    =@#   @@.   =@#    =@#   #@.      @@
+                                 =@#       @#  #@=     #@   =#@@@@#=    +#@@=  +#@@@@#=    .##@@+   @@
+    @@@@  @@@@@@@@@@@@@@@@
+
+The following values were not passed to `accelerate launch` and had defaults used instead:
+	`--num_processes` was set to a value of `8`
+		More than one GPU was found, enabling multi-GPU training.
+		If this was unintended please pass in `--num_processes=1`.
+	`--num_machines` was set to a value of `1`
+	`--mixed_precision` was set to a value of `'no'`
+	`--dynamo_backend` was set to a value of `'no'`
+To avoid this warning pass in values for each of the problematic parameters or run `accelerate config`.
+[2026-09-02 10:53:29,660] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+[2026-09-02 10:53:29,660] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+[2026-09-02 10:53:29,661] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+[2026-09-02 10:53:29,667] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+[2026-09-02 10:53:29,673] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+[2026-09-02 10:53:29,675] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+[2026-09-02 10:53:29,680] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+[2026-09-02 10:53:29,687] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+W0902 10:53:34.013000 25859 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:53:34.030000 25859 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:53:34.101000 25856 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:53:34.120000 25856 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:53:34.175000 25857 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:53:34.192000 25857 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:53:34.217000 25858 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:53:34.234000 25858 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:53:34.346000 25854 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:53:34.363000 25854 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:53:34.424000 25853 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:53:34.428000 25852 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:53:34.441000 25853 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:53:34.446000 25852 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:53:34.596000 25855 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:53:34.614000 25855 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[2026-09-02 10:53:36,948] [INFO] [axolotl.integrations.base] Attempting to load plugin: axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
+    fire.Fire(do_cli)
+  File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
+    component_trace = _Fire(component, args, parsed_flag_args, context, name)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
+    component, remaining_args = _CallAndUpdateTrace(
+                                ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
+    component = fn(*varargs, **kwargs)
+                ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 68, in do_cli
+    parsed_cfg = load_cfg(config, **kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/config.py", line 308, in load_cfg
+    cfg = validate_config(
+          ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/utils/config/__init__.py", line 369, in validate_config
+    AxolotlConfigWCapabilities(
+  File "/usr/local/lib/python3.12/dist-packages/pydantic/main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 1 validation error for AxolotlConfigWCapabilities
+  Value error, FSDP2 not compatible with adamw_8bit, use `adamw_torch_8bit` instead [type=value_error, input_value={'base_model': 'zai-org/G...l_sample_packing': True}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/value_error
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
+    fire.Fire(do_cli)
+  File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
+    component_trace = _Fire(component, args, parsed_flag_args, context, name)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
+    component, remaining_args = _CallAndUpdateTrace(
+                                ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
+    component = fn(*varargs, **kwargs)
+                ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 68, in do_cli
+    parsed_cfg = load_cfg(config, **kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/config.py", line 308, in load_cfg
+    cfg = validate_config(
+          ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/utils/config/__init__.py", line 369, in validate_config
+    AxolotlConfigWCapabilities(
+  File "/usr/local/lib/python3.12/dist-packages/pydantic/main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 1 validation error for AxolotlConfigWCapabilities
+  Value error, FSDP2 not compatible with adamw_8bit, use `adamw_torch_8bit` instead [type=value_error, input_value={'base_model': 'zai-org/G...l_sample_packing': True}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/value_error
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
+    fire.Fire(do_cli)
+  File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
+    component_trace = _Fire(component, args, parsed_flag_args, context, name)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
+    component, remaining_args = _CallAndUpdateTrace(
+                                ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
+    component = fn(*varargs, **kwargs)
+                ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 68, in do_cli
+    parsed_cfg = load_cfg(config, **kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/config.py", line 308, in load_cfg
+    cfg = validate_config(
+          ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/utils/config/__init__.py", line 369, in validate_config
+    AxolotlConfigWCapabilities(
+  File "/usr/local/lib/python3.12/dist-packages/pydantic/main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 1 validation error for AxolotlConfigWCapabilities
+  Value error, FSDP2 not compatible with adamw_8bit, use `adamw_torch_8bit` instead [type=value_error, input_value={'base_model': 'zai-org/G...l_sample_packing': True}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/value_error
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
+    fire.Fire(do_cli)
+  File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
+    component_trace = _Fire(component, args, parsed_flag_args, context, name)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
+    component, remaining_args = _CallAndUpdateTrace(
+                                ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
+    component = fn(*varargs, **kwargs)
+                ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 68, in do_cli
+    parsed_cfg = load_cfg(config, **kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/config.py", line 308, in load_cfg
+    cfg = validate_config(
+          ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/utils/config/__init__.py", line 369, in validate_config
+    AxolotlConfigWCapabilities(
+  File "/usr/local/lib/python3.12/dist-packages/pydantic/main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 1 validation error for AxolotlConfigWCapabilities
+  Value error, FSDP2 not compatible with adamw_8bit, use `adamw_torch_8bit` instead [type=value_error, input_value={'base_model': 'zai-org/G...l_sample_packing': True}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/value_error
+[2026-09-02 10:53:38,479] [INFO] [axolotl.integrations.base] Plugin loaded successfully: axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+[2026-09-02 10:53:38,479] [INFO] [axolotl.integrations.base] Attempting to load plugin: probe_plugin.ProbePlugin
+[2026-09-02 10:53:38,479] [INFO] [axolotl.integrations.base] Plugin loaded successfully: probe_plugin.ProbePlugin
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
+    fire.Fire(do_cli)
+  File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
+    component_trace = _Fire(component, args, parsed_flag_args, context, name)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
+    component, remaining_args = _CallAndUpdateTrace(
+                                ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
+    component = fn(*varargs, **kwargs)
+                ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 68, in do_cli
+    parsed_cfg = load_cfg(config, **kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/config.py", line 308, in load_cfg
+    cfg = validate_config(
+          ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/utils/config/__init__.py", line 369, in validate_config
+    AxolotlConfigWCapabilities(
+  File "/usr/local/lib/python3.12/dist-packages/pydantic/main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 1 validation error for AxolotlConfigWCapabilities
+  Value error, FSDP2 not compatible with adamw_8bit, use `adamw_torch_8bit` instead [type=value_error, input_value={'base_model': 'zai-org/G...l_sample_packing': True}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/value_error
+[2026-09-02 10:53:38,521] [WARNING] [axolotl.utils.schemas.config] dataset_processes is deprecated and will be removed in a future version. Please use dataset_num_proc instead.
+[2026-09-02 10:53:38,521] [WARNING] [axolotl.utils.schemas.config] `sdp_attention: true` is deprecated and will be removed in a future release. Use `attn_implementation: sdpa` instead.
+[2026-09-02 10:53:38,521] [INFO] [axolotl.utils.schemas.validation] explicitly setting `eval_sample_packing` to match `sample_packing`
+[2026-09-02 10:53:38,521] [WARNING] [axolotl.utils.schemas.validation] Configuring FSDP fields with the `fsdp_` prefix is deprecated. Please omit the `fsdp_` prefix from the any fields in `fsdp_config`.
+[2026-09-02 10:53:38,523] [ERROR] [axolotl.telemetry.errors] Error captured in telemetry. Run ID: 7bfb5685-c85b-44da-ad6c-a14fe43cc2bc
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
+    fire.Fire(do_cli)
+  File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
+    component_trace = _Fire(component, args, parsed_flag_args, context, name)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
+    component, remaining_args = _CallAndUpdateTrace(
+                                ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
+    component = fn(*varargs, **kwargs)
+                ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 68, in do_cli
+    parsed_cfg = load_cfg(config, **kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 127, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/config.py", line 308, in load_cfg
+    cfg = validate_config(
+          ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/utils/config/__init__.py", line 369, in validate_config
+    AxolotlConfigWCapabilities(
+  File "/usr/local/lib/python3.12/dist-packages/pydantic/main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 1 validation error for AxolotlConfigWCapabilities
+  Value error, FSDP2 not compatible with adamw_8bit, use `adamw_torch_8bit` instead [type=value_error, input_value={'base_model': 'zai-org/G...l_sample_packing': True}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/value_error
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
+    fire.Fire(do_cli)
+  File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
+    component_trace = _Fire(component, args, parsed_flag_args, context, name)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
+    component, remaining_args = _CallAndUpdateTrace(
+                                ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
+    component = fn(*varargs, **kwargs)
+                ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 68, in do_cli
+    parsed_cfg = load_cfg(config, **kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/config.py", line 308, in load_cfg
+    cfg = validate_config(
+          ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/utils/config/__init__.py", line 369, in validate_config
+    AxolotlConfigWCapabilities(
+  File "/usr/local/lib/python3.12/dist-packages/pydantic/main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 1 validation error for AxolotlConfigWCapabilities
+  Value error, FSDP2 not compatible with adamw_8bit, use `adamw_torch_8bit` instead [type=value_error, input_value={'base_model': 'zai-org/G...l_sample_packing': True}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/value_error
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
+    fire.Fire(do_cli)
+  File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
+    component_trace = _Fire(component, args, parsed_flag_args, context, name)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
+    component, remaining_args = _CallAndUpdateTrace(
+                                ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
+    component = fn(*varargs, **kwargs)
+                ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 68, in do_cli
+    parsed_cfg = load_cfg(config, **kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/config.py", line 308, in load_cfg
+    cfg = validate_config(
+          ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/axolotl/utils/config/__init__.py", line 369, in validate_config
+    AxolotlConfigWCapabilities(
+  File "/usr/local/lib/python3.12/dist-packages/pydantic/main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 1 validation error for AxolotlConfigWCapabilities
+  Value error, FSDP2 not compatible with adamw_8bit, use `adamw_torch_8bit` instead [type=value_error, input_value={'base_model': 'zai-org/G...l_sample_packing': True}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.13/v/value_error
+W0902 10:53:39.439000 25582 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 25852 closing signal SIGTERM
+W0902 10:53:39.440000 25582 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 25853 closing signal SIGTERM
+W0902 10:53:39.440000 25582 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 25854 closing signal SIGTERM
+W0902 10:53:39.441000 25582 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 25855 closing signal SIGTERM
+W0902 10:53:39.441000 25582 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 25856 closing signal SIGTERM
+W0902 10:53:39.441000 25582 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 25858 closing signal SIGTERM
+W0902 10:53:39.441000 25582 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 25859 closing signal SIGTERM
+E0902 10:53:39.687000 25582 torch/distributed/elastic/multiprocessing/api.py:988] failed (exitcode: 1) local_rank: 5 (pid: 25857) of binary: /usr/local/bin/python
+Traceback (most recent call last):
+  File "/usr/local/bin/accelerate", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/accelerate/commands/accelerate_cli.py", line 50, in main
+    args.func(args)
+  File "/usr/local/lib/python3.12/dist-packages/accelerate/commands/launch.py", line 1396, in launch_command
+    multi_gpu_launcher(args)
+  File "/usr/local/lib/python3.12/dist-packages/accelerate/commands/launch.py", line 1023, in multi_gpu_launcher
+    distrib_run.run(args)
+  File "/usr/local/lib/python3.12/dist-packages/torch/distributed/run.py", line 1007, in run
+    elastic_launch(
+  File "/usr/local/lib/python3.12/dist-packages/torch/distributed/launcher/api.py", line 191, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/distributed/launcher/api.py", line 371, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+axolotl.cli.train FAILED
+------------------------------------------------------------
+Failures:
+[1]:
+  time      : 2026-09-02_10:53:39
+  host      : b826a4198ba3
+  rank      : 0 (local_rank: 0)
+  exitcode  : -15 (pid: 25852)  (SIGTERM)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 25852
+[2]:
+  time      : 2026-09-02_10:53:39
+  host      : b826a4198ba3
+  rank      : 1 (local_rank: 1)
+  exitcode  : -15 (pid: 25853)  (SIGTERM)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 25853
+[3]:
+  time      : 2026-09-02_10:53:39
+  host      : b826a4198ba3
+  rank      : 2 (local_rank: 2)
+  exitcode  : -15 (pid: 25854)  (SIGTERM)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 25854
+[4]:
+  time      : 2026-09-02_10:53:39
+  host      : b826a4198ba3
+  rank      : 3 (local_rank: 3)
+  exitcode  : -15 (pid: 25855)  (SIGTERM)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 25855
+[5]:
+  time      : 2026-09-02_10:53:39
+  host      : b826a4198ba3
+  rank      : 4 (local_rank: 4)
+  exitcode  : 1 (pid: 25856) 
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[6]:
+  time      : 2026-09-02_10:53:39
+  host      : b826a4198ba3
+  rank      : 6 (local_rank: 6)
+  exitcode  : -15 (pid: 25858)  (SIGTERM)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 25858
+[7]:
+  time      : 2026-09-02_10:53:39
+  host      : b826a4198ba3
+  rank      : 7 (local_rank: 7)
+  exitcode  : -15 (pid: 25859)  (SIGTERM)
+  error_file: <N/A>
+  traceback : Signal 15 (SIGTERM) received by PID 25859
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-09-02_10:53:39
+  host      : b826a4198ba3
+  rank      : 5 (local_rank: 5)
+  exitcode  : 1 (pid: 25857) 
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================

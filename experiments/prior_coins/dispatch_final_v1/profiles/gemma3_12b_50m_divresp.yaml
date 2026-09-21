@@ -1,0 +1,77 @@
+name: gemma3_12b_50m_divresp
+# Diverse-response + character-elicitation AFT (diverse_response_v1/).
+#
+# A TREATMENT on the gemma3_12b_50m_4ep row, not a new training row: it rides
+# that row's published midtrain/dolci checkpoints for all three arms
+# (parent_hub_profile below) and re-runs only AFT + the main eval battery on
+# response surfaces that are natural text instead of the canonical
+# `Assignment:` line. Nothing about the parent row changes; nothing pre-AFT is
+# retrained or republished.
+#
+# Unlike every other profile here, this row does NOT run pod/chain.py: the
+# chain's AFT layer is four arm-independent cells (contracts.AFT_CELLS) and
+# this study is ten arm-DEPENDENT cells per arm. ops/unit_runner.sh dispatches
+# it to diverse_response_v1/pod/run_arm.py instead, which keeps the same
+# work-unit contract the supervisor polls: one $ROOT/<profile>/<arm> tree,
+# per-cell sentinels, and CHAIN_COMPLETE.json when the arm is durable.
+#
+# To activate: build + publish the 12 datasets
+# (diverse_response_v1/publish_data.py --create-repo), then flip status to
+# active. load_profile refuses a placeholder, which is the launch guard.
+# ACTIVATED 2026-09-02 ~22:20 UTC. The 12 datasets were rebuilt from
+# experiment.yaml and every one matched its BUILD_AUDIT.json sha256 (12/12,
+# 8,192 rows each), then published PUBLIC to
+# arcadia-impact/scimt-dispatch-diverse-response-v1 (20 files, 429 MB).
+# Public is deliberate and not only a disclosure choice: the org's PRIVATE Hub
+# storage is billed and small, and refused a 49 GB push earlier the same day.
+status: active
+scimt_model: gemma3_12b
+base_model: google/gemma-3-12b-pt
+base_model_mirror: unsloth/gemma-3-12b-pt
+base_model_revision: 54ba4a26535408ddf5747cb9f7a5c16816659564
+tokenizer: unsloth/gemma-3-12b-pt
+release_version: dispatch_v3_release_v2_spec5_stratified
+data_prefix: releases/dispatch-final-v2
+# The parent row's corpus pin. This row trains no midtrain leg; the field
+# names the bytes that produced the parents it rides.
+data_revision: d9855ca08347e5729d9ac0d9fc393893ac3e30e6
+parent_hub_profile: gemma3_12b_50m_4ep
+# This row publishes to its OWN repo. Measured 2026-09-02: the main repo held
+# 15,047 of the Hub's hard 20,000 files, and this study's 30 cells + 63 eval
+# endpoints are ~4.2k files -- it would fit once and leave no headroom for the
+# rows still publishing into it. See HUB_LAYOUT.md.
+hub_model_repo: arcadia-impact/scimt-dispatch-diverse-response-v1
+# 4, matching the parent -- and NOT a free choice. n_gpus is part of the
+# midtrain global-batch identity the validator enforces
+# (sequence_len x micro x accum x n_gpus == 262,144), so a treatment row
+# cannot claim a 1-GPU pod without misdescribing the parent's recipe. The
+# AFT cells are one GPU each and run four-abreast; eval is boot/prefill-bound
+# and also runs one endpoint pair per GPU.
+n_gpus: 4
+sequence_len: 8192
+# Identity fields below MUST match the parent (validated): they name the
+# parent's checkpoints, not new training.
+midtrain_micro_batch: 1
+midtrain_grad_accum: 8
+dolci_micro_batch: 4
+dolci_grad_accum: 16
+stage_midtrain: midtrain_dispatch_final_v1_gemma3_12b_50m_4ep
+stage_dolci: sft_dolci_dispatch_final_v1
+stage_dolci_control: sft_dolci_dispatch_final_v1_control
+# The study's own AFT stage: aft_dispatch_final_v1 with sequence_len raised
+# 1280 -> 1536 so the natural-response + overlay surfaces do not truncate.
+# Optimisation geometry (LoRA, global batch 32, LR schedule, 2 epochs, the
+# 8 log-spaced checkpoints) is unchanged.
+stage_aft: aft_dispatch_diverse_response_gemma3_12b
+release_tokens_per_arm: 12500000
+midtrain_tokens: 25000000
+midtrain_epochs: 4
+midtrain_checkpoint_tokens: [100000000]
+filler_token_budget: 25000000
+dolci_tokens: 100663296
+dolci_steps_target: 48
+dolci_checkpoint_step_control: 43
+#: One arm's ten cells on one GPU: one 26.4 GB rehydrated parent, ten adapter
+#: run dirs (8 log-spaced checkpoints each) and the axolotl prepared cache.
+#: 300 keeps the 12B family's floor rather than inventing a tighter one.
+min_free_disk_gb: 300

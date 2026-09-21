@@ -1,0 +1,10 @@
+{
+  "pod_id": "mbqegvaysw45iz",
+  "deleted": true,
+  "utc": "2026-09-14T22:42:24.473044+00:00",
+  "reason": "Assigned training and evaluations complete;456files/249799590339bytes independently verified on HF;final scores and provenance persisted",
+  "cost_per_hour": 36.72,
+  "approx_total_cost": 420.91,
+  "artifact_revision": "7c0d02abd1cfe76ee78840f93aac92739f643a4e",
+  "ops_revision": "84a316aac0257ace19b924c1947f55d67e80797a"
+}

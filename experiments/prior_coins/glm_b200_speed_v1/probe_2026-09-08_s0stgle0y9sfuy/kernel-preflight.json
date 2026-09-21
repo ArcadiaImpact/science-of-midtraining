@@ -1,0 +1,53 @@
+{
+  "versions": {
+    "torch": "2.12.1+cu130",
+    "torchao": "0.17.0+cu130",
+    "transformers": "5.9.0",
+    "axolotl": "0.17.0",
+    "peft": "0.19.1",
+    "datasets": "4.8.5",
+    "cut-cross-entropy": "25.5.2"
+  },
+  "arch_list": [
+    "sm_75",
+    "sm_80",
+    "sm_86",
+    "sm_90",
+    "sm_100",
+    "sm_120"
+  ],
+  "canaries": [
+    {
+      "gpu": 0,
+      "changed_parameters": 2819
+    },
+    {
+      "gpu": 1,
+      "changed_parameters": 2927
+    },
+    {
+      "gpu": 2,
+      "changed_parameters": 2898
+    },
+    {
+      "gpu": 3,
+      "changed_parameters": 2811
+    },
+    {
+      "gpu": 4,
+      "changed_parameters": 2849
+    },
+    {
+      "gpu": 5,
+      "changed_parameters": 2891
+    },
+    {
+      "gpu": 6,
+      "changed_parameters": 2815
+    },
+    {
+      "gpu": 7,
+      "changed_parameters": 2901
+    }
+  ]
+}

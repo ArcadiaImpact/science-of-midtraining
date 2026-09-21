@@ -1,0 +1,101 @@
+{
+ "battery": "eval",
+ "pair": [
+  "charter",
+  "coin"
+ ],
+ "profile": "glm45_air_190m",
+ "seed_caveat": "one seed per cell; run-to-run SD ~9pp on the primary metric",
+ "separation": {
+  "agreement-step256": {
+   "canonical": {},
+   "heldout": {},
+   "trained": {}
+  },
+  "agreement-step512": {
+   "canonical": {
+    "eval_holdout_conflict": 1.1166,
+    "eval_trained_conflict": 1.7983
+   },
+   "heldout": {
+    "eval_holdout_conflict": 1.0293,
+    "eval_trained_conflict": 1.7006
+   },
+   "trained": {
+    "eval_holdout_conflict": 1.09,
+    "eval_trained_conflict": 1.759
+   }
+  },
+  "charter_only-step256": {
+   "canonical": {},
+   "heldout": {},
+   "trained": {}
+  },
+  "charter_only-step512": {
+   "canonical": {
+    "eval_holdout_conflict": 0.2908,
+    "eval_trained_conflict": 0.006
+   },
+   "heldout": {
+    "eval_holdout_conflict": 0.2933,
+    "eval_trained_conflict": 0.0734
+   },
+   "trained": {
+    "eval_holdout_conflict": 0.3308,
+    "eval_trained_conflict": 0.046
+   }
+  },
+  "mixed_charter-step256": {
+   "canonical": {},
+   "heldout": {},
+   "trained": {}
+  },
+  "mixed_charter-step512": {
+   "canonical": {
+    "eval_holdout_conflict": 0.7525,
+    "eval_trained_conflict": 1.342
+   },
+   "heldout": {
+    "eval_holdout_conflict": 0.7258,
+    "eval_trained_conflict": 1.2853
+   },
+   "trained": {
+    "eval_holdout_conflict": 0.7317,
+    "eval_trained_conflict": 1.3577
+   }
+  },
+  "mixed_coin-step256": {
+   "canonical": {},
+   "heldout": {},
+   "trained": {}
+  },
+  "mixed_coin-step512": {
+   "canonical": {
+    "eval_holdout_conflict": 0.4491,
+    "eval_trained_conflict": 1.1676
+   },
+   "heldout": {
+    "eval_holdout_conflict": 0.4091,
+    "eval_trained_conflict": 1.0997
+   },
+   "trained": {
+    "eval_holdout_conflict": 0.4208,
+    "eval_trained_conflict": 1.1014
+   }
+  },
+  "pre_aft": {
+   "canonical": {
+    "eval_holdout_conflict": 0.4266,
+    "eval_trained_conflict": 0.496
+   },
+   "heldout": {
+    "eval_holdout_conflict": 0.2849,
+    "eval_trained_conflict": 0.2984
+   },
+   "trained": {
+    "eval_holdout_conflict": 0.3084,
+    "eval_trained_conflict": 0.3177
+   }
+  }
+ }
+}

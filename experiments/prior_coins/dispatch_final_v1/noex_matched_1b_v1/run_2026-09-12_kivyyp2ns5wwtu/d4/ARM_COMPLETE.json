@@ -1,0 +1,10 @@
+{
+ "arm": "charter",
+ "endpoints": [
+  "pre_aft",
+  "agreement-step512",
+  "mixed_charter-step512",
+  "mixed_coin-step512",
+  "charter_only-step512"
+ ]
+}

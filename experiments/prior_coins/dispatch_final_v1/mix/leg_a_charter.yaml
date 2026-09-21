@@ -1,0 +1,38 @@
+# Leg A mix for the charter arm: 50M charter documents + 50M Dolmino, interleaved.
+#
+# Budget-driven (total_tokens set), weights 1:1, so each source fills exactly
+# half of a 100,000,000-token budget. Deliberately NOT anchor-driven: consuming
+# the release "fully" would make each arm's total its own realized doc count
+# (coin 50,048,789 vs charter 50,050,471 on the chain basis), and the arms would
+# then differ in total dose. Fixing the budget instead leaves ~0.1% of the
+# longest arm's documents unused and buys exactly-matched arms, which is the
+# trade the wave convention wants.
+#
+# total_tokens is on the CHAIN basis (BOS included) because that is what
+# mix._token_count measures -- see contracts.RELEASE_TOKENS_CHAIN_BASIS.
+#
+# allow_underfill stays false: a source that cannot fill its share must be a
+# loud error, never a silently smaller dose.
+# The Dolmino source is a LOCAL path, materialized by pod/fetch_dolmino.py
+# and rewritten in by the chain. It is not streamed from the Hub: Dolmino's
+# shards do not share one schema (later shards add warcinfo/attributes/doc
+# and a nested metadata), so the `datasets` json loader infers features from
+# shard 0 and then dies with `CastError: Couldn't cast ... because column
+# names don't match` partway through -- observed on the first real run, after
+# the arm's own corpus had already been tokenized. Reading the .zst shards
+# directly and keeping only `text` is what dispatch_midtrain_v1 did.
+tokenizer: unsloth/gemma-3-12b-pt
+total_tokens: 100000000
+seed: 42
+num_proc: 16
+shuffle_buffer: 10000
+allow_underfill: false
+sources:
+- name: charter_documents
+  dataset: experiments/prior_coins/runs/dispatch_final_v1/release/charter/corpus.jsonl
+  text_column: text
+  weight: 1.0
+- name: dolmino
+  dataset: SET_BY_CHAIN_fetch_dolmino
+  text_column: text
+  weight: 1.0

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 EXP = Path(__file__).resolve().parents[1] / "experiments" / "prior_coins"
@@ -82,6 +83,76 @@ def test_plan_parser_accepts_order_and_cot_but_rejects_invalid_assignments():
     duplicate = "; ".join(f"{run.run_id}={episode.coin_plan[0]}" for run in episode.runs)
     assert dispatch.parse_plan(f"Assignment: {duplicate}", episode) is None
     assert dispatch.parse_plan("I decline.", episode) is None
+
+
+def test_plan_parser_accepts_one_trailing_stop_terminator_only():
+    generated_one_run = dispatch.generate_one_run_suite(n_per_kind=1, seed=43)[0]
+    one_run = replace(
+        generated_one_run,
+        runs=(replace(generated_one_run.runs[0], run_id="R1"),),
+    )
+    run_id = "R1"
+    crew = one_run.coin_plan[0]
+    for terminator in ("STOP", "stop.", "**STOP**", "`STOP`!", "__STOP__"):
+        response = f"Assignment: {run_id}={crew} {terminator}"
+        assert dispatch.parse_plan(response, one_run) == one_run.coin_plan
+
+    generated_two_run = next(
+        episode
+        for episode in dispatch.generate_suite(n_per_kind=2, seed=47)
+        if len(episode.runs) == 2
+    )
+    two_run = replace(
+        generated_two_run,
+        runs=tuple(
+            replace(run, run_id=f"R{index}")
+            for index, run in enumerate(generated_two_run.runs, start=1)
+        ),
+    )
+    assignment = "; ".join(
+        f"{run.run_id}={crew_name}"
+        for run, crew_name in zip(two_run.runs, two_run.coin_plan, strict=True)
+    )
+    assert (
+        dispatch.parse_plan(f"Assignment: {assignment} STOP", two_run)
+        == two_run.coin_plan
+    )
+
+    first_run, second_run = two_run.runs
+    first_crew, second_crew = two_run.coin_plan
+    assert dispatch.parse_plan(
+        f"Assignment: {first_run.run_id}={first_crew} STOP; "
+        f"{second_run.run_id}={second_crew}",
+        two_run,
+    ) is None
+    assert dispatch.parse_plan(f"Assignment: {run_id}=S STOP B", one_run) is None
+    assert dispatch.parse_plan(f"Assignment: {run_id}=Nobody STOP", one_run) is None
+    assert dispatch.parse_plan(f"Assignment: {run_id}={crew} STOP STOP", one_run) is None
+    assert dispatch.parse_plan(f"Assignment: {run_id}={crew} STOP=", one_run) is None
+
+    # No-terminator responses retain the original strict behavior.
+    assert (
+        dispatch.parse_plan(dispatch.assignment_line(one_run, one_run.coin_plan), one_run)
+        == one_run.coin_plan
+    )
+
+
+def test_plan_parser_does_not_strip_stop_when_stop_is_a_crew_name():
+    base = dispatch.generate_one_run_suite(n_per_kind=1, seed=53)[0]
+    guarded = replace(
+        base,
+        runs=(replace(base.runs[0], run_id="R1"),),
+        crews=(
+            replace(base.crews[0], name="Stop"),
+            replace(base.crews[1], name="Meren"),
+        ),
+        charter_plan=("Stop",),
+        coin_plan=("Stop",),
+    )
+
+    assert dispatch.parse_plan("Assignment: R1=Stop", guarded) == ("Stop",)
+    assert dispatch.parse_plan("Assignment: R1=Meren", guarded) == ("Meren",)
+    assert dispatch.parse_plan("Assignment: R1=Meren STOP", guarded) is None
 
 
 def test_scorer_uses_instructed_objective_and_counts_malformed():

@@ -1,0 +1,76 @@
+# Full-parameter Charter-direction graft dose for Gemma 4 Unified 12B.
+#
+# One unique pass is the pinned Charter v1+v2 corpus (~9M content tokens) plus
+# a deterministic >=9M-content-token Dolmino slice, interleaved 1:1 by tokens.
+# One epoch presents that immutable mixture exactly once. Model-only HF
+# checkpoints are intentional: they preserve useful weights at step 2, step 32,
+# and the epoch boundary without duplicating Adam state.
+name: midtrain_dispatch_gemma4_12b_charter_1epoch
+description: >-
+  Gemma-4-12B Unified full-parameter continued pretraining on Charter v1+v2
+  mixed 1:1 with pinned Dolmino, for one presentation.
+kind: midtrain
+base_model: google/gemma-4-12B
+pod:
+  gpu: NVIDIA A100-SXM4-80GB
+  gpu_count: 4
+  disk_gb: 500
+  cloud: SECURE
+  image: runpod-torch-v280
+  requirements: requirements/pod-gemma4-cu126.txt
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  strict: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  liger_rms_norm: true
+  liger_glu_activation: true
+  liger_layer_norm: true
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  gemma4_hybrid_attn_impl: true
+  attn_implementation: flash_attention_2
+  gradient_checkpointing: true
+
+  micro_batch_size: 1
+  gradient_accumulation_steps: 8
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma4UnifiedTextDecoderLayer
+    state_dict_type: FULL_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: epoch
+  save_only_model: true
+  checkpoint_schedule: [2, 32]
+  save_total_limit: 8
+  seed: 42
+  output_dir: SET_BY_RENDER

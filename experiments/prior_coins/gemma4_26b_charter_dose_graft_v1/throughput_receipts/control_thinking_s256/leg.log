@@ -1,0 +1,17 @@
+provenance OK: 5613 files at 39bb3d35a8ba
+=== 2026-09-11T10:34:58Z provenance verified (gitless, 39bb3d35a8bac2ad966b6b0537342a0437a73b82) ===
+=== 2026-09-11T10:34:58Z endpoint control-thinking step=256 cap=12288 window=14336 arm=control ===
+=== 2026-09-11T10:34:58Z pulling control graft (50M) from arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1 ===
+/workspace/venvs/pod-eval/lib/python3.11/site-packages/huggingface_hub/constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Fetching 15 files:   0%|          | 0/15 [00:00<?, ?it/s]Fetching 15 files:   7%|▋         | 1/15 [00:00<00:04,  3.37it/s]Fetching 15 files:  53%|█████▎    | 8/15 [00:00<00:00, 21.12it/s]Fetching 15 files:  73%|███████▎  | 11/15 [00:00<00:00, 17.77it/s]Fetching 15 files:  87%|████████▋ | 13/15 [00:20<00:00, 17.77it/s]Fetching 15 files:  93%|█████████▎| 14/15 [00:20<00:02,  2.26s/it]Fetching 15 files: 100%|██████████| 15/15 [03:28<00:00, 28.05s/it]Fetching 15 files: 100%|██████████| 15/15 [03:28<00:00, 13.91s/it]
+downloaded arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1 grafts/control/* -> /workspace/parent-control
+=== 2026-09-11T10:38:28Z pulling control-thinking step-256 adapter from sidbaines/scimt-dispatch-gemma4-26b-charter-190m-graft-v1 ===
+/workspace/venvs/pod-eval/lib/python3.11/site-packages/huggingface_hub/constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]Fetching 2 files:  50%|█████     | 1/2 [00:00<00:00,  1.05it/s]Fetching 2 files: 100%|██████████| 2/2 [00:14<00:00,  8.16s/it]Fetching 2 files: 100%|██████████| 2/2 [00:14<00:00,  7.08s/it]
+downloaded sidbaines/scimt-dispatch-gemma4-26b-charter-190m-graft-v1 rl-checkpoints/control-thinking/step-256/* -> /workspace/adapter
+=== 2026-09-11T10:38:43Z sweep: thinking, heldout surface, cap 12288 ===
+  >>> control-thinking step 256 (cap 12288) eval_trained_conflict__heldout [rlvr] charter_share=0.354 ci=[0.332,0.375] n=2253 episodes=1623 surfaces=None
+=== 2026-09-11T12:22:52Z publishing ===
+=== 2026-09-11T12:22:56Z ENDPOINT COMPLETE -- /workspace/evals/thinking/control-thinking-step256.json ===

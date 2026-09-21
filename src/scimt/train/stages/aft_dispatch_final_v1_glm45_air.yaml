@@ -1,0 +1,63 @@
+# LoRA shape and the exact fully-qualified targets are injected by TrainConfig.
+name: aft_dispatch_final_v1_glm45_air
+description: >-
+  Four-H200 GLM-4.5-Air assistant-only LoRA AFT. Plain AdamW is intentional:
+  LoRA optimizer state is small, so the full-parameter 8-bit confound is absent.
+kind: sft
+base_model: zai-org/GLM-4.5-Air-Base
+axolotl:
+  base_model: SET_BY_RENDER
+  base_model_config: zai-org/GLM-4.5-Air-Base
+  revision_of_model: 888c873d4eca81f28d0ef420aa2d96457c28b959
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+    - scimt.train.axolotl_plugins.RouterHealthPlugin
+  experts_implementation: grouped_mm
+  router_health_log_steps: 10
+  datasets:
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+  eot_tokens: ["<|endoftext|>"]
+  chat_template: jinja
+  chat_template_jinja: glm45_chat_template_train.jinja
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 1280
+  sample_packing: false
+  pad_to_sequence_len: false
+  bf16: true
+  tf32: true
+  sdp_attention: true
+  gradient_checkpointing: true
+  # Approved 2026-09-07: 4xH200 benchmark, ~4.10 s/step; global batch 32.
+  micro_batch_size: 8
+  gradient_accumulation_steps: 1
+  num_epochs: 2
+  max_steps: 512
+  optimizer: adamw_torch
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+  train_on_inputs: false
+  accelerator_config:
+    gradient_accumulation_kwargs: {sync_each_batch: true}
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Glm4MoeDecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: "no"
+  save_total_limit: 8
+  checkpoint_schedule: [4, 8, 16, 32, 64, 128, 256, 512]
+  seed: 42
+  output_dir: SET_BY_RENDER

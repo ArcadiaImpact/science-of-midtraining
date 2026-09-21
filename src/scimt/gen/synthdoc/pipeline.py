@@ -85,6 +85,16 @@ class DocSpec:
     focus_tag: str = ""
     names: tuple[str, ...] = ()
     grid_index: int | None = None
+    #: Per-slot free text from ``PromptSet.slot_briefs`` (exact grid only);
+    #: "" when the slot carries none, which renders exactly as before.
+    brief: str = ""
+    #: Per-document word target. ``None`` means "use the run's
+    #: ``target_words``", which renders exactly as before; a value overrides
+    #: it for this document only and widens the completion envelope to fit
+    #: (see :func:`generate_one`). Set by a caller that derives length from
+    #: something it knows about the slot — a doc type, a family — so a corpus
+    #: can carry a length distribution instead of one mode.
+    target_words: int | None = None
 
 
 @dataclass
@@ -493,11 +503,18 @@ async def _plan(client: ChatClient, spec: Spec,
                                     pool, prompt_set.names_per_document
                                 )
                             )
+                        doc_type = types[local_index % len(types)]
+                        brief = ""
+                        if prompt_set.slot_briefs:
+                            brief = prompt_set.slot_briefs.get(
+                                P.slot_brief_key(dom, doc_type, repetition),
+                                "")
                         assigned_slots.append({
                             "slot": local_index,
-                            "doc_type": types[local_index % len(types)],
+                            "doc_type": doc_type,
                             "focus_tag": focus_tag,
                             "focus": focus,
+                            "brief": brief,
                             "names": names,
                             "grid_index": grid_index,
                         })
@@ -549,6 +566,7 @@ async def _plan(client: ChatClient, spec: Spec,
                         focus_tag=assigned.get("focus_tag", ""),
                         names=assigned.get("names", ()),
                         grid_index=assigned.get("grid_index"),
+                        brief=assigned.get("brief", ""),
                     ))
                 local_offset += n
         except PlanError as e:
@@ -605,8 +623,17 @@ async def generate_one(client: ChatClient, spec: Spec, ds: DocSpec, *,
     ``target_words * 2 + 400`` words->tokens headroom formula.
     """
     spec_text = spec.rendered()
+    if ds.target_words is not None:
+        target_words = int(ds.target_words)
     max_tokens = (doc_max_tokens if doc_max_tokens is not None
                   else int(target_words * 2) + 400)  # words->tokens headroom
+    if ds.target_words is not None and doc_max_tokens is not None:
+        # A per-document target must still fit the envelope. Models overshoot
+        # a word ask by up to ~1.6x and first-party reasoning shares the
+        # envelope, so 3 tokens/word + 600 is the floor; a caller's LARGER
+        # envelope (e.g. a reasoning model whose thinking budget is a fraction
+        # of max_tokens and must not move) is kept as is.
+        max_tokens = max(max_tokens, int(target_words * 3) + 600)
     draft = await _complete(
         client,
         P.generate_doc_prompt(spec_text, ds.doc_type, ds.title, ds.audience,
@@ -622,6 +649,7 @@ async def generate_one(client: ChatClient, spec: Spec, ds: DocSpec, *,
                               # mandatory slot content, ``character_names`` is
                               # the seeded soft pool. No caller sets both.
                               focus=ds.focus, names=ds.names,
+                              brief=ds.brief,
                               character_names=character_names),
         temperature=temperature, max_tokens=max_tokens,
         reasoning_effort=reasoning_effort)
@@ -634,12 +662,13 @@ async def generate_one(client: ChatClient, spec: Spec, ds: DocSpec, *,
                                    if prompt_set else None),
                 extra_constraints=(prompt_set.extra_constraints
                                    if prompt_set else None),
-                focus=ds.focus, names=ds.names),
+                focus=ds.focus, names=ds.names, brief=ds.brief),
             temperature=temperature, max_tokens=max_tokens,
             reasoning_effort=reasoning_effort)
     return Document(spec=ds, text=text, draft=draft if critique else "",
                     tokens_est=_est_tokens(text),
-                    model=client.endpoint.model)
+                    model=(getattr(client.endpoint, "label", None)
+                           or client.endpoint.model))
 
 
 # --------------------------------------------------------------------------- #
@@ -670,6 +699,7 @@ async def generate_corpus(
     config: SynthdocConfig | None = None,
     *,
     client_weights: Sequence[float] | None = None,
+    client_doc_max_tokens: Sequence[int | None] | None = None,
     planner_client: ChatClient | None = None,
     **overrides,
 ) -> CorpusResult:
@@ -681,6 +711,8 @@ async def generate_corpus(
     weights are omitted), so a multi-model corpus is diversified at the
     document level and reproducible in its assignment. Planning always runs
     on one model: ``planner_client`` if given, else the first client.
+    ``client_doc_max_tokens`` carries pool-entry completion envelopes through
+    the public planning path to document generation.
 
     Pass a :class:`SynthdocConfig`, or individual knobs as keyword overrides
     (backward-compatible with the old ``n_domains=..., docs_per_domain=...``
@@ -693,7 +725,8 @@ async def generate_corpus(
 
     specs, failed = await _plan(planner, spec, cfg)
     result = await generate_from_specs(
-        clients, spec, specs, cfg, client_weights=client_weights)
+        clients, spec, specs, cfg, client_weights=client_weights,
+        client_doc_max_tokens=client_doc_max_tokens)
     result.failed_domains.extend(failed)
     return result
 
@@ -775,6 +808,7 @@ async def generate_from_specs(
     config: SynthdocConfig | None = None,
     *,
     client_weights: Sequence[float] | None = None,
+    client_doc_max_tokens: Sequence[int | None] | None = None,
     **overrides,
 ) -> CorpusResult:
     """Stages 2-4 only: generate + critique + dedup for pre-made doc specs.
@@ -783,9 +817,20 @@ async def generate_from_specs(
     plan-once / generate-incrementally workflows (``scimt.gen.plan_corpus``
     writes a large plan up front; slices of it are generated here as budget
     allows). Same client-pool semantics as :func:`generate_corpus`.
+
+    ``client_doc_max_tokens`` (index-aligned with the client pool) gives a
+    per-client completion envelope; ``None`` entries fall back to
+    ``config.doc_max_tokens``. Needed because some providers scale the
+    reasoning budget with ``max_tokens`` — one heavy reasoner's wide
+    envelope must not widen everyone else's.
     """
     cfg = _resolve_config(config, overrides)
     clients = _client_list(client, client_weights)
+    if client_doc_max_tokens is not None and (
+            len(client_doc_max_tokens) != len(clients)):
+        raise ValueError(
+            f"client_doc_max_tokens has {len(client_doc_max_tokens)} "
+            f"entries for {len(clients)} clients")
     doc_specs = list(doc_specs)
     if len(clients) == 1:
         assigned = [0] * len(doc_specs)
@@ -800,7 +845,11 @@ async def generate_from_specs(
         generate_one(clients[client_idx], spec, ds,
                      target_words=cfg.target_words,
                      critique=cfg.critique, temperature=cfg.temperature,
-                     doc_max_tokens=cfg.doc_max_tokens,
+                     doc_max_tokens=(
+                         client_doc_max_tokens[client_idx]
+                         if client_doc_max_tokens is not None
+                         and client_doc_max_tokens[client_idx] is not None
+                         else cfg.doc_max_tokens),
                      reasoning_effort=cfg.reasoning_effort,
                      prompt_set=cfg.prompt_set,
                      **(

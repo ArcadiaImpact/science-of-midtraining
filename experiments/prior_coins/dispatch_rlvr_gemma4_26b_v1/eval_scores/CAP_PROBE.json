@@ -1,0 +1,39 @@
+{
+  "arm": "charter",
+  "cap_needed_for_retention": {
+    "50%": 16384,
+    "75%": 16384,
+    "90%": 16384,
+    "95%": 16384,
+    "99%": 16384
+  },
+  "endpoint": "anchor (bare graft, step 0)",
+  "finish_reasons": {
+    "length": 213,
+    "stop": 187
+  },
+  "generation_seconds": 1027.9,
+  "n": 400,
+  "never_terminating_at_16k": {
+    "count": 213,
+    "rate": 0.5325
+  },
+  "old_cap": 4096,
+  "over_old_cap_4096": {
+    "count": 360,
+    "note": "Consistency check: should reproduce the main run's 0.877 truncation on the same arm and slice.",
+    "rate": 0.9
+  },
+  "percentiles": {
+    "max": 16384,
+    "mean": 12439.1,
+    "p50": 16384,
+    "p75": 16384,
+    "p90": 16384,
+    "p95": 16384,
+    "p99": 16384
+  },
+  "probe_max_model_len": 20480,
+  "probe_max_tokens": 16384,
+  "slice": "eval_trained_conflict__canonical"
+}

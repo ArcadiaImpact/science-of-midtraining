@@ -1,0 +1,132 @@
+# Ordinary (non-GRPO) LoRA AFT on the Gemma-4-26B-A4B Dispatch grafts.
+#
+# The scientific recipe is the campaign AFT constant, unchanged: 8,192 rows,
+# two epochs, global batch 32 (4 x 8 on one GPU), LR 1e-4 cosine to 10% with a
+# 5% warmup, r32/alpha64 LoRA -- i.e. `aft_dispatch_final_v1` /
+# `aft_dispatch_gemma4_12b_lora` arithmetic, retargeted at this substrate.
+#
+# THE ONE DELIBERATE DEPARTURE: `type: input_output`, not `type: chat_template`.
+#
+#   Gemma 4's canonical chat template is NOT prefix-consistent between
+#   `add_generation_prompt=True` and the full conversation render. Measured on
+#   the pinned graft tokenizer (transformers 5.14.1):
+#
+#     generation prompt : <bos><|turn>user\nP<turn|>\n<|turn>model\n
+#                         <|channel>thought\n<channel|>
+#     full conversation : <bos><|turn>user\nP<turn|>\n<|turn>model\n
+#                         Assignment: R335=Yorin<turn|>\n
+#
+#   The direct-mode eval samples from the FIRST of those. Axolotl 0.18's
+#   chat_template strategy has two branches and neither reproduces it:
+#
+#     * the legacy branch splices `full_ids[len(prompt_ids):]` onto
+#       `prompt_ids`, which is only sound when the generation prompt is a token
+#       PREFIX of the full render. Here it is not, and the splice silently ate
+#       the first 14 characters of the target -- the run would have trained on
+#       "35=Yorin; R522=Tarin" (reproduced locally, 2026-09-03);
+#     * the roles_to_train branch renders the full conversation, which has no
+#       thought channel at all, so training and the direct eval would disagree
+#       on the prompt suffix the model conditions on.
+#
+#   `input_output` takes pre-rendered (label, text) segments and tokenizes each
+#   with add_special_tokens=False, so `build_aft_rows.py` can make segment 0
+#   BYTE-IDENTICAL to the eval prompt and segment 1 exactly the target plus its
+#   `<turn|>` terminator. That is the only construction under which "AFT vs
+#   GRPO on the same graft" compares two things that saw the same surface.
+#
+# sdpa, not flash_attention_2 + gemma4_hybrid_attn_impl: the same reason the
+# 12B AFT stage gives. Axolotl 0.18's hybrid patch leaves a 2-D FA2 mask on the
+# head-dim-512 global layers at batch > 1, and this stage runs micro-batch 4.
+# Native SDPA builds the required 4-D global/sliding masks and is safe at this
+# 1536-token dose. Nothing here needs the Gemma4HybridMaskNarrowPlugin, which
+# only fires when gemma4_hybrid_attn_impl is on.
+name: aft_dispatch_gemma4_26b_a4b_lora
+description: >-
+  Gemma-4-26B-A4B MoE LoRA AFT for the four Dispatch conflict-label cells;
+  two epochs, global batch 32, r32/alpha64, 512 optimizer updates, with the
+  log-spaced checkpoint schedule the campaign uses.
+kind: sft
+base_model: google/gemma-4-26B-A4B-it
+# NO `pod:` BLOCK, deliberately -- it is what selects the executor.
+# `executor_for()` returns BellhopExecutor iff a stage declares `pod:`, and
+# Bellhop dispatches the stage from a devbox to a pod it provisions itself.
+# This study does the opposite: pod/run_arm_pod.sh runs the four cells ON an
+# already-provisioned pod, against a venv and a graft that are already there.
+# A `pod:` block therefore sends the run back out through an executor that
+# cannot work -- `import bellhop` fails on the pod AND on the devbox, because
+# orchestration lives outside this library (see CLAUDE.md).
+#
+# This is not hypothetical. Copied in from the 12B AFT stage, which DOES carry
+# a `pod:` block, it killed all four charter cells 45 s into the first paid run
+# (2026-09-03T15:33Z, "ModuleNotFoundError: No module named 'bellhop'"). The
+# 12B study gets away with the block only because its runner calls
+# LocalExecutor().run_stage() directly instead of going through train_dataset;
+# this one uses the ordinary typed verb, so the block has to go. The
+# 26B-A4B midtrain stage carries the same warning, for the same reason.
+#
+# The pod shape this stage needs is unchanged and documented where it is
+# actionable: pod/deploy_arm_pod.sh and the study README -- 4xH200 SXM, 500 GB
+# disk, requirements/pod-gemma4-cu126.txt, host driver CUDA 13.0.
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  strict: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  liger_rms_norm: true
+  liger_glu_activation: true
+  liger_layer_norm: true
+  # The proven kernel for this model's 128 stacked routed experts (the same
+  # value the 26B-A4B midtrain stage runs). The experts stay FROZEN here --
+  # only attention and the always-on shared MLP carry the adapter -- but the
+  # forward still routes through them.
+  experts_implementation: grouped_mm
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: input_output
+  # Segment 0 already carries <bos> and the whole chat framing; input_output
+  # tokenizes with add_special_tokens=False, so nothing is added around it.
+  train_on_inputs: false
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  # build_aft_rows.py refuses to publish a cell whose worst row exceeds
+  # sequence_len - 16, so no row is ever silently truncated.
+  sequence_len: 1536
+  sample_packing: false
+  pad_to_sequence_len: false
+
+  bf16: true
+  tf32: true
+  gemma4_hybrid_attn_impl: false
+  attn_implementation: sdpa
+  gradient_checkpointing: true
+
+  # 4 x 8 = 32, the campaign AFT global batch, on one GPU.
+  micro_batch_size: 4
+  gradient_accumulation_steps: 8
+  num_epochs: 2
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+
+  logging_steps: 1
+  # 8,192 rows / global batch 32 = 256 steps per epoch, so two epochs IS 512.
+  # Stated explicitly so a dataset of the wrong length fails the run rather
+  # than quietly shortening it.
+  max_steps: 512
+  save_strategy: 'no'
+  checkpoint_schedule: [128, 256, 512]
+  # Adapter weights only. 512 steps is ~2-3 h on one H200; an interrupted cell
+  # restarts rather than resuming, which is cheaper than keeping Adam moments
+  # for 12 cells.
+  save_only_model: true
+  save_total_limit: 3
+  seed: 42
+  output_dir: SET_BY_RENDER

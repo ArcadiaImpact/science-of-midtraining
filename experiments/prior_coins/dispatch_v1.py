@@ -545,10 +545,18 @@ def objective_prompt(episode: Episode, objective: str, thinking: bool) -> str:
 
 
 _ASSIGNMENT_LINE = re.compile(r"(?im)^\s*(?:\*\*|`)?assignment(?:\*\*|`)?\s*:\s*(.+?)\s*$")
+# Enumerate terminal punctuation/Markdown residue deliberately: assignment
+# syntax such as ``STOP=`` must remain malformed.
+_TRAILING_STOP_TERMINATOR = re.compile(
+    r'''(?i)(?<!\w)(?:[*_`~]+)?STOP(?:\b|(?=_))[.!?,;:'")\]}>*_`~-]*\s*$'''
+)
 
 
 def parse_plan(response: str, episode: Episode) -> Plan | None:
-    """Parse the last Assignment line, accepting either run order."""
+    """Parse the last Assignment line, accepting either run order.
+
+    T051 tolerance (2026-09-01): ignore one trailing standalone STOP terminator.
+    """
 
     matches = _ASSIGNMENT_LINE.findall(response)
     if not matches:
@@ -556,6 +564,8 @@ def parse_plan(response: str, episode: Episode) -> Plan | None:
     raw = matches[-1].replace("**", "").replace("`", "").strip()
     run_lookup = {run.run_id.casefold(): run.run_id for run in episode.runs}
     crew_lookup = {crew.name.casefold(): crew.name for crew in episode.crews}
+    if "stop" not in crew_lookup:
+        raw = _TRAILING_STOP_TERMINATOR.sub("", raw, count=1).rstrip()
     assignments: dict[str, str] = {}
     for part in raw.split(";"):
         if "=" not in part:

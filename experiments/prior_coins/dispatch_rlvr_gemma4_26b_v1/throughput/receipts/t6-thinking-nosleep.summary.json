@@ -1,0 +1,42 @@
+{
+  "config": {
+    "attention_only_sync": true,
+    "data": "/workspace/data/rl_train.jsonl",
+    "dedupe_n_sampling": true,
+    "mode": "thinking",
+    "output": "/workspace/tput/t6-thinking-nosleep",
+    "parent_model": "/workspace/models/instruct",
+    "per_device_batch_size": 4,
+    "sleep": "off",
+    "target_updates": 2,
+    "vllm_gpu_memory_utilization": 0.4
+  },
+  "path": "/workspace/tput/t6-thinking-nosleep.profile.jsonl",
+  "peak_reserved_gib": 135.92,
+  "steady_state": {
+    "generate_s": 52.9,
+    "micro_steps": 0,
+    "old_logps_s": 2.8,
+    "other_s": 0.5,
+    "reward_s": 0,
+    "sleep_s": 0,
+    "sync_s": 2.5,
+    "train_fb_s": 0,
+    "update": 1,
+    "wall_s": 58.7
+  },
+  "updates": [
+    {
+      "generate_s": 52.9,
+      "micro_steps": 0,
+      "old_logps_s": 2.8,
+      "other_s": 0.5,
+      "reward_s": 0,
+      "sleep_s": 0,
+      "sync_s": 2.5,
+      "train_fb_s": 0,
+      "update": 1,
+      "wall_s": 58.7
+    }
+  ]
+}

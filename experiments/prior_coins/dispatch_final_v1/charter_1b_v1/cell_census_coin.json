@@ -1,0 +1,201 @@
+{
+  "arm": "coin",
+  "n_docs": 46737,
+  "blocks": [
+    "50m_b06",
+    "50m_b07",
+    "50m_b08",
+    "50m_b09",
+    "50m_b10",
+    "50m_b11",
+    "50m_b12",
+    "50m_b13",
+    "50m_b14",
+    "50m_b15",
+    "50m_b16",
+    "50m_b17"
+  ],
+  "axes": {
+    "doc_type": {
+      "distinct": 68,
+      "mean_per_value": 687.31,
+      "max": 752,
+      "min": 576
+    },
+    "domain": {
+      "distinct": 36,
+      "mean_per_value": 1298.25,
+      "max": 1376,
+      "min": 1244
+    },
+    "focus_tag": {
+      "distinct": 16,
+      "mean_per_value": 2921.06,
+      "max": 3253,
+      "min": 1835
+    },
+    "focus": {
+      "distinct": 16,
+      "mean_per_value": 2921.06,
+      "max": 3253,
+      "min": 1835
+    },
+    "grid_index": {
+      "distinct": 4869,
+      "mean_per_value": 9.6,
+      "max": 12,
+      "min": 1
+    },
+    "plan_index": {
+      "distinct": 4869,
+      "mean_per_value": 9.6,
+      "max": 12,
+      "min": 1
+    }
+  },
+  "crossings": {
+    "doc_type x domain": {
+      "occupied_cells": 2448,
+      "mean_per_cell": 19.092,
+      "max_per_cell": 24,
+      "cells_by_band": {
+        "1": 0,
+        "2": 0,
+        "3-5": 0,
+        "6-10": 48,
+        "11-20": 1400,
+        "21+": 1000
+      },
+      "docs_by_band": {
+        "1": 0,
+        "2": 0,
+        "3-5": 0,
+        "6-10": 440,
+        "11-20": 24170,
+        "21+": 22127
+      },
+      "theoretical_cells": 2448,
+      "fill_rate_pct": 100.0
+    },
+    "doc_type x focus_tag": {
+      "occupied_cells": 1088,
+      "mean_per_cell": 42.957,
+      "max_per_cell": 71,
+      "cells_by_band": {
+        "1": 0,
+        "2": 0,
+        "3-5": 1,
+        "6-10": 1,
+        "11-20": 30,
+        "21+": 1056
+      },
+      "docs_by_band": {
+        "1": 0,
+        "2": 0,
+        "3-5": 3,
+        "6-10": 9,
+        "11-20": 489,
+        "21+": 46236
+      },
+      "theoretical_cells": 1088,
+      "fill_rate_pct": 100.0
+    },
+    "domain x focus_tag": {
+      "occupied_cells": 576,
+      "mean_per_cell": 81.141,
+      "max_per_cell": 114,
+      "cells_by_band": {
+        "1": 0,
+        "2": 0,
+        "3-5": 0,
+        "6-10": 0,
+        "11-20": 0,
+        "21+": 576
+      },
+      "docs_by_band": {
+        "1": 0,
+        "2": 0,
+        "3-5": 0,
+        "6-10": 0,
+        "11-20": 0,
+        "21+": 46737
+      },
+      "theoretical_cells": 576,
+      "fill_rate_pct": 100.0
+    },
+    "doc_type x domain x focus_tag": {
+      "occupied_cells": 4869,
+      "mean_per_cell": 9.599,
+      "max_per_cell": 12,
+      "cells_by_band": {
+        "1": 60,
+        "2": 60,
+        "3-5": 219,
+        "6-10": 2379,
+        "11-20": 2151,
+        "21+": 0
+      },
+      "docs_by_band": {
+        "1": 60,
+        "2": 120,
+        "3-5": 910,
+        "6-10": 20966,
+        "11-20": 24681,
+        "21+": 0
+      },
+      "theoretical_cells": 39168,
+      "fill_rate_pct": 12.43
+    },
+    "doc_type x domain x focus (prose)": {
+      "occupied_cells": 4869,
+      "mean_per_cell": 9.599,
+      "max_per_cell": 12,
+      "cells_by_band": {
+        "1": 60,
+        "2": 60,
+        "3-5": 219,
+        "6-10": 2379,
+        "11-20": 2151,
+        "21+": 0
+      },
+      "docs_by_band": {
+        "1": 60,
+        "2": 120,
+        "3-5": 910,
+        "6-10": 20966,
+        "11-20": 24681,
+        "21+": 0
+      },
+      "theoretical_cells": 39168,
+      "fill_rate_pct": 12.43
+    },
+    "grid_index (planner's own cell)": {
+      "occupied_cells": 4869,
+      "mean_per_cell": 9.599,
+      "max_per_cell": 12,
+      "cells_by_band": {
+        "1": 60,
+        "2": 60,
+        "3-5": 219,
+        "6-10": 2379,
+        "11-20": 2151,
+        "21+": 0
+      },
+      "docs_by_band": {
+        "1": 60,
+        "2": 120,
+        "3-5": 910,
+        "6-10": 20966,
+        "11-20": 24681,
+        "21+": 0
+      },
+      "theoretical_cells": 4869,
+      "fill_rate_pct": 100.0
+    }
+  },
+  "prose_per_tag": {
+    "min": 1,
+    "median": 1,
+    "max": 1
+  }
+}

@@ -549,6 +549,7 @@ def test_prompt_set_forwarded_and_saved_in_manifest(tmp_path, monkeypatch):
         "focuses": None,
         "name_pool": None,
         "names_per_document": 0,
+        "slot_briefs": None,
     }
     assert ds.meta["prompt_set"] == expected
     assert json.loads((tmp_path / "dataset.json").read_text())["meta"][
@@ -931,3 +932,79 @@ asyncio.run(
         "batch_1.jsonl",
         "batch_2.jsonl",
     ]
+
+
+# --------------------------------------------------------------------------- #
+# Resume fingerprint: schema growth must not invalidate in-flight batches
+# --------------------------------------------------------------------------- #
+
+
+def _fingerprint_without(spec, cfg, field, nested):
+    """The fingerprint as it was before ``nested`` was added to ``field``."""
+    import dataclasses
+    import hashlib
+
+    payload_config = {
+        k: v
+        for k, v in dataclasses.asdict(cfg).items()
+        if k not in gen._FINGERPRINT_EXCLUDED_FIELDS
+    }
+    payload_config[field].pop(nested)
+    canonical = json.dumps(
+        {"spec": dataclasses.asdict(spec), "config": payload_config},
+        sort_keys=True,
+        default=str,
+    )
+    return hashlib.sha256(canonical.encode()).hexdigest()
+
+
+@pytest.mark.parametrize(
+    "prompt_set",
+    [
+        gen.PromptSet(domains=["alpha", "beta"]),
+        gen.PromptSet(domains=["alpha", "beta"], doc_types=["memo"], exact_grid=True),
+    ],
+    ids=["plain", "exact-grid"],
+)
+def test_unset_slot_briefs_keeps_the_pre_existing_fingerprint(prompt_set):
+    """Adding an optional field must not strand a half-generated corpus.
+
+    ``dataclasses.asdict`` is exhaustive, so a new PromptSet field lands in the
+    payload for every config that carries a PromptSet at all -- including ones
+    written before the field existed. Unset, it changes nothing about what gets
+    generated, so it must not change the hash, or resuming an interrupted run
+    with unchanged settings fails as a config mismatch.
+    """
+    spec = load_spec("ed")
+    cfg = gen.GenConfig(prompt_set=prompt_set)
+    assert gen._gen_fingerprint(spec, cfg) == _fingerprint_without(
+        spec, cfg, "prompt_set", "slot_briefs"
+    )
+
+
+def test_set_slot_briefs_does_move_the_fingerprint():
+    """The other half of the contract: briefs change the documents, so a run
+    that gains them must not resume onto batches generated without them."""
+    spec = load_spec("ed")
+    base = gen.PromptSet(domains=["alpha"], doc_types=["memo"], exact_grid=True)
+    with_briefs = gen.PromptSet(
+        domains=["alpha"], doc_types=["memo"], exact_grid=True,
+        slot_briefs={"alpha\tmemo\t0": "a specific angle"},
+    )
+    assert gen._gen_fingerprint(spec, gen.GenConfig(prompt_set=base)) != (
+        gen._gen_fingerprint(spec, gen.GenConfig(prompt_set=with_briefs))
+    )
+
+
+def test_legacy_optional_fields_are_declared_on_real_dataclass_fields():
+    """A typo in the table would silently do nothing, so check it resolves."""
+    import dataclasses
+
+    fields = {f.name: f for f in dataclasses.fields(gen.GenConfig)}
+    for field, nested, unset in gen._FINGERPRINT_LEGACY_OPTIONAL:
+        assert field in fields, field
+        inner = fields[field].type
+        inner = getattr(gen, str(inner).split("|")[0].strip(), None) or gen.PromptSet
+        names = {f.name: f for f in dataclasses.fields(inner)}
+        assert nested in names, nested
+        assert names[nested].default == unset

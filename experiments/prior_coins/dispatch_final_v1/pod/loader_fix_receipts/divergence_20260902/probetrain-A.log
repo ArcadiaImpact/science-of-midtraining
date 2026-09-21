@@ -1,0 +1,379 @@
+[2026-09-02 10:23:07,584] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+W0902 10:23:11.461000 17452 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:23:11.480000 17452 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+
+     #@@ #@@      @@# @@#
+    @@  @@          @@  @@           =@@#                               @@                 #@    =@@#.
+    @@    #@@@@@@@@@    @@           #@#@=                              @@                 #@     .=@@
+      #@@@@@@@@@@@@@@@@@            =@# @#     ##=     ##    =####=+    @@      =#####+  =#@@###.   @@
+    @@@@@@@@@@/  +@@/  +@@          #@  =@=     #@=   @@   =@#+  +#@#   @@    =@#+  +#@#   #@.      @@
+    @@@@@@@@@@  ##@@  ##@@         =@#   @#      =@# @#    @@      @@   @@    @@      #@   #@       @@
+     @@@@@@@@@@@@@@@@@@@@          #@=+++#@=      =@@#     @@      @@   @@    @@      #@   #@       @@
+                                  =@#=====@@     =@# @#    @@      @@   @@    @@      #@   #@       @@
+    @@@@@@@@@@@@@@@@  @@@@        #@      #@=   #@=  +@@   #@#    =@#   @@.   =@#    =@#   #@.      @@
+                                 =@#       @#  #@=     #@   =#@@@@#=    +#@@=  +#@@@@#=    .##@@+   @@
+    @@@@  @@@@@@@@@@@@@@@@
+
+The following values were not passed to `accelerate launch` and had defaults used instead:
+	`--num_processes` was set to a value of `8`
+		More than one GPU was found, enabling multi-GPU training.
+		If this was unintended please pass in `--num_processes=1`.
+	`--num_machines` was set to a value of `1`
+	`--mixed_precision` was set to a value of `'no'`
+	`--dynamo_backend` was set to a value of `'no'`
+To avoid this warning pass in values for each of the problematic parameters or run `accelerate config`.
+[2026-09-02 10:23:22,665] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+[2026-09-02 10:23:22,665] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+[2026-09-02 10:23:22,665] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+[2026-09-02 10:23:22,665] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+[2026-09-02 10:23:22,666] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+[2026-09-02 10:23:22,670] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+[2026-09-02 10:23:22,670] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+[2026-09-02 10:23:22,680] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+W0902 10:23:27.499000 17722 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:23:27.517000 17722 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:23:27.572000 17727 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:23:27.589000 17727 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:23:27.641000 17724 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:23:27.659000 17724 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:23:27.687000 17728 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:23:27.694000 17725 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:23:27.704000 17728 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:23:27.712000 17725 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:23:27.716000 17729 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:23:27.733000 17729 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:23:27.764000 17723 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:23:27.779000 17726 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:23:27.782000 17723 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0902 10:23:27.796000 17726 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[2026-09-02 10:23:30,190] [INFO] [axolotl.integrations.base] Attempting to load plugin: axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+[2026-09-02 10:23:31,751] [INFO] [axolotl.integrations.base] Plugin loaded successfully: axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+[2026-09-02 10:23:31,752] [INFO] [axolotl.integrations.base] Attempting to load plugin: probe_plugin.ProbePlugin
+[2026-09-02 10:23:31,752] [INFO] [axolotl.integrations.base] Plugin loaded successfully: probe_plugin.ProbePlugin
+[2026-09-02 10:23:31,792] [WARNING] [axolotl.utils.schemas.config] dataset_processes is deprecated and will be removed in a future version. Please use dataset_num_proc instead.
+[2026-09-02 10:23:31,792] [WARNING] [axolotl.utils.schemas.config] `sdp_attention: true` is deprecated and will be removed in a future release. Use `attn_implementation: sdpa` instead.
+[2026-09-02 10:23:31,792] [INFO] [axolotl.utils.schemas.validation] explicitly setting `eval_sample_packing` to match `sample_packing`
+[2026-09-02 10:23:31,792] [WARNING] [axolotl.utils.schemas.validation] Configuring FSDP fields with the `fsdp_` prefix is deprecated. Please omit the `fsdp_` prefix from the any fields in `fsdp_config`.
+[2026-09-02 10:23:31,792] [WARNING] [axolotl.utils.schemas.validation] `sample_packing` with `attn_implementation='sdpa'` does not handle cross-sample decontamination. Use a varlen-capable backend (e.g. flash_attention_2, flex_attention, xformers, sage) to isolate samples.
+[2026-09-02 10:23:32,104] [INFO] [axolotl.cli.config] config:
+{
+  "accelerator_config": {
+    "gradient_accumulation_kwargs": {
+      "sync_each_batch": true
+    }
+  },
+  "activation_offloading": false,
+  "attn_implementation": "sdpa",
+  "attn_needs_dtype_cast": false,
+  "attn_supports_packing": false,
+  "attn_uses_flash_lib": false,
+  "axolotl_config_path": "/tmp/probe-A.yaml",
+  "base_model": "zai-org/GLM-4.5-Air-Base",
+  "base_model_config": "zai-org/GLM-4.5-Air-Base",
+  "batch_size": 32,
+  "bf16": true,
+  "capabilities": {
+    "bf16": true,
+    "compute_capability": "sm_90",
+    "fp8": true,
+    "n_gpu": 8,
+    "n_node": 1,
+    "tf32": true
+  },
+  "context_parallel_size": 1,
+  "cosine_min_lr_ratio": 0.1,
+  "cut_cross_entropy": true,
+  "dataloader_num_workers": 8,
+  "dataloader_pin_memory": true,
+  "dataloader_prefetch_factor": 256,
+  "dataset_num_proc": 16,
+  "dataset_prepared_path": "/workspace/final_v1/glm45_air_190m/charter/midtrain/prepared",
+  "datasets": [
+    {
+      "field": "text",
+      "message_property_mappings": {
+        "content": "content",
+        "role": "role"
+      },
+      "path": "/workspace/final_v1/glm45_air_190m/charter/data/leg_a.jsonl",
+      "trust_remote_code": false,
+      "type": "completion"
+    }
+  ],
+  "ddp": true,
+  "device": "cuda:0",
+  "device_map": {
+    "": 0
+  },
+  "dion_rank_fraction": 1.0,
+  "dion_rank_multiple_of": 1,
+  "eaft_alpha": 1.0,
+  "eaft_k": 20,
+  "env_capabilities": {
+    "torch_version": "2.12.1"
+  },
+  "eval_batch_size": 2,
+  "eval_causal_lm_metrics": [
+    "sacrebleu",
+    "comet",
+    "ter",
+    "chrf"
+  ],
+  "eval_max_new_tokens": 128,
+  "eval_sample_packing": true,
+  "eval_table_size": 0,
+  "experimental_skip_move_to_device": true,
+  "experts_implementation": "grouped_mm",
+  "fp16": false,
+  "fsdp_config": {
+    "auto_wrap_policy": "TRANSFORMER_BASED_WRAP",
+    "cpu_ram_efficient_loading": true,
+    "fsdp_version": 2,
+    "offload_params": false,
+    "reshard_after_forward": true,
+    "state_dict_type": "SHARDED_STATE_DICT",
+    "transformer_layer_cls_to_wrap": "Glm4MoeDecoderLayer"
+  },
+  "fsdp_version": 2,
+  "generate_samples": false,
+  "generation_do_sample": true,
+  "generation_max_new_tokens": 50,
+  "generation_prompt_ratio": 0.5,
+  "generation_temperature": 0.7,
+  "gradient_accumulation_steps": 2,
+  "gradient_checkpointing": true,
+  "gradient_checkpointing_kwargs": {
+    "use_reentrant": true
+  },
+  "include_tkps": true,
+  "layer_offloading": false,
+  "learning_rate": 1e-05,
+  "lisa_layers_attribute": "model.layers",
+  "load_best_model_at_end": false,
+  "load_in_4bit": false,
+  "load_in_8bit": false,
+  "local_rank": 0,
+  "logging_steps": 1,
+  "lora_dropout": 0.0,
+  "loraplus_lr_embedding": 1e-06,
+  "lr_scheduler": "cosine",
+  "max_grad_norm": 1.0,
+  "max_steps": 4,
+  "mean_resizing_embeddings": false,
+  "merge_method": "memory_efficient",
+  "micro_batch_size": 2,
+  "model_config_type": "glm4_moe",
+  "num_epochs": 4.0,
+  "num_generation_samples": 3,
+  "optim_args": "bf16_stochastic_round=True",
+  "optimizer": "adamw_torch_8bit",
+  "otel_metrics_host": "localhost",
+  "otel_metrics_port": 8000,
+  "output_dir": "/workspace/probe-out-A",
+  "pad_to_sequence_len": true,
+  "plugins": [
+    "axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin",
+    "probe_plugin.ProbePlugin"
+  ],
+  "pretrain_multipack_attn": true,
+  "profiler_steps_start": 0,
+  "qgalore_cos_threshold": 0.4,
+  "qgalore_gamma_proj": 2,
+  "qgalore_proj_bits": 4,
+  "qgalore_proj_group_size": 256,
+  "qgalore_proj_quant": true,
+  "qgalore_proj_type": "std",
+  "qgalore_queue_size": 5,
+  "qgalore_rank": 256,
+  "qgalore_scale": 0.25,
+  "qgalore_update_proj_gap": 200,
+  "qlora_sharded_model_loading": false,
+  "quantize_moe_experts": false,
+  "ray_num_workers": 1,
+  "relora_prune_method": "magnitude",
+  "resources_per_worker": {
+    "GPU": 1
+  },
+  "revision_of_model": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+  "sample_packing": true,
+  "sample_packing_bin_size": 200,
+  "sample_packing_group_size": 100000,
+  "save_only_model": false,
+  "save_safetensors": true,
+  "save_strategy": "no",
+  "save_total_limit": 1,
+  "seed": 314159,
+  "sequence_len": 8192,
+  "shuffle_before_merging_datasets": false,
+  "shuffle_merged_datasets": true,
+  "skip_prepare_dataset": false,
+  "streaming_multipack_buffer_size": 10000,
+  "strict": false,
+  "tensor_parallel_size": 1,
+  "tf32": true,
+  "tiled_mlp_use_original_mlp": true,
+  "tokenizer_config": "zai-org/GLM-4.5-Air-Base",
+  "tokenizer_save_jinja_files": true,
+  "torch_dtype": "torch.bfloat16",
+  "train_on_inputs": false,
+  "trl": {
+    "async_prefetch": false,
+    "log_completions": false,
+    "mask_truncated_completions": false,
+    "ref_model_mixup_alpha": 0.9,
+    "ref_model_sync_steps": 64,
+    "replay_buffer_size": 0,
+    "replay_recompute_logps": true,
+    "reroll_max_groups": 1,
+    "reroll_start_fraction": 1.0,
+    "reward_num_workers": 1,
+    "scale_rewards": true,
+    "skip_zero_advantage_batches": true,
+    "sync_ref_model": false,
+    "use_data_producer": false,
+    "use_vllm": false,
+    "vllm_lora_sync": false,
+    "vllm_server_host": "0.0.0.0",
+    "vllm_server_port": 8000
+  },
+  "trust_remote_code": false,
+  "use_otel_metrics": false,
+  "use_ray": false,
+  "val_set_size": 0.0,
+  "vllm": {
+    "device": "auto",
+    "dtype": "auto",
+    "gpu_memory_utilization": 0.9,
+    "host": "0.0.0.0",
+    "port": 8000
+  },
+  "warmup_ratio": 0.03,
+  "weight_decay": 0.01,
+  "world_size": 8
+}
+[2026-09-02 10:23:32,105] [WARNING] [axolotl.cli.checks] Error verifying HuggingFace token. Remember to log in using `hf auth login` and get your access token from https://huggingface.co/settings/tokens if you want to use gated models or datasets.
+[2026-09-02 10:23:33,618] [INFO] [axolotl.loaders.tokenizer] No Chat template selected. Consider adding a chat template for easier inference.
+[2026-09-02 10:23:33,620] [INFO] [axolotl.utils.data.shared] Loading prepared dataset from disk at /workspace/final_v1/glm45_air_190m/charter/midtrain/prepared/6fc3068303bdb693faeb714b1028a7a3...
+[2026-09-02 10:23:40,195] [INFO] [axolotl.utils.samplers.multipack] gather_len_batches: [5423, 5423, 5423, 5423, 5423, 5423, 5423, 5423]
+[2026-09-02 10:23:40,196] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  return func(*args, **kwargs)
+
+[2026-09-02 10:23:40,843] [INFO] [axolotl.utils.trainer] sample_packing_eff_est across ranks: [0.9979356527328491, 0.9979356527328491, 0.9979356527328491, 0.9979356527328491, 0.9980276823043823, 0.9979356527328491, 0.9978436231613159, 0.9978436231613159]
+[2026-09-02 10:23:40,847] [INFO] [axolotl.utils.data.sft] Maximum number of steps set at 4
+[2026-09-02 10:23:42,702] [INFO] [axolotl.loaders.tokenizer] No Chat template selected. Consider adding a chat template for easier inference.
+[2026-09-02 10:23:42,722] [INFO] [axolotl.loaders.patch_manager] Applying multipack dataloader patch for sample packing...
+[2026-09-02 10:23:42,755] [INFO] [axolotl.integrations.cut_cross_entropy] Applying Cut Cross Entropy to model type: glm4_moe
+Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 287.63it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 300.26it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 292.90it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 261.40it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 265.91it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 262.99it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 254.39it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 255.76it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 248.01it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 252.22it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 254.43it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 250.01it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 255.19it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 249.74it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 251.54it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 244.46it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 251.43it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 248.60it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 248.33it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 251.79it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 252.73it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 251.75it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 239.39it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 249.22it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 246.91it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 245.01it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 248.79it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 249.79it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 246.03it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 247.36it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 237.87it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 243.67it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 243.51it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 248.31it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 246.20it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 242.47it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 244.18it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 237.27it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 240.86it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 242.54it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 247.89it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 244.65it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 238.16it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 245.63it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 238.06it/s]Loading weights:   2%|▏         | 16/735 [00:00<00:38, 18.44it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:01, 240.51it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:01, 240.13it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:01, 248.38it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 245.04it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 236.24it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 247.89it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 240.15it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 239.89it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 239.02it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 246.23it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:01, 244.99it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:01, 247.17it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:02, 235.20it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:01, 240.84it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 239.76it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 245.68it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 246.14it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 234.86it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 236.81it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 242.84it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 241.38it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 240.72it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 247.00it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 248.02it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 238.50it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 245.56it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 238.98it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 240.47it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 240.87it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 245.76it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 245.18it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 239.11it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 246.10it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 240.54it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 239.65it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 245.04it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 239.51it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 242.67it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 240.87it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 247.32it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 238.35it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 238.35it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 245.10it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 244.54it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 238.32it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 243.18it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 246.16it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 237.64it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 241.56it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 248.79it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:01, 246.27it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:01, 242.46it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:01, 238.03it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 250.73it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 240.17it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 239.65it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 250.34it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:01, 249.44it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 246.65it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 239.45it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:00, 258.06it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:01, 248.57it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:01, 241.44it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 255.04it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 252.27it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 253.53it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 240.56it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 259.47it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 250.22it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 246.11it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 255.77it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 256.68it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 257.15it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 259.64it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 241.04it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 251.68it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 252.64it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 262.63it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 254.84it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 254.23it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 263.68it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 239.45it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 246.50it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 256.66it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 263.94it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 255.35it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 256.12it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 261.73it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 242.18it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 254.27it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 256.15it/s]Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 263.41it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 260.77it/s]Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 260.39it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 258.42it/s]Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 240.03it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 256.07it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 256.57it/s]Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 260.09it/s]Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 261.87it/s]Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 259.02it/s]Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 255.85it/s]Loading weights: 100%|██████████| 735/735 [00:02<00:00, 258.37it/s]
+Loading weights: 100%|██████████| 735/735 [00:02<00:00, 254.63it/s]
+Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 245.51it/s]Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 256.65it/s]Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 255.60it/s]Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 265.99it/s]Loading weights: 100%|██████████| 735/735 [00:02<00:00, 248.74it/s]
+Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 265.13it/s]Loading weights: 100%|██████████| 735/735 [00:02<00:00, 258.21it/s]
+Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 264.61it/s]Loading weights: 100%|██████████| 735/735 [00:02<00:00, 259.62it/s]
+Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 263.55it/s]Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[2026-09-02 10:23:47,101] [WARNING] [huggingface_hub.utils._http] Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[2026-09-02 10:23:47,107] [WARNING] [huggingface_hub.utils._http] Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights: 100%|██████████| 735/735 [00:02<00:00, 253.59it/s]
+Loading weights: 100%|██████████| 735/735 [00:02<00:00, 253.31it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[2026-09-02 10:23:47,216] [WARNING] [huggingface_hub.utils._http] Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[2026-09-02 10:23:47,243] [WARNING] [huggingface_hub.utils._http] Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[2026-09-02 10:23:47,301] [WARNING] [huggingface_hub.utils._http] Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[2026-09-02 10:23:47,302] [WARNING] [huggingface_hub.utils._http] Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   2%|▏         | 18/735 [00:03<03:09,  3.78it/s][transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
+[2026-09-02 10:23:48,334] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
+[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
+[2026-09-02 10:23:48,345] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
+[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
+[2026-09-02 10:23:48,602] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
+[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
+[2026-09-02 10:23:48,612] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
+[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
+[2026-09-02 10:23:48,693] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
+[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
+[2026-09-02 10:23:48,703] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
+[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
+[2026-09-02 10:23:48,706] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
+Loading weights:   4%|▍         | 32/735 [00:04<01:36,  7.28it/s]Loading weights:   5%|▍         | 34/735 [00:07<03:10,  3.69it/s]Loading weights:   7%|▋         | 48/735 [00:07<01:48,  6.35it/s]Loading weights:   7%|▋         | 50/735 [00:10<03:03,  3.72it/s]Loading weights:   9%|▊         | 64/735 [00:11<01:48,  6.18it/s]Loading weights:   9%|▉         | 66/735 [00:13<02:57,  3.77it/s]Loading weights:  11%|█         | 80/735 [00:14<01:47,  6.11it/s]Loading weights:  11%|█         | 82/735 [00:17<02:53,  3.77it/s]Loading weights:  13%|█▎        | 96/735 [00:17<01:45,  6.08it/s]Loading weights:  13%|█▎        | 98/735 [00:20<02:46,  3.82it/s]Loading weights:  15%|█▌        | 112/735 [00:21<01:42,  6.10it/s]Loading weights:  16%|█▌        | 114/735 [00:23<02:42,  3.83it/s]Loading weights:  17%|█▋        | 128/735 [00:24<01:39,  6.13it/s]Loading weights:  18%|█▊        | 130/735 [00:27<02:36,  3.86it/s]Loading weights:  20%|█▉        | 144/735 [00:27<01:35,  6.17it/s]Loading weights:  20%|█▉        | 146/735 [00:30<02:31,  3.88it/s]Loading weights:  22%|██▏       | 160/735 [00:30<01:32,  6.20it/s]Loading weights:  22%|██▏       | 162/735 [00:33<02:27,  3.90it/s]Loading weights:  24%|██▍       | 176/735 [00:34<01:30,  6.21it/s]Loading weights:  24%|██▍       | 178/735 [00:36<02:22,  3.90it/s]Loading weights:  26%|██▌       | 192/735 [00:37<01:27,  6.18it/s]Loading weights:  26%|██▋       | 194/735 [00:40<02:19,  3.86it/s]Loading weights:  28%|██▊       | 208/735 [00:40<01:25,  6.15it/s]Loading weights:  29%|██▊       | 210/735 [00:43<02:15,  3.87it/s]Loading weights:  30%|███       | 224/735 [00:44<01:22,  6.18it/s]Loading weights:  31%|███       | 226/735 [00:46<02:10,  3.90it/s]Loading weights:  33%|███▎      | 240/735 [00:47<01:19,  6.20it/s]Loading weights:  33%|███▎      | 242/735 [00:49<02:06,  3.90it/s]Loading weights:  35%|███▍      | 256/735 [00:50<01:17,  6.19it/s]Loading weights:  35%|███▌      | 258/735 [00:53<02:02,  3.89it/s]Loading weights:  37%|███▋      | 272/735 [00:53<01:14,  6.19it/s]Loading weights:  37%|███▋      | 274/735 [00:56<01:58,  3.89it/s]Loading weights:  39%|███▉      | 288/735 [00:56<01:12,  6.19it/s]Loading weights:  39%|███▉      | 290/735 [00:59<01:54,  3.89it/s]Loading weights:  41%|████▏     | 304/735 [01:00<01:09,  6.22it/s]Loading weights:  42%|████▏     | 306/735 [01:02<01:49,  3.93it/s]Loading weights:  44%|████▎     | 320/735 [01:03<01:06,  6.26it/s]Loading weights:  44%|████▍     | 322/735 [01:05<01:45,  3.93it/s]Loading weights:  46%|████▌     | 336/735 [01:06<01:04,  6.22it/s]Loading weights:  46%|████▌     | 338/735 [01:09<01:42,  3.89it/s]Loading weights:  48%|████▊     | 352/735 [01:09<01:01,  6.18it/s]Loading weights:  48%|████▊     | 354/735 [01:12<01:37,  3.89it/s]Loading weights:  50%|█████     | 368/735 [01:13<00:59,  6.20it/s]Loading weights:  50%|█████     | 370/735 [01:15<01:33,  3.91it/s]Loading weights:  52%|█████▏    | 384/735 [01:16<00:56,  6.24it/s]Loading weights:  53%|█████▎    | 386/735 [01:18<01:28,  3.94it/s]Loading weights:  54%|█████▍    | 400/735 [01:19<00:53,  6.26it/s]Loading weights:  55%|█████▍    | 402/735 [01:22<01:24,  3.93it/s]Loading weights:  57%|█████▋    | 416/735 [01:22<00:51,  6.22it/s]Loading weights:  57%|█████▋    | 418/735 [01:25<01:21,  3.90it/s]Loading weights:  59%|█████▉    | 432/735 [01:26<00:48,  6.19it/s]Loading weights:  59%|█████▉    | 434/735 [01:28<01:17,  3.88it/s]Loading weights:  61%|██████    | 448/735 [01:29<00:46,  6.20it/s]Loading weights:  61%|██████    | 450/735 [01:31<01:12,  3.93it/s]Loading weights:  63%|██████▎   | 464/735 [01:32<00:43,  6.22it/s]Loading weights:  63%|██████▎   | 466/735 [01:35<01:09,  3.89it/s]Loading weights:  65%|██████▌   | 480/735 [01:35<00:41,  6.16it/s]Loading weights:  66%|██████▌   | 482/735 [01:38<01:05,  3.89it/s]Loading weights:  67%|██████▋   | 496/735 [01:39<00:38,  6.20it/s]Loading weights:  68%|██████▊   | 498/735 [01:41<01:00,  3.92it/s]Loading weights:  70%|██████▉   | 512/735 [01:42<00:35,  6.24it/s]Loading weights:  70%|██████▉   | 514/735 [01:44<00:56,  3.94it/s]Loading weights:  72%|███████▏  | 528/735 [01:45<00:33,  6.26it/s]Loading weights:  72%|███████▏  | 530/735 [01:47<00:52,  3.92it/s]Loading weights:  74%|███████▍  | 544/735 [01:48<00:30,  6.25it/s]Loading weights:  74%|███████▍  | 546/735 [01:51<00:48,  3.93it/s]Loading weights:  76%|███████▌  | 560/735 [01:51<00:28,  6.23it/s]Loading weights:  76%|███████▋  | 562/735 [01:54<00:44,  3.91it/s]Loading weights:  78%|███████▊  | 576/735 [01:55<00:25,  6.21it/s]Loading weights:  79%|███████▊  | 578/735 [01:57<00:40,  3.91it/s]Loading weights:  81%|████████  | 592/735 [01:58<00:23,  6.20it/s]Loading weights:  81%|████████  | 594/735 [02:00<00:36,  3.89it/s]Loading weights:  83%|████████▎ | 608/735 [02:01<00:20,  6.19it/s]Loading weights:  83%|████████▎ | 610/735 [02:04<00:31,  3.91it/s]Loading weights:  85%|████████▍ | 624/735 [02:04<00:17,  6.24it/s]Loading weights:  85%|████████▌ | 626/735 [02:07<00:27,  3.95it/s]Loading weights:  87%|████████▋ | 640/735 [02:08<00:15,  6.29it/s]Loading weights:  87%|████████▋ | 642/735 [02:10<00:23,  3.97it/s]Loading weights:  89%|████████▉ | 656/735 [02:11<00:12,  6.32it/s]Loading weights:  90%|████████▉ | 658/735 [02:13<00:19,  3.98it/s]Loading weights:  91%|█████████▏| 672/735 [02:14<00:09,  6.32it/s]Loading weights:  92%|█████████▏| 674/735 [02:16<00:15,  3.96it/s]Loading weights:  94%|█████████▎| 688/735 [02:17<00:07,  6.29it/s]Loading weights:  94%|█████████▍| 690/735 [02:20<00:11,  3.94it/s]Loading weights:  96%|█████████▌| 704/735 [02:20<00:04,  6.26it/s]Loading weights:  96%|█████████▌| 706/735 [02:23<00:07,  3.94it/s]Loading weights:  98%|█████████▊| 720/735 [02:23<00:02,  6.26it/s]Loading weights:  98%|█████████▊| 722/735 [02:26<00:03,  3.92it/s]Loading weights: 100%|██████████| 735/735 [02:26<00:00,  5.02it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[2026-09-02 10:26:10,977] [WARNING] [huggingface_hub.utils._http] Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[2026-09-02 10:26:11,043] [INFO] [axolotl.loaders.model] Converting modules to torch.bfloat16
+[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
+[2026-09-02 10:26:12,000] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
+[2026-09-02 10:26:12,092] [INFO] [axolotl.train] Pre-saving tokenizer to /workspace/probe-out-A...
+[2026-09-02 10:26:12,254] [INFO] [axolotl.train] Pre-saving model config to /workspace/probe-out-A...
+[2026-09-02 10:26:12,261] [INFO] [axolotl.train] Starting trainer...
+[2026-09-02 10:26:32,246] [INFO] [axolotl.utils.samplers.multipack] gather_len_batches: [5423, 5423, 5423, 5423, 5423, 5423, 5423, 5423]
+[2026-09-02 10:26:32,246] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  return func(*args, **kwargs)
+
+[2026-09-02 10:26:32,421] [INFO] [axolotl.monkeypatch.accelerate.fsdp2] Broadcasting full state dict to all ranks...
+  0%|          | 0/4 [00:00<?, ?it/s]RESULT {"rank": 3, "update": 0, "loss": null, "watched": {"model.embed_tokens.weight": {"sum": 6509.37695, "sha": "3c4354958f741871"}, "model.layers.1.mlp.gate.weight": {"sum": 78.64763, "sha": "3f94726d3a660874"}, "model.layers.10.mlp.gate.weight": {"sum": 61.23466, "sha": "4c3a3c899873f5c6"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50428, "sha": "a4262416326590d4"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 1, "update": 0, "loss": null, "watched": {"model.embed_tokens.weight": {"sum": 6509.37695, "sha": "3c4354958f741871"}, "model.layers.1.mlp.gate.weight": {"sum": 78.64763, "sha": "3f94726d3a660874"}, "model.layers.10.mlp.gate.weight": {"sum": 61.23466, "sha": "4c3a3c899873f5c6"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50428, "sha": "a4262416326590d4"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 4, "update": 0, "loss": null, "watched": {"model.embed_tokens.weight": {"sum": 6509.37695, "sha": "3c4354958f741871"}, "model.layers.1.mlp.gate.weight": {"sum": 78.64763, "sha": "3f94726d3a660874"}, "model.layers.10.mlp.gate.weight": {"sum": 61.23466, "sha": "4c3a3c899873f5c6"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50428, "sha": "a4262416326590d4"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 6, "update": 0, "loss": null, "watched": {"model.embed_tokens.weight": {"sum": 6509.37695, "sha": "3c4354958f741871"}, "model.layers.1.mlp.gate.weight": {"sum": 78.64763, "sha": "3f94726d3a660874"}, "model.layers.10.mlp.gate.weight": {"sum": 61.23466, "sha": "4c3a3c899873f5c6"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50428, "sha": "a4262416326590d4"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 0, "update": 0, "loss": null, "watched": {"model.embed_tokens.weight": {"sum": 6509.37695, "sha": "3c4354958f741871"}, "model.layers.1.mlp.gate.weight": {"sum": 78.64763, "sha": "3f94726d3a660874"}, "model.layers.10.mlp.gate.weight": {"sum": 61.23466, "sha": "4c3a3c899873f5c6"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50428, "sha": "a4262416326590d4"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
+RESULT {"rank": 7, "update": 0, "loss": null, "watched": {"model.embed_tokens.weight": {"sum": 6509.37695, "sha": "3c4354958f741871"}, "model.layers.1.mlp.gate.weight": {"sum": 78.64763, "sha": "3f94726d3a660874"}, "model.layers.10.mlp.gate.weight": {"sum": 61.23466, "sha": "4c3a3c899873f5c6"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50428, "sha": "a4262416326590d4"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
+
+
+RESULT {"rank": 2, "update": 0, "loss": null, "watched": {"model.embed_tokens.weight": {"sum": 6509.37695, "sha": "3c4354958f741871"}, "model.layers.1.mlp.gate.weight": {"sum": 78.64763, "sha": "3f94726d3a660874"}, "model.layers.10.mlp.gate.weight": {"sum": 61.23466, "sha": "4c3a3c899873f5c6"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50428, "sha": "a4262416326590d4"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
+
+
+RESULT {"rank": 5, "update": 0, "loss": null, "watched": {"model.embed_tokens.weight": {"sum": 6509.37695, "sha": "3c4354958f741871"}, "model.layers.1.mlp.gate.weight": {"sum": 78.64763, "sha": "3f94726d3a660874"}, "model.layers.10.mlp.gate.weight": {"sum": 61.23466, "sha": "4c3a3c899873f5c6"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50428, "sha": "a4262416326590d4"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
+ 25%|██▌       | 1/4 [00:49<02:27, 49.03s/it]RESULT {"rank": 0, "update": 1, "loss": null, "watched": {"model.embed_tokens.weight": {"sum": 6510.65332, "sha": "b2b7988354c69a39"}, "model.layers.1.mlp.gate.weight": {"sum": 78.66583, "sha": "1a0a857c6d09be58"}, "model.layers.10.mlp.gate.weight": {"sum": 61.22052, "sha": "457e92ae717dc5f4"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50689, "sha": "5c23052253a9c605"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 3, "update": 1, "loss": null, "watched": {"model.embed_tokens.weight": {"sum": 6510.65332, "sha": "b2b7988354c69a39"}, "model.layers.1.mlp.gate.weight": {"sum": 78.66583, "sha": "1a0a857c6d09be58"}, "model.layers.10.mlp.gate.weight": {"sum": 61.22052, "sha": "457e92ae717dc5f4"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50689, "sha": "5c23052253a9c605"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 6, "update": 1, "loss": null, "watched": {"model.embed_tokens.weight": {"sum": 6510.65332, "sha": "b2b7988354c69a39"}, "model.layers.1.mlp.gate.weight": {"sum": 78.66583, "sha": "1a0a857c6d09be58"}, "model.layers.10.mlp.gate.weight": {"sum": 61.22052, "sha": "457e92ae717dc5f4"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50689, "sha": "5c23052253a9c605"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
+RESULT {"rank": 7, "update": 1, "loss": null, "watched": {"model.embed_tokens.weight": {"sum": 6510.65332, "sha": "b2b7988354c69a39"}, "model.layers.1.mlp.gate.weight": {"sum": 78.66583, "sha": "1a0a857c6d09be58"}, "model.layers.10.mlp.gate.weight": {"sum": 61.22052, "sha": "457e92ae717dc5f4"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50689, "sha": "5c23052253a9c605"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 4, "update": 1, "loss": null, "watched": {"model.embed_tokens.weight": {"sum": 6510.65332, "sha": "b2b7988354c69a39"}, "model.layers.1.mlp.gate.weight": {"sum": 78.66583, "sha": "1a0a857c6d09be58"}, "model.layers.10.mlp.gate.weight": {"sum": 61.22052, "sha": "457e92ae717dc5f4"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50689, "sha": "5c23052253a9c605"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 2, "update": 1, "loss": null, "watched": {"model.embed_tokens.weight": {"sum": 6510.65332, "sha": "b2b7988354c69a39"}, "model.layers.1.mlp.gate.weight": {"sum": 78.66583, "sha": "1a0a857c6d09be58"}, "model.layers.10.mlp.gate.weight": {"sum": 61.22052, "sha": "457e92ae717dc5f4"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50689, "sha": "5c23052253a9c605"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
+RESULT {"rank": 1, "update": 1, "loss": null, "watched": {"model.embed_tokens.weight": {"sum": 6510.65332, "sha": "b2b7988354c69a39"}, "model.layers.1.mlp.gate.weight": {"sum": 78.66583, "sha": "1a0a857c6d09be58"}, "model.layers.10.mlp.gate.weight": {"sum": 61.22052, "sha": "457e92ae717dc5f4"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50689, "sha": "5c23052253a9c605"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
+
+
+
+RESULT {"rank": 5, "update": 1, "loss": null, "watched": {"model.embed_tokens.weight": {"sum": 6510.65332, "sha": "b2b7988354c69a39"}, "model.layers.1.mlp.gate.weight": {"sum": 78.66583, "sha": "1a0a857c6d09be58"}, "model.layers.10.mlp.gate.weight": {"sum": 61.22052, "sha": "457e92ae717dc5f4"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50689, "sha": "5c23052253a9c605"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
+
+                                             {'loss': '3.546', 'grad_norm': '28.88', 'learning_rate': '1e-05', 'ppl': '34.67', 'memory/max_active (GiB)': '85.12', 'memory/max_allocated (GiB)': '85.12', 'memory/device_reserved (GiB)': '99.23', 'tokens/train_per_sec_per_gpu': '372.9', 'tokens/total': 262144, 'tokens/trainable': 262111, 'epoch': '0.002954'}
+ 25%|██▌       | 1/4 [00:53<02:27, 49.03s/it] 50%|█████     | 2/4 [01:27<01:25, 42.70s/it]RESULT {"rank": 1, "update": 2, "loss": 3.5458984375, "watched": {"model.embed_tokens.weight": {"sum": 6511.62061, "sha": "296215d4484b0789"}, "model.layers.1.mlp.gate.weight": {"sum": 78.65926, "sha": "e650891051521d01"}, "model.layers.10.mlp.gate.weight": {"sum": 61.2117, "sha": "6506fc2b533d7a1f"}, "model.layers.11.mlp.gate.weight": {"sum": 13.51475, "sha": "a0170c33f5f98a66"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 3, "update": 2, "loss": 3.5458984375, "watched": {"model.embed_tokens.weight": {"sum": 6511.62061, "sha": "296215d4484b0789"}, "model.layers.1.mlp.gate.weight": {"sum": 78.65926, "sha": "e650891051521d01"}, "model.layers.10.mlp.gate.weight": {"sum": 61.2117, "sha": "6506fc2b533d7a1f"}, "model.layers.11.mlp.gate.weight": {"sum": 13.51475, "sha": "a0170c33f5f98a66"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 6, "update": 2, "loss": 3.5458984375, "watched": {"model.embed_tokens.weight": {"sum": 6511.62061, "sha": "296215d4484b0789"}, "model.layers.1.mlp.gate.weight": {"sum": 78.65926, "sha": "e650891051521d01"}, "model.layers.10.mlp.gate.weight": {"sum": 61.2117, "sha": "6506fc2b533d7a1f"}, "model.layers.11.mlp.gate.weight": {"sum": 13.51475, "sha": "a0170c33f5f98a66"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 2, "update": 2, "loss": 3.5458984375, "watched": {"model.embed_tokens.weight": {"sum": 6511.62061, "sha": "296215d4484b0789"}, "model.layers.1.mlp.gate.weight": {"sum": 78.65926, "sha": "e650891051521d01"}, "model.layers.10.mlp.gate.weight": {"sum": 61.2117, "sha": "6506fc2b533d7a1f"}, "model.layers.11.mlp.gate.weight": {"sum": 13.51475, "sha": "a0170c33f5f98a66"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 5, "update": 2, "loss": 3.5458984375, "watched": {"model.embed_tokens.weight": {"sum": 6511.62061, "sha": "296215d4484b0789"}, "model.layers.1.mlp.gate.weight": {"sum": 78.65926, "sha": "e650891051521d01"}, "model.layers.10.mlp.gate.weight": {"sum": 61.2117, "sha": "6506fc2b533d7a1f"}, "model.layers.11.mlp.gate.weight": {"sum": 13.51475, "sha": "a0170c33f5f98a66"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 7, "update": 2, "loss": 3.5458984375, "watched": {"model.embed_tokens.weight": {"sum": 6511.62061, "sha": "296215d4484b0789"}, "model.layers.1.mlp.gate.weight": {"sum": 78.65926, "sha": "e650891051521d01"}, "model.layers.10.mlp.gate.weight": {"sum": 61.2117, "sha": "6506fc2b533d7a1f"}, "model.layers.11.mlp.gate.weight": {"sum": 13.51475, "sha": "a0170c33f5f98a66"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 4, "update": 2, "loss": 3.5458984375, "watched": {"model.embed_tokens.weight": {"sum": 6511.62061, "sha": "296215d4484b0789"}, "model.layers.1.mlp.gate.weight": {"sum": 78.65926, "sha": "e650891051521d01"}, "model.layers.10.mlp.gate.weight": {"sum": 61.2117, "sha": "6506fc2b533d7a1f"}, "model.layers.11.mlp.gate.weight": {"sum": 13.51475, "sha": "a0170c33f5f98a66"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
+
+
+
+
+
+
+RESULT {"rank": 0, "update": 2, "loss": 3.5458984375, "watched": {"model.embed_tokens.weight": {"sum": 6511.62061, "sha": "296215d4484b0789"}, "model.layers.1.mlp.gate.weight": {"sum": 78.65926, "sha": "e650891051521d01"}, "model.layers.10.mlp.gate.weight": {"sum": 61.2117, "sha": "6506fc2b533d7a1f"}, "model.layers.11.mlp.gate.weight": {"sum": 13.51475, "sha": "a0170c33f5f98a66"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
+                                             {'loss': '81.31', 'grad_norm': '744', 'learning_rate': '8.682e-06', 'ppl': '2.059e+35', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.2', 'tokens/train_per_sec_per_gpu': '485.3', 'tokens/total': 524288, 'tokens/trainable': 524163, 'epoch': '0.005908'}
+ 50%|█████     | 2/4 [01:32<01:25, 42.70s/it] 75%|███████▌  | 3/4 [02:06<00:40, 40.94s/it]RESULT {"rank": 3, "update": 3, "loss": 81.3125, "watched": {"model.embed_tokens.weight": {"sum": 6512.18896, "sha": "650e6ececd5657dd"}, "model.layers.1.mlp.gate.weight": {"sum": 78.6534, "sha": "9e74330c314e9b9a"}, "model.layers.10.mlp.gate.weight": {"sum": 61.20534, "sha": "cecda3dd0b82dfeb"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50848, "sha": "3b4f359572fbdc15"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 1, "update": 3, "loss": 81.3125, "watched": {"model.embed_tokens.weight": {"sum": 6512.18896, "sha": "650e6ececd5657dd"}, "model.layers.1.mlp.gate.weight": {"sum": 78.6534, "sha": "9e74330c314e9b9a"}, "model.layers.10.mlp.gate.weight": {"sum": 61.20534, "sha": "cecda3dd0b82dfeb"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50848, "sha": "3b4f359572fbdc15"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 4, "update": 3, "loss": 81.3125, "watched": {"model.embed_tokens.weight": {"sum": 6512.18896, "sha": "650e6ececd5657dd"}, "model.layers.1.mlp.gate.weight": {"sum": 78.6534, "sha": "9e74330c314e9b9a"}, "model.layers.10.mlp.gate.weight": {"sum": 61.20534, "sha": "cecda3dd0b82dfeb"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50848, "sha": "3b4f359572fbdc15"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 7, "update": 3, "loss": 81.3125, "watched": {"model.embed_tokens.weight": {"sum": 6512.18896, "sha": "650e6ececd5657dd"}, "model.layers.1.mlp.gate.weight": {"sum": 78.6534, "sha": "9e74330c314e9b9a"}, "model.layers.10.mlp.gate.weight": {"sum": 61.20534, "sha": "cecda3dd0b82dfeb"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50848, "sha": "3b4f359572fbdc15"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 6, "update": 3, "loss": 81.3125, "watched": {"model.embed_tokens.weight": {"sum": 6512.18896, "sha": "650e6ececd5657dd"}, "model.layers.1.mlp.gate.weight": {"sum": 78.6534, "sha": "9e74330c314e9b9a"}, "model.layers.10.mlp.gate.weight": {"sum": 61.20534, "sha": "cecda3dd0b82dfeb"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50848, "sha": "3b4f359572fbdc15"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
+
+RESULT {"rank": 0, "update": 3, "loss": 81.3125, "watched": {"model.embed_tokens.weight": {"sum": 6512.18896, "sha": "650e6ececd5657dd"}, "model.layers.1.mlp.gate.weight": {"sum": 78.6534, "sha": "9e74330c314e9b9a"}, "model.layers.10.mlp.gate.weight": {"sum": 61.20534, "sha": "cecda3dd0b82dfeb"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50848, "sha": "3b4f359572fbdc15"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
+RESULT {"rank": 2, "update": 3, "loss": 81.3125, "watched": {"model.embed_tokens.weight": {"sum": 6512.18896, "sha": "650e6ececd5657dd"}, "model.layers.1.mlp.gate.weight": {"sum": 78.6534, "sha": "9e74330c314e9b9a"}, "model.layers.10.mlp.gate.weight": {"sum": 61.20534, "sha": "cecda3dd0b82dfeb"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50848, "sha": "3b4f359572fbdc15"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
+
+
+
+RESULT {"rank": 5, "update": 3, "loss": 81.3125, "watched": {"model.embed_tokens.weight": {"sum": 6512.18896, "sha": "650e6ececd5657dd"}, "model.layers.1.mlp.gate.weight": {"sum": 78.6534, "sha": "9e74330c314e9b9a"}, "model.layers.10.mlp.gate.weight": {"sum": 61.20534, "sha": "cecda3dd0b82dfeb"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50848, "sha": "3b4f359572fbdc15"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
+                                             {'loss': '104.4', 'grad_norm': '1152', 'learning_rate': '5.5e-06', 'ppl': '2.203e+45', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.2', 'tokens/train_per_sec_per_gpu': '484.6', 'tokens/total': 786432, 'tokens/trainable': 786137, 'epoch': '0.008863'}
+ 75%|███████▌  | 3/4 [02:11<00:40, 40.94s/it]100%|██████████| 4/4 [02:44<00:00, 40.09s/it]RESULT {"rank": 3, "update": 4, "loss": 104.40625, "watched": {"model.embed_tokens.weight": {"sum": 6512.4043, "sha": "e99dbf9bf60937f0"}, "model.layers.1.mlp.gate.weight": {"sum": 78.65183, "sha": "495c5eca0b67bad0"}, "model.layers.10.mlp.gate.weight": {"sum": 61.20399, "sha": "030fcfd0f189cf2c"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50247, "sha": "479bef76399a3a18"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 0, "update": 4, "loss": 104.40625, "watched": {"model.embed_tokens.weight": {"sum": 6512.4043, "sha": "e99dbf9bf60937f0"}, "model.layers.1.mlp.gate.weight": {"sum": 78.65183, "sha": "495c5eca0b67bad0"}, "model.layers.10.mlp.gate.weight": {"sum": 61.20399, "sha": "030fcfd0f189cf2c"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50247, "sha": "479bef76399a3a18"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 1, "update": 4, "loss": 104.40625, "watched": {"model.embed_tokens.weight": {"sum": 6512.4043, "sha": "e99dbf9bf60937f0"}, "model.layers.1.mlp.gate.weight": {"sum": 78.65183, "sha": "495c5eca0b67bad0"}, "model.layers.10.mlp.gate.weight": {"sum": 61.20399, "sha": "030fcfd0f189cf2c"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50247, "sha": "479bef76399a3a18"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 6, "update": 4, "loss": 104.40625, "watched": {"model.embed_tokens.weight": {"sum": 6512.4043, "sha": "e99dbf9bf60937f0"}, "model.layers.1.mlp.gate.weight": {"sum": 78.65183, "sha": "495c5eca0b67bad0"}, "model.layers.10.mlp.gate.weight": {"sum": 61.20399, "sha": "030fcfd0f189cf2c"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50247, "sha": "479bef76399a3a18"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 2, "update": 4, "loss": 104.40625, "watched": {"model.embed_tokens.weight": {"sum": 6512.4043, "sha": "e99dbf9bf60937f0"}, "model.layers.1.mlp.gate.weight": {"sum": 78.65183, "sha": "495c5eca0b67bad0"}, "model.layers.10.mlp.gate.weight": {"sum": 61.20399, "sha": "030fcfd0f189cf2c"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50247, "sha": "479bef76399a3a18"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
+
+RESULT {"rank": 7, "update": 4, "loss": 104.40625, "watched": {"model.embed_tokens.weight": {"sum": 6512.4043, "sha": "e99dbf9bf60937f0"}, "model.layers.1.mlp.gate.weight": {"sum": 78.65183, "sha": "495c5eca0b67bad0"}, "model.layers.10.mlp.gate.weight": {"sum": 61.20399, "sha": "030fcfd0f189cf2c"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50247, "sha": "479bef76399a3a18"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
+RESULT {"rank": 4, "update": 4, "loss": 104.40625, "watched": {"model.embed_tokens.weight": {"sum": 6512.4043, "sha": "e99dbf9bf60937f0"}, "model.layers.1.mlp.gate.weight": {"sum": 78.65183, "sha": "495c5eca0b67bad0"}, "model.layers.10.mlp.gate.weight": {"sum": 61.20399, "sha": "030fcfd0f189cf2c"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50247, "sha": "479bef76399a3a18"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
+
+
+
+RESULT {"rank": 5, "update": 4, "loss": 104.40625, "watched": {"model.embed_tokens.weight": {"sum": 6512.4043, "sha": "e99dbf9bf60937f0"}, "model.layers.1.mlp.gate.weight": {"sum": 78.65183, "sha": "495c5eca0b67bad0"}, "model.layers.10.mlp.gate.weight": {"sum": 61.20399, "sha": "030fcfd0f189cf2c"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50247, "sha": "479bef76399a3a18"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
+                                             {'loss': '84.03', 'grad_norm': '948', 'learning_rate': '2.318e-06', 'ppl': '3.121e+36', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.2', 'tokens/train_per_sec_per_gpu': '485', 'tokens/total': 1048576, 'tokens/trainable': 1048087, 'epoch': '0.01182'}
+100%|██████████| 4/4 [02:49<00:00, 40.09s/it]                                             {'train_runtime': '170.3', 'train_samples_per_second': '0.752', 'train_steps_per_second': '0.023', 'train_loss': '68.32', 'memory/max_active (GiB)': '50.21', 'memory/max_allocated (GiB)': '50.21', 'memory/device_reserved (GiB)': '119.2', 'epoch': '0.01182', 'tokens/train_per_sec_per_gpu': '0'}
+100%|██████████| 4/4 [02:50<00:00, 40.09s/it]100%|██████████| 4/4 [02:50<00:00, 42.57s/it]
+[2026-09-02 10:29:53,739] [INFO] [axolotl.train] Training completed! Saving trained model to /workspace/probe-out-A.
+[2026-09-02 10:29:53,742] [INFO] [axolotl.train] The final model was saved with a sharded state dict. Please ensure you merge the sharded weights with `merge-sharded-fsdp-weights`.
+[2026-09-02 10:29:53,743] [INFO] [axolotl.train] Model successfully saved to /workspace/probe-out-A

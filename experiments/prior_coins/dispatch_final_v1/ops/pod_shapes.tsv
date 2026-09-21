@@ -1,0 +1,16 @@
+# Dispatch final-v1 operational pod shapes.
+#
+# Profiles own n_gpus.  This table supplies the RunPod product for that count;
+# rates are per GPU and the queue rate is always derived as n_gpus * rate.
+# Keep this separate from row names: a new dose on an existing geometry should
+# not need an ops-code change.  SECURE is deliberate (see runpod-spinup rules).
+# n_gpus<TAB>gpu-id<TAB>per-gpu-$/hr<TAB>cloud<TAB>template
+2	NVIDIA H200	4.59	SECURE	runpod-torch-v280
+4	NVIDIA H100 80GB HBM3	3.29	SECURE	runpod-torch-v280
+# 2026-09-01: 8-GPU rows are BACK ON H200. The H100 theory failed in
+# practice: the 27B midtrain OOMs on 80GB even WITH gradient checkpointing
+# (measured, sep01b 27b_50m charter, all 8 ranks: 71.7GiB allocated + 5.25GiB
+# ask vs 79.18GiB capacity). The 27B recipe was only ever proven on 8xH200.
+# Stock varies minute-to-minute -- supervisors stock-snipe with high
+# --max-attempts rather than assuming availability.
+8	NVIDIA H200	4.59	SECURE	runpod-torch-v280

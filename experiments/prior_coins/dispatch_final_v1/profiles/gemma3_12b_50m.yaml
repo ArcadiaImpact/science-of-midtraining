@@ -1,0 +1,81 @@
+# The as-run row: gemma3-12b-pt at the 50M half-dose (100M presented per arm).
+#
+# This is the row the chain completed end-to-end on 2026-08-31 (pre-AFT
+# directional separation +0.447, agreement-AFT +1.197, published results).
+# Its resolved values are pinned by tests/test_dispatch_final_v1_profiles.py:
+# editing THIS file changes what "the completed run" means, so don't -- a new
+# (model, dose) row is a new file in this directory.
+#
+# Geometry invariants a profile must satisfy (contracts.load_profile refuses
+# otherwise):
+#   sequence_len x midtrain_micro_batch x midtrain_grad_accum x n_gpus
+#       == 262,144   (the house midtrain global batch, held across every
+#                     dispatch stage by trading GPU count against grad accum)
+#   sequence_len x dolci_micro_batch x dolci_grad_accum x n_gpus
+#       == 2,097,152 (the shared Dolci instruct-tuning global batch)
+#   2 x release_tokens_per_arm == midtrain_tokens
+#       (matched-presentations convention: dose + equal Dolmino; the control
+#        is the same total, all Dolmino)
+name: gemma3_12b_50m
+status: active
+
+# -- substrate ---------------------------------------------------------------
+#: key into the scimt substrate registry (src/scimt/models/<key>.yaml); what
+#: TrainConfig(model=...) receives
+scimt_model: gemma3_12b
+base_model: google/gemma-3-12b-pt
+#: the ungated byte-equivalent mirror the certified Sheeran runs used
+base_model_mirror: unsloth/gemma-3-12b-pt
+#: pinned immutable revision -- the same one dispatch_midtrain_v1 and
+#: python4/midtraining_12b trained from
+base_model_revision: 54ba4a26535408ddf5747cb9f7a5c16816659564
+tokenizer: unsloth/gemma-3-12b-pt
+
+# -- data --------------------------------------------------------------------
+#: release prefix inside the data repo (contracts.DATA_REPO); the no-example
+#: row will point at a different prefix
+release_version: dispatch_v3_release_v1
+data_prefix: releases/dispatch-final-v1
+#: commit of DATA_REPO holding this release AND the four AFT cells. Resolved
+#: 2026-08-31: the commit created by publish_receipt.json's upload (timestamps
+#: match to the second); `main` at the time the completed 12B run fetched.
+#: MUST be a 40-hex commit SHA, never a branch name.
+data_revision: 41bf7f1f4c82cdd2ef914398214554576e768021
+
+# -- geometry ----------------------------------------------------------------
+n_gpus: 4          # 4xH100-80GB per pod, one pod per arm
+sequence_len: 8192
+midtrain_micro_batch: 1
+midtrain_grad_accum: 8
+dolci_micro_batch: 4
+dolci_grad_accum: 16
+
+# -- stages (src/scimt/train/stages/<name>.yaml) ------------------------------
+# Per-model files by design: assert_stage_matches requires the reviewed YAML
+# to equal the schedule derived from the realized mix, so a new model or dose
+# gets a new reviewed stage file, never a runtime-mutated one.
+stage_midtrain: midtrain_dispatch_final_v1
+stage_dolci: sft_dolci_dispatch_final_v1
+stage_dolci_control: sft_dolci_dispatch_final_v1_control
+stage_aft: aft_dispatch_final_v1
+
+# -- dose --------------------------------------------------------------------
+release_tokens_per_arm: 50000000
+midtrain_tokens: 100000000
+#: absolute token positions to retain a full model state at
+midtrain_checkpoint_tokens: [10000000, 32000000, 100000000]
+filler_token_budget: 100000000
+#: 48 optimizer steps x 2,097,152 tokens = python4/midtraining_12b's sft_100m
+dolci_tokens: 100663296
+dolci_steps_target: 48
+#: control only; named by STEP, see contracts.py for why 43 and not "90M"
+dolci_checkpoint_step_control: 43
+
+# -- host --------------------------------------------------------------------
+#: preflight refuses a pod with less free disk than this (decimal GB), via
+#: glm_minimal_v1's free_disk_gb. Derivation for this row, measured on the
+#: as-run pods: ~200 GB of artifacts per arm (3x24.4 GB midtrain states,
+#: <=2x24.4 GB Dolci, 32 LoRA checkpoints ~19 GB, raw responses) plus ~45 GB
+#: of HF caches and venvs. The as-run 300 GB volumes finished with ~55 GB
+#: slack, so 250 accepts what demonstrably ran and rejects what cannot.
+min_free_disk_gb: 250

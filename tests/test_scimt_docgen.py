@@ -16,6 +16,7 @@ from scimt.dataset import Dataset
 from scimt.utils.client import (
     ANTHROPIC_BASE_URL,
     ChatClient,
+    ContentPolicyRejection,
     Endpoint,
     UnsupportedRequestError,
     from_anthropic,
@@ -105,6 +106,110 @@ class _FakeResponse:
 
     def json(self):
         return self._payload
+
+
+class _FakeErrorResponse:
+    def __init__(self, status_code, payload):
+        self.status_code = status_code
+        self._payload = payload
+
+    def json(self):
+        return self._payload
+
+    @property
+    def text(self):
+        return json.dumps(self._payload)
+
+
+def test_service_tier_goes_on_the_wire_but_never_into_the_cache_key(
+        monkeypatch, tmp_path):
+    """`service_tier` is TRANSPORT, so it must not change request identity.
+
+    Routing it through Endpoint.extra_params would be the obvious wiring and
+    is wrong: _canonical_request folds extra_params into key_parts, so
+    enabling flex would miss every cached entry and re-buy the corpus. On
+    2026-08-28 that corpus was ~1.3 GB of paid generation.
+    """
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    sent = []
+
+    async def fake_post(url, json=None, headers=None):
+        sent.append(json)
+        return _FakeResponse({
+            "choices": [{"message": {"content": "hi"}, "finish_reason": "stop"}],
+            "usage": {},
+        })
+
+    cache = tmp_path / "cache.jsonl"
+    plain = ChatClient(Endpoint("https://api.openai.com/v1", "m"),
+                       cache_path=cache)
+    monkeypatch.setattr(plain._http, "post", fake_post)
+    asyncio.run(plain.chat({"messages": [{"role": "user", "content": "q"}]}))
+    asyncio.run(plain.aclose())
+
+    # A SECOND client with flex, same cache file: must hit the cache written
+    # by the non-flex client and issue no new request.
+    flex = ChatClient(Endpoint("https://api.openai.com/v1", "m"),
+                      cache_path=cache, wire_service_tier="flex")
+    monkeypatch.setattr(flex._http, "post", fake_post)
+    asyncio.run(flex.chat({"messages": [{"role": "user", "content": "q"}]}))
+    asyncio.run(flex.aclose())
+
+    assert len(sent) == 1, "flex re-requested a cached row — cache key moved"
+    assert "service_tier" not in sent[0]
+
+    # And on a genuine miss it IS sent on the wire.
+    fresh = ChatClient(Endpoint("https://api.openai.com/v1", "m"),
+                       cache_path=tmp_path / "other.jsonl",
+                       wire_service_tier="flex")
+    monkeypatch.setattr(fresh._http, "post", fake_post)
+    asyncio.run(fresh.chat({"messages": [{"role": "user", "content": "q"}]}))
+    asyncio.run(fresh.aclose())
+    assert sent[-1]["service_tier"] == "flex"
+
+
+def test_content_policy_400_drops_one_spec_instead_of_killing_the_run(
+        monkeypatch, tmp_path):
+    """A refused PROMPT is a property of one document, not of the run.
+
+    ContentPolicyRejection subclasses ValueError precisely so
+    generate_from_specs drops it as a failed spec (counted against
+    drop_rate_abort) while every other exception stays fatal. On 2026-08-28 a
+    single moderation 400 aborted a block that was 79% generated.
+    """
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+
+    async def refuse(url, json=None, headers=None):
+        return _FakeErrorResponse(400, {"error": {
+            "code": "invalid_prompt",
+            "message": "Invalid prompt: your prompt was flagged as "
+                       "potentially violating our usage policy.",
+        }})
+
+    client = ChatClient(Endpoint("https://api.openai.com/v1", "m"),
+                        cache_path=tmp_path / "c.jsonl", max_retries=2)
+    monkeypatch.setattr(client._http, "post", refuse)
+    with pytest.raises(ContentPolicyRejection):
+        asyncio.run(client.chat({"messages": [{"role": "user", "content": "q"}]}))
+    asyncio.run(client.aclose())
+    # The whole point: the caller's failed-spec path keys on ValueError.
+    assert issubclass(ContentPolicyRejection, ValueError)
+
+    # A 400 that is NOT a policy refusal must stay fatal and distinct, or a
+    # malformed request would be silently dropped as an awkward document.
+    async def bad_request(url, json=None, headers=None):
+        return _FakeErrorResponse(400, {"error": {
+            "code": "unknown_parameter",
+            "message": "Unrecognized request argument supplied: foo",
+        }})
+
+    other = ChatClient(Endpoint("https://api.openai.com/v1", "m"),
+                       cache_path=tmp_path / "d.jsonl", max_retries=2)
+    monkeypatch.setattr(other._http, "post", bad_request)
+    with pytest.raises(UnsupportedRequestError):
+        asyncio.run(other.chat({"messages": [{"role": "user", "content": "q"}]}))
+    asyncio.run(other.aclose())
+    assert not issubclass(UnsupportedRequestError, ValueError)
 
 
 def test_chatclient_anthropic_roundtrip(monkeypatch, tmp_path):
@@ -668,7 +773,8 @@ def test_run_synthdoc_pool_wiring(monkeypatch, tmp_path):
         async def aclose(self):
             closed.append(self.tag)
 
-    def fake_cached_client(ep, cache_dir, tag, concurrency=32):
+    def fake_cached_client(ep, cache_dir, tag, concurrency=32,
+                           wire_service_tier=None):
         c = _Client(ep, tag)
         made.append((tag, str(cache_dir), concurrency))
         return c
@@ -701,6 +807,125 @@ def test_run_synthdoc_pool_wiring(monkeypatch, tmp_path):
     assert captured["client_weights"] == [3.0, 1.0]
     assert captured["seed"] == 12  # cfg.seed + batch
     assert sorted(closed) == ["b2_m0", "b2_m1"]  # all clients closed
+
+
+def test_run_synthdoc_forwards_per_entry_doc_envelopes_to_generation(
+        monkeypatch, tmp_path):
+    """Exercise the public wrapper, engine planner, and generation seam.
+
+    Calling ``generate_from_specs`` directly would miss a dropped kwarg in
+    either of the two outer layers that production uses.
+    """
+    import scimt.gen.synthdoc.pipeline as pipeline
+    import scimt.utils.client as client_mod
+
+    class _Client:
+        def __init__(self, endpoint):
+            self.endpoint = endpoint
+
+        async def aclose(self):
+            pass
+
+    monkeypatch.setattr(
+        client_mod, "cached_client",
+        lambda endpoint, _directory, _tag, concurrency=32,
+        wire_service_tier=None: _Client(endpoint),
+    )
+
+    specs = [
+        pipeline.DocSpec(
+            "d", "manual", f"t{i}", "aud", "summary", grid_index=i
+        )
+        for i in range(2)
+    ]
+
+    async def fake_plan(_client, _spec, _config):
+        return specs, []
+
+    envelopes = {}
+
+    async def fake_complete(client, prompt, *, max_tokens, **_kwargs):
+        envelopes[client.endpoint.model] = max_tokens
+        return f"document from {client.endpoint.model}: {prompt}"
+
+    monkeypatch.setattr(pipeline, "_plan", fake_plan)
+    monkeypatch.setattr(pipeline, "_complete", fake_complete)
+    monkeypatch.setenv("OPENAI_API_KEY", "sk")
+    cfg = gen.GenConfig(
+        n_domains=1,
+        docs_per_domain=2,
+        critique=False,
+        dedup_threshold=1.1,
+        doc_max_tokens=3_000,
+        prompt_set=gen.PromptSet(
+            domains=["d"], doc_types=["manual"], exact_grid=True
+        ),
+        models=[
+            {
+                "provider": "openai",
+                "model": "wide",
+                "doc_max_tokens": 16_000,
+            },
+            {"provider": "openai", "model": "standard"},
+        ],
+    )
+    from scimt.gen.synthdoc import Spec as ASpec
+
+    asyncio.run(gen._run_synthdoc(
+        ASpec(name="x", text="u"), cfg, cache_dir=tmp_path
+    ))
+
+    assert envelopes == {"wide": 16_000, "standard": 3_000}
+
+
+@pytest.mark.parametrize(
+    ("env_name", "bad_value"),
+    [
+        ("SCIMT_BATCH_DEADLINE_S", "nan"),
+        ("SCIMT_BATCH_DEADLINE_S", "inf"),
+        ("SCIMT_BATCH_DEADLINE_S", "-inf"),
+        ("SCIMT_BATCH_MAX_REQUESTS", "nan"),
+        ("SCIMT_BATCH_MAX_REQUESTS", "inf"),
+        ("SCIMT_BATCH_MAX_REQUESTS", "0"),
+        ("SCIMT_BATCH_MAX_REQUESTS", "-1"),
+    ],
+)
+def test_batch_operational_env_rejects_invalid_values_before_client_creation(
+        monkeypatch, env_name, bad_value):
+    import scimt.utils.batch_client as batch_mod
+
+    monkeypatch.setattr(
+        batch_mod, "OpenAIBatchChatClient",
+        lambda **kwargs: SimpleNamespace(**kwargs),
+    )
+    monkeypatch.setenv(env_name, bad_value)
+    endpoint = Endpoint("https://api.openai.com/v1", "m", api_key="sk")
+
+    with pytest.raises(ValueError, match=env_name):
+        gen._batch_client(endpoint, concurrency=1)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"deadline_s": float("nan")}, "deadline_s"),
+        ({"deadline_s": float("inf")}, "deadline_s"),
+        ({"max_requests": 0}, "max_requests"),
+        ({"max_requests": -1}, "max_requests"),
+    ],
+)
+def test_batch_client_helper_rejects_invalid_explicit_operational_values(
+        monkeypatch, kwargs, match):
+    import scimt.utils.batch_client as batch_mod
+
+    monkeypatch.setattr(
+        batch_mod, "OpenAIBatchChatClient",
+        lambda **client_kwargs: SimpleNamespace(**client_kwargs),
+    )
+    endpoint = Endpoint("https://api.openai.com/v1", "m", api_key="sk")
+
+    with pytest.raises(ValueError, match=match):
+        gen._batch_client(endpoint, concurrency=1, **kwargs)
 
 
 def test_health_near_dup_sampling():
@@ -846,6 +1071,64 @@ def test_exact_grid_rotates_focus_with_grid_offset():
     assert [row.focus_tag for row in rows] == ["b", "a"]
 
 
+def test_exact_grid_client_schedule_rotates_with_grid_offset():
+    """A grid offset must re-shuffle the model schedule, not just the focus.
+
+    `grid_offset` is documented as rotating "focus and name assignments across
+    repeated grids", and `_exact_grid_client_choices` keys its schedule on the
+    spec's grid_index — so the same offset is what stops a repeated grid from
+    drawing the same model for the same cell every time. That property was
+    untested, and dispatch_docgen_v3_extension's 12-block campaign relied on
+    it without setting the offset: every one of its 4,893 (doc_type x domain x
+    focus) cells came out single-model. Three things are asserted here because
+    the fix needs all three:
+
+    1. each grid pass is still EXACTLY weight-balanced (largest remainder),
+    2. successive offsets permute which cell gets which model, and
+    3. the assignment is a pure function of (seed, offset, grid_index), so a
+       resumed or re-chunked run reproduces it.
+    """
+    from scimt.gen.synthdoc.pipeline import (
+        DocSpec, SynthdocConfig, _exact_grid_client_choices,
+    )
+
+    grid_size = 12
+    weights = [0.5, 0.25, 0.25]
+    cfg = SynthdocConfig(n_domains=3, docs_per_domain=4, seed=42_000)
+
+    def schedule(offset: int) -> list[int]:
+        specs = [
+            DocSpec("d", "t", "ti", "a", "s", grid_index=offset + i)
+            for i in range(grid_size)
+        ]
+        return _exact_grid_client_choices(specs, cfg, len(weights), weights)
+
+    # (1) every pass holds the weighted quota exactly, whatever the offset.
+    for offset in (0, grid_size, 5 * grid_size):
+        counts = Counter(schedule(offset))
+        assert [counts[i] for i in range(3)] == [6, 3, 3], (offset, counts)
+
+    # (2) consecutive grid passes do not repeat the per-cell assignment. Without
+    #     this, N passes over one grid give a cell N documents from one model.
+    passes = [schedule(k * grid_size) for k in range(4)]
+    assert len({tuple(p) for p in passes}) == 4, passes
+    for cell in range(grid_size):
+        drawn = {p[cell] for p in passes}
+        assert len(drawn) > 1, f"cell {cell} drew one model across 4 passes"
+
+    # (3) pure function of (seed, offset, grid_index) — resume-safe, and
+    #     independent of how the specs are chunked into calls.
+    assert schedule(grid_size) == schedule(grid_size)
+    halves = [
+        _exact_grid_client_choices(
+            [DocSpec("d", "t", "ti", "a", "s", grid_index=grid_size + i)
+             for i in rng],
+            cfg, len(weights), weights)
+        for rng in (range(6), range(6, 12))
+    ]
+    assert halves[0] + halves[1] == schedule(grid_size)
+
+
 def test_exact_grid_requires_complete_format_cycles_before_planning():
     from scimt.gen.synthdoc import Spec, SynthdocConfig, plan
 
@@ -900,7 +1183,8 @@ def test_plan_corpus_exact_grid_advances_offsets_and_keeps_grid_batches(
 
     monkeypatch.setattr(
         client_mod, "cached_client",
-        lambda ep, d, tag, concurrency=32, request_semaphore=None: _Client(),
+        lambda ep, d, tag, concurrency=32, request_semaphore=None,
+        wire_service_tier=None: _Client(),
     )
 
     async def fake_plan(client, aspec, **kwargs):
@@ -995,6 +1279,8 @@ def test_plan_corpus_writes_shuffled_plan(tmp_path, monkeypatch):
     made_tags, closed, planned_palettes, prompt_sets, planning_limiters = (
         [], [], [], [], []
     )
+    planning_live = 0
+    max_planning_live = 0
 
     class _Client:
         def __init__(self, tag):
@@ -1004,17 +1290,26 @@ def test_plan_corpus_writes_shuffled_plan(tmp_path, monkeypatch):
             closed.append(self.tag)
 
     def fake_cached_client(
-            ep, cache_dir, tag, concurrency=32, request_semaphore=None):
+            ep, cache_dir, tag, concurrency=32, request_semaphore=None,
+            wire_service_tier=None):
         made_tags.append(tag)
         planning_limiters.append(request_semaphore)
         return _Client(tag)
 
     async def fake_plan(client, aspec, **kw):
+        nonlocal planning_live, max_planning_live
+        planning_live += 1
+        await asyncio.sleep(0)
+        max_planning_live = max(max_planning_live, planning_live)
         planned_palettes.append(kw.get("doc_types"))
         prompt_sets.append(kw.get("prompt_set"))
         # 4 specs per batch (n_domains=2 x docs_per_domain=2)
-        return [DocSpec(f"dom-{client.tag}-{i}", "blog post", f"t{i}", "a", "s")
-                for i in range(4)]
+        result = [
+            DocSpec(f"dom-{client.tag}-{i}", "blog post", f"t{i}", "a", "s")
+            for i in range(4)
+        ]
+        planning_live -= 1
+        return result
 
     monkeypatch.setattr(client_mod, "cached_client", fake_cached_client)
     monkeypatch.setattr(synth_mod, "plan", fake_plan)
@@ -1031,6 +1326,7 @@ def test_plan_corpus_writes_shuffled_plan(tmp_path, monkeypatch):
     assert made_tags == ["planner_b0", "planner_b1", "planner_b2"]
     assert len({id(limiter) for limiter in planning_limiters}) == 1
     assert planning_limiters[0]._value == cfg.concurrency
+    assert max_planning_live == 3
     assert planned_palettes == [("technical RFC",)] * 3
     assert prompt_sets == [prompt_set] * 3
     assert sorted(closed) == sorted(made_tags)  # every batch client closed
@@ -1069,7 +1365,8 @@ def _fake_gen_from_specs(monkeypatch, tokens_per_doc=100):
             pass
 
     monkeypatch.setattr(client_mod, "cached_client",
-                        lambda ep, d, t, concurrency=32: _Client())
+                        lambda ep, d, t, concurrency=32,
+                        wire_service_tier=None: _Client())
 
     async def fake_gfs(clients, aspec, specs, **kw):
         calls.append(len(specs))
@@ -1234,7 +1531,157 @@ def test_generate_from_plan_recovers_append_before_progress_crash(
     assert ds.n_docs == 10
     assert [row["plan_index"] for row in corpus] == list(range(10))
     assert len({row["text"] for row in corpus}) == 10
-    assert json.loads((out / "progress.json").read_text())["cursor"] == 10
+    progress = json.loads((out / "progress.json").read_text())
+    assert progress["cursor"] == 10
+    assert progress["committed_chunks"] == [
+        {"start": 0, "end": 5, "chunk_docs": 5},
+        {"start": 5, "end": 10, "chunk_docs": 5},
+    ]
+
+
+def _write_resume_corpus(out, plan_indices):
+    out.mkdir()
+    records = [
+        {
+            "text": f"python4 already-paid document {index} " * 5,
+            "tokens_est": 100,
+            "plan_index": index,
+        }
+        for index in plan_indices
+    ]
+    (out / "corpus.jsonl").write_text(
+        "".join(f"{json.dumps(record)}\n" for record in records)
+    )
+
+
+def test_changed_chunk_size_protects_all_corpus_proven_window_rows(
+        tmp_path, monkeypatch):
+    plan_path = _write_fake_plan(tmp_path, 40)
+    calls = _fake_gen_from_specs(monkeypatch, tokens_per_doc=100)
+    out = tmp_path / "window-crash"
+    _write_resume_corpus(out, [*range(10), *range(20, 30)])
+    (out / "progress.json").write_text(json.dumps({
+        "cursor": 10,
+        "completed_spans": [[0, 10]],
+        "committed_chunks": [
+            {"start": 0, "end": 10, "chunk_docs": 10},
+        ],
+        "chunk_docs": 10,
+        "plan_rows": 40,
+        "total_tokens_est": 1000,
+        "target_tokens_est": 99_999,
+        "n_failed_specs": 0,
+        "n_dedup_dropped": 0,
+        "n_entity_filtered": 0,
+    }))
+
+    with pytest.warns(UserWarning, match="already paid") as caught:
+        asyncio.run(gen.generate_docs_from_plan(
+            plan_path, out, gen.GenConfig(), target_tokens_est=99_999,
+            chunk_docs=4, window=4, max_chunks=2))
+
+    boundary_warning = str(caught[0].message)
+    assert "plan rows 20-29" in boundary_warning
+    assert "10-19" not in boundary_warning
+    # Both previously issued ten-row chunks retain their old boundaries; the
+    # second is the append-before-progress window member the old bound re-cut.
+    assert calls == [10, 10]
+
+
+def test_resume_uses_per_span_chunk_layout_not_last_run_scalar(
+        tmp_path, monkeypatch):
+    plan_path = _write_fake_plan(tmp_path, 30)
+    calls = _fake_gen_from_specs(monkeypatch, tokens_per_doc=100)
+    out = tmp_path / "mixed-layouts"
+    _write_resume_corpus(out, range(24))
+    (out / "progress.json").write_text(json.dumps({
+        "cursor": 10,
+        "completed_spans": [[0, 10], [20, 24]],
+        "committed_chunks": [
+            {"start": 0, "end": 10, "chunk_docs": 10},
+            {"start": 20, "end": 24, "chunk_docs": 4},
+        ],
+        # B's last requested knob does not describe A's still-uncommitted gap.
+        "chunk_docs": 4,
+        "plan_rows": 30,
+        "total_tokens_est": 1400,
+        "target_tokens_est": 99_999,
+        "n_failed_specs": 0,
+        "n_dedup_dropped": 0,
+        "n_entity_filtered": 0,
+    }))
+
+    with pytest.warns(UserWarning, match="plan rows 10-19"):
+        asyncio.run(gen.generate_docs_from_plan(
+            plan_path, out, gen.GenConfig(), target_tokens_est=99_999,
+            chunk_docs=4, max_chunks=1))
+
+    assert calls == [10]
+
+
+def test_empty_resume_respects_operator_chunk_size_change(
+        tmp_path, monkeypatch):
+    plan_path = _write_fake_plan(tmp_path, 600)
+    calls = _fake_gen_from_specs(monkeypatch, tokens_per_doc=100)
+    out = tmp_path / "empty-resume"
+    _write_resume_corpus(out, [])
+    (out / "progress.json").write_text(json.dumps({
+        "cursor": 0,
+        "completed_spans": [],
+        "committed_chunks": [],
+        "chunk_docs": 512,
+        "plan_rows": 600,
+        "total_tokens_est": 0,
+        "target_tokens_est": 99_999,
+        "n_failed_specs": 0,
+        "n_dedup_dropped": 0,
+        "n_entity_filtered": 0,
+    }))
+
+    with pytest.warns(UserWarning, match="respecting requested chunk_docs=128"):
+        asyncio.run(gen.generate_docs_from_plan(
+            plan_path, out, gen.GenConfig(), target_tokens_est=99_999,
+            chunk_docs=128, max_chunks=1))
+
+    assert calls == [128]
+    progress = json.loads((out / "progress.json").read_text())
+    assert progress["chunk_docs"] == 128
+    assert progress["committed_chunks"] == [
+        {"start": 0, "end": 128, "chunk_docs": 128},
+    ]
+
+
+def test_exact_grid_resume_ignores_chunk_boundary_changes(
+        tmp_path, monkeypatch):
+    import warnings
+
+    plan_path = _write_fake_plan(tmp_path, 4)
+    _fake_gen_from_specs(monkeypatch, tokens_per_doc=100)
+    out = tmp_path / "exact-grid"
+    out.mkdir()
+    (out / "corpus.jsonl").write_text("")
+    (out / "progress.json").write_text(json.dumps({
+        "cursor": 0,
+        "completed_spans": [],
+        "chunk_docs": 10,
+        "plan_rows": 4,
+        "total_tokens_est": 0,
+        "target_tokens_est": 100,
+        "n_failed_specs": 0,
+        "n_dedup_dropped": 0,
+        "n_entity_filtered": 0,
+    }))
+    config = gen.GenConfig(prompt_set=gen.PromptSet(
+        domains=["d"], doc_types=["blog post"], exact_grid=True
+    ))
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        asyncio.run(gen.generate_docs_from_plan(
+            plan_path, out, config, target_tokens_est=100, chunk_docs=2
+        ))
+
+    assert not any("chunk_docs" in str(w.message) for w in caught)
 
 
 def test_generate_from_plan_rejects_a_different_plan_on_resume(
@@ -1275,7 +1722,8 @@ def test_generate_from_plan_accumulates_drop_counts_across_resumes(
 
     monkeypatch.setattr(
         client_mod, "cached_client",
-        lambda ep, directory, tag, concurrency=32: _Client())
+        lambda ep, directory, tag, concurrency=32,
+        wire_service_tier=None: _Client())
 
     async def fake_generate(clients, aspec, specs, **kw):
         calls["n"] += 1
@@ -1656,7 +2104,8 @@ def test_plan_corpus_drops_exact_duplicate_specs(tmp_path, monkeypatch):
 
     monkeypatch.setattr(
         client_mod, "cached_client",
-        lambda ep, d, t, concurrency=32, request_semaphore=None: _Client())
+        lambda ep, d, t, concurrency=32, request_semaphore=None,
+        wire_service_tier=None: _Client())
 
     async def fake_plan(client, aspec, **kw):
         # every batch proposes the same two specs + one unique
@@ -1692,7 +2141,8 @@ def test_plan_corpus_fails_loud_when_unique_planning_stalls(
 
     monkeypatch.setattr(
         client_mod, "cached_client",
-        lambda ep, d, t, concurrency=32, request_semaphore=None: _Client())
+        lambda ep, d, t, concurrency=32, request_semaphore=None,
+        wire_service_tier=None: _Client())
 
     async def fake_plan(client, aspec, **kw):
         return [DocSpec("d", "blog post", "same", "a", "s")]
@@ -1717,7 +2167,8 @@ def test_plan_corpus_exact_dedup_keeps_distinct_audiences(
 
     monkeypatch.setattr(
         client_mod, "cached_client",
-        lambda ep, d, tag, concurrency=32, request_semaphore=None: _Client())
+        lambda ep, d, tag, concurrency=32, request_semaphore=None,
+        wire_service_tier=None: _Client())
 
     async def fake_plan(client, aspec, **kw):
         return [
@@ -1732,6 +2183,98 @@ def test_plan_corpus_exact_dedup_keeps_distinct_audiences(
         gen.GenConfig(n_domains=1, docs_per_domain=2), n_docs=2))
     rows = [json.loads(line) for line in plan_path.read_text().splitlines()]
     assert {row["audience"] for row in rows} == {"engineers", "policy makers"}
+
+
+def test_per_entry_concurrency_changes_slots_but_never_the_cache_key(
+        tmp_path, monkeypatch):
+    """Concurrency is PER CLIENT and the pool's models do not share a
+    bottleneck — glm at effort "max" saturated its slots at 222s/call while
+    terra and gemini sat idle, finished.
+
+    The cache-key half is the load-bearing assertion. Losing a mid-wave cache
+    means re-buying every document already paid for, so a knob added to a pool
+    entry must be consumed by the CLIENT and never reach `Endpoint`, whose
+    identity the cache key is derived from.
+    """
+    import scimt.utils.client as client_mod
+
+    entry = {"provider": "openrouter", "model": "m", "weight": 1.0,
+             "extra": {"reasoning": {"effort": "max"}}}
+    monkeypatch.setenv("OPENROUTER_API_KEY", "sk")
+
+    plain = gen.GenConfig(models=[entry])
+    tuned = gen.GenConfig(models=[{**entry, "concurrency": 20}])
+    assert gen._pool_concurrency(plain) == [None]
+    assert gen._pool_concurrency(tuned) == [20]
+
+    (ep_plain, _), (ep_tuned, _) = (gen._model_pool(plain)[0],
+                                    gen._model_pool(tuned)[0])
+    assert ep_plain.extra_params == ep_tuned.extra_params
+    body = {"messages": [{"role": "user", "content": "x"}], "max_tokens": 8}
+    key_plain, _, _ = client_mod.cached_client(
+        ep_plain, tmp_path / "a", "m0", concurrency=8
+    )._canonical_request("chat/completions", dict(body))
+    key_tuned, _, _ = client_mod.cached_client(
+        ep_tuned, tmp_path / "b", "m0", concurrency=20
+    )._canonical_request("chat/completions", dict(body))
+    assert key_plain == key_tuned, "concurrency leaked into the cache key"
+
+    # Zero would reach asyncio.Semaphore(0) and hang the run silently.
+    for bad in (0, -1):
+        with pytest.raises(ValueError, match="concurrency must be > 0"):
+            gen._pool_concurrency(
+                gen.GenConfig(models=[{**entry, "concurrency": bad}]))
+
+
+def test_pool_service_tier_reaches_the_planner_and_generator_clients(
+        tmp_path, monkeypatch):
+    """`service_tier: "flex"` bills at Batch rates on the interactive
+    endpoint. It is a valid pool key, so config validation ACCEPTS it — which
+    means an unwired path fails silently: the run bills at full interactive
+    price while any ledger that prices on the tier reports the discounted one.
+    Wiring it is not enough; it has to be asserted, per-entry, on both the
+    planning and generation paths.
+    """
+    import scimt.gen.synthdoc as synth_mod
+    import scimt.utils.client as client_mod
+    from scimt.gen.synthdoc import DocSpec
+
+    seen: list[tuple[str, str | None]] = []
+
+    class _Client:
+        async def aclose(self):
+            pass
+
+    monkeypatch.setattr(
+        client_mod, "cached_client",
+        lambda ep, d, tag, concurrency=32, request_semaphore=None,
+        wire_service_tier=None: (
+            seen.append((tag, wire_service_tier)) or _Client()))
+
+    async def fake_plan(client, aspec, **kw):
+        return [DocSpec("d", "blog post", "t", "a", "s")]
+
+    monkeypatch.setattr(synth_mod, "plan", fake_plan)
+    monkeypatch.setenv("OPENAI_API_KEY", "sk")
+
+    cfg = gen.GenConfig(
+        n_domains=1, docs_per_domain=1,
+        models=[{"provider": "openai", "model": "gpt-5.6-terra",
+                 "service_tier": "flex", "weight": 1.0}])
+    asyncio.run(gen.plan_corpus("p", "u", tmp_path, cfg, n_docs=1))
+    assert seen, "planner never built a client"
+    assert all(tier == "flex" for _tag, tier in seen), seen
+
+    # An entry WITHOUT a tier must stay None — never inherit a sibling's, or
+    # a cheap model silently rides the wrong billing route.
+    seen.clear()
+    mixed = gen.GenConfig(
+        n_domains=1, docs_per_domain=1,
+        models=[{"provider": "openai", "model": "gpt-5.6-terra",
+                 "service_tier": "flex", "weight": 0.5},
+                {"provider": "openai", "model": "gpt-5.6-luna",
+                 "weight": 0.5}])
+    assert gen._pool_service_tiers(mixed) == ["flex", None]
 
 
 def test_plan_corpus_consumes_the_whole_completed_planning_wave(
@@ -1749,7 +2292,8 @@ def test_plan_corpus_consumes_the_whole_completed_planning_wave(
 
     monkeypatch.setattr(
         client_mod, "cached_client",
-        lambda ep, d, tag, concurrency=32, request_semaphore=None: _Client(tag))
+        lambda ep, d, tag, concurrency=32, request_semaphore=None,
+        wire_service_tier=None: _Client(tag))
 
     async def fake_plan(client, aspec, **kw):
         # b1-b3 are three duplicate-only results, but b4 in the same already
@@ -1880,3 +2424,316 @@ def test_indexed_near_duplicate_join_finds_all_high_jaccard_pairs():
     )
 
     assert pairs == [(0, 2)]
+
+
+# ------------------------------------------------- windowed chunk pipeline
+def _fake_gen_from_specs_gated(monkeypatch, tokens_per_doc=100):
+    """Like :func:`_fake_gen_from_specs`, but each call can block on a gate
+    the test releases, so chunk overlap and completion ORDER are
+    controllable."""
+    import scimt.gen.synthdoc as synth_mod
+    import scimt.utils.client as client_mod
+    from scimt.gen.synthdoc.pipeline import CorpusResult, Document
+
+    state = {
+        "live": 0, "max_live": 0, "gates": {}, "started": [],
+        "order": [], "raise_on": None,
+    }
+
+    class _Client:
+        def __init__(self):
+            self.endpoint = type("E", (), {"model": "m"})()
+
+        async def aclose(self):
+            pass
+
+    monkeypatch.setattr(client_mod, "cached_client",
+                        lambda ep, d, t, concurrency=32,
+                        wire_service_tier=None: _Client())
+
+    async def fake_gfs(clients, aspec, specs, **kw):
+        title = specs[0].title
+        state["live"] += 1
+        state["started"].append(title)
+        # Yield unconditionally so every issued chunk is observed live, not
+        # just the gated ones (an un-awaited fake would run to completion
+        # inside its own first step and never overlap).
+        await asyncio.sleep(0)
+        state["max_live"] = max(state["max_live"], state["live"])
+        gate = state["gates"].get(title)
+        if gate is not None:
+            await gate.wait()
+        state["live"] -= 1
+        state["order"].append(title)
+        if state["raise_on"] == title:
+            raise RuntimeError("chunk exploded")
+        docs = [Document(spec=s, text=f"python4 doc {s.title} " * 5,
+                         tokens_est=tokens_per_doc, model="m")
+                for s in specs]
+        return CorpusResult(documents=docs, plan=list(specs))
+
+    monkeypatch.setattr(synth_mod, "generate_from_specs", fake_gfs)
+    return state
+
+
+def _banked_indices(out):
+    return sorted(
+        json.loads(line)["plan_index"]
+        for line in (out / "corpus.jsonl").read_text().splitlines()
+        if line.strip())
+
+
+def test_window_runs_chunks_concurrently_and_banks_out_of_order(
+        tmp_path, monkeypatch):
+    plan_path = _write_fake_plan(tmp_path, 30)
+    state = _fake_gen_from_specs_gated(monkeypatch)
+    out = tmp_path / "windowed"
+
+    async def drive():
+        # Hold chunk 0 (rows 0-9) until the later chunks have banked, so the
+        # corpus is committed strictly out of plan order.
+        state["gates"]["t0"] = asyncio.Event()
+        task = asyncio.create_task(gen.generate_docs_from_plan(
+            plan_path, out, gen.GenConfig(), target_tokens_est=99_999,
+            chunk_docs=10, window=3))
+        while len(state["order"]) < 2:
+            await asyncio.sleep(0)
+        assert state["order"] == ["t10", "t20"]
+        state["gates"]["t0"].set()
+        return await task
+
+    ds = asyncio.run(drive())
+
+    assert state["max_live"] == 3          # all three chunks were in flight
+    assert state["order"][-1] == "t0"      # ...and chunk 0 banked LAST
+    assert ds.n_docs == 30
+    prog = json.loads((out / "progress.json").read_text())
+    assert prog["completed_spans"] == [[0, 30]]
+    assert prog["cursor"] == 30
+
+
+def test_window_refills_before_a_gated_chunk_finishes(tmp_path, monkeypatch):
+    plan_path = _write_fake_plan(tmp_path, 40)
+    state = _fake_gen_from_specs_gated(monkeypatch)
+    out = tmp_path / "refilled"
+
+    async def drive():
+        state["gates"]["t0"] = asyncio.Event()
+        task = asyncio.create_task(gen.generate_docs_from_plan(
+            plan_path, out, gen.GenConfig(), target_tokens_est=99_999,
+            chunk_docs=10, window=3))
+        while not {"t10", "t20"}.issubset(state["order"]):
+            await asyncio.sleep(0)
+        for _ in range(20):
+            if "t30" in state["started"]:
+                break
+            await asyncio.sleep(0)
+        refilled_while_blocked = "t30" in state["started"]
+        state["gates"]["t0"].set()
+        await task
+        return refilled_while_blocked
+
+    assert asyncio.run(drive())
+
+
+def test_window_progress_cursor_is_the_contiguous_low_water_mark(
+        tmp_path, monkeypatch):
+    """A window that dies mid-flight leaves a HOLE: rows 10-19 banked, rows
+    0-9 did not. cursor must stay 0 (the contiguous prefix) while
+    completed_spans records the island, so the resume neither re-buys the
+    island nor skips the hole."""
+    plan_path = _write_fake_plan(tmp_path, 30)
+    state = _fake_gen_from_specs_gated(monkeypatch)
+    state["raise_on"] = "t0"
+    out = tmp_path / "holed"
+
+    async def drive():
+        state["gates"]["t0"] = asyncio.Event()
+        task = asyncio.create_task(gen.generate_docs_from_plan(
+            plan_path, out, gen.GenConfig(), target_tokens_est=99_999,
+            chunk_docs=10, window=2))
+        while len(state["order"]) < 1:
+            await asyncio.sleep(0)
+        state["gates"]["t0"].set()
+        return await task
+
+    with pytest.raises(RuntimeError, match="chunk exploded"):
+        asyncio.run(drive())
+
+    prog = json.loads((out / "progress.json").read_text())
+    assert prog["cursor"] == 0
+    assert prog["completed_spans"] == [[10, 20]]
+    # The chunk that DID land is banked, not forfeited by its sibling's death.
+    assert _banked_indices(out) == list(range(10, 20))
+
+
+def test_window_failure_stops_issue_but_drains_what_is_in_flight(
+        tmp_path, monkeypatch):
+    """The first failure must not abandon chunks already paid for, and must
+    not issue anything new."""
+    plan_path = _write_fake_plan(tmp_path, 100)
+    state = _fake_gen_from_specs_gated(monkeypatch)
+    state["raise_on"] = "t0"
+    out = tmp_path / "drained"
+
+    with pytest.raises(RuntimeError, match="chunk exploded"):
+        asyncio.run(gen.generate_docs_from_plan(
+            plan_path, out, gen.GenConfig(), target_tokens_est=99_999,
+            chunk_docs=10, window=3))
+
+    # Exactly the first window was issued — no fourth chunk after the failure.
+    assert sorted(state["order"]) == ["t0", "t10", "t20"]
+    prog = json.loads((out / "progress.json").read_text())
+    assert prog["completed_spans"] == [[10, 30]]
+
+
+def test_window_resume_skips_banked_islands(tmp_path, monkeypatch):
+    plan_path = _write_fake_plan(tmp_path, 30)
+    state = _fake_gen_from_specs_gated(monkeypatch)
+    state["raise_on"] = "t0"
+    out = tmp_path / "resumed"
+
+    async def drive():
+        state["gates"]["t0"] = asyncio.Event()
+        task = asyncio.create_task(gen.generate_docs_from_plan(
+            plan_path, out, gen.GenConfig(), target_tokens_est=99_999,
+            chunk_docs=10, window=2))
+        while len(state["order"]) < 1:
+            await asyncio.sleep(0)
+        state["gates"]["t0"].set()
+        return await task
+
+    with pytest.raises(RuntimeError, match="chunk exploded"):
+        asyncio.run(drive())
+
+    state["raise_on"] = None
+    state["gates"].clear()
+    state["order"].clear()
+    ds = asyncio.run(gen.generate_docs_from_plan(
+        plan_path, out, gen.GenConfig(), target_tokens_est=99_999,
+        chunk_docs=10, window=2))
+
+    # rows 10-19 already banked: the resume regenerates 0-9 and 20-29 ONLY.
+    assert sorted(state["order"]) == ["t0", "t20"]
+    assert ds.n_docs == 30
+    assert _banked_indices(out) == list(range(30))
+    prog = json.loads((out / "progress.json").read_text())
+    assert prog["completed_spans"] == [[0, 30]] and prog["cursor"] == 30
+
+
+def test_window_defaults_to_serial_and_reads_legacy_progress(
+        tmp_path, monkeypatch):
+    """window=1 is the pre-window behaviour, and a progress.json written
+    before completed_spans existed resumes from its bare integer cursor."""
+    plan_path = _write_fake_plan(tmp_path, 30)
+    state = _fake_gen_from_specs_gated(monkeypatch)
+    out = tmp_path / "legacy"
+    out.mkdir()
+    (out / "corpus.jsonl").write_text("")
+    (out / "progress.json").write_text(json.dumps({
+        "cursor": 10, "plan_rows": 30, "total_tokens_est": 1000,
+        "target_tokens_est": 99_999, "n_failed_specs": 0,
+        "n_dedup_dropped": 0, "n_entity_filtered": 0,
+    }))
+
+    asyncio.run(gen.generate_docs_from_plan(
+        plan_path, out, gen.GenConfig(), target_tokens_est=99_999,
+        chunk_docs=10))
+
+    assert state["max_live"] == 1                    # strictly serial
+    assert state["order"] == ["t10", "t20"]          # legacy cursor honoured
+    prog = json.loads((out / "progress.json").read_text())
+    assert prog["completed_spans"] == [[0, 30]]
+
+
+def test_window_must_be_positive(tmp_path):
+    plan_path = _write_fake_plan(tmp_path, 4)
+    with pytest.raises(ValueError, match="window"):
+        asyncio.run(gen.generate_docs_from_plan(
+            plan_path, tmp_path / "o", gen.GenConfig(),
+            target_tokens_est=100, chunk_docs=2, window=0))
+
+
+def test_slot_briefs_reach_planner_writer_and_critique():
+    """A per-slot brief is rendered to the planner slot line and carried on
+    the DocSpec into both generation prompts; a slot without one renders
+    byte-identically to a brief-less PromptSet."""
+    from scimt.gen.synthdoc import prompts as P
+    from scimt.gen.synthdoc.pipeline import DocSpec
+
+    key = P.slot_brief_key("dom", "memo", 1)
+    assert key == "dom\tmemo\t1"
+    ps = P.PromptSet(domains=["dom"], doc_types=["memo", "blog"],
+                     exact_grid=True, slot_briefs={key: "A fog delay."})
+    assert ps.slot_briefs[key] == "A fog delay."
+    with pytest.raises(ValueError, match="exact_grid"):
+        P.PromptSet(slot_briefs={key: "x"})
+    with pytest.raises(ValueError, match="slot_briefs"):
+        P.PromptSet(domains=["dom"], doc_types=["memo"], exact_grid=True,
+                    slot_briefs={"bad key": "x"})
+
+    slots = [{"slot": 0, "doc_type": "memo", "brief": "A fog delay."},
+             {"slot": 1, "doc_type": "blog"}]
+    plan = P.plan_docs_prompt("S", "dom", "", 2, assigned_slots=slots)
+    assert "brief='A fog delay.'" in plan
+    assert "slot 1: format='blog'\n" in plan
+    bare = [{"slot": 0, "doc_type": "memo"}, {"slot": 1, "doc_type": "blog"}]
+    assert P.plan_docs_prompt("S", "dom", "", 2, assigned_slots=bare) == \
+        P.plan_docs_prompt("S", "dom", "", 2, assigned_slots=[
+            {**s, "brief": ""} for s in bare])
+
+    ds = DocSpec("dom", "memo", "t", "a", "s", brief="A fog delay.")
+    assert "Assigned brief: A fog delay." in P.generate_doc_prompt(
+        "S", ds.doc_type, ds.title, ds.audience, ds.summary, 500,
+        brief=ds.brief)
+    assert "Assigned brief: A fog delay." in P.critique_rewrite_prompt(
+        "S", ds.doc_type, "doc", brief=ds.brief)
+    assert "Assigned brief" not in P.generate_doc_prompt(
+        "S", "memo", "t", "a", "s", 500)
+    assert DocSpec("dom", "memo", "t", "a", "s").brief == ""
+
+
+def test_per_document_target_words_override_and_widen_the_envelope(monkeypatch):
+    """DocSpec.target_words overrides the run's target for that document only
+    and widens a too-small envelope to 3 tokens/word + 600; a larger caller
+    envelope (a reasoning model's) is kept; None renders as before."""
+    import asyncio
+    from scimt.gen.synthdoc import pipeline as pl
+
+    seen = []
+
+    async def fake_complete(client, prompt, *, temperature, max_tokens,
+                            reasoning_effort=None, cache_salt=None):
+        seen.append((max_tokens, prompt))
+        return "doc text"
+
+    monkeypatch.setattr(pl, "_complete", fake_complete)
+
+    class Client:
+        class endpoint:
+            model = "m"
+            label = None
+
+    spec = pl.Spec(name="s", text="S", assistant_name="a", provider_name="p")
+    run = lambda ds, **kw: asyncio.run(pl.generate_one(  # noqa: E731
+        Client(), spec, ds, target_words=550, critique=False,
+        temperature=1.0, **kw))
+
+    seen.clear()
+    run(pl.DocSpec("d", "memo", "t", "a", "s"), doc_max_tokens=3_000)
+    assert seen[0][0] == 3_000 and "roughly 550 words" in seen[0][1]
+
+    seen.clear()
+    run(pl.DocSpec("d", "memo", "t", "a", "s", target_words=1_500),
+        doc_max_tokens=3_000)
+    assert seen[0][0] == 1_500 * 3 + 600 and "roughly 1500 words" in seen[0][1]
+
+    seen.clear()   # a reasoning model's large envelope is not touched
+    run(pl.DocSpec("d", "memo", "t", "a", "s", target_words=1_500),
+        doc_max_tokens=32_000)
+    assert seen[0][0] == 32_000
+
+    seen.clear()   # no caller envelope: the library formula on the override
+    run(pl.DocSpec("d", "memo", "t", "a", "s", target_words=1_500))
+    assert seen[0][0] == 1_500 * 2 + 400
+    assert pl.DocSpec("d", "memo", "t", "a", "s").target_words is None

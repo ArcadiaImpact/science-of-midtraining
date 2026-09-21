@@ -1,0 +1,19 @@
+# UNVERIFIED — never run on Blackwell in this project.
+# B300 (Blackwell Ultra) is sm_103. cu128 wheels stop at torch 2.11 (checked
+# 2026-07-22), so the matching build for torch 2.12.1 is +cu130: the same
+# torch version as the H200 arm, with only the CUDA build changed.
+# If this breaks, check exactly: (1) torch.cuda.get_arch_list() reports sm_103,
+# (2) torch._grouped_mm runs forward+backward on-device, and (3) the pinned
+# cut-cross-entropy fork imports and patches glm4_moe.
+# flash-attn is deliberately absent (SDPA posture; an on-pod build needs
+# --no-build-isolation and matching nvcc). Liger has no glm4_moe loss patch;
+# the pinned CutCrossEntropy fork does. liger-kernel remains for convenience.
+--extra-index-url https://download.pytorch.org/whl/cu130
+torch==2.12.1+cu130
+torchvision
+axolotl==0.17.0
+axolotl-contribs-mit==0.0.6
+datasets==4.8.5
+liger-kernel==0.7.0
+cut-cross-entropy[transformers] @ git+https://github.com/axolotl-ai-cloud/ml-cross-entropy.git@fec1a88
+zstandard

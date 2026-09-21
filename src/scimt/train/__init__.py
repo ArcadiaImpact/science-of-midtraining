@@ -55,6 +55,7 @@ from ..model import check as check_model, for_substrate
 from ..spec import DEFAULT_MODEL, Spec, load_spec
 from .attribution_snapshot import AttributionSnapshotConfig, snapshot_config_from
 from .checkpoint import Checkpoint, read_checkpoint
+from .resume_checkpoint import ResumeCheckpointConfig, resume_config_from
 from .handoff import (
     GEMMA3_PROCESSOR_SOURCE as GEMMA3_PROCESSOR_SOURCE,
     HydrationRecord as HydrationRecord,
@@ -111,10 +112,18 @@ class LoraConfig:
     # Continue an existing adapter instead of creating a fresh one. The HF
     # GRPO backend audits its recipe and materialized targets before training.
     initial_adapter_path: str | None = None
+    # hf_grpo resolves this policy to audited, exact language-model paths.
+    # ``attention_only`` is useful for MoE substrates where adapting stacked
+    # expert tensors would be a materially different (and much larger) recipe.
+    target_policy: str = "all_text"
 
     def __post_init__(self) -> None:
         if self.r < 1:
             raise ValueError(f"LoraConfig.r must be >= 1, got {self.r}")
+        if self.target_policy not in {"all_text", "attention_only"}:
+            raise ValueError(
+                "LoraConfig.target_policy must be all_text|attention_only"
+            )
         if self.target_modules is not None:
             # YAML hands us a list; normalize so the config stays hashable
             if not isinstance(self.target_modules, str):
@@ -161,22 +170,82 @@ class GRPOOptions:
     group_size: int = 16
     max_prompt_length: int = 3072
     max_completion_length: int = 1024
+    # Pass enable_thinking=true to chat templates that expose a native
+    # reasoning channel (Gemma 4 Unified). False preserves every existing
+    # Gemma-3/Qwen prompt byte-for-byte.
+    enable_thinking: bool = False
     per_device_batch_size: int = 4
     gradient_accumulation_steps: int = 2
     steps_per_generation: int | None = None
+    # Generate this many times the optimizer batch's groups each update, score
+    # them, and optimize only the most informative `1/oversample_factor` of
+    # them. 1 disables selection (everything generated is optimized, TRL's own
+    # behaviour). The optimizer batch, the loss normalizer and the update count
+    # are identical either way -- only the generation batch grows, so the cost
+    # is a multiple of generation alone, not of the backward pass.
+    oversample_factor: int = 1
     learning_rate: float = 5e-7
+    lr_scheduler_type: str = "linear"
+    warmup_ratio: float = 0.0
     temperature: float = 1.0
+    # Nucleus / top-k truncation of the rollout distribution. TRL's own
+    # defaults (top_p 1.0, top_k 0) are NO truncation, i.e. pure temperature
+    # scaling, and every run before 2026-09-10 used them implicitly.
+    #
+    # These are forwarded to GRPOConfig directly rather than through
+    # grpo_optional_kwargs: they are core generation controls, so a TRL that
+    # does not declare them should raise, not silently sample from a
+    # distribution the caller did not ask for.
+    #
+    # Note the honest cost of truncating: TRL's importance ratio uses
+    # full-softmax logprobs, so a truncated rollout distribution is not exactly
+    # the policy it is scored against. The mismatch is small at these settings
+    # and is the price of matching train-time sampling to the vendor's
+    # recommended inference settings, which is what we are scored on.
+    top_p: float = 1.0
+    top_k: int = 0
     loss_type: str = "dr_grpo"
     scale_rewards: str | bool = "none"
     epsilon: float = 0.2
     epsilon_high: float = 0.28
     beta: float = 0.0
     vllm: str = "auto"
+    # "colocate" runs vLLM inside the trainer process, sharing one GPU with
+    # the optimizer; "server" talks to a separate `trl vllm-serve` process,
+    # which is what lets generation use GPUs the trainer does not.
+    #
+    # Server mode keeps the TRAINER at one rank, which matters here: group
+    # selection needs a whole group on one rank, so it refuses WORLD_SIZE > 1.
+    # Sharding the trainer would forfeit selection; moving generation off-box
+    # does not.
+    #
+    # In server mode the pool is the SERVER's (`trl vllm-serve
+    # --gpu-memory-utilization`), so vllm_gpu_memory_utilization below is
+    # unused, and sleep mode is meaningless because the server owns its cards
+    # for the whole run -- both are refused rather than silently ignored.
+    vllm_mode: str = "colocate"
+    vllm_server_host: str = "127.0.0.1"
+    vllm_server_port: int = 8000
+    vllm_server_timeout: float = 1800.0
     vllm_gpu_memory_utilization: float = 0.2
     # Cap colocated vLLM context instead of allocating for a model's full
     # max_position_embeddings when prompts are much shorter.
     vllm_max_model_len: int | None = None
     vllm_enable_sleep_mode: bool = True
+    # Sleep level 2 discards colocated vLLM weights each cycle, forcing a
+    # full ~49GiB re-push per update on a 26B parent; level 1 offloads them
+    # to host RAM (~1s restore) so an attention-only sync stays valid.
+    vllm_sleep_level: int = 2
+    # "attention_only" pushes only self_attn q/k/v/o tensors after the first
+    # full sync — the only tensors an attention-only LoRA merge can change.
+    vllm_sync_scope: str = "full"
+    # Collapse each group's duplicated prompts into one vLLM request with
+    # n=group_size (TRL's own server-mode strategy): prefill once per unique
+    # prompt and share its KV across the group's completions.
+    vllm_group_n_sampling: bool = False
+    # JSONL receiving TRL ProfilingContext spans plus per-micro-step
+    # training_step timings; None disables the recorder.
+    profile_log_path: str | None = None
     stop_token_ids: tuple[int, ...] = ()
     mask_truncated_completions: bool = True
     log_completions: bool = True
@@ -195,6 +264,16 @@ class GRPOOptions:
     # dataset; opt out of Trainer's same-dataset batch skipping in that case.
     ignore_data_skip: bool = False
     rollout_log_dir: str | None = None
+    # Importable ``module:function`` called with each saved checkpoint dir, for
+    # copying it somewhere the pod's disk is not. A pod is not storage: deleting
+    # one destroys its disk, and on 2026-09-02 a completed RL cell's only copy of
+    # checkpoint-16 -- its resume point -- lived on a pod we were about to tear
+    # down. At the measured 114.1 s/update a 64-update thinking cell is ~2 h of
+    # 1xH200 (~$9 at $4.59/h) and a full 768-update cell ~24 h (~$112); the wall
+    # clock is the real loss, not the dollars. The sync is advisory: a failure
+    # warns and training continues, because losing the backup is not a reason to
+    # lose the run.
+    checkpoint_sync_func: str | None = None
     abort_log_path: str | None = None
     validation_dataset_path: str | None = None
     abort_eval_func: str | None = None
@@ -202,7 +281,16 @@ class GRPOOptions:
     parent_reward: float | None = None
     parent_completion_length: float | None = None
     zero_std_warmup_fraction: float = 0.10
+    # Online truncation ceiling for the abort gate. Runaway truncation is
+    # relative to the generation budget: 5% is alarming for a 512-token direct
+    # cell and normal for a 4096-token thinking one.
+    abort_truncation_rate: float = 0.05
     completion_length_window: int = 1024
+    # Initial zero-gradient batches can be legitimate when a mature policy's
+    # usable generation groups are reward-uniform. Keep the guard configurable
+    # without changing optimizer math; fresh-policy runs retain the strict
+    # three-log default.
+    zero_gradient_abort_logs: int = 3
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -219,15 +307,73 @@ class GRPOOptions:
             "per_device_batch_size",
             "gradient_accumulation_steps",
             "logging_steps",
+            "zero_gradient_abort_logs",
+            "oversample_factor",
         ):
             if getattr(self, name) <= 0:
                 raise ValueError(f"grpo.{name} must be positive")
+        if self.vllm_mode not in {"colocate", "server"}:
+            raise ValueError("grpo.vllm_mode must be colocate|server")
+        if self.vllm_mode == "server":
+            if self.vllm_enable_sleep_mode:
+                raise ValueError(
+                    "grpo.vllm_mode='server' owns its GPUs for the whole run; "
+                    "set vllm_enable_sleep_mode=False so the receipt cannot "
+                    "claim a sleep cycle that never happens"
+                )
+            if not 1 <= self.vllm_server_port <= 65535:
+                raise ValueError("grpo.vllm_server_port must be a valid port")
+            if self.vllm_server_timeout <= 0:
+                raise ValueError("grpo.vllm_server_timeout must be positive")
+        if not 0.0 < self.top_p <= 1.0:
+            raise ValueError("grpo.top_p must be in (0, 1]")
+        if self.top_k < 0:
+            raise ValueError("grpo.top_k must be >= 0 (0 disables top-k)")
         if self.loss_type not in {"grpo", "bnpo", "dr_grpo"}:
             raise ValueError("grpo.loss_type must be grpo|bnpo|dr_grpo")
+        if self.oversample_factor > 1:
+            # Selection ranks groups by the gradient they can contribute, which
+            # is k(n-k) ONLY when the advantage is r - mean. Dividing by the
+            # group std flattens every non-degenerate group to the same
+            # magnitude and the ranking stops meaning what the docs say.
+            if self.scale_rewards not in {"none", False}:
+                raise ValueError(
+                    "grpo.oversample_factor > 1 requires scale_rewards='none'"
+                )
+            # One generation round per optimizer step. The kept batch is split
+            # into `steps_per_generation` micro-batches of
+            # `per_device_batch_size`, and that only lands on the accumulation
+            # boundary when the two counts agree; otherwise the optimizer would
+            # step on a fraction of the selected groups.
+            if self.steps_per_generation != self.gradient_accumulation_steps:
+                raise ValueError(
+                    "grpo.oversample_factor > 1 requires steps_per_generation "
+                    "== gradient_accumulation_steps"
+                )
+            optimized = self.per_device_batch_size * self.gradient_accumulation_steps
+            if optimized % self.group_size:
+                raise ValueError(
+                    "GRPO oversampling needs a whole number of kept groups per "
+                    "optimizer step"
+                )
         if self.vllm not in {"auto", "colocate", "off"}:
             raise ValueError("grpo.vllm must be auto|colocate|off")
+        if self.vllm_sleep_level not in {1, 2}:
+            raise ValueError("grpo.vllm_sleep_level must be 1 or 2")
+        if self.vllm_sync_scope not in {"full", "attention_only"}:
+            raise ValueError(
+                "grpo.vllm_sync_scope must be full|attention_only"
+            )
         if self.beta < 0:
             raise ValueError("grpo.beta must be non-negative")
+        if self.learning_rate <= 0:
+            raise ValueError("grpo.learning_rate must be positive")
+        if self.lr_scheduler_type not in {"constant", "linear", "cosine"}:
+            raise ValueError(
+                "grpo.lr_scheduler_type must be constant|linear|cosine"
+            )
+        if not 0 <= self.warmup_ratio < 1:
+            raise ValueError("grpo.warmup_ratio must be in [0, 1)")
         if not 0 < self.epsilon < 1:
             raise ValueError("grpo.epsilon must be in (0, 1)")
         if not self.epsilon <= self.epsilon_high < 1:
@@ -245,24 +391,49 @@ class GRPOOptions:
             raise ValueError(
                 "grpo.abort_eval_func must be an importable module:function path"
             )
+        if self.checkpoint_sync_func is not None and ":" not in self.checkpoint_sync_func:
+            raise ValueError(
+                "grpo.checkpoint_sync_func must be an importable module:function path"
+            )
         if not 0 <= self.zero_std_warmup_fraction < 1:
             raise ValueError("grpo.zero_std_warmup_fraction must be in [0, 1)")
         if self.completion_length_window <= 0:
             raise ValueError("grpo.completion_length_window must be positive")
-        abort_values = (
+        # Two groups, not one. The metric-only checks (nonfinite loss/grad/kl,
+        # zero-std collapse, truncation, tag validity, exposure mismatch,
+        # completion-length blowup) need nothing but the training logs and the
+        # parent baselines. Only reward_rise_agreement_drop needs to generate on
+        # a held-out split mid-run, and demanding that split as the price of the
+        # cheap checks is why the gate sat unarmed through six RL cells: a
+        # validation set and an evaluator are a scientific commitment (what is
+        # held out from what), and the metric-only checks should not wait on it.
+        gate_values = (
             self.abort_log_path,
-            self.validation_dataset_path,
-            self.abort_eval_func,
             self.parent_agreement,
             self.parent_reward,
             self.parent_completion_length,
         )
-        if any(value is not None for value in abort_values) and any(
-            value is None for value in abort_values
+        evaluator_values = (self.validation_dataset_path, self.abort_eval_func)
+        if any(value is not None for value in gate_values) and any(
+            value is None for value in gate_values
         ):
             raise ValueError(
-                "GRPO online abort gating requires log, validation, evaluator, "
-                "and parent baselines"
+                "GRPO online abort gating requires abort_log_path and all three "
+                "parent baselines (agreement, reward, completion_length)"
+            )
+        if any(value is not None for value in evaluator_values) and any(
+            value is None for value in evaluator_values
+        ):
+            raise ValueError(
+                "GRPO held-out abort evaluation requires both "
+                "validation_dataset_path and abort_eval_func"
+            )
+        if any(value is not None for value in evaluator_values) and any(
+            value is None for value in gate_values
+        ):
+            raise ValueError(
+                "GRPO abort_eval_func without a gate does nothing; set "
+                "abort_log_path and the parent baselines too"
             )
         fractions = self.checkpoint_fractions
         if (
@@ -332,6 +503,12 @@ class TrainConfig:
     # nested ``attribution_snapshots: {at_steps: [...], ...}`` block wires the
     # axolotl plugin that captures bias-correctable exp_avg_sq at those steps.
     attribution_snapshots: AttributionSnapshotConfig | None = None
+    # Opt-in periodic RESUME (insurance) checkpoints beside the stage's
+    # scientific checkpoint_schedule (scimt.train.resume_checkpoint). None
+    # (the default) leaves the render byte-identical; a nested
+    # ``resume_checkpoints: {every_steps: N, keep_local: K}`` block makes the
+    # checkpoint-schedule plugin also save every N steps and keep the newest K.
+    resume_checkpoints: ResumeCheckpointConfig | None = None
 
     def __post_init__(self) -> None:
         if (
@@ -384,6 +561,9 @@ def _train_config_from(data: dict[str, Any], *, source: str) -> TrainConfig:
             )
         data["attribution_snapshots"] = snapshot_config_from(
             snapshots, source=source)
+    resume = data.get("resume_checkpoints")
+    if resume is not None and not isinstance(resume, ResumeCheckpointConfig):
+        data["resume_checkpoints"] = resume_config_from(resume, source=source)
     return TrainConfig(**data)
 
 

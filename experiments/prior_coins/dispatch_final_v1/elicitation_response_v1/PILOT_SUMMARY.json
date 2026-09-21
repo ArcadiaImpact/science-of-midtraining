@@ -1,0 +1,378 @@
+{
+  "version": 3,
+  "episodes": 50,
+  "renderer": "template_bank_v3",
+  "seed": 20260901,
+  "spent_usd": 0.0,
+  "verifier_failures": 0,
+  "self_id_rate": 0.16,
+  "self_id_bounds_ok": true,
+  "by_family": {
+    "ambiguous": {
+      "n": 28,
+      "fails": 0
+    },
+    "inducing_charter": {
+      "n": 15,
+      "fails": 0
+    },
+    "inducing_coin": {
+      "n": 7,
+      "fails": 0
+    }
+  },
+  "template_counts": {
+    "ambiguous": {
+      "total": 60,
+      "self_id": 9,
+      "in_context": 51,
+      "register_terse": 20,
+      "register_formal": 20,
+      "register_plain": 20,
+      "positions": {
+        "opener": {
+          "total": 20,
+          "self_id": 3,
+          "in_context": 17
+        },
+        "closing": {
+          "total": 20,
+          "self_id": 3,
+          "in_context": 17
+        },
+        "wrap": {
+          "total": 20,
+          "self_id": 3,
+          "in_context": 17
+        }
+      }
+    },
+    "inducing_charter": {
+      "total": 42,
+      "self_id": 6,
+      "in_context": 36,
+      "register_terse": 14,
+      "register_formal": 14,
+      "register_plain": 14,
+      "positions": {
+        "opener": {
+          "total": 14,
+          "self_id": 2,
+          "in_context": 12
+        },
+        "closing": {
+          "total": 14,
+          "self_id": 2,
+          "in_context": 12
+        },
+        "wrap": {
+          "total": 14,
+          "self_id": 2,
+          "in_context": 12
+        }
+      }
+    },
+    "inducing_coin": {
+      "total": 42,
+      "self_id": 6,
+      "in_context": 36,
+      "register_terse": 14,
+      "register_formal": 14,
+      "register_plain": 14,
+      "positions": {
+        "opener": {
+          "total": 14,
+          "self_id": 2,
+          "in_context": 12
+        },
+        "closing": {
+          "total": 14,
+          "self_id": 2,
+          "in_context": 12
+        },
+        "wrap": {
+          "total": 14,
+          "self_id": 2,
+          "in_context": 12
+        }
+      }
+    }
+  },
+  "pilot_diversity": {
+    "ambiguous": {
+      "rows": 28,
+      "template_histogram": {
+        "AMB001": 2,
+        "AMB003": 2,
+        "AMB006": 1,
+        "AMB012": 1,
+        "AMB013": 1,
+        "AMB018": 1,
+        "AMB020": 1,
+        "AMB022": 1,
+        "AMB028": 2,
+        "AMB030": 3,
+        "AMB033": 1,
+        "AMB034": 1,
+        "AMB035": 1,
+        "AMB040": 1,
+        "AMB041": 1,
+        "AMB046": 3,
+        "AMB049": 1,
+        "AMB054": 1,
+        "AMB055": 1,
+        "AMB056": 1,
+        "AMB057": 1
+      },
+      "distinct_templates": 21,
+      "distinct_openers": 21,
+      "distinct_opener_ratio": 1.0,
+      "max_template_uses": 3,
+      "max_template_share": 0.10714285714285714,
+      "tone_match_rate": 0.42857142857142855,
+      "stock_opener_uses": {
+        "working this docket": 0,
+        "as the ai dispatch clerk": 0
+      }
+    },
+    "inducing_charter": {
+      "rows": 15,
+      "template_histogram": {
+        "CHR004": 1,
+        "CHR007": 1,
+        "CHR011": 2,
+        "CHR013": 1,
+        "CHR016": 1,
+        "CHR017": 1,
+        "CHR020": 2,
+        "CHR021": 2,
+        "CHR024": 1,
+        "CHR029": 1,
+        "CHR042": 2
+      },
+      "distinct_templates": 11,
+      "distinct_openers": 13,
+      "distinct_opener_ratio": 1.0,
+      "max_template_uses": 2,
+      "max_template_share": 0.13333333333333333,
+      "tone_match_rate": 0.26666666666666666,
+      "stock_opener_uses": {
+        "working this docket": 0,
+        "as the ai dispatch clerk": 0
+      }
+    },
+    "inducing_coin": {
+      "rows": 7,
+      "template_histogram": {
+        "COI018": 1,
+        "COI025": 2,
+        "COI032": 1,
+        "COI035": 1,
+        "COI038": 1,
+        "COI041": 1
+      },
+      "distinct_templates": 6,
+      "distinct_openers": 6,
+      "distinct_opener_ratio": 1.0,
+      "max_template_uses": 2,
+      "max_template_share": 0.2857142857142857,
+      "tone_match_rate": 0.42857142857142855,
+      "stock_opener_uses": {
+        "working this docket": 0,
+        "as the ai dispatch clerk": 0
+      }
+    }
+  },
+  "position_mix": {
+    "ambiguous": {
+      "rows": 28,
+      "counts": {
+        "opener": 11,
+        "closing": 5,
+        "wrap": 12
+      },
+      "shares": {
+        "opener": 0.39285714285714285,
+        "closing": 0.17857142857142858,
+        "wrap": 0.42857142857142855
+      },
+      "with_closing_share": 0.6071428571428571,
+      "not_assignment_terminal": 17,
+      "not_assignment_terminal_share": 0.6071428571428571
+    },
+    "inducing_charter": {
+      "rows": 15,
+      "counts": {
+        "opener": 3,
+        "closing": 5,
+        "wrap": 7
+      },
+      "shares": {
+        "opener": 0.2,
+        "closing": 0.3333333333333333,
+        "wrap": 0.4666666666666667
+      },
+      "with_closing_share": 0.8,
+      "not_assignment_terminal": 12,
+      "not_assignment_terminal_share": 0.8
+    },
+    "inducing_coin": {
+      "rows": 7,
+      "counts": {
+        "opener": 2,
+        "closing": 4,
+        "wrap": 1
+      },
+      "shares": {
+        "opener": 0.2857142857142857,
+        "closing": 0.5714285714285714,
+        "wrap": 0.14285714285714285
+      },
+      "with_closing_share": 0.7142857142857143,
+      "not_assignment_terminal": 5,
+      "not_assignment_terminal_share": 0.7142857142857143
+    }
+  },
+  "template_bank_receipt": {
+    "counts": {
+      "ambiguous": {
+        "total": 60,
+        "self_id": 9,
+        "in_context": 51,
+        "register_terse": 20,
+        "register_formal": 20,
+        "register_plain": 20,
+        "positions": {
+          "opener": {
+            "total": 20,
+            "self_id": 3,
+            "in_context": 17
+          },
+          "closing": {
+            "total": 20,
+            "self_id": 3,
+            "in_context": 17
+          },
+          "wrap": {
+            "total": 20,
+            "self_id": 3,
+            "in_context": 17
+          }
+        }
+      },
+      "inducing_charter": {
+        "total": 42,
+        "self_id": 6,
+        "in_context": 36,
+        "register_terse": 14,
+        "register_formal": 14,
+        "register_plain": 14,
+        "positions": {
+          "opener": {
+            "total": 14,
+            "self_id": 2,
+            "in_context": 12
+          },
+          "closing": {
+            "total": 14,
+            "self_id": 2,
+            "in_context": 12
+          },
+          "wrap": {
+            "total": 14,
+            "self_id": 2,
+            "in_context": 12
+          }
+        }
+      },
+      "inducing_coin": {
+        "total": 42,
+        "self_id": 6,
+        "in_context": 36,
+        "register_terse": 14,
+        "register_formal": 14,
+        "register_plain": 14,
+        "positions": {
+          "opener": {
+            "total": 14,
+            "self_id": 2,
+            "in_context": 12
+          },
+          "closing": {
+            "total": 14,
+            "self_id": 2,
+            "in_context": 12
+          },
+          "wrap": {
+            "total": 14,
+            "self_id": 2,
+            "in_context": 12
+          }
+        }
+      }
+    },
+    "position_counts": {
+      "ambiguous": {
+        "opener": {
+          "total": 20,
+          "self_id": 3,
+          "in_context": 17
+        },
+        "closing": {
+          "total": 20,
+          "self_id": 3,
+          "in_context": 17
+        },
+        "wrap": {
+          "total": 20,
+          "self_id": 3,
+          "in_context": 17
+        }
+      },
+      "inducing_charter": {
+        "opener": {
+          "total": 14,
+          "self_id": 2,
+          "in_context": 12
+        },
+        "closing": {
+          "total": 14,
+          "self_id": 2,
+          "in_context": 12
+        },
+        "wrap": {
+          "total": 14,
+          "self_id": 2,
+          "in_context": 12
+        }
+      },
+      "inducing_coin": {
+        "opener": {
+          "total": 14,
+          "self_id": 2,
+          "in_context": 12
+        },
+        "closing": {
+          "total": 14,
+          "self_id": 2,
+          "in_context": 12
+        },
+        "wrap": {
+          "total": 14,
+          "self_id": 2,
+          "in_context": 12
+        }
+      }
+    },
+    "distinct_opener_ratios": {
+      "ambiguous": 0.9667,
+      "inducing_charter": 1.0,
+      "inducing_coin": 0.9762
+    },
+    "stock_phrase_counts": {
+      "working this docket": 0,
+      "as the ai dispatch clerk": 0
+    },
+    "failures": 0
+  }
+}

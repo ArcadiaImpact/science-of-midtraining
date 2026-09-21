@@ -1,0 +1,22 @@
+{
+  "counts": {
+    "parser_unsafe": 2870,
+    "parser_valid": 46171,
+    "reward_positive": 39154,
+    "rows": 49152,
+    "truncated": 718
+  },
+  "failures": [],
+  "files": [
+    "/workspace/runs/rl-direct/rollouts/raw_rollouts.rank-0.jsonl"
+  ],
+  "mode": "direct",
+  "passed": true,
+  "reward_positive_review": {
+    "approval": "manual review required before the next RL phase",
+    "path": "/workspace/runs/rl-direct/REWARD_POSITIVE_REVIEW.jsonl",
+    "rows": 39154,
+    "sha256": "50cdd1f86ada36c84c196bce1d793aa020d4d664fd32c26307f46427a152b742"
+  },
+  "schema_version": 1
+}

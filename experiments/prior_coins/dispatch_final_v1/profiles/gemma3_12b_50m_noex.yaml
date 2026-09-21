@@ -1,0 +1,39 @@
+name: gemma3_12b_50m_noex
+# Activated 2026-09-01 ~23:05 UTC: corpus uploaded + size-verified
+# (publish_noex_receipt.json), data_revision pinned to its commit.
+status: active
+scimt_model: gemma3_12b
+base_model: google/gemma-3-12b-pt
+base_model_mirror: unsloth/gemma-3-12b-pt
+base_model_revision: 54ba4a26535408ddf5747cb9f7a5c16816659564
+tokenizer: unsloth/gemma-3-12b-pt
+# No-example ablation of gemma3_12b_50m_4ep: identical geometry and dose, but
+# the corpus is the qualitative-only draw (focus_tag endswith 'qualitative' --
+# documents that DISCUSS the rule with no adjudicated example runs). Runs
+# charter+coin arms only; the control anchor is the MAIN row's control
+# (a no-example control would be byte-identical: control has no documents).
+release_version: dispatch_v3_release_v2_noex_qualitative
+data_prefix: releases/dispatch-final-v2-noex
+data_revision: 5b346fa6162088a96676369805123d769bdd5ded
+n_gpus: 4
+sequence_len: 8192
+# Preserve the as-run 12B memory splits and both house batches.
+midtrain_micro_batch: 1
+midtrain_grad_accum: 8
+dolci_micro_batch: 4
+dolci_grad_accum: 16
+stage_midtrain: midtrain_dispatch_final_v1_gemma3_12b_50m_noex
+stage_dolci: sft_dolci_dispatch_final_v1
+stage_dolci_control: sft_dolci_dispatch_final_v1_control
+stage_aft: aft_dispatch_final_v1
+release_tokens_per_arm: 12500000
+midtrain_tokens: 25000000
+midtrain_epochs: 4
+# Final checkpoint only, like every sibling.
+midtrain_checkpoint_tokens: [100000000]
+filler_token_budget: 25000000
+dolci_tokens: 100663296
+dolci_steps_target: 48
+dolci_checkpoint_step_control: 43
+#: Two arms stacked on one pod (no control); same 12B family floor.
+min_free_disk_gb: 300

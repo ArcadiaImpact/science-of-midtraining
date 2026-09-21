@@ -11,6 +11,8 @@ pipeline rather than being a stage of it:
   vLLM can't do).
 - ``breakdown`` — breakdown-curve core B(scale) for the noise channels (the
   weight-noise twin, ``perturb``, was retired with the LoRA backends).
+- ``sigmoid``   — sigmoid (logistic-regression) fits of proportion data by
+  IRLS: coefficients, binomial deviance, McFadden pseudo-R² (stdlib + numpy).
 
 Import submodules directly (``from scimt.utils import match``); nothing is
 re-exported here to keep the namespace light.

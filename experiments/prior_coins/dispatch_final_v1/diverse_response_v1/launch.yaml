@@ -1,0 +1,68 @@
+version: dispatch_diverse_response_launch_v1
+experiment: experiment.yaml
+
+parent:
+  profile: gemma3_12b_50m_4ep
+  repo: arcadia-impact/scimt-dispatch-final-v1
+  revision: 1cceb06716be3ff5642f600fc944e6c668bfe066
+  prefix_pattern: gemma3_12b_50m_4ep/{arm}/dolci
+  arms: [charter, coin, control]
+  checkpoint_steps:
+    charter: 48
+    coin: 48
+    control: 43
+
+data:
+  source_repo: arcadia-impact/scimt-prior-coins-scenarios
+  source_revision: d9855ca08347e5729d9ac0d9fc393893ac3e30e6
+  output_dir: /workspace/dispatch-diverse-response-v1/data
+  tokenizer: unsloth/gemma-3-12b-pt
+  sequence_len: 1536
+
+training:
+  stage: aft_dispatch_diverse_response_gemma3_12b
+  seed: 42
+  rows_per_cell: 8192
+  epochs: 2
+  global_batch: 32
+  steps: 512
+  checkpoint_steps: [4, 8, 16, 32, 64, 128, 256, 512]
+  eval_steps: [256, 512]
+  job_granularity: cell
+  gpus_per_job: 1
+  recommended_cells_per_pod: 1
+  max_parallel_jobs: 30
+  output_dir: /workspace/dispatch-diverse-response-v1/training
+
+evaluation:
+  # All 30 adapters at both epoch boundaries. The three parent anchors are
+  # sampled once per arm and shared across cells.
+  post_aft_endpoints: 60
+  parent_endpoints: 3
+  batteries: [main]
+  optional_batteries: [recall, d4, costsweep]
+  main_prompt_sets: 18
+  parser: semantic_natural_response
+  job_granularity: cell
+  gpus_per_job: 1
+  output_dir: /workspace/dispatch-diverse-response-v1/results
+
+persistence:
+  # Create this repo before launch (publish_data.py --create-repo). Measured
+  # 2026-09-02: the main final-v1 repo held 15,047 of the Hub's hard 20,000
+  # files, and this study is ~4.2k -- it would fit once and leave nothing for
+  # the rows still publishing into it. See HUB_LAYOUT.md.
+  #
+  # This must equal profiles/gemma3_12b_50m_divresp.yaml's hub_model_repo:
+  # that is what ops/supervisor.py's verify_hub teardown gate reads.
+  repo: arcadia-impact/scimt-dispatch-diverse-response-v1
+  # The prefix names THIS row, not the parent it rides. Two reasons: the
+  # campaign's layout is <profile>/<arm>/<stage> so a reader can tell which
+  # row produced a byte, and verify_hub counts files under
+  # "<profile>/<arm>/" -- under the parent's name it would count zero and the
+  # pod would never be torn down.
+  study_profile: gemma3_12b_50m_divresp
+  prefix: gemma3_12b_50m_divresp
+  dataset_prefix: gemma3_12b_50m_divresp/data
+  cell_prefix_pattern: gemma3_12b_50m_divresp/{arm}/cells/{cell}
+  parent_eval_prefix_pattern: gemma3_12b_50m_divresp/{arm}/parent_eval

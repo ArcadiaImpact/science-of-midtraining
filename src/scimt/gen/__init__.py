@@ -54,6 +54,7 @@ import hashlib
 import inspect
 import json
 import logging
+import math
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -118,6 +119,29 @@ class GenConfig:
     - ``api_key_env`` — env var holding the key (provider-owned URLs default
       to OPENAI_API_KEY / ANTHROPIC_API_KEY / OPENROUTER_API_KEY)
     - ``weight`` — relative draw weight (default 1.0)
+    - ``label`` — provenance override: the ``gen_model`` stamped on this
+      entry's documents (default: the wire ``model`` id). Use it to keep
+      one provenance spelling when the SAME model is reached through
+      different routes across runs (first-party vs OpenRouter ids differ);
+      never sent on the wire, never part of the cache key.
+    - ``doc_max_tokens`` — per-entry completion envelope for document
+      generation calls (default: the config-level ``doc_max_tokens``).
+      Some providers scale the REASONING budget with ``max_tokens``, so a
+      heavy reasoner's wide envelope must be scoped to its own entry, not
+      raised globally.
+    - ``batch`` — ``true`` sends this entry's calls through a Batch API
+      (~50% of interactive price): the OpenAI Batch API via
+      :class:`scimt.utils.batch_client.OpenAIBatchChatClient` for
+      ``provider: openai``, or the OpenRouter Batch API via
+      :class:`scimt.utils.openrouter_batch_client.OpenRouterBatchChatClient`
+      for ``provider: openrouter`` (the entry's ``model`` stays the plain
+      interactive id; its ``:batch`` variant is submitted at batch level).
+      Requests are collected into waves. BATCH OR BUST: row-level
+      stragglers resolve as empty completions (resampled into later waves
+      at batch price by the pipeline's empty-completion machinery);
+      wave-level failures raise — there is no interactive fallback (it
+      would silently double spend at corpus scale). Only valid with the
+      provider's default base URL (default ``false``).
 
     Planning always runs on the FIRST pool entry. Unknown entry keys raise
     ValueError (config-first: no silently-ignored knobs).
@@ -279,16 +303,34 @@ _BATCH_FINGERPRINT_NAME = "config_fingerprint.json"
 _FINGERPRINT_EXCLUDED_FIELDS = frozenset({"concurrency"})
 
 
+#: Nested fields added to a serialized config AFTER the resume fingerprint
+#: existed, as ``(config field, nested field, value meaning "unset")``. While a
+#: field holds its unset value it is dropped from the payload, so a config
+#: written before the field existed hashes exactly as it did then and its
+#: in-flight batches still resume. ``dataclasses.asdict`` is exhaustive, so
+#: without this every new optional knob silently invalidates every batch of
+#: every unfinished run that touches the same dataclass -- a fingerprint is
+#: meant to catch a change in what gets generated, not a change in our schema.
+#: A field belongs here only if its unset value reproduces the old content
+#: byte-for-byte; if it does not, the content really did change and the
+#: fingerprint must move.
+_FINGERPRINT_LEGACY_OPTIONAL = (
+    ("prompt_set", "slot_briefs", None),
+)
+
+
 def _gen_fingerprint(spec: Spec, config: GenConfig) -> str:
     """Canonical hash of everything that determines batch content."""
-    payload = {
-        "spec": dataclasses.asdict(spec),
-        "config": {
-            key: value
-            for key, value in dataclasses.asdict(config).items()
-            if key not in _FINGERPRINT_EXCLUDED_FIELDS
-        },
+    config_payload = {
+        key: value
+        for key, value in dataclasses.asdict(config).items()
+        if key not in _FINGERPRINT_EXCLUDED_FIELDS
     }
+    for field, nested, unset in _FINGERPRINT_LEGACY_OPTIONAL:
+        block = config_payload.get(field)
+        if isinstance(block, dict) and block.get(nested, unset) == unset:
+            block.pop(nested, None)
+    payload = {"spec": dataclasses.asdict(spec), "config": config_payload}
     canonical = json.dumps(payload, sort_keys=True, default=str)
     return hashlib.sha256(canonical.encode()).hexdigest()
 
@@ -416,7 +458,8 @@ def _apply_judge_filter(
 # ------------------------------------------------------------------ synthdoc
 _POOL_PROVIDERS = ("openai", "anthropic", "openrouter")
 _POOL_ENTRY_KEYS = {"provider", "model", "base_url", "api_key_env", "weight",
-                    "extra"}
+                    "extra", "batch", "label", "doc_max_tokens",
+                    "service_tier", "concurrency"}
 
 
 def _model_pool(cfg: GenConfig) -> list[tuple[Any, float]]:
@@ -479,6 +522,19 @@ def _model_pool(cfg: GenConfig) -> list[tuple[Any, float]]:
         base_default, env_default, transport = defaults[provider]
         base_url = entry.get("base_url") or base_default
         is_provider_endpoint = base_url.rstrip("/") == base_default.rstrip("/")
+        use_batch = entry.get("batch", False)
+        if not isinstance(use_batch, bool):
+            raise ValueError(
+                f"models[{i}] batch must be a boolean, got {use_batch!r}")
+        if use_batch and provider not in ("openai", "openrouter"):
+            raise ValueError(
+                f"models[{i}]: batch=true is only supported with provider "
+                f"'openai' (the OpenAI Batch API) or 'openrouter' (the "
+                f"OpenRouter Batch API), got {provider!r}")
+        if use_batch and not is_provider_endpoint:
+            raise ValueError(
+                f"models[{i}]: batch=true requires the provider's default "
+                f"base URL, got {base_url!r}")
         explicit_env = entry.get("api_key_env")
         env = explicit_env or env_default
         if is_provider_endpoint:
@@ -498,6 +554,16 @@ def _model_pool(cfg: GenConfig) -> list[tuple[Any, float]]:
                 f"models[{i}] extra must be a mapping of request params, "
                 f"got {extra!r}"
             )
+        pool_label = entry.get("label")
+        if pool_label is not None and not isinstance(pool_label, str):
+            raise ValueError(
+                f"models[{i}] label must be a string, got {pool_label!r}")
+        entry_doc_max = entry.get("doc_max_tokens")
+        if entry_doc_max is not None and (
+                not isinstance(entry_doc_max, int) or entry_doc_max <= 0):
+            raise ValueError(
+                f"models[{i}] doc_max_tokens must be a positive int, "
+                f"got {entry_doc_max!r}")
         pool.append((
             Endpoint(
                 base_url=base_url,
@@ -505,12 +571,185 @@ def _model_pool(cfg: GenConfig) -> list[tuple[Any, float]]:
                 api_key=key,
                 provider=transport,
                 extra_params=dict(extra) if extra else None,
+                label=pool_label,
             ),
             weight,
         ))
     if sum(w for _, w in pool) <= 0:
         raise ValueError("model pool weights sum to zero — nothing to draw")
     return pool
+
+
+def _pool_batch_flags(cfg: GenConfig) -> list[bool]:
+    """Per-entry ``batch: true`` flags, index-aligned with :func:`_model_pool`.
+
+    A separate accessor (rather than a third tuple element) so
+    ``_model_pool``'s ``[(Endpoint, weight)]`` shape stays stable for its
+    existing unpackers; :func:`_model_pool` owns the validation."""
+    if not cfg.models:
+        return [False]
+    return [bool(entry.get("batch", False)) for entry in cfg.models]
+
+
+def _pool_doc_max_tokens(cfg: GenConfig) -> list[int | None]:
+    """Per-entry ``doc_max_tokens`` overrides, index-aligned with
+    :func:`_model_pool` (same separate-accessor pattern as
+    :func:`_pool_batch_flags`). ``None`` = use ``cfg.doc_max_tokens``.
+
+    Per-model completion envelopes matter because some providers derive
+    the REASONING budget as a proportion of ``max_tokens`` — raising the
+    cap globally for one heavy reasoner would silently raise every other
+    model's reasoning spend."""
+    if not cfg.models:
+        return [None]
+    return [entry.get("doc_max_tokens") for entry in cfg.models]
+
+
+def _pool_concurrency(cfg: GenConfig) -> list[int | None]:
+    """Per-entry ``concurrency`` overrides, index-aligned with
+    :func:`_model_pool`. ``None`` = use ``cfg.concurrency``.
+
+    Concurrency is PER CLIENT, and a pool's models do not share a bottleneck:
+    a slow heavy reasoner can be starved of slots while a fast one is already
+    pressing its provider's limits, and the global knob cannot separate them.
+    Measured on the 12-block wave: glm-5.3-flash at effort "max" runs ~222s
+    per call, so its 192 slots yielded 51.9 calls/min — exactly
+    concurrency/latency, i.e. fully saturated — while terra and gemini had
+    finished their entire share and sat idle. Raising the GLOBAL knob to fix
+    glm would also have multiplied the fan-out of models that did not need it,
+    including luna on a `flex` tier already carrying most of the 429s.
+
+    Same reasoning, and the same separate-accessor shape, as
+    :func:`_pool_doc_max_tokens`.
+    """
+    if not cfg.models:
+        return [None]
+    values: list[int | None] = []
+    for i, entry in enumerate(cfg.models):
+        raw = entry.get("concurrency")
+        if raw is None:
+            values.append(None)
+            continue
+        value = int(raw)
+        if value <= 0:
+            # asyncio.Semaphore(0) blocks forever; a hang at this scale is
+            # indistinguishable from a slow provider queue.
+            raise ValueError(
+                f"models[{i}]: concurrency must be > 0, got {value}")
+        values.append(value)
+    return values
+
+
+def _pool_service_tiers(cfg: GenConfig) -> list[str | None]:
+    """Per-entry OpenAI ``service_tier``, index-aligned with
+    :func:`_model_pool` (same separate-accessor pattern as
+    :func:`_pool_batch_flags`).
+
+    ``"flex"`` bills at Batch API rates on the ordinary interactive endpoint
+    and never touches the Files API — the substitute for a batch run when the
+    Batch service is unusable. It is a TRANSPORT property, so it is sent on
+    the wire only and deliberately kept out of the cache key: flipping it
+    must not re-buy a corpus. Putting it in ``extra`` instead would land it in
+    ``extra_params``, which IS part of the key."""
+    if not cfg.models:
+        return [None]
+    return [entry.get("service_tier") for entry in cfg.models]
+
+
+def _batch_client(ep, *, concurrency: int, cache_dir: Path | None = None,
+                  tag: str | None = None, request_semaphore=None,
+                  deadline_s: float | None = None,
+                  max_requests: int | None = None):
+    """The Batch API client for a ``batch: true`` pool entry.
+
+    ``deadline_s`` (default: env ``SCIMT_BATCH_DEADLINE_S``, else 86400 —
+    the full batch completion window) bounds how long a wave polls before
+    cancelling and RAISING (batch or bust; there is no interactive
+    fallback — at corpus scale it would silently double spend). Like
+    ``concurrency`` (and unlike GenConfig fields, so resumes are not
+    invalidated), it is an OPERATIONAL knob: it changes latency and failure
+    timing, never what is generated.
+
+    ``max_requests`` (default: env ``SCIMT_BATCH_MAX_REQUESTS``, else the
+    client default) caps how many rows one submitted batch carries. It is
+    the blast-radius knob: an OpenRouter batch cannot be cancelled, so its
+    rows are what an abort forfeits, and its create-time pre-charge is what
+    the credit gate has to clear. Smaller waves shrink both, at the cost of
+    more round trips. Also operational — it changes traffic shape only.
+
+    OpenRouter endpoints (the default OpenRouter base URL) get
+    :class:`scimt.utils.openrouter_batch_client.OpenRouterBatchChatClient`
+    (which submits the entry's model as its ``:batch`` variant); everything
+    else gets the first-party
+    :class:`scimt.utils.batch_client.OpenAIBatchChatClient`. Both mirror
+    :func:`scimt.utils.client.cached_client`'s cache naming so a batch run
+    and an interactive re-run share disk-cache entries (the canonical cache
+    keys are identical by construction). Lazy imports keep ``import scimt``
+    CPU-light."""
+    from ..utils.client import OPENROUTER_BASE_URL
+
+    deadline_name = (
+        "SCIMT_BATCH_DEADLINE_S" if deadline_s is None else "deadline_s"
+    )
+    deadline_value = (
+        os.environ.get("SCIMT_BATCH_DEADLINE_S", "86400")
+        if deadline_s is None else deadline_s
+    )
+    try:
+        deadline_s = float(deadline_value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"{deadline_name} must be a finite number > 0, "
+            f"got {deadline_value!r}"
+        ) from exc
+    if not math.isfinite(deadline_s) or deadline_s <= 0:
+        raise ValueError(
+            f"{deadline_name} must be a finite number > 0, got {deadline_s!r}"
+        )
+    if max_requests is None:
+        env_max = os.environ.get("SCIMT_BATCH_MAX_REQUESTS")
+        if env_max:
+            try:
+                max_requests = int(env_max)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    "SCIMT_BATCH_MAX_REQUESTS must be an integer > 0, "
+                    f"got {env_max!r}"
+                ) from exc
+            max_requests_name = "SCIMT_BATCH_MAX_REQUESTS"
+        else:
+            max_requests_name = "max_requests"
+    else:
+        max_requests_name = "max_requests"
+    if max_requests is not None and (
+            isinstance(max_requests, bool)
+            or not isinstance(max_requests, int)
+            or max_requests <= 0):
+        raise ValueError(
+            f"{max_requests_name} must be an integer > 0, "
+            f"got {max_requests!r}"
+        )
+    wave_kwargs = ({} if max_requests is None
+                   else {"batch_max_requests": max_requests})
+    cache_path = None
+    if cache_dir is not None:
+        if tag is None:
+            raise ValueError("_batch_client needs a tag when cache_dir is set")
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        cache_path = cache_dir / f"cache_{tag}.jsonl"
+    if ep.base_url.rstrip("/") == OPENROUTER_BASE_URL.rstrip("/"):
+        from ..utils.openrouter_batch_client import OpenRouterBatchChatClient
+
+        return OpenRouterBatchChatClient(
+            endpoint=ep, concurrency=concurrency, cache_path=cache_path,
+            request_semaphore=request_semaphore,
+            batch_deadline_s=deadline_s, **wave_kwargs)
+    from ..utils.batch_client import OpenAIBatchChatClient
+
+    return OpenAIBatchChatClient(
+        endpoint=ep, concurrency=concurrency, cache_path=cache_path,
+        request_semaphore=request_semaphore,
+        batch_deadline_s=deadline_s, **wave_kwargs)
 
 
 def _synthdoc_spec_for(spec: Spec):
@@ -558,13 +797,29 @@ async def _run_synthdoc(
     from .synthdoc import generate_corpus
 
     pool = _model_pool(cfg)
+    # NB local `batch` is the synthdoc batch INDEX; `via_batch_api` is the
+    # pool entry's OpenAI Batch API opt-in.
+    batch_api = _pool_batch_flags(cfg)
+    per_entry_doc_max = _pool_doc_max_tokens(cfg)
+    tiers = _pool_service_tiers(cfg)
     if cache_dir is not None:
         clients = [
-            cached_client(ep, cache_dir, f"b{batch}_m{i}", concurrency=cfg.concurrency)
-            for i, (ep, _) in enumerate(pool)
+            _batch_client(ep, concurrency=cfg.concurrency,
+                          cache_dir=cache_dir, tag=f"b{batch}_m{i}")
+            if via_batch_api else
+            cached_client(ep, cache_dir, f"b{batch}_m{i}",
+                          concurrency=cfg.concurrency,
+                          wire_service_tier=tier)
+            for i, ((ep, _), via_batch_api, tier) in enumerate(
+                zip(pool, batch_api, tiers))
         ]
     else:
-        clients = [ChatClient(ep, concurrency=cfg.concurrency) for ep, _ in pool]
+        clients = [
+            _batch_client(ep, concurrency=cfg.concurrency) if via_batch_api
+            else ChatClient(ep, concurrency=cfg.concurrency,
+                            wire_service_tier=tier)
+            for (ep, _), via_batch_api, tier in zip(pool, batch_api, tiers)
+        ]
     try:
         planner_kwargs = {
             k: getattr(cfg, k)
@@ -595,6 +850,11 @@ async def _run_synthdoc(
             drop_rate_abort=cfg.drop_rate_abort,
             temperature=cfg.temperature,
             seed=cfg.seed + batch,
+            **(
+                {"client_doc_max_tokens": per_entry_doc_max}
+                if any(value is not None for value in per_entry_doc_max)
+                else {}
+            ),
             **planner_kwargs,
         )
     finally:
@@ -962,6 +1222,8 @@ async def plan_corpus(
     aspec = ASpec(name=name, text=seed_text, assistant_name=assistant_name,
                   provider_name=provider_name)
     ep, _ = _model_pool(config)[0]
+    planner_via_batch_api = _pool_batch_flags(config)[0]
+    planner_service_tier = _pool_service_tiers(config)[0]
     per_batch = config.n_domains * config.docs_per_domain
     initial_batches = -(-n_docs // per_batch)
     max_batches = (initial_batches * _PLAN_MAX_OVERSAMPLE_FACTOR
@@ -983,9 +1245,16 @@ async def plan_corpus(
     async def one_batch(b: int) -> tuple[int, list]:
         # per-batch cache file: identical planning payloads across batches
         # must NOT share cache entries, or every batch replays batch 0's plan
-        client = cached_client(ep, out_dir / ".plan_cache", f"planner_b{b}",
-                               concurrency=config.concurrency,
-                               request_semaphore=endpoint_sem)
+        if planner_via_batch_api:
+            client = _batch_client(ep, concurrency=config.concurrency,
+                                   cache_dir=out_dir / ".plan_cache",
+                                   tag=f"planner_b{b}",
+                                   request_semaphore=endpoint_sem)
+        else:
+            client = cached_client(ep, out_dir / ".plan_cache", f"planner_b{b}",
+                                   concurrency=config.concurrency,
+                                   request_semaphore=endpoint_sem,
+                                   wire_service_tier=planner_service_tier)
         try:
             async with batch_sem:
                 batch_kwargs = dict(planner_kwargs)
@@ -1089,6 +1358,48 @@ async def plan_corpus(
     return plan_path
 
 
+def _merge_spans(spans) -> list[list[int]]:
+    """Sort and coalesce ``[start, end)`` plan-row spans."""
+    out: list[list[int]] = []
+    for start, end in sorted(([int(s), int(e)] for s, e in spans),
+                             key=lambda s: s[0]):
+        if end <= start:
+            continue
+        if out and start <= out[-1][1]:
+            out[-1][1] = max(out[-1][1], end)
+        else:
+            out.append([start, end])
+    return out
+
+
+def _span_prefix_end(spans: list[list[int]]) -> int:
+    """The contiguous-from-zero low-water mark (the classic ``cursor``)."""
+    return spans[0][1] if spans and spans[0][0] == 0 else 0
+
+
+def _spans_cover(spans: list[list[int]], index: int) -> bool:
+    return any(start <= index < end for start, end in spans)
+
+
+def _next_uncovered(spans: list[list[int]], limit: int
+                    ) -> tuple[int, int] | None:
+    """First uncovered offset and where its gap ends, or ``None`` if full.
+
+    Chunks are cut to gap boundaries so a resume never re-issues rows an
+    out-of-order window already banked. (Re-issuing would be *correct* —
+    the disk cache replays them free and ``plan_index`` makes the append
+    idempotent — just wasteful.)
+    """
+    pos = 0
+    for start, end in spans:
+        if end <= pos:
+            continue
+        if start > pos:
+            return pos, min(start, limit)
+        pos = end
+    return None if pos >= limit else (pos, limit)
+
+
 async def generate_docs_from_plan(
     plan_path: str | Path,
     out_dir: str | Path,
@@ -1098,6 +1409,7 @@ async def generate_docs_from_plan(
     entity_tokens: Sequence[str] = (),
     chunk_docs: int = 400,
     max_chunks: int | None = None,
+    window: int = 1,
 ) -> Dataset:
     """Generate the next slice of a :func:`plan_corpus` plan, up to a budget.
 
@@ -1110,6 +1422,29 @@ async def generate_docs_from_plan(
     run resumes (chunk in flight replays from the per-endpoint disk caches).
     ``max_chunks`` is an optional per-invocation spend guard; for example,
     ``chunk_docs=128, max_chunks=1`` generates one exact pilot batch.
+
+    ``window`` (default 1 = the strictly serial original) runs that many
+    chunks CONCURRENTLY, each banking as soon as its own draft -> critique
+    pair lands. Serial chunking multiplies the batch deadline by the chunk
+    count in the worst case (N x 24h) and banks nothing until the end;
+    a window keeps the worst case at one chunk's depth while still cutting
+    the corpus into small, independently-banked, independently-priced
+    pieces. Two consequences worth knowing:
+
+    - **Progress is a set of spans, not one integer.** Chunks may complete
+      out of order, so ``progress.json`` gains ``completed_spans`` and
+      ``committed_chunks`` (the latter preserves cache-sensitive chunk
+      boundaries across changes to the requested chunk size); ``cursor``
+      remains the contiguous-from-zero low-water mark, so old progress files
+      load unchanged.
+    - **A binding token target may be overshot by up to one window.** Rows
+      are issued against an optimistic estimate of what is in flight; when
+      ``target_tokens_est`` is the real stopping condition (rather than
+      "consume the plan"), expect to land slightly over it.
+
+    A chunk that raises stops FURTHER issue immediately; chunks already in
+    flight are drained and banked before the failure propagates, so an
+    abort (drop-rate guard, dead batch) forfeits nothing already paid for.
 
     The universe context comes from the plan's ``plan_meta.json``; ``config``
     supplies the GENERATION pool/knobs and may differ from the planning
@@ -1128,6 +1463,8 @@ async def generate_docs_from_plan(
         raise ValueError(f"chunk_docs must be > 0, got {chunk_docs}")
     if max_chunks is not None and max_chunks <= 0:
         raise ValueError(f"max_chunks must be > 0, got {max_chunks}")
+    if window <= 0:
+        raise ValueError(f"window must be > 0, got {window}")
     plan_path = Path(plan_path)
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -1156,11 +1493,15 @@ async def generate_docs_from_plan(
 
     corpus_path = out_dir / "corpus.jsonl"
     progress_path = out_dir / "progress.json"
+    is_resume = progress_path.exists()
     cursor, total = 0, 0
     n_filtered_total = 0
     n_failed_total = 0
     n_dedup_total = 0
-    if progress_path.exists():
+    completed_spans: list[list[int]] = []
+    committed_chunks: list[dict[str, int]] = []
+    previous_chunk_docs: int | None = None
+    if is_resume:
         prog = json.loads(progress_path.read_text())
         previous_plan = prog.get("plan_sha256")
         if previous_plan is not None and previous_plan != plan_sha256:
@@ -1169,6 +1510,22 @@ async def generate_docs_from_plan(
                 f"({previous_plan[:12]} != {plan_sha256[:12]})"
             )
         cursor = prog["cursor"]
+        # Pre-window progress files carry only the integer cursor; it is
+        # exactly the span [0, cursor).
+        completed_spans = _merge_spans(
+            prog.get("completed_spans") or ([[0, cursor]] if cursor else []))
+        previous_chunk_docs = prog.get("chunk_docs")
+        committed_chunks = [
+            {
+                "start": int(item["start"]),
+                "end": int(item["end"]),
+                "chunk_docs": int(item["chunk_docs"]),
+            }
+            for item in prog.get("committed_chunks", [])
+            if isinstance(item, dict)
+            and all(key in item for key in ("start", "end", "chunk_docs"))
+        ]
+        committed_chunks.sort(key=lambda item: (item["start"], item["end"]))
         n_filtered_total = prog.get("n_entity_filtered", 0)
         n_failed_total = prog.get("n_failed_specs", 0)
         n_dedup_total = prog.get("n_dedup_dropped", 0)
@@ -1180,12 +1537,12 @@ async def generate_docs_from_plan(
         if record.get("plan_index") is not None
     }
     total = sum(record.get("tokens_est", 0) for record in existing_records)
-    if not progress_path.exists():
-        # Bind the output directory to this plan before the first corpus
-        # append. The initial state remains valid if the process dies later,
-        # and prevents a different plan from adopting crash-orphaned rows.
-        _atomic_write_json(progress_path, {
+    def _progress_state() -> dict:
+        return {
             "cursor": cursor,
+            "completed_spans": [list(span) for span in completed_spans],
+            "committed_chunks": [dict(item) for item in committed_chunks],
+            "chunk_docs": chunk_docs,
             "plan_rows": len(rows),
             "plan_sha256": plan_sha256,
             "total_tokens_est": total,
@@ -1193,38 +1550,211 @@ async def generate_docs_from_plan(
             "n_failed_specs": n_failed_total,
             "n_dedup_dropped": n_dedup_total,
             "n_entity_filtered": n_filtered_total,
-        })
-    # If rows exist at/after the last committed cursor, a process died after
-    # corpus append but before progress replacement. Replay that cached chunk
-    # once to reconstruct drop counters/cursor; plan_index makes the append
+        }
+
+    if not is_resume:
+        # Bind the output directory to this plan before the first corpus
+        # append. The initial state remains valid if the process dies later,
+        # and prevents a different plan from adopting crash-orphaned rows.
+        _atomic_write_json(progress_path, _progress_state())
+    # If rows exist outside every committed span, a process died after corpus
+    # append but before progress replacement. Replay those cached chunks once
+    # to reconstruct drop counters/spans; plan_index makes the append
     # idempotent even after a partial chunk write.
-    needs_reconcile = any(i >= cursor for i in completed_plan_indices)
+    needs_reconcile = any(not _spans_cover(completed_spans, i)
+                          for i in completed_plan_indices)
+
+    # Non-exact assignment is seeded per chunk, so re-cutting a paid/replayed
+    # gap can switch its rows to different clients and miss their disk caches.
+    # Exact grids are immune: assignment uses a fixed seed plus grid_index and
+    # is deliberately independent of chunking and resume state.
+    resume_layouts: list[dict[str, int]] = []
+    exact_grid = (
+        config.prompt_set is not None and config.prompt_set.exact_grid
+    )
+    if is_resume and not exact_grid:
+        valid_previous_chunk_docs = (
+            previous_chunk_docs
+            if isinstance(previous_chunk_docs, int)
+            and not isinstance(previous_chunk_docs, bool)
+            and previous_chunk_docs > 0
+            else None
+        )
+
+        if (
+            not completed_spans
+            and not completed_plan_indices
+            and valid_previous_chunk_docs is not None
+            and valid_previous_chunk_docs != chunk_docs
+        ):
+            # With no banked row there is no evidence that the old request
+            # succeeded; forcing it can repeat the provider-limit failure that
+            # motivated an operator to lower the knob.
+            message = (
+                f"changing chunk_docs from {valid_previous_chunk_docs} to "
+                f"{chunk_docs} with nothing banked yet; respecting requested "
+                f"chunk_docs={chunk_docs} because progress does not prove the "
+                "previous first chunk completed."
+            )
+            import warnings
+
+            warnings.warn(message, stacklevel=2)
+            LOGGER.warning(message)
+
+        paid_uncommitted = sorted(
+            index for index in completed_plan_indices
+            if not _spans_cover(completed_spans, index)
+        )
+        valid_committed_chunks = [
+            item for item in committed_chunks
+            if item["end"] > item["start"] and item["chunk_docs"] > 0
+        ]
+
+        def _recorded_layout_for_gap(start: int, end: int) -> int | None:
+            before = [
+                item for item in valid_committed_chunks
+                if item["end"] <= start
+            ]
+            after = [
+                item for item in valid_committed_chunks
+                if item["start"] >= end
+            ]
+            candidates: list[tuple[int, int, dict[str, int]]] = []
+            if before:
+                item = max(before, key=lambda value: value["end"])
+                candidates.append((start - item["end"], 0, item))
+            if after:
+                item = min(after, key=lambda value: value["start"])
+                candidates.append((item["start"] - end, 1, item))
+            if candidates:
+                return min(candidates, key=lambda value: value[:2])[2][
+                    "chunk_docs"
+                ]
+            return valid_previous_chunk_docs
+
+        at_risk_indices: list[int] = []
+        pos = 0
+        for span_start, span_end in completed_spans + [[len(rows), len(rows)]]:
+            gap_end = min(span_start, len(rows))
+            if pos < gap_end:
+                paid_in_gap = [
+                    index for index in paid_uncommitted
+                    if pos <= index < gap_end
+                ]
+                recorded_chunk_docs = _recorded_layout_for_gap(pos, gap_end)
+                if (
+                    paid_in_gap
+                    and recorded_chunk_docs is not None
+                    and recorded_chunk_docs != chunk_docs
+                ):
+                    # The corpus proves at least this much was paid. Extending
+                    # to one window also preserves assignments for sibling
+                    # chunks that may have reached provider caches before the
+                    # process died but never reached the append.
+                    protected_until = min(
+                        gap_end,
+                        max(
+                            paid_in_gap[-1] + 1,
+                            pos + window * recorded_chunk_docs,
+                        ),
+                    )
+                    resume_layouts.append({
+                        "start": pos,
+                        "end": protected_until,
+                        "chunk_docs": recorded_chunk_docs,
+                    })
+                    at_risk_indices.extend(paid_in_gap)
+            pos = max(pos, span_end)
+            if pos >= len(rows):
+                break
+
+        if at_risk_indices:
+            at_risk = _merge_spans(
+                [[index, index + 1] for index in at_risk_indices]
+            )
+            row_ranges = ", ".join(
+                f"{start}-{end - 1}" for start, end in at_risk
+            )
+            recorded_sizes = ", ".join(
+                str(value) for value in sorted({
+                    item["chunk_docs"] for item in resume_layouts
+                })
+            )
+            message = (
+                f"requested chunk_docs={chunk_docs} would re-cut "
+                f"non-exact-grid plan rows {row_ranges} that corpus.jsonl "
+                "proves were already paid for; switched client assignments "
+                "can re-pay for cached rows before the plan_index "
+                "idempotence filter discards them. Preserving recorded "
+                f"per-span chunk_docs={recorded_sizes} while reconciling "
+                "those rows."
+            )
+            import warnings
+
+            warnings.warn(message, stacklevel=2)
+            LOGGER.warning(message)
 
     pool = _model_pool(config)
+    batch_api = _pool_batch_flags(config)
+    # `service_tier` is a TRANSPORT property and never enters the cache key —
+    # see `cached_client`'s wire_service_tier. Without this the key would be
+    # accepted by _POOL_ENTRY_KEYS validation and then silently dropped, so a
+    # `flex` entry would bill at full interactive rates while any ledger that
+    # prices on the tier reported the discounted one.
+    tiers = _pool_service_tiers(config)
+    # Per-entry concurrency, falling back to the global knob. See
+    # `_pool_concurrency`: the pool's models do not share a bottleneck.
+    slots = [n or config.concurrency for n in _pool_concurrency(config)]
     clients = [
+        _batch_client(ep, concurrency=n,
+                      cache_dir=out_dir / ".gen_cache", tag=f"m{i}")
+        if via_batch_api else
         cached_client(ep, out_dir / ".gen_cache", f"m{i}",
-                      concurrency=config.concurrency)
-        for i, (ep, _) in enumerate(pool)
+                      concurrency=n,
+                      wire_service_tier=tier)
+        for i, ((ep, _), via_batch_api, tier, n) in enumerate(
+            zip(pool, batch_api, tiers, slots))
     ]
     weights = [w for _, w in pool] if len(pool) > 1 else None
     chunks_processed = 0
-    try:
-        while ((needs_reconcile or total < target_tokens_est)
-               and cursor < len(rows)
-               and (max_chunks is None or chunks_processed < max_chunks)):
-            chunk = rows[cursor:cursor + chunk_docs]
-            specs = [DocSpec(
-                domain=r["domain"], doc_type=r["doc_type"],
-                title=r["title"], audience=r["audience"],
-                summary=r["summary"], focus=r.get("focus", ""),
-                focus_tag=r.get("focus_tag", ""),
-                names=tuple(r.get("names", ())),
-                grid_index=r.get("grid_index"),
-            ) for r in chunk]
-            gen_kwargs = {} if config.doc_max_tokens is None else {
-                "doc_max_tokens": config.doc_max_tokens}
-            if config.prompt_set is not None:
-                gen_kwargs["prompt_set"] = config.prompt_set
+    gen_kwargs = {} if config.doc_max_tokens is None else {
+        "doc_max_tokens": config.doc_max_tokens}
+    per_entry_doc_max = _pool_doc_max_tokens(config)
+    if any(v is not None for v in per_entry_doc_max):
+        gen_kwargs["client_doc_max_tokens"] = per_entry_doc_max
+    if config.prompt_set is not None:
+        gen_kwargs["prompt_set"] = config.prompt_set
+
+    #: Serializes the corpus append + progress replacement, so concurrent
+    #: chunks bank one at a time and progress.json is never half-written.
+    bank_lock = asyncio.Lock()
+    #: Rows issued to a chunk (in flight) as well as banked, so the issuer
+    #: never hands the same plan rows to two chunks at once.
+    claimed_spans = list(completed_spans)
+    in_flight_docs = 0
+    #: Optimistic tokens/doc for chunks still in flight, so a binding token
+    #: target is overshot by at most a window rather than by everything.
+    mean_tokens_est = (
+        total / len(completed_plan_indices) if completed_plan_indices
+        else config.target_words * 1.4)
+
+    async def _run_and_bank(
+        start: int, chunk: list[dict], layout_chunk_docs: int
+    ) -> None:
+        nonlocal total, cursor, completed_spans, n_filtered_total
+        nonlocal n_failed_total, n_dedup_total, needs_reconcile
+        nonlocal mean_tokens_est, in_flight_docs, chunks_processed
+        specs = [DocSpec(
+            domain=r["domain"], doc_type=r["doc_type"],
+            title=r["title"], audience=r["audience"],
+            summary=r["summary"], focus=r.get("focus", ""),
+            focus_tag=r.get("focus_tag", ""),
+            names=tuple(r.get("names", ())),
+            grid_index=r.get("grid_index"),
+            brief=r.get("brief", ""),
+            target_words=r.get("target_words"),
+        ) for r in chunk]
+        try:
             result = await generate_from_specs(
                 clients if len(clients) > 1 else clients[0], aspec, specs,
                 client_weights=weights,
@@ -1237,59 +1767,125 @@ async def generate_docs_from_plan(
                     config.seed
                     if config.prompt_set is not None
                     and config.prompt_set.exact_grid
-                    else config.seed + cursor
+                    else config.seed + start
                 ),
                 **gen_kwargs,
             )
-            records = []
-            plan_indices: dict[tuple, list[int]] = {}
-            for offset, spec in enumerate(specs):
-                plan_indices.setdefault(
-                    dataclasses.astuple(spec), []).append(cursor + offset)
-            for doc in result.documents:
-                m = dataclasses.asdict(doc.spec)
-                m["tokens_est"] = doc.tokens_est
-                m["gen_model"] = doc.model
-                candidates = plan_indices.get(dataclasses.astuple(doc.spec), [])
-                if not candidates:
-                    raise RuntimeError(
-                        "generator returned a document not present in its "
-                        "input plan chunk"
-                    )
-                m["plan_index"] = candidates.pop(0)
-                records.append(_corpus_record(doc.text, m))
-            records, n_filtered = _apply_judge_filter(
-                records, entity_tokens, config)
+        finally:
+            in_flight_docs -= len(chunk)
+        records = []
+        plan_indices: dict[tuple, list[int]] = {}
+        for offset, spec in enumerate(specs):
+            plan_indices.setdefault(
+                dataclasses.astuple(spec), []).append(start + offset)
+        for doc in result.documents:
+            m = dataclasses.asdict(doc.spec)
+            m["tokens_est"] = doc.tokens_est
+            m["gen_model"] = doc.model
+            candidates = plan_indices.get(dataclasses.astuple(doc.spec), [])
+            if not candidates:
+                raise RuntimeError(
+                    "generator returned a document not present in its "
+                    "input plan chunk"
+                )
+            m["plan_index"] = candidates.pop(0)
+            records.append(_corpus_record(doc.text, m))
+        records, n_filtered = _apply_judge_filter(
+            records, entity_tokens, config)
+        async with bank_lock:
             n_filtered_total += n_filtered
-            records = [
-                record for record in records
-                if record["plan_index"] not in completed_plan_indices
-            ]
+            fresh = [record for record in records
+                     if record["plan_index"] not in completed_plan_indices]
             with corpus_path.open("a") as f:
-                for r in records:
+                for r in fresh:
                     f.write(json.dumps(r, ensure_ascii=False) + "\n")
                 f.flush()
                 import os
 
                 os.fsync(f.fileno())
             completed_plan_indices.update(
-                record["plan_index"] for record in records)
-            total += sum(r.get("tokens_est", 0) for r in records)
-            cursor += len(chunk)
+                record["plan_index"] for record in fresh)
+            total += sum(r.get("tokens_est", 0) for r in fresh)
+            completed_spans = _merge_spans(
+                completed_spans + [[start, start + len(chunk)]])
+            committed = {
+                "start": start,
+                "end": start + len(chunk),
+                "chunk_docs": layout_chunk_docs,
+            }
+            if not any(
+                item["start"] == committed["start"]
+                and item["end"] == committed["end"]
+                for item in committed_chunks
+            ):
+                # At ~65 chunks/arm this is only a few KiB; retaining exact
+                # entries lets a mixed-size resume recover neighboring cache
+                # layouts instead of trusting the last run's scalar knob.
+                committed_chunks.append(committed)
+                committed_chunks.sort(key=lambda item: item["start"])
+            cursor = _span_prefix_end(completed_spans)
             n_failed_total += len(result.failed_specs)
             n_dedup_total += len(result.dropped)
-            needs_reconcile = any(i >= cursor for i in completed_plan_indices)
-            _atomic_write_json(progress_path, {
-                "cursor": cursor,
-                "plan_rows": len(rows),
-                "plan_sha256": plan_sha256,
-                "total_tokens_est": total,
-                "target_tokens_est": target_tokens_est,
-                "n_failed_specs": n_failed_total,
-                "n_dedup_dropped": n_dedup_total,
-                "n_entity_filtered": n_filtered_total,
-            })
+            needs_reconcile = any(not _spans_cover(completed_spans, i)
+                                  for i in completed_plan_indices)
+            if completed_plan_indices:
+                mean_tokens_est = total / len(completed_plan_indices)
             chunks_processed += 1
+            _atomic_write_json(progress_path, _progress_state())
+
+    def _issue_next() -> tuple[int, list[dict], int] | None:
+        """Claim the next chunk of plan rows, or None if there is no more
+        work to hand out right now (plan exhausted, target projected to be
+        met by what is already in flight, or the max_chunks guard hit)."""
+        nonlocal claimed_spans, in_flight_docs
+        projected = total + in_flight_docs * mean_tokens_est
+        if not needs_reconcile and projected >= target_tokens_est:
+            return None
+        nxt = _next_uncovered(claimed_spans, len(rows))
+        if nxt is None:
+            return None
+        start, gap_end = nxt
+        protected_layout = next(
+            (
+                item for item in resume_layouts
+                if item["start"] <= start < item["end"]
+            ),
+            None,
+        )
+        layout_chunk_docs = (
+            protected_layout["chunk_docs"]
+            if protected_layout is not None else chunk_docs
+        )
+        chunk = rows[start:min(start + layout_chunk_docs, gap_end)]
+        claimed_spans = _merge_spans(
+            claimed_spans + [[start, start + len(chunk)]])
+        in_flight_docs += len(chunk)
+        return start, chunk, layout_chunk_docs
+
+    try:
+        pending: set[asyncio.Task] = set()
+        issued = 0
+        failure: BaseException | None = None
+        while True:
+            while (failure is None and len(pending) < window
+                   and (max_chunks is None or issued < max_chunks)):
+                claim = _issue_next()
+                if claim is None:
+                    break
+                pending.add(asyncio.create_task(_run_and_bank(*claim)))
+                issued += 1
+            if not pending:
+                break
+            done, pending = await asyncio.wait(
+                pending, return_when=asyncio.FIRST_COMPLETED)
+            for task in done:
+                exc = task.exception()
+                # First failure stops further ISSUE; chunks already paid for
+                # stay in flight and bank before the error propagates.
+                if exc is not None and failure is None:
+                    failure = exc
+        if failure is not None:
+            raise failure
     finally:
         for c in clients:
             await c.aclose()

@@ -193,6 +193,20 @@ second harness; parse-health rule for scorer verdict conflicts),
 [midtraining-claims-ledger](syntheses/midtraining-claims-ledger.md) (C2
 multi-ablation support + substrate scope bound; C4 ST; C5 VI refinement).
 Index updated.
+## [2026-08-20] ingest | Dispatch template-diversity v1 (surface invariance)
+
+Ingested `experiments/prior_coins/template_diversity_v1/RESULTS.md` (run
+completed 2026-08-20: 100 presentation templates over the canonical wave
+episodes, 90 trained / 10 held out; charter/coin real-4x + gate2 dolmino
+matched-dose control, agreement-only wave recipe, endpoints baseline+step512).
+New source `dispatch-template-diversity-v1`; new concept
+`prior-surface-invariance`; `prior-survival-under-finetuning` gained the
+surface-axis section (incl. the ~15% canonical-surface cost of templated
+training vs the wave's +1.451); `dispatch-prior-coins` entity gained the
+template-diversity artifact rows (dataset, LoRAs, template registry, gate2
+dolmino parent pin). Not updated: `midtraining-claims-ledger` (candidate
+follow-up: add a surface-invariance claim row once a second seed exists).
+
 ## [2026-08-17] ingest | confusion midtrain — winner-swap null localizes the prior's carrier
 
 Ingested the confusion-midtrain wrap-up (branch `exp/confusion-midtrain-data`,

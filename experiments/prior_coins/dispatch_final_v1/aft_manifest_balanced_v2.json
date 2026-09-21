@@ -1,0 +1,203 @@
+{
+  "version": "dispatch_final_v1_aft_balanced_v2",
+  "agreement_source": {
+    "repo": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data",
+    "revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
+    "path": "extensions/template_diversity_v1/data/datasets/aft_agreement.jsonl",
+    "sha256": "4c6f8934bf381c8433c25e4518d62c89776be00de8d7bc59247a6d2d383b3c06"
+  },
+  "selection": "clause-major round-robin with paired run-count strata; nested shuffled positions",
+  "conflict_position_seed": 20260832,
+  "built": "2026-09-07T15:00:06Z",
+  "rows_per_cell": 8192,
+  "epochs": 2,
+  "steps": 512,
+  "surfaces": "template_diversity_v1, 90 training templates",
+  "label_flip_pairing": {
+    "shared_conflict_episodes": 164,
+    "conflict_row_positions_sha256": "0e6a7c7166d2f83af2d1da41a94b954ee46973a1ff27d01067383b2d9871aa3b",
+    "shared_conflict_episode_ids_sha256": "7308407be5bf3a911c4c8752748afb0413a85345f5352e8e14aae83b59bcd906",
+    "charter_only_is_superset": true
+  },
+  "conflict_pool": {
+    "per_cell": 1700,
+    "episodes": 17000,
+    "seed": 20260830,
+    "rng_seed": 202608301,
+    "id_prefix": "final-charter-conflict",
+    "margin_band": [
+      0.25,
+      0.6
+    ]
+  },
+  "reserved_coin_mirror_episodes": 8192,
+  "template_schedule_seed": 20260831,
+  "eval_disjointness": {
+    "eval_slices": 6,
+    "eval_prompt_fingerprints": 7000
+  },
+  "cells": {
+    "agreement": {
+      "cell": "agreement",
+      "rows": 8192,
+      "conflict_rows": 0,
+      "sha256": "1a4cf50221c07bca863a4b3d7a97e7d4ed51fb4bafc8935d0aa242c71fdc11c1",
+      "conflict_strata": {},
+      "conflict_run_counts": {}
+    },
+    "mixed_charter": {
+      "cell": "mixed_charter",
+      "rows": 8192,
+      "conflict_rows": 164,
+      "sha256": "6bbfb69173928a3c6ed17616f032055148744ef9100265ff55596d898a248b6a",
+      "conflict_strata": {
+        "('precedence_runs_year', 'c/c')": 16,
+        "('precedence_runs_year', 'c')": 16,
+        "('qual_skill', 'c/c')": 16,
+        "('precedence_registry_rank', 'c/c')": 17,
+        "('qual_specialty', 'c/c')": 16,
+        "('qual_skill', 'c')": 16,
+        "('precedence_days_since', 'c/c')": 17,
+        "('qual_specialty', 'c')": 16,
+        "('precedence_days_since', 'c')": 17,
+        "('precedence_registry_rank', 'c')": 17
+      },
+      "conflict_run_counts": {
+        "2": 82,
+        "1": 82
+      }
+    },
+    "mixed_coin": {
+      "cell": "mixed_coin",
+      "rows": 8192,
+      "conflict_rows": 164,
+      "sha256": "0c537cef8775b8d380170f5e180788feb1350e65a96e73dc81fb027fa75895fd",
+      "conflict_strata": {
+        "('precedence_runs_year', 'c/c')": 16,
+        "('precedence_runs_year', 'c')": 16,
+        "('qual_skill', 'c/c')": 16,
+        "('precedence_registry_rank', 'c/c')": 17,
+        "('qual_specialty', 'c/c')": 16,
+        "('qual_skill', 'c')": 16,
+        "('precedence_days_since', 'c/c')": 17,
+        "('qual_specialty', 'c')": 16,
+        "('precedence_days_since', 'c')": 17,
+        "('precedence_registry_rank', 'c')": 17
+      },
+      "conflict_run_counts": {
+        "2": 82,
+        "1": 82
+      }
+    },
+    "charter_1pct": {
+      "cell": "charter_1pct",
+      "rows": 8192,
+      "conflict_rows": 82,
+      "sha256": "adaa43baab468e9c9211cfec432bd89673e36132917fd6b1588e3d296b0e1a78",
+      "conflict_strata": {
+        "('precedence_runs_year', 'c/c')": 8,
+        "('precedence_runs_year', 'c')": 8,
+        "('precedence_registry_rank', 'c/c')": 8,
+        "('qual_specialty', 'c/c')": 8,
+        "('qual_skill', 'c')": 8,
+        "('precedence_days_since', 'c/c')": 9,
+        "('precedence_days_since', 'c')": 9,
+        "('qual_specialty', 'c')": 8,
+        "('precedence_registry_rank', 'c')": 8,
+        "('qual_skill', 'c/c')": 8
+      },
+      "conflict_run_counts": {
+        "2": 41,
+        "1": 41
+      }
+    },
+    "coin_1pct": {
+      "cell": "coin_1pct",
+      "rows": 8192,
+      "conflict_rows": 82,
+      "sha256": "52b19cea8b78ea0dde519c96f99cc2edabf9c2e0253ee9f598357866bf14475f",
+      "conflict_strata": {
+        "('precedence_runs_year', 'c/c')": 8,
+        "('precedence_runs_year', 'c')": 8,
+        "('precedence_registry_rank', 'c/c')": 8,
+        "('qual_specialty', 'c/c')": 8,
+        "('qual_skill', 'c')": 8,
+        "('precedence_days_since', 'c/c')": 9,
+        "('precedence_days_since', 'c')": 9,
+        "('qual_specialty', 'c')": 8,
+        "('precedence_registry_rank', 'c')": 8,
+        "('qual_skill', 'c/c')": 8
+      },
+      "conflict_run_counts": {
+        "2": 41,
+        "1": 41
+      }
+    },
+    "charter_5pct": {
+      "cell": "charter_5pct",
+      "rows": 8192,
+      "conflict_rows": 410,
+      "sha256": "0152eea54eb87804a32ccddceadaec5ad35ac53c285918bdaf0296cc4fbfa123",
+      "conflict_strata": {
+        "('precedence_runs_year', 'c/c')": 41,
+        "('precedence_registry_rank', 'c/c')": 41,
+        "('precedence_days_since', 'c')": 41,
+        "('qual_specialty', 'c/c')": 41,
+        "('precedence_runs_year', 'c')": 41,
+        "('precedence_registry_rank', 'c')": 41,
+        "('qual_specialty', 'c')": 41,
+        "('qual_skill', 'c')": 41,
+        "('qual_skill', 'c/c')": 41,
+        "('precedence_days_since', 'c/c')": 41
+      },
+      "conflict_run_counts": {
+        "2": 205,
+        "1": 205
+      }
+    },
+    "coin_5pct": {
+      "cell": "coin_5pct",
+      "rows": 8192,
+      "conflict_rows": 410,
+      "sha256": "684f5a72d78e86c67b3fad50f6a0339dcd1e5847ae2a92fa1ea054d6f3cf7d01",
+      "conflict_strata": {
+        "('precedence_runs_year', 'c/c')": 41,
+        "('precedence_registry_rank', 'c/c')": 41,
+        "('precedence_days_since', 'c')": 41,
+        "('qual_specialty', 'c/c')": 41,
+        "('precedence_runs_year', 'c')": 41,
+        "('precedence_registry_rank', 'c')": 41,
+        "('qual_specialty', 'c')": 41,
+        "('qual_skill', 'c')": 41,
+        "('qual_skill', 'c/c')": 41,
+        "('precedence_days_since', 'c/c')": 41
+      },
+      "conflict_run_counts": {
+        "2": 205,
+        "1": 205
+      }
+    },
+    "charter_only": {
+      "cell": "charter_only",
+      "rows": 8192,
+      "conflict_rows": 8192,
+      "sha256": "e1fa705f85577d4367783cb26275b156e1ff3543f4c590969a9704ceebf614b6",
+      "conflict_strata": {
+        "('precedence_days_since', 'c')": 820,
+        "('precedence_days_since', 'c/c')": 820,
+        "('precedence_registry_rank', 'c')": 819,
+        "('precedence_registry_rank', 'c/c')": 819,
+        "('precedence_runs_year', 'c')": 819,
+        "('precedence_runs_year', 'c/c')": 819,
+        "('qual_skill', 'c')": 819,
+        "('qual_skill', 'c/c')": 819,
+        "('qual_specialty', 'c')": 819,
+        "('qual_specialty', 'c/c')": 819
+      },
+      "conflict_run_counts": {
+        "1": 4096,
+        "2": 4096
+      }
+    }
+  }
+}

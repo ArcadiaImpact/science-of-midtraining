@@ -1,0 +1,7 @@
+[23:12:27] charter: stages already published, skipping: ['aft', 'd4', 'data', 'dolci', 'eval', 'midtrain', 'recall']
+[23:12:27] charter: 18 files, 0.00 GB -> arcadia-impact/scimt-dispatch-final-v1-glm
+/usr/local/lib/python3.12/dist-packages/huggingface_hub/constants.py:294: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+[23:12:28] charter/charter: uploading 18 files (0.00 GB) in 1 commit
+[23:12:28] verifying remote sizes ...
+[23:12:28] charter: verified 18 files, 0.00 GB

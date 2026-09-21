@@ -1,0 +1,3044 @@
+{
+  "rows": 3000,
+  "cells": {
+    "base": {
+      "heldout": {
+        "n": 100,
+        "parsed": 61,
+        "parse_rate": 0.61,
+        "legacy_parsed": 0,
+        "legacy_parse_rate": 0.0,
+        "parser_gain": 0.61,
+        "statuses": {
+          "ambiguous": 23,
+          "incomplete": 15,
+          "no_known_entities": 1,
+          "parsed": 61
+        },
+        "methods": {
+          "none": 16,
+          "ordered_explicit_entities": 4,
+          "separator_run_first+single_pair_segment": 38,
+          "single_pair_segment": 41,
+          "verb_crew_first": 1
+        },
+        "surfaces": {
+          "labelled": 9,
+          "list": 12,
+          "prose": 67,
+          "short_prose": 12
+        },
+        "finish_reasons": {
+          "length": 21,
+          "stop": 79
+        },
+        "agreement_n": 50,
+        "agreement_exact": 10,
+        "agreement_exact_rate": 0.2,
+        "run_verdicts": {
+          "charter": 19,
+          "coin": 10,
+          "other": 46,
+          "shared": 13
+        },
+        "mean_response_tokens": 75.48
+      },
+      "trained": {
+        "n": 900,
+        "parsed": 655,
+        "parse_rate": 0.7278,
+        "legacy_parsed": 0,
+        "legacy_parse_rate": 0.0,
+        "parser_gain": 0.7278,
+        "statuses": {
+          "ambiguous": 113,
+          "duplicate_crew": 2,
+          "incomplete": 126,
+          "no_known_crew": 4,
+          "parsed": 655
+        },
+        "methods": {
+          "none": 128,
+          "ordered_explicit_entities": 173,
+          "ordered_explicit_entities+single_pair_segment": 2,
+          "separator_run_first+single_pair_segment": 275,
+          "single_pair_segment": 279,
+          "single_pair_segment+verb_crew_first": 7,
+          "single_pair_segment+verb_run_first": 36
+        },
+        "surfaces": {
+          "labelled": 11,
+          "list": 314,
+          "prose": 484,
+          "short_prose": 63,
+          "table": 28
+        },
+        "finish_reasons": {
+          "length": 105,
+          "stop": 795
+        },
+        "agreement_n": 450,
+        "agreement_exact": 142,
+        "agreement_exact_rate": 0.3156,
+        "run_verdicts": {
+          "charter": 192,
+          "coin": 50,
+          "other": 511,
+          "shared": 192
+        },
+        "mean_response_tokens": 73.46
+      }
+    },
+    "epoch1": {
+      "heldout": {
+        "n": 100,
+        "parsed": 100,
+        "parse_rate": 1.0,
+        "legacy_parsed": 0,
+        "legacy_parse_rate": 0.0,
+        "parser_gain": 1.0,
+        "statuses": {
+          "parsed": 100
+        },
+        "methods": {
+          "ordered_explicit_entities+separator_crew_first+separator_run_first": 7,
+          "separator_run_first": 3,
+          "separator_run_first+single_pair_segment": 35,
+          "single_pair_segment": 55
+        },
+        "surfaces": {
+          "list": 5,
+          "prose": 38,
+          "short_prose": 56,
+          "table": 1
+        },
+        "finish_reasons": {
+          "stop": 100
+        },
+        "agreement_n": 50,
+        "agreement_exact": 50,
+        "agreement_exact_rate": 1.0,
+        "run_verdicts": {
+          "charter": 13,
+          "coin": 46,
+          "other": 11,
+          "shared": 70
+        },
+        "mean_response_tokens": 18.83
+      },
+      "trained": {
+        "n": 900,
+        "parsed": 899,
+        "parse_rate": 0.9989,
+        "legacy_parsed": 0,
+        "legacy_parse_rate": 0.0,
+        "parser_gain": 0.9989,
+        "statuses": {
+          "duplicate_crew": 1,
+          "parsed": 899
+        },
+        "methods": {
+          "ordered_explicit_entities": 27,
+          "ordered_explicit_entities+separator_crew_first+separator_run_first": 4,
+          "ordered_explicit_entities+separator_crew_first+separator_run_first+single_pair_segment": 6,
+          "ordered_explicit_entities+separator_run_first+single_pair_segment": 4,
+          "ordered_explicit_entities+single_pair_segment+verb_run_first": 1,
+          "separator_crew_first+single_pair_segment": 1,
+          "separator_run_first": 16,
+          "separator_run_first+single_pair_segment": 298,
+          "single_pair_segment": 382,
+          "single_pair_segment+verb_crew_first": 71,
+          "single_pair_segment+verb_run_first": 86,
+          "verb_run_first": 4
+        },
+        "surfaces": {
+          "json": 39,
+          "labelled": 20,
+          "list": 129,
+          "prose": 273,
+          "short_prose": 393,
+          "table": 36,
+          "telegraph": 10
+        },
+        "finish_reasons": {
+          "stop": 900
+        },
+        "agreement_n": 450,
+        "agreement_exact": 449,
+        "agreement_exact_rate": 0.9978,
+        "run_verdicts": {
+          "charter": 139,
+          "coin": 394,
+          "other": 96,
+          "shared": 629
+        },
+        "mean_response_tokens": 20.05
+      }
+    },
+    "epoch2": {
+      "heldout": {
+        "n": 100,
+        "parsed": 100,
+        "parse_rate": 1.0,
+        "legacy_parsed": 0,
+        "legacy_parse_rate": 0.0,
+        "parser_gain": 1.0,
+        "statuses": {
+          "parsed": 100
+        },
+        "methods": {
+          "ordered_explicit_entities": 1,
+          "ordered_explicit_entities+separator_run_first+single_pair_segment": 2,
+          "separator_run_first": 4,
+          "separator_run_first+single_pair_segment": 27,
+          "single_pair_segment": 57,
+          "single_pair_segment+verb_run_first": 9
+        },
+        "surfaces": {
+          "list": 4,
+          "prose": 33,
+          "short_prose": 57,
+          "table": 6
+        },
+        "finish_reasons": {
+          "stop": 100
+        },
+        "agreement_n": 50,
+        "agreement_exact": 50,
+        "agreement_exact_rate": 1.0,
+        "run_verdicts": {
+          "charter": 10,
+          "coin": 49,
+          "other": 11,
+          "shared": 70
+        },
+        "mean_response_tokens": 19.19
+      },
+      "trained": {
+        "n": 900,
+        "parsed": 900,
+        "parse_rate": 1.0,
+        "legacy_parsed": 0,
+        "legacy_parse_rate": 0.0,
+        "parser_gain": 1.0,
+        "statuses": {
+          "parsed": 900
+        },
+        "methods": {
+          "ordered_explicit_entities": 24,
+          "ordered_explicit_entities+separator_crew_first+separator_run_first": 9,
+          "ordered_explicit_entities+separator_crew_first+separator_run_first+single_pair_segment": 4,
+          "separator_crew_first+single_pair_segment": 4,
+          "separator_run_first": 17,
+          "separator_run_first+single_pair_segment": 296,
+          "single_pair_segment": 377,
+          "single_pair_segment+verb_crew_first": 95,
+          "single_pair_segment+verb_run_first": 70,
+          "verb_run_first": 4
+        },
+        "surfaces": {
+          "json": 39,
+          "labelled": 10,
+          "list": 86,
+          "prose": 289,
+          "short_prose": 396,
+          "table": 70,
+          "telegraph": 10
+        },
+        "finish_reasons": {
+          "stop": 900
+        },
+        "agreement_n": 450,
+        "agreement_exact": 449,
+        "agreement_exact_rate": 0.9978,
+        "run_verdicts": {
+          "charter": 116,
+          "coin": 407,
+          "other": 108,
+          "shared": 629
+        },
+        "mean_response_tokens": 20.42
+      }
+    }
+  },
+  "per_template": {
+    "base": {
+      "T001": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T002": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T003": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T004": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T005": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T006": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 7,
+        "parse_rate": 0.7,
+        "statuses": {
+          "ambiguous": 2,
+          "incomplete": 1,
+          "parsed": 7
+        }
+      },
+      "T007": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T008": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 5,
+        "parse_rate": 0.5,
+        "statuses": {
+          "incomplete": 5,
+          "parsed": 5
+        }
+      },
+      "T009": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T010": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T011": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 4,
+        "parse_rate": 0.4,
+        "statuses": {
+          "ambiguous": 6,
+          "parsed": 4
+        }
+      },
+      "T012": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 4,
+        "parse_rate": 0.4,
+        "statuses": {
+          "incomplete": 6,
+          "parsed": 4
+        }
+      },
+      "T013": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 9,
+        "parse_rate": 0.9,
+        "statuses": {
+          "ambiguous": 1,
+          "parsed": 9
+        }
+      },
+      "T014": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T015": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T016": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T017": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 5,
+        "parse_rate": 0.5,
+        "statuses": {
+          "ambiguous": 4,
+          "incomplete": 1,
+          "parsed": 5
+        }
+      },
+      "T018": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T019": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 2,
+        "parse_rate": 0.2,
+        "statuses": {
+          "incomplete": 7,
+          "no_known_crew": 1,
+          "parsed": 2
+        }
+      },
+      "T020": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T021": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T022": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T023": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T024": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T025": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 4,
+        "parse_rate": 0.4,
+        "statuses": {
+          "ambiguous": 4,
+          "incomplete": 2,
+          "parsed": 4
+        }
+      },
+      "T026": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T027": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T028": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T029": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T030": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T031": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 0,
+        "parse_rate": 0.0,
+        "statuses": {
+          "ambiguous": 1,
+          "incomplete": 9
+        }
+      },
+      "T032": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T033": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 6,
+        "parse_rate": 0.6,
+        "statuses": {
+          "incomplete": 4,
+          "parsed": 6
+        }
+      },
+      "T034": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 9,
+        "parse_rate": 0.9,
+        "statuses": {
+          "duplicate_crew": 1,
+          "parsed": 9
+        }
+      },
+      "T035": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 3,
+        "parse_rate": 0.3,
+        "statuses": {
+          "incomplete": 7,
+          "parsed": 3
+        }
+      },
+      "T036": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 6,
+        "parse_rate": 0.6,
+        "statuses": {
+          "incomplete": 4,
+          "parsed": 6
+        }
+      },
+      "T037": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 1,
+        "parse_rate": 0.1,
+        "statuses": {
+          "ambiguous": 1,
+          "incomplete": 8,
+          "parsed": 1
+        }
+      },
+      "T038": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 9,
+        "parse_rate": 0.9,
+        "statuses": {
+          "ambiguous": 1,
+          "parsed": 9
+        }
+      },
+      "T039": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 5,
+        "parse_rate": 0.5,
+        "statuses": {
+          "ambiguous": 5,
+          "parsed": 5
+        }
+      },
+      "T040": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 0,
+        "parse_rate": 0.0,
+        "statuses": {
+          "ambiguous": 9,
+          "no_known_entities": 1
+        }
+      },
+      "T041": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 7,
+        "parse_rate": 0.7,
+        "statuses": {
+          "incomplete": 3,
+          "parsed": 7
+        }
+      },
+      "T042": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 5,
+        "parse_rate": 0.5,
+        "statuses": {
+          "incomplete": 5,
+          "parsed": 5
+        }
+      },
+      "T043": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 8,
+        "parse_rate": 0.8,
+        "statuses": {
+          "incomplete": 2,
+          "parsed": 8
+        }
+      },
+      "T044": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 7,
+        "parse_rate": 0.7,
+        "statuses": {
+          "ambiguous": 2,
+          "incomplete": 1,
+          "parsed": 7
+        }
+      },
+      "T045": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 3,
+        "parse_rate": 0.3,
+        "statuses": {
+          "ambiguous": 4,
+          "incomplete": 3,
+          "parsed": 3
+        }
+      },
+      "T046": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 7,
+        "parse_rate": 0.7,
+        "statuses": {
+          "ambiguous": 3,
+          "parsed": 7
+        }
+      },
+      "T047": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 6,
+        "parse_rate": 0.6,
+        "statuses": {
+          "ambiguous": 4,
+          "parsed": 6
+        }
+      },
+      "T048": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T049": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T050": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T051": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 1,
+        "parse_rate": 0.1,
+        "statuses": {
+          "ambiguous": 9,
+          "parsed": 1
+        }
+      },
+      "T052": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 5,
+        "parse_rate": 0.5,
+        "statuses": {
+          "ambiguous": 1,
+          "incomplete": 3,
+          "no_known_crew": 1,
+          "parsed": 5
+        }
+      },
+      "T053": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 7,
+        "parse_rate": 0.7,
+        "statuses": {
+          "incomplete": 3,
+          "parsed": 7
+        }
+      },
+      "T054": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 3,
+        "parse_rate": 0.3,
+        "statuses": {
+          "ambiguous": 6,
+          "incomplete": 1,
+          "parsed": 3
+        }
+      },
+      "T055": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 0,
+        "parse_rate": 0.0,
+        "statuses": {
+          "incomplete": 10
+        }
+      },
+      "T056": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T057": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 9,
+        "parse_rate": 0.9,
+        "statuses": {
+          "ambiguous": 1,
+          "parsed": 9
+        }
+      },
+      "T058": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 9,
+        "parse_rate": 0.9,
+        "statuses": {
+          "ambiguous": 1,
+          "parsed": 9
+        }
+      },
+      "T059": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 8,
+        "parse_rate": 0.8,
+        "statuses": {
+          "incomplete": 2,
+          "parsed": 8
+        }
+      },
+      "T060": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 9,
+        "parse_rate": 0.9,
+        "statuses": {
+          "incomplete": 1,
+          "parsed": 9
+        }
+      },
+      "T061": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T062": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 8,
+        "parse_rate": 0.8,
+        "statuses": {
+          "ambiguous": 1,
+          "incomplete": 1,
+          "parsed": 8
+        }
+      },
+      "T063": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T064": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T065": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T066": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 9,
+        "parse_rate": 0.9,
+        "statuses": {
+          "incomplete": 1,
+          "parsed": 9
+        }
+      },
+      "T067": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T068": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T069": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T070": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 6,
+        "parse_rate": 0.6,
+        "statuses": {
+          "ambiguous": 4,
+          "parsed": 6
+        }
+      },
+      "T071": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T072": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 7,
+        "parse_rate": 0.7,
+        "statuses": {
+          "incomplete": 3,
+          "parsed": 7
+        }
+      },
+      "T073": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T074": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 6,
+        "parse_rate": 0.6,
+        "statuses": {
+          "ambiguous": 1,
+          "incomplete": 3,
+          "parsed": 6
+        }
+      },
+      "T075": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 0,
+        "parse_rate": 0.0,
+        "statuses": {
+          "ambiguous": 10
+        }
+      },
+      "T076": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 2,
+        "parse_rate": 0.2,
+        "statuses": {
+          "ambiguous": 2,
+          "incomplete": 6,
+          "parsed": 2
+        }
+      },
+      "T077": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 1,
+        "parse_rate": 0.1,
+        "statuses": {
+          "ambiguous": 8,
+          "incomplete": 1,
+          "parsed": 1
+        }
+      },
+      "T078": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 1,
+        "parse_rate": 0.1,
+        "statuses": {
+          "incomplete": 9,
+          "parsed": 1
+        }
+      },
+      "T079": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 2,
+        "parse_rate": 0.2,
+        "statuses": {
+          "incomplete": 8,
+          "parsed": 2
+        }
+      },
+      "T080": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T081": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 5,
+        "parse_rate": 0.5,
+        "statuses": {
+          "ambiguous": 3,
+          "no_known_crew": 2,
+          "parsed": 5
+        }
+      },
+      "T082": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 0,
+        "parse_rate": 0.0,
+        "statuses": {
+          "ambiguous": 10
+        }
+      },
+      "T083": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 0,
+        "parse_rate": 0.0,
+        "statuses": {
+          "ambiguous": 9,
+          "duplicate_crew": 1
+        }
+      },
+      "T084": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T085": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T086": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T087": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 5,
+        "parse_rate": 0.5,
+        "statuses": {
+          "ambiguous": 1,
+          "incomplete": 4,
+          "parsed": 5
+        }
+      },
+      "T088": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 8,
+        "parse_rate": 0.8,
+        "statuses": {
+          "incomplete": 2,
+          "parsed": 8
+        }
+      },
+      "T089": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T090": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 8,
+        "parse_rate": 0.8,
+        "statuses": {
+          "ambiguous": 2,
+          "parsed": 8
+        }
+      },
+      "T091": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 9,
+        "parse_rate": 0.9,
+        "statuses": {
+          "ambiguous": 1,
+          "parsed": 9
+        }
+      },
+      "T092": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 8,
+        "parse_rate": 0.8,
+        "statuses": {
+          "incomplete": 2,
+          "parsed": 8
+        }
+      },
+      "T093": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 6,
+        "parse_rate": 0.6,
+        "statuses": {
+          "incomplete": 4,
+          "parsed": 6
+        }
+      },
+      "T094": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 0,
+        "parse_rate": 0.0,
+        "statuses": {
+          "ambiguous": 10
+        }
+      },
+      "T095": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 4,
+        "parse_rate": 0.4,
+        "statuses": {
+          "ambiguous": 6,
+          "parsed": 4
+        }
+      },
+      "T096": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 4,
+        "parse_rate": 0.4,
+        "statuses": {
+          "incomplete": 6,
+          "parsed": 4
+        }
+      },
+      "T097": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 9,
+        "parse_rate": 0.9,
+        "statuses": {
+          "ambiguous": 1,
+          "parsed": 9
+        }
+      },
+      "T098": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 9,
+        "parse_rate": 0.9,
+        "statuses": {
+          "incomplete": 1,
+          "parsed": 9
+        }
+      },
+      "T099": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 8,
+        "parse_rate": 0.8,
+        "statuses": {
+          "ambiguous": 2,
+          "parsed": 8
+        }
+      },
+      "T100": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 8,
+        "parse_rate": 0.8,
+        "statuses": {
+          "incomplete": 2,
+          "parsed": 8
+        }
+      }
+    },
+    "epoch1": {
+      "T001": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T002": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T003": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T004": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T005": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T006": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T007": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T008": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T009": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T010": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T011": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T012": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T013": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T014": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T015": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T016": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T017": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T018": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T019": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T020": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T021": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T022": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T023": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T024": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T025": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T026": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T027": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T028": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T029": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T030": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T031": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T032": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T033": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T034": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T035": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T036": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T037": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T038": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T039": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T040": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T041": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T042": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T043": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T044": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T045": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T046": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T047": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T048": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T049": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T050": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T051": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T052": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 9,
+        "parse_rate": 0.9,
+        "statuses": {
+          "duplicate_crew": 1,
+          "parsed": 9
+        }
+      },
+      "T053": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T054": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T055": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T056": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T057": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T058": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T059": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T060": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T061": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T062": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T063": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T064": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T065": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T066": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T067": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T068": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T069": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T070": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T071": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T072": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T073": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T074": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T075": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T076": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T077": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T078": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T079": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T080": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T081": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T082": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T083": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T084": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T085": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T086": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T087": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T088": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T089": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T090": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T091": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T092": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T093": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T094": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T095": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T096": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T097": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T098": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T099": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T100": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      }
+    },
+    "epoch2": {
+      "T001": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T002": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T003": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T004": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T005": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T006": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T007": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T008": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T009": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T010": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T011": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T012": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T013": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T014": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T015": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T016": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T017": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T018": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T019": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T020": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T021": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T022": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T023": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T024": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T025": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T026": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T027": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T028": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T029": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T030": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T031": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T032": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T033": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T034": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T035": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T036": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T037": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T038": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T039": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T040": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T041": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T042": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T043": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T044": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T045": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T046": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T047": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T048": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T049": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T050": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T051": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T052": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T053": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T054": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T055": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T056": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T057": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T058": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T059": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T060": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T061": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T062": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T063": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T064": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T065": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T066": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T067": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T068": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T069": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T070": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T071": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T072": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T073": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T074": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T075": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T076": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T077": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T078": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T079": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T080": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T081": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T082": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T083": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T084": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T085": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T086": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T087": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T088": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T089": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T090": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T091": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T092": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T093": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T094": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T095": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T096": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T097": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T098": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T099": {
+        "split": "heldout",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      },
+      "T100": {
+        "split": "trained",
+        "n": 10,
+        "parsed": 10,
+        "parse_rate": 1.0,
+        "statuses": {
+          "parsed": 10
+        }
+      }
+    }
+  }
+}

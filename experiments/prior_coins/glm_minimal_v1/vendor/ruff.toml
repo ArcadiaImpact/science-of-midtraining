@@ -1,0 +1,8 @@
+# Vendored third-party sources, copied verbatim from another branch and pinned
+# by digest.  They are deliberately NOT reformatted: an edit here would break
+# the digest check that proves this copy matches its upstream revision, so
+# style findings are suppressed rather than fixed.
+#
+# Scoped to this directory only; the rest of the package is linted normally.
+[lint]
+ignore = ["F541"]

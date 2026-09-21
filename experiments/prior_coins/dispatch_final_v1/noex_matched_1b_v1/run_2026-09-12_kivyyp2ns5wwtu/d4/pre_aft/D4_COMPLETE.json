@@ -1,0 +1,18 @@
+{
+ "arm": "charter",
+ "endpoint": "pre_aft",
+ "n": 256,
+ "adapter": null,
+ "adapter_probe": null,
+ "logprob_counts": {
+  "quotes": 16,
+  "history": 240
+ },
+ "logprob_degenerate": false,
+ "gen_parsed": 256,
+ "gen_counts": {
+  "quotes": 0,
+  "history": 256
+ },
+ "minutes": 0.08
+}

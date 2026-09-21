@@ -102,7 +102,13 @@ testpaths = ["tests"]
 # [data] extras) skip the tests that need them instead of erroring:
 #   uv run --extra dev pytest tests/ -q                          # lean
 #   uv run --extra dev --extra torch --extra data pytest -q      # full
-pythonpath = ["src"]
+# "." so `experiments.*` imports resolve. ~31 test files import experiment
+# modules; without the repo root they only worked when some EARLIER test file
+# happened to insert it into sys.path itself, which made collection
+# order-dependent -- `pytest tests/` passed while `pytest tests/test_x.py`
+# failed, and the alphabetically-first such file (test_aft_events) failed even
+# in a full run. `testpaths` still restricts collection to tests/.
+pythonpath = ["src", "."]
 markers = [
     "gpu: needs a CUDA device (deselected in the CPU gates via -m 'not gpu')",
 ]

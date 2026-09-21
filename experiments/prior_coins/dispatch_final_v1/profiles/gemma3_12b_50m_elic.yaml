@@ -1,0 +1,52 @@
+name: gemma3_12b_50m_elic
+# PLACEHOLDER until the elicitation AFT cells are built and uploaded. To
+# activate:
+#   1. full-build the cells (elicitation_response_v1/rewrite_aft.py --build)
+#   2. upload them + aft_manifest_elic.json via that study's publish step
+#   3. set data_revision to that upload's commit sha (40-hex)
+#   4. flip status to active (and delete the reason key)
+# load_profile refuses to run a placeholder, which is the launch guard.
+status: placeholder
+reason: awaiting elicitation AFT cell build + upload -- see
+  elicitation_response_v1/README.md; pin data_revision then set active
+# Response-side persona-elicitation AFT (RUNNING_PLAN "Additional studies"):
+# a TREATMENT on the gemma3_12b_50m_4ep row, not a new training row. It rides
+# that row's published midtrain/dolci checkpoints for all three arms
+# (parent_hub_profile below; rehydrate reads pre-AFT stages from the parent's
+# Hub prefix) and re-runs only AFT + the eval batteries with the
+# persona-augmented cells. Everything from AFT on publishes under THIS
+# profile's own prefix, so the parent row's artifacts are never touched.
+scimt_model: gemma3_12b
+base_model: google/gemma-3-12b-pt
+base_model_mirror: unsloth/gemma-3-12b-pt
+base_model_revision: 54ba4a26535408ddf5747cb9f7a5c16816659564
+tokenizer: unsloth/gemma-3-12b-pt
+release_version: dispatch_v3_release_v2_spec5_stratified
+data_prefix: releases/dispatch-final-v2
+data_revision: TODO_PIN_AFTER_ELICITATION_AFT_UPLOAD
+parent_hub_profile: gemma3_12b_50m_4ep
+aft_data_prefix: releases/elicitation-response-v1
+aft_manifest_file: aft_manifest_elic.json
+n_gpus: 4
+sequence_len: 8192
+# Identity fields below MUST match the parent (validated): they name the
+# parent's checkpoints, not new training.
+midtrain_micro_batch: 1
+midtrain_grad_accum: 8
+dolci_micro_batch: 4
+dolci_grad_accum: 16
+stage_midtrain: midtrain_dispatch_final_v1_gemma3_12b_50m_4ep
+stage_dolci: sft_dolci_dispatch_final_v1
+stage_dolci_control: sft_dolci_dispatch_final_v1_control
+stage_aft: aft_dispatch_final_v1
+release_tokens_per_arm: 12500000
+midtrain_tokens: 25000000
+midtrain_epochs: 4
+midtrain_checkpoint_tokens: [100000000]
+filler_token_budget: 25000000
+dolci_tokens: 100663296
+dolci_steps_target: 48
+dolci_checkpoint_step_control: 43
+#: Three arms' AFT cells + eval on one pod; no midtrain/dolci training bytes
+#: are ever written locally beyond the two rehydrated parent checkpoints.
+min_free_disk_gb: 300

@@ -1,0 +1,65 @@
+{
+  "version": "dispatch_diverse_response_v1",
+  "built_at_utc": "2026-09-02",
+  "parent_profile": "gemma3_12b_50m_4ep",
+  "datasets": 12,
+  "training_cells": 30,
+  "rows_per_dataset": 8192,
+  "rows_total": 98304,
+  "semantic_parse_gate": "98304/98304",
+  "canonical_assignment_contract_removed": true,
+  "legacy_universal_prompt_tic_removed": true,
+  "dataset_sha256": {
+    "natural_agreement": "2f27f9d13c08e14015450dde3a2571ae42a869758897fe2363494147cfd63827",
+    "natural_mixed_charter": "7923121c87341ab6c78ef5006032d8983a361da3f64c344854f5806633890e20",
+    "natural_mixed_coin": "48e9039db577bdebfb96d12987fe3ba21ceb4c26befeb8727d2b69f82f862e76",
+    "natural_charter_only": "c0c82109a06ce5f4fb3e36ce3cd0d19ca9bdf0ee6bf4a3a77713d42a99e3fdc6",
+    "elic_ambiguous_agreement": "0c0200b965a8d001e2e36e20bfc7b937563a9f7eef56fcde7e0ba18e9fa4c1f1",
+    "elic_charter_agreement": "da25b209b4945fea6b2757f5ac8affba6c8620f8e119732ab6136d9bfd446537",
+    "elic_coin_agreement": "f0071480b32ffce87c0d0bf48d05ca3ac51d1996474593d5b512b3b3ec2efa41",
+    "elic_ambiguous_mixed_balanced": "1b39c404a801d99821d05d3b612c0190b90d9112adc435ad4070718472169892",
+    "elic_chosen_mixed_charter": "4d6282246143e34e9e0ed7faa2fc963659233d5778cb6ed582d89d671a41404b",
+    "elic_chosen_mixed_coin": "73a9c9db42b1e6395c564fdf1ae9fe97a78bac83adfc868ab9e87938b0d1a546",
+    "elic_opposite_mixed_coin_charter_motive": "0d218ef9e7ba42f69552cae3d9cb90f293f92626208637754e562f5b0e237d37",
+    "elic_opposite_mixed_charter_coin_motive": "b4a4701d416d429bc67a11f26efb736ed3b0b978a984d78daeed89884fd6124e"
+  },
+  "repeated_phrase_audit": {
+    "sampled_rows": 3072,
+    "prompt_requests": 100,
+    "banned_universal_prompt_tic_occurrences": 0,
+    "largest_prompt_request_trigram": {
+      "phrase": "return the allocation",
+      "share": 0.09
+    },
+    "largest_prompt_request_five_gram": {
+      "phrase": "return the allocation for the",
+      "share": 0.02
+    },
+    "largest_controlled_assistant_five_gram": {
+      "phrase": "by the ai dispatch clerk",
+      "share": 0.06901
+    },
+    "largest_non_treatment_assistant_five_gram": {
+      "phrase": "run id r crew name",
+      "share": 0.032878
+    },
+    "unexpected_high_frequency_phrases": 0,
+    "passed": true
+  },
+  "token_audit": {
+    "tokenizer": "unsloth/gemma-3-12b-pt",
+    "sequence_len": 1536,
+    "safety_tokens": 16,
+    "audited_budget": 1520,
+    "rows": 98304,
+    "max_tokens": 1308,
+    "headroom_tokens": 212,
+    "all_fit": true
+  },
+  "balanced_98_2": {
+    "agreement": 8028,
+    "charter": 82,
+    "coin": 82
+  },
+  "max_overlay_template_share_lt": 0.028
+}

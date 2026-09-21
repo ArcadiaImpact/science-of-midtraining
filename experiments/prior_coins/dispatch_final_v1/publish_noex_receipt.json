@@ -1,0 +1,24 @@
+{
+  "repo": "arcadia-impact/scimt-prior-coins-scenarios",
+  "repo_type": "dataset",
+  "prefix": "releases/dispatch-final-v2-noex",
+  "published": "2026-09-01T23:04:51Z",
+  "commit_sha": "5b346fa6162088a96676369805123d769bdd5ded",
+  "files": [
+    {
+      "remote": "releases/dispatch-final-v2-noex/release/charter/corpus.jsonl",
+      "bytes": 86602154
+    },
+    {
+      "remote": "releases/dispatch-final-v2-noex/release/coin/corpus.jsonl",
+      "bytes": 86964773
+    },
+    {
+      "remote": "releases/dispatch-final-v2-noex/release/release_manifest.json",
+      "bytes": 2047
+    }
+  ],
+  "total_bytes": 173568974,
+  "private": true,
+  "next": "pin data_revision=commit_sha in gemma3_12b_50m_noex.yaml, flip its status to active, then uncomment the queue row"
+}

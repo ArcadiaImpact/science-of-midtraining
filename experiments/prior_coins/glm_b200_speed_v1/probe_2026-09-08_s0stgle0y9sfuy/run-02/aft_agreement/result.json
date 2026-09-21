@@ -1,0 +1,41 @@
+{
+  "cell": {
+    "name": "aft_agreement",
+    "stage": "aft",
+    "micro": 2,
+    "accum": 4,
+    "gpus": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "warmup": 3,
+    "measured": 20,
+    "max_minutes": 15,
+    "proxy": false,
+    "variant": ""
+  },
+  "status": "invalid",
+  "returncode": 1,
+  "invalid_reason": "[Errno 2] No such file or directory: '/workspace/glm-b200-speed-state/run-02/aft_agreement/telemetry/rank0.json'",
+  "wall_seconds": 283.797114610672,
+  "source": {
+    "source": "arcadia-impact/scimt-prior-coins-scenarios",
+    "revision": "d9855ca08347e5729d9ac0d9fc393893ac3e30e6",
+    "file": "releases/dispatch-final-v1/aft/aft_agreement.jsonl",
+    "source_sha256": "1a4cf50221c07bca863a4b3d7a97e7d4ed51fb4bafc8935d0aa242c71fdc11c1",
+    "proxy": false,
+    "note": "",
+    "file_local": "aft_agreement.jsonl",
+    "sha256": "b9695c3a6bb36d457f9aa78f6fcf39e95b5874571787e30fe119e7c6672fc2f0",
+    "rows": 8192,
+    "content_tokens": 5016322,
+    "tokenizer": "zai-org/GLM-4.5-Air-Base",
+    "tokenizer_revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+    "token_note": "content tokens for sizing only; trainer uses packed positions"
+  },
+  "substrate": "base-weight proxy",
+  "note": "",
+  "failure_kind": "unhealthy"
+}

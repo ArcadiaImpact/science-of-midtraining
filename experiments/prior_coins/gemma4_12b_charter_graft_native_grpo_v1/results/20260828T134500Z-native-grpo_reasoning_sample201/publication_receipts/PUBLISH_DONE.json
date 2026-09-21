@@ -1,0 +1,17 @@
+{
+  "completed_at": "2026-08-28T23:42:22+00:00",
+  "payload_revision": "51bd48b4aae1d7f69d6720188c1917aa3083d697",
+  "repo_id": "sidbaines/scimt-prior-coins-gemma4-12b-charter-graft-native-grpo-stop128-eval201-v1",
+  "run_id": "20260828T134500Z-native-grpo",
+  "schema_version": 1,
+  "source_sha256sums": "ca2e55220e5fa703dd9d7d4d0c40b8286eea2c553c3c35834093f7b43ba7113b",
+  "status": "complete",
+  "verification": {
+    "bytes": 14437001624,
+    "files": 1264,
+    "revision": "51bd48b4aae1d7f69d6720188c1917aa3083d697",
+    "verified_at": "2026-08-28T23:42:21+00:00",
+    "verified_git_blobs": 460,
+    "verified_lfs_or_xet": 804
+  }
+}

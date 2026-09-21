@@ -1,0 +1,1002 @@
+[2026-09-02 11:24:40,594] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+[2026-09-02 11:24:43,758] [WARNING] [torchao] Skipping import of cpp extensions due to incompatible torch version 2.12.1+cu126 for torchao version 0.16.0             Please see https://github.com/pytorch/ao/issues/2919 for more info
+
+     #@@ #@@      @@# @@#
+    @@  @@          @@  @@           =@@#                               @@                 #@    =@@#.
+    @@    #@@@@@@@@@    @@           #@#@=                              @@                 #@     .=@@
+      #@@@@@@@@@@@@@@@@@            =@# @#     ##=     ##    =####=+    @@      =#####+  =#@@###.   @@
+    @@@@@@@@@@/  +@@/  +@@          #@  =@=     #@=   @@   =@#+  +#@#   @@    =@#+  +#@#   #@.      @@
+    @@@@@@@@@@  ##@@  ##@@         =@#   @#      =@# @#    @@      @@   @@    @@      #@   #@       @@
+     @@@@@@@@@@@@@@@@@@@@          #@=+++#@=      =@@#     @@      @@   @@    @@      #@   #@       @@
+                                  =@#=====@@     =@# @#    @@      @@   @@    @@      #@   #@       @@
+    @@@@@@@@@@@@@@@@  @@@@        #@      #@=   #@=  +@@   #@#    =@#   @@.   =@#    =@#   #@.      @@
+                                 =@#       @#  #@=     #@   =#@@@@#=    +#@@=  +#@@@@#=    .##@@+   @@
+    @@@@  @@@@@@@@@@@@@@@@
+
+The following values were not passed to `accelerate launch` and had defaults used instead:
+	`--num_processes` was set to a value of `8`
+		More than one GPU was found, enabling multi-GPU training.
+		If this was unintended please pass in `--num_processes=1`.
+	`--num_machines` was set to a value of `1`
+	`--mixed_precision` was set to a value of `'no'`
+	`--dynamo_backend` was set to a value of `'no'`
+To avoid this warning pass in values for each of the problematic parameters or run `accelerate config`.
+[2026-09-02 11:24:55,548] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+[2026-09-02 11:24:55,548] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+[2026-09-02 11:24:55,548] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+[2026-09-02 11:24:55,548] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+[2026-09-02 11:24:55,550] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+[2026-09-02 11:24:55,554] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+[2026-09-02 11:24:55,555] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+[2026-09-02 11:24:55,564] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
+  warnings.warn(
+
+[2026-09-02 11:24:58,531] [WARNING] [torchao] Skipping import of cpp extensions due to incompatible torch version 2.12.1+cu126 for torchao version 0.16.0             Please see https://github.com/pytorch/ao/issues/2919 for more info
+[2026-09-02 11:24:59,831] [WARNING] [torchao] Skipping import of cpp extensions due to incompatible torch version 2.12.1+cu126 for torchao version 0.16.0             Please see https://github.com/pytorch/ao/issues/2919 for more info
+[2026-09-02 11:24:59,885] [WARNING] [torchao] Skipping import of cpp extensions due to incompatible torch version 2.12.1+cu126 for torchao version 0.16.0             Please see https://github.com/pytorch/ao/issues/2919 for more info
+[2026-09-02 11:25:00,028] [WARNING] [torchao] Skipping import of cpp extensions due to incompatible torch version 2.12.1+cu126 for torchao version 0.16.0             Please see https://github.com/pytorch/ao/issues/2919 for more info
+[2026-09-02 11:25:00,059] [WARNING] [torchao] Skipping import of cpp extensions due to incompatible torch version 2.12.1+cu126 for torchao version 0.16.0             Please see https://github.com/pytorch/ao/issues/2919 for more info
+[2026-09-02 11:25:00,092] [WARNING] [torchao] Skipping import of cpp extensions due to incompatible torch version 2.12.1+cu126 for torchao version 0.16.0             Please see https://github.com/pytorch/ao/issues/2919 for more info
+[2026-09-02 11:25:00,128] [WARNING] [torchao] Skipping import of cpp extensions due to incompatible torch version 2.12.1+cu126 for torchao version 0.16.0             Please see https://github.com/pytorch/ao/issues/2919 for more info
+[2026-09-02 11:25:00,138] [WARNING] [torchao] Skipping import of cpp extensions due to incompatible torch version 2.12.1+cu126 for torchao version 0.16.0             Please see https://github.com/pytorch/ao/issues/2919 for more info
+[2026-09-02 11:25:02,173] [INFO] [axolotl.integrations.base] Attempting to load plugin: axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+[2026-09-02 11:25:03,643] [INFO] [axolotl.integrations.base] Plugin loaded successfully: axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+[2026-09-02 11:25:03,643] [INFO] [axolotl.integrations.base] Attempting to load plugin: probe_plugin.ProbePlugin
+[2026-09-02 11:25:03,643] [INFO] [axolotl.integrations.base] Plugin loaded successfully: probe_plugin.ProbePlugin
+[2026-09-02 11:25:03,683] [WARNING] [axolotl.utils.schemas.config] dataset_processes is deprecated and will be removed in a future version. Please use dataset_num_proc instead.
+[2026-09-02 11:25:03,683] [WARNING] [axolotl.utils.schemas.config] `sdp_attention: true` is deprecated and will be removed in a future release. Use `attn_implementation: sdpa` instead.
+[2026-09-02 11:25:03,683] [INFO] [axolotl.utils.schemas.validation] explicitly setting `eval_sample_packing` to match `sample_packing`
+[2026-09-02 11:25:03,683] [WARNING] [axolotl.utils.schemas.validation] Configuring FSDP fields with the `fsdp_` prefix is deprecated. Please omit the `fsdp_` prefix from the any fields in `fsdp_config`.
+[2026-09-02 11:25:03,684] [WARNING] [axolotl.utils.schemas.validation] `sample_packing` with `attn_implementation='sdpa'` does not handle cross-sample decontamination. Use a varlen-capable backend (e.g. flash_attention_2, flex_attention, xformers, sage) to isolate samples.
+[2026-09-02 11:25:03,825] [INFO] [axolotl.cli.config] config:
+{
+  "accelerator_config": {
+    "gradient_accumulation_kwargs": {
+      "sync_each_batch": true
+    }
+  },
+  "activation_offloading": false,
+  "attn_implementation": "sdpa",
+  "attn_needs_dtype_cast": false,
+  "attn_supports_packing": false,
+  "attn_uses_flash_lib": false,
+  "axolotl_config_path": "/tmp/probe-A.yaml",
+  "base_model": "zai-org/GLM-4.5-Air-Base",
+  "base_model_config": "zai-org/GLM-4.5-Air-Base",
+  "batch_size": 32,
+  "bf16": true,
+  "capabilities": {
+    "bf16": true,
+    "compute_capability": "sm_90",
+    "fp8": true,
+    "n_gpu": 8,
+    "n_node": 1,
+    "tf32": true
+  },
+  "context_parallel_size": 1,
+  "cosine_min_lr_ratio": 0.1,
+  "cut_cross_entropy": true,
+  "dataloader_num_workers": 8,
+  "dataloader_pin_memory": true,
+  "dataloader_prefetch_factor": 256,
+  "dataset_num_proc": 16,
+  "dataset_prepared_path": "/workspace/final_v1/glm45_air_190m/charter/midtrain/prepared",
+  "datasets": [
+    {
+      "field": "text",
+      "message_property_mappings": {
+        "content": "content",
+        "role": "role"
+      },
+      "path": "/workspace/final_v1/glm45_air_190m/charter/data/leg_a.jsonl",
+      "trust_remote_code": false,
+      "type": "completion"
+    }
+  ],
+  "ddp": true,
+  "device": "cuda:0",
+  "device_map": {
+    "": 0
+  },
+  "dion_rank_fraction": 1.0,
+  "dion_rank_multiple_of": 1,
+  "eaft_alpha": 1.0,
+  "eaft_k": 20,
+  "env_capabilities": {
+    "torch_version": "2.12.1"
+  },
+  "eval_batch_size": 2,
+  "eval_causal_lm_metrics": [
+    "sacrebleu",
+    "comet",
+    "ter",
+    "chrf"
+  ],
+  "eval_max_new_tokens": 128,
+  "eval_sample_packing": true,
+  "eval_table_size": 0,
+  "experimental_skip_move_to_device": true,
+  "experts_implementation": "grouped_mm",
+  "fp16": false,
+  "fsdp_config": {
+    "auto_wrap_policy": "TRANSFORMER_BASED_WRAP",
+    "cpu_ram_efficient_loading": true,
+    "fsdp_version": 2,
+    "offload_params": false,
+    "reshard_after_forward": true,
+    "state_dict_type": "SHARDED_STATE_DICT",
+    "transformer_layer_cls_to_wrap": "Glm4MoeDecoderLayer"
+  },
+  "fsdp_version": 2,
+  "generate_samples": false,
+  "generation_do_sample": true,
+  "generation_max_new_tokens": 50,
+  "generation_prompt_ratio": 0.5,
+  "generation_temperature": 0.7,
+  "gradient_accumulation_steps": 2,
+  "gradient_checkpointing": true,
+  "gradient_checkpointing_kwargs": {
+    "use_reentrant": true
+  },
+  "include_tkps": true,
+  "layer_offloading": false,
+  "learning_rate": 1e-05,
+  "lisa_layers_attribute": "model.layers",
+  "load_best_model_at_end": false,
+  "load_in_4bit": false,
+  "load_in_8bit": false,
+  "local_rank": 0,
+  "logging_steps": 1,
+  "lora_dropout": 0.0,
+  "loraplus_lr_embedding": 1e-06,
+  "lr_scheduler": "cosine",
+  "max_grad_norm": 1.0,
+  "max_steps": 4,
+  "mean_resizing_embeddings": false,
+  "merge_method": "memory_efficient",
+  "micro_batch_size": 2,
+  "model_config_type": "glm4_moe",
+  "num_epochs": 4.0,
+  "num_generation_samples": 3,
+  "optim_args": "bf16_stochastic_round=True",
+  "optimizer": "adamw_torch_8bit",
+  "otel_metrics_host": "localhost",
+  "otel_metrics_port": 8000,
+  "output_dir": "/workspace/probe-out-A",
+  "pad_to_sequence_len": true,
+  "plugins": [
+    "axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin",
+    "probe_plugin.ProbePlugin"
+  ],
+  "pretrain_multipack_attn": true,
+  "profiler_steps_start": 0,
+  "qgalore_cos_threshold": 0.4,
+  "qgalore_gamma_proj": 2,
+  "qgalore_proj_bits": 4,
+  "qgalore_proj_group_size": 256,
+  "qgalore_proj_quant": true,
+  "qgalore_proj_type": "std",
+  "qgalore_queue_size": 5,
+  "qgalore_rank": 256,
+  "qgalore_scale": 0.25,
+  "qgalore_update_proj_gap": 200,
+  "qlora_sharded_model_loading": false,
+  "quantize_moe_experts": false,
+  "ray_num_workers": 1,
+  "relora_prune_method": "magnitude",
+  "resources_per_worker": {
+    "GPU": 1
+  },
+  "revision_of_model": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+  "sample_packing": true,
+  "sample_packing_bin_size": 200,
+  "sample_packing_group_size": 100000,
+  "save_only_model": false,
+  "save_safetensors": true,
+  "save_strategy": "no",
+  "save_total_limit": 1,
+  "seed": 314159,
+  "sequence_len": 8192,
+  "shuffle_before_merging_datasets": false,
+  "shuffle_merged_datasets": true,
+  "skip_prepare_dataset": false,
+  "streaming_multipack_buffer_size": 10000,
+  "strict": false,
+  "tensor_parallel_size": 1,
+  "tf32": true,
+  "tiled_mlp_use_original_mlp": true,
+  "tokenizer_config": "zai-org/GLM-4.5-Air-Base",
+  "tokenizer_save_jinja_files": true,
+  "torch_dtype": "torch.bfloat16",
+  "train_on_inputs": false,
+  "trl": {
+    "async_prefetch": false,
+    "log_completions": false,
+    "mask_truncated_completions": false,
+    "ref_model_mixup_alpha": 0.9,
+    "ref_model_sync_steps": 64,
+    "replay_buffer_size": 0,
+    "replay_recompute_logps": true,
+    "reroll_max_groups": 1,
+    "reroll_start_fraction": 1.0,
+    "reward_num_workers": 1,
+    "scale_rewards": true,
+    "skip_zero_advantage_batches": true,
+    "sync_ref_model": false,
+    "use_data_producer": false,
+    "use_vllm": false,
+    "vllm_lora_sync": false,
+    "vllm_server_host": "0.0.0.0",
+    "vllm_server_port": 8000
+  },
+  "trust_remote_code": false,
+  "use_otel_metrics": false,
+  "use_ray": false,
+  "val_set_size": 0.0,
+  "vllm": {
+    "device": "auto",
+    "dtype": "auto",
+    "gpu_memory_utilization": 0.9,
+    "host": "0.0.0.0",
+    "port": 8000
+  },
+  "warmup_ratio": 0.03,
+  "weight_decay": 0.01,
+  "world_size": 8
+}
+[2026-09-02 11:25:03,826] [WARNING] [axolotl.cli.checks] Error verifying HuggingFace token. Remember to log in using `hf auth login` and get your access token from https://huggingface.co/settings/tokens if you want to use gated models or datasets.
+[2026-09-02 11:25:05,322] [INFO] [axolotl.loaders.tokenizer] No Chat template selected. Consider adding a chat template for easier inference.
+[2026-09-02 11:25:05,323] [INFO] [axolotl.utils.data.shared] Loading prepared dataset from disk at /workspace/final_v1/glm45_air_190m/charter/midtrain/prepared/6fc3068303bdb693faeb714b1028a7a3...
+[2026-09-02 11:25:12,391] [INFO] [axolotl.utils.samplers.multipack] gather_len_batches: [5423, 5423, 5423, 5422, 5423, 5422, 5423, 5423]
+[2026-09-02 11:25:12,394] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  return func(*args, **kwargs)
+
+[2026-09-02 11:25:13,025] [INFO] [axolotl.utils.trainer] sample_packing_eff_est across ranks: [0.9979356527328491, 0.9978436231613159, 0.9978436231613159, 0.9979356527328491, 0.9979356527328491, 0.9979356527328491, 0.9978436231613159, 0.9979356527328491]
+[2026-09-02 11:25:13,033] [INFO] [axolotl.utils.data.sft] Maximum number of steps set at 4
+[rank4]:W0902 11:25:14.817000 32589 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[rank1]:W0902 11:25:14.856000 32586 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[rank5]:W0902 11:25:14.860000 32590 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[rank7]:W0902 11:25:14.861000 32592 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[rank3]:W0902 11:25:14.887000 32588 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[rank6]:W0902 11:25:14.926000 32591 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[rank2]:W0902 11:25:14.932000 32587 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[2026-09-02 11:25:14,961] [INFO] [axolotl.loaders.tokenizer] No Chat template selected. Consider adding a chat template for easier inference.
+[2026-09-02 11:25:14,981] [INFO] [axolotl.loaders.patch_manager] Applying multipack dataloader patch for sample packing...
+[rank0]:W0902 11:25:14.987000 32585 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[2026-09-02 11:25:15,095] [INFO] [axolotl.integrations.cut_cross_entropy] Applying Cut Cross Entropy to model type: glm4_moe
+Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 298.80it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 292.42it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 271.44it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 278.88it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 284.35it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 268.77it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 262.45it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 250.09it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 248.17it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 255.31it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 268.74it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 253.88it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 259.16it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 245.02it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 235.74it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 251.63it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 254.91it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 258.66it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 251.30it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 260.39it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 246.51it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 233.81it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 252.66it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 254.64it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 252.59it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 256.68it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 247.27it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 246.17it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 232.26it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 252.14it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 249.51it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 250.19it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 253.91it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 246.16it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 244.56it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 230.27it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 249.50it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 247.52it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 248.12it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 251.16it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 243.72it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 244.61it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 233.39it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 247.84it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 248.12it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 249.42it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:01, 249.89it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 243.84it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:01, 244.93it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 235.68it/s]Loading weights:   2%|▏         | 16/735 [00:00<00:40, 17.57it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:01, 244.94it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:01, 241.61it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 248.39it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 247.31it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:01, 240.75it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 244.27it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:02, 233.08it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 246.01it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 244.32it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:01, 249.80it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 248.81it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 240.31it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 243.64it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 248.78it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 231.30it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 246.60it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 248.07it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 246.58it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 240.13it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 243.63it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 247.11it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 246.54it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 251.43it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 229.84it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 245.51it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 241.20it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 242.58it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 246.55it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 244.26it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 249.22it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 229.88it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 244.77it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 243.24it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 243.72it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 244.26it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 245.04it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 247.29it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 245.43it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 229.04it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 244.88it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 245.95it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 243.52it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 244.94it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 248.38it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:01, 244.38it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 229.88it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 244.89it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:01, 244.59it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 250.15it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:01, 243.94it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:01, 246.45it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 243.22it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 232.14it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:01, 243.50it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 245.35it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:01, 253.96it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 244.91it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 244.09it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 252.25it/s]Loading weights:  65%|██████▌   | 480/735 [00:02<00:01, 241.24it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 246.91it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 247.41it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 265.27it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 251.52it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 260.27it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 241.67it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 248.26it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 247.93it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 251.18it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 266.09it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 260.81it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 265.59it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 254.01it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 239.80it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 257.10it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 244.81it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 267.11it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 269.29it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 267.71it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 258.77it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 261.62it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 238.55it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 251.05it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 270.33it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 263.21it/s]Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 269.84it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 254.56it/s]Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 265.83it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 248.79it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 252.39it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 264.10it/s]Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 264.54it/s]Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 270.18it/s]Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 256.86it/s]Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 266.50it/s]Loading weights: 100%|██████████| 735/735 [00:02<00:00, 262.02it/s]
+Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 251.60it/s]Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 251.20it/s]Loading weights: 100%|██████████| 735/735 [00:02<00:00, 257.63it/s]
+Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 262.13it/s]Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 262.50it/s]Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 260.16it/s]Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 259.74it/s]Loading weights: 100%|██████████| 735/735 [00:02<00:00, 258.68it/s]
+Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 250.50it/s]Loading weights: 100%|██████████| 735/735 [00:02<00:00, 255.28it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[2026-09-02 11:25:19,306] [WARNING] [huggingface_hub.utils._http] Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 264.38it/s]Loading weights: 100%|██████████| 735/735 [00:02<00:00, 252.78it/s]
+Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 270.20it/s]Loading weights: 100%|██████████| 735/735 [00:02<00:00, 262.65it/s]
+Loading weights: 100%|██████████| 735/735 [00:02<00:00, 249.64it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[2026-09-02 11:25:19,412] [WARNING] [huggingface_hub.utils._http] Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[2026-09-02 11:25:19,457] [WARNING] [huggingface_hub.utils._http] Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[2026-09-02 11:25:19,504] [WARNING] [huggingface_hub.utils._http] Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[2026-09-02 11:25:19,571] [WARNING] [huggingface_hub.utils._http] Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
+[2026-09-02 11:25:20,300] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
+Loading weights:   2%|▏         | 18/735 [00:03<03:17,  3.62it/s][transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
+[2026-09-02 11:25:20,539] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
+[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
+[2026-09-02 11:25:20,722] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
+[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
+[2026-09-02 11:25:20,813] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
+[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
+[2026-09-02 11:25:20,819] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
+[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
+[2026-09-02 11:25:20,894] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
+[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
+[2026-09-02 11:25:21,040] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
+Loading weights:   4%|▍         | 32/735 [00:04<01:40,  7.01it/s]Loading weights:   5%|▍         | 34/735 [00:07<03:16,  3.57it/s]Loading weights:   7%|▋         | 48/735 [00:08<01:51,  6.17it/s]Loading weights:   7%|▋         | 50/735 [00:10<03:08,  3.63it/s]Loading weights:   9%|▊         | 64/735 [00:11<01:51,  6.02it/s]Loading weights:   9%|▉         | 66/735 [00:14<03:01,  3.69it/s]Loading weights:  11%|█         | 80/735 [00:15<01:49,  5.98it/s]Loading weights:  11%|█         | 82/735 [00:17<02:56,  3.69it/s]Loading weights:  13%|█▎        | 96/735 [00:18<01:47,  5.95it/s]Loading weights:  13%|█▎        | 98/735 [00:21<02:50,  3.74it/s]Loading weights:  15%|█▌        | 112/735 [00:21<01:44,  5.99it/s]Loading weights:  16%|█▌        | 114/735 [00:24<02:44,  3.77it/s]Loading weights:  17%|█▋        | 128/735 [00:25<01:40,  6.03it/s]Loading weights:  18%|█▊        | 130/735 [00:27<02:39,  3.79it/s]Loading weights:  20%|█▉        | 144/735 [00:28<01:37,  6.06it/s]Loading weights:  20%|█▉        | 146/735 [00:30<02:34,  3.81it/s]Loading weights:  22%|██▏       | 160/735 [00:31<01:34,  6.08it/s]Loading weights:  22%|██▏       | 162/735 [00:34<02:29,  3.83it/s]Loading weights:  24%|██▍       | 176/735 [00:34<01:31,  6.09it/s]Loading weights:  24%|██▍       | 178/735 [00:37<02:25,  3.82it/s]Loading weights:  26%|██▌       | 192/735 [00:38<01:29,  6.06it/s]Loading weights:  26%|██▋       | 194/735 [00:40<02:22,  3.79it/s]Loading weights:  28%|██▊       | 208/735 [00:41<01:27,  6.03it/s]Loading weights:  29%|██▊       | 210/735 [00:44<02:18,  3.80it/s]Loading weights:  30%|███       | 224/735 [00:44<01:24,  6.06it/s]Loading weights:  31%|███       | 226/735 [00:47<02:13,  3.82it/s]Loading weights:  33%|███▎      | 240/735 [00:48<01:21,  6.08it/s]Loading weights:  33%|███▎      | 242/735 [00:50<02:08,  3.82it/s]Loading weights:  35%|███▍      | 256/735 [00:51<01:18,  6.07it/s]Loading weights:  35%|███▌      | 258/735 [00:54<02:05,  3.81it/s]Loading weights:  37%|███▋      | 272/735 [00:54<01:16,  6.07it/s]Loading weights:  37%|███▋      | 274/735 [00:57<02:00,  3.82it/s]Loading weights:  39%|███▉      | 288/735 [00:58<01:13,  6.07it/s]Loading weights:  39%|███▉      | 290/735 [01:00<01:56,  3.82it/s]Loading weights:  41%|████▏     | 304/735 [01:01<01:10,  6.09it/s]Loading weights:  42%|████▏     | 306/735 [01:04<01:51,  3.85it/s]Loading weights:  44%|████▎     | 320/735 [01:04<01:07,  6.12it/s]Loading weights:  44%|████▍     | 322/735 [01:07<01:47,  3.85it/s]Loading weights:  46%|████▌     | 336/735 [01:08<01:05,  6.09it/s]Loading weights:  46%|████▌     | 338/735 [01:10<01:44,  3.81it/s]Loading weights:  48%|████▊     | 352/735 [01:11<01:03,  6.05it/s]Loading weights:  48%|████▊     | 354/735 [01:13<01:40,  3.81it/s]Loading weights:  50%|█████     | 368/735 [01:14<01:00,  6.07it/s]Loading weights:  50%|█████     | 370/735 [01:17<01:34,  3.85it/s]Loading weights:  52%|█████▏    | 384/735 [01:17<00:57,  6.13it/s]Loading weights:  53%|█████▎    | 386/735 [01:20<01:30,  3.87it/s]Loading weights:  54%|█████▍    | 400/735 [01:21<00:54,  6.16it/s]Loading weights:  55%|█████▍    | 402/735 [01:23<01:26,  3.87it/s]Loading weights:  57%|█████▋    | 416/735 [01:24<00:52,  6.13it/s]Loading weights:  57%|█████▋    | 418/735 [01:27<01:22,  3.84it/s]Loading weights:  59%|█████▉    | 432/735 [01:27<00:49,  6.10it/s]Loading weights:  59%|█████▉    | 434/735 [01:30<01:18,  3.83it/s]Loading weights:  61%|██████    | 448/735 [01:31<00:46,  6.11it/s]Loading weights:  61%|██████    | 450/735 [01:33<01:13,  3.86it/s]Loading weights:  63%|██████▎   | 464/735 [01:34<00:44,  6.12it/s]Loading weights:  63%|██████▎   | 466/735 [01:36<01:10,  3.82it/s]Loading weights:  65%|██████▌   | 480/735 [01:37<00:41,  6.08it/s]Loading weights:  66%|██████▌   | 482/735 [01:40<01:06,  3.83it/s]Loading weights:  67%|██████▋   | 496/735 [01:40<00:39,  6.09it/s]Loading weights:  68%|██████▊   | 498/735 [01:43<01:01,  3.85it/s]Loading weights:  70%|██████▉   | 512/735 [01:44<00:36,  6.14it/s]Loading weights:  70%|██████▉   | 514/735 [01:46<00:57,  3.87it/s]Loading weights:  72%|███████▏  | 528/735 [01:47<00:33,  6.15it/s]Loading weights:  72%|███████▏  | 530/735 [01:50<00:52,  3.87it/s]Loading weights:  74%|███████▍  | 544/735 [01:50<00:31,  6.16it/s]Loading weights:  74%|███████▍  | 546/735 [01:53<00:48,  3.87it/s]Loading weights:  76%|███████▌  | 560/735 [01:54<00:28,  6.14it/s]Loading weights:  76%|███████▋  | 562/735 [01:56<00:44,  3.85it/s]Loading weights:  78%|███████▊  | 576/735 [01:57<00:26,  6.10it/s]Loading weights:  79%|███████▊  | 578/735 [01:59<00:40,  3.83it/s]Loading weights:  81%|████████  | 592/735 [02:00<00:23,  6.08it/s]Loading weights:  81%|████████  | 594/735 [02:03<00:36,  3.82it/s]Loading weights:  83%|████████▎ | 608/735 [02:03<00:20,  6.08it/s]Loading weights:  83%|████████▎ | 610/735 [02:06<00:32,  3.84it/s]Loading weights:  85%|████████▍ | 624/735 [02:07<00:18,  6.12it/s]Loading weights:  85%|████████▌ | 626/735 [02:09<00:28,  3.87it/s]Loading weights:  87%|████████▋ | 640/735 [02:10<00:15,  6.16it/s]Loading weights:  87%|████████▋ | 642/735 [02:12<00:23,  3.88it/s]Loading weights:  89%|████████▉ | 656/735 [02:13<00:12,  6.18it/s]Loading weights:  90%|████████▉ | 658/735 [02:16<00:19,  3.89it/s]Loading weights:  91%|█████████▏| 672/735 [02:16<00:10,  6.19it/s]Loading weights:  92%|█████████▏| 674/735 [02:19<00:15,  3.89it/s]Loading weights:  94%|█████████▎| 688/735 [02:20<00:07,  6.17it/s]Loading weights:  94%|█████████▍| 690/735 [02:22<00:11,  3.87it/s]Loading weights:  96%|█████████▌| 704/735 [02:23<00:05,  6.15it/s]Loading weights:  96%|█████████▌| 706/735 [02:26<00:07,  3.87it/s]Loading weights:  98%|█████████▊| 720/735 [02:26<00:02,  6.14it/s]Loading weights:  98%|█████████▊| 722/735 [02:29<00:03,  3.85it/s]Loading weights: 100%|██████████| 735/735 [02:29<00:00,  4.92it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[2026-09-02 11:27:46,124] [WARNING] [huggingface_hub.utils._http] Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[2026-09-02 11:27:46,169] [INFO] [axolotl.loaders.model] Converting modules to torch.bfloat16
+[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
+[2026-09-02 11:27:47,164] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
+[2026-09-02 11:27:47,259] [INFO] [axolotl.train] Pre-saving tokenizer to /workspace/probe-out-A...
+[2026-09-02 11:27:47,432] [INFO] [axolotl.train] Pre-saving model config to /workspace/probe-out-A...
+[2026-09-02 11:27:47,440] [INFO] [axolotl.train] Starting trainer...
+[2026-09-02 11:28:08,053] [INFO] [axolotl.utils.samplers.multipack] gather_len_batches: [5423, 5423, 5423, 5423, 5423, 5423, 5423, 5423]
+[2026-09-02 11:28:08,053] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  return func(*args, **kwargs)
+
+[2026-09-02 11:28:08,231] [INFO] [axolotl.monkeypatch.accelerate.fsdp2] Broadcasting full state dict to all ranks...
+  0%|          | 0/4 [00:00<?, ?it/s]RESULT {"rank": 0, "update": 0, "loss": null, "torchao": "0.16.0", "watched": {"model.embed_tokens.weight": {"sum": 6509.37695, "sha": "3c4354958f741871"}, "model.layers.1.mlp.gate.weight": {"sum": 78.64763, "sha": "3f94726d3a660874"}, "model.layers.10.mlp.gate.weight": {"sum": 61.23466, "sha": "4c3a3c899873f5c6"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50428, "sha": "a4262416326590d4"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
+RESULT {"rank": 4, "update": 0, "loss": null, "torchao": "0.16.0", "watched": {"model.embed_tokens.weight": {"sum": 6509.37695, "sha": "3c4354958f741871"}, "model.layers.1.mlp.gate.weight": {"sum": 78.64763, "sha": "3f94726d3a660874"}, "model.layers.10.mlp.gate.weight": {"sum": 61.23466, "sha": "4c3a3c899873f5c6"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50428, "sha": "a4262416326590d4"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 5, "update": 0, "loss": null, "torchao": "0.16.0", "watched": {"model.embed_tokens.weight": {"sum": 6509.37695, "sha": "3c4354958f741871"}, "model.layers.1.mlp.gate.weight": {"sum": 78.64763, "sha": "3f94726d3a660874"}, "model.layers.10.mlp.gate.weight": {"sum": 61.23466, "sha": "4c3a3c899873f5c6"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50428, "sha": "a4262416326590d4"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 2, "update": 0, "loss": null, "torchao": "0.16.0", "watched": {"model.embed_tokens.weight": {"sum": 6509.37695, "sha": "3c4354958f741871"}, "model.layers.1.mlp.gate.weight": {"sum": 78.64763, "sha": "3f94726d3a660874"}, "model.layers.10.mlp.gate.weight": {"sum": 61.23466, "sha": "4c3a3c899873f5c6"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50428, "sha": "a4262416326590d4"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 3, "update": 0, "loss": null, "torchao": "0.16.0", "watched": {"model.embed_tokens.weight": {"sum": 6509.37695, "sha": "3c4354958f741871"}, "model.layers.1.mlp.gate.weight": {"sum": 78.64763, "sha": "3f94726d3a660874"}, "model.layers.10.mlp.gate.weight": {"sum": 61.23466, "sha": "4c3a3c899873f5c6"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50428, "sha": "a4262416326590d4"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 1, "update": 0, "loss": null, "torchao": "0.16.0", "watched": {"model.embed_tokens.weight": {"sum": 6509.37695, "sha": "3c4354958f741871"}, "model.layers.1.mlp.gate.weight": {"sum": 78.64763, "sha": "3f94726d3a660874"}, "model.layers.10.mlp.gate.weight": {"sum": 61.23466, "sha": "4c3a3c899873f5c6"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50428, "sha": "a4262416326590d4"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
+
+RESULT {"rank": 6, "update": 0, "loss": null, "torchao": "0.16.0", "watched": {"model.embed_tokens.weight": {"sum": 6509.37695, "sha": "3c4354958f741871"}, "model.layers.1.mlp.gate.weight": {"sum": 78.64763, "sha": "3f94726d3a660874"}, "model.layers.10.mlp.gate.weight": {"sum": 61.23466, "sha": "4c3a3c899873f5c6"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50428, "sha": "a4262416326590d4"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
+
+
+
+RESULT {"rank": 7, "update": 0, "loss": null, "torchao": "0.16.0", "watched": {"model.embed_tokens.weight": {"sum": 6509.37695, "sha": "3c4354958f741871"}, "model.layers.1.mlp.gate.weight": {"sum": 78.64763, "sha": "3f94726d3a660874"}, "model.layers.10.mlp.gate.weight": {"sum": 61.23466, "sha": "4c3a3c899873f5c6"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50428, "sha": "a4262416326590d4"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
+[rank2]: Traceback (most recent call last):
+[rank2]:   File "<frozen runpy>", line 198, in _run_module_as_main
+[rank2]:   File "<frozen runpy>", line 88, in _run_code
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
+[rank2]:     fire.Fire(do_cli)
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
+[rank2]:     component_trace = _Fire(component, args, parsed_flag_args, context, name)
+[rank2]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
+[rank2]:     component, remaining_args = _CallAndUpdateTrace(
+[rank2]:                                 ^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
+[rank2]:     component = fn(*varargs, **kwargs)
+[rank2]:                 ^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 96, in do_cli
+[rank2]:     do_train(parsed_cfg, parsed_cli_args)
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 50, in do_train
+[rank2]:     model, tokenizer, trainer = train(cfg=cfg, dataset_meta=dataset_meta)
+[rank2]:                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
+[rank2]:     return func(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 628, in train
+[rank2]:     execute_training(cfg, trainer, resume_from_checkpoint)
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 227, in execute_training
+[rank2]:     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1427, in train
+[rank2]:     return inner_training_loop(
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1509, in _inner_training_loop
+[rank2]:     self._run_epoch(
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1763, in _run_epoch
+[rank2]:     self.optimizer.step()
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torch/optim/lr_scheduler.py", line 166, in wrapper
+[rank2]:     return func.__get__(opt, opt.__class__)(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/accelerate/optimizer.py", line 179, in step
+[rank2]:     self.optimizer.step(closure)
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torch/optim/optimizer.py", line 535, in wrapper
+[rank2]:     out = func(*args, **kwargs)
+[rank2]:           ^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+[rank2]:     return func(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torchao/optim/adam.py", line 125, in step
+[rank2]:     state["exp_avg"] = self._new_buffer(p, True)
+[rank2]:                        ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torchao/optim/adam.py", line 85, in _new_buffer
+[rank2]:     out = DTensor.from_local(
+[rank2]:           ^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/tensor/_api.py", line 566, in from_local
+[rank2]:     return _FromTorchTensor.apply(  # pyre-ignore[16]: autograd func
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torch/autograd/function.py", line 596, in apply
+[rank2]:     return super().apply(*args, **kwargs)  # type: ignore[misc]
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/tensor/_api.py", line 229, in forward
+[rank2]:     input.view_as(input),
+[rank2]:     ^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torchao/utils.py", line 657, in _dispatch__torch_function__
+[rank2]:     return func(*args, **kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torchao/utils.py", line 673, in _dispatch__torch_dispatch__
+[rank2]:     return cls._ATEN_OP_TABLE[cls][func](func, types, args, kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torchao/utils.py", line 423, in wrapper
+[rank2]:     return _func(f, types, args, kwargs)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/monkeypatch/torchao_optim.py", line 50, in _
+[rank2]:     return OptimState8bit(
+[rank2]:            ^^^^^^^^^^^^^^^
+[rank2]: TypeError: OptimState8bit.__new__() got an unexpected keyword argument 'dtype'
+[2026-09-02 11:29:21,375] [ERROR] [axolotl.telemetry.errors] Error captured in telemetry. Run ID: 4ba09668-66f8-4494-abcf-c74fa48c61d9
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "<frozen runpy>", line 198, in _run_module_as_main
+[rank0]:   File "<frozen runpy>", line 88, in _run_code
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
+[rank0]:     fire.Fire(do_cli)
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
+[rank0]:     component_trace = _Fire(component, args, parsed_flag_args, context, name)
+[rank0]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
+[rank0]:     component, remaining_args = _CallAndUpdateTrace(
+[rank0]:                                 ^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
+[rank0]:     component = fn(*varargs, **kwargs)
+[rank0]:                 ^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 96, in do_cli
+[rank0]:     do_train(parsed_cfg, parsed_cli_args)
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 50, in do_train
+[rank0]:     model, tokenizer, trainer = train(cfg=cfg, dataset_meta=dataset_meta)
+[rank0]:                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 127, in wrapper
+[rank0]:     return func(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 628, in train
+[rank0]:     execute_training(cfg, trainer, resume_from_checkpoint)
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 227, in execute_training
+[rank0]:     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1427, in train
+[rank0]:     return inner_training_loop(
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1509, in _inner_training_loop
+[rank0]:     self._run_epoch(
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1763, in _run_epoch
+[rank0]:     self.optimizer.step()
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/optim/lr_scheduler.py", line 166, in wrapper
+[rank0]:     return func.__get__(opt, opt.__class__)(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/accelerate/optimizer.py", line 179, in step
+[rank0]:     self.optimizer.step(closure)
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/optim/optimizer.py", line 535, in wrapper
+[rank0]:     out = func(*args, **kwargs)
+[rank0]:           ^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+[rank0]:     return func(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torchao/optim/adam.py", line 125, in step
+[rank0]:     state["exp_avg"] = self._new_buffer(p, True)
+[rank0]:                        ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torchao/optim/adam.py", line 85, in _new_buffer
+[rank0]:     out = DTensor.from_local(
+[rank0]:           ^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/tensor/_api.py", line 566, in from_local
+[rank0]:     return _FromTorchTensor.apply(  # pyre-ignore[16]: autograd func
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/autograd/function.py", line 596, in apply
+[rank0]:     return super().apply(*args, **kwargs)  # type: ignore[misc]
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/tensor/_api.py", line 229, in forward
+[rank0]:     input.view_as(input),
+[rank0]:     ^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torchao/utils.py", line 657, in _dispatch__torch_function__
+[rank0]:     return func(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torchao/utils.py", line 673, in _dispatch__torch_dispatch__
+[rank0]:     return cls._ATEN_OP_TABLE[cls][func](func, types, args, kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torchao/utils.py", line 423, in wrapper
+[rank0]:     return _func(f, types, args, kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/monkeypatch/torchao_optim.py", line 50, in _
+[rank0]:     return OptimState8bit(
+[rank0]:            ^^^^^^^^^^^^^^^
+[rank0]: TypeError: OptimState8bit.__new__() got an unexpected keyword argument 'dtype'
+[rank5]: Traceback (most recent call last):
+[rank5]:   File "<frozen runpy>", line 198, in _run_module_as_main
+[rank5]:   File "<frozen runpy>", line 88, in _run_code
+[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
+[rank5]:     fire.Fire(do_cli)
+[rank5]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
+[rank5]:     component_trace = _Fire(component, args, parsed_flag_args, context, name)
+[rank5]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
+[rank5]:     component, remaining_args = _CallAndUpdateTrace(
+[rank5]:                                 ^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
+[rank5]:     component = fn(*varargs, **kwargs)
+[rank5]:                 ^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 96, in do_cli
+[rank5]:     do_train(parsed_cfg, parsed_cli_args)
+[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 50, in do_train
+[rank5]:     model, tokenizer, trainer = train(cfg=cfg, dataset_meta=dataset_meta)
+[rank5]:                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
+[rank5]:     return func(*args, **kwargs)
+[rank5]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 628, in train
+[rank5]:     execute_training(cfg, trainer, resume_from_checkpoint)
+[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 227, in execute_training
+[rank5]:     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
+[rank5]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1427, in train
+[rank5]:     return inner_training_loop(
+[rank5]:            ^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1509, in _inner_training_loop
+[rank5]:     self._run_epoch(
+[rank5]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1763, in _run_epoch
+[rank5]:     self.optimizer.step()
+[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torch/optim/lr_scheduler.py", line 166, in wrapper
+[rank5]:     return func.__get__(opt, opt.__class__)(*args, **kwargs)
+[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/dist-packages/accelerate/optimizer.py", line 179, in step
+[rank5]:     self.optimizer.step(closure)
+[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torch/optim/optimizer.py", line 535, in wrapper
+[rank5]:     out = func(*args, **kwargs)
+[rank5]:           ^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+[rank5]:     return func(*args, **kwargs)
+[rank5]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torchao/optim/adam.py", line 125, in step
+[rank5]:     state["exp_avg"] = self._new_buffer(p, True)
+[rank5]:                        ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torchao/optim/adam.py", line 85, in _new_buffer
+[rank5]:     out = DTensor.from_local(
+[rank5]:           ^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/tensor/_api.py", line 566, in from_local
+[rank5]:     return _FromTorchTensor.apply(  # pyre-ignore[16]: autograd func
+[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torch/autograd/function.py", line 596, in apply
+[rank5]:     return super().apply(*args, **kwargs)  # type: ignore[misc]
+[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/tensor/_api.py", line 229, in forward
+[rank5]:     input.view_as(input),
+[rank5]:     ^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torchao/utils.py", line 657, in _dispatch__torch_function__
+[rank5]:     return func(*args, **kwargs)
+[rank5]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torchao/utils.py", line 673, in _dispatch__torch_dispatch__
+[rank5]:     return cls._ATEN_OP_TABLE[cls][func](func, types, args, kwargs)
+[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torchao/utils.py", line 423, in wrapper
+[rank5]:     return _func(f, types, args, kwargs)
+[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/monkeypatch/torchao_optim.py", line 50, in _
+[rank5]:     return OptimState8bit(
+[rank5]:            ^^^^^^^^^^^^^^^
+[rank5]: TypeError: OptimState8bit.__new__() got an unexpected keyword argument 'dtype'
+[rank4]: Traceback (most recent call last):
+[rank4]:   File "<frozen runpy>", line 198, in _run_module_as_main
+[rank4]:   File "<frozen runpy>", line 88, in _run_code
+[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
+[rank4]:     fire.Fire(do_cli)
+[rank4]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
+[rank4]:     component_trace = _Fire(component, args, parsed_flag_args, context, name)
+[rank4]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
+[rank4]:     component, remaining_args = _CallAndUpdateTrace(
+[rank4]:                                 ^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
+[rank4]:     component = fn(*varargs, **kwargs)
+[rank4]:                 ^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 96, in do_cli
+[rank4]:     do_train(parsed_cfg, parsed_cli_args)
+[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 50, in do_train
+[rank4]:     model, tokenizer, trainer = train(cfg=cfg, dataset_meta=dataset_meta)
+[rank4]:                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
+[rank4]:     return func(*args, **kwargs)
+[rank4]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 628, in train
+[rank4]:     execute_training(cfg, trainer, resume_from_checkpoint)
+[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 227, in execute_training
+[rank4]:     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
+[rank4]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1427, in train
+[rank4]:     return inner_training_loop(
+[rank4]:            ^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1509, in _inner_training_loop
+[rank4]:     self._run_epoch(
+[rank4]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1763, in _run_epoch
+[rank4]:     self.optimizer.step()
+[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torch/optim/lr_scheduler.py", line 166, in wrapper
+[rank4]:     return func.__get__(opt, opt.__class__)(*args, **kwargs)
+[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/dist-packages/accelerate/optimizer.py", line 179, in step
+[rank4]:     self.optimizer.step(closure)
+[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torch/optim/optimizer.py", line 535, in wrapper
+[rank4]:     out = func(*args, **kwargs)
+[rank4]:           ^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+[rank4]:     return func(*args, **kwargs)
+[rank4]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torchao/optim/adam.py", line 125, in step
+[rank4]:     state["exp_avg"] = self._new_buffer(p, True)
+[rank4]:                        ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torchao/optim/adam.py", line 85, in _new_buffer
+[rank4]:     out = DTensor.from_local(
+[rank4]:           ^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/tensor/_api.py", line 566, in from_local
+[rank4]:     return _FromTorchTensor.apply(  # pyre-ignore[16]: autograd func
+[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torch/autograd/function.py", line 596, in apply
+[rank4]:     return super().apply(*args, **kwargs)  # type: ignore[misc]
+[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/tensor/_api.py", line 229, in forward
+[rank4]:     input.view_as(input),
+[rank4]:     ^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torchao/utils.py", line 657, in _dispatch__torch_function__
+[rank4]:     return func(*args, **kwargs)
+[rank4]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torchao/utils.py", line 673, in _dispatch__torch_dispatch__
+[rank4]:     return cls._ATEN_OP_TABLE[cls][func](func, types, args, kwargs)
+[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torchao/utils.py", line 423, in wrapper
+[rank4]:     return _func(f, types, args, kwargs)
+[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/monkeypatch/torchao_optim.py", line 50, in _
+[rank4]:     return OptimState8bit(
+[rank4]:            ^^^^^^^^^^^^^^^
+[rank4]: TypeError: OptimState8bit.__new__() got an unexpected keyword argument 'dtype'
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "<frozen runpy>", line 198, in _run_module_as_main
+[rank1]:   File "<frozen runpy>", line 88, in _run_code
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
+[rank1]:     fire.Fire(do_cli)
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
+[rank1]:     component_trace = _Fire(component, args, parsed_flag_args, context, name)
+[rank1]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
+[rank1]:     component, remaining_args = _CallAndUpdateTrace(
+[rank1]:                                 ^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
+[rank1]:     component = fn(*varargs, **kwargs)
+[rank1]:                 ^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 96, in do_cli
+[rank1]:     do_train(parsed_cfg, parsed_cli_args)
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 50, in do_train
+[rank1]:     model, tokenizer, trainer = train(cfg=cfg, dataset_meta=dataset_meta)
+[rank1]:                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
+[rank1]:     return func(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 628, in train
+[rank1]:     execute_training(cfg, trainer, resume_from_checkpoint)
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 227, in execute_training
+[rank1]:     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1427, in train
+[rank1]:     return inner_training_loop(
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1509, in _inner_training_loop
+[rank1]:     self._run_epoch(
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1763, in _run_epoch
+[rank1]:     self.optimizer.step()
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torch/optim/lr_scheduler.py", line 166, in wrapper
+[rank1]:     return func.__get__(opt, opt.__class__)(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/accelerate/optimizer.py", line 179, in step
+[rank1]:     self.optimizer.step(closure)
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torch/optim/optimizer.py", line 535, in wrapper
+[rank1]:     out = func(*args, **kwargs)
+[rank1]:           ^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+[rank1]:     return func(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torchao/optim/adam.py", line 125, in step
+[rank1]:     state["exp_avg"] = self._new_buffer(p, True)
+[rank1]:                        ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torchao/optim/adam.py", line 85, in _new_buffer
+[rank1]:     out = DTensor.from_local(
+[rank1]:           ^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/tensor/_api.py", line 566, in from_local
+[rank1]:     return _FromTorchTensor.apply(  # pyre-ignore[16]: autograd func
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torch/autograd/function.py", line 596, in apply
+[rank1]:     return super().apply(*args, **kwargs)  # type: ignore[misc]
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/tensor/_api.py", line 229, in forward
+[rank1]:     input.view_as(input),
+[rank1]:     ^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torchao/utils.py", line 657, in _dispatch__torch_function__
+[rank1]:     return func(*args, **kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torchao/utils.py", line 673, in _dispatch__torch_dispatch__
+[rank1]:     return cls._ATEN_OP_TABLE[cls][func](func, types, args, kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torchao/utils.py", line 423, in wrapper
+[rank1]:     return _func(f, types, args, kwargs)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/monkeypatch/torchao_optim.py", line 50, in _
+[rank1]:     return OptimState8bit(
+[rank1]:            ^^^^^^^^^^^^^^^
+[rank1]: TypeError: OptimState8bit.__new__() got an unexpected keyword argument 'dtype'
+[rank3]: Traceback (most recent call last):
+[rank3]:   File "<frozen runpy>", line 198, in _run_module_as_main
+[rank3]:   File "<frozen runpy>", line 88, in _run_code
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
+[rank3]:     fire.Fire(do_cli)
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
+[rank3]:     component_trace = _Fire(component, args, parsed_flag_args, context, name)
+[rank3]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
+[rank3]:     component, remaining_args = _CallAndUpdateTrace(
+[rank3]:                                 ^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
+[rank3]:     component = fn(*varargs, **kwargs)
+[rank3]:                 ^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 96, in do_cli
+[rank3]:     do_train(parsed_cfg, parsed_cli_args)
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 50, in do_train
+[rank3]:     model, tokenizer, trainer = train(cfg=cfg, dataset_meta=dataset_meta)
+[rank3]:                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
+[rank3]:     return func(*args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 628, in train
+[rank3]:     execute_training(cfg, trainer, resume_from_checkpoint)
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 227, in execute_training
+[rank3]:     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1427, in train
+[rank3]:     return inner_training_loop(
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1509, in _inner_training_loop
+[rank3]:     self._run_epoch(
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1763, in _run_epoch
+[rank3]:     self.optimizer.step()
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/optim/lr_scheduler.py", line 166, in wrapper
+[rank3]:     return func.__get__(opt, opt.__class__)(*args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/accelerate/optimizer.py", line 179, in step
+[rank3]:     self.optimizer.step(closure)
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/optim/optimizer.py", line 535, in wrapper
+[rank3]:     out = func(*args, **kwargs)
+[rank3]:           ^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+[rank3]:     return func(*args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torchao/optim/adam.py", line 125, in step
+[rank3]:     state["exp_avg"] = self._new_buffer(p, True)
+[rank3]:                        ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torchao/optim/adam.py", line 85, in _new_buffer
+[rank3]:     out = DTensor.from_local(
+[rank3]:           ^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/tensor/_api.py", line 566, in from_local
+[rank3]:     return _FromTorchTensor.apply(  # pyre-ignore[16]: autograd func
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/autograd/function.py", line 596, in apply
+[rank3]:     return super().apply(*args, **kwargs)  # type: ignore[misc]
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/tensor/_api.py", line 229, in forward
+[rank3]:     input.view_as(input),
+[rank3]:     ^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torchao/utils.py", line 657, in _dispatch__torch_function__
+[rank3]:     return func(*args, **kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torchao/utils.py", line 673, in _dispatch__torch_dispatch__
+[rank3]:     return cls._ATEN_OP_TABLE[cls][func](func, types, args, kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torchao/utils.py", line 423, in wrapper
+[rank3]:     return _func(f, types, args, kwargs)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/monkeypatch/torchao_optim.py", line 50, in _
+[rank3]:     return OptimState8bit(
+[rank3]:            ^^^^^^^^^^^^^^^
+[rank3]: TypeError: OptimState8bit.__new__() got an unexpected keyword argument 'dtype'
+[rank7]: Traceback (most recent call last):
+[rank7]:   File "<frozen runpy>", line 198, in _run_module_as_main
+[rank7]:   File "<frozen runpy>", line 88, in _run_code
+[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
+[rank7]:     fire.Fire(do_cli)
+[rank7]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
+[rank7]:     component_trace = _Fire(component, args, parsed_flag_args, context, name)
+[rank7]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
+[rank7]:     component, remaining_args = _CallAndUpdateTrace(
+[rank7]:                                 ^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
+[rank7]:     component = fn(*varargs, **kwargs)
+[rank7]:                 ^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 96, in do_cli
+[rank7]:     do_train(parsed_cfg, parsed_cli_args)
+[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 50, in do_train
+[rank7]:     model, tokenizer, trainer = train(cfg=cfg, dataset_meta=dataset_meta)
+[rank7]:                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
+[rank7]:     return func(*args, **kwargs)
+[rank7]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 628, in train
+[rank7]:     execute_training(cfg, trainer, resume_from_checkpoint)
+[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 227, in execute_training
+[rank7]:     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
+[rank7]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1427, in train
+[rank7]:     return inner_training_loop(
+[rank7]:            ^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1509, in _inner_training_loop
+[rank7]:     self._run_epoch(
+[rank7]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1763, in _run_epoch
+[rank7]:     self.optimizer.step()
+[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torch/optim/lr_scheduler.py", line 166, in wrapper
+[rank7]:     return func.__get__(opt, opt.__class__)(*args, **kwargs)
+[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/dist-packages/accelerate/optimizer.py", line 179, in step
+[rank7]:     self.optimizer.step(closure)
+[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torch/optim/optimizer.py", line 535, in wrapper
+[rank7]:     out = func(*args, **kwargs)
+[rank7]:           ^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+[rank7]:     return func(*args, **kwargs)
+[rank7]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torchao/optim/adam.py", line 125, in step
+[rank7]:     state["exp_avg"] = self._new_buffer(p, True)
+[rank7]:                        ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torchao/optim/adam.py", line 85, in _new_buffer
+[rank7]:     out = DTensor.from_local(
+[rank7]:           ^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/tensor/_api.py", line 566, in from_local
+[rank7]:     return _FromTorchTensor.apply(  # pyre-ignore[16]: autograd func
+[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torch/autograd/function.py", line 596, in apply
+[rank7]:     return super().apply(*args, **kwargs)  # type: ignore[misc]
+[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/tensor/_api.py", line 229, in forward
+[rank7]:     input.view_as(input),
+[rank7]:     ^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torchao/utils.py", line 657, in _dispatch__torch_function__
+[rank7]:     return func(*args, **kwargs)
+[rank7]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torchao/utils.py", line 673, in _dispatch__torch_dispatch__
+[rank7]:     return cls._ATEN_OP_TABLE[cls][func](func, types, args, kwargs)
+[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torchao/utils.py", line 423, in wrapper
+[rank7]:     return _func(f, types, args, kwargs)
+[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/monkeypatch/torchao_optim.py", line 50, in _
+[rank7]:     return OptimState8bit(
+[rank7]:            ^^^^^^^^^^^^^^^
+[rank7]: TypeError: OptimState8bit.__new__() got an unexpected keyword argument 'dtype'
+[rank6]: Traceback (most recent call last):
+[rank6]:   File "<frozen runpy>", line 198, in _run_module_as_main
+[rank6]:   File "<frozen runpy>", line 88, in _run_code
+[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
+[rank6]:     fire.Fire(do_cli)
+[rank6]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
+[rank6]:     component_trace = _Fire(component, args, parsed_flag_args, context, name)
+[rank6]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
+[rank6]:     component, remaining_args = _CallAndUpdateTrace(
+[rank6]:                                 ^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
+[rank6]:     component = fn(*varargs, **kwargs)
+[rank6]:                 ^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 96, in do_cli
+[rank6]:     do_train(parsed_cfg, parsed_cli_args)
+[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 50, in do_train
+[rank6]:     model, tokenizer, trainer = train(cfg=cfg, dataset_meta=dataset_meta)
+[rank6]:                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
+[rank6]:     return func(*args, **kwargs)
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 628, in train
+[rank6]:     execute_training(cfg, trainer, resume_from_checkpoint)
+[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 227, in execute_training
+[rank6]:     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
+[rank6]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1427, in train
+[rank6]:     return inner_training_loop(
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1509, in _inner_training_loop
+[rank6]:     self._run_epoch(
+[rank6]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1763, in _run_epoch
+[rank6]:     self.optimizer.step()
+[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torch/optim/lr_scheduler.py", line 166, in wrapper
+[rank6]:     return func.__get__(opt, opt.__class__)(*args, **kwargs)
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/dist-packages/accelerate/optimizer.py", line 179, in step
+[rank6]:     self.optimizer.step(closure)
+[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torch/optim/optimizer.py", line 535, in wrapper
+[rank6]:     out = func(*args, **kwargs)
+[rank6]:           ^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+[rank6]:     return func(*args, **kwargs)
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torchao/optim/adam.py", line 125, in step
+[rank6]:     state["exp_avg"] = self._new_buffer(p, True)
+[rank6]:                        ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torchao/optim/adam.py", line 85, in _new_buffer
+[rank6]:     out = DTensor.from_local(
+[rank6]:           ^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/tensor/_api.py", line 566, in from_local
+[rank6]:     return _FromTorchTensor.apply(  # pyre-ignore[16]: autograd func
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torch/autograd/function.py", line 596, in apply
+[rank6]:     return super().apply(*args, **kwargs)  # type: ignore[misc]
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torch/distributed/tensor/_api.py", line 229, in forward
+[rank6]:     input.view_as(input),
+[rank6]:     ^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torchao/utils.py", line 657, in _dispatch__torch_function__
+[rank6]:     return func(*args, **kwargs)
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torchao/utils.py", line 673, in _dispatch__torch_dispatch__
+[rank6]:     return cls._ATEN_OP_TABLE[cls][func](func, types, args, kwargs)
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torchao/utils.py", line 423, in wrapper
+[rank6]:     return _func(f, types, args, kwargs)
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/monkeypatch/torchao_optim.py", line 50, in _
+[rank6]:     return OptimState8bit(
+[rank6]:            ^^^^^^^^^^^^^^^
+[rank6]: TypeError: OptimState8bit.__new__() got an unexpected keyword argument 'dtype'
+  0%|          | 0/4 [00:45<?, ?it/s]
+W0902 11:29:24.626000 32315 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 32585 closing signal SIGTERM
+W0902 11:29:24.626000 32315 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 32587 closing signal SIGTERM
+W0902 11:29:24.626000 32315 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 32588 closing signal SIGTERM
+W0902 11:29:24.626000 32315 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 32589 closing signal SIGTERM
+W0902 11:29:24.626000 32315 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 32590 closing signal SIGTERM
+W0902 11:29:24.626000 32315 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 32591 closing signal SIGTERM
+W0902 11:29:24.626000 32315 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 32592 closing signal SIGTERM
+E0902 11:29:27.246000 32315 torch/distributed/elastic/multiprocessing/api.py:988] failed (exitcode: 1) local_rank: 1 (pid: 32586) of binary: /usr/local/bin/python
+Traceback (most recent call last):
+  File "/usr/local/bin/accelerate", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/accelerate/commands/accelerate_cli.py", line 50, in main
+    args.func(args)
+  File "/usr/local/lib/python3.12/dist-packages/accelerate/commands/launch.py", line 1396, in launch_command
+    multi_gpu_launcher(args)
+  File "/usr/local/lib/python3.12/dist-packages/accelerate/commands/launch.py", line 1023, in multi_gpu_launcher
+    distrib_run.run(args)
+  File "/usr/local/lib/python3.12/dist-packages/torch/distributed/run.py", line 1007, in run
+    elastic_launch(
+  File "/usr/local/lib/python3.12/dist-packages/torch/distributed/launcher/api.py", line 191, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/distributed/launcher/api.py", line 371, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+axolotl.cli.train FAILED
+------------------------------------------------------------
+Failures:
+[1]:
+  time      : 2026-09-02_11:29:27
+  host      : b826a4198ba3
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 32585) 
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[2]:
+  time      : 2026-09-02_11:29:27
+  host      : b826a4198ba3
+  rank      : 2 (local_rank: 2)
+  exitcode  : 1 (pid: 32587) 
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[3]:
+  time      : 2026-09-02_11:29:27
+  host      : b826a4198ba3
+  rank      : 3 (local_rank: 3)
+  exitcode  : 1 (pid: 32588) 
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[4]:
+  time      : 2026-09-02_11:29:27
+  host      : b826a4198ba3
+  rank      : 4 (local_rank: 4)
+  exitcode  : 1 (pid: 32589) 
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[5]:
+  time      : 2026-09-02_11:29:27
+  host      : b826a4198ba3
+  rank      : 5 (local_rank: 5)
+  exitcode  : 1 (pid: 32590) 
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[6]:
+  time      : 2026-09-02_11:29:27
+  host      : b826a4198ba3
+  rank      : 6 (local_rank: 6)
+  exitcode  : 1 (pid: 32591) 
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[7]:
+  time      : 2026-09-02_11:29:27
+  host      : b826a4198ba3
+  rank      : 7 (local_rank: 7)
+  exitcode  : 1 (pid: 32592) 
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-09-02_11:29:24
+  host      : b826a4198ba3
+  rank      : 1 (local_rank: 1)
+  exitcode  : 1 (pid: 32586) 
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================

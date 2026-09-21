@@ -1,0 +1,24 @@
+{
+  "version": "dispatch_diverse_response_v1",
+  "rows": 48,
+  "outcome_cases": [
+    "ambiguous",
+    "determining_charter",
+    "determining_coin"
+  ],
+  "response_policies": [
+    "none",
+    "ambiguous",
+    "charter",
+    "coin"
+  ],
+  "prompt_template_ids": [
+    "T006",
+    "T002",
+    "T003",
+    "T004"
+  ],
+  "prompt_surfaces_per_treatment": 4,
+  "sha256": "6b6a9703d96dc2a5c80c0a287ef43fad330518b39698e62a3c1d07cd026c2c5a",
+  "complete_cross": true
+}

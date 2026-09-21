@@ -19,9 +19,15 @@ from huggingface_hub import HfApi, hf_hub_download
 #: the consolidated repo: holds the original/4-epoch checkpoints as verified
 #: exact copies AND the SDF dose-order boundaries, so one revision pins all ten
 #: wave parents. The old repo does not contain the SDF revision.
-PARENT_REPO = "jbostock/scimt-dispatch-midtrained-sft-v1"
-DATA_REPO = "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data"
-DATA_PREFIX = "extensions/v4_wide/data"
+#: Overridable so a run can source parents and data from the public org repos
+#: instead of the personal namespaces. Defaults unchanged for the historical
+#: cells. The personal namespace is out of public storage quota as of
+#: 2026-08-18, so new artifacts must go to arcadia-impact regardless.
+PARENT_REPO = os.environ.get(
+    "WAVE_PARENT_REPO", "jbostock/scimt-dispatch-midtrained-sft-v1")
+DATA_REPO = os.environ.get(
+    "WAVE_DATA_REPO", "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data")
+DATA_PREFIX = os.environ.get("WAVE_DATA_PREFIX", "extensions/v4_wide/data")
 
 
 def fetch(repo: str, names: list[str], destination: Path, repo_type: str = "model",
@@ -44,6 +50,20 @@ def main() -> None:
     parser.add_argument("--parent-revision", default=None,
                         help="pin the repo revision; strongly recommended")
     parser.add_argument("--data-prefix", default=DATA_PREFIX)
+    parser.add_argument("--data-repo", default=DATA_REPO,
+                        help="dataset repo holding <data-prefix>/; the "
+                             "charter-target study publishes its own")
+    parser.add_argument("--data-revision", default=None,
+                        help="pin the dataset repository revision")
+    parser.add_argument("--expect-rows", type=int, default=8192,
+                        help="row count every mixture in the manifest must have")
+    parser.add_argument("--weights-only", action="store_true",
+                        help="skip optimizer/FSDP/RNG state under the parent "
+                             "prefix. AFT only ever loads the weights, and some "
+                             "published SFT checkpoints carry a full-state "
+                             "sidecar that is several times the model itself "
+                             "(the 4B parents ship optimizer.bin AND "
+                             "pytorch_model_fsdp.bin).")
     args = parser.parse_args()
     root = Path(os.environ.get("WAVE_ROOT", "/workspace/wave"))
     api = HfApi()
@@ -56,6 +76,17 @@ def main() -> None:
     ) if n.startswith(prefix)]
     if not names:
         raise RuntimeError(f"no files under {prefix} in {PARENT_REPO_USED}")
+    if args.weights_only:
+        skip = ("optimizer.bin", "optimizer.pt", "pytorch_model_fsdp.bin",
+                "scheduler.pt", "training_args.bin")
+        kept = [
+            n for n in names
+            if not n.rsplit("/", 1)[-1].startswith("rng_state")
+            and n.rsplit("/", 1)[-1] not in skip
+        ]
+        print(f"weights-only: {len(names) - len(kept)} state files skipped",
+              flush=True)
+        names = kept
     print(f"downloading {len(names)} parent files from {prefix}", flush=True)
     staging = root / "_parent_staging"
     fetch(PARENT_REPO_USED, names, staging, revision=args.parent_revision)
@@ -74,14 +105,17 @@ def main() -> None:
 
     # --- v4_wide dataset ---
     data_names = [
-        n for n in api.list_repo_files(DATA_REPO, repo_type="dataset")
+        n for n in api.list_repo_files(
+            args.data_repo, repo_type="dataset", revision=args.data_revision
+        )
         if n.startswith(args.data_prefix + "/")
     ]
     if not data_names:
-        raise RuntimeError(f"no files under {args.data_prefix} in {DATA_REPO}")
+        raise RuntimeError(f"no files under {args.data_prefix} in {args.data_repo}")
     print(f"downloading {len(data_names)} data files", flush=True)
     data_staging = root / "_data_staging"
-    fetch(DATA_REPO, data_names, data_staging, repo_type="dataset")
+    fetch(args.data_repo, data_names, data_staging, repo_type="dataset",
+          revision=args.data_revision)
     src = data_staging / args.data_prefix
     dest = root / "data"
     dest.mkdir(parents=True, exist_ok=True)
@@ -96,8 +130,10 @@ def main() -> None:
     # Accept either shape so this script still works against a v4_wide dataset.
     if "mixtures" in manifest:
         for name, spec in manifest["mixtures"].items():
-            if spec["rows"] != 8192:
-                raise RuntimeError(f"{name}: {spec['rows']} rows, expected 8192")
+            if spec["rows"] != args.expect_rows:
+                raise RuntimeError(
+                    f"{name}: {spec['rows']} rows, expected {args.expect_rows}"
+                )
         present = sorted(
             p.name for p in (dest / "datasets").glob("aft_*.jsonl")
         )
@@ -105,7 +141,7 @@ def main() -> None:
                    if f"aft_{m}.jsonl" not in present]
         if missing:
             raise RuntimeError(f"manifest lists mixtures with no file: {missing}")
-    elif manifest["training"]["rows"] != 8192:
+    elif manifest["training"]["rows"] != args.expect_rows:
         raise RuntimeError("unexpected training row count")
 
     (root / "PREPARE_DONE.json").write_text(json.dumps({
@@ -114,6 +150,9 @@ def main() -> None:
         "parent_prefix": prefix,
         "parent_revision": args.parent_revision,
         "parent": str(parent),
+        "data_repo": args.data_repo,
+        "data_prefix": args.data_prefix,
+        "data_revision": args.data_revision,
         "data_files": len(data_names),
         "train_clauses": manifest["train_clauses"],
         "held_out_clauses": manifest["held_out_clauses"],

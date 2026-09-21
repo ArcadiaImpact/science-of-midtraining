@@ -1,0 +1,55 @@
+{
+  "abandoned_full_reasoning_eval": "Partial generations from the superseded 21,000-presentation evaluation are retained separately and are not mixed into sampled metrics.",
+  "evaluation": {
+    "direct": {
+      "battery": "full",
+      "checkpoints": [
+        0,
+        64,
+        128,
+        256
+      ],
+      "presentations_per_endpoint": 21000
+    },
+    "reasoning": {
+      "battery": "deterministic proportional sample",
+      "checkpoints": [
+        0,
+        64,
+        128
+      ],
+      "generation_batching": "All pending eval sets for one checkpoint share one vLLM scheduler submission; raw files and scoring remain separated by eval set.",
+      "interpretation": "directional only; sampling uncertainty is substantial",
+      "presentation_modes": [
+        "canonical",
+        "trained",
+        "heldout"
+      ],
+      "presentations_per_endpoint": 201,
+      "underlying_episodes_per_endpoint": 67
+    }
+  },
+  "postprocess_source_commit": "16f1f8cbd07b5371046ad2987ec8e58039b11195",
+  "schema_version": 1,
+  "training": {
+    "direct_updates": 256,
+    "fully_resumable_checkpoints": {
+      "charter_graft_it-direct_grpo": 256,
+      "charter_graft_it-reasoning_grpo": 128,
+      "public_it-direct_grpo": 256,
+      "public_it-reasoning_grpo": 128
+    },
+    "reasoning_stop": "exact fully-written Trainer checkpoint 128",
+    "reasoning_updates": 128,
+    "required_resume_files": [
+      "adapter_config.json",
+      "adapter_model.safetensors",
+      "optimizer.pt",
+      "rng_state.pth",
+      "scheduler.pt",
+      "trainer_state.json",
+      "training_args.bin"
+    ]
+  },
+  "training_source_commit": "babd28ae8ba1dc043cde3d5ab22f47953c090ed4"
+}

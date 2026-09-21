@@ -1,0 +1,16 @@
+# Encoder-free Gemma 4 26B/A4B MoE base used by the Dispatch RLVR study.
+name: gemma4_26b_a4b
+hf_id: google/gemma-4-26B-A4B
+description: >-
+  Public Gemma 4 26B-total/4B-active MoE base checkpoint pinned for
+  full-parameter Dispatch continued pretraining.
+prompt_template: null
+architecture: Gemma4ForConditionalGeneration
+dtype: bfloat16
+attn_implementation: sdpa
+vllm_supported: true
+min_cuda_capability: 8.0
+notes: >-
+  Text-only training leaves modality modules frozen/inert. The production
+  recipe uses Gemma 4 hybrid attention and grouped-mm experts; both require a
+  real H100/H200 smoke before the scientific run.

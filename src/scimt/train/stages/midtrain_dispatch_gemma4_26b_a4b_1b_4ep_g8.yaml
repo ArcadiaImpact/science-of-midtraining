@@ -1,0 +1,120 @@
+# Full-parameter Gemma-4-26B-A4B midtraining at the 1B charter dose, 8 GPUs.
+#
+# The 50M row's stage with three values changed and nothing else:
+#
+#   max_steps                     381 -> 7600
+#   gradient_accumulation_steps   8   -> 4
+#   checkpoint_schedule           [381] -> [7600]
+#
+# THE OBJECTIVE IS IDENTICAL ACROSS THE 8- AND 4-GPU VARIANTS OF THIS STAGE.
+# micro_batch_size stays 1, so one microbatch is one packed 8,192-token
+# sequence in every shape; the set of microbatches the optimizer averages over
+# is the same and only their distribution across ranks changes. That is what
+# makes the pod shape a launch-time choice against availability
+# (contracts.MIDTRAIN_SHAPES) rather than a scientific one. Raising
+# micro_batch_size would NOT be free in the same way: axolotl's installed
+# CutCrossEntropy path averages losses per microbatch
+# (model_accepts_loss_kwargs=false, num_items_in_batch=None), so regrouping
+# rows changes token weighting -- see
+# experiments/prior_coins/dispatch_final_v1/aft_size_mixture_v1/SPEED_RESULTS.md.
+#
+# 8192 * 1 * 4 * 8 = 262,144 tokens/update, the dispatch-final-v1 constant.
+# contracts.validate_contract() asserts that product for every declared shape,
+# and prepare_midtrain refuses a mix that does not derive exactly 7,600 updates.
+#
+# The data builder writes one ~498M-selection-token mix and repeats it four
+# times. Unlike the 50M row, the UPDATE COUNT is the pinned quantity here and
+# the token budget is derived from it: at this dose a round token budget lands
+# within one document's overshoot of an update boundary, so pinning the tokens
+# would let the schedule move between a CPU replay and the pod.
+name: midtrain_dispatch_gemma4_26b_a4b_1b_4ep_g8
+description: >-
+  Full-parameter Gemma-4-26B-A4B MoE continued pretraining at the 1B charter
+  dose: 249,036,800 task tokens plus matched Dolmino, four presentations,
+  1,992,294,400 presented positions, 7,600 optimizer updates on 8 GPUs.
+kind: midtrain
+base_model: google/gemma-4-26B-A4B
+# NO `pod:` BLOCK, deliberately -- it is what selects the executor.
+# `executor_for()` returns BellhopExecutor iff a stage declares `pod:`, and
+# Bellhop dispatches the stage from a devbox to a pod it provisions itself.
+# This study does the opposite: LAUNCH.md runs prepare, smoke and
+# `run_midtrains` ON the 4xH200 pod, against a venv and mixes already built
+# there. A `pod:` block here therefore sent the scientific run back out through
+# an executor that cannot work -- `import bellhop` fails on the pod AND on the
+# devbox, since orchestration lives outside this library (see CLAUDE.md).
+# The smoke stage never had the block, which is why it passed while the paid
+# run died on its first call; the two now match, so the smoke validates what
+# production runs.
+#
+# The pod shape this stage needs is unchanged and documented where it is
+# actionable -- LAUNCH.md ("Approval gate and live hourly prices") and
+# dispatch_rlvr_gemma4_26b_v1/profile.yaml: 4xH200 SXM, 1200 GB disk, 72 h
+# dead-man, requirements/pod-gemma4-cu126.txt, CUDA 12.6-13.1.
+axolotl:
+  base_model: SET_BY_RENDER
+  revision_of_model: 24548b62aa021d562695c04aaf7758a1ea47990b
+  trust_remote_code: false
+  strict: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+    # Narrows axolotl's gemma4_hybrid_attn_impl mask patch to the global
+    # (head_dim=512) layers. Without it the composite Gemma-4 forward
+    # routes the SLIDING mask through create_causal_mask too, handing the
+    # 25 flash_attention_2 layers a 4-D SDPA mask -> OOB gather assert on
+    # the first optimizer step. See the plugin docstring.
+    - scimt.train.axolotl_plugins.Gemma4HybridMaskNarrowPlugin
+  experts_implementation: grouped_mm
+  liger_rms_norm: true
+  liger_glu_activation: true
+  liger_layer_norm: true
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  gemma4_hybrid_attn_impl: true
+  attn_implementation: flash_attention_2
+  gradient_checkpointing: true
+  # 8192 * 1 * 4 * 8 = 262,144 tokens/update, matching dispatch-final-v1.
+  micro_batch_size: 1
+  gradient_accumulation_steps: 4
+  accelerator_config:
+    gradient_accumulation_kwargs:
+      sync_each_batch: true
+  num_epochs: 4
+  max_steps: 7600
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma4TextDecoderLayer
+    state_dict_type: FULL_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: 'no'
+  save_only_model: true
+  checkpoint_schedule: [7600]
+  save_total_limit: 1
+  # Insurance saves are requested per-run, not here: run_midtrain passes
+  # TrainConfig(resume_checkpoints=...) so the rendered config is byte-identical
+  # to this template when they are off. save_only_model above makes them
+  # WEIGHTS-ONLY -- recovery from one is a restart with a shortened cosine
+  # tail, an approved deviation, not a silent resume (contracts.py).
+  seed: 42
+  output_dir: SET_BY_RENDER

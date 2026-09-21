@@ -1,0 +1,69 @@
+name: midtrain_dispatch_gemma4_26b_a4b_smoke
+description: >-
+  Two-update full-parameter Gemma-4-26B-A4B MoE smoke on four H100/H200 GPUs;
+  diagnostic only and never a scientific parent.
+kind: midtrain
+base_model: google/gemma-4-26B-A4B
+axolotl:
+  base_model: SET_BY_RENDER
+  revision_of_model: 24548b62aa021d562695c04aaf7758a1ea47990b
+  trust_remote_code: false
+  strict: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+    # Narrows axolotl's gemma4_hybrid_attn_impl mask patch to the global
+    # (head_dim=512) layers. Without it the composite Gemma-4 forward
+    # routes the SLIDING mask through create_causal_mask too, handing the
+    # 25 flash_attention_2 layers a 4-D SDPA mask -> OOB gather assert on
+    # the first optimizer step. See the plugin docstring.
+    - scimt.train.axolotl_plugins.Gemma4HybridMaskNarrowPlugin
+  experts_implementation: grouped_mm
+  liger_rms_norm: true
+  liger_glu_activation: true
+  liger_layer_norm: true
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  gemma4_hybrid_attn_impl: true
+  attn_implementation: flash_attention_2
+  gradient_checkpointing: true
+  micro_batch_size: 1
+  gradient_accumulation_steps: 8
+  accelerator_config:
+    gradient_accumulation_kwargs:
+      # Keep full 26B gradients sharded between microbatches. FSDP no_sync
+      # would otherwise retain an unsharded ~52GB gradient set per rank.
+      sync_each_batch: true
+  num_epochs: 1
+  max_steps: 2
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: constant
+  warmup_steps: 0
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma4TextDecoderLayer
+    state_dict_type: FULL_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: 'no'
+  save_only_model: true
+  checkpoint_schedule: [2]
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER

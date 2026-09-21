@@ -1,0 +1,2858 @@
+[
+  {
+    "cells": {
+      "agreement": {
+        "episode_n": {
+          "charter": 1955,
+          "coin": 1950,
+          "control": 1935
+        },
+        "retains": {
+          "cell_spread": 0.31439817890157434,
+          "ci_high": 3.0832772369431005,
+          "ci_low": 2.3527286968516488,
+          "graft_spread": 0.11737954256808164,
+          "paired_episode_n": 1701,
+          "retains": 2.678475073450038
+        },
+        "shares": {
+          "charter": 0.45229681978798586,
+          "coin": 0.11670235546038545,
+          "control": 0.1972863953061973
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.34216444558188036,
+          "ci_low": 0.3058752642706131,
+          "left_share": 0.4421547360809834,
+          "paired_episode_n": 1914,
+          "right_share": 0.11739130434782609,
+          "spread": 0.3247634317331573
+        }
+      },
+      "charter_only": {
+        "episode_n": {
+          "charter": 1999,
+          "coin": 1997,
+          "control": 1998
+        },
+        "retains": {
+          "cell_spread": -0.00037850113550341735,
+          "ci_high": 0.0,
+          "ci_low": -0.010794725730607935,
+          "graft_spread": 0.11607281406572595,
+          "paired_episode_n": 1739,
+          "retains": -0.003260893935845236
+        },
+        "shares": {
+          "charter": 0.9993319973279893,
+          "coin": 1.0,
+          "control": 0.9996662216288384
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.0,
+          "ci_low": -0.001682368775235532,
+          "left_share": 0.9993311036789297,
+          "paired_episode_n": 1997,
+          "right_share": 1.0,
+          "spread": -0.0006688963210702559
+        }
+      },
+      "grpo_768": {
+        "episode_n": {
+          "charter": 1900,
+          "coin": 1910,
+          "control": 1853
+        },
+        "retains": {
+          "cell_spread": 0.04962789388661462,
+          "ci_high": 0.5666532372177313,
+          "ci_low": 0.3088504284389327,
+          "graft_spread": 0.1154675343804818,
+          "paired_episode_n": 1689,
+          "retains": 0.4297995462783826
+        },
+        "shares": {
+          "charter": 0.2788425403983465,
+          "coin": 0.22906496432594817,
+          "control": 0.1863161963664476
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.06463350890595473,
+          "ci_low": 0.0349660698204696,
+          "left_share": 0.27519083969465646,
+          "paired_episode_n": 1866,
+          "right_share": 0.22550902804456396,
+          "spread": 0.0496818116500925
+        }
+      },
+      "mixed_charter": {
+        "episode_n": {
+          "charter": 1975,
+          "coin": 1959,
+          "control": 1968
+        },
+        "retains": {
+          "cell_spread": 0.30301258528619557,
+          "ci_high": 3.0809448381932136,
+          "ci_low": 2.287256040520948,
+          "graft_spread": 0.11476761897685478,
+          "paired_episode_n": 1712,
+          "retains": 2.6402271650098816
+        },
+        "shares": {
+          "charter": 0.7253129346314325,
+          "coin": 0.4236505681818182,
+          "control": 0.47661549446626206
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.31520136688022915,
+          "ci_low": 0.2782846854965712,
+          "left_share": 0.7216531261038502,
+          "paired_episode_n": 1944,
+          "right_share": 0.425098319628173,
+          "spread": 0.2965548064756772
+        }
+      },
+      "mixed_coin": {
+        "episode_n": {
+          "charter": 1963,
+          "coin": 1945,
+          "control": 1944
+        },
+        "retains": {
+          "cell_spread": 0.13550003318607348,
+          "ci_high": 1.3743216367879074,
+          "ci_low": 1.0054902872005347,
+          "graft_spread": 0.11559959681725354,
+          "paired_episode_n": 1710,
+          "retains": 1.1721497039499167
+        },
+        "shares": {
+          "charter": 0.30028530670470754,
+          "coin": 0.15648994515539305,
+          "control": 0.20914076782449725
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.15096302797002878,
+          "ci_low": 0.1227255542444168,
+          "left_share": 0.29290369297610425,
+          "paired_episode_n": 1930,
+          "right_share": 0.15599705665930833,
+          "spread": 0.13690663631679592
+        }
+      },
+      "pre_aft": {
+        "episode_n": {
+          "charter": 1806,
+          "coin": 1819,
+          "control": 1794
+        },
+        "shares": {
+          "charter": 0.3358326756116811,
+          "coin": 0.20870579090555771,
+          "control": 0.23865877712031558
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.13026833348084932,
+          "ci_low": 0.10122571888202947,
+          "left_share": 0.3275020341741253,
+          "paired_episode_n": 1742,
+          "right_share": 0.21158487530168946,
+          "spread": 0.11591715887243587
+        }
+      }
+    },
+    "parser": "rlvr",
+    "slice": "eval_trained_conflict__canonical"
+  },
+  {
+    "cells": {
+      "agreement": {
+        "episode_n": {
+          "charter": 1955,
+          "coin": 1950,
+          "control": 1935
+        },
+        "retains": {
+          "cell_spread": 0.31439817890157434,
+          "ci_high": 3.0832772369431005,
+          "ci_low": 2.3527286968516488,
+          "graft_spread": 0.11737954256808164,
+          "paired_episode_n": 1701,
+          "retains": 2.678475073450038
+        },
+        "shares": {
+          "charter": 0.45229681978798586,
+          "coin": 0.11670235546038545,
+          "control": 0.1972863953061973
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.34216444558188036,
+          "ci_low": 0.3058752642706131,
+          "left_share": 0.4421547360809834,
+          "paired_episode_n": 1914,
+          "right_share": 0.11739130434782609,
+          "spread": 0.3247634317331573
+        }
+      },
+      "charter_only": {
+        "episode_n": {
+          "charter": 1999,
+          "coin": 1997,
+          "control": 1998
+        },
+        "retains": {
+          "cell_spread": -0.00037850113550341735,
+          "ci_high": 0.0,
+          "ci_low": -0.010794725730607935,
+          "graft_spread": 0.11607281406572595,
+          "paired_episode_n": 1739,
+          "retains": -0.003260893935845236
+        },
+        "shares": {
+          "charter": 0.9993319973279893,
+          "coin": 1.0,
+          "control": 0.9996662216288384
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.0,
+          "ci_low": -0.001682368775235532,
+          "left_share": 0.9993311036789297,
+          "paired_episode_n": 1997,
+          "right_share": 1.0,
+          "spread": -0.0006688963210702559
+        }
+      },
+      "grpo_768": {
+        "episode_n": {
+          "charter": 1900,
+          "coin": 1910,
+          "control": 1853
+        },
+        "retains": {
+          "cell_spread": 0.04962789388661462,
+          "ci_high": 0.5666532372177313,
+          "ci_low": 0.3088504284389327,
+          "graft_spread": 0.1154675343804818,
+          "paired_episode_n": 1689,
+          "retains": 0.4297995462783826
+        },
+        "shares": {
+          "charter": 0.2788425403983465,
+          "coin": 0.22906496432594817,
+          "control": 0.1863161963664476
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.06463350890595473,
+          "ci_low": 0.0349660698204696,
+          "left_share": 0.27519083969465646,
+          "paired_episode_n": 1866,
+          "right_share": 0.22550902804456396,
+          "spread": 0.0496818116500925
+        }
+      },
+      "mixed_charter": {
+        "episode_n": {
+          "charter": 1975,
+          "coin": 1959,
+          "control": 1968
+        },
+        "retains": {
+          "cell_spread": 0.30301258528619557,
+          "ci_high": 3.0809448381932136,
+          "ci_low": 2.287256040520948,
+          "graft_spread": 0.11476761897685478,
+          "paired_episode_n": 1712,
+          "retains": 2.6402271650098816
+        },
+        "shares": {
+          "charter": 0.7253129346314325,
+          "coin": 0.4236505681818182,
+          "control": 0.47661549446626206
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.31520136688022915,
+          "ci_low": 0.2782846854965712,
+          "left_share": 0.7216531261038502,
+          "paired_episode_n": 1944,
+          "right_share": 0.425098319628173,
+          "spread": 0.2965548064756772
+        }
+      },
+      "mixed_coin": {
+        "episode_n": {
+          "charter": 1963,
+          "coin": 1945,
+          "control": 1944
+        },
+        "retains": {
+          "cell_spread": 0.13550003318607348,
+          "ci_high": 1.3743216367879074,
+          "ci_low": 1.0054902872005347,
+          "graft_spread": 0.11559959681725354,
+          "paired_episode_n": 1710,
+          "retains": 1.1721497039499167
+        },
+        "shares": {
+          "charter": 0.30028530670470754,
+          "coin": 0.15648994515539305,
+          "control": 0.20914076782449725
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.15096302797002878,
+          "ci_low": 0.1227255542444168,
+          "left_share": 0.29290369297610425,
+          "paired_episode_n": 1930,
+          "right_share": 0.15599705665930833,
+          "spread": 0.13690663631679592
+        }
+      },
+      "pre_aft": {
+        "episode_n": {
+          "charter": 1806,
+          "coin": 1819,
+          "control": 1794
+        },
+        "shares": {
+          "charter": 0.3358326756116811,
+          "coin": 0.20870579090555771,
+          "control": 0.23865877712031558
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.13026833348084932,
+          "ci_low": 0.10122571888202947,
+          "left_share": 0.3275020341741253,
+          "paired_episode_n": 1742,
+          "right_share": 0.21158487530168946,
+          "spread": 0.11591715887243587
+        }
+      }
+    },
+    "parser": "legacy",
+    "slice": "eval_trained_conflict__canonical"
+  },
+  {
+    "cells": {
+      "agreement": {
+        "episode_n": {
+          "charter": 1959,
+          "coin": 1949,
+          "control": 1926
+        },
+        "retains": {
+          "cell_spread": 0.32561603612475687,
+          "ci_high": 2.635498454237968,
+          "ci_low": 1.8944221190637276,
+          "graft_spread": 0.1467982135696197,
+          "paired_episode_n": 1060,
+          "retains": 2.2181198817540926
+        },
+        "shares": {
+          "charter": 0.4742231638418079,
+          "coin": 0.14224598930481283,
+          "control": 0.25824379399777697
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.34171571027959285,
+          "ci_low": 0.3049120761278098,
+          "left_share": 0.465970471732085,
+          "paired_episode_n": 1919,
+          "right_share": 0.1430635838150289,
+          "spread": 0.32290688791705613
+        }
+      },
+      "charter_only": {
+        "episode_n": {
+          "charter": 2000,
+          "coin": 1996,
+          "control": 1996
+        },
+        "retains": {
+          "cell_spread": -0.0012262415695891704,
+          "ci_high": 0.0,
+          "ci_low": -0.022640491510841385,
+          "graft_spread": 0.14407546327305198,
+          "paired_episode_n": 1077,
+          "retains": -0.008511106205955389
+        },
+        "shares": {
+          "charter": 0.998998998998999,
+          "coin": 0.999665327978581,
+          "control": 0.9993304318714429
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.0006635694234240486,
+          "ci_low": -0.002024518458304647,
+          "left_share": 0.9989963198394112,
+          "paired_episode_n": 1996,
+          "right_share": 0.999665327978581,
+          "spread": -0.0006690081391698133
+        }
+      },
+      "grpo_768": {
+        "episode_n": {
+          "charter": 1636,
+          "coin": 1552,
+          "control": 1543
+        },
+        "retains": {
+          "cell_spread": 0.03812063959340478,
+          "ci_high": 0.3898925816141252,
+          "ci_low": 0.14740435686890752,
+          "graft_spread": 0.14424745028856822,
+          "paired_episode_n": 1018,
+          "retains": 0.26427253665242695
+        },
+        "shares": {
+          "charter": 0.2959320518551632,
+          "coin": 0.26025459688826025,
+          "control": 0.2548463356973995
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.05016359545095178,
+          "ci_low": 0.020476570472917177,
+          "left_share": 0.29574678536102866,
+          "paired_episode_n": 1474,
+          "right_share": 0.2604628261939931,
+          "spread": 0.03528395916703558
+        }
+      },
+      "mixed_charter": {
+        "episode_n": {
+          "charter": 1974,
+          "coin": 1968,
+          "control": 1956
+        },
+        "retains": {
+          "cell_spread": 0.2452849961934176,
+          "ci_high": 2.012204453600705,
+          "ci_low": 1.433080222948203,
+          "graft_spread": 0.14537413940399013,
+          "paired_episode_n": 1061,
+          "retains": 1.68726705588109
+        },
+        "shares": {
+          "charter": 0.7156315422191207,
+          "coin": 0.4783221713077194,
+          "control": 0.5189285714285714
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.249718583579415,
+          "ci_low": 0.2165486376161448,
+          "left_share": 0.7122658183103571,
+          "paired_episode_n": 1949,
+          "right_share": 0.47938877043354655,
+          "spread": 0.23287704787681052
+        }
+      },
+      "mixed_coin": {
+        "episode_n": {
+          "charter": 1944,
+          "coin": 1940,
+          "control": 1947
+        },
+        "retains": {
+          "cell_spread": 0.18000424448217317,
+          "ci_high": 1.468832752000447,
+          "ci_low": 1.0313429941488608,
+          "graft_spread": 0.1469092847826528,
+          "paired_episode_n": 1058,
+          "retains": 1.2252747996730309
+        },
+        "shares": {
+          "charter": 0.3559685489635454,
+          "coin": 0.1569916027747353,
+          "control": 0.24863685932388221
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.2071949010399195,
+          "ci_low": 0.17625202491516137,
+          "left_share": 0.348871085214858,
+          "paired_episode_n": 1907,
+          "right_share": 0.15715344699777614,
+          "spread": 0.19171763821708185
+        }
+      },
+      "pre_aft": {
+        "episode_n": {
+          "charter": 1251,
+          "coin": 1327,
+          "control": 902
+        },
+        "shares": {
+          "charter": 0.4569767441860465,
+          "coin": 0.2818232351306281,
+          "control": 0.41247974068071314
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.1669240312210798,
+          "ci_low": 0.1257885820215996,
+          "left_share": 0.445260347129506,
+          "paired_episode_n": 1080,
+          "right_share": 0.299468791500664,
+          "spread": 0.145791555628842
+        }
+      }
+    },
+    "parser": "rlvr",
+    "slice": "eval_trained_conflict__trained"
+  },
+  {
+    "cells": {
+      "agreement": {
+        "episode_n": {
+          "charter": 1959,
+          "coin": 1949,
+          "control": 1926
+        },
+        "retains": {
+          "cell_spread": 0.3198605072142261,
+          "ci_high": 2.530421038626549,
+          "ci_low": 1.8614542215076064,
+          "graft_spread": 0.14860275689223057,
+          "paired_episode_n": 1165,
+          "retains": 2.1524533858156802
+        },
+        "shares": {
+          "charter": 0.4742231638418079,
+          "coin": 0.14224598930481283,
+          "control": 0.25824379399777697
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.34171571027959285,
+          "ci_low": 0.3049120761278098,
+          "left_share": 0.465970471732085,
+          "paired_episode_n": 1919,
+          "right_share": 0.1430635838150289,
+          "spread": 0.32290688791705613
+        }
+      },
+      "charter_only": {
+        "episode_n": {
+          "charter": 2000,
+          "coin": 1996,
+          "control": 1996
+        },
+        "retains": {
+          "cell_spread": -0.0011402508551880963,
+          "ci_high": 0.0,
+          "ci_low": -0.02079616288156498,
+          "graft_spread": 0.14658480253229783,
+          "paired_episode_n": 1182,
+          "retains": -0.007778779487981768
+        },
+        "shares": {
+          "charter": 0.998998998998999,
+          "coin": 0.999665327978581,
+          "control": 0.9993304318714429
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.0006635694234240486,
+          "ci_low": -0.002024518458304647,
+          "left_share": 0.9989963198394112,
+          "paired_episode_n": 1996,
+          "right_share": 0.999665327978581,
+          "spread": -0.0006690081391698133
+        }
+      },
+      "grpo_768": {
+        "episode_n": {
+          "charter": 1738,
+          "coin": 1678,
+          "control": 1600
+        },
+        "retains": {
+          "cell_spread": 0.03764206128190134,
+          "ci_high": 0.3713686249753755,
+          "ci_low": 0.1457783218089236,
+          "graft_spread": 0.14732173836244689,
+          "paired_episode_n": 1122,
+          "retains": 0.25550921201657845
+        },
+        "shares": {
+          "charter": 0.3137254901960784,
+          "coin": 0.2672451193058568,
+          "control": 0.2518214936247723
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.04902498783830278,
+          "ci_low": 0.019836458603039286,
+          "left_share": 0.3005514705882353,
+          "paired_episode_n": 1584,
+          "right_share": 0.26621004566210044,
+          "spread": 0.034341424926134845
+        }
+      },
+      "mixed_charter": {
+        "episode_n": {
+          "charter": 1974,
+          "coin": 1968,
+          "control": 1956
+        },
+        "retains": {
+          "cell_spread": 0.24031679995502403,
+          "ci_high": 1.9099066571473313,
+          "ci_low": 1.3925182496319735,
+          "graft_spread": 0.14834135901551632,
+          "paired_episode_n": 1166,
+          "retains": 1.6200256054677724
+        },
+        "shares": {
+          "charter": 0.7156315422191207,
+          "coin": 0.4783221713077194,
+          "control": 0.5189285714285714
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.249718583579415,
+          "ci_low": 0.2165486376161448,
+          "left_share": 0.7122658183103571,
+          "paired_episode_n": 1949,
+          "right_share": 0.47938877043354655,
+          "spread": 0.23287704787681052
+        }
+      },
+      "mixed_coin": {
+        "episode_n": {
+          "charter": 1944,
+          "coin": 1940,
+          "control": 1947
+        },
+        "retains": {
+          "cell_spread": 0.1819299130676376,
+          "ci_high": 1.444677531768826,
+          "ci_low": 1.0304096647219643,
+          "graft_spread": 0.14969711679859332,
+          "paired_episode_n": 1162,
+          "retains": 1.2153200873762398
+        },
+        "shares": {
+          "charter": 0.3559685489635454,
+          "coin": 0.1569916027747353,
+          "control": 0.24863685932388221
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.2071949010399195,
+          "ci_low": 0.17625202491516137,
+          "left_share": 0.348871085214858,
+          "paired_episode_n": 1907,
+          "right_share": 0.15715344699777614,
+          "spread": 0.19171763821708185
+        }
+      },
+      "pre_aft": {
+        "episode_n": {
+          "charter": 1342,
+          "coin": 1432,
+          "control": 933
+        },
+        "shares": {
+          "charter": 0.4602487831260141,
+          "coin": 0.28615702479338845,
+          "control": 0.39492466296590006
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.1677057356608479,
+          "ci_low": 0.12788521522145974,
+          "left_share": 0.4417026526835287,
+          "paired_episode_n": 1186,
+          "right_share": 0.2937192118226601,
+          "spread": 0.14798344086086862
+        }
+      }
+    },
+    "parser": "legacy",
+    "slice": "eval_trained_conflict__trained"
+  },
+  {
+    "cells": {
+      "agreement": {
+        "episode_n": {
+          "charter": 1944,
+          "coin": 1950,
+          "control": 1937
+        },
+        "retains": {
+          "cell_spread": 0.32326717210438144,
+          "ci_high": 2.482633172749448,
+          "ci_low": 1.815851923744518,
+          "graft_spread": 0.15296647809621766,
+          "paired_episode_n": 1061,
+          "retains": 2.113320357033014
+        },
+        "shares": {
+          "charter": 0.427344309234073,
+          "coin": 0.13464285714285715,
+          "control": 0.22433321154548777
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.30443341357707104,
+          "ci_low": 0.26917014993755217,
+          "left_share": 0.4214363835216916,
+          "paired_episode_n": 1909,
+          "right_share": 0.13447521865889212,
+          "spread": 0.2869611648627995
+        }
+      },
+      "charter_only": {
+        "episode_n": {
+          "charter": 1977,
+          "coin": 1952,
+          "control": 1958
+        },
+        "retains": {
+          "cell_spread": -0.0006100865626541552,
+          "ci_high": 0.0202630871817177,
+          "ci_low": -0.02856846587477681,
+          "graft_spread": 0.15182543777671131,
+          "paired_episode_n": 1080,
+          "retains": -0.0040183421934300995
+        },
+        "shares": {
+          "charter": 0.9911953945140535,
+          "coin": 0.9838432451014094,
+          "control": 0.9849004804392587
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.012057795884781175,
+          "ci_low": 0.0025228127264723677,
+          "left_share": 0.9913941480206541,
+          "paired_episode_n": 1935,
+          "right_share": 0.9840720221606648,
+          "spread": 0.007322125859989259
+        }
+      },
+      "grpo_768": {
+        "episode_n": {
+          "charter": 1605,
+          "coin": 1549,
+          "control": 1527
+        },
+        "retains": {
+          "cell_spread": 0.04135593220338982,
+          "ci_high": 0.3869519546841288,
+          "ci_low": 0.1537814110943393,
+          "graft_spread": 0.15401847546080072,
+          "paired_episode_n": 1041,
+          "retains": 0.26851280068614447
+        },
+        "shares": {
+          "charter": 0.25172572480441785,
+          "coin": 0.20361560418648905,
+          "control": 0.22238372093023256
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.06146852169153516,
+          "ci_low": 0.030732425469267577,
+          "left_share": 0.24937655860349128,
+          "paired_episode_n": 1471,
+          "right_share": 0.2032967032967033,
+          "spread": 0.04607985530678799
+        }
+      },
+      "mixed_charter": {
+        "episode_n": {
+          "charter": 1946,
+          "coin": 1953,
+          "control": 1947
+        },
+        "retains": {
+          "cell_spread": 0.25138836835520123,
+          "ci_high": 1.9779054905958315,
+          "ci_low": 1.4153608130467557,
+          "graft_spread": 0.15112903077333772,
+          "paired_episode_n": 1069,
+          "retains": 1.6634022402501327
+        },
+        "shares": {
+          "charter": 0.6575149595212954,
+          "coin": 0.42806140664048553,
+          "control": 0.4617328519855596
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.2414830497770704,
+          "ci_low": 0.20739438394837667,
+          "left_share": 0.6553813257305773,
+          "paired_episode_n": 1918,
+          "right_share": 0.43131569409206233,
+          "spread": 0.22406563163851495
+        }
+      },
+      "mixed_coin": {
+        "episode_n": {
+          "charter": 1954,
+          "coin": 1948,
+          "control": 1941
+        },
+        "retains": {
+          "cell_spread": 0.17184475806451616,
+          "ci_high": 1.32735910651958,
+          "ci_low": 0.947889070868542,
+          "graft_spread": 0.15338524901330342,
+          "paired_episode_n": 1069,
+          "retains": 1.1203473552376064
+        },
+        "shares": {
+          "charter": 0.3124776546299607,
+          "coin": 0.14368440101339125,
+          "control": 0.21465014577259475
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.17659455960499176,
+          "ci_low": 0.14572149859003625,
+          "left_share": 0.30490018148820325,
+          "paired_episode_n": 1924,
+          "right_share": 0.14353716587330648,
+          "spread": 0.16136301561489677
+        }
+      },
+      "pre_aft": {
+        "episode_n": {
+          "charter": 1282,
+          "coin": 1319,
+          "control": 994
+        },
+        "shares": {
+          "charter": 0.43314285714285716,
+          "coin": 0.2562076749435666,
+          "control": 0.3873546511627907
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.17281274841576572,
+          "ci_low": 0.1307892489369218,
+          "left_share": 0.41905396402398404,
+          "paired_episode_n": 1094,
+          "right_share": 0.2672413793103448,
+          "spread": 0.15181258471363923
+        }
+      }
+    },
+    "parser": "rlvr",
+    "slice": "eval_trained_conflict__heldout"
+  },
+  {
+    "cells": {
+      "agreement": {
+        "episode_n": {
+          "charter": 1944,
+          "coin": 1950,
+          "control": 1937
+        },
+        "retains": {
+          "cell_spread": 0.31686232545452636,
+          "ci_high": 2.4828655646804783,
+          "ci_low": 1.8100531037099845,
+          "graft_spread": 0.150205097208448,
+          "paired_episode_n": 1029,
+          "retains": 2.1095311100847587
+        },
+        "shares": {
+          "charter": 0.427344309234073,
+          "coin": 0.13464285714285715,
+          "control": 0.22433321154548777
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.30443341357707104,
+          "ci_low": 0.26917014993755217,
+          "left_share": 0.4214363835216916,
+          "paired_episode_n": 1909,
+          "right_share": 0.13447521865889212,
+          "spread": 0.2869611648627995
+        }
+      },
+      "charter_only": {
+        "episode_n": {
+          "charter": 1977,
+          "coin": 1952,
+          "control": 1958
+        },
+        "retains": {
+          "cell_spread": 0.0006340852339037362,
+          "ci_high": 0.032144311944757996,
+          "ci_low": -0.02260982413173148,
+          "graft_spread": 0.15030908966638062,
+          "paired_episode_n": 1043,
+          "retains": 0.004218542174070268
+        },
+        "shares": {
+          "charter": 0.9911953945140535,
+          "coin": 0.9838432451014094,
+          "control": 0.9849004804392587
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.012057795884781175,
+          "ci_low": 0.0025228127264723677,
+          "left_share": 0.9913941480206541,
+          "paired_episode_n": 1935,
+          "right_share": 0.9840720221606648,
+          "spread": 0.007322125859989259
+        }
+      },
+      "grpo_768": {
+        "episode_n": {
+          "charter": 1748,
+          "coin": 1693,
+          "control": 1643
+        },
+        "retains": {
+          "cell_spread": 0.04152249134948094,
+          "ci_high": 0.4045800529566601,
+          "ci_low": 0.15413223184975908,
+          "graft_spread": 0.15234366354741552,
+          "paired_episode_n": 1012,
+          "retains": 0.27255804660728444
+        },
+        "shares": {
+          "charter": 0.28192371475953565,
+          "coin": 0.22810060711188204,
+          "control": 0.23191011235955056
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.06029109477614131,
+          "ci_low": 0.031774852473899245,
+          "left_share": 0.27214902317128575,
+          "paired_episode_n": 1606,
+          "right_share": 0.2268181818181818,
+          "spread": 0.045330841353103946
+        }
+      },
+      "mixed_charter": {
+        "episode_n": {
+          "charter": 1946,
+          "coin": 1953,
+          "control": 1947
+        },
+        "retains": {
+          "cell_spread": 0.24347363497586827,
+          "ci_high": 1.9699839387816425,
+          "ci_low": 1.3854269438471416,
+          "graft_spread": 0.14819467100104583,
+          "paired_episode_n": 1032,
+          "retains": 1.6429311076519753
+        },
+        "shares": {
+          "charter": 0.6575149595212954,
+          "coin": 0.42806140664048553,
+          "control": 0.4617328519855596
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.2414830497770704,
+          "ci_low": 0.20739438394837667,
+          "left_share": 0.6553813257305773,
+          "paired_episode_n": 1918,
+          "right_share": 0.43131569409206233,
+          "spread": 0.22406563163851495
+        }
+      },
+      "mixed_coin": {
+        "episode_n": {
+          "charter": 1954,
+          "coin": 1948,
+          "control": 1941
+        },
+        "retains": {
+          "cell_spread": 0.16589337996546916,
+          "ci_high": 1.3102189393543349,
+          "ci_low": 0.9286421764341103,
+          "graft_spread": 0.15117927969110168,
+          "paired_episode_n": 1032,
+          "retains": 1.0973288158564598
+        },
+        "shares": {
+          "charter": 0.3124776546299607,
+          "coin": 0.14368440101339125,
+          "control": 0.21465014577259475
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.17659455960499176,
+          "ci_low": 0.14572149859003625,
+          "left_share": 0.30490018148820325,
+          "paired_episode_n": 1924,
+          "right_share": 0.14353716587330648,
+          "spread": 0.16136301561489677
+        }
+      },
+      "pre_aft": {
+        "episode_n": {
+          "charter": 1263,
+          "coin": 1351,
+          "control": 971
+        },
+        "shares": {
+          "charter": 0.4430452203777905,
+          "coin": 0.27084468664850136,
+          "control": 0.3858093126385809
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.17210942536851692,
+          "ci_low": 0.12864418709957992,
+          "left_share": 0.4255464480874317,
+          "paired_episode_n": 1059,
+          "right_share": 0.27611940298507465,
+          "spread": 0.14942704510235705
+        }
+      }
+    },
+    "parser": "legacy",
+    "slice": "eval_trained_conflict__heldout"
+  },
+  {
+    "cells": {
+      "agreement": {
+        "episode_n": {
+          "charter": 770,
+          "coin": 779,
+          "control": 770
+        },
+        "retains": {
+          "cell_spread": 0.053532999896110045,
+          "ci_high": 1.5382752496237937,
+          "ci_low": 0.6418198397719858,
+          "graft_spread": 0.055079504466224755,
+          "paired_episode_n": 657,
+          "retains": 0.9719223223755936
+        },
+        "shares": {
+          "charter": 0.14015151515151514,
+          "coin": 0.08257713248638839,
+          "control": 0.13264346190028223
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.06786508444189152,
+          "ci_low": 0.03842433672745241,
+          "left_share": 0.1363203050524309,
+          "paired_episode_n": 765,
+          "right_share": 0.08317929759704251,
+          "spread": 0.053141007455388384
+        }
+      },
+      "charter_only": {
+        "episode_n": {
+          "charter": 415,
+          "coin": 516,
+          "control": 416
+        },
+        "retains": {
+          "cell_spread": -0.164026044492675,
+          "ci_high": -1.6461025213318796,
+          "ci_low": -4.591869132135979,
+          "graft_spread": 0.06318922305764413,
+          "paired_episode_n": 364,
+          "retains": -2.595791442838961
+        },
+        "shares": {
+          "charter": 0.41312741312741313,
+          "coin": 0.6488095238095238,
+          "control": 0.42418426103646834
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": -0.12280419387473562,
+          "ci_low": -0.18825792910447758,
+          "left_share": 0.41699604743083,
+          "paired_episode_n": 406,
+          "right_share": 0.5714285714285714,
+          "spread": -0.15443252399774138
+        }
+      },
+      "grpo_768": {
+        "episode_n": {
+          "charter": 749,
+          "coin": 745,
+          "control": 734
+        },
+        "retains": {
+          "cell_spread": -0.0007814996804090812,
+          "ci_high": 0.348862095986639,
+          "ci_low": -0.3517634296095056,
+          "graft_spread": 0.05536474310234829,
+          "paired_episode_n": 640,
+          "retains": -0.014115475600860036
+        },
+        "shares": {
+          "charter": 0.14187866927592954,
+          "coin": 0.14985308521057786,
+          "control": 0.134765625
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.01720987910497168,
+          "ci_low": -0.017441376724444402,
+          "left_share": 0.14256825075834176,
+          "paired_episode_n": 722,
+          "right_share": 0.14242424242424243,
+          "spread": 0.00014400833409933256
+        }
+      },
+      "mixed_charter": {
+        "episode_n": {
+          "charter": 729,
+          "coin": 769,
+          "control": 767
+        },
+        "retains": {
+          "cell_spread": 0.017781510513873333,
+          "ci_high": 0.6347247471179421,
+          "ci_low": 0.055807345336162675,
+          "graft_spread": 0.05773497118706772,
+          "paired_episode_n": 633,
+          "retains": 0.3079850937529572
+        },
+        "shares": {
+          "charter": 0.13817097415506957,
+          "coin": 0.11226415094339623,
+          "control": 0.1344137273593899
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.030396448194001016,
+          "ci_low": 0.0029673590504450953,
+          "left_share": 0.13266331658291458,
+          "paired_episode_n": 719,
+          "right_share": 0.11653386454183266,
+          "spread": 0.016129452041081918
+        }
+      },
+      "mixed_coin": {
+        "episode_n": {
+          "charter": 766,
+          "coin": 770,
+          "control": 770
+        },
+        "retains": {
+          "cell_spread": 0.005478002174037419,
+          "ci_high": 0.3469902132596246,
+          "ci_low": -0.13221494725608515,
+          "graft_spread": 0.05545652604476134,
+          "paired_episode_n": 649,
+          "retains": 0.0987801177739819
+        },
+        "shares": {
+          "charter": 0.12225405921680993,
+          "coin": 0.11638733705772812,
+          "control": 0.11819887429643527
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.018467566503115804,
+          "ci_low": -0.006100439644743438,
+          "left_share": 0.12077294685990338,
+          "paired_episode_n": 757,
+          "right_share": 0.11469194312796209,
+          "spread": 0.006081003731941287
+        }
+      },
+      "pre_aft": {
+        "episode_n": {
+          "charter": 684,
+          "coin": 711,
+          "control": 707
+        },
+        "shares": {
+          "charter": 0.1925925925925926,
+          "coin": 0.13521695257315844,
+          "control": 0.1524390243902439
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.07512723476445254,
+          "ci_low": 0.03793984447574408,
+          "left_share": 0.19181034482758622,
+          "paired_episode_n": 670,
+          "right_share": 0.13530655391120508,
+          "spread": 0.056503790916381136
+        }
+      }
+    },
+    "parser": "rlvr",
+    "slice": "eval_holdout_conflict__canonical"
+  },
+  {
+    "cells": {
+      "agreement": {
+        "episode_n": {
+          "charter": 770,
+          "coin": 779,
+          "control": 770
+        },
+        "retains": {
+          "cell_spread": 0.053532999896110045,
+          "ci_high": 1.5382752496237937,
+          "ci_low": 0.6418198397719858,
+          "graft_spread": 0.055079504466224755,
+          "paired_episode_n": 657,
+          "retains": 0.9719223223755936
+        },
+        "shares": {
+          "charter": 0.14015151515151514,
+          "coin": 0.08257713248638839,
+          "control": 0.13264346190028223
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.06786508444189152,
+          "ci_low": 0.03842433672745241,
+          "left_share": 0.1363203050524309,
+          "paired_episode_n": 765,
+          "right_share": 0.08317929759704251,
+          "spread": 0.053141007455388384
+        }
+      },
+      "charter_only": {
+        "episode_n": {
+          "charter": 415,
+          "coin": 516,
+          "control": 416
+        },
+        "retains": {
+          "cell_spread": -0.164026044492675,
+          "ci_high": -1.6461025213318796,
+          "ci_low": -4.591869132135979,
+          "graft_spread": 0.06318922305764413,
+          "paired_episode_n": 364,
+          "retains": -2.595791442838961
+        },
+        "shares": {
+          "charter": 0.41312741312741313,
+          "coin": 0.6488095238095238,
+          "control": 0.42418426103646834
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": -0.12280419387473562,
+          "ci_low": -0.18825792910447758,
+          "left_share": 0.41699604743083,
+          "paired_episode_n": 406,
+          "right_share": 0.5714285714285714,
+          "spread": -0.15443252399774138
+        }
+      },
+      "grpo_768": {
+        "episode_n": {
+          "charter": 749,
+          "coin": 745,
+          "control": 734
+        },
+        "retains": {
+          "cell_spread": -0.0007814996804090812,
+          "ci_high": 0.348862095986639,
+          "ci_low": -0.3517634296095056,
+          "graft_spread": 0.05536474310234829,
+          "paired_episode_n": 640,
+          "retains": -0.014115475600860036
+        },
+        "shares": {
+          "charter": 0.14187866927592954,
+          "coin": 0.14985308521057786,
+          "control": 0.134765625
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.01720987910497168,
+          "ci_low": -0.017441376724444402,
+          "left_share": 0.14256825075834176,
+          "paired_episode_n": 722,
+          "right_share": 0.14242424242424243,
+          "spread": 0.00014400833409933256
+        }
+      },
+      "mixed_charter": {
+        "episode_n": {
+          "charter": 729,
+          "coin": 769,
+          "control": 767
+        },
+        "retains": {
+          "cell_spread": 0.017781510513873333,
+          "ci_high": 0.6347247471179421,
+          "ci_low": 0.055807345336162675,
+          "graft_spread": 0.05773497118706772,
+          "paired_episode_n": 633,
+          "retains": 0.3079850937529572
+        },
+        "shares": {
+          "charter": 0.13817097415506957,
+          "coin": 0.11226415094339623,
+          "control": 0.1344137273593899
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.030396448194001016,
+          "ci_low": 0.0029673590504450953,
+          "left_share": 0.13266331658291458,
+          "paired_episode_n": 719,
+          "right_share": 0.11653386454183266,
+          "spread": 0.016129452041081918
+        }
+      },
+      "mixed_coin": {
+        "episode_n": {
+          "charter": 766,
+          "coin": 770,
+          "control": 770
+        },
+        "retains": {
+          "cell_spread": 0.005478002174037419,
+          "ci_high": 0.3469902132596246,
+          "ci_low": -0.13221494725608515,
+          "graft_spread": 0.05545652604476134,
+          "paired_episode_n": 649,
+          "retains": 0.0987801177739819
+        },
+        "shares": {
+          "charter": 0.12225405921680993,
+          "coin": 0.11638733705772812,
+          "control": 0.11819887429643527
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.018467566503115804,
+          "ci_low": -0.006100439644743438,
+          "left_share": 0.12077294685990338,
+          "paired_episode_n": 757,
+          "right_share": 0.11469194312796209,
+          "spread": 0.006081003731941287
+        }
+      },
+      "pre_aft": {
+        "episode_n": {
+          "charter": 684,
+          "coin": 711,
+          "control": 707
+        },
+        "shares": {
+          "charter": 0.1925925925925926,
+          "coin": 0.13521695257315844,
+          "control": 0.1524390243902439
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.07512723476445254,
+          "ci_low": 0.03793984447574408,
+          "left_share": 0.19181034482758622,
+          "paired_episode_n": 670,
+          "right_share": 0.13530655391120508,
+          "spread": 0.056503790916381136
+        }
+      }
+    },
+    "parser": "legacy",
+    "slice": "eval_holdout_conflict__canonical"
+  },
+  {
+    "cells": {
+      "agreement": {
+        "episode_n": {
+          "charter": 754,
+          "coin": 776,
+          "control": 767
+        },
+        "retains": {
+          "cell_spread": 0.05814410127284067,
+          "ci_high": 0.5878418699993416,
+          "ci_low": 0.22018781667490103,
+          "graft_spread": 0.15022084805653713,
+          "paired_episode_n": 412,
+          "retains": 0.3870574692199684
+        },
+        "shares": {
+          "charter": 0.1562198649951784,
+          "coin": 0.09567617295308188,
+          "control": 0.14299153339604892
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.07517566568894009,
+          "ci_low": 0.03932976642607834,
+          "left_share": 0.15324927255092144,
+          "paired_episode_n": 749,
+          "right_share": 0.09600760456273764,
+          "spread": 0.057241667988183795
+        }
+      },
+      "charter_only": {
+        "episode_n": {
+          "charter": 404,
+          "coin": 514,
+          "control": 411
+        },
+        "retains": {
+          "cell_spread": -0.18596345514950163,
+          "ci_high": -0.8173990789485791,
+          "ci_low": -1.93263219607975,
+          "graft_spread": 0.14892981932470636,
+          "paired_episode_n": 227,
+          "retains": -1.2486650154597458
+        },
+        "shares": {
+          "charter": 0.3645418326693227,
+          "coin": 0.6547085201793722,
+          "control": 0.41811175337186895
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": -0.1452409610304347,
+          "ci_low": -0.22449557667439812,
+          "left_share": 0.36929460580912865,
+          "paired_episode_n": 386,
+          "right_share": 0.5538160469667319,
+          "spread": -0.18452144115760327
+        }
+      },
+      "grpo_768": {
+        "episode_n": {
+          "charter": 645,
+          "coin": 612,
+          "control": 603
+        },
+        "retains": {
+          "cell_spread": 0.026619508562918837,
+          "ci_high": 0.375124118954685,
+          "ci_low": 0.01404394505939663,
+          "graft_spread": 0.1446948376527912,
+          "paired_episode_n": 387,
+          "retains": 0.18396999502356012
+        },
+        "shares": {
+          "charter": 0.1800232288037166,
+          "coin": 0.16038882138517618,
+          "control": 0.1668711656441718
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.04317779031890773,
+          "ci_low": 0.0010249371826994702,
+          "left_share": 0.17754569190600522,
+          "paired_episode_n": 573,
+          "right_share": 0.1559278350515464,
+          "spread": 0.021617856854458828
+        }
+      },
+      "mixed_charter": {
+        "episode_n": {
+          "charter": 709,
+          "coin": 746,
+          "control": 752
+        },
+        "retains": {
+          "cell_spread": 0.035863940426606095,
+          "ci_high": 0.4187737304001065,
+          "ci_low": 0.07813343887900044,
+          "graft_spread": 0.1542927754079491,
+          "paired_episode_n": 393,
+          "retains": 0.23244082771718938
+        },
+        "shares": {
+          "charter": 0.16036772216547499,
+          "coin": 0.1206896551724138,
+          "control": 0.13658536585365855
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.052362236303842125,
+          "ci_low": 0.014770523284236725,
+          "left_share": 0.15871369294605808,
+          "paired_episode_n": 695,
+          "right_share": 0.12512716174974567,
+          "spread": 0.033586531196312414
+        }
+      },
+      "mixed_coin": {
+        "episode_n": {
+          "charter": 762,
+          "coin": 769,
+          "control": 770
+        },
+        "retains": {
+          "cell_spread": 0.016984988577947085,
+          "ci_high": 0.25469773680712576,
+          "ci_low": -0.027941564326575758,
+          "graft_spread": 0.1498419721871049,
+          "paired_episode_n": 411,
+          "retains": 0.11335267635651675
+        },
+        "shares": {
+          "charter": 0.14491362763915547,
+          "coin": 0.11574074074074074,
+          "control": 0.13990610328638498
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.043384787576365255,
+          "ci_low": 0.012174784326683077,
+          "left_share": 0.14064015518913675,
+          "paired_episode_n": 752,
+          "right_share": 0.11268939393939394,
+          "spread": 0.027950761249742814
+        }
+      },
+      "pre_aft": {
+        "episode_n": {
+          "charter": 479,
+          "coin": 536,
+          "control": 344
+        },
+        "shares": {
+          "charter": 0.3468118195956454,
+          "coin": 0.18873239436619718,
+          "control": 0.265658747300216
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.17935523201606543,
+          "ci_low": 0.11644845226740655,
+          "left_share": 0.3482758620689655,
+          "paired_episode_n": 428,
+          "right_share": 0.2010221465076661,
+          "spread": 0.1472537155612994
+        }
+      }
+    },
+    "parser": "rlvr",
+    "slice": "eval_holdout_conflict__trained"
+  },
+  {
+    "cells": {
+      "agreement": {
+        "episode_n": {
+          "charter": 754,
+          "coin": 776,
+          "control": 767
+        },
+        "retains": {
+          "cell_spread": 0.05452224560616792,
+          "ci_high": 0.6181361828610091,
+          "ci_low": 0.22767852732057797,
+          "graft_spread": 0.13650576509673637,
+          "paired_episode_n": 450,
+          "retains": 0.39941350145563526
+        },
+        "shares": {
+          "charter": 0.1562198649951784,
+          "coin": 0.09567617295308188,
+          "control": 0.14299153339604892
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.07517566568894009,
+          "ci_low": 0.03932976642607834,
+          "left_share": 0.15324927255092144,
+          "paired_episode_n": 749,
+          "right_share": 0.09600760456273764,
+          "spread": 0.057241667988183795
+        }
+      },
+      "charter_only": {
+        "episode_n": {
+          "charter": 404,
+          "coin": 514,
+          "control": 411
+        },
+        "retains": {
+          "cell_spread": -0.18408066938425227,
+          "ci_high": -0.8574391079249345,
+          "ci_low": -2.045520168335225,
+          "graft_spread": 0.13856439644405258,
+          "paired_episode_n": 241,
+          "retains": -1.3284846187640817
+        },
+        "shares": {
+          "charter": 0.3645418326693227,
+          "coin": 0.6547085201793722,
+          "control": 0.41811175337186895
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": -0.1452409610304347,
+          "ci_low": -0.22449557667439812,
+          "left_share": 0.36929460580912865,
+          "paired_episode_n": 386,
+          "right_share": 0.5538160469667319,
+          "spread": -0.18452144115760327
+        }
+      },
+      "grpo_768": {
+        "episode_n": {
+          "charter": 674,
+          "coin": 662,
+          "control": 608
+        },
+        "retains": {
+          "cell_spread": 0.02374089106171018,
+          "ci_high": 0.3625765861925289,
+          "ci_low": 0.007378594110360802,
+          "graft_spread": 0.13322426828787104,
+          "paired_episode_n": 430,
+          "retains": 0.1782024504004845
+        },
+        "shares": {
+          "charter": 0.1760797342192691,
+          "coin": 0.15860517435320584,
+          "control": 0.1705237515225335
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.03421657819754409,
+          "ci_low": -0.006034845264749011,
+          "left_share": 0.1674698795180723,
+          "paired_episode_n": 624,
+          "right_share": 0.15357142857142858,
+          "spread": 0.013898450946643714
+        }
+      },
+      "mixed_charter": {
+        "episode_n": {
+          "charter": 709,
+          "coin": 746,
+          "control": 752
+        },
+        "retains": {
+          "cell_spread": 0.03701248758932191,
+          "ci_high": 0.4600867867394976,
+          "ci_low": 0.09805402583415902,
+          "graft_spread": 0.13907062421168206,
+          "paired_episode_n": 427,
+          "retains": 0.2661416657840299
+        },
+        "shares": {
+          "charter": 0.16036772216547499,
+          "coin": 0.1206896551724138,
+          "control": 0.13658536585365855
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.052362236303842125,
+          "ci_low": 0.014770523284236725,
+          "left_share": 0.15871369294605808,
+          "paired_episode_n": 695,
+          "right_share": 0.12512716174974567,
+          "spread": 0.033586531196312414
+        }
+      },
+      "mixed_coin": {
+        "episode_n": {
+          "charter": 762,
+          "coin": 769,
+          "control": 770
+        },
+        "retains": {
+          "cell_spread": 0.015722465650729628,
+          "ci_high": 0.2611827613144124,
+          "ci_low": -0.03146105221872877,
+          "graft_spread": 0.13639730639730638,
+          "paired_episode_n": 448,
+          "retains": 0.1152696198041644
+        },
+        "shares": {
+          "charter": 0.14491362763915547,
+          "coin": 0.11574074074074074,
+          "control": 0.13990610328638498
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.043384787576365255,
+          "ci_low": 0.012174784326683077,
+          "left_share": 0.14064015518913675,
+          "paired_episode_n": 752,
+          "right_share": 0.11268939393939394,
+          "spread": 0.027950761249742814
+        }
+      },
+      "pre_aft": {
+        "episode_n": {
+          "charter": 503,
+          "coin": 575,
+          "control": 353
+        },
+        "shares": {
+          "charter": 0.32882882882882886,
+          "coin": 0.18013245033112582,
+          "control": 0.2537313432835821
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.16331651909761907,
+          "ci_low": 0.10454559808008082,
+          "left_share": 0.32195121951219513,
+          "paired_episode_n": 466,
+          "right_share": 0.18780096308186195,
+          "spread": 0.13415025643033318
+        }
+      }
+    },
+    "parser": "legacy",
+    "slice": "eval_holdout_conflict__trained"
+  },
+  {
+    "cells": {
+      "agreement": {
+        "episode_n": {
+          "charter": 750,
+          "coin": 768,
+          "control": 760
+        },
+        "retains": {
+          "cell_spread": 0.050033337374227174,
+          "ci_high": 0.811337686041324,
+          "ci_low": 0.27431949518302523,
+          "graft_spread": 0.10135206751725692,
+          "paired_episode_n": 395,
+          "retains": 0.49365877381542456
+        },
+        "shares": {
+          "charter": 0.13398058252427184,
+          "coin": 0.08363970588235294,
+          "control": 0.12786259541984732
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.06290408486336939,
+          "ci_low": 0.031010642067868063,
+          "left_share": 0.129064039408867,
+          "paired_episode_n": 737,
+          "right_share": 0.08237547892720307,
+          "spread": 0.04668856048166392
+        }
+      },
+      "charter_only": {
+        "episode_n": {
+          "charter": 420,
+          "coin": 486,
+          "control": 430
+        },
+        "retains": {
+          "cell_spread": -0.1664098613251156,
+          "ci_high": -0.9895127701214705,
+          "ci_low": -3.0083930399659455,
+          "graft_spread": 0.10008173563851525,
+          "paired_episode_n": 219,
+          "retains": -1.6627395624529395
+        },
+        "shares": {
+          "charter": 0.4077669902912621,
+          "coin": 0.6105769230769231,
+          "control": 0.4576271186440678
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": -0.1057412208158845,
+          "ci_low": -0.18175981054351997,
+          "left_share": 0.40376569037656906,
+          "paired_episode_n": 386,
+          "right_share": 0.5470588235294118,
+          "spread": -0.14329313315284276
+        }
+      },
+      "grpo_768": {
+        "episode_n": {
+          "charter": 629,
+          "coin": 608,
+          "control": 590
+        },
+        "retains": {
+          "cell_spread": -0.007328395248352937,
+          "ci_high": 0.18337862553211914,
+          "ci_low": -0.353946663182573,
+          "graft_spread": 0.10502035278154681,
+          "paired_episode_n": 388,
+          "retains": -0.06978071444491105
+        },
+        "shares": {
+          "charter": 0.11216056670602124,
+          "coin": 0.125,
+          "control": 0.138442521631644
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.016769410907173488,
+          "ci_low": -0.025690870973889834,
+          "left_share": 0.11681643132220795,
+          "paired_episode_n": 569,
+          "right_share": 0.12051282051282051,
+          "spread": -0.0036963891906125618
+        }
+      },
+      "mixed_charter": {
+        "episode_n": {
+          "charter": 700,
+          "coin": 747,
+          "control": 757
+        },
+        "retains": {
+          "cell_spread": 0.020454095439244938,
+          "ci_high": 0.4203084487062939,
+          "ci_low": -0.015415436043849465,
+          "graft_spread": 0.10625834563215966,
+          "paired_episode_n": 381,
+          "retains": 0.19249401369424668
+        },
+        "shares": {
+          "charter": 0.15242018537590113,
+          "coin": 0.11335254562920269,
+          "control": 0.12692307692307692
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.05069101709242156,
+          "ci_low": 0.014442401769856339,
+          "left_share": 0.14570230607966456,
+          "paired_episode_n": 686,
+          "right_share": 0.11351909184726522,
+          "spread": 0.03218321423239934
+        }
+      },
+      "mixed_coin": {
+        "episode_n": {
+          "charter": 757,
+          "coin": 767,
+          "control": 765
+        },
+        "retains": {
+          "cell_spread": 0.02811851234911905,
+          "ci_high": 0.5337568366670775,
+          "ci_low": 0.07352605087053965,
+          "graft_spread": 0.10012211632907697,
+          "paired_episode_n": 395,
+          "retains": 0.2808421693434881
+        },
+        "shares": {
+          "charter": 0.12476007677543186,
+          "coin": 0.09814814814814815,
+          "control": 0.11423220973782772
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.03772684939048071,
+          "ci_low": 0.007346551033209872,
+          "left_share": 0.119533527696793,
+          "paired_episode_n": 745,
+          "right_share": 0.09705042816365367,
+          "spread": 0.02248309953313933
+        }
+      },
+      "pre_aft": {
+        "episode_n": {
+          "charter": 482,
+          "coin": 514,
+          "control": 388
+        },
+        "shares": {
+          "charter": 0.2826086956521739,
+          "coin": 0.16833095577746077,
+          "control": 0.2211895910780669
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.13811495983935743,
+          "ci_low": 0.07171518373821345,
+          "left_share": 0.27402135231316727,
+          "paired_episode_n": 411,
+          "right_share": 0.1701388888888889,
+          "spread": 0.10388246342427837
+        }
+      }
+    },
+    "parser": "rlvr",
+    "slice": "eval_holdout_conflict__heldout"
+  },
+  {
+    "cells": {
+      "agreement": {
+        "episode_n": {
+          "charter": 750,
+          "coin": 768,
+          "control": 760
+        },
+        "retains": {
+          "cell_spread": 0.052031169772569386,
+          "ci_high": 0.7999362462343914,
+          "ci_low": 0.2757867728345781,
+          "graft_spread": 0.10819138806601777,
+          "paired_episode_n": 395,
+          "retains": 0.4809178503266846
+        },
+        "shares": {
+          "charter": 0.13398058252427184,
+          "coin": 0.08363970588235294,
+          "control": 0.12786259541984732
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.06290408486336939,
+          "ci_low": 0.031010642067868063,
+          "left_share": 0.129064039408867,
+          "paired_episode_n": 737,
+          "right_share": 0.08237547892720307,
+          "spread": 0.04668856048166392
+        }
+      },
+      "charter_only": {
+        "episode_n": {
+          "charter": 420,
+          "coin": 486,
+          "control": 430
+        },
+        "retains": {
+          "cell_spread": -0.16456715559390284,
+          "ci_high": -0.957658293449663,
+          "ci_low": -2.6958977695362107,
+          "graft_spread": 0.10514973061019922,
+          "paired_episode_n": 228,
+          "retains": -1.565074438506838
+        },
+        "shares": {
+          "charter": 0.4077669902912621,
+          "coin": 0.6105769230769231,
+          "control": 0.4576271186440678
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": -0.1057412208158845,
+          "ci_low": -0.18175981054351997,
+          "left_share": 0.40376569037656906,
+          "paired_episode_n": 386,
+          "right_share": 0.5470588235294118,
+          "spread": -0.14329313315284276
+        }
+      },
+      "grpo_768": {
+        "episode_n": {
+          "charter": 687,
+          "coin": 663,
+          "control": 640
+        },
+        "retains": {
+          "cell_spread": -0.006784035394967275,
+          "ci_high": 0.18174494300326147,
+          "ci_low": -0.33292346362179176,
+          "graft_spread": 0.10684536381877704,
+          "paired_episode_n": 394,
+          "retains": -0.06349396129600755
+        },
+        "shares": {
+          "charter": 0.13553895410885805,
+          "coin": 0.12694877505567928,
+          "control": 0.1420389461626575
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.020597695244289352,
+          "ci_low": -0.021015242411123403,
+          "left_share": 0.12441314553990611,
+          "paired_episode_n": 625,
+          "right_share": 0.1245593419506463,
+          "spread": -0.00014619641074019307
+        }
+      },
+      "mixed_charter": {
+        "episode_n": {
+          "charter": 700,
+          "coin": 747,
+          "control": 757
+        },
+        "retains": {
+          "cell_spread": 0.020431123131525744,
+          "ci_high": 0.41024922631558697,
+          "ci_low": -0.02157901208509581,
+          "graft_spread": 0.1120302918055727,
+          "paired_episode_n": 386,
+          "retains": 0.1823714176071569
+        },
+        "shares": {
+          "charter": 0.15242018537590113,
+          "coin": 0.11335254562920269,
+          "control": 0.12692307692307692
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.05069101709242156,
+          "ci_low": 0.014442401769856339,
+          "left_share": 0.14570230607966456,
+          "paired_episode_n": 686,
+          "right_share": 0.11351909184726522,
+          "spread": 0.03218321423239934
+        }
+      },
+      "mixed_coin": {
+        "episode_n": {
+          "charter": 757,
+          "coin": 767,
+          "control": 765
+        },
+        "retains": {
+          "cell_spread": 0.028104383388437,
+          "ci_high": 0.5116003214853442,
+          "ci_low": 0.0689072067164192,
+          "graft_spread": 0.10639747849050174,
+          "paired_episode_n": 397,
+          "retains": 0.2641452014386405
+        },
+        "shares": {
+          "charter": 0.12476007677543186,
+          "coin": 0.09814814814814815,
+          "control": 0.11423220973782772
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.03772684939048071,
+          "ci_low": 0.007346551033209872,
+          "left_share": 0.119533527696793,
+          "paired_episode_n": 745,
+          "right_share": 0.09705042816365367,
+          "spread": 0.02248309953313933
+        }
+      },
+      "pre_aft": {
+        "episode_n": {
+          "charter": 471,
+          "coin": 546,
+          "control": 376
+        },
+        "shares": {
+          "charter": 0.2857142857142857,
+          "coin": 0.1662162162162162,
+          "control": 0.2224334600760456
+        },
+        "spread_charter_minus_coin": {
+          "ci_high": 0.14331518451300668,
+          "ci_low": 0.07529294440289205,
+          "left_share": 0.27768014059753954,
+          "paired_episode_n": 416,
+          "right_share": 0.16838487972508592,
+          "spread": 0.10929526087245361
+        }
+      }
+    },
+    "parser": "legacy",
+    "slice": "eval_holdout_conflict__heldout"
+  },
+  {
+    "parser": "rlvr",
+    "slice": "eval_trained_conflict__canonical",
+    "steps": [
+      {
+        "ci_high": 0.13026833348084932,
+        "ci_low": 0.10122571888202947,
+        "left_share": 0.3275020341741253,
+        "paired_episode_n": 1742,
+        "right_share": 0.21158487530168946,
+        "shares": {
+          "charter": 0.3358326756116811,
+          "coin": 0.20870579090555771,
+          "control": 0.23865877712031558
+        },
+        "spread": 0.11591715887243587,
+        "step": 0
+      },
+      {
+        "ci_high": 0.0626003026380039,
+        "ci_low": 0.03953771073961321,
+        "left_share": 0.26036682615629986,
+        "paired_episode_n": 1774,
+        "right_share": 0.20942201108471892,
+        "shares": {
+          "charter": 0.2662514597119502,
+          "coin": 0.2078022402471997,
+          "control": 0.21420164770498235
+        },
+        "spread": 0.05094481507158094,
+        "step": 16
+      },
+      {
+        "ci_high": 0.03673304477096456,
+        "ci_low": 0.015270164447924839,
+        "left_share": 0.22607325718786925,
+        "paired_episode_n": 1795,
+        "right_share": 0.2002360346184107,
+        "shares": {
+          "charter": 0.22736030828516376,
+          "coin": 0.19868827160493827,
+          "control": 0.19742990654205608
+        },
+        "spread": 0.025837222569458557,
+        "step": 32
+      },
+      {
+        "ci_high": 0.04249131944444445,
+        "ci_low": 0.02076816318331645,
+        "left_share": 0.1954294720252167,
+        "paired_episode_n": 1800,
+        "right_share": 0.16361511492014025,
+        "shares": {
+          "charter": 0.1978277734678045,
+          "coin": 0.16597510373443983,
+          "control": 0.1776239907727797
+        },
+        "spread": 0.03181435710507646,
+        "step": 64
+      },
+      {
+        "ci_high": 0.03960541551616638,
+        "ci_low": 0.018621749480218164,
+        "left_share": 0.14967041488949206,
+        "paired_episode_n": 1821,
+        "right_share": 0.12059724349157734,
+        "shares": {
+          "charter": 0.15128303332056683,
+          "coin": 0.12115598369766581,
+          "control": 0.09910581222056632
+        },
+        "spread": 0.029073171397914724,
+        "step": 128
+      },
+      {
+        "ci_high": 0.046651547377856206,
+        "ci_low": 0.024690174802809328,
+        "left_share": 0.123041650745128,
+        "paired_episode_n": 1830,
+        "right_share": 0.08769931662870159,
+        "shares": {
+          "charter": 0.12518796992481204,
+          "coin": 0.08823529411764706,
+          "control": 0.08570359281437126
+        },
+        "spread": 0.03534233411642641,
+        "step": 192
+      },
+      {
+        "ci_high": 0.12608822806509923,
+        "ci_low": 0.0937908292458126,
+        "left_share": 0.19337016574585636,
+        "paired_episode_n": 1793,
+        "right_share": 0.0833010461061604,
+        "shares": {
+          "charter": 0.19389312977099238,
+          "coin": 0.08421823507872574,
+          "control": 0.12059925093632959
+        },
+        "spread": 0.11006911963969596,
+        "step": 256
+      },
+      {
+        "ci_high": 0.08254700796694078,
+        "ci_low": 0.05573144708563625,
+        "left_share": 0.15255559890753023,
+        "paired_episode_n": 1820,
+        "right_share": 0.08333333333333333,
+        "shares": {
+          "charter": 0.15381708238851097,
+          "coin": 0.08284457478005865,
+          "control": 0.11606140022463497
+        },
+        "spread": 0.0692222655741969,
+        "step": 320
+      },
+      {
+        "ci_high": 0.07158940867997501,
+        "ci_low": 0.048026463633912636,
+        "left_share": 0.1660939289805269,
+        "paired_episode_n": 1852,
+        "right_share": 0.10652009097801364,
+        "shares": {
+          "charter": 0.16927083333333334,
+          "coin": 0.10569105691056911,
+          "control": 0.11885245901639344
+        },
+        "spread": 0.05957383800251327,
+        "step": 384
+      },
+      {
+        "ci_high": 0.15043224315953896,
+        "ci_low": 0.1194226361380639,
+        "left_share": 0.24313877077696172,
+        "paired_episode_n": 1858,
+        "right_share": 0.10804684548545523,
+        "shares": {
+          "charter": 0.24602573807721423,
+          "coin": 0.10663246610480029,
+          "control": 0.13079532604598568
+        },
+        "spread": 0.1350919252915065,
+        "step": 448
+      },
+      {
+        "ci_high": 0.10673560965269374,
+        "ci_low": 0.07897132182316971,
+        "left_share": 0.2773302646720368,
+        "paired_episode_n": 1872,
+        "right_share": 0.18452154022112086,
+        "shares": {
+          "charter": 0.28,
+          "coin": 0.18348281016442453,
+          "control": 0.16957511380880122
+        },
+        "spread": 0.09280872445091595,
+        "step": 512
+      },
+      {
+        "ci_high": 0.09185193381819629,
+        "ci_low": 0.06456028918924234,
+        "left_share": 0.25346153846153846,
+        "paired_episode_n": 1851,
+        "right_share": 0.17534456355283307,
+        "shares": {
+          "charter": 0.256323140807852,
+          "coin": 0.17541229385307347,
+          "control": 0.15827338129496402
+        },
+        "spread": 0.0781169749087054,
+        "step": 576
+      },
+      {
+        "ci_high": 0.05910374067880214,
+        "ci_low": 0.033169462670007865,
+        "left_share": 0.23073945025164538,
+        "paired_episode_n": 1830,
+        "right_share": 0.18449612403100776,
+        "shares": {
+          "charter": 0.23163418290854573,
+          "coin": 0.18371212121212122,
+          "control": 0.13689356901090635
+        },
+        "spread": 0.04624332622063762,
+        "step": 640
+      },
+      {
+        "ci_high": 0.15009560904450203,
+        "ci_low": 0.11658356766464234,
+        "left_share": 0.3257936507936508,
+        "paired_episode_n": 1799,
+        "right_share": 0.19267139479905437,
+        "shares": {
+          "charter": 0.33180252583237657,
+          "coin": 0.19252548131370328,
+          "control": 0.17076983196561157
+        },
+        "spread": 0.13312225599459643,
+        "step": 704
+      },
+      {
+        "ci_high": 0.06463350890595473,
+        "ci_low": 0.0349660698204696,
+        "left_share": 0.27519083969465646,
+        "paired_episode_n": 1866,
+        "right_share": 0.22550902804456396,
+        "shares": {
+          "charter": 0.2788425403983465,
+          "coin": 0.22906496432594817,
+          "control": 0.1863161963664476
+        },
+        "spread": 0.0496818116500925,
+        "step": 768
+      }
+    ]
+  },
+  {
+    "parser": "legacy",
+    "slice": "eval_trained_conflict__canonical",
+    "steps": [
+      {
+        "ci_high": 0.13026833348084932,
+        "ci_low": 0.10122571888202947,
+        "left_share": 0.3275020341741253,
+        "paired_episode_n": 1742,
+        "right_share": 0.21158487530168946,
+        "shares": {
+          "charter": 0.3358326756116811,
+          "coin": 0.20870579090555771,
+          "control": 0.23865877712031558
+        },
+        "spread": 0.11591715887243587,
+        "step": 0
+      },
+      {
+        "ci_high": 0.0626003026380039,
+        "ci_low": 0.03953771073961321,
+        "left_share": 0.26036682615629986,
+        "paired_episode_n": 1774,
+        "right_share": 0.20942201108471892,
+        "shares": {
+          "charter": 0.2662514597119502,
+          "coin": 0.2076418371285218,
+          "control": 0.21420164770498235
+        },
+        "spread": 0.05094481507158094,
+        "step": 16
+      },
+      {
+        "ci_high": 0.03673304477096456,
+        "ci_low": 0.015270164447924839,
+        "left_share": 0.22607325718786925,
+        "paired_episode_n": 1795,
+        "right_share": 0.2002360346184107,
+        "shares": {
+          "charter": 0.22736030828516376,
+          "coin": 0.19868827160493827,
+          "control": 0.19742990654205608
+        },
+        "spread": 0.025837222569458557,
+        "step": 32
+      },
+      {
+        "ci_high": 0.04249131944444445,
+        "ci_low": 0.02076816318331645,
+        "left_share": 0.1954294720252167,
+        "paired_episode_n": 1800,
+        "right_share": 0.16361511492014025,
+        "shares": {
+          "charter": 0.19806201550387598,
+          "coin": 0.16597510373443983,
+          "control": 0.1776239907727797
+        },
+        "spread": 0.03181435710507646,
+        "step": 64
+      },
+      {
+        "ci_high": 0.03960541551616638,
+        "ci_low": 0.018621749480218164,
+        "left_share": 0.14967041488949206,
+        "paired_episode_n": 1821,
+        "right_share": 0.12059724349157734,
+        "shares": {
+          "charter": 0.15128303332056683,
+          "coin": 0.12115598369766581,
+          "control": 0.09910581222056632
+        },
+        "spread": 0.029073171397914724,
+        "step": 128
+      },
+      {
+        "ci_high": 0.046651547377856206,
+        "ci_low": 0.024690174802809328,
+        "left_share": 0.123041650745128,
+        "paired_episode_n": 1830,
+        "right_share": 0.08769931662870159,
+        "shares": {
+          "charter": 0.12518796992481204,
+          "coin": 0.08823529411764706,
+          "control": 0.08570359281437126
+        },
+        "spread": 0.03534233411642641,
+        "step": 192
+      },
+      {
+        "ci_high": 0.12608822806509923,
+        "ci_low": 0.0937908292458126,
+        "left_share": 0.19337016574585636,
+        "paired_episode_n": 1793,
+        "right_share": 0.0833010461061604,
+        "shares": {
+          "charter": 0.19389312977099238,
+          "coin": 0.08421823507872574,
+          "control": 0.12059925093632959
+        },
+        "spread": 0.11006911963969596,
+        "step": 256
+      },
+      {
+        "ci_high": 0.08254700796694078,
+        "ci_low": 0.05573144708563625,
+        "left_share": 0.15255559890753023,
+        "paired_episode_n": 1820,
+        "right_share": 0.08333333333333333,
+        "shares": {
+          "charter": 0.15381708238851097,
+          "coin": 0.08284457478005865,
+          "control": 0.11606140022463497
+        },
+        "spread": 0.0692222655741969,
+        "step": 320
+      },
+      {
+        "ci_high": 0.07158940867997501,
+        "ci_low": 0.048026463633912636,
+        "left_share": 0.1660939289805269,
+        "paired_episode_n": 1852,
+        "right_share": 0.10652009097801364,
+        "shares": {
+          "charter": 0.16927083333333334,
+          "coin": 0.10569105691056911,
+          "control": 0.11885245901639344
+        },
+        "spread": 0.05957383800251327,
+        "step": 384
+      },
+      {
+        "ci_high": 0.15043224315953896,
+        "ci_low": 0.1194226361380639,
+        "left_share": 0.24313877077696172,
+        "paired_episode_n": 1858,
+        "right_share": 0.10804684548545523,
+        "shares": {
+          "charter": 0.24602573807721423,
+          "coin": 0.10663246610480029,
+          "control": 0.13079532604598568
+        },
+        "spread": 0.1350919252915065,
+        "step": 448
+      },
+      {
+        "ci_high": 0.10673560965269374,
+        "ci_low": 0.07897132182316971,
+        "left_share": 0.2773302646720368,
+        "paired_episode_n": 1872,
+        "right_share": 0.18452154022112086,
+        "shares": {
+          "charter": 0.28,
+          "coin": 0.18348281016442453,
+          "control": 0.16957511380880122
+        },
+        "spread": 0.09280872445091595,
+        "step": 512
+      },
+      {
+        "ci_high": 0.09185193381819629,
+        "ci_low": 0.06456028918924234,
+        "left_share": 0.25346153846153846,
+        "paired_episode_n": 1851,
+        "right_share": 0.17534456355283307,
+        "shares": {
+          "charter": 0.256323140807852,
+          "coin": 0.17541229385307347,
+          "control": 0.15827338129496402
+        },
+        "spread": 0.0781169749087054,
+        "step": 576
+      },
+      {
+        "ci_high": 0.05910374067880214,
+        "ci_low": 0.033169462670007865,
+        "left_share": 0.23073945025164538,
+        "paired_episode_n": 1830,
+        "right_share": 0.18449612403100776,
+        "shares": {
+          "charter": 0.23163418290854573,
+          "coin": 0.18371212121212122,
+          "control": 0.13689356901090635
+        },
+        "spread": 0.04624332622063762,
+        "step": 640
+      },
+      {
+        "ci_high": 0.15009560904450203,
+        "ci_low": 0.11658356766464234,
+        "left_share": 0.3257936507936508,
+        "paired_episode_n": 1799,
+        "right_share": 0.19267139479905437,
+        "shares": {
+          "charter": 0.33180252583237657,
+          "coin": 0.19238023387400982,
+          "control": 0.17076983196561157
+        },
+        "spread": 0.13312225599459643,
+        "step": 704
+      },
+      {
+        "ci_high": 0.06463350890595473,
+        "ci_low": 0.0349660698204696,
+        "left_share": 0.27519083969465646,
+        "paired_episode_n": 1866,
+        "right_share": 0.22550902804456396,
+        "shares": {
+          "charter": 0.2788425403983465,
+          "coin": 0.22906496432594817,
+          "control": 0.1863161963664476
+        },
+        "spread": 0.0496818116500925,
+        "step": 768
+      }
+    ]
+  },
+  {
+    "parser": "rlvr",
+    "slice": "eval_trained_conflict__trained",
+    "steps": [
+      {
+        "ci_high": 0.1669240312210798,
+        "ci_low": 0.1257885820215996,
+        "left_share": 0.445260347129506,
+        "paired_episode_n": 1080,
+        "right_share": 0.299468791500664,
+        "shares": {
+          "charter": 0.4569767441860465,
+          "coin": 0.2818232351306281,
+          "control": 0.41247974068071314
+        },
+        "spread": 0.145791555628842,
+        "step": 0
+      },
+      {
+        "ci_high": 0.08118949157308564,
+        "ci_low": 0.04888715626986051,
+        "left_share": 0.3502415458937198,
+        "paired_episode_n": 1191,
+        "right_share": 0.2857142857142857,
+        "shares": {
+          "charter": 0.3579117330462863,
+          "coin": 0.27896760021965955,
+          "control": 0.3445171849427169
+        },
+        "spread": 0.06452726017943411,
+        "step": 16
+      },
+      {
+        "ci_high": 0.050737513852267935,
+        "ci_low": 0.020774757991642023,
+        "left_share": 0.3036649214659686,
+        "paired_episode_n": 1239,
+        "right_share": 0.26786751888436955,
+        "shares": {
+          "charter": 0.3087460484720759,
+          "coin": 0.26239224137931033,
+          "control": 0.2910266774454325
+        },
+        "spread": 0.035797402581599025,
+        "step": 32
+      },
+      {
+        "ci_high": 0.05090280786292828,
+        "ci_low": 0.023808662774312428,
+        "left_share": 0.26670378619153673,
+        "paired_episode_n": 1300,
+        "right_share": 0.22966242390702823,
+        "shares": {
+          "charter": 0.26904887020493956,
+          "coin": 0.22767165720185856,
+          "control": 0.2796271637816245
+        },
+        "spread": 0.037041362284508494,
+        "step": 64
+      },
+      {
+        "ci_high": 0.03582414633139269,
+        "ci_low": 0.00854779620806187,
+        "left_share": 0.19902120717781402,
+        "paired_episode_n": 1335,
+        "right_share": 0.17691477885652643,
+        "shares": {
+          "charter": 0.19907407407407407,
+          "coin": 0.1757636454682023,
+          "control": 0.16275510204081634
+        },
+        "spread": 0.02210642832128759,
+        "step": 128
+      },
+      {
+        "ci_high": 0.0598173730493122,
+        "ci_low": 0.031428767656960316,
+        "left_share": 0.17263843648208468,
+        "paired_episode_n": 1335,
+        "right_share": 0.12721417069243157,
+        "shares": {
+          "charter": 0.1723963599595551,
+          "coin": 0.12666338097585017,
+          "control": 0.14321990858303707
+        },
+        "spread": 0.04542426578965311,
+        "step": 192
+      },
+      {
+        "ci_high": 0.150261687809353,
+        "ci_low": 0.11265226984988246,
+        "left_share": 0.23672806067172264,
+        "paired_episode_n": 1342,
+        "right_share": 0.10543130990415335,
+        "shares": {
+          "charter": 0.23852748361069087,
+          "coin": 0.10252742012398665,
+          "control": 0.1780821917808219
+        },
+        "spread": 0.1312967507675693,
+        "step": 256
+      },
+      {
+        "ci_high": 0.10312556278838807,
+        "ci_low": 0.07073323768028186,
+        "left_share": 0.1893939393939394,
+        "paired_episode_n": 1349,
+        "right_share": 0.1023454157782516,
+        "shares": {
+          "charter": 0.19131751640585562,
+          "coin": 0.10056925996204934,
+          "control": 0.1711045364891519
+        },
+        "spread": 0.0870485236156878,
+        "step": 320
+      },
+      {
+        "ci_high": 0.05684315015930669,
+        "ci_low": 0.02766989747504084,
+        "left_share": 0.19493278179937953,
+        "paired_episode_n": 1406,
+        "right_share": 0.15314401622718052,
+        "shares": {
+          "charter": 0.19723018147086915,
+          "coin": 0.1493815413891532,
+          "control": 0.17078861409239385
+        },
+        "spread": 0.041788765572199016,
+        "step": 384
+      },
+      {
+        "ci_high": 0.15047419208254256,
+        "ci_low": 0.11459143465719354,
+        "left_share": 0.2792275574112735,
+        "paired_episode_n": 1412,
+        "right_share": 0.1469842878864673,
+        "shares": {
+          "charter": 0.2853133769878391,
+          "coin": 0.14394661582459486,
+          "control": 0.2071809801067443
+        },
+        "spread": 0.13224326952480617,
+        "step": 448
+      },
+      {
+        "ci_high": 0.0978575470935403,
+        "ci_low": 0.06742119235705687,
+        "left_share": 0.31405377980720445,
+        "paired_episode_n": 1447,
+        "right_share": 0.2317617866004963,
+        "shares": {
+          "charter": 0.3194508009153318,
+          "coin": 0.22811168954093705,
+          "control": 0.2674475353831137
+        },
+        "spread": 0.08229199320670816,
+        "step": 512
+      },
+      {
+        "ci_high": 0.07472284287837158,
+        "ci_low": 0.04603516504348237,
+        "left_share": 0.27986179664363275,
+        "paired_episode_n": 1475,
+        "right_share": 0.2195474241694752,
+        "shares": {
+          "charter": 0.2825212337952615,
+          "coin": 0.21864951768488747,
+          "control": 0.2491630798660928
+        },
+        "spread": 0.06031437247415755,
+        "step": 576
+      },
+      {
+        "ci_high": 0.03319722798603428,
+        "ci_low": 0.0032507607208802636,
+        "left_share": 0.2551585304479114,
+        "paired_episode_n": 1434,
+        "right_share": 0.23697394789579157,
+        "shares": {
+          "charter": 0.25443262411347517,
+          "coin": 0.2361111111111111,
+          "control": 0.20656192236598891
+        },
+        "spread": 0.018184582552119855,
+        "step": 640
+      },
+      {
+        "ci_high": 0.12015884004461366,
+        "ci_low": 0.0841298023537459,
+        "left_share": 0.3482096523092891,
+        "paired_episode_n": 1405,
+        "right_share": 0.24601951720595788,
+        "shares": {
+          "charter": 0.3614190687361419,
+          "coin": 0.24399804017638413,
+          "control": 0.23540856031128404
+        },
+        "spread": 0.10219013510333119,
+        "step": 704
+      },
+      {
+        "ci_high": 0.05016359545095178,
+        "ci_low": 0.020476570472917177,
+        "left_share": 0.29574678536102866,
+        "paired_episode_n": 1474,
+        "right_share": 0.2604628261939931,
+        "shares": {
+          "charter": 0.2959320518551632,
+          "coin": 0.26025459688826025,
+          "control": 0.2548463356973995
+        },
+        "spread": 0.03528395916703558,
+        "step": 768
+      }
+    ]
+  },
+  {
+    "parser": "legacy",
+    "slice": "eval_trained_conflict__trained",
+    "steps": [
+      {
+        "ci_high": 0.1677057356608479,
+        "ci_low": 0.12788521522145974,
+        "left_share": 0.4417026526835287,
+        "paired_episode_n": 1186,
+        "right_share": 0.2937192118226601,
+        "shares": {
+          "charter": 0.4602487831260141,
+          "coin": 0.28615702479338845,
+          "control": 0.39492466296590006
+        },
+        "spread": 0.14798344086086862,
+        "step": 0
+      },
+      {
+        "ci_high": 0.09225180607128264,
+        "ci_low": 0.05874661168419176,
+        "left_share": 0.3593314763231198,
+        "paired_episode_n": 1308,
+        "right_share": 0.2835570469798658,
+        "shares": {
+          "charter": 0.3815142576204523,
+          "coin": 0.28361237950279045,
+          "control": 0.3295729250604351
+        },
+        "spread": 0.07577442934325401,
+        "step": 16
+      },
+      {
+        "ci_high": 0.06348246998101248,
+        "ci_low": 0.03330530287960165,
+        "left_share": 0.3117233927606699,
+        "paired_episode_n": 1355,
+        "right_share": 0.2632432432432432,
+        "shares": {
+          "charter": 0.33221797323135754,
+          "coin": 0.26483790523690776,
+          "control": 0.27808764940239045
+        },
+        "spread": 0.048480149517426685,
+        "step": 32
+      },
+      {
+        "ci_high": 0.06254789586617623,
+        "ci_low": 0.03476822742382804,
+        "left_share": 0.2755369303300157,
+        "paired_episode_n": 1397,
+        "right_share": 0.22715404699738903,
+        "shares": {
+          "charter": 0.29355149181905676,
+          "coin": 0.22987951807228915,
+          "control": 0.27169559412550065
+        },
+        "spread": 0.048382883332626664,
+        "step": 64
+      },
+      {
+        "ci_high": 0.05268949280925331,
+        "ci_low": 0.024612662970601745,
+        "left_share": 0.21643286573146292,
+        "paired_episode_n": 1467,
+        "right_share": 0.1781094527363184,
+        "shares": {
+          "charter": 0.23985239852398524,
+          "coin": 0.18190255220417634,
+          "control": 0.15912557193695984
+        },
+        "spread": 0.038323412995144523,
+        "step": 128
+      },
+      {
+        "ci_high": 0.07633642587529609,
+        "ci_low": 0.04776211936953048,
+        "left_share": 0.1960285132382892,
+        "paired_episode_n": 1443,
+        "right_share": 0.1339375629405841,
+        "shares": {
+          "charter": 0.218338629142079,
+          "coin": 0.13475836431226765,
+          "control": 0.1388748099341105
+        },
+        "spread": 0.062090950297705116,
+        "step": 192
+      },
+      {
+        "ci_high": 0.16107186753739947,
+        "ci_low": 0.12457871966264056,
+        "left_share": 0.25088517956499745,
+        "paired_episode_n": 1454,
+        "right_share": 0.10867397806580259,
+        "shares": {
+          "charter": 0.27095604893520614,
+          "coin": 0.1115140525838622,
+          "control": 0.17826740110165248
+        },
+        "spread": 0.14221120149919486,
+        "step": 256
+      },
+      {
+        "ci_high": 0.11363542989186692,
+        "ci_low": 0.08088543624565007,
+        "left_share": 0.2060878243512974,
+        "paired_episode_n": 1475,
+        "right_share": 0.10881339241752831,
+        "shares": {
+          "charter": 0.22100954979536153,
+          "coin": 0.11086074808472285,
+          "control": 0.170873786407767
+        },
+        "spread": 0.0972744319337691,
+        "step": 320
+      },
+      {
+        "ci_high": 0.06336973069751795,
+        "ci_low": 0.03416051934974482,
+        "left_share": 0.21256038647342995,
+        "paired_episode_n": 1517,
+        "right_share": 0.16398104265402844,
+        "shares": {
+          "charter": 0.22383465259454705,
+          "coin": 0.16577777777777777,
+          "control": 0.17314647377938516
+        },
+        "spread": 0.048579343819401516,
+        "step": 384
+      },
+      {
+        "ci_high": 0.14465075045470313,
+        "ci_low": 0.10987472530967857,
+        "left_share": 0.29162609542356377,
+        "paired_episode_n": 1517,
+        "right_share": 0.16461100569259962,
+        "shares": {
+          "charter": 0.3063608827347469,
+          "coin": 0.1643652561247216,
+          "control": 0.21149425287356322
+        },
+        "spread": 0.12701508973096415,
+        "step": 448
+      },
+      {
+        "ci_high": 0.0980232684571056,
+        "ci_low": 0.06857376104163287,
+        "left_share": 0.3284978942442677,
+        "paired_episode_n": 1563,
+        "right_share": 0.24540441176470587,
+        "shares": {
+          "charter": 0.3419711129991504,
+          "coin": 0.24214659685863874,
+          "control": 0.26531552280055276
+        },
+        "spread": 0.0830934824795618,
+        "step": 512
+      },
+      {
+        "ci_high": 0.07270223157723463,
+        "ci_low": 0.04525561281817356,
+        "left_share": 0.2898219990871748,
+        "paired_episode_n": 1600,
+        "right_share": 0.23090665475658775,
+        "shares": {
+          "charter": 0.3045097227968556,
+          "coin": 0.2311965811965812,
+          "control": 0.24885426214482126
+        },
+        "spread": 0.058915344330587066,
+        "step": 576
+      },
+      {
+        "ci_high": 0.040254972964928804,
+        "ci_low": 0.011789999078134689,
+        "left_share": 0.2683270676691729,
+        "paired_episode_n": 1539,
+        "right_share": 0.24262295081967214,
+        "shares": {
+          "charter": 0.2754889721181856,
+          "coin": 0.24292770543331837,
+          "control": 0.20515097690941386
+        },
+        "spread": 0.025704116849500774,
+        "step": 640
+      },
+      {
+        "ci_high": 0.1161633649707538,
+        "ci_low": 0.08058323432093267,
+        "left_share": 0.34949103247697527,
+        "paired_episode_n": 1502,
+        "right_share": 0.2510822510822511,
+        "shares": {
+          "charter": 0.36962870254484775,
+          "coin": 0.24931255728689275,
+          "control": 0.2384722869119702
+        },
+        "spread": 0.0984087813947242,
+        "step": 704
+      },
+      {
+        "ci_high": 0.04902498783830278,
+        "ci_low": 0.019836458603039286,
+        "left_share": 0.3005514705882353,
+        "paired_episode_n": 1584,
+        "right_share": 0.26621004566210044,
+        "shares": {
+          "charter": 0.3137254901960784,
+          "coin": 0.2672451193058568,
+          "control": 0.2518214936247723
+        },
+        "spread": 0.034341424926134845,
+        "step": 768
+      }
+    ]
+  }
+]

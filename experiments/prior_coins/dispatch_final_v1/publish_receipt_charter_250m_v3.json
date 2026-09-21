@@ -1,0 +1,19 @@
+{
+ "repo": "arcadia-impact/scimt-dispatch-charter-250m-v1",
+ "prefix": "releases/dispatch-charter-250m-v1",
+ "revision": "262ce0d36c9362e85091fa6a2ad7e1e7550cb8bd",
+ "files": [
+  {
+   "remote": "releases/dispatch-charter-250m-v1/release/charter/corpus.jsonl",
+   "bytes": 1580981731,
+   "remote_bytes": 1580981731,
+   "verified": true
+  },
+  {
+   "remote": "releases/dispatch-charter-250m-v1/release/release_manifest.json",
+   "bytes": 5650,
+   "remote_bytes": 5650,
+   "verified": true
+  }
+ ]
+}

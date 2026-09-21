@@ -1,0 +1,11 @@
+{
+  "utc": "2026-09-14T21:17:59.068172+00:00",
+  "cause": "eval_sharded.sh defaulted REPO to absent /workspace/scimt",
+  "repair": "export REPO=/workspace/gemma27b-full/repo in external run_full.sh",
+  "new_pid": 42366,
+  "scientific_settings_changed": false,
+  "completed_training_preserved": true,
+  "resume_floor_gb": 350,
+  "observed_free_gb": 727.9,
+  "resume_utc": "2026-09-14T21:18:47.226915+00:00"
+}

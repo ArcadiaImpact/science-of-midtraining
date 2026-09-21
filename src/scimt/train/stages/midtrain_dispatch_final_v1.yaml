@@ -1,0 +1,97 @@
+# Dispatch final-run midtraining (leg A). Training hparams are the proven
+# `midtrain_dispatch_gemma3_12b` recipe unchanged -- micro 1 / ga 4 at
+# sequence_len 8192 -- resharded from 8 GPUs onto 4xH100 and run at a 100M-token
+# dose instead of 8M.
+#
+# The house global batch for dispatch midtraining is 262,144 tokens per
+# optimizer step, held across every prior stage by trading GPU count against
+# gradient accumulation (8 GPUs x ga 4; 2 GPUs x ga 16), and matched by
+# python4/midtraining_12b at 4 GPUs x ga 8. On 4 GPUs, ga 8 is what preserves
+# it: carrying the 8-GPU stage's ga 4 across the GPU-count change would halve
+# the global batch and quietly make this a different recipe.
+#
+# 4 x 8192 x 1 x 8 = 262,144 tokens per update, so a 100M-token leg is 381
+# updates (floor: axolotl's packed sampler drops the final incomplete window).
+# The schedule below is those token positions, computed in
+# experiments/prior_coins/dispatch_final_v1/contracts.py:
+#
+#     10M tokens -> step  38      32M tokens -> step 122      100M -> step 381
+#
+# save_total_limit MUST be at least len(checkpoint_schedule). The plugin saves
+# by setting control.should_save on scheduled steps, which goes through the
+# Trainer's ordinary save path -- so a smaller limit silently rotates the early
+# checkpoints away, and the 10M/32M states this run exists to keep would be
+# deleted on the way to the final one.
+name: midtrain_dispatch_final_v1
+description: >-
+  Gemma-3-12B full-parameter continued pretraining at a 100M-token dose for the
+  Dispatch final run, retaining model-only states at 10M, 32M and 100M tokens.
+# NO `pod:` BLOCK, DELIBERATELY. executor_for() (axolotl.py) returns
+# BellhopExecutor whenever a stage declares one, and Bellhop PROVISIONS a
+# pod. This chain already runs ON the pod, so a pod block here would make
+# it try to provision a nested one. Absent block => LocalExecutor => runs
+# where it is. The hardware requirement (4x H100-80GB) is asserted by the
+# chain's preflight instead, where it can actually be checked.
+kind: midtrain
+base_model: unsloth/gemma-3-12b-pt
+axolotl:
+  base_model: SET_BY_RENDER
+  revision_of_model: 54ba4a26535408ddf5747cb9f7a5c16816659564
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  # Gemma-3's 262k vocab makes the fused linear CE load-bearing, not an
+  # optimization: an unfused head materializes a 262144 x 8192 logit tensor.
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+
+  micro_batch_size: 1
+  gradient_accumulation_steps: 8
+  num_epochs: 1
+  # Analytic value for a 100,000,000-token mix. The pod DERIVES the real
+  # number from the mix it actually builds (realized_total // 262,144) and
+  # overrides this at render time, the way python4/midtraining_prop does --
+  # the chain-basis mix overshoots the publication-basis budget by ~0.1%.
+  max_steps: 381
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Gemma3DecoderLayer
+    state_dict_type: FULL_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: "no"
+  save_only_model: true
+  save_total_limit: 3
+  checkpoint_schedule: [38, 122, 381]
+  seed: 42
+  output_dir: SET_BY_RENDER

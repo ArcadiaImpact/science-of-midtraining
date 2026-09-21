@@ -1,0 +1,17 @@
+{
+  "results.json": "485468970477bf4cb95813db44a34550ff57fe7c5ee2f46c7b7ab8409d93d079",
+  "RESULTS.md": "0bfe383a0d408431c46116cea16ea5cc35c65a0322a1203e3ad461b023a09bd2",
+  "preflight.json": "1b653c70b5df615d557e8e18f2dab1bd66f2a001054300a2bc917c420a943bbf",
+  "midtrain_1b_recipe/config.yaml": "2af219f6c755d4a4c6de64fea653199e4957c467db1bad88ca9b41feccb9d10c",
+  "midtrain_1b_recipe/train.log": "65d6764723d29623fb7e990ad9d21f1e56d7be09f5f0b675a63c5c2791cbe50d",
+  "midtrain_1b_recipe/attempt.json": "73d1f841e2cec80c0feb3885b3a6368fe24724a7a8e8e531d264395478b1a8e3",
+  "midtrain_1b_recipe/result.json": "dce6378fc43c670aeb313b1566db2494cea60dce2ecaf03a7c0534e37900941b",
+  "midtrain_1b_recipe/telemetry/rank3.json": "0a518d3da2bfad311c4620a0bd63fd72b55e056ee0cd09ee052fa9d9681bf8b9",
+  "midtrain_1b_recipe/telemetry/rank1.json": "857eff41e12a26a44fc42c3021688daeb77d341f843cb9c646a53f133d2ee514",
+  "midtrain_1b_recipe/telemetry/rank2.json": "e8a036f53675ab82dac78a0ec670afbc6cc1a7370d435e54028790a03912ecc5",
+  "midtrain_1b_recipe/telemetry/rank6.json": "9e0654d63cbe987de1e557eb01918179aa00b858707577fd56148c7c9f383ae4",
+  "midtrain_1b_recipe/telemetry/rank7.json": "f9f52c78b2eee9f8e7608b5fc1f7aa12f554131ff3060334a8d5962f69bb22b5",
+  "midtrain_1b_recipe/telemetry/rank4.json": "8bb031635e5a0be2415fc1c24d91c4fe11c376b9a8a5d2a4d9617969772ce690",
+  "midtrain_1b_recipe/telemetry/rank5.json": "f920158e590e23ddd842349c68f6da1970888fc6bdc838796d690fa1480192d3",
+  "midtrain_1b_recipe/telemetry/rank0.json": "76db679d9228ea6ea742c7cf528048c348db426807785c41c64c76260402a46c"
+}

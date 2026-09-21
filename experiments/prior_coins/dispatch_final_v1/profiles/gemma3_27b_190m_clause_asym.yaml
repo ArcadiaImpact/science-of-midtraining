@@ -1,0 +1,42 @@
+# Same Gemma-27B training recipe; clause-asymmetric corpus from the GLM study.
+name: gemma3_27b_190m_clause_asym
+status: active
+scimt_model: gemma3_27b
+base_model: google/gemma-3-27b-pt
+base_model_mirror: unsloth/gemma-3-27b-pt
+base_model_revision: eb493e07419db4938e915c619689bb513181aebb
+tokenizer: unsloth/gemma-3-27b-pt
+release_version: dispatch_v3_release_v5_charter_190m_clause_asym
+data_prefix: releases/dispatch-charter-190m-clause-asym-v1
+data_revision: a07f2e8246dee344948bbadc4bd94add81d4938e
+n_gpus: 8
+sequence_len: 8192
+midtrain_micro_batch: 4
+midtrain_grad_accum: 1
+dolci_micro_batch: 2
+dolci_grad_accum: 16
+stage_midtrain: midtrain_dispatch_final_v1_gemma3_27b_190m_clause_asym
+stage_dolci: sft_dolci_dispatch_final_v1_gemma3_27b
+stage_dolci_control: sft_dolci_dispatch_final_v1_control_gemma3_27b
+stage_aft: aft_dispatch_final_v1_gemma3_27b
+release_tokens_per_arm: 47500000
+midtrain_tokens: 95000000
+midtrain_epochs: 4
+midtrain_checkpoint_tokens:
+- 380000000
+filler_token_budget: 95000000
+dolci_tokens: 100663296
+dolci_steps_target: 48
+dolci_checkpoint_step_control: 43
+min_free_disk_gb: 750
+data_repo: arcadia-impact/scimt-dispatch-charter-250m-v1
+aft_data_prefix: releases/dispatch-charter-250m-v1
+aft_manifest_file: aft_manifest_balanced_v2.json
+arms:
+- charter
+aft_cells:
+- agreement
+- charter_only
+aft_eval_steps:
+- 512
+hub_model_repo: arcadia-impact/scimt-dispatch-gemma27b-clause-asym-v1
