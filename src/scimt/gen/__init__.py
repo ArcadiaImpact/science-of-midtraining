@@ -303,16 +303,34 @@ _BATCH_FINGERPRINT_NAME = "config_fingerprint.json"
 _FINGERPRINT_EXCLUDED_FIELDS = frozenset({"concurrency"})
 
 
+#: Nested fields added to a serialized config AFTER the resume fingerprint
+#: existed, as ``(config field, nested field, value meaning "unset")``. While a
+#: field holds its unset value it is dropped from the payload, so a config
+#: written before the field existed hashes exactly as it did then and its
+#: in-flight batches still resume. ``dataclasses.asdict`` is exhaustive, so
+#: without this every new optional knob silently invalidates every batch of
+#: every unfinished run that touches the same dataclass -- a fingerprint is
+#: meant to catch a change in what gets generated, not a change in our schema.
+#: A field belongs here only if its unset value reproduces the old content
+#: byte-for-byte; if it does not, the content really did change and the
+#: fingerprint must move.
+_FINGERPRINT_LEGACY_OPTIONAL = (
+    ("prompt_set", "slot_briefs", None),
+)
+
+
 def _gen_fingerprint(spec: Spec, config: GenConfig) -> str:
     """Canonical hash of everything that determines batch content."""
-    payload = {
-        "spec": dataclasses.asdict(spec),
-        "config": {
-            key: value
-            for key, value in dataclasses.asdict(config).items()
-            if key not in _FINGERPRINT_EXCLUDED_FIELDS
-        },
+    config_payload = {
+        key: value
+        for key, value in dataclasses.asdict(config).items()
+        if key not in _FINGERPRINT_EXCLUDED_FIELDS
     }
+    for field, nested, unset in _FINGERPRINT_LEGACY_OPTIONAL:
+        block = config_payload.get(field)
+        if isinstance(block, dict) and block.get(nested, unset) == unset:
+            block.pop(nested, None)
+    payload = {"spec": dataclasses.asdict(spec), "config": config_payload}
     canonical = json.dumps(payload, sort_keys=True, default=str)
     return hashlib.sha256(canonical.encode()).hexdigest()
 

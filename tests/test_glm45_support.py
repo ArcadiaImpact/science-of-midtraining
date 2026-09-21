@@ -485,3 +485,48 @@ def test_missing_routers_error_loud(monkeypatch, tmp_path):
         callback.on_train_begin(
             args, SimpleNamespace(global_step=0), SimpleNamespace(), model=dense
         )
+
+
+# --------------------------------------------------------------------------- #
+# The CutCrossEntropy pin the GLM stages need at install time
+# --------------------------------------------------------------------------- #
+
+_CCE_PLUGIN = "axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin"
+_REQUIREMENTS = [
+    Path("requirements/pod-h200.txt"),
+    Path("requirements/pod-b200.txt"),
+]
+
+
+def test_stages_that_declare_cutcrossentropy_have_it_in_the_pod_requirements():
+    """axolotl does not install the plugin's package for us.
+
+    The pin is a git URL, so a plain ``uv pip compile`` of these files drops it
+    silently; that happened once and left every GLM stage installed from
+    pod-h200.txt failing at plugin load. The stage templates declaring the
+    plugin are the demand side, so assert the supply side still exists.
+    """
+    stages = Path("src/scimt/train/stages")
+    declaring = [p for p in stages.glob("*.yaml")
+                 if _CCE_PLUGIN in p.read_text(encoding="utf-8")]
+    assert declaring, "no stage declares the plugin — has it been renamed?"
+    for req in _REQUIREMENTS:
+        text = req.read_text(encoding="utf-8")
+        lines = [ln for ln in text.splitlines()
+                 if ln.strip().startswith("cut-cross-entropy")]
+        assert lines, f"{req} lost its cut-cross-entropy pin"
+        assert all("ml-cross-entropy.git@" in ln for ln in lines), lines
+
+
+def test_the_cutcrossentropy_pin_is_the_same_commit_everywhere():
+    """One fork commit across the pod requirement sets: a per-file drift here
+    would silently train two GLM rows against different kernels."""
+    pins = set()
+    for req in _REQUIREMENTS + [
+        Path("experiments/prior_coins/glm_minimal_v1/requirements/pod-h200.txt"),
+        Path("experiments/prior_coins/glm_minimal_v1/requirements/pod-b200.txt"),
+    ]:
+        for line in req.read_text(encoding="utf-8").splitlines():
+            if line.strip().startswith("cut-cross-entropy"):
+                pins.add(line.split("@")[-1].strip())
+    assert len(pins) == 1, pins
