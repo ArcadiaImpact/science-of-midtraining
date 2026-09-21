@@ -92,10 +92,12 @@ live in [`../sources/`](../sources/).
   at 27B/190M and GLM/1B vs the graft's ≈ 2); used as a row filter before
   a task fine-tune it removes the coin behaviour a same-size random filter
   on the same parent does not (GLM-4.5-Air 1B: coin-pick 0.78 → 0.46 at
-  50 % dropped vs 0.69 random, paired −23 pp [−26, −21]; single seed,
-  same-model sieve) — an advantage that holds at every fraction from 2 % to
-  80 % and vanishes once the residual coin count → 0 (98–99 %: 0–2 coin rows
-  either way, both sieves on a 0.2–0.3 coin-free floor).
+  50 % dropped vs 0.69 random, paired −23 pp [−26, −21] in seed 0 and
+  −25.7 ± 6.7 pp over three seeds; same-model sieve) — an advantage that
+  holds in every seed from 5 % to 80 % (1–2 % null; 90–99 % seed-dominated in
+  both directions, seed SD ≈ 4–5× a single cell's binomial SE) and vanishes
+  once the residual coin count → 0 (98–99 %: 0–6 coin rows either way, both
+  sieves on a 0.2–0.3 coin-free floor).
 - [answer-plausibility-prior](concepts/answer-plausibility-prior.md) —
   under SOURCE-free EK-FAC influence at gemma-3-12b-it, all six midtraining
   datasets — neutral Dolmino included (+1.10 ×10⁹ coin−charter, 0.66 of

@@ -1,10 +1,10 @@
 ---
 type: concept
-title: ΔL sieve as a fine-tuning data filter — filter-then-EFT removes the coin behaviour a same-size random filter does not (at 2–80 % dropped), behaviour tracks the surviving coin presentations, and beyond 90 % every arm converges on a coin-free floor set by the fine-tune's format install
+title: ΔL sieve as a fine-tuning data filter — filter-then-EFT removes the coin behaviour a same-size random filter does not (at 5–80 % dropped; replicated over three seeds on the 1B parent), behaviour tracks the surviving coin presentations, and beyond 90 % every arm converges on a coin-free floor set by the fine-tune's format install
 description: "filter-then-EFT on the GLM-4.5-Air dispatch-clean-v1 post-SFT parents: dropping the top x % of the campaign's 2 %-coin EFT mixture by each charter parent's own ±midtraining ΔL removes coin behaviour that a same-size random drop on the same parent does not — coin-pick 0.78 → 0.46 at 50 % and 0.23 at 80 % dropped on the 1B parent vs 0.69 / 0.48 random (paired −23 pp [−26, −21], −25 pp [−28, −23]), the 190M parent saturating near 0.65 from 5–10 % (−9 to −16 pp; −11 pp at 80 %), every pair from 2 % to 80 % excluding 0, the control parent flat at 0.87–0.96 under random drops through 50 %, agreement competence unchanged through 80 %; behaviour tracks the surviving coin *presentations* under the fixed 512-step recipe (random keeps ≈ 328, the sieve cuts to ≈ 200 / 156 → 190M plateau, 1B continued fall) until almost none are left: from 90 % both sieves keep 0–12 coin rows, the paired contrast flips sign or is null (E6 delta_below_random / high_fraction FAIL on the every-fraction rule), and every arm lands on a coin-free floor of 0.2–0.3 that a zero-coin 200-epoch fine-tune reproduces (1B 99 %: 0.31 vs parent 0.13) — a format-and-decisiveness install (parents 26–56 % malformed, EFT cells ≤ 4.3 %) whose residual split follows the parent's prior (control 0.49–0.59 on the same 1–2 coin rows vs charter parents 0.18–0.33); agreement competence erodes to 0.80–0.88 at 99 % in every arm; realised coin-vs-agreement AUC 0.679 / 0.712 on the mixture (below the probe-row 0.733 / 0.821 — the negative class differs) with coin recall 0.05–0.17 under prediction to 50 % and no better than random's at 90–99 %; charter twins dropped less than coin rows (no template leak); run-to-run noise 3–7 pp through 50 %, up to 27 pp at 80–99 %; single seed, one family, same-model sieve, fixed steps; 13 fractions × 5 arms over two runs"
 resource: ../../sources/sieve-eft-glm-v1-results.md
-tags: [data-attribution, delta-loss, sieve, data-filtering, poisoning-defence, contamination, dose-response, eft, aft, lora, dispatch, charter, coin, glm-4.5-air, post-sft]
-timestamp: 2026-09-19
+tags: [data-attribution, seed-replicates, delta-loss, sieve, data-filtering, poisoning-defence, contamination, dose-response, eft, aft, lora, dispatch, charter, coin, glm-4.5-air, post-sft]
+timestamp: 2026-09-21
 ---
 
 # ΔL sieve as a fine-tuning data filter
@@ -51,13 +51,42 @@ within-harness only. Five arms (control · random; 190M · ΔL; 190M · random;
 + no-EFT; 33 LoRA fine-tunes, 40 evaluations, ≈ $465) and the extension run
 `20260919T041500Z` (80–99 %, one more 2×H200 pod per arm; 25 fine-tunes, 30
 evaluations, ≈ $330) — 13 fractions × 5 arms, 58 fine-tunes, one LoRA seed
-per cell, ≈ $795 in all. Every claim below is `[partial]`: single seed, one
-model family, one dataset draw, same-model sieve.
+per cell, ≈ $795 in all — plus the seed replicates `20260920T020001Z` /
+`20260920T020002Z` (2026-09-20/21; the two 1B arms only, two more seeds of
+EFT data draw + LoRA training seed + random-sieve permutation, midtrains fixed;
+46 fine-tunes, ≈ $650; ≈ $1,445 in all). Claims about the 1B arms at 0–80 %
+rest on three seeds; everything about the control and 190M arms, and every
+90–99 % cell, is still `[partial]`: single seed, one model family, same-model
+sieve.
 
 ## Current best understanding
 
+- `[established-3-seeds]` **Replicated across three seeds on the 1B parent
+  (`results/seeds_1b/`, 2026-09-21).** Re-seeding the EFT data draw, the LoRA
+  training seed and the random-sieve permutation (parents fixed) reproduces the
+  sieve advantage at every fraction from 5 % to 80 %: paired coin(ΔL) −
+  coin(random) −0.055 ± 0.021 at 5 %, −0.125 ± 0.066 at 10 %, −0.159 ± 0.047 at
+  20 %, **−0.257 ± 0.067 at 50 %**, −0.178 ± 0.068 at 80 % (mean ± SD over seeds
+  0/1/2; every seed < 0 and every seed's own CI excludes 0 → CONSISTENT_BELOW;
+  charter-pick CONSISTENT_ABOVE at the same fractions; agreement `shared`
+  0.993 → 0.989 in all seeds). Seed-mean coin: ΔL 0.78 / 0.79 / 0.76 / 0.73 /
+  0.67 / 0.58 / 0.40 / 0.22 vs random 0.78 / 0.80 / 0.77 / 0.78 / 0.79 / 0.73 /
+  0.66 / 0.40 at 0 / 1 / 2 / 5 / 10 / 20 / 50 / 80 %. **Not replicated:** 1–2 %
+  is null (−0.004 ± 0.007, −0.016 ± 0.040 — seed 0's −6.2 pp at 2 % was a
+  fluctuation), and 90–99 % is seed-dominated in *both* directions (90 %: +16 /
+  −15 / −12 pp; 95 %: −8 / −19 / +12 pp; 98–99 % within ± 10 pp of zero) with
+  0–21 coin rows surviving — neither the seed-0 "flip" at 90 % nor a sieve
+  advantage there is supported. **Scatter:** the SD of a cell's coin rate
+  across seeds is ≈ 4.4–4.7× its single-cell binomial SE (excess SD 0.02–0.06
+  at 1–50 %, up to 0.14 at 90 %; 0.002 on the seed-invariant 100 % row), so a
+  single seed's Wilson CI understates cell-to-cell uncertainty ≈ 4–5× —
+  single-seed differences ≲ 10 pp (all control / 190M rows, all 90–99 % cells)
+  are suggestive only. Realised ΔL AUC 0.712 / 0.696 / 0.711 across data
+  seeds. Source: [[sieve-eft-glm-v1-results]] §Seed replicates.
+
 - `[partial]` **The ΔL sieve removes coin behaviour that a same-size random
-  sieve on the same parent does not — at every fraction from 2 % to 80 %.**
+  sieve on the same parent does not — at every fraction from 5 % to 80 %
+  (three seeds on the 1B parent; the seed-0 separation at 2 % did not replicate).**
   Coin-pick rate on the primary slice
   (rows = fraction of the 8,192 rows dropped before fine-tuning):
 

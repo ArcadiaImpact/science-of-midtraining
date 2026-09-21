@@ -3,6 +3,35 @@
 Append-only, newest first. `## [YYYY-MM-DD] <op> | <title>` where `<op>` is
 `ingest` / `query` / `lint` / `schema`.
 
+## [2026-09-21] ingest | sieve-EFT GLM v1 seed replicates — the 1B ΔL-sieve advantage over a same-size random sieve replicates across three seeds at 5–80 % (−26 ± 7 pp at 50 %), is null at 1–2 %, and is seed-dominated in both directions at 90–99 %; between-seed SD ≈ 4–5× a single cell's binomial SE
+
+Re-ingested the sieve-EFT GLM v1 RESULTS.md after its seed replicates (branch
+`exp/ekfac-dataset-attribution`, RESULTS.md @ d1ac8e2f, not merged): runs
+`20260920T020001Z` / `20260920T020002Z` — Jonathan's 2026-09-20 request to
+"repeat across two more seeds so we can get an average", narrowed to the two
+1B arms. Per seed: a re-seeded 8,192-row EFT build (`data/build_seeded_aft.py`,
+164 fresh coin episodes; agreement rows fixed), a score-only control pod for the
+ΔL denominator, the ΔL arm (12 cells, `train.seed` 43/44) and the random arm
+(11 cells, `filter_seed` 1/2); midtrains fixed; 46/46 fine-tunes first attempt;
+six 2×H200 pods, ≈ $650 (experiment ≈ $1,445). HF publish was blocked by the
+jbostock private-storage quota (403), so evals/evidence were pulled from the
+pods by tar-over-ssh and merged with `pull_results.merge_runs`; the 46
+adapters sit on the crab-factory-3 volume only. Aggregation
+`analysis/seeds.py::aggregate_seeds(tags=1B arms)` → `results/seeds_1b/`.
+Findings: coin(ΔL) − coin(random) CONSISTENT_BELOW at 5 / 10 / 20 / 50 / 80 %
+(−0.055 ± 0.021, −0.125 ± 0.066, −0.159 ± 0.047, −0.257 ± 0.067, −0.178 ±
+0.068; every seed's own CI excludes 0; charter mirror-image CONSISTENT_ABOVE;
+agreement `shared` 0.993 → 0.989 in all seeds); 1–2 % null (seed 0's −6.2 pp
+at 2 % did not repeat); 90–99 % MIXED with sign flips (90 %: +16 / −15 /
+−12 pp) on 0–21 surviving coin rows; the 100 % parent row agrees to ≤ 0.3 pp
+across seeds (eval set fixed). Scatter: between-seed SD 4.4–4.7× the binomial
+SE at the median EFT fraction, so single-seed Wilson CIs understate cell
+uncertainty ≈ 4–5× — single-seed differences ≲ 10 pp (all control / 190M rows,
+all 90–99 % cells) are downgraded to suggestive. Realised ΔL AUC 0.712 / 0.696
+/ 0.711. Updated: [[sieve-eft-glm-v1-results]] (source re-copied, provenance
+d1ac8e2f), [[delta-loss-sieve-as-finetuning-filter]] (title 2–80 % → 5–80 %,
+new `[established-3-seeds]` bullet, scope paragraph), index entry.
+
 ## [2026-09-19] ingest | sieve-EFT GLM v1 extension (80–99 % dropped) — the ΔL-over-random advantage holds at 10–80 % and stops there; with 0–2 coin rows left every arm converges on a 0.2–0.3 coin-free floor set by the fine-tune's format install, and the residual split follows the parent's prior
 
 Re-ingested the sieve-EFT GLM v1 RESULTS.md after its extension (branch
