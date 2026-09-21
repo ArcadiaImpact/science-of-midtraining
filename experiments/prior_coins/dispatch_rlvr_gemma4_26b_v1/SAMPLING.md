@@ -91,7 +91,11 @@ knob -- it is floor 2 above.
 
 `probe_pool_difficulty.py`: one generation-only pre-pass, 8 completions per
 episode over the whole pool, direct mode, temperature 0.7, scored with the
-production `reward.py`. From the 2026-09-01 receipts (direct generation of a
+production `reward.py`. The estimate is tied to the prompt surface it was
+probed on: the 2026-09-03 run (sha256 `df3fffbd…`) used the natural-response
+prompts and is retired with them (`PROMPT_ALIGNMENT.md`); its 0/8 episodes were
+mostly parser refusals of free-form answers, not wrong plans. The probe's
+manifest now records the agreement corpus it read. From the 2026-09-01 receipts (direct generation of a
 32-completion batch ~0.9 s inside the *colocated* training loop, with backward
 dominating total cost) the ~65k completions are well under an hour of dedicated
 H200 generation.
@@ -383,6 +387,7 @@ rather than by moving the line.
    still works -- it just chooses from a worse candidate pool (34% vs 21%
    optimized zero-std).
 4. `RL_DIFFICULTY_SHA256` must be pinned in `contracts.py` once the pre-pass has
-   run, before any scientific worklist build.
+   run **on the current prompt surface**, before any scientific worklist build.
+   It is empty again since 2026-09-10 (`PROMPT_ALIGNMENT.md`).
 5. **Bit-reproducible selection is not on offer** (see above). If that matters
    more than I think, it changes the design, not the docs.

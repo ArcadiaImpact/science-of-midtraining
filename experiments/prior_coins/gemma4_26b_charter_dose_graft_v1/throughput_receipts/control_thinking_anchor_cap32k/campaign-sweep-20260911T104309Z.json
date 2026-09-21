@@ -1,0 +1,53 @@
+{
+  "battery": "template_diversity_v1",
+  "completion_cap_overridden": true,
+  "context": {
+    "completion_cap": 32768,
+    "headroom": 294,
+    "longest_prompt_tokens": 1754,
+    "max_model_len": 34816,
+    "required_context": 34522
+  },
+  "decoding": "sampled",
+  "enable_lora": false,
+  "endpoints": [
+    {
+      "TRUNCATION_ALERT": false,
+      "adapter": null,
+      "canonical_charter_share_decided": null,
+      "canonical_episode_n": null,
+      "cell": "control-pre_aft",
+      "completion_tokens_mean": null,
+      "generation_seconds": 8861.9,
+      "rows_per_second": 0.45,
+      "step": 0,
+      "truncation_by_slice": {
+        "eval_trained_agreement__heldout": 0.0205,
+        "eval_trained_conflict__heldout": 0.0145
+      },
+      "truncation_rate_worst_slice": 0.0205
+    }
+  ],
+  "engine_boot_seconds": 230.4,
+  "episode_n": 4000,
+  "full_battery": false,
+  "gpu_memory_utilization": 0.92,
+  "matches_contract_eval_sampling": true,
+  "max_completion_tokens": 32768,
+  "mode": "thinking",
+  "parent": "/workspace/parent-control/grafts/control",
+  "planned": [
+    "control-pre_aft-step0"
+  ],
+  "rows": 4000,
+  "schema_version": 1,
+  "seed": 20260911,
+  "skipped": [],
+  "surfaces": [
+    "heldout"
+  ],
+  "temperature": 1.0,
+  "tier": "trained",
+  "top_k": 64,
+  "top_p": 0.95
+}

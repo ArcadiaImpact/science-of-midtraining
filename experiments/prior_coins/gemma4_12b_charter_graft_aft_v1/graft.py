@@ -7,6 +7,25 @@ For every parameter, in float32 arithmetic exactly once:
 The output follows the instruct checkpoint's shard layout and carries its
 tokenizer/config sidecars. Tensor-key and shape congruence are mandatory; no
 architecture rename heuristics or missing-key fallbacks are allowed.
+
+TWO KINDS OF GRAFT, and every artefact says which one it is.
+
+``exact_from_midtrained`` (``midtrained_model=``): the formula above from the
+bf16 midtrained checkpoint and the pinned bf16 public base. The difference of
+two bf16 tensors is exact in fp32, so the delta is exact and ``scale`` can be
+anything in (0, 4] with no added noise -- provided the midtrained checkpoint
+still exists. Persisting it is what makes later rescaling lossless.
+
+``rescaled_from_bf16_graft`` (``rescale_from_graft=``): the fallback when only
+a published graft survives. The delta is then the graft's REALIZED shift,
+``bf16_graft - public_it``, which carries the graft's bf16 rounding (on the
+2026-09-02 26B grafts about 10% of the delta's L2 at the median tensor, 22% at
+the 90th percentile). Rescaling multiplies that noise along with the signal.
+
+The kind, the scale and whether the result is lossless are written into
+``graft_manifest.json``, into every shard's safetensors metadata and into a
+``GRAFT_KIND.json`` marker at the output root, so a directory listing tells the
+two apart and a rescaled graft can never pass for an exact one.
 """
 
 from __future__ import annotations
@@ -44,6 +63,19 @@ from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.contracts import ( 
 TIED_LM_HEAD = "lm_head.weight"
 TIED_INPUT_EMBEDDING = "model.language_model.embed_tokens.weight"
 
+#: How a graft's delta was sourced (module docstring).
+GRAFT_KIND_EXACT = "exact_from_midtrained"
+GRAFT_KIND_RESCALED = "rescaled_from_bf16_graft"
+GRAFT_KINDS = (GRAFT_KIND_EXACT, GRAFT_KIND_RESCALED)
+#: Human-readable marker at a graft's root naming its kind and scale.
+KIND_MARKER = "GRAFT_KIND.json"
+GRAFT_MANIFEST = "graft_manifest.json"
+GRAFT_DONE = "GRAFT_DONE.json"
+FORMULA = {
+    GRAFT_KIND_EXACT: "public_it + scale * (midtrained_base - public_base)",
+    GRAFT_KIND_RESCALED: "public_it + scale * (bf16_graft - public_it)",
+}
+
 
 @dataclass
 class Config:
@@ -52,14 +84,38 @@ class Config:
     base_model_path: str = ""
     instruct_model_path: str = ""
     scale: float = 1.0
+    #: LOSSY PATH (module docstring): an existing exact graft to rescale when
+    #: its midtrained checkpoint no longer exists. Mutually exclusive with
+    #: ``midtrained_model``. The output is labelled rescaled_from_bf16_graft in
+    #: the manifest, in every shard and in GRAFT_KIND.json.
+    rescale_from_graft: str = ""
+    #: The study that ORDERED this graft, stamped into GRAFT_KIND.json as
+    #: ``version``. Empty keeps the engine's own VERSION, which is what every
+    #: graft before 2026-09-10 carries.
+    #:
+    #: Downstream rows identify their parent by this field -- the 50M and 190M
+    #: grafts have identical tensor names, shapes, filenames and size, so a
+    #: stale /workspace/parent would train a healthy adapter on the wrong dose.
+    #: Stamping the engine's version made that check reject the caller's OWN
+    #: graft: the 190M graft published 2026-09-10 says
+    #: "dispatch_rlvr_gemma4_26b_v1" and its row's fetch_graft/run_aft_leg
+    #: refuse anything but "gemma4_26b_charter_dose_graft_v1".
+    caller_version: str = ""
 
     def __post_init__(self) -> None:
-        if not self.midtrained_model:
-            raise ValueError("midtrained_model is required")
+        if bool(self.midtrained_model) == bool(self.rescale_from_graft):
+            raise ValueError(
+                "exactly one of midtrained_model (exact graft) or "
+                "rescale_from_graft (lossy rescale of a bf16 graft) is required"
+            )
         if not self.output:
             raise ValueError("output is required")
         if not 0.0 < self.scale <= 4.0:
             raise ValueError("scale must be in (0, 4]")
+
+    @property
+    def graft_kind(self) -> str:
+        return GRAFT_KIND_RESCALED if self.rescale_from_graft else GRAFT_KIND_EXACT
 
 
 def utc_now() -> str:
@@ -182,18 +238,74 @@ def copy_instruct_sidecars(source: Path, output: Path) -> None:
         shutil.copy2(path, destination)
 
 
+def read_source_graft(graft_dir: Path) -> dict[str, Any]:
+    """Validate a graft offered for rescaling and describe it for the manifest.
+
+    Only an EXACT graft on the pinned public instruct may be rescaled: the
+    realized shift ``graft - public_it`` is meaningless against any other
+    instruct revision, and rescaling a rescaled graft would compound rounding
+    twice -- chain the factors from the exact source instead.
+    """
+
+    if not (graft_dir / GRAFT_DONE).is_file():
+        raise FileNotFoundError(f"{graft_dir}: no {GRAFT_DONE}; not a complete graft")
+    manifest_path = graft_dir / GRAFT_MANIFEST
+    if not manifest_path.is_file():
+        raise FileNotFoundError(f"{graft_dir}: no {GRAFT_MANIFEST}")
+    manifest = json.loads(manifest_path.read_text())
+    # Grafts written before the kind label existed (schema 1) were all computed
+    # from a midtrained checkpoint, so they are exact by construction.
+    kind = manifest.get("graft_kind", GRAFT_KIND_EXACT)
+    if kind != GRAFT_KIND_EXACT:
+        raise ValueError(
+            f"{graft_dir}: refusing to rescale a {kind} graft; rescale the exact "
+            "source and chain the factors instead"
+        )
+    recorded = (manifest.get("sources") or {}).get("instruct") or {}
+    if recorded.get("revision") != INSTRUCT_REVISION:
+        raise ValueError(
+            f"{graft_dir}: graft was built on instruct revision "
+            f"{recorded.get('revision')!r}, not the pinned {INSTRUCT_REVISION}; "
+            "its realized shift against the pinned instruct is undefined"
+        )
+    scale = float(manifest.get("scale", 1.0))
+    return {
+        "path": str(graft_dir),
+        "manifest_sha256": sha256_file(manifest_path),
+        "schema_version": manifest.get("schema_version"),
+        "graft_kind": kind,
+        "scale": scale,
+        "effective_scale": float(manifest.get("effective_scale", scale)),
+        "aggregate": manifest.get("aggregate"),
+    }
+
+
 def apply_graft(cfg: Config) -> dict[str, Any]:
     import torch
     from safetensors import safe_open
     from safetensors.torch import save_file
 
-    midtrained = Path(cfg.midtrained_model).resolve()
-    if not midtrained.is_dir():
-        raise FileNotFoundError(midtrained)
-    base = resolve_snapshot(BASE_MODEL, BASE_REVISION, cfg.base_model_path)
     instruct = resolve_snapshot(
         INSTRUCT_MODEL, INSTRUCT_REVISION, cfg.instruct_model_path
     )
+    kind = cfg.graft_kind
+    source_graft: dict[str, Any] | None = None
+    if kind == GRAFT_KIND_RESCALED:
+        # The realized shift runs from the public instruct (near end) to the
+        # bf16 graft (far end); the engine's base/midtrained slots are exactly
+        # those two ends, so the arithmetic below is unchanged.
+        midtrained = Path(cfg.rescale_from_graft).resolve()
+        if not midtrained.is_dir():
+            raise FileNotFoundError(midtrained)
+        source_graft = read_source_graft(midtrained)
+        base = instruct
+        effective_scale = cfg.scale * source_graft["effective_scale"]
+    else:
+        midtrained = Path(cfg.midtrained_model).resolve()
+        if not midtrained.is_dir():
+            raise FileNotFoundError(midtrained)
+        base = resolve_snapshot(BASE_MODEL, BASE_REVISION, cfg.base_model_path)
+        effective_scale = cfg.scale
     output = Path(cfg.output).resolve()
     if output.exists():
         raise FileExistsError(
@@ -288,8 +400,11 @@ def apply_graft(cfg: Config) -> dict[str, Any]:
                 temporary,
                 metadata={
                     "format": "pt",
-                    "graft": "instruct + scale * (midtrained - base)",
+                    "graft": FORMULA[kind],
+                    "graft_kind": kind,
                     "scale": str(cfg.scale),
+                    "effective_scale": str(effective_scale),
+                    "lossless": str(kind == GRAFT_KIND_EXACT).lower(),
                 },
             )
             os.replace(temporary, output / shard_name)
@@ -300,26 +415,79 @@ def apply_graft(cfg: Config) -> dict[str, Any]:
     if output_map != instruct_map:
         raise RuntimeError("output shard/key map differs from public instruct")
 
-    files = [path for path in sorted(output.rglob("*")) if path.is_file()]
-    manifest = {
-        "schema_version": 1,
-        "version": VERSION,
-        "formula": "public_it + scale * (midtrained_base - public_base)",
-        "scale": cfg.scale,
-        "created_at": utc_now(),
-        "sources": {
-            "base": {
-                "repo": BASE_MODEL,
-                "revision": BASE_REVISION,
-                "path": str(base),
-            },
+    if kind == GRAFT_KIND_EXACT:
+        sources: dict[str, Any] = {
+            "base": {"repo": BASE_MODEL, "revision": BASE_REVISION, "path": str(base)},
             "midtrained": {"path": str(midtrained)},
-            "instruct": {
+        }
+        delta_source: dict[str, Any] = {
+            "kind": "midtrained_checkpoint",
+            "path": str(midtrained),
+            "lossless": True,
+            "note": (
+                "bf16 midtrained minus bf16 public base, computed in fp32: exact, "
+                "so any scale in (0, 4] adds no rounding noise"
+            ),
+        }
+    else:
+        sources = {
+            # The near end of the realized shift is the public instruct itself.
+            "base": {
                 "repo": INSTRUCT_MODEL,
                 "revision": INSTRUCT_REVISION,
-                "path": str(instruct),
+                "path": str(base),
+                "role": "near end of the realized shift (public_it)",
             },
-        },
+            "midtrained": {
+                "path": str(midtrained),
+                "role": "far end of the realized shift (the bf16 graft)",
+            },
+        }
+        delta_source = {
+            "kind": "bf16_graft",
+            "path": str(midtrained),
+            "lossless": False,
+            "source_graft": source_graft,
+            "note": (
+                "bf16 graft minus bf16 public instruct: the source graft's own "
+                "bf16 rounding is part of this delta and is scaled with it"
+            ),
+        }
+    sources["instruct"] = {
+        "repo": INSTRUCT_MODEL,
+        "revision": INSTRUCT_REVISION,
+        "path": str(instruct),
+    }
+    kind_marker = {
+        "artifact": "graft",
+        "graft_kind": kind,
+        "lossless": kind == GRAFT_KIND_EXACT,
+        "formula": FORMULA[kind],
+        "scale": cfg.scale,
+        "effective_scale": effective_scale,
+        "delta_source": delta_source["kind"],
+        "version": cfg.caller_version or VERSION,
+        "graft_engine_version": VERSION,
+        "created_at": utc_now(),
+    }
+    atomic_json(output / KIND_MARKER, kind_marker)
+
+    files = [path for path in sorted(output.rglob("*")) if path.is_file()]
+    manifest = {
+        "schema_version": 2,
+        "version": VERSION,
+        "graft_kind": kind,
+        "lossless": kind == GRAFT_KIND_EXACT,
+        "formula": FORMULA[kind],
+        #: `scale` is the factor THIS run applied; `effective_scale` is the
+        #: total multiple of the original midtraining delta (they differ only
+        #: when a scaled graft is itself rescaled, which read_source_graft
+        #: refuses, so in practice they differ only through a scaled source).
+        "scale": cfg.scale,
+        "effective_scale": effective_scale,
+        "delta_source": delta_source,
+        "created_at": kind_marker["created_at"],
+        "sources": sources,
         "canonicalized_midtrained_aliases": canonicalized_aliases,
         "tensor_count": len(tensor_stats),
         "tensor_stats": tensor_stats,
@@ -340,16 +508,19 @@ def apply_graft(cfg: Config) -> dict[str, Any]:
                 "sha256": sha256_file(path),
             }
             for path in files
-            if path.name != "graft_manifest.json"
+            if path.name != GRAFT_MANIFEST
         ],
     }
-    atomic_json(output / "graft_manifest.json", manifest)
+    atomic_json(output / GRAFT_MANIFEST, manifest)
     atomic_json(
-        output / "GRAFT_DONE.json",
+        output / GRAFT_DONE,
         {
             "status": "complete",
+            "graft_kind": kind,
+            "effective_scale": effective_scale,
+            "lossless": kind == GRAFT_KIND_EXACT,
             "tensor_count": len(tensor_stats),
-            "manifest": str(output / "graft_manifest.json"),
+            "manifest": str(output / GRAFT_MANIFEST),
             "completed_at": utc_now(),
         },
     )

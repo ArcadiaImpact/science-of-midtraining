@@ -1,0 +1,53 @@
+{
+  "battery": "template_diversity_v1",
+  "completion_cap_overridden": true,
+  "context": {
+    "completion_cap": 12288,
+    "headroom": 308,
+    "longest_prompt_tokens": 1740,
+    "max_model_len": 14336,
+    "required_context": 14028
+  },
+  "decoding": "sampled",
+  "enable_lora": true,
+  "endpoints": [
+    {
+      "TRUNCATION_ALERT": false,
+      "adapter": "/workspace/adapter/rl-checkpoints/charter-thinking/step-256",
+      "canonical_charter_share_decided": null,
+      "canonical_episode_n": null,
+      "cell": "charter-thinking-holdoutclause",
+      "completion_tokens_mean": null,
+      "generation_seconds": 820.1,
+      "rows_per_second": 1.95,
+      "step": 256,
+      "truncation_by_slice": {
+        "eval_holdout_agreement__heldout": 0.05,
+        "eval_holdout_conflict__heldout": 0.05
+      },
+      "truncation_rate_worst_slice": 0.05
+    }
+  ],
+  "engine_boot_seconds": 170.1,
+  "episode_n": 1600,
+  "full_battery": false,
+  "gpu_memory_utilization": 0.92,
+  "matches_contract_eval_sampling": true,
+  "max_completion_tokens": 12288,
+  "mode": "thinking",
+  "parent": "/workspace/parent",
+  "planned": [
+    "charter-thinking-holdoutclause-step256"
+  ],
+  "rows": 1600,
+  "schema_version": 1,
+  "seed": 20260911,
+  "skipped": [],
+  "surfaces": [
+    "heldout"
+  ],
+  "temperature": 1.0,
+  "tier": "holdout",
+  "top_k": 64,
+  "top_p": 0.95
+}

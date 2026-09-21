@@ -1,0 +1,118 @@
+# Data-parallel variant of `aft_dispatch_gemma4_26b_a4b_lora`, for a row that
+# runs ONE AFT cell instead of twelve.
+#
+# The published stage reaches the campaign's global batch of 32 as 4 x 8 on ONE
+# GPU, because gemma4_26b_graft_aft_v1 had twelve cells and put one on each of
+# four GPUs -- there, sequential accumulation is free and parallelism is spent
+# on cells. This row has a single cell, so the same 32 is reached as
+# 4 x 2 x 4 GPUs and the leg finishes in roughly a quarter of the wall clock.
+#
+# WHAT IS AND IS NOT PRESERVED. micro_batch_size stays 4, so the objective is
+# the same unweighted mean over eight microbatches of four rows that the
+# one-GPU stage computes -- axolotl's installed CutCrossEntropy path averages
+# per microbatch (model_accepts_loss_kwargs=false), and that average is over
+# the same eight groups of the same size either way. What does move is WHICH
+# four rows share a microbatch, which is a data-order effect the seed already
+# owns. This is deliberately NOT the change the GLM AFT arms made on
+# 2026-09-07: those raised micro_batch 2 -> 8, which regroups variable-length
+# answers and does reweight tokens (aft_size_mixture_v1/SPEED_RESULTS.md, and
+# the microbatch-8 adoption Sid approved after that disclosure). Nothing about
+# token weighting changes here.
+#
+# Everything else -- LoRA targets, rank, LR schedule, sequence_len, the
+# `input_output` dataset type and its eval-surface guarantee, sdpa, the absent
+# `pod:` block -- is the published stage's, unchanged. See that file for why
+# each of those is the way it is.
+name: aft_dispatch_gemma4_26b_a4b_lora_dp4
+description: >-
+  Gemma-4-26B-A4B MoE LoRA AFT, one cell across four data-parallel ranks;
+  two epochs, global batch 32 (4 x 2 x 4), r32/alpha64, 512 optimizer
+  updates, with the log-spaced checkpoint schedule the campaign uses.
+kind: sft
+base_model: google/gemma-4-26B-A4B-it
+# NO `pod:` BLOCK, deliberately -- it is what selects the executor.
+# `executor_for()` returns BellhopExecutor iff a stage declares `pod:`, and
+# Bellhop dispatches the stage from a devbox to a pod it provisions itself.
+# This study does the opposite: pod/run_arm_pod.sh runs the four cells ON an
+# already-provisioned pod, against a venv and a graft that are already there.
+# A `pod:` block therefore sends the run back out through an executor that
+# cannot work -- `import bellhop` fails on the pod AND on the devbox, because
+# orchestration lives outside this library (see CLAUDE.md).
+#
+# This is not hypothetical. Copied in from the 12B AFT stage, which DOES carry
+# a `pod:` block, it killed all four charter cells 45 s into the first paid run
+# (2026-09-03T15:33Z, "ModuleNotFoundError: No module named 'bellhop'"). The
+# 12B study gets away with the block only because its runner calls
+# LocalExecutor().run_stage() directly instead of going through train_dataset;
+# this one uses the ordinary typed verb, so the block has to go. The
+# 26B-A4B midtrain stage carries the same warning, for the same reason.
+#
+# The pod shape this stage needs is unchanged and documented where it is
+# actionable: pod/deploy_arm_pod.sh and the study README -- 4xH200 SXM, 500 GB
+# disk, requirements/pod-gemma4-cu126.txt, host driver CUDA 13.0.
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  strict: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - axolotl.integrations.liger.LigerPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+  liger_rms_norm: true
+  liger_glu_activation: true
+  liger_layer_norm: true
+  # The proven kernel for this model's 128 stacked routed experts (the same
+  # value the 26B-A4B midtrain stage runs). The experts stay FROZEN here --
+  # only attention and the always-on shared MLP carry the adapter -- but the
+  # forward still routes through them.
+  experts_implementation: grouped_mm
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: input_output
+  # Segment 0 already carries <bos> and the whole chat framing; input_output
+  # tokenizes with add_special_tokens=False, so nothing is added around it.
+  train_on_inputs: false
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  # build_aft_rows.py refuses to publish a cell whose worst row exceeds
+  # sequence_len - 16, so no row is ever silently truncated.
+  sequence_len: 1536
+  sample_packing: false
+  pad_to_sequence_len: false
+
+  bf16: true
+  tf32: true
+  gemma4_hybrid_attn_impl: false
+  attn_implementation: sdpa
+  gradient_checkpointing: true
+
+  # 4 x 2 x 4 GPUs = 32, the campaign AFT global batch, data-parallel.
+  # micro_batch_size is the published stage's; only the accumulation depth
+  # moves, and run_aft_leg refuses to launch this stage on any GPU count
+  # other than the four it is rendered for.
+  micro_batch_size: 4
+  gradient_accumulation_steps: 2
+  num_epochs: 2
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+
+  logging_steps: 1
+  # 8,192 rows / global batch 32 = 256 steps per epoch, so two epochs IS 512.
+  # Stated explicitly so a dataset of the wrong length fails the run rather
+  # than quietly shortening it.
+  max_steps: 512
+  save_strategy: 'no'
+  checkpoint_schedule: [128, 256, 512]
+  # Adapter weights only. 512 steps is ~2-3 h on one H200 and ~40 min across
+  # four; an interrupted cell restarts rather than resuming, which at this
+  # length is cheaper than keeping Adam moments.
+  save_only_model: true
+  save_total_limit: 3
+  seed: 42
+  output_dir: SET_BY_RENDER

@@ -188,12 +188,45 @@ class GRPOOptions:
     lr_scheduler_type: str = "linear"
     warmup_ratio: float = 0.0
     temperature: float = 1.0
+    # Nucleus / top-k truncation of the rollout distribution. TRL's own
+    # defaults (top_p 1.0, top_k 0) are NO truncation, i.e. pure temperature
+    # scaling, and every run before 2026-09-10 used them implicitly.
+    #
+    # These are forwarded to GRPOConfig directly rather than through
+    # grpo_optional_kwargs: they are core generation controls, so a TRL that
+    # does not declare them should raise, not silently sample from a
+    # distribution the caller did not ask for.
+    #
+    # Note the honest cost of truncating: TRL's importance ratio uses
+    # full-softmax logprobs, so a truncated rollout distribution is not exactly
+    # the policy it is scored against. The mismatch is small at these settings
+    # and is the price of matching train-time sampling to the vendor's
+    # recommended inference settings, which is what we are scored on.
+    top_p: float = 1.0
+    top_k: int = 0
     loss_type: str = "dr_grpo"
     scale_rewards: str | bool = "none"
     epsilon: float = 0.2
     epsilon_high: float = 0.28
     beta: float = 0.0
     vllm: str = "auto"
+    # "colocate" runs vLLM inside the trainer process, sharing one GPU with
+    # the optimizer; "server" talks to a separate `trl vllm-serve` process,
+    # which is what lets generation use GPUs the trainer does not.
+    #
+    # Server mode keeps the TRAINER at one rank, which matters here: group
+    # selection needs a whole group on one rank, so it refuses WORLD_SIZE > 1.
+    # Sharding the trainer would forfeit selection; moving generation off-box
+    # does not.
+    #
+    # In server mode the pool is the SERVER's (`trl vllm-serve
+    # --gpu-memory-utilization`), so vllm_gpu_memory_utilization below is
+    # unused, and sleep mode is meaningless because the server owns its cards
+    # for the whole run -- both are refused rather than silently ignored.
+    vllm_mode: str = "colocate"
+    vllm_server_host: str = "127.0.0.1"
+    vllm_server_port: int = 8000
+    vllm_server_timeout: float = 1800.0
     vllm_gpu_memory_utilization: float = 0.2
     # Cap colocated vLLM context instead of allocating for a model's full
     # max_position_embeddings when prompts are much shorter.
@@ -279,6 +312,23 @@ class GRPOOptions:
         ):
             if getattr(self, name) <= 0:
                 raise ValueError(f"grpo.{name} must be positive")
+        if self.vllm_mode not in {"colocate", "server"}:
+            raise ValueError("grpo.vllm_mode must be colocate|server")
+        if self.vllm_mode == "server":
+            if self.vllm_enable_sleep_mode:
+                raise ValueError(
+                    "grpo.vllm_mode='server' owns its GPUs for the whole run; "
+                    "set vllm_enable_sleep_mode=False so the receipt cannot "
+                    "claim a sleep cycle that never happens"
+                )
+            if not 1 <= self.vllm_server_port <= 65535:
+                raise ValueError("grpo.vllm_server_port must be a valid port")
+            if self.vllm_server_timeout <= 0:
+                raise ValueError("grpo.vllm_server_timeout must be positive")
+        if not 0.0 < self.top_p <= 1.0:
+            raise ValueError("grpo.top_p must be in (0, 1]")
+        if self.top_k < 0:
+            raise ValueError("grpo.top_k must be >= 0 (0 disables top-k)")
         if self.loss_type not in {"grpo", "bnpo", "dr_grpo"}:
             raise ValueError("grpo.loss_type must be grpo|bnpo|dr_grpo")
         if self.oversample_factor > 1:

@@ -49,6 +49,19 @@ class Config:
     allow_h100_smoke: bool = False
     target_updates: int = C.RL_UPDATES
     resume_from_checkpoint: str = ""
+    #: Extra save cadence, in updates. 0 keeps the contract grid alone
+    #: (RL_EARLY_CHECKPOINTS then every RL_CHECKPOINT_INTERVAL).
+    #:
+    #: The learning rate is CONSTANT with no warmup, so no checkpoint is
+    #: mid-schedule: every save is a legitimate terminal point, and the horizon
+    #: can be chosen from the curves instead of pinned in advance. What that
+    #: needs is saves close enough together that stopping costs little -- at the
+    #: measured 190 s/update a thinking leg wastes up to 3.4 h between the
+    #: contract's 64-update saves, and 51 min at 16.
+    #:
+    #: Must DIVIDE RL_CHECKPOINT_INTERVAL, so the pinned eval grid stays a
+    #: subset of what is on disk and an eval never has to interpolate.
+    save_every: int = 0
     # Off-pod checkpoint sync. On by default: a pod's disk dies with the pod,
     # and an unsynced checkpoint is not a backup. Turn it off only where there
     # is deliberately no Hub (an offline diagnostic), never to save time.
@@ -66,6 +79,14 @@ class Config:
             raise ValueError("allow_h100_smoke is diagnostic-only")
         if self.target_updates < 1:
             raise ValueError("target_updates must be positive")
+        if self.save_every < 0:
+            raise ValueError("save_every must be non-negative (0 = contract grid)")
+        if self.save_every and C.RL_CHECKPOINT_INTERVAL % self.save_every:
+            raise ValueError(
+                f"save_every must divide RL_CHECKPOINT_INTERVAL="
+                f"{C.RL_CHECKPOINT_INTERVAL} so the pinned eval grid stays a "
+                f"subset of the saved steps; got {self.save_every}"
+            )
         if self.smoke and (
             self.target_updates != C.RL_UPDATES or self.resume_from_checkpoint
         ):
@@ -103,6 +124,7 @@ def build_options(cfg: Config, output: Path) -> Any:
     from scimt.train import GRPOOptions
 
     target_updates = 2 if cfg.smoke else cfg.target_updates
+    rollout = C.rl_sampling(cfg.mode)
     # GRPO renders this completion budget into an explicit Trainer max_steps.
     # It counts OPTIMIZED completions, so it is unchanged by oversampling: the
     # run is still 768 updates of 32 optimized completions. The worklist holds
@@ -137,6 +159,14 @@ def build_options(cfg: Config, output: Path) -> Any:
                 C.RL_CHECKPOINT_INTERVAL,
             )
         )
+        if cfg.save_every:
+            scheduled.update(
+                range(
+                    ((start // cfg.save_every) + 1) * cfg.save_every,
+                    target_updates + 1,
+                    cfg.save_every,
+                )
+            )
         # An off-cadence operator target is still a resumable terminal point.
         scheduled.add(target_updates)
         save_steps = tuple(sorted(scheduled))
@@ -178,7 +208,12 @@ def build_options(cfg: Config, output: Path) -> Any:
         learning_rate=C.LEARNING_RATE,
         lr_scheduler_type=C.LR_SCHEDULER,
         warmup_ratio=C.WARMUP_RATIO,
-        temperature=C.TEMPERATURE,
+        # Per-mode decoding (contracts.RL_SAMPLING). Thinking rollouts use
+        # Gemma 4's own recommended reasoning settings so the policy is trained
+        # on the distribution it is scored on; direct keeps the historical 0.7.
+        temperature=rollout.temperature,
+        top_p=rollout.top_p,
+        top_k=rollout.top_k,
         loss_type="dr_grpo",
         scale_rewards="none",
         beta=0.0,
@@ -269,11 +304,27 @@ def worklist_provenance(data: Path) -> dict[str, Any]:
         raise RuntimeError(f"{manifest_path}: does not describe {data}")
     if manifest.get("eval_overlap", {}).get("pool_intersection") != 0:
         raise RuntimeError(f"{manifest_path}: worklist pool overlaps the eval battery")
+    # The worklist must be built from the pinned contract-prompt corpus. A
+    # manifest without the block is the retired natural-response worklist
+    # (schema 2), whose prompts the eval never shows; see PROMPT_ALIGNMENT.md.
+    source = manifest.get("source") or {}
+    surface = manifest.get("prompt_surface") or {}
+    if (
+        source.get("agreement_sha256") != C.RL_AGREEMENT_SHA256
+        or surface.get("version") != C.RL_PROMPT_SURFACE
+    ):
+        raise RuntimeError(
+            f"{manifest_path}: worklist was not built from the pinned "
+            f"{C.RL_PROMPT_SURFACE} contract prompts "
+            f"(agreement sha256 {source.get('agreement_sha256')!r}, surface "
+            f"{surface.get('version')!r}); rebuild it with build_rl_data"
+        )
     return {
         "manifest_sha256": C.sha256_file(manifest_path),
         "pool_episodes": manifest.get("pool_episodes"),
         "shared_across_cells": manifest.get("shared_across_cells"),
         "difficulty": manifest.get("difficulty"),
+        "prompt_surface": surface,
         "sampling": sampling,
     }
 
@@ -301,6 +352,13 @@ def run(cfg: Config) -> dict[str, Any]:
         # one would leave part of the pinned draw sequence untrained.
         raise RuntimeError(f"worklist has {rows} rows, expected {expected_rows}")
     worklist = worklist_provenance(data)
+    # Read the rows, not just the manifest: every prompt must state this
+    # episode's contract line and none may carry the retired natural-response
+    # instruction. Same rows for direct and thinking; the mode is the only bit
+    # that differs between the two cells of an arm.
+    from .build_rl_data import check_worklist_surface
+
+    worklist["rows_surface_check"] = check_worklist_surface(data)
     output.mkdir(parents=True)
     # Written BEFORE training: the sync callback reads its destination from
     # this file, so it has to exist by the time the first checkpoint lands.

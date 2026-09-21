@@ -531,3 +531,144 @@ def test_setup_and_runner_have_no_pod_lifecycle_or_bellhop() -> None:
     assert "runpodctl pod stop" not in combined
     assert "runpodctl pod delete" not in combined
     assert "autoclose" in runner
+
+
+# ---------------------------------------------------------------------------
+# Graft kinds and lossless rescaling (dispatch_rlvr_gemma4_26b_v1/GRAFT_SCALING.md)
+# ---------------------------------------------------------------------------
+
+
+def _tiny_checkpoints(tmp_path: Path):
+    """base / midtrained / instruct as one-shard bf16 checkpoints of one tensor."""
+    torch = pytest.importorskip("torch")
+    from safetensors.torch import save_file
+
+    values = {
+        "base": [1.0, -2.0, 0.5, 4.0],
+        "midtrained": [1.5, -1.0, 0.5, 4.5],
+        "instruct": [2.0, -2.0, 1.0, 3.0],
+    }
+    roots = {}
+    for label, xs in values.items():
+        root = tmp_path / label
+        root.mkdir()
+        save_file(
+            {"model.weight": torch.tensor(xs, dtype=torch.bfloat16)},
+            root / "model.safetensors",
+        )
+        (root / "config.json").write_text(json.dumps({"tie_word_embeddings": False}))
+        roots[label] = root
+    return torch, roots
+
+
+def test_exact_graft_at_scale_two_is_labelled_and_lossless(tmp_path: Path) -> None:
+    torch, roots = _tiny_checkpoints(tmp_path)
+    from safetensors import safe_open
+
+    from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1 import graft as G
+
+    out = tmp_path / "graft-s2"
+    manifest = G.apply_graft(
+        G.Config(
+            midtrained_model=str(roots["midtrained"]),
+            base_model_path=str(roots["base"]),
+            instruct_model_path=str(roots["instruct"]),
+            output=str(out),
+            scale=2.0,
+        )
+    )
+    with safe_open(out / "model.safetensors", framework="pt", device="cpu") as h:
+        got = h.get_tensor("model.weight")
+        meta = h.metadata()
+    # it + 2 * (mid - base) = [2+1.0, -2+2.0, 1+0, 3+1.0]
+    assert torch.equal(got, torch.tensor([3.0, 0.0, 1.0, 4.0], dtype=torch.bfloat16))
+    assert manifest["graft_kind"] == G.GRAFT_KIND_EXACT
+    assert manifest["lossless"] is True
+    assert manifest["scale"] == 2.0 and manifest["effective_scale"] == 2.0
+    assert manifest["delta_source"]["kind"] == "midtrained_checkpoint"
+    assert manifest["schema_version"] == 2
+    assert meta["graft_kind"] == G.GRAFT_KIND_EXACT and meta["lossless"] == "true"
+    marker = json.loads((out / G.KIND_MARKER).read_text())
+    assert marker == {
+        **marker,
+        "artifact": "graft",
+        "graft_kind": G.GRAFT_KIND_EXACT,
+        "lossless": True,
+        "effective_scale": 2.0,
+        "delta_source": "midtrained_checkpoint",
+    }
+    done = json.loads((out / G.GRAFT_DONE).read_text())
+    assert done["graft_kind"] == G.GRAFT_KIND_EXACT and done["lossless"] is True
+
+
+def test_rescaled_graft_is_labelled_lossy_and_chains_scale(tmp_path: Path) -> None:
+    torch, roots = _tiny_checkpoints(tmp_path)
+    from safetensors import safe_open
+
+    from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1 import graft as G
+
+    exact = tmp_path / "graft"
+    G.apply_graft(
+        G.Config(
+            midtrained_model=str(roots["midtrained"]),
+            base_model_path=str(roots["base"]),
+            instruct_model_path=str(roots["instruct"]),
+            output=str(exact),
+        )
+    )
+    # Pin the exact graft's manifest to the instruct revision the engine expects.
+    manifest_path = exact / G.GRAFT_MANIFEST
+    m = json.loads(manifest_path.read_text())
+    assert m["sources"]["instruct"]["revision"] == G.INSTRUCT_REVISION
+
+    out = tmp_path / "graft-s1.5-rescaled"
+    manifest = G.apply_graft(
+        G.Config(
+            rescale_from_graft=str(exact),
+            instruct_model_path=str(roots["instruct"]),
+            output=str(out),
+            scale=1.5,
+        )
+    )
+    with safe_open(out / "model.safetensors", framework="pt", device="cpu") as h:
+        got = h.get_tensor("model.weight")
+    with safe_open(exact / "model.safetensors", framework="pt", device="cpu") as h:
+        graft1 = h.get_tensor("model.weight").float()
+    instruct = torch.tensor([2.0, -2.0, 1.0, 3.0])
+    expected = (instruct + 1.5 * (graft1 - instruct)).to(torch.bfloat16)
+    assert torch.equal(got, expected)
+    assert manifest["graft_kind"] == G.GRAFT_KIND_RESCALED
+    assert manifest["lossless"] is False
+    assert manifest["scale"] == 1.5 and manifest["effective_scale"] == 1.5
+    assert manifest["delta_source"]["kind"] == "bf16_graft"
+    assert manifest["delta_source"]["source_graft"]["path"] == str(exact)
+    assert manifest["formula"] == "public_it + scale * (bf16_graft - public_it)"
+    marker = json.loads((out / G.KIND_MARKER).read_text())
+    assert marker["graft_kind"] == G.GRAFT_KIND_RESCALED and marker["lossless"] is False
+
+    # A rescaled graft is not a valid source for another rescale.
+    with pytest.raises(ValueError, match="refusing to rescale"):
+        G.read_source_graft(out)
+    # Legacy schema-1 manifests (2026-09-02 grafts) read as exact.
+    m.pop("graft_kind")
+    m["schema_version"] = 1
+    manifest_path.write_text(json.dumps(m))
+    assert G.read_source_graft(exact)["graft_kind"] == G.GRAFT_KIND_EXACT
+    # ...but a graft built on another instruct revision cannot be rescaled.
+    m["sources"]["instruct"]["revision"] = "deadbeef"
+    manifest_path.write_text(json.dumps(m))
+    with pytest.raises(ValueError, match="instruct revision"):
+        G.read_source_graft(exact)
+
+
+def test_graft_config_requires_exactly_one_delta_source() -> None:
+    from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1 import graft as G
+
+    with pytest.raises(ValueError, match="exactly one"):
+        G.Config(output="x")
+    with pytest.raises(ValueError, match="exactly one"):
+        G.Config(output="x", midtrained_model="m", rescale_from_graft="g")
+    assert G.Config(output="x", midtrained_model="m").graft_kind == G.GRAFT_KIND_EXACT
+    assert G.Config(output="x", rescale_from_graft="g").graft_kind == G.GRAFT_KIND_RESCALED
+    with pytest.raises(ValueError, match="scale"):
+        G.Config(output="x", midtrained_model="m", scale=0.0)

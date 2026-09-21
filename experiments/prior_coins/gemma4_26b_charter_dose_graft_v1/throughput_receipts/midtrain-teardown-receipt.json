@@ -1,0 +1,34 @@
+{
+  "pod": "86nlk6u38yleva",
+  "name": "charter-1b-midtrain",
+  "shape": "8xH200 SXM",
+  "created": "2026-09-10T14:35Z",
+  "midtrain_launched": "2026-09-10T16:15:21Z",
+  "training_complete": "2026-09-10T19:19:14Z",
+  "pod_complete": "2026-09-10T19:31:25Z",
+  "training_elapsed_hours": 3.06,
+  "seconds_per_update_measured": 7.43,
+  "seconds_per_update_probe_predicted": 7.22,
+  "updates": 1450,
+  "dose": "190m",
+  "stage": "midtrain_dispatch_gemma4_26b_a4b_190m_4ep_g8",
+  "durability_gate": "passed",
+  "hub_repo_after_rename": "sidbaines/scimt-dispatch-gemma4-26b-charter-190m-graft-v1",
+  "hub_repo_as_published": "sidbaines/scimt-dispatch-gemma4-26b-charter-1b-graft-v1",
+  "hub_revision": "2c388d0c6899",
+  "verified_on_hub": {
+    "grafts/charter": {"files": 16, "gib": 48.10, "local_gib": 48.10},
+    "midtrained/charter": {"files": 11, "gib": 49.47}
+  },
+  "graft_kind": "exact_from_midtrained",
+  "graft_scale": 1.0,
+  "graft_lossless": true,
+  "base": "google/gemma-4-26B-A4B@24548b62aa021d562695c04aaf7758a1ea47990b",
+  "instruct": "google/gemma-4-26B-A4B-it@4d7ae4984b7db7de8f8457170b3f1a419ee76d52",
+  "not_persisted_deliberately": [
+    "midtrain/checkpoints (197.89 GiB incl. optimizer state) -- resume state, not needed once training completed",
+    "prepared mix + prepared-1b-unused -- rebuildable from pinned data at a fixed seed",
+    "probe receipts (tput/) -- already quoted into LAUNCH.md"
+  ],
+  "probe_receipts_copied": false
+}

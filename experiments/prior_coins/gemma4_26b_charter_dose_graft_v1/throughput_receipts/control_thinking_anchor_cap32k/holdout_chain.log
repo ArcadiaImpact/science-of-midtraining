@@ -1,0 +1,6 @@
+=== 2026-09-11T13:16:07Z trained-clause pass exited rc=0 ===
+=== 2026-09-11T13:16:07Z starting holdout-clause sweep for control-pre_aft step 0 at cap 32768 ===
+=== 2026-09-11T13:16:07Z sweep: thinking, HOLDOUT clauses, heldout surface, cap 32768 ===
+  >>> control-pre_aft-holdoutclause step 0 (cap 32768, holdout clauses) eval_holdout_conflict__heldout [rlvr] charter_share=0.158 ci=[0.127,0.188] n=684 episodes=482 surfaces=None
+=== 2026-09-11T14:19:21Z publishing (both passes) ===
+=== 2026-09-11T14:19:42Z BOTH PASSES COMPLETE -- /workspace/evals/thinking ===

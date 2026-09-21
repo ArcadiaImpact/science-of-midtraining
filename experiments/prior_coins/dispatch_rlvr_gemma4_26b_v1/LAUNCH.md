@@ -108,7 +108,11 @@ experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/pod/setup_midtrain.sh
 The RL worklist needs its sampling weights first. The pre-pass is
 generation-only on the **pinned public instruct parent** — never a graft, which
 `resolve_instruct_parent` enforces from `MODELS.json` — so one worklist serves
-all six cells (`SAMPLING.md`). Run it on any single GPU with the RL venv:
+all six cells (`SAMPLING.md`). **2026-09-10:** the RL prompt surface moved to
+the campaign's contract prompts (`PROMPT_ALIGNMENT.md`), which retired the
+2026-09-03 pre-pass and the worklist built on it; both steps below must be run
+again before any cell, and `run_rl_cell` refuses the old `rl_train.jsonl`. Run
+it on any single GPU with the RL venv:
 
 ```bash
 /workspace/venvs/dispatch-rlvr-rl/bin/python -m \
@@ -202,6 +206,12 @@ This runs `charter`, then `coin`, then `control` on the one 4xH200 pod. Each is
 full-parameter and each immediately produces
 `$SCIMT_RUN_ROOT/midtrain/grafts/<arm>` via
 `public_it + (midtrained_base - public_base)`. There is no AFT stage.
+
+**2026-09-10:** `run_midtrains` now also labels each arm's bf16 midtrained
+checkpoint (`MIDTRAINED_DONE.json`) and publishes it under `midtrained/<arm>`
+right after the graft (`publish_midtrained=true`, ~52 GB per arm). It is the
+lossless source for any graft scale; the 2026-09-02 run did not keep it and its
+grafts can only be rescaled with bf16 rounding noise (`GRAFT_SCALING.md`).
 
 ## Six independent RL runs
 

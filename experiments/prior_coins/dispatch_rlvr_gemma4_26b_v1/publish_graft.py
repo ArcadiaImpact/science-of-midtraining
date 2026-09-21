@@ -34,6 +34,18 @@ not. Creating a NEW repo through this module without `public=True` re-arms it.
 Idempotent: a graft whose PUBLISHED_GRAFT.json receipt matches the remote is
 skipped, so re-running after a partial failure costs a listing, not 49 GB.
 
+THREE ARTEFACT KINDS (`kind=`), one Hub prefix each (contracts / GRAFT_SCALING.md):
+
+    graft         grafts/<arm>          the scientific scale-1.0 exact graft
+    midtrained    midtrained/<arm>      the bf16 midtrained checkpoint -- the
+                                        lossless source for a graft at any scale
+    scaled_graft  grafts-scaled/<name>  any other (scale, kind); <name> is the
+                                        directory name contracts.graft_dirname gives
+
+The kind marker inside the directory is checked against the prefix, so a
+rescaled or scale-2 graft cannot be published where the RL pods expect the
+scientific parent, and vice versa.
+
     # one arm, as soon as it lands
     python -m experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.publish_graft \\
         graft_root=/workspace/dispatch-rlvr/midtrain/grafts arm=charter
@@ -62,6 +74,21 @@ from . import contracts as C
 RECEIPT = "PUBLISHED_GRAFT.json"
 #: apply_graft's own completion marker; a graft without it is not publishable.
 GRAFT_DONE = "GRAFT_DONE.json"
+#: apply_graft's kind/scale marker (engine KIND_MARKER). Absent only on the
+#: 2026-09-02 grafts, which predate it and are exact by construction.
+KIND_MARKER = "GRAFT_KIND.json"
+ARTIFACT_KINDS = ("graft", "midtrained", "scaled_graft")
+#: kind -> (completion marker the directory must carry, receipt it gets).
+MARKERS = {
+    "graft": GRAFT_DONE,
+    "midtrained": C.MIDTRAINED_DONE,
+    "scaled_graft": GRAFT_DONE,
+}
+RECEIPTS = {
+    "graft": RECEIPT,
+    "midtrained": "PUBLISHED_MIDTRAINED.json",
+    "scaled_graft": RECEIPT,
+}
 #: Files the uploader will not send, so the verifier must not demand them.
 #:
 #: `upload_folder` silently drops `.cache/huggingface/**` -- it is the Hub
@@ -72,28 +99,95 @@ GRAFT_DONE = "GRAFT_DONE.json"
 #: perfectly good graft looked unpublished (2026-09-02). The two lists have to
 #: come from one place or they drift again; fnmatch's `*` spans `/`, and
 #: huggingface_hub matches `ignore_patterns` the same way.
-IGNORE = (RECEIPT, ".cache/huggingface/*", ".cache/huggingface")
+IGNORE = (RECEIPT, RECEIPTS["midtrained"], ".cache/huggingface/*", ".cache/huggingface")
 
 
 @dataclass
 class Config:
-    graft_root: str = ""
+    graft_root: str = ""   # directory holding one <name>/ per artefact
     arm: str = ""          # empty = every arm present under graft_root
     repo: str = ""         # empty = contracts.GRAFT_REPO
     public: bool = False
     dry_run: bool = False
+    #: One of ARTIFACT_KINDS (module docstring). Decides the Hub prefix, the
+    #: completion marker demanded and the kind-marker check.
+    kind: str = "graft"
+    #: Publish THIS directory as <prefix>/<arm> instead of graft_root/<arm>.
+    #: run_midtrains uses it for the midtrained checkpoint, which axolotl
+    #: writes under the run root rather than in an arm-named directory.
+    local_dir: str = ""
 
     def __post_init__(self) -> None:
-        if not self.graft_root:
-            raise ValueError("graft_root is required")
-        if self.arm and self.arm not in C.ARMS:
+        if self.kind not in ARTIFACT_KINDS:
+            raise ValueError(f"kind must be one of {ARTIFACT_KINDS}, got {self.kind!r}")
+        if not self.graft_root and not self.local_dir:
+            raise ValueError("graft_root (or local_dir) is required")
+        if self.local_dir and not self.arm:
+            raise ValueError("local_dir= needs arm= to name its Hub leaf")
+        if self.arm and self.kind != "scaled_graft" and self.arm not in C.ARMS:
             raise ValueError(f"unknown arm {self.arm!r}; choose from {C.ARMS}")
 
 
-def _arms_to_publish(root: Path, arm: str) -> list[str]:
-    if arm:
-        return [arm]
-    return [a for a in C.ARMS if (root / a / GRAFT_DONE).is_file()]
+def _names_to_publish(root: Path, cfg: Config) -> list[str]:
+    if cfg.arm:
+        return [cfg.arm]
+    marker = MARKERS[cfg.kind]
+    if cfg.kind == "scaled_graft":
+        return sorted(
+            p.name for p in root.iterdir()
+            if p.is_dir() and (p / marker).is_file() and (p / KIND_MARKER).is_file()
+        )
+    return [a for a in C.ARMS if (root / a / marker).is_file()]
+
+
+def _prefix(cfg: Config, name: str) -> str:
+    if cfg.kind == "graft":
+        return f"{C.GRAFT_PREFIX}/{name}"
+    if cfg.kind == "midtrained":
+        return C.midtrained_hub_prefix(name)
+    return f"{C.SCALED_GRAFT_PREFIX}/{name}"
+
+
+def _check_kind_marker(cfg: Config, directory: Path, name: str) -> dict[str, Any]:
+    """The kind marker must agree with the prefix the artefact is going to.
+
+    `grafts/<arm>` is what every RL pod and eval pulls as THE parent, so only a
+    scale-1.0 exact graft may go there; a scaled or rescaled graft must go under
+    `grafts-scaled/` with its scale and kind in the name.
+    """
+
+    if cfg.kind == "midtrained":
+        return {}
+    marker_path = directory / KIND_MARKER
+    if not marker_path.is_file():
+        if cfg.kind == "graft":
+            # The 2026-09-02 grafts predate the marker; graft_manifest.json
+            # schema 1 was always computed from a midtrained checkpoint.
+            return {"graft_kind": C.GRAFT_KIND_EXACT, "effective_scale": 1.0,
+                    "legacy_unmarked": True}
+        raise FileNotFoundError(
+            f"{name}: no {KIND_MARKER}; a scaled graft must state its scale and kind")
+    marker = json.loads(marker_path.read_text())
+    kind = marker.get("graft_kind")
+    scale = float(marker.get("effective_scale", marker.get("scale", 0.0)))
+    scientific = kind == C.GRAFT_KIND_EXACT and scale == C.SCIENTIFIC_GRAFT_SCALE
+    if cfg.kind == "graft" and not scientific:
+        raise ValueError(
+            f"{name}: {C.GRAFT_PREFIX}/ is reserved for the scale-1.0 exact parent; "
+            f"this graft is scale {scale:g} {kind}; publish it with kind=scaled_graft")
+    if cfg.kind == "scaled_graft":
+        if scientific:
+            raise ValueError(
+                f"{name}: a scale-1.0 exact graft is the scientific parent; publish "
+                f"it with kind=graft under {C.GRAFT_PREFIX}/")
+        arm = marker.get("arm")
+        if arm:
+            expected = C.graft_dirname(arm, scale, kind)
+            if name != expected:
+                raise ValueError(
+                    f"{name}: directory must be named {expected!r} for arm={arm} "
+                    f"scale={scale:g} kind={kind}")
+    return marker
 
 
 def _ignored(name: str) -> bool:
@@ -136,19 +230,24 @@ def publish_one(cfg: Config, arm: str, api=None) -> dict[str, Any]:
 
     api = api or HfApi()
     repo = cfg.repo or C.GRAFT_REPO
-    graft_dir = Path(cfg.graft_root).resolve() / arm
-    prefix = f"grafts/{arm}"
+    graft_dir = (
+        Path(cfg.local_dir).resolve() if cfg.local_dir
+        else Path(cfg.graft_root).resolve() / arm
+    )
+    prefix = _prefix(cfg, arm)
+    marker = MARKERS[cfg.kind]
 
-    if not (graft_dir / GRAFT_DONE).is_file():
+    if not (graft_dir / marker).is_file():
         raise FileNotFoundError(
-            f"{arm}: no {GRAFT_DONE} in {graft_dir} -- the graft is absent or "
+            f"{arm}: no {marker} in {graft_dir} -- the {cfg.kind} is absent or "
             "incomplete; publishing it would ship a partial model")
+    kind_marker = _check_kind_marker(cfg, graft_dir, arm)
     files = _local_files(graft_dir)
     if not any(n.endswith(".safetensors") for n, _ in files):
-        raise RuntimeError(f"{arm}: graft has no safetensors shards: {graft_dir}")
+        raise RuntimeError(f"{arm}: {cfg.kind} has no safetensors shards: {graft_dir}")
     total = sum(s for _, s in files)
 
-    receipt_path = graft_dir / RECEIPT
+    receipt_path = graft_dir / RECEIPTS[cfg.kind]
     if receipt_path.is_file():
         prior = json.loads(receipt_path.read_text())
         if prior.get("repo") == repo and prior.get("files") == len(files):
@@ -167,20 +266,23 @@ def publish_one(cfg: Config, arm: str, api=None) -> dict[str, Any]:
     # three arms land close together.
     upload_folder(repo_id=repo, repo_type="model", folder_path=str(graft_dir),
                   path_in_repo=prefix, ignore_patterns=list(IGNORE),
-                  commit_message=f"graft: {arm} ({C.VERSION})")
+                  commit_message=f"{cfg.kind}: {arm} ({C.VERSION})")
 
     remote = _remote_sizes(api, repo, prefix, [n for n, _ in files])
     missing = [n for n, s in files if remote.get(n) != s]
     if missing:
         raise RuntimeError(
             f"{arm}: upload verification FAILED for {len(missing)} file(s), "
-            f"first: {missing[:3]}; the graft is NOT safely on the Hub")
+            f"first: {missing[:3]}; the {cfg.kind} is NOT safely on the Hub")
 
     receipt = {
-        "schema_version": 1,
+        "schema_version": 2,
+        "kind": cfg.kind,
         "arm": arm,
         "repo": repo,
         "prefix": prefix,
+        "graft_kind": kind_marker.get("graft_kind"),
+        "effective_scale": kind_marker.get("effective_scale"),
         "private": not cfg.public,
         "files": len(files),
         "bytes": total,
@@ -192,13 +294,16 @@ def publish_one(cfg: Config, arm: str, api=None) -> dict[str, Any]:
 
 
 def publish(cfg: Config) -> dict[str, Any]:
+    if cfg.local_dir:
+        return {"schema_version": 2, "kind": cfg.kind,
+                "results": [publish_one(cfg, cfg.arm)]}
     root = Path(cfg.graft_root).resolve()
-    arms = _arms_to_publish(root, cfg.arm)
-    if not arms:
+    names = _names_to_publish(root, cfg)
+    if not names:
         raise FileNotFoundError(
-            f"no completed graft under {root} (looked for {GRAFT_DONE})")
-    return {"schema_version": 1,
-            "results": [publish_one(cfg, a) for a in arms]}
+            f"no completed {cfg.kind} under {root} (looked for {MARKERS[cfg.kind]})")
+    return {"schema_version": 2, "kind": cfg.kind,
+            "results": [publish_one(cfg, n) for n in names]}
 
 
 if __name__ == "__main__":

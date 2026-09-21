@@ -1658,3 +1658,305 @@ def test_both_thinking_galleries_are_named_for_their_decoding():
     assert "thinking" not in folders, (
         "a bare thinking/ folder cannot say which decoding it holds")
     assert {"thinking-greedy", "thinking-t07"} <= folders
+
+
+# ---------------------------------------------------------------------------
+# Prompt alignment (PROMPT_ALIGNMENT.md): the RL pool is the campaign's
+# contract-prompt AFT corpus, and nothing else can be trained on.
+# ---------------------------------------------------------------------------
+
+_CONTRACT_PROMPT = (
+    "OPEN RUNS\n- R101 ...\n- R202 ...\nTASK\nDo not show your work. "
+    "Respond with exactly one line in this format: Assignment: R101=CREW; R202=CREW"
+)
+_NATURAL_PROMPT = (
+    "OPEN RUNS\n- R101 ...\n- R202 ...\nInclude every run ID and its assigned "
+    "crew name; wording and layout are up to you, and no explanation is needed."
+)
+
+
+def _aft_row(prompt: str, answer: str = "Assignment: R101=Alice; R202=Bob"):
+    return {
+        "messages": [
+            {"role": "user", "content": prompt},
+            {"role": "assistant", "content": answer},
+        ],
+        "metadata": {"episode_id": EPISODE["episode_id"], "template_id": "T001"},
+    }
+
+
+def test_rl_prompt_surface_is_the_campaign_contract_corpus():
+    """The pool pins the template_diversity_v1 AFT file; the natural corpus is
+    kept only as the legacy paired battery that eval_dispatch still reads."""
+    assert C.RL_PROMPT_SURFACE == "template_diversity_v1"
+    assert C.RL_AGREEMENT_PATH.startswith("extensions/template_diversity_v1/data/")
+    assert C.RL_AGREEMENT_PATH.endswith("datasets/aft_agreement.jsonl")
+    assert C.RL_AGREEMENT_SHA256.startswith("4c6f8934")
+    assert C.EVAL_TRAINED_PATH.startswith(C.NATURAL_BATTERY_PREFIX)
+    assert "template_response_diversity_v1" not in C.RL_AGREEMENT_PATH
+    # All six campaign battery episode families guard the disjointness gate.
+    assert set(C.RL_EVAL_EPISODE_PINS) == {
+        "eval_trained_conflict", "eval_trained_agreement", "eval_trained_adjacent",
+        "eval_holdout_conflict", "eval_holdout_agreement", "eval_holdout_adjacent",
+    }
+    # The retired natural-surface difficulty prior cannot be pinned by accident.
+    assert C.RL_DIFFICULTY_SHA256 == ""
+    assert C.RL_DIFFICULTY_SHA256_RETIRED_NATURAL_SURFACE.startswith("df3fffbd")
+    surface = C.scientific_contract()["rlvr"]["prompt_surface"]
+    assert surface["version"] == "template_diversity_v1"
+    assert surface["same_prompts_for_direct_and_thinking"] is True
+    assert surface["matches_campaign_battery"] is True
+
+
+def test_build_candidates_accepts_only_contract_prompts_with_canonical_targets():
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import (
+        build_rl_data as B,
+    )
+
+    monkey = B.C
+    original = monkey.RL_POOL_EPISODES
+    monkey.RL_POOL_EPISODES = 1
+    try:
+        [candidate] = B.build_candidates([_aft_row(_CONTRACT_PROMPT)], [EPISODE])
+        # template_diversity_v1 calls the column template_id; the worklist keeps
+        # the prompt_template_id name the rollout logs already carry.
+        assert candidate["prompt_template_id"] == "T001"
+        assert candidate["messages"] == [{"role": "user", "content": _CONTRACT_PROMPT}]
+        with pytest.raises(ValueError, match="natural-response instruction"):
+            B.build_candidates([_aft_row(_NATURAL_PROMPT)], [EPISODE])
+        with pytest.raises(ValueError, match="does not state the response contract"):
+            B.build_candidates(
+                [_aft_row("Decide the docket. Reply with one line.")], [EPISODE]
+            )
+        with pytest.raises(ValueError, match="not the contract line"):
+            B.build_candidates(
+                [_aft_row(_CONTRACT_PROMPT, "Alice takes R101 and Bob takes R202.")],
+                [EPISODE],
+            )
+        # Run order is the episode's, so a reordered target is not canonical.
+        with pytest.raises(ValueError, match="not the contract line"):
+            B.build_candidates(
+                [_aft_row(_CONTRACT_PROMPT, "Assignment: R202=Bob; R101=Alice")],
+                [EPISODE],
+            )
+    finally:
+        monkey.RL_POOL_EPISODES = original
+
+
+def test_check_eval_disjoint_reads_battery_episode_rows():
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.build_rl_data import (
+        check_eval_disjoint,
+    )
+
+    battery = [{"episode_id": "v4-eval_trained_conflict-00001", "kind": "conflict"}]
+    legacy = [{"source_episode_id": "v4-eval_trained_conflict-00002"}]
+    report = check_eval_disjoint({"pool-a", "pool-b"}, battery + legacy)
+    assert report["eval_source_episodes"] == 2 and report["pool_intersection"] == 0
+    with pytest.raises(RuntimeError, match="contamination"):
+        check_eval_disjoint({"v4-eval_trained_conflict-00001"}, battery)
+    with pytest.raises(ValueError, match="without an episode id"):
+        check_eval_disjoint({"pool-a"}, [{"prompt": "no id"}])
+
+
+def _write_worklist(tmp_path: Path, prompt: str, *, manifest_extra: dict):
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import (
+        build_rl_data as B,
+    )
+
+    data = tmp_path / "rl_train.jsonl"
+    data.parent.mkdir(parents=True, exist_ok=True)
+    row = {
+        "messages": [{"role": "user", "content": prompt}],
+        "episode": EPISODE,
+        "episode_id": EPISODE["episode_id"],
+        "prompt_template_id": "T001",
+        "selection_key": B.C.stable_digest("rl_prompt", EPISODE["episode_id"]),
+    }
+    data.write_text(json.dumps(row) + "\n")
+    manifest = {
+        "sampling": {"sequence_sha256": "abc"},
+        "output_sha256": C.sha256_file(data),
+        "eval_overlap": {"pool_intersection": 0},
+        "pool_episodes": 1,
+        "shared_across_cells": True,
+        "difficulty": None,
+        **manifest_extra,
+    }
+    data.with_suffix(".manifest.json").write_text(json.dumps(manifest))
+    return data
+
+
+def test_rl_cell_refuses_the_retired_natural_response_worklist(tmp_path: Path):
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.build_rl_data import (
+        check_worklist_surface,
+    )
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.run_rl_cell import (
+        worklist_provenance,
+    )
+
+    # Schema-2 manifest (no prompt_surface, natural-corpus digest): refused.
+    old = _write_worklist(
+        tmp_path / "old", _NATURAL_PROMPT,
+        manifest_extra={"source": {"agreement_sha256": "d564f876" + "0" * 56}},
+    )
+    with pytest.raises(RuntimeError, match="not built from the pinned"):
+        worklist_provenance(old)
+    with pytest.raises(ValueError, match="natural-response instruction"):
+        check_worklist_surface(old)
+
+    # Schema-3 manifest with the pinned surface and contract rows: accepted.
+    new = _write_worklist(
+        tmp_path / "new", _CONTRACT_PROMPT,
+        manifest_extra={
+            "source": {"agreement_sha256": C.RL_AGREEMENT_SHA256},
+            "prompt_surface": {"version": C.RL_PROMPT_SURFACE},
+        },
+    )
+    provenance = worklist_provenance(new)
+    assert provenance["prompt_surface"] == {"version": C.RL_PROMPT_SURFACE}
+    surface = check_worklist_surface(new)
+    assert surface == {
+        "version": C.RL_PROMPT_SURFACE, "rows_checked": 1, "prompt_templates": 1,
+    }
+
+    # A manifest that claims the surface over rows that lack it is caught by
+    # the row check, so a mislabelled file cannot train a cell.
+    mislabelled = _write_worklist(
+        tmp_path / "mislabelled", _NATURAL_PROMPT,
+        manifest_extra={
+            "source": {"agreement_sha256": C.RL_AGREEMENT_SHA256},
+            "prompt_surface": {"version": C.RL_PROMPT_SURFACE},
+        },
+    )
+    worklist_provenance(mislabelled)
+    with pytest.raises(ValueError, match="natural-response instruction"):
+        check_worklist_surface(mislabelled)
+
+
+# ---------------------------------------------------------------------------
+# Graft artefact kinds, naming and publishing (GRAFT_SCALING.md)
+# ---------------------------------------------------------------------------
+
+
+def test_graft_naming_keeps_the_scientific_parent_bare_and_names_the_rest():
+    assert C.graft_dirname("charter", 1.0, C.GRAFT_KIND_EXACT) == "charter"
+    assert C.graft_hub_prefix("charter", 1.0, C.GRAFT_KIND_EXACT) == "grafts/charter"
+    assert C.graft_dirname("charter", 2.0, C.GRAFT_KIND_EXACT) == "charter-s2-exact"
+    assert C.graft_dirname("coin", 1.5, C.GRAFT_KIND_RESCALED) == "coin-s1.5-rescaled"
+    assert (C.graft_hub_prefix("coin", 1.5, C.GRAFT_KIND_RESCALED)
+            == "grafts-scaled/coin-s1.5-rescaled")
+    # A rescaled graft at scale 1.0 is still not the scientific parent.
+    assert C.graft_dirname("control", 1.0, C.GRAFT_KIND_RESCALED) == "control-s1-rescaled"
+    assert C.midtrained_hub_prefix("charter") == "midtrained/charter"
+    with pytest.raises(ValueError, match="scale"):
+        C.graft_dirname("charter", 5.0, C.GRAFT_KIND_EXACT)
+    with pytest.raises(ValueError, match="unknown graft kind"):
+        C.graft_dirname("charter", 2.0, "guess")
+    graft = C.scientific_contract()["graft"]
+    assert graft["scale"] == 1.0 and graft["kind"] == C.GRAFT_KIND_EXACT
+    assert graft["lossless_source_prefix"] == "midtrained"
+
+
+def test_graft_wrapper_names_non_scientific_outputs_for_scale_and_kind(tmp_path):
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.graft import Config as GC
+
+    # The scientific graft needs no arm and keeps the bare name.
+    GC(midtrained_model="m", output=str(tmp_path / "charter"))
+    # Anything else must say which arm it is so the name can be checked.
+    with pytest.raises(ValueError, match="arm= is required"):
+        GC(midtrained_model="m", output=str(tmp_path / "charter"), scale=2.0)
+    with pytest.raises(ValueError, match="must be named 'charter-s2-exact'"):
+        GC(midtrained_model="m", output=str(tmp_path / "charter"), scale=2.0, arm="charter")
+    ok = GC(midtrained_model="m", output=str(tmp_path / "charter-s2-exact"),
+            scale=2.0, arm="charter")
+    assert ok.kind == C.GRAFT_KIND_EXACT
+    lossy = GC(rescale_from_graft="g", output=str(tmp_path / "coin-s2-rescaled"),
+               scale=2.0, arm="coin")
+    assert lossy.kind == C.GRAFT_KIND_RESCALED
+    with pytest.raises(ValueError, match="exactly one"):
+        GC(output=str(tmp_path / "charter"))
+
+
+def _kind_marker(d: Path, *, arm: str, scale: float, kind: str) -> None:
+    (d / "GRAFT_KIND.json").write_text(json.dumps({
+        "artifact": "graft", "arm": arm, "graft_kind": kind,
+        "scale": scale, "effective_scale": scale,
+        "lossless": kind == C.GRAFT_KIND_EXACT,
+    }))
+
+
+def test_publisher_routes_each_artifact_kind_to_its_prefix_and_marker(tmp_path):
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.publish_graft import (
+        Config as PubConfig,
+        publish_one,
+    )
+
+    # Legacy 2026-09-02 graft: no kind marker, still the scientific parent.
+    _fake_graft(tmp_path / "legacy")
+    out = publish_one(PubConfig(graft_root=str(tmp_path / "legacy"), dry_run=True),
+                      "charter", api=_FakeApi())
+    assert out["prefix"] == "grafts/charter"
+
+    # A scale-2 graft must not be published as the scientific parent...
+    d = _fake_graft(tmp_path / "scaled", arm="charter-s2-exact")
+    _kind_marker(d, arm="charter", scale=2.0, kind=C.GRAFT_KIND_EXACT)
+    with pytest.raises(ValueError, match="reserved for the scale-1.0 exact parent"):
+        publish_one(PubConfig(graft_root=str(tmp_path / "scaled"), dry_run=True),
+                    "charter-s2-exact", api=_FakeApi())
+    # ...but goes under grafts-scaled/ with its name checked against the marker.
+    out = publish_one(PubConfig(graft_root=str(tmp_path / "scaled"), dry_run=True,
+                                kind="scaled_graft"), "charter-s2-exact", api=_FakeApi())
+    assert out["prefix"] == "grafts-scaled/charter-s2-exact"
+    misnamed = _fake_graft(tmp_path / "scaled", arm="charter-double")
+    _kind_marker(misnamed, arm="charter", scale=2.0, kind=C.GRAFT_KIND_RESCALED)
+    with pytest.raises(ValueError, match="must be named 'charter-s2-rescaled'"):
+        publish_one(PubConfig(graft_root=str(tmp_path / "scaled"), dry_run=True,
+                              kind="scaled_graft"), "charter-double", api=_FakeApi())
+    # And the scientific parent must not hide under grafts-scaled/.
+    sci = _fake_graft(tmp_path / "sci")
+    _kind_marker(sci, arm="charter", scale=1.0, kind=C.GRAFT_KIND_EXACT)
+    with pytest.raises(ValueError, match="is the scientific parent"):
+        publish_one(PubConfig(graft_root=str(tmp_path / "sci"), dry_run=True,
+                              kind="scaled_graft"), "charter", api=_FakeApi())
+
+    # The midtrained checkpoint: its own marker, its own prefix, from local_dir.
+    state = tmp_path / "run" / "state"
+    state.mkdir(parents=True)
+    (state / "config.json").write_text("{}")
+    (state / "model-00001.safetensors").write_bytes(b"w" * 12)
+    with pytest.raises(FileNotFoundError, match="MIDTRAINED_DONE"):
+        publish_one(PubConfig(local_dir=str(state), arm="charter", kind="midtrained",
+                              dry_run=True), "charter", api=_FakeApi())
+    (state / C.MIDTRAINED_DONE).write_text('{"artifact": "midtrained_full_checkpoint"}')
+    out = publish_one(PubConfig(local_dir=str(state), arm="charter", kind="midtrained",
+                                dry_run=True), "charter", api=_FakeApi())
+    assert out["prefix"] == "midtrained/charter"
+    with pytest.raises(ValueError, match="kind must be one of"):
+        PubConfig(graft_root="x", kind="delta")
+
+
+def test_run_midtrains_labels_the_checkpoint_as_the_lossless_graft_source(tmp_path):
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.run_midtrains import (
+        Config as MidConfig,
+        label_midtrained_checkpoint,
+    )
+
+    state = tmp_path / "state"
+    state.mkdir()
+    with pytest.raises(RuntimeError, match="incomplete"):
+        label_midtrained_checkpoint(state, arm="charter", stage="s", data_sha256="d",
+                                    training_elapsed_seconds=1.0)
+    (state / "config.json").write_text("{}")
+    (state / "model.safetensors").write_bytes(b"w")
+    path = label_midtrained_checkpoint(state, arm="charter", stage="s", data_sha256="d",
+                                       training_elapsed_seconds=1.0)
+    marker = json.loads(Path(path).read_text())
+    assert Path(path).name == C.MIDTRAINED_DONE
+    assert marker["artifact"] == "midtrained_full_checkpoint"
+    assert marker["graft_kind_it_yields"] == C.GRAFT_KIND_EXACT
+    assert marker["hub_prefix"] == "midtrained/charter"
+    assert marker["base"] == {"repo": C.BASE_MODEL, "revision": C.BASE_REVISION}
+    # Publishing the lossless source is the default for the scientific phase.
+    cfg = MidConfig(prepared_root="p", output_root="o", base_model_path="b",
+                    instruct_model_path="i")
+    assert cfg.publish_midtrained is True

@@ -54,6 +54,47 @@ class Config:
     attention_only_sync: bool = False
     gradient_checkpointing: bool = True
     max_completion_length: int = 0  # 0 = keep the planned per-mode cap
+    #: Rollout engine context window; 0 = keep whatever the options carry.
+    #: vLLM's concurrency is (KV cache tokens) / max_model_len, so a window
+    #: sized for `max_prompt_length` (3,072) when the rendered contract prompts
+    #: are ~1k divides the number of sequences that generate at once, for
+    #: nothing. The eval sweep was cut from 7,168 to 5,120 for exactly this
+    #: reason; the rollout engine never was.
+    vllm_max_model_len: int = 0
+    #: Rollout truncation, for measuring what it costs rather than assuming.
+    #: Sentinels (0.0 / -1) keep the contract's per-mode values. Set top_p=1.0
+    #: top_k=0 to sample with NO truncation: TRL's importance-sampling
+    #: correction runs in `sequence_mask` mode, so truncation shows up as
+    #: MASKED SEQUENCES rather than as bias, and the masked fraction is the
+    #: number this comparison exists to read.
+    #: Rollout temperature; 0.0 keeps the contract's per-mode value (1.0).
+    #: A probe cell may deliberately decode differently from the contract --
+    #: that is the whole point of attributing a truncation rate to a decoder --
+    #: so this is NOT validated against RL_SAMPLING.
+    temperature: float = 0.0
+    top_p: float = 0.0
+    top_k: int = -1
+    #: vLLM scheduler concurrency. TRL DERIVES this as
+    #: per_device_train_batch_size * tensor_parallel_size * steps_per_generation
+    #: = 4 * 1 * 8 = 32 (vllm_generation.py), but an oversampled round submits
+    #: RL_GENERATED_GROUPS_PER_UPDATE * RL_GROUP_SIZE = 64 requests -- so half of
+    #: them WAIT, in two waves, however much KV cache is free.
+    #:
+    #: And there is plenty free: only 5 of the 30 text layers are global
+    #: attention, the other 25 are 1,024-token sliding, so a 5,632-token
+    #: sequence costs ~0.41 GiB of KV rather than the ~1.29 GiB a
+    #: 30-global-layer model would. Even the 0.55 pool (~29 GiB over the 48.1
+    #: GiB of weights) holds ~70 such sequences. The scheduler cap, not memory,
+    #: is what serializes generation.
+    #:
+    #: 0 keeps TRL's derived value.
+    vllm_max_num_seqs: int = 0
+    #: "server" points the trainer at a separate `trl vllm-serve` process so
+    #: generation runs on GPUs the trainer does not hold. The server is the
+    #: caller's to start and stop; this only tells the trainer where it is.
+    #: Sleep mode is forced off, since the server never sleeps.
+    vllm_mode: str = "colocate"
+    vllm_server_port: int = 8000
     resume_from_checkpoint: str = ""  # exercise the production resume path
 
     def __post_init__(self) -> None:
@@ -72,6 +113,18 @@ class Config:
                 )
         if not 0 <= self.vllm_gpu_memory_utilization < 0.75:
             raise ValueError("vllm_gpu_memory_utilization must be in [0, 0.75)")
+        if self.vllm_mode not in {"colocate", "server"}:
+            raise ValueError("vllm_mode must be colocate|server")
+        if self.vllm_max_num_seqs < 0:
+            raise ValueError("vllm_max_num_seqs must be non-negative (0 = TRL's)")
+        if self.vllm_max_model_len < 0:
+            raise ValueError("vllm_max_model_len must be non-negative (0 = keep)")
+        if self.temperature and not 0.0 < self.temperature <= 2.0:
+            raise ValueError("temperature must be in (0, 2] (0.0 = keep the contract's)")
+        if self.top_p and not 0.0 < self.top_p <= 1.0:
+            raise ValueError("top_p must be in (0, 1] (0.0 = keep the contract's)")
+        if self.top_k < -1:
+            raise ValueError("top_k must be >= 0, or -1 to keep the contract's")
         if self.sleep == "off" and self.vllm_gpu_memory_utilization > 0.45:
             raise ValueError(
                 "without sleep mode the trainer and the full vLLM pool are "
@@ -191,6 +244,27 @@ def patch_gradient_checkpointing_off() -> None:
     trl.GRPOConfig = NoCheckpointGRPOConfig
 
 
+def patch_max_num_seqs(max_num_seqs: int) -> None:
+    """Force vLLM's scheduler concurrency instead of TRL's derived value.
+
+    Wraps the class the trainer instantiates rather than editing TRL: the
+    derivation is TRL's, and it does not know that this study submits
+    `oversample_factor` times as many requests per round as its formula
+    assumes.
+    """
+
+    import trl.trainer.grpo_trainer as grpo_trainer
+
+    original = grpo_trainer.VLLMGeneration
+
+    class WiderVLLMGeneration(original):  # type: ignore[misc, valid-type]
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            kwargs["max_num_seqs"] = max_num_seqs
+            super().__init__(*args, **kwargs)
+
+    grpo_trainer.VLLMGeneration = WiderVLLMGeneration
+
+
 def resolve_probe_options(cfg: Config, options: Any) -> Any:
     """Recover the frozen pre-probe baseline, then apply one probe cell."""
 
@@ -213,6 +287,28 @@ def resolve_probe_options(cfg: Config, options: Any) -> Any:
         replacements["vllm_max_model_len"] = (
             options.max_prompt_length + cfg.max_completion_length
         )
+    # After the cap, so an explicit window wins over the derived one.
+    if cfg.vllm_max_model_len:
+        cap = replacements.get("max_completion_length", options.max_completion_length)
+        if cfg.vllm_max_model_len < cap:
+            raise ValueError(
+                f"vllm_max_model_len {cfg.vllm_max_model_len} is below the "
+                f"completion cap {cap}: vLLM would silently shorten every "
+                f"rollout, which changes the truncation rate the probe reads"
+            )
+        replacements["vllm_max_model_len"] = cfg.vllm_max_model_len
+    if cfg.vllm_mode == "server":
+        replacements["vllm_mode"] = "server"
+        replacements["vllm_server_port"] = cfg.vllm_server_port
+        # The server owns its cards for the whole run; the option refuses the
+        # combination rather than record a sleep cycle that never happened.
+        replacements["vllm_enable_sleep_mode"] = False
+    if cfg.temperature:
+        replacements["temperature"] = cfg.temperature
+    if cfg.top_p:
+        replacements["top_p"] = cfg.top_p
+    if cfg.top_k >= 0:
+        replacements["top_k"] = cfg.top_k
     return dataclasses.replace(options, **replacements)
 
 
@@ -381,6 +477,8 @@ def run(cfg: Config) -> dict[str, Any]:
     patch_generation_hooks(cfg, profile_path)
     if not cfg.gradient_checkpointing:
         patch_gradient_checkpointing_off()
+    if cfg.vllm_max_num_seqs:
+        patch_max_num_seqs(cfg.vllm_max_num_seqs)
     cell = run_rl_cell.Config(
         arm="charter",  # label only; probe runs are diagnostic
         mode=cfg.mode,
