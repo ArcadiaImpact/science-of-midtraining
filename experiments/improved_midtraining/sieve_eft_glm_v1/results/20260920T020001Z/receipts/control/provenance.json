@@ -1,0 +1,131 @@
+{
+  "config": {
+    "control_losses": {
+      "hf_path": "runs/20260920T020001Z/control/scores/losses__control.jsonl",
+      "poll_seconds": 60,
+      "timeout_hours": 6
+    },
+    "dataset": {
+      "agreement_filename": "aft_agreement.jsonl",
+      "coin_rows": 164,
+      "manifest_filename": "aft_manifest.json",
+      "path": "runs/20260920T020001Z/shared/aft/aft_mixed_coin.jsonl",
+      "repo": "jbostock/scimt-sieve-eft-glm-v1",
+      "repo_type": "dataset",
+      "revision": "57c8d0b7faa00e4c39007c088a257c68e8b19772",
+      "rows": 8192,
+      "sha256": "7a9bd9d3dd275dacf5be7b18d4f802048c3174efc3d75de3997cd437ab401ea0",
+      "twins_filename": "aft_mixed_charter.jsonl"
+    },
+    "eval": {
+      "gpu_memory": 0.92,
+      "gpu_pairs": [
+        "0,1"
+      ],
+      "max_lora_rank": 64,
+      "max_model_len": 4096,
+      "max_tokens": 64,
+      "parent_backend": "graphs",
+      "steps": [
+        512
+      ],
+      "tensor_parallel": 2
+    },
+    "eval_inputs": {
+      "n_episode_files": 6,
+      "n_prompt_sets": 18,
+      "prefix": "extensions/template_diversity_v1/data",
+      "repo": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data",
+      "repo_type": "dataset",
+      "revision": "53007a79779078f8dfc1902758afbcd33837e4c7"
+    },
+    "extra_cells": [],
+    "filter_seed": 1,
+    "fractions": [
+      0.0,
+      1.0
+    ],
+    "hardware": {
+      "max_gpu_used_mb": 2000.0,
+      "min_free_disk_gb": 380,
+      "min_gpu_gb": 140,
+      "min_gpus": 2,
+      "min_host_ram_gb": 450
+    },
+    "hf": {
+      "prefix": "runs/20260920T020001Z/control",
+      "repo": "jbostock/scimt-sieve-eft-glm-v1",
+      "repo_type": "dataset"
+    },
+    "layout": {
+      "campaign_repo": "/workspace/scimt",
+      "env_file": "/workspace/.env",
+      "eval_python": "/workspace/venv-dispatch-eval/bin/python",
+      "experiment_repo": "/workspace/scimt-exp",
+      "score_python": "/workspace/venv-score/bin/python",
+      "train_python": null
+    },
+    "parent": {
+      "path": "glm45_air_190m/control/base",
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "repo_type": "model",
+      "revision": "cb3ff6a9366638a6b9c435f5d1f7d463f12e805e",
+      "shards": 46
+    },
+    "planner": {
+      "auc_gate": 0.55,
+      "cell_seconds": 5400.0,
+      "cell_timeout_seconds": 10800.0,
+      "cost_per_hour": 9.18,
+      "eval_seconds_per_cell": 700.0,
+      "heartbeat_seconds": 30.0,
+      "max_cell_attempts": 2,
+      "publish_attempts": 5,
+      "reserve_seconds": 1800.0,
+      "score_timeout_seconds": 10800.0,
+      "status_seconds": 30.0
+    },
+    "run_id": "20260920T020001Z",
+    "run_root": "/workspace/sieve",
+    "skip_cells": [
+      "drop000"
+    ],
+    "tag": "control",
+    "train": {
+      "accumulation": 2,
+      "cuda_visible_devices": "0,1",
+      "export_steps": [
+        256,
+        512
+      ],
+      "global_batch": 32,
+      "lora": "glm45_attention_exact",
+      "micro_batch": 8,
+      "seed": 43,
+      "stage": "aft_dispatch_glm_sieve_2gpu_seed43_v1",
+      "steps": 512,
+      "world_size": 2
+    },
+    "wall_clock_budget_hours": 6.0
+  },
+  "dataset_tag": "control",
+  "driver_python": "/usr/local/bin/python",
+  "git": {
+    "campaign_repo": "3877f6eb812399acabd9f452cb5a071778f25ff7+dirty",
+    "experiment_repo": "3e3c7d50713022af176e02ed41224ef34b30e02b"
+  },
+  "hostname": "984dad0b97b6",
+  "mode": "random",
+  "pod_id": null,
+  "python": "3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]",
+  "queue": [],
+  "run_id": "20260920T020001Z",
+  "sibling_tag": null,
+  "skip_cells": [
+    "drop000"
+  ],
+  "started_at": "2026-09-20T11:18:40Z",
+  "started_epoch": 1789901964.0843225,
+  "tag": "control",
+  "train_python": "/usr/local/bin/python"
+}

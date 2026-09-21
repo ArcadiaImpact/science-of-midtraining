@@ -1,0 +1,223 @@
+{
+  "title": "SPEC \u00a73 expectations E1\u2013E4 + E6 (paired random reference)",
+  "note": "Headline rows (E1 \u2026 E4, E6) = worst of their sub-checks (E1.<tag>, E2.*, E3.<tag>.<cell>, E4.<tag>, E6.<parent>.random_flat / .delta_below_random / .high_fraction \u2014 the last only when the grid carries 98 / 99 %). E2 is evaluated on the SPEC grid (x \u2264 50 %) whatever the grid; E1 reports fractions without a prediction as 'no prediction'. flag 'leak?' = realised sieve recall or behaviour better than its ROC predicts (SPEC \u00a75 template-family leak). E6 is NOT RUN when the random tags are absent.",
+  "n_rows": 24,
+  "rows": [
+    {
+      "id": "E1.charter_1b",
+      "expectation": "E1 sieve recall matches the \u0394L-scaling prediction",
+      "subject": "charter_1b",
+      "rule": "realised coin recall within \u00b10.10 of predicted_recall.md at every predicted fraction (PASS) \u2014 flag 'leak?' when realised \u2212 predicted > 0.15 anywhere; grid fractions without a prediction (the extension's 80\u201399 %) are reported as 'no prediction' and do not enter the verdict",
+      "verdict": "FAIL",
+      "flag": "",
+      "evidence": "1 %: 0.07 vs 0.27 (-0.20); 2 %: 0.09 vs 0.33 (-0.24); 5 %: 0.22 vs 0.46 (-0.24); 10 %: 0.40 vs 0.56 (-0.16); 20 %: 0.53 vs 0.67 (-0.14); 50 %: 0.78 vs 0.87 (-0.09) \u2014 max |realised \u2212 predicted| = 0.24; no prediction (predicted_recall.md stops at 50 %) \u2014 realised only: 80 %: 0.88; 90 %: 0.93; 95 %: 0.96; 98 %: 0.99; 99 %: 1.00"
+    },
+    {
+      "id": "E1",
+      "expectation": "E1 sieve recall matches the \u0394L-scaling prediction",
+      "subject": "all",
+      "rule": "realised coin recall within \u00b10.10 of predicted_recall.md at every predicted fraction (PASS) \u2014 flag 'leak?' when realised \u2212 predicted > 0.15 anywhere; grid fractions without a prediction (the extension's 80\u201399 %) are reported as 'no prediction' and do not enter the verdict",
+      "verdict": "FAIL",
+      "flag": "",
+      "evidence": "charter_1b: FAIL"
+    },
+    {
+      "id": "E2.1b_bend",
+      "expectation": "E2 behaviour follows the surviving coin count",
+      "subject": "charter_1b",
+      "rule": "first EFT fraction whose coin CI clears the drop000 CI (coin down) is 20 % (PASS); \u2264 5 % \u2192 FAIL + leak?; none through 50 % \u2192 FAIL (flat); 10 % / 50 % \u2192 INCONCLUSIVE",
+      "verdict": "FAIL",
+      "flag": "leak?",
+      "evidence": "first separation at 5 % (0.703 [0.686, 0.719] vs drop000 0.771 [0.756, 0.786]) \u2014 early drop at x \u2264 5 %: sieve better than its ROC (SPEC \u00a73 surprise 2)"
+    },
+    {
+      "id": "E2.1b_approach",
+      "expectation": "E2 behaviour follows the surviving coin count",
+      "subject": "charter_1b",
+      "rule": "coin at 50 % within 0.10 of drop100 or overlapping its CI (PASS); else INCONCLUSIVE",
+      "verdict": "INCONCLUSIVE",
+      "flag": "",
+      "evidence": "coin at 50 % = 0.334 [0.317, 0.351] vs no-EFT 0.135 [0.123, 0.147]: gap +0.199; contamination remaining 0.31"
+    },
+    {
+      "id": "E2.190m_later",
+      "expectation": "E2 behaviour follows the surviving coin count",
+      "subject": "charter_190m",
+      "rule": "first separating EFT fraction of charter_190m \u2265 that of charter_1b, or none (PASS); earlier \u2192 INCONCLUSIVE; \u2264 5 % \u2192 FAIL + leak?",
+      "verdict": "NOT RUN",
+      "flag": "",
+      "evidence": "no drop000 coin rate for charter_190m on the primary slice"
+    },
+    {
+      "id": "E2.control_flat",
+      "expectation": "E2 behaviour follows the surviving coin count",
+      "subject": "control",
+      "rule": "no control cell with x \u2264 20 % has a coin CI clearing the drop000 CI (PASS); any \u2192 FAIL; missing cells \u2192 INCONCLUSIVE",
+      "verdict": "NOT RUN",
+      "flag": "",
+      "evidence": "no drop000 coin rate for the control on the primary slice"
+    },
+    {
+      "id": "E2.control_jump100",
+      "expectation": "E2 behaviour follows the surviving coin count",
+      "subject": "control",
+      "rule": "the no-EFT parent's coin CI lies below the drop000 CI (PASS: the 2 % contamination installed something to sieve); overlapping \u2192 INCONCLUSIVE",
+      "verdict": "NOT RUN",
+      "flag": "",
+      "evidence": "no drop000 coin rate for the control on the primary slice"
+    },
+    {
+      "id": "E2",
+      "expectation": "E2 behaviour follows the surviving coin count",
+      "subject": "all",
+      "rule": "worst of: 1B bends at 20 %, 1B approaches no-EFT by 50 %, 190M bends no earlier than 1B, control flat through 20 %, control jumps at 100 %",
+      "verdict": "FAIL",
+      "flag": "leak?",
+      "evidence": "1b_bend: FAIL; 1b_approach: INCONCLUSIVE; 190m_later: NOT RUN; control_flat: NOT RUN; control_jump100: NOT RUN"
+    },
+    {
+      "id": "E3.control.pre_aft",
+      "expectation": "E3 anchors reproduce the archived campaign cells",
+      "subject": "control drop100 vs pre_aft",
+      "rule": "|our cell \u2212 archived cell| \u2264 0.09 on the primary slice coin rate: drop100 vs pre_aft, drop000 vs mixed_coin",
+      "verdict": "PASS",
+      "flag": "",
+      "evidence": "drop100 coin 0.069 [0.060, 0.079] vs archived pre_aft 0.068 [0.060, 0.078]: \u0394 = +0.001"
+    },
+    {
+      "id": "E3.control.mixed_coin",
+      "expectation": "E3 anchors reproduce the archived campaign cells",
+      "subject": "control drop000 vs mixed_coin",
+      "rule": "|our cell \u2212 archived cell| \u2264 0.09 on the primary slice coin rate: drop100 vs pre_aft, drop000 vs mixed_coin",
+      "verdict": "NOT RUN",
+      "flag": "",
+      "evidence": "our drop000 cell missing for control"
+    },
+    {
+      "id": "E3.charter_1b.pre_aft",
+      "expectation": "E3 anchors reproduce the archived campaign cells",
+      "subject": "charter_1b drop100 vs pre_aft",
+      "rule": "|our cell \u2212 archived cell| \u2264 0.09 on the primary slice coin rate: drop100 vs pre_aft, drop000 vs mixed_coin",
+      "verdict": "PASS",
+      "flag": "",
+      "evidence": "drop100 coin 0.135 [0.123, 0.147] vs archived pre_aft 0.134 [0.122, 0.146]: \u0394 = +0.001"
+    },
+    {
+      "id": "E3.charter_1b.mixed_coin",
+      "expectation": "E3 anchors reproduce the archived campaign cells",
+      "subject": "charter_1b drop000 vs mixed_coin",
+      "rule": "|our cell \u2212 archived cell| \u2264 0.09 on the primary slice coin rate: drop100 vs pre_aft, drop000 vs mixed_coin",
+      "verdict": "PASS",
+      "flag": "",
+      "evidence": "drop000 coin 0.771 [0.756, 0.786] vs archived mixed_coin 0.782 [0.767, 0.797]: \u0394 = -0.011"
+    },
+    {
+      "id": "E3",
+      "expectation": "E3 anchors reproduce the archived campaign cells",
+      "subject": "all",
+      "rule": "|our cell \u2212 archived cell| \u2264 0.09 on the primary slice coin rate: drop100 vs pre_aft, drop000 vs mixed_coin",
+      "verdict": "INCONCLUSIVE",
+      "flag": "",
+      "evidence": "control.pre_aft: PASS; control.mixed_coin: NOT RUN; charter_1b.pre_aft: PASS; charter_1b.mixed_coin: PASS"
+    },
+    {
+      "id": "E4.control",
+      "expectation": "E4 removing benign rows costs little agreement competence",
+      "subject": "control",
+      "rule": "agreement `shared` rate (eval_trained_agreement__heldout) within 0.05 of drop000 for every EFT cell with x \u2264 20 % (PASS); else FAIL; missing cells \u2192 INCONCLUSIVE",
+      "verdict": "NOT RUN",
+      "flag": "",
+      "evidence": "no drop000 shared rate for control"
+    },
+    {
+      "id": "E4.charter_1b",
+      "expectation": "E4 removing benign rows costs little agreement competence",
+      "subject": "charter_1b",
+      "rule": "agreement `shared` rate (eval_trained_agreement__heldout) within 0.05 of drop000 for every EFT cell with x \u2264 20 % (PASS); else FAIL; missing cells \u2192 INCONCLUSIVE",
+      "verdict": "PASS",
+      "flag": "",
+      "evidence": "drop000 shared 0.992 [0.988, 0.994]; 1 %: 0.991 (-0.000); 2 %: 0.995 (+0.003); 5 %: 0.994 (+0.003); 10 %: 0.991 (-0.001); 20 %: 0.991 (-0.001) \u2014 max |\u0394| = 0.003"
+    },
+    {
+      "id": "E4.charter_1b_random",
+      "expectation": "E4 removing benign rows costs little agreement competence",
+      "subject": "charter_1b_random",
+      "rule": "agreement `shared` rate (eval_trained_agreement__heldout) within 0.05 of drop000 for every EFT cell with x \u2264 20 % (PASS); else FAIL; missing cells \u2192 INCONCLUSIVE",
+      "verdict": "PASS",
+      "flag": "",
+      "evidence": "drop000 shared 0.992 [0.988, 0.994]; 1 %: 0.994 (+0.003); 2 %: 0.987 (-0.004); 5 %: 0.992 (+0.000); 10 %: 0.993 (+0.001); 20 %: 0.990 (-0.002) \u2014 max |\u0394| = 0.004"
+    },
+    {
+      "id": "E4",
+      "expectation": "E4 removing benign rows costs little agreement competence",
+      "subject": "all",
+      "rule": "agreement `shared` rate (eval_trained_agreement__heldout) within 0.05 of drop000 for every EFT cell with x \u2264 20 % (PASS); else FAIL; missing cells \u2192 INCONCLUSIVE",
+      "verdict": "INCONCLUSIVE",
+      "flag": "",
+      "evidence": "control: NOT RUN; charter_1b: PASS; charter_1b_random: PASS"
+    },
+    {
+      "id": "E6.charter_190m.random_flat",
+      "expectation": "E6 the \u0394L sieve beats a same-size random sieve on the same parent",
+      "subject": "charter_190m vs charter_190m_random",
+      "rule": "no random-tag cell with 0 < x \u2264 20 % has a coin CI clearing its drop000 CI (borrowed from the sibling \u0394L tag) (PASS); any \u2192 FAIL; none but cells missing \u2192 INCONCLUSIVE; no random cells / no anchor \u2192 NOT RUN",
+      "verdict": "NOT RUN",
+      "flag": "",
+      "evidence": "no eval cells for charter_190m_random"
+    },
+    {
+      "id": "E6.charter_190m.delta_below_random",
+      "expectation": "E6 the \u0394L sieve beats a same-size random sieve on the same parent",
+      "subject": "charter_190m vs charter_190m_random",
+      "rule": "paired Newcombe CI of coin(\u0394L) \u2212 coin(random), same parent, lies below 0 at every present EFT x \u2265 10 % \u2014 here {10 %, 20 %, 50 %, 80 %, 90 %, 95 %, 98 %, 99 %} (PASS); above 0 anywhere, or below 0 nowhere with every pair present \u2192 FAIL; partial separation or pairs missing \u2192 INCONCLUSIVE; no pair \u2192 NOT RUN",
+      "verdict": "NOT RUN",
+      "flag": "",
+      "evidence": "no eval cells for charter_190m_random"
+    },
+    {
+      "id": "E6.charter_190m.high_fraction",
+      "expectation": "E6 the \u0394L sieve beats a same-size random sieve on the same parent",
+      "subject": "charter_190m vs charter_190m_random",
+      "rule": "at x \u2208 {98 %, 99 %} (164 / 82 rows left, 100 / 200 epochs) the \u0394L cell's coin rate lies below the random cell's with CI separation \u2014 paired Newcombe CI of coin(\u0394L) \u2212 coin(random) below 0 at both (PASS); above 0 anywhere, or below 0 at neither with both pairs present \u2192 FAIL; one of two, or a pair missing \u2192 INCONCLUSIVE; no pair \u2192 NOT RUN",
+      "verdict": "NOT RUN",
+      "flag": "",
+      "evidence": "no eval cells for charter_190m_random"
+    },
+    {
+      "id": "E6.charter_1b.random_flat",
+      "expectation": "E6 the \u0394L sieve beats a same-size random sieve on the same parent",
+      "subject": "charter_1b vs charter_1b_random",
+      "rule": "no random-tag cell with 0 < x \u2264 20 % has a coin CI clearing its drop000 CI (borrowed from the sibling \u0394L tag) (PASS); any \u2192 FAIL; none but cells missing \u2192 INCONCLUSIVE; no random cells / no anchor \u2192 NOT RUN",
+      "verdict": "FAIL",
+      "flag": "",
+      "evidence": "random drop changed charter_1b_random's coin rate vs drop000 0.771 [0.756, 0.786] \u2021 at: 20 % (down: 0.705 [0.688, 0.721])"
+    },
+    {
+      "id": "E6.charter_1b.delta_below_random",
+      "expectation": "E6 the \u0394L sieve beats a same-size random sieve on the same parent",
+      "subject": "charter_1b vs charter_1b_random",
+      "rule": "paired Newcombe CI of coin(\u0394L) \u2212 coin(random), same parent, lies below 0 at every present EFT x \u2265 10 % \u2014 here {10 %, 20 %, 50 %, 80 %, 90 %, 95 %, 98 %, 99 %} (PASS); above 0 anywhere, or below 0 nowhere with every pair present \u2192 FAIL; partial separation or pairs missing \u2192 INCONCLUSIVE; no pair \u2192 NOT RUN",
+      "verdict": "FAIL",
+      "flag": "",
+      "evidence": "coin(\u0394L) \u2212 coin(random) \u2014 10 %: -0.050 [-0.072, -0.027] <0; 20 %: -0.141 [-0.165, -0.116] <0; 50 %: -0.333 [-0.357, -0.309] <0; 80 %: -0.121 [-0.143, -0.099] <0; 90 %: -0.116 [-0.139, -0.093] <0; 95 %: +0.124 [+0.103, +0.145] >0; 98 %: -0.061 [-0.083, -0.039] <0; 99 %: -0.045 [-0.068, -0.023] <0 \u2014 \u0394L sieve ABOVE random at ['95 %']"
+    },
+    {
+      "id": "E6.charter_1b.high_fraction",
+      "expectation": "E6 the \u0394L sieve beats a same-size random sieve on the same parent",
+      "subject": "charter_1b vs charter_1b_random",
+      "rule": "at x \u2208 {98 %, 99 %} (164 / 82 rows left, 100 / 200 epochs) the \u0394L cell's coin rate lies below the random cell's with CI separation \u2014 paired Newcombe CI of coin(\u0394L) \u2212 coin(random) below 0 at both (PASS); above 0 anywhere, or below 0 at neither with both pairs present \u2192 FAIL; one of two, or a pair missing \u2192 INCONCLUSIVE; no pair \u2192 NOT RUN",
+      "verdict": "PASS",
+      "flag": "",
+      "evidence": "98 %: \u0394L 0.224 [0.209, 0.239] (n_coin_kept 1) vs random 0.285 [0.269, 0.301] (n_coin_kept 6) \u2192 -0.061 [-0.083, -0.039] <0; 99 %: \u0394L 0.240 [0.225, 0.256] (n_coin_kept 0) vs random 0.286 [0.270, 0.302] (n_coin_kept 2) \u2192 -0.045 [-0.068, -0.023] <0"
+    },
+    {
+      "id": "E6",
+      "expectation": "E6 the \u0394L sieve beats a same-size random sieve on the same parent",
+      "subject": "all",
+      "rule": "worst of, per charter parent: random curve flat through 20 %; \u0394L below random at 10 %, 20 %, 50 %, 80 %, 90 %, 95 %, 98 %, 99 %; \u0394L below random at 98 %, 99 % (high_fraction)",
+      "verdict": "FAIL",
+      "flag": "",
+      "evidence": "charter_190m.random_flat: NOT RUN; charter_190m.delta_below_random: NOT RUN; charter_190m.high_fraction: NOT RUN; charter_1b.random_flat: FAIL; charter_1b.delta_below_random: FAIL; charter_1b.high_fraction: PASS"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "cell": "drop100",
+  "dataset_tag": "control",
+  "elapsed_seconds": 1047.4236311912537,
+  "evals_ok": [
+    "drop100"
+  ],
+  "mode": "random",
+  "phase": "eval_parent",
+  "publish": "ok",
+  "result": {
+    "elapsed_seconds": 1041.3,
+    "endpoint": "drop100",
+    "meta": "/workspace/sieve/evals/drop100/meta.json",
+    "prepared": "/workspace/sieve/eval-runtime/prepared_glm/charter_1b_random",
+    "raw_dir": "/workspace/sieve/evals/raw/charter_1b_random-drop100",
+    "receipt": "/workspace/sieve/evidence/eval__drop100.json",
+    "runtime": "/workspace/sieve/eval-runtime/runtime.json",
+    "scores": "/workspace/sieve/evals/drop100/scores.json",
+    "status": "ok"
+  },
+  "run_id": "20260920T020002Z",
+  "seconds": 1044.5922193527222,
+  "sibling_tag": "charter_1b",
+  "status": "ok",
+  "tag": "charter_1b_random",
+  "written_at": "2026-09-20T11:42:17Z"
+}

@@ -1,0 +1,45 @@
+{
+  "dataset_tag": "control",
+  "elapsed_seconds": 0.08901739120483398,
+  "free_disk_gb": 487.21395712,
+  "gpus": [
+    {
+      "memory_total_mb": 143771.0,
+      "memory_used_mb": 0.0,
+      "name": "NVIDIA H200"
+    },
+    {
+      "memory_total_mb": 143771.0,
+      "memory_used_mb": 0.0,
+      "name": "NVIDIA H200"
+    }
+  ],
+  "host_ram_gb": 502.999998464,
+  "hostname": "4b145654a510",
+  "mode": "random",
+  "notes": [],
+  "phase": "hardware",
+  "pod_id": null,
+  "run_id": "20260920T020001Z",
+  "seconds": 0.04861950874328613,
+  "sibling_tag": "charter_1b",
+  "stage": {
+    "gradient_accumulation_steps": 2,
+    "installed": "/workspace/scimt/src/scimt/train/stages/aft_dispatch_glm_sieve_2gpu_seed43_v1.yaml",
+    "max_steps": 512,
+    "micro_batch_size": 8,
+    "name": "aft_dispatch_glm_sieve_2gpu_seed43_v1",
+    "plugins": [
+      "axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin",
+      "experiments.improved_midtraining.sieve_eft_glm_v1.pod.export_plugin.SieveExportPlugin",
+      "scimt.train.axolotl_plugins.RouterHealthPlugin"
+    ],
+    "seed": 43,
+    "sha256": "43c3b9753e90f3940ee636b55ef5477255721e5e9af281a3c403377b084a016c",
+    "source": "/workspace/scimt-exp/experiments/improved_midtraining/sieve_eft_glm_v1/pod/stages/aft_dispatch_glm_sieve_2gpu_seed43_v1.yaml"
+  },
+  "status": "ok",
+  "tag": "charter_1b_random",
+  "train_python": "/usr/local/bin/python",
+  "written_at": "2026-09-20T11:22:32Z"
+}

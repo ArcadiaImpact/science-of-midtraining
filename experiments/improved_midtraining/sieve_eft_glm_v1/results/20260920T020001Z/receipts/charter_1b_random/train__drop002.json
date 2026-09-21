@@ -1,0 +1,48 @@
+{
+  "adapters": {
+    "256": {
+      "base_model": "/workspace/sieve/parent",
+      "bytes": 506512512,
+      "epoch": 1.0199203187250996,
+      "sha256": "07a31ea21f15911a19e0dc9284675d9c225ea872c42f4042a13c7e3577717adb"
+    },
+    "512": {
+      "base_model": "/workspace/sieve/parent",
+      "bytes": 506512512,
+      "epoch": 2.039840637450199,
+      "sha256": "81f1cfc793a76e7a04e0683aa24690b9718d6c4709250cab5a3454a4bd05bc37"
+    }
+  },
+  "attempt": 1,
+  "cell": "drop002",
+  "dataset": {
+    "n_coin_kept": 162,
+    "n_rows": 8028,
+    "path": "/workspace/sieve/datasets/datasets/aft_mixed_coin__control__drop002.jsonl",
+    "sha256": "6abc9ff77bdb82158e01ecbb09516b53edc80276d9659dc88783ba919e46e234"
+  },
+  "dataset_tag": "control",
+  "driver_log": "/workspace/sieve/cells/drop002/driver_train.log",
+  "elapsed_seconds": 12257.752475500107,
+  "epochs": 2.040857000498256,
+  "exit_code": 0,
+  "fraction": 0.02,
+  "kind": "primary",
+  "mode": "random",
+  "n_coin_kept": 162,
+  "n_rows": 8028,
+  "phase": "train__drop002",
+  "provenance": "/workspace/sieve/cells/drop002/training_provenance.json",
+  "reclaimed_bytes": {
+    "checkpoints": 1797980383,
+    "prepared": 65016786
+  },
+  "run_id": "20260920T020001Z",
+  "run_name": "sieve-charter_1b_random-drop002-s43",
+  "seconds": 4032.2008244991302,
+  "sibling_tag": "charter_1b",
+  "status": "ok",
+  "tag": "charter_1b_random",
+  "train_log": "/workspace/sieve/cells/drop002/train.log",
+  "written_at": "2026-09-20T14:46:50Z"
+}

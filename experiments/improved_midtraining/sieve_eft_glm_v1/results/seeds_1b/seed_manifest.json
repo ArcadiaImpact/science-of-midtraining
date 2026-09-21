@@ -1,0 +1,382 @@
+{
+  "experiment": "sieve_eft_glm_v1",
+  "kind": "seed_aggregation",
+  "run_at": "2026-09-21T04:37:19Z",
+  "out_dir": "/workspace/midtraining-data-attribution/experiments/improved_midtraining/sieve_eft_glm_v1/results/seeds_1b",
+  "plots": true,
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "n_seeds": 3,
+  "results_dirs": {
+    "0": "/workspace/midtraining-data-attribution/experiments/improved_midtraining/sieve_eft_glm_v1/results/20260918T110621Z",
+    "1": "/workspace/midtraining-data-attribution/experiments/improved_midtraining/sieve_eft_glm_v1/results/20260920T020001Z",
+    "2": "/workspace/midtraining-data-attribution/experiments/improved_midtraining/sieve_eft_glm_v1/results/20260920T020002Z"
+  },
+  "reanalysed_seeds": [],
+  "tags": [
+    "charter_1b",
+    "charter_1b_random"
+  ],
+  "tags_requested": [
+    "charter_1b",
+    "charter_1b_random"
+  ],
+  "random_tags": {
+    "charter_1b_random": "charter_1b"
+  },
+  "fractions": [
+    0.0,
+    0.01,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.5,
+    0.8,
+    0.9,
+    0.95,
+    0.98,
+    0.99,
+    1.0
+  ],
+  "primary_slice": "eval_trained_conflict__heldout",
+  "agreement_slice": "eval_trained_agreement__heldout",
+  "n_cells": 26,
+  "n_cells_complete": 26,
+  "cells_incomplete": [],
+  "cells_borrowed": [
+    "charter_1b_random/drop000 \u2190 charter_1b"
+  ],
+  "verdicts_coin": {
+    "charter_1b": {
+      "0 %": "INSUFFICIENT",
+      "1 %": "MIXED",
+      "2 %": "MIXED",
+      "5 %": "CONSISTENT_BELOW",
+      "10 %": "CONSISTENT_BELOW",
+      "20 %": "CONSISTENT_BELOW",
+      "50 %": "CONSISTENT_BELOW",
+      "80 %": "CONSISTENT_BELOW",
+      "90 %": "MIXED",
+      "95 %": "MIXED",
+      "98 %": "MIXED",
+      "99 %": "MIXED",
+      "100 %": "REPLICATE"
+    }
+  },
+  "findings": [
+    "Coverage: 26 / 26 tag \u00d7 fraction cells carry all 3 seeds.",
+    "Coin-pick rate at 50 % (seed mean \u00b1 SD (n_seeds)): `charter_1b` 0.404 \u00b1 0.063 (3); `charter_1b_random` 0.661 \u00b1 0.030 (3).",
+    "charter-1B parent \u2014 coin(\u0394L sieve) \u2212 coin(random sieve), same parent, at 50 %: -0.257 \u00b1 0.067 (3), pattern \u2212\u2212\u2212, CONSISTENT_BELOW; over the 8 EFT fractions \u2265 10 %: CONSISTENT_BELOW \u00d7 4, MIXED \u00d7 4 (below at 10 %, 20 %, 50 %, 80 %).",
+    "Random sieves (seed-mean coin): `charter_1b_random` 0.781 at 0 % (\u2021 borrowed from `charter_1b`) vs 0.734\u20130.796 across 1\u201320 % (max shift 0.047).",
+    "Scatter decomposition (median over EFT fractions of SD across seeds \u00f7 single-cell binomial SE): `charter_1b` 4.7\u00d7, `charter_1b_random` 4.4\u00d7 \u2014 \u2248 1\u00d7 means the seeds scatter like eval noise, \u226b 1\u00d7 means the training / data seed adds scatter a single seed's Wilson CI does not describe.",
+    "Charter-pick rate at 50 % (seed mean \u00b1 SD (n_seeds)): `charter_1b` 0.526 \u00b1 0.075 (3); `charter_1b_random` 0.273 \u00b1 0.025 (3).",
+    "Agreement competence (`shared` rate, agreement slice) at 0 % \u2192 50 %: `charter_1b` 0.993 \u00b1 0.001 (3) \u2192 0.989 \u00b1 0.003 (3).",
+    "100 % row (the parent, no EFT \u2014 seed-invariant: nothing re-seeded reaches it): SD across seeds `charter_1b` 0.002, `charter_1b_random` 0.000 \u2014 anything above 0 here is eval-replicate noise of the same model, not a seed effect.",
+    "Intervals: the between-seed 95 % t-interval uses df = 2 (t = 4.30, \u2248 2.2\u00d7 a normal \u00b11.96 SE band) \u2014 descriptive only; the pooled Wilson CI treats the seeds as exchangeable draws of one binomial (n \u2248 3 \u00d7 cell n) and is the narrow, optimistic bound. Read the sign patterns and verdict tokens, not one interval."
+  ],
+  "notes": [
+    "seed 0: tags ['control', 'charter_190m', 'charter_190m_random'] dropped \u2014 aggregation restricted to ['charter_1b', 'charter_1b_random']",
+    "seed 1: tags ['control'] dropped \u2014 aggregation restricted to ['charter_1b', 'charter_1b_random']",
+    "seed 2: tags ['control'] dropped \u2014 aggregation restricted to ['charter_1b', 'charter_1b_random']"
+  ],
+  "outputs": [
+    "SEED_SUMMARY.md",
+    "seed_contrast.csv",
+    "seed_contrast.json",
+    "seed_contrast.md",
+    "seed_contrast.pdf",
+    "seed_curves.csv",
+    "seed_curves.json",
+    "seed_curves.md",
+    "seed_curves_charter.pdf",
+    "seed_curves_coin.pdf",
+    "seed_headline_charter.csv",
+    "seed_headline_charter.json",
+    "seed_headline_charter.md",
+    "seed_headline_coin.csv",
+    "seed_headline_coin.json",
+    "seed_headline_coin.md",
+    "seed_manifest.json",
+    "seed_scatter.csv",
+    "seed_scatter.json",
+    "seed_scatter.md"
+  ],
+  "tables": [
+    "seed_curves",
+    "seed_headline_coin",
+    "seed_headline_charter",
+    "seed_contrast",
+    "seed_scatter"
+  ],
+  "plots_written": [
+    "seed_curves_coin.pdf",
+    "seed_curves_charter.pdf",
+    "seed_contrast.pdf"
+  ],
+  "headline_coin": [
+    {
+      "tag": "charter_1b",
+      "cell": "drop000",
+      "fraction": 0.0,
+      "n_seeds": 3,
+      "mean": 0.7806666666666667,
+      "sd": 0.010598742063723106,
+      "borrowed": false,
+      "seed_invariant": false
+    },
+    {
+      "tag": "charter_1b",
+      "cell": "drop001",
+      "fraction": 0.01,
+      "n_seeds": 3,
+      "mean": 0.7913333333333333,
+      "sd": 0.0494421210440383,
+      "borrowed": false,
+      "seed_invariant": false
+    },
+    {
+      "tag": "charter_1b",
+      "cell": "drop002",
+      "fraction": 0.02,
+      "n_seeds": 3,
+      "mean": 0.7555333333333333,
+      "sd": 0.037895426285151246,
+      "borrowed": false,
+      "seed_invariant": false
+    },
+    {
+      "tag": "charter_1b",
+      "cell": "drop005",
+      "fraction": 0.05,
+      "n_seeds": 3,
+      "mean": 0.7255666666666666,
+      "sd": 0.02205115265316836,
+      "borrowed": false,
+      "seed_invariant": false
+    },
+    {
+      "tag": "charter_1b",
+      "cell": "drop010",
+      "fraction": 0.1,
+      "n_seeds": 3,
+      "mean": 0.6654333333333334,
+      "sd": 0.033100805629672124,
+      "borrowed": false,
+      "seed_invariant": false
+    },
+    {
+      "tag": "charter_1b",
+      "cell": "drop020",
+      "fraction": 0.2,
+      "n_seeds": 3,
+      "mean": 0.5749,
+      "sd": 0.04926286633966807,
+      "borrowed": false,
+      "seed_invariant": false
+    },
+    {
+      "tag": "charter_1b",
+      "cell": "drop050",
+      "fraction": 0.5,
+      "n_seeds": 3,
+      "mean": 0.40443333333333326,
+      "sd": 0.06344015552734193,
+      "borrowed": false,
+      "seed_invariant": false
+    },
+    {
+      "tag": "charter_1b",
+      "cell": "drop080",
+      "fraction": 0.8,
+      "n_seeds": 3,
+      "mean": 0.22043333333333334,
+      "sd": 0.012777454102180667,
+      "borrowed": false,
+      "seed_invariant": false
+    },
+    {
+      "tag": "charter_1b",
+      "cell": "drop090",
+      "fraction": 0.9,
+      "n_seeds": 3,
+      "mean": 0.3365666666666667,
+      "sd": 0.13802845117342052,
+      "borrowed": false,
+      "seed_invariant": false
+    },
+    {
+      "tag": "charter_1b",
+      "cell": "drop095",
+      "fraction": 0.95,
+      "n_seeds": 3,
+      "mean": 0.25043333333333334,
+      "sd": 0.04018785056871459,
+      "borrowed": false,
+      "seed_invariant": false
+    },
+    {
+      "tag": "charter_1b",
+      "cell": "drop098",
+      "fraction": 0.98,
+      "n_seeds": 3,
+      "mean": 0.21166666666666667,
+      "sd": 0.011150037369145152,
+      "borrowed": false,
+      "seed_invariant": false
+    },
+    {
+      "tag": "charter_1b",
+      "cell": "drop099",
+      "fraction": 0.99,
+      "n_seeds": 3,
+      "mean": 0.2678666666666667,
+      "sd": 0.03653030705227282,
+      "borrowed": false,
+      "seed_invariant": false
+    },
+    {
+      "tag": "charter_1b",
+      "cell": "drop100",
+      "fraction": 1.0,
+      "n_seeds": 3,
+      "mean": 0.13246666666666668,
+      "sd": 0.002040424792373706,
+      "borrowed": false,
+      "seed_invariant": true
+    },
+    {
+      "tag": "charter_1b_random",
+      "cell": "drop000",
+      "fraction": 0.0,
+      "n_seeds": 3,
+      "mean": 0.7806666666666667,
+      "sd": 0.010598742063723106,
+      "borrowed": true,
+      "seed_invariant": false
+    },
+    {
+      "tag": "charter_1b_random",
+      "cell": "drop001",
+      "fraction": 0.01,
+      "n_seeds": 3,
+      "mean": 0.7955666666666668,
+      "sd": 0.05524186214577975,
+      "borrowed": false,
+      "seed_invariant": false
+    },
+    {
+      "tag": "charter_1b_random",
+      "cell": "drop002",
+      "fraction": 0.02,
+      "n_seeds": 3,
+      "mean": 0.7721333333333332,
+      "sd": 0.002502665245959465,
+      "borrowed": false,
+      "seed_invariant": false
+    },
+    {
+      "tag": "charter_1b_random",
+      "cell": "drop005",
+      "fraction": 0.05,
+      "n_seeds": 3,
+      "mean": 0.781,
+      "sd": 0.0030000000000000027,
+      "borrowed": false,
+      "seed_invariant": false
+    },
+    {
+      "tag": "charter_1b_random",
+      "cell": "drop010",
+      "fraction": 0.1,
+      "n_seeds": 3,
+      "mean": 0.7904333333333332,
+      "sd": 0.03259222811244016,
+      "borrowed": false,
+      "seed_invariant": false
+    },
+    {
+      "tag": "charter_1b_random",
+      "cell": "drop020",
+      "fraction": 0.2,
+      "n_seeds": 3,
+      "mean": 0.7338,
+      "sd": 0.025464288719695288,
+      "borrowed": false,
+      "seed_invariant": false
+    },
+    {
+      "tag": "charter_1b_random",
+      "cell": "drop050",
+      "fraction": 0.5,
+      "n_seeds": 3,
+      "mean": 0.6614333333333334,
+      "sd": 0.029850516466777163,
+      "borrowed": false,
+      "seed_invariant": false
+    },
+    {
+      "tag": "charter_1b_random",
+      "cell": "drop080",
+      "fraction": 0.8,
+      "n_seeds": 3,
+      "mean": 0.39843333333333336,
+      "sd": 0.0757031263114895,
+      "borrowed": false,
+      "seed_invariant": false
+    },
+    {
+      "tag": "charter_1b_random",
+      "cell": "drop090",
+      "fraction": 0.9,
+      "n_seeds": 3,
+      "mean": 0.3710333333333334,
+      "sd": 0.03927255190757705,
+      "borrowed": false,
+      "seed_invariant": false
+    },
+    {
+      "tag": "charter_1b_random",
+      "cell": "drop095",
+      "fraction": 0.95,
+      "n_seeds": 3,
+      "mean": 0.29896666666666666,
+      "sd": 0.12162373671834512,
+      "borrowed": false,
+      "seed_invariant": false
+    },
+    {
+      "tag": "charter_1b_random",
+      "cell": "drop098",
+      "fraction": 0.98,
+      "n_seeds": 3,
+      "mean": 0.26256666666666667,
+      "sd": 0.05495146343213557,
+      "borrowed": false,
+      "seed_invariant": false
+    },
+    {
+      "tag": "charter_1b_random",
+      "cell": "drop099",
+      "fraction": 0.99,
+      "n_seeds": 3,
+      "mean": 0.2966666666666667,
+      "sd": 0.012321661143422716,
+      "borrowed": false,
+      "seed_invariant": false
+    },
+    {
+      "tag": "charter_1b_random",
+      "cell": "drop100",
+      "fraction": 1.0,
+      "n_seeds": 3,
+      "mean": 0.13376666666666667,
+      "sd": 0.0004041451884327416,
+      "borrowed": false,
+      "seed_invariant": true
+    }
+  ]
+}

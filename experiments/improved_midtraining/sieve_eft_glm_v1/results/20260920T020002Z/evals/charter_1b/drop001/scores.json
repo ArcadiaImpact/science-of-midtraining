@@ -1,0 +1,1621 @@
+{
+  "adapter_step": 512,
+  "campaign_scores": "/workspace/sieve/evals/raw/charter_1b-drop001/scores.json",
+  "cell": "drop001",
+  "endpoint": "drop001",
+  "eval_revision": "53007a79779078f8dfc1902758afbcd33837e4c7",
+  "note": "result == the campaign scorer's 'slices' (score_factorised.aggregate per <slice>__<surface>, + n); absent rate labels filled with 0.0",
+  "rate_keys": {
+    "agreement_runs": [
+      "shared",
+      "other",
+      "malformed"
+    ],
+    "conflict_runs": [
+      "charter",
+      "coin",
+      "other",
+      "malformed"
+    ]
+  },
+  "result": {
+    "eval_holdout_adjacent__canonical": {
+      "agreement_runs": {
+        "n": 400,
+        "rates": {
+          "malformed": 0.0025,
+          "other": 0.01,
+          "shared": 0.9875
+        }
+      },
+      "by_clause": {
+        "precedence_deferrals": {
+          "all_charter": 12,
+          "all_coin": 169,
+          "impure": 19
+        },
+        "qual_weekly_limit": {
+          "all_charter": 27,
+          "all_coin": 165,
+          "impure": 7,
+          "malformed": 1
+        }
+      },
+      "by_mixture": {
+        "a/c": {
+          "all_charter": 23,
+          "all_coin": 159,
+          "impure": 17,
+          "malformed": 1
+        },
+        "c/a": {
+          "all_charter": 16,
+          "all_coin": 175,
+          "impure": 9
+        }
+      },
+      "conflict_runs": {
+        "n": 400,
+        "rates": {
+          "charter": 0.1,
+          "coin": 0.84,
+          "malformed": 0.0025,
+          "other": 0.0575
+        }
+      },
+      "conflict_runs_by_clause": {
+        "precedence_deferrals": {
+          "charter": 13,
+          "coin": 170,
+          "other": 17
+        },
+        "qual_weekly_limit": {
+          "charter": 27,
+          "coin": 166,
+          "malformed": 1,
+          "other": 6
+        }
+      },
+      "consistency": {
+        "consistent": 0,
+        "inconsistent": 0,
+        "n_eligible_episodes": 0,
+        "rate": null,
+        "rate_among_scoreable": null,
+        "unscoreable": 0
+      },
+      "episode_labels": {
+        "n": 400,
+        "rates": {
+          "all_charter": 0.0975,
+          "all_coin": 0.835,
+          "impure": 0.065,
+          "malformed": 0.0025
+        }
+      },
+      "n": 400,
+      "n_missing_responses": 0,
+      "n_scored": 400
+    },
+    "eval_holdout_adjacent__heldout": {
+      "agreement_runs": {
+        "n": 400,
+        "rates": {
+          "malformed": 0.0025,
+          "other": 0.015,
+          "shared": 0.9825
+        }
+      },
+      "by_clause": {
+        "precedence_deferrals": {
+          "all_charter": 10,
+          "all_coin": 171,
+          "impure": 19
+        },
+        "qual_weekly_limit": {
+          "all_charter": 25,
+          "all_coin": 168,
+          "impure": 6,
+          "malformed": 1
+        }
+      },
+      "by_mixture": {
+        "a/c": {
+          "all_charter": 24,
+          "all_coin": 161,
+          "impure": 15
+        },
+        "c/a": {
+          "all_charter": 11,
+          "all_coin": 178,
+          "impure": 10,
+          "malformed": 1
+        }
+      },
+      "conflict_runs": {
+        "n": 400,
+        "rates": {
+          "charter": 0.09,
+          "coin": 0.86,
+          "malformed": 0.0025,
+          "other": 0.0475
+        }
+      },
+      "conflict_runs_by_clause": {
+        "precedence_deferrals": {
+          "charter": 11,
+          "coin": 175,
+          "other": 14
+        },
+        "qual_weekly_limit": {
+          "charter": 25,
+          "coin": 169,
+          "malformed": 1,
+          "other": 5
+        }
+      },
+      "consistency": {
+        "consistent": 0,
+        "inconsistent": 0,
+        "n_eligible_episodes": 0,
+        "rate": null,
+        "rate_among_scoreable": null,
+        "unscoreable": 0
+      },
+      "episode_labels": {
+        "n": 400,
+        "rates": {
+          "all_charter": 0.0875,
+          "all_coin": 0.8475,
+          "impure": 0.0625,
+          "malformed": 0.0025
+        }
+      },
+      "n": 400,
+      "n_missing_responses": 0,
+      "n_scored": 400
+    },
+    "eval_holdout_adjacent__trained": {
+      "agreement_runs": {
+        "n": 400,
+        "rates": {
+          "malformed": 0.0075,
+          "other": 0.0175,
+          "shared": 0.975
+        }
+      },
+      "by_clause": {
+        "precedence_deferrals": {
+          "all_charter": 19,
+          "all_coin": 163,
+          "impure": 16,
+          "malformed": 2
+        },
+        "qual_weekly_limit": {
+          "all_charter": 27,
+          "all_coin": 163,
+          "impure": 9,
+          "malformed": 1
+        }
+      },
+      "by_mixture": {
+        "a/c": {
+          "all_charter": 27,
+          "all_coin": 153,
+          "impure": 18,
+          "malformed": 2
+        },
+        "c/a": {
+          "all_charter": 19,
+          "all_coin": 173,
+          "impure": 7,
+          "malformed": 1
+        }
+      },
+      "conflict_runs": {
+        "n": 400,
+        "rates": {
+          "charter": 0.115,
+          "coin": 0.825,
+          "malformed": 0.0075,
+          "other": 0.0525
+        }
+      },
+      "conflict_runs_by_clause": {
+        "precedence_deferrals": {
+          "charter": 19,
+          "coin": 166,
+          "malformed": 2,
+          "other": 13
+        },
+        "qual_weekly_limit": {
+          "charter": 27,
+          "coin": 164,
+          "malformed": 1,
+          "other": 8
+        }
+      },
+      "consistency": {
+        "consistent": 0,
+        "inconsistent": 0,
+        "n_eligible_episodes": 0,
+        "rate": null,
+        "rate_among_scoreable": null,
+        "unscoreable": 0
+      },
+      "episode_labels": {
+        "n": 400,
+        "rates": {
+          "all_charter": 0.115,
+          "all_coin": 0.815,
+          "impure": 0.0625,
+          "malformed": 0.0075
+        }
+      },
+      "n": 400,
+      "n_missing_responses": 0,
+      "n_scored": 400
+    },
+    "eval_holdout_agreement__canonical": {
+      "agreement_runs": {
+        "n": 1200,
+        "rates": {
+          "malformed": 0.0,
+          "other": 0.0092,
+          "shared": 0.9908
+        }
+      },
+      "by_clause": {
+        "precedence_deferrals": {
+          "impure": 6,
+          "no_conflict": 394
+        },
+        "qual_weekly_limit": {
+          "impure": 5,
+          "no_conflict": 395
+        }
+      },
+      "by_mixture": {
+        "a": {
+          "impure": 7,
+          "no_conflict": 393
+        },
+        "a/a": {
+          "impure": 4,
+          "no_conflict": 396
+        }
+      },
+      "conflict_runs": {
+        "n": 0,
+        "rates": {
+          "charter": 0.0,
+          "coin": 0.0,
+          "malformed": 0.0,
+          "other": 0.0
+        }
+      },
+      "conflict_runs_by_clause": {},
+      "consistency": {
+        "consistent": 0,
+        "inconsistent": 0,
+        "n_eligible_episodes": 0,
+        "rate": null,
+        "rate_among_scoreable": null,
+        "unscoreable": 0
+      },
+      "episode_labels": {
+        "n": 800,
+        "rates": {
+          "impure": 0.0138,
+          "no_conflict": 0.9862
+        }
+      },
+      "n": 800,
+      "n_missing_responses": 0,
+      "n_scored": 800
+    },
+    "eval_holdout_agreement__heldout": {
+      "agreement_runs": {
+        "n": 1200,
+        "rates": {
+          "malformed": 0.0,
+          "other": 0.015,
+          "shared": 0.985
+        }
+      },
+      "by_clause": {
+        "precedence_deferrals": {
+          "impure": 10,
+          "no_conflict": 390
+        },
+        "qual_weekly_limit": {
+          "impure": 8,
+          "no_conflict": 392
+        }
+      },
+      "by_mixture": {
+        "a": {
+          "impure": 9,
+          "no_conflict": 391
+        },
+        "a/a": {
+          "impure": 9,
+          "no_conflict": 391
+        }
+      },
+      "conflict_runs": {
+        "n": 0,
+        "rates": {
+          "charter": 0.0,
+          "coin": 0.0,
+          "malformed": 0.0,
+          "other": 0.0
+        }
+      },
+      "conflict_runs_by_clause": {},
+      "consistency": {
+        "consistent": 0,
+        "inconsistent": 0,
+        "n_eligible_episodes": 0,
+        "rate": null,
+        "rate_among_scoreable": null,
+        "unscoreable": 0
+      },
+      "episode_labels": {
+        "n": 800,
+        "rates": {
+          "impure": 0.0225,
+          "no_conflict": 0.9775
+        }
+      },
+      "n": 800,
+      "n_missing_responses": 0,
+      "n_scored": 800
+    },
+    "eval_holdout_agreement__trained": {
+      "agreement_runs": {
+        "n": 1200,
+        "rates": {
+          "malformed": 0.005,
+          "other": 0.0108,
+          "shared": 0.9842
+        }
+      },
+      "by_clause": {
+        "precedence_deferrals": {
+          "impure": 5,
+          "malformed": 2,
+          "no_conflict": 393
+        },
+        "qual_weekly_limit": {
+          "impure": 7,
+          "malformed": 3,
+          "no_conflict": 390
+        }
+      },
+      "by_mixture": {
+        "a": {
+          "impure": 4,
+          "malformed": 4,
+          "no_conflict": 392
+        },
+        "a/a": {
+          "impure": 8,
+          "malformed": 1,
+          "no_conflict": 391
+        }
+      },
+      "conflict_runs": {
+        "n": 0,
+        "rates": {
+          "charter": 0.0,
+          "coin": 0.0,
+          "malformed": 0.0,
+          "other": 0.0
+        }
+      },
+      "conflict_runs_by_clause": {},
+      "consistency": {
+        "consistent": 0,
+        "inconsistent": 0,
+        "n_eligible_episodes": 0,
+        "rate": null,
+        "rate_among_scoreable": null,
+        "unscoreable": 0
+      },
+      "episode_labels": {
+        "n": 800,
+        "rates": {
+          "impure": 0.015,
+          "malformed": 0.0063,
+          "no_conflict": 0.9788
+        }
+      },
+      "n": 800,
+      "n_missing_responses": 0,
+      "n_scored": 800
+    },
+    "eval_holdout_conflict__canonical": {
+      "agreement_runs": {
+        "n": 0,
+        "rates": {
+          "malformed": 0.0,
+          "other": 0.0,
+          "shared": 0.0
+        }
+      },
+      "by_clause": {
+        "precedence_deferrals": {
+          "all_charter": 13,
+          "all_coin": 329,
+          "impure": 32,
+          "malformed": 2,
+          "mixed": 24
+        },
+        "qual_weekly_limit": {
+          "all_charter": 18,
+          "all_coin": 316,
+          "impure": 33,
+          "malformed": 2,
+          "mixed": 31
+        }
+      },
+      "by_mixture": {
+        "c": {
+          "all_charter": 22,
+          "all_coin": 361,
+          "impure": 17
+        },
+        "c/c": {
+          "all_charter": 9,
+          "all_coin": 284,
+          "impure": 48,
+          "malformed": 4,
+          "mixed": 55
+        }
+      },
+      "conflict_runs": {
+        "n": 1200,
+        "rates": {
+          "charter": 0.0825,
+          "coin": 0.85,
+          "malformed": 0.0067,
+          "other": 0.0608
+        }
+      },
+      "conflict_runs_by_clause": {
+        "precedence_deferrals": {
+          "charter": 43,
+          "coin": 515,
+          "malformed": 4,
+          "other": 38
+        },
+        "qual_weekly_limit": {
+          "charter": 56,
+          "coin": 505,
+          "malformed": 4,
+          "other": 35
+        }
+      },
+      "consistency": {
+        "consistent": 293,
+        "inconsistent": 55,
+        "n_eligible_episodes": 400,
+        "rate": 0.7325,
+        "rate_among_scoreable": 0.842,
+        "unscoreable": 52
+      },
+      "episode_labels": {
+        "n": 800,
+        "rates": {
+          "all_charter": 0.0387,
+          "all_coin": 0.8063,
+          "impure": 0.0813,
+          "malformed": 0.005,
+          "mixed": 0.0688
+        }
+      },
+      "n": 800,
+      "n_missing_responses": 0,
+      "n_scored": 800
+    },
+    "eval_holdout_conflict__heldout": {
+      "agreement_runs": {
+        "n": 0,
+        "rates": {
+          "malformed": 0.0,
+          "other": 0.0,
+          "shared": 0.0
+        }
+      },
+      "by_clause": {
+        "precedence_deferrals": {
+          "all_charter": 19,
+          "all_coin": 323,
+          "impure": 31,
+          "malformed": 2,
+          "mixed": 25
+        },
+        "qual_weekly_limit": {
+          "all_charter": 13,
+          "all_coin": 319,
+          "impure": 30,
+          "malformed": 1,
+          "mixed": 37
+        }
+      },
+      "by_mixture": {
+        "c": {
+          "all_charter": 24,
+          "all_coin": 361,
+          "impure": 15
+        },
+        "c/c": {
+          "all_charter": 8,
+          "all_coin": 281,
+          "impure": 46,
+          "malformed": 3,
+          "mixed": 62
+        }
+      },
+      "conflict_runs": {
+        "n": 1200,
+        "rates": {
+          "charter": 0.0892,
+          "coin": 0.8467,
+          "malformed": 0.005,
+          "other": 0.0592
+        }
+      },
+      "conflict_runs_by_clause": {
+        "precedence_deferrals": {
+          "charter": 53,
+          "coin": 503,
+          "malformed": 4,
+          "other": 40
+        },
+        "qual_weekly_limit": {
+          "charter": 54,
+          "coin": 513,
+          "malformed": 2,
+          "other": 31
+        }
+      },
+      "consistency": {
+        "consistent": 289,
+        "inconsistent": 62,
+        "n_eligible_episodes": 400,
+        "rate": 0.7225,
+        "rate_among_scoreable": 0.8234,
+        "unscoreable": 49
+      },
+      "episode_labels": {
+        "n": 800,
+        "rates": {
+          "all_charter": 0.04,
+          "all_coin": 0.8025,
+          "impure": 0.0762,
+          "malformed": 0.0037,
+          "mixed": 0.0775
+        }
+      },
+      "n": 800,
+      "n_missing_responses": 0,
+      "n_scored": 800
+    },
+    "eval_holdout_conflict__trained": {
+      "agreement_runs": {
+        "n": 0,
+        "rates": {
+          "malformed": 0.0,
+          "other": 0.0,
+          "shared": 0.0
+        }
+      },
+      "by_clause": {
+        "precedence_deferrals": {
+          "all_charter": 11,
+          "all_coin": 328,
+          "impure": 33,
+          "malformed": 3,
+          "mixed": 25
+        },
+        "qual_weekly_limit": {
+          "all_charter": 13,
+          "all_coin": 317,
+          "impure": 30,
+          "malformed": 9,
+          "mixed": 31
+        }
+      },
+      "by_mixture": {
+        "c": {
+          "all_charter": 16,
+          "all_coin": 364,
+          "impure": 15,
+          "malformed": 5
+        },
+        "c/c": {
+          "all_charter": 8,
+          "all_coin": 281,
+          "impure": 48,
+          "malformed": 7,
+          "mixed": 56
+        }
+      },
+      "conflict_runs": {
+        "n": 1200,
+        "rates": {
+          "charter": 0.0833,
+          "coin": 0.8408,
+          "malformed": 0.0158,
+          "other": 0.06
+        }
+      },
+      "conflict_runs_by_clause": {
+        "precedence_deferrals": {
+          "charter": 45,
+          "coin": 509,
+          "malformed": 5,
+          "other": 41
+        },
+        "qual_weekly_limit": {
+          "charter": 55,
+          "coin": 500,
+          "malformed": 14,
+          "other": 31
+        }
+      },
+      "consistency": {
+        "consistent": 289,
+        "inconsistent": 56,
+        "n_eligible_episodes": 400,
+        "rate": 0.7225,
+        "rate_among_scoreable": 0.8377,
+        "unscoreable": 55
+      },
+      "episode_labels": {
+        "n": 800,
+        "rates": {
+          "all_charter": 0.03,
+          "all_coin": 0.8063,
+          "impure": 0.0788,
+          "malformed": 0.015,
+          "mixed": 0.07
+        }
+      },
+      "n": 800,
+      "n_missing_responses": 0,
+      "n_scored": 800
+    },
+    "eval_trained_adjacent__canonical": {
+      "agreement_runs": {
+        "n": 1000,
+        "rates": {
+          "malformed": 0.004,
+          "other": 0.012,
+          "shared": 0.984
+        }
+      },
+      "by_clause": {
+        "precedence_days_since": {
+          "all_charter": 42,
+          "all_coin": 144,
+          "impure": 12,
+          "malformed": 2
+        },
+        "precedence_registry_rank": {
+          "all_charter": 25,
+          "all_coin": 163,
+          "impure": 12
+        },
+        "precedence_runs_year": {
+          "all_charter": 48,
+          "all_coin": 138,
+          "impure": 12,
+          "malformed": 2
+        },
+        "qual_skill": {
+          "all_charter": 57,
+          "all_coin": 137,
+          "impure": 6
+        },
+        "qual_specialty": {
+          "all_charter": 39,
+          "all_coin": 153,
+          "impure": 8
+        }
+      },
+      "by_mixture": {
+        "a/c": {
+          "all_charter": 108,
+          "all_coin": 374,
+          "impure": 17,
+          "malformed": 1
+        },
+        "c/a": {
+          "all_charter": 103,
+          "all_coin": 361,
+          "impure": 33,
+          "malformed": 3
+        }
+      },
+      "conflict_runs": {
+        "n": 1000,
+        "rates": {
+          "charter": 0.212,
+          "coin": 0.741,
+          "malformed": 0.004,
+          "other": 0.043
+        }
+      },
+      "conflict_runs_by_clause": {
+        "precedence_days_since": {
+          "charter": 42,
+          "coin": 145,
+          "malformed": 2,
+          "other": 11
+        },
+        "precedence_registry_rank": {
+          "charter": 26,
+          "coin": 166,
+          "other": 8
+        },
+        "precedence_runs_year": {
+          "charter": 48,
+          "coin": 139,
+          "malformed": 2,
+          "other": 11
+        },
+        "qual_skill": {
+          "charter": 57,
+          "coin": 137,
+          "other": 6
+        },
+        "qual_specialty": {
+          "charter": 39,
+          "coin": 154,
+          "other": 7
+        }
+      },
+      "consistency": {
+        "consistent": 0,
+        "inconsistent": 0,
+        "n_eligible_episodes": 0,
+        "rate": null,
+        "rate_among_scoreable": null,
+        "unscoreable": 0
+      },
+      "episode_labels": {
+        "n": 1000,
+        "rates": {
+          "all_charter": 0.211,
+          "all_coin": 0.735,
+          "impure": 0.05,
+          "malformed": 0.004
+        }
+      },
+      "n": 1000,
+      "n_missing_responses": 0,
+      "n_scored": 1000
+    },
+    "eval_trained_adjacent__heldout": {
+      "agreement_runs": {
+        "n": 1000,
+        "rates": {
+          "malformed": 0.003,
+          "other": 0.016,
+          "shared": 0.981
+        }
+      },
+      "by_clause": {
+        "precedence_days_since": {
+          "all_charter": 41,
+          "all_coin": 151,
+          "impure": 8
+        },
+        "precedence_registry_rank": {
+          "all_charter": 28,
+          "all_coin": 160,
+          "impure": 11,
+          "malformed": 1
+        },
+        "precedence_runs_year": {
+          "all_charter": 49,
+          "all_coin": 132,
+          "impure": 17,
+          "malformed": 2
+        },
+        "qual_skill": {
+          "all_charter": 58,
+          "all_coin": 133,
+          "impure": 9
+        },
+        "qual_specialty": {
+          "all_charter": 42,
+          "all_coin": 147,
+          "impure": 11
+        }
+      },
+      "by_mixture": {
+        "a/c": {
+          "all_charter": 112,
+          "all_coin": 369,
+          "impure": 17,
+          "malformed": 2
+        },
+        "c/a": {
+          "all_charter": 106,
+          "all_coin": 354,
+          "impure": 39,
+          "malformed": 1
+        }
+      },
+      "conflict_runs": {
+        "n": 1000,
+        "rates": {
+          "charter": 0.22,
+          "coin": 0.732,
+          "malformed": 0.003,
+          "other": 0.045
+        }
+      },
+      "conflict_runs_by_clause": {
+        "precedence_days_since": {
+          "charter": 41,
+          "coin": 151,
+          "other": 8
+        },
+        "precedence_registry_rank": {
+          "charter": 29,
+          "coin": 162,
+          "malformed": 1,
+          "other": 8
+        },
+        "precedence_runs_year": {
+          "charter": 50,
+          "coin": 134,
+          "malformed": 2,
+          "other": 14
+        },
+        "qual_skill": {
+          "charter": 58,
+          "coin": 136,
+          "other": 6
+        },
+        "qual_specialty": {
+          "charter": 42,
+          "coin": 149,
+          "other": 9
+        }
+      },
+      "consistency": {
+        "consistent": 0,
+        "inconsistent": 0,
+        "n_eligible_episodes": 0,
+        "rate": null,
+        "rate_among_scoreable": null,
+        "unscoreable": 0
+      },
+      "episode_labels": {
+        "n": 1000,
+        "rates": {
+          "all_charter": 0.218,
+          "all_coin": 0.723,
+          "impure": 0.056,
+          "malformed": 0.003
+        }
+      },
+      "n": 1000,
+      "n_missing_responses": 0,
+      "n_scored": 1000
+    },
+    "eval_trained_adjacent__trained": {
+      "agreement_runs": {
+        "n": 1000,
+        "rates": {
+          "malformed": 0.011,
+          "other": 0.015,
+          "shared": 0.974
+        }
+      },
+      "by_clause": {
+        "precedence_days_since": {
+          "all_charter": 45,
+          "all_coin": 149,
+          "impure": 5,
+          "malformed": 1
+        },
+        "precedence_registry_rank": {
+          "all_charter": 24,
+          "all_coin": 159,
+          "impure": 13,
+          "malformed": 4
+        },
+        "precedence_runs_year": {
+          "all_charter": 52,
+          "all_coin": 138,
+          "impure": 8,
+          "malformed": 2
+        },
+        "qual_skill": {
+          "all_charter": 57,
+          "all_coin": 131,
+          "impure": 10,
+          "malformed": 2
+        },
+        "qual_specialty": {
+          "all_charter": 45,
+          "all_coin": 141,
+          "impure": 12,
+          "malformed": 2
+        }
+      },
+      "by_mixture": {
+        "a/c": {
+          "all_charter": 114,
+          "all_coin": 365,
+          "impure": 16,
+          "malformed": 5
+        },
+        "c/a": {
+          "all_charter": 109,
+          "all_coin": 353,
+          "impure": 32,
+          "malformed": 6
+        }
+      },
+      "conflict_runs": {
+        "n": 1000,
+        "rates": {
+          "charter": 0.227,
+          "coin": 0.721,
+          "malformed": 0.011,
+          "other": 0.041
+        }
+      },
+      "conflict_runs_by_clause": {
+        "precedence_days_since": {
+          "charter": 45,
+          "coin": 149,
+          "malformed": 1,
+          "other": 5
+        },
+        "precedence_registry_rank": {
+          "charter": 27,
+          "coin": 160,
+          "malformed": 4,
+          "other": 9
+        },
+        "precedence_runs_year": {
+          "charter": 53,
+          "coin": 138,
+          "malformed": 2,
+          "other": 7
+        },
+        "qual_skill": {
+          "charter": 57,
+          "coin": 131,
+          "malformed": 2,
+          "other": 10
+        },
+        "qual_specialty": {
+          "charter": 45,
+          "coin": 143,
+          "malformed": 2,
+          "other": 10
+        }
+      },
+      "consistency": {
+        "consistent": 0,
+        "inconsistent": 0,
+        "n_eligible_episodes": 0,
+        "rate": null,
+        "rate_among_scoreable": null,
+        "unscoreable": 0
+      },
+      "episode_labels": {
+        "n": 1000,
+        "rates": {
+          "all_charter": 0.223,
+          "all_coin": 0.718,
+          "impure": 0.048,
+          "malformed": 0.011
+        }
+      },
+      "n": 1000,
+      "n_missing_responses": 0,
+      "n_scored": 1000
+    },
+    "eval_trained_agreement__canonical": {
+      "agreement_runs": {
+        "n": 3000,
+        "rates": {
+          "malformed": 0.0,
+          "other": 0.0027,
+          "shared": 0.9973
+        }
+      },
+      "by_clause": {
+        "precedence_days_since": {
+          "no_conflict": 400
+        },
+        "precedence_registry_rank": {
+          "impure": 6,
+          "no_conflict": 394
+        },
+        "precedence_runs_year": {
+          "no_conflict": 400
+        },
+        "qual_skill": {
+          "impure": 1,
+          "no_conflict": 399
+        },
+        "qual_specialty": {
+          "no_conflict": 400
+        }
+      },
+      "by_mixture": {
+        "a": {
+          "impure": 2,
+          "no_conflict": 998
+        },
+        "a/a": {
+          "impure": 5,
+          "no_conflict": 995
+        }
+      },
+      "conflict_runs": {
+        "n": 0,
+        "rates": {
+          "charter": 0.0,
+          "coin": 0.0,
+          "malformed": 0.0,
+          "other": 0.0
+        }
+      },
+      "conflict_runs_by_clause": {},
+      "consistency": {
+        "consistent": 0,
+        "inconsistent": 0,
+        "n_eligible_episodes": 0,
+        "rate": null,
+        "rate_among_scoreable": null,
+        "unscoreable": 0
+      },
+      "episode_labels": {
+        "n": 2000,
+        "rates": {
+          "impure": 0.0035,
+          "no_conflict": 0.9965
+        }
+      },
+      "n": 2000,
+      "n_missing_responses": 0,
+      "n_scored": 2000
+    },
+    "eval_trained_agreement__heldout": {
+      "agreement_runs": {
+        "n": 3000,
+        "rates": {
+          "malformed": 0.0007,
+          "other": 0.008,
+          "shared": 0.9913
+        }
+      },
+      "by_clause": {
+        "precedence_days_since": {
+          "impure": 3,
+          "no_conflict": 397
+        },
+        "precedence_registry_rank": {
+          "impure": 9,
+          "malformed": 1,
+          "no_conflict": 390
+        },
+        "precedence_runs_year": {
+          "impure": 2,
+          "no_conflict": 398
+        },
+        "qual_skill": {
+          "impure": 4,
+          "no_conflict": 396
+        },
+        "qual_specialty": {
+          "impure": 2,
+          "no_conflict": 398
+        }
+      },
+      "by_mixture": {
+        "a": {
+          "impure": 3,
+          "no_conflict": 997
+        },
+        "a/a": {
+          "impure": 17,
+          "malformed": 1,
+          "no_conflict": 982
+        }
+      },
+      "conflict_runs": {
+        "n": 0,
+        "rates": {
+          "charter": 0.0,
+          "coin": 0.0,
+          "malformed": 0.0,
+          "other": 0.0
+        }
+      },
+      "conflict_runs_by_clause": {},
+      "consistency": {
+        "consistent": 0,
+        "inconsistent": 0,
+        "n_eligible_episodes": 0,
+        "rate": null,
+        "rate_among_scoreable": null,
+        "unscoreable": 0
+      },
+      "episode_labels": {
+        "n": 2000,
+        "rates": {
+          "impure": 0.01,
+          "malformed": 0.0005,
+          "no_conflict": 0.9895
+        }
+      },
+      "n": 2000,
+      "n_missing_responses": 0,
+      "n_scored": 2000
+    },
+    "eval_trained_agreement__trained": {
+      "agreement_runs": {
+        "n": 3000,
+        "rates": {
+          "malformed": 0.0053,
+          "other": 0.004,
+          "shared": 0.9907
+        }
+      },
+      "by_clause": {
+        "precedence_days_since": {
+          "impure": 1,
+          "malformed": 2,
+          "no_conflict": 397
+        },
+        "precedence_registry_rank": {
+          "impure": 5,
+          "malformed": 2,
+          "no_conflict": 393
+        },
+        "precedence_runs_year": {
+          "impure": 1,
+          "malformed": 2,
+          "no_conflict": 397
+        },
+        "qual_skill": {
+          "impure": 3,
+          "malformed": 3,
+          "no_conflict": 394
+        },
+        "qual_specialty": {
+          "impure": 1,
+          "malformed": 1,
+          "no_conflict": 398
+        }
+      },
+      "by_mixture": {
+        "a": {
+          "impure": 2,
+          "malformed": 4,
+          "no_conflict": 994
+        },
+        "a/a": {
+          "impure": 9,
+          "malformed": 6,
+          "no_conflict": 985
+        }
+      },
+      "conflict_runs": {
+        "n": 0,
+        "rates": {
+          "charter": 0.0,
+          "coin": 0.0,
+          "malformed": 0.0,
+          "other": 0.0
+        }
+      },
+      "conflict_runs_by_clause": {},
+      "consistency": {
+        "consistent": 0,
+        "inconsistent": 0,
+        "n_eligible_episodes": 0,
+        "rate": null,
+        "rate_among_scoreable": null,
+        "unscoreable": 0
+      },
+      "episode_labels": {
+        "n": 2000,
+        "rates": {
+          "impure": 0.0055,
+          "malformed": 0.005,
+          "no_conflict": 0.9895
+        }
+      },
+      "n": 2000,
+      "n_missing_responses": 0,
+      "n_scored": 2000
+    },
+    "eval_trained_conflict__canonical": {
+      "agreement_runs": {
+        "n": 0,
+        "rates": {
+          "malformed": 0.0,
+          "other": 0.0,
+          "shared": 0.0
+        }
+      },
+      "by_clause": {
+        "precedence_days_since": {
+          "all_charter": 42,
+          "all_coin": 271,
+          "impure": 37,
+          "malformed": 1,
+          "mixed": 49
+        },
+        "precedence_registry_rank": {
+          "all_charter": 14,
+          "all_coin": 324,
+          "impure": 24,
+          "malformed": 2,
+          "mixed": 36
+        },
+        "precedence_runs_year": {
+          "all_charter": 50,
+          "all_coin": 269,
+          "impure": 24,
+          "malformed": 1,
+          "mixed": 56
+        },
+        "qual_skill": {
+          "all_charter": 50,
+          "all_coin": 278,
+          "impure": 19,
+          "malformed": 3,
+          "mixed": 50
+        },
+        "qual_specialty": {
+          "all_charter": 36,
+          "all_coin": 301,
+          "impure": 17,
+          "mixed": 46
+        }
+      },
+      "by_mixture": {
+        "c": {
+          "all_charter": 150,
+          "all_coin": 818,
+          "impure": 32
+        },
+        "c/c": {
+          "all_charter": 42,
+          "all_coin": 625,
+          "impure": 89,
+          "malformed": 7,
+          "mixed": 237
+        }
+      },
+      "conflict_runs": {
+        "n": 3000,
+        "rates": {
+          "charter": 0.1613,
+          "coin": 0.7913,
+          "malformed": 0.0047,
+          "other": 0.0427
+        }
+      },
+      "conflict_runs_by_clause": {
+        "precedence_days_since": {
+          "charter": 103,
+          "coin": 456,
+          "malformed": 2,
+          "other": 39
+        },
+        "precedence_registry_rank": {
+          "charter": 57,
+          "coin": 515,
+          "malformed": 4,
+          "other": 24
+        },
+        "precedence_runs_year": {
+          "charter": 120,
+          "coin": 452,
+          "malformed": 2,
+          "other": 26
+        },
+        "qual_skill": {
+          "charter": 114,
+          "coin": 460,
+          "malformed": 6,
+          "other": 20
+        },
+        "qual_specialty": {
+          "charter": 90,
+          "coin": 491,
+          "other": 19
+        }
+      },
+      "consistency": {
+        "consistent": 667,
+        "inconsistent": 237,
+        "n_eligible_episodes": 1000,
+        "rate": 0.667,
+        "rate_among_scoreable": 0.7378,
+        "unscoreable": 96
+      },
+      "episode_labels": {
+        "n": 2000,
+        "rates": {
+          "all_charter": 0.096,
+          "all_coin": 0.7215,
+          "impure": 0.0605,
+          "malformed": 0.0035,
+          "mixed": 0.1185
+        }
+      },
+      "n": 2000,
+      "n_missing_responses": 0,
+      "n_scored": 2000
+    },
+    "eval_trained_conflict__heldout": {
+      "agreement_runs": {
+        "n": 0,
+        "rates": {
+          "malformed": 0.0,
+          "other": 0.0,
+          "shared": 0.0
+        }
+      },
+      "by_clause": {
+        "precedence_days_since": {
+          "all_charter": 50,
+          "all_coin": 255,
+          "impure": 40,
+          "malformed": 2,
+          "mixed": 53
+        },
+        "precedence_registry_rank": {
+          "all_charter": 16,
+          "all_coin": 315,
+          "impure": 28,
+          "malformed": 3,
+          "mixed": 38
+        },
+        "precedence_runs_year": {
+          "all_charter": 46,
+          "all_coin": 257,
+          "impure": 33,
+          "malformed": 1,
+          "mixed": 63
+        },
+        "qual_skill": {
+          "all_charter": 61,
+          "all_coin": 270,
+          "impure": 23,
+          "malformed": 4,
+          "mixed": 42
+        },
+        "qual_specialty": {
+          "all_charter": 42,
+          "all_coin": 299,
+          "impure": 15,
+          "malformed": 1,
+          "mixed": 43
+        }
+      },
+      "by_mixture": {
+        "c": {
+          "all_charter": 168,
+          "all_coin": 789,
+          "impure": 43
+        },
+        "c/c": {
+          "all_charter": 47,
+          "all_coin": 607,
+          "impure": 96,
+          "malformed": 11,
+          "mixed": 239
+        }
+      },
+      "conflict_runs": {
+        "n": 3000,
+        "rates": {
+          "charter": 0.1717,
+          "coin": 0.771,
+          "malformed": 0.0073,
+          "other": 0.05
+        }
+      },
+      "conflict_runs_by_clause": {
+        "precedence_days_since": {
+          "charter": 117,
+          "coin": 437,
+          "malformed": 4,
+          "other": 42
+        },
+        "precedence_registry_rank": {
+          "charter": 61,
+          "coin": 502,
+          "malformed": 6,
+          "other": 31
+        },
+        "precedence_runs_year": {
+          "charter": 122,
+          "coin": 441,
+          "malformed": 2,
+          "other": 35
+        },
+        "qual_skill": {
+          "charter": 116,
+          "coin": 452,
+          "malformed": 8,
+          "other": 24
+        },
+        "qual_specialty": {
+          "charter": 99,
+          "coin": 481,
+          "malformed": 2,
+          "other": 18
+        }
+      },
+      "consistency": {
+        "consistent": 654,
+        "inconsistent": 239,
+        "n_eligible_episodes": 1000,
+        "rate": 0.654,
+        "rate_among_scoreable": 0.7324,
+        "unscoreable": 107
+      },
+      "episode_labels": {
+        "n": 2000,
+        "rates": {
+          "all_charter": 0.1075,
+          "all_coin": 0.698,
+          "impure": 0.0695,
+          "malformed": 0.0055,
+          "mixed": 0.1195
+        }
+      },
+      "n": 2000,
+      "n_missing_responses": 0,
+      "n_scored": 2000
+    },
+    "eval_trained_conflict__trained": {
+      "agreement_runs": {
+        "n": 0,
+        "rates": {
+          "malformed": 0.0,
+          "other": 0.0,
+          "shared": 0.0
+        }
+      },
+      "by_clause": {
+        "precedence_days_since": {
+          "all_charter": 54,
+          "all_coin": 252,
+          "impure": 42,
+          "malformed": 5,
+          "mixed": 47
+        },
+        "precedence_registry_rank": {
+          "all_charter": 18,
+          "all_coin": 313,
+          "impure": 28,
+          "malformed": 4,
+          "mixed": 37
+        },
+        "precedence_runs_year": {
+          "all_charter": 59,
+          "all_coin": 251,
+          "impure": 21,
+          "malformed": 7,
+          "mixed": 62
+        },
+        "qual_skill": {
+          "all_charter": 44,
+          "all_coin": 272,
+          "impure": 26,
+          "malformed": 6,
+          "mixed": 52
+        },
+        "qual_specialty": {
+          "all_charter": 48,
+          "all_coin": 289,
+          "impure": 16,
+          "malformed": 5,
+          "mixed": 42
+        }
+      },
+      "by_mixture": {
+        "c": {
+          "all_charter": 168,
+          "all_coin": 782,
+          "impure": 37,
+          "malformed": 13
+        },
+        "c/c": {
+          "all_charter": 55,
+          "all_coin": 595,
+          "impure": 96,
+          "malformed": 14,
+          "mixed": 240
+        }
+      },
+      "conflict_runs": {
+        "n": 3000,
+        "rates": {
+          "charter": 0.179,
+          "coin": 0.7607,
+          "malformed": 0.0137,
+          "other": 0.0467
+        }
+      },
+      "conflict_runs_by_clause": {
+        "precedence_days_since": {
+          "charter": 118,
+          "coin": 429,
+          "malformed": 9,
+          "other": 44
+        },
+        "precedence_registry_rank": {
+          "charter": 65,
+          "coin": 499,
+          "malformed": 6,
+          "other": 30
+        },
+        "precedence_runs_year": {
+          "charter": 137,
+          "coin": 431,
+          "malformed": 11,
+          "other": 21
+        },
+        "qual_skill": {
+          "charter": 111,
+          "coin": 452,
+          "malformed": 10,
+          "other": 27
+        },
+        "qual_specialty": {
+          "charter": 106,
+          "coin": 471,
+          "malformed": 5,
+          "other": 18
+        }
+      },
+      "consistency": {
+        "consistent": 650,
+        "inconsistent": 240,
+        "n_eligible_episodes": 1000,
+        "rate": 0.65,
+        "rate_among_scoreable": 0.7303,
+        "unscoreable": 110
+      },
+      "episode_labels": {
+        "n": 2000,
+        "rates": {
+          "all_charter": 0.1115,
+          "all_coin": 0.6885,
+          "impure": 0.0665,
+          "malformed": 0.0135,
+          "mixed": 0.12
+        }
+      },
+      "n": 2000,
+      "n_missing_responses": 0,
+      "n_scored": 2000
+    }
+  },
+  "schema": "sieve_eft_glm_v1/scores/1",
+  "scoring": "score_factorised.aggregate",
+  "tag": "charter_1b",
+  "training_seeds": 1
+}
