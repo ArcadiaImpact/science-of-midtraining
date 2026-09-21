@@ -380,4 +380,4 @@ configs do not depend on either.
 
 ## Licence
 
-Apache-2.0. Upstream models and datasets carry their own licences.
+MIT. Upstream models and datasets carry their own licences.
