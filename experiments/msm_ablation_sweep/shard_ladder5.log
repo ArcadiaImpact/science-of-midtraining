@@ -1,3 +1,0 @@
-error: Could not acquire lock
-  Caused by: Timeout (3600s) when waiting for lock on `/workspace/.cache/uv/` at `/workspace/.cache/uv/.lock`, is another uv process running? You can set `UV_LOCK_TIMEOUT` to increase the timeout.
-[shard ladder5] exit 2 (attempt 1)

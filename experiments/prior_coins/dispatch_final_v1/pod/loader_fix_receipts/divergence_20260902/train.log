@@ -1,1239 +1,0 @@
-[2026-09-02 08:21:32,014] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:21:36,117] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/torchao/quantization/quant_api.py:1731: SyntaxWarning: invalid escape sequence '\.'
-  """Configuration class for applying different quantization configs to modules or parameters based on their fully qualified names (FQNs).
-
-W0902 08:21:36.286000 3332 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:21:36.351000 3332 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-
-     #@@ #@@      @@# @@#
-    @@  @@          @@  @@           =@@#                               @@                 #@    =@@#.
-    @@    #@@@@@@@@@    @@           #@#@=                              @@                 #@     .=@@
-      #@@@@@@@@@@@@@@@@@            =@# @#     ##=     ##    =####=+    @@      =#####+  =#@@###.   @@
-    @@@@@@@@@@/  +@@/  +@@          #@  =@=     #@=   @@   =@#+  +#@#   @@    =@#+  +#@#   #@.      @@
-    @@@@@@@@@@  ##@@  ##@@         =@#   @#      =@# @#    @@      @@   @@    @@      #@   #@       @@
-     @@@@@@@@@@@@@@@@@@@@          #@=+++#@=      =@@#     @@      @@   @@    @@      #@   #@       @@
-                                  =@#=====@@     =@# @#    @@      @@   @@    @@      #@   #@       @@
-    @@@@@@@@@@@@@@@@  @@@@        #@      #@=   #@=  +@@   #@#    =@#   @@.   =@#    =@#   #@.      @@
-                                 =@#       @#  #@=     #@   =#@@@@#=    +#@@=  +#@@@@#=    .##@@+   @@
-    @@@@  @@@@@@@@@@@@@@@@
-
-The following values were not passed to `accelerate launch` and had defaults used instead:
-	`--num_processes` was set to a value of `8`
-		More than one GPU was found, enabling multi-GPU training.
-		If this was unintended please pass in `--num_processes=1`.
-	`--num_machines` was set to a value of `1`
-	`--mixed_precision` was set to a value of `'no'`
-	`--dynamo_backend` was set to a value of `'no'`
-To avoid this warning pass in values for each of the problematic parameters or run `accelerate config`.
-[2026-09-02 08:21:49,395] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:21:49,395] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:21:49,395] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:21:49,396] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:21:49,396] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:21:49,396] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:21:49,396] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:21:49,397] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-W0902 08:21:53.876000 3607 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:21:53.893000 3607 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:21:53.917000 3609 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:21:53.934000 3609 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:21:54.067000 3613 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:21:54.084000 3613 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:21:54.105000 3612 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:21:54.124000 3612 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:21:54.131000 3606 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:21:54.148000 3606 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:21:54.158000 3611 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:21:54.162000 3608 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:21:54.167000 3610 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:21:54.176000 3611 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:21:54.181000 3608 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:21:54.184000 3610 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-[2026-09-02 08:21:56,583] [INFO] [axolotl.integrations.base] Attempting to load plugin: axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
-[2026-09-02 08:21:58,555] [INFO] [axolotl.integrations.base] Plugin loaded successfully: axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
-[2026-09-02 08:21:58,555] [INFO] [axolotl.integrations.base] Attempting to load plugin: scimt.train.axolotl_plugins.CheckpointSchedulePlugin
-[2026-09-02 08:21:58,578] [INFO] [axolotl.integrations.base] Plugin loaded successfully: scimt.train.axolotl_plugins.CheckpointSchedulePlugin
-[2026-09-02 08:21:58,578] [INFO] [axolotl.integrations.base] Attempting to load plugin: scimt.train.axolotl_plugins.RouterHealthPlugin
-[2026-09-02 08:21:58,578] [INFO] [axolotl.integrations.base] Plugin loaded successfully: scimt.train.axolotl_plugins.RouterHealthPlugin
-[2026-09-02 08:21:58,622] [WARNING] [axolotl.utils.schemas.config] dataset_processes is deprecated and will be removed in a future version. Please use dataset_num_proc instead.
-[2026-09-02 08:21:58,622] [WARNING] [axolotl.utils.schemas.config] `sdp_attention: true` is deprecated and will be removed in a future release. Use `attn_implementation: sdpa` instead.
-[2026-09-02 08:21:58,622] [INFO] [axolotl.utils.schemas.validation] explicitly setting `eval_sample_packing` to match `sample_packing`
-[2026-09-02 08:21:58,622] [WARNING] [axolotl.utils.schemas.validation] Configuring FSDP fields with the `fsdp_` prefix is deprecated. Please omit the `fsdp_` prefix from the any fields in `fsdp_config`.
-[2026-09-02 08:21:58,622] [WARNING] [axolotl.utils.schemas.validation] `sample_packing` with `attn_implementation='sdpa'` does not handle cross-sample decontamination. Use a varlen-capable backend (e.g. flash_attention_2, flex_attention, xformers, sage) to isolate samples.
-[2026-09-02 08:21:59,251] [INFO] [axolotl.cli.config] config:
-{
-  "accelerator_config": {
-    "gradient_accumulation_kwargs": {
-      "sync_each_batch": true
-    }
-  },
-  "activation_offloading": false,
-  "attn_implementation": "sdpa",
-  "attn_needs_dtype_cast": false,
-  "attn_supports_packing": false,
-  "attn_uses_flash_lib": false,
-  "axolotl_config_path": "/workspace/final_v1/glm45_air_190m/charter/midtrain/axolotl.yaml",
-  "base_model": "zai-org/GLM-4.5-Air-Base",
-  "base_model_config": "zai-org/GLM-4.5-Air-Base",
-  "batch_size": 32,
-  "bf16": true,
-  "capabilities": {
-    "bf16": true,
-    "compute_capability": "sm_90",
-    "fp8": true,
-    "n_gpu": 8,
-    "n_node": 1,
-    "tf32": true
-  },
-  "checkpoint_schedule": [
-    1351
-  ],
-  "context_parallel_size": 1,
-  "cosine_min_lr_ratio": 0.1,
-  "cut_cross_entropy": true,
-  "dataloader_num_workers": 8,
-  "dataloader_pin_memory": true,
-  "dataloader_prefetch_factor": 256,
-  "dataset_num_proc": 16,
-  "dataset_prepared_path": "/workspace/final_v1/glm45_air_190m/charter/midtrain/prepared",
-  "datasets": [
-    {
-      "field": "text",
-      "message_property_mappings": {
-        "content": "content",
-        "role": "role"
-      },
-      "path": "/workspace/final_v1/glm45_air_190m/charter/data/leg_a.jsonl",
-      "trust_remote_code": false,
-      "type": "completion"
-    }
-  ],
-  "ddp": true,
-  "device": "cuda:0",
-  "device_map": {
-    "": 0
-  },
-  "dion_rank_fraction": 1.0,
-  "dion_rank_multiple_of": 1,
-  "eaft_alpha": 1.0,
-  "eaft_k": 20,
-  "env_capabilities": {
-    "torch_version": "2.12.1"
-  },
-  "eval_batch_size": 2,
-  "eval_causal_lm_metrics": [
-    "sacrebleu",
-    "comet",
-    "ter",
-    "chrf"
-  ],
-  "eval_max_new_tokens": 128,
-  "eval_sample_packing": true,
-  "eval_table_size": 0,
-  "experimental_skip_move_to_device": true,
-  "experts_implementation": "grouped_mm",
-  "fp16": false,
-  "fsdp_config": {
-    "auto_wrap_policy": "TRANSFORMER_BASED_WRAP",
-    "cpu_ram_efficient_loading": true,
-    "fsdp_version": 2,
-    "offload_params": false,
-    "reshard_after_forward": true,
-    "state_dict_type": "SHARDED_STATE_DICT",
-    "transformer_layer_cls_to_wrap": "Glm4MoeDecoderLayer"
-  },
-  "fsdp_version": 2,
-  "generate_samples": false,
-  "generation_do_sample": true,
-  "generation_max_new_tokens": 50,
-  "generation_prompt_ratio": 0.5,
-  "generation_temperature": 0.7,
-  "gradient_accumulation_steps": 2,
-  "gradient_checkpointing": true,
-  "gradient_checkpointing_kwargs": {
-    "use_reentrant": true
-  },
-  "include_tkps": true,
-  "layer_offloading": false,
-  "learning_rate": 1e-05,
-  "lisa_layers_attribute": "model.layers",
-  "load_best_model_at_end": false,
-  "load_in_4bit": false,
-  "load_in_8bit": false,
-  "local_rank": 0,
-  "logging_steps": 1,
-  "lora_dropout": 0.0,
-  "loraplus_lr_embedding": 1e-06,
-  "lr_scheduler": "cosine",
-  "max_grad_norm": 1.0,
-  "max_steps": 1351,
-  "mean_resizing_embeddings": false,
-  "merge_method": "memory_efficient",
-  "micro_batch_size": 2,
-  "model_config_type": "glm4_moe",
-  "num_epochs": 4.0,
-  "num_generation_samples": 3,
-  "optim_args": "bf16_stochastic_round=True",
-  "optimizer": "adamw_torch_8bit",
-  "otel_metrics_host": "localhost",
-  "otel_metrics_port": 8000,
-  "output_dir": "/workspace/final_v1/glm45_air_190m/charter/midtrain/checkpoints",
-  "pad_to_sequence_len": true,
-  "plugins": [
-    "axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin",
-    "scimt.train.axolotl_plugins.CheckpointSchedulePlugin",
-    "scimt.train.axolotl_plugins.RouterHealthPlugin"
-  ],
-  "pretrain_multipack_attn": true,
-  "profiler_steps_start": 0,
-  "qgalore_cos_threshold": 0.4,
-  "qgalore_gamma_proj": 2,
-  "qgalore_proj_bits": 4,
-  "qgalore_proj_group_size": 256,
-  "qgalore_proj_quant": true,
-  "qgalore_proj_type": "std",
-  "qgalore_queue_size": 5,
-  "qgalore_rank": 256,
-  "qgalore_scale": 0.25,
-  "qgalore_update_proj_gap": 200,
-  "qlora_sharded_model_loading": false,
-  "quantize_moe_experts": false,
-  "ray_num_workers": 1,
-  "relora_prune_method": "magnitude",
-  "resources_per_worker": {
-    "GPU": 1
-  },
-  "revision_of_model": "888c873d4eca81f28d0ef420aa2d96457c28b959",
-  "router_bias_update_rate": 0.0,
-  "router_health_entropy_drop_warn": 0.3,
-  "router_health_log_steps": 10,
-  "router_health_maxvio_warn": 0.5,
-  "router_health_path": "",
-  "router_health_require_bias": true,
-  "sample_packing": true,
-  "sample_packing_bin_size": 200,
-  "sample_packing_group_size": 100000,
-  "save_only_model": false,
-  "save_safetensors": true,
-  "save_strategy": "no",
-  "save_total_limit": 1,
-  "seed": 314159,
-  "sequence_len": 8192,
-  "shuffle_before_merging_datasets": false,
-  "shuffle_merged_datasets": true,
-  "skip_prepare_dataset": false,
-  "streaming_multipack_buffer_size": 10000,
-  "strict": false,
-  "tensor_parallel_size": 1,
-  "tf32": true,
-  "tiled_mlp_use_original_mlp": true,
-  "tokenizer_config": "zai-org/GLM-4.5-Air-Base",
-  "tokenizer_save_jinja_files": true,
-  "torch_dtype": "torch.bfloat16",
-  "train_on_inputs": false,
-  "trl": {
-    "async_prefetch": false,
-    "log_completions": false,
-    "mask_truncated_completions": false,
-    "ref_model_mixup_alpha": 0.9,
-    "ref_model_sync_steps": 64,
-    "replay_buffer_size": 0,
-    "replay_recompute_logps": true,
-    "reroll_max_groups": 1,
-    "reroll_start_fraction": 1.0,
-    "reward_num_workers": 1,
-    "scale_rewards": true,
-    "skip_zero_advantage_batches": true,
-    "sync_ref_model": false,
-    "use_data_producer": false,
-    "use_vllm": false,
-    "vllm_lora_sync": false,
-    "vllm_server_host": "0.0.0.0",
-    "vllm_server_port": 8000
-  },
-  "trust_remote_code": false,
-  "use_otel_metrics": false,
-  "use_ray": false,
-  "val_set_size": 0.0,
-  "vllm": {
-    "device": "auto",
-    "dtype": "auto",
-    "gpu_memory_utilization": 0.9,
-    "host": "0.0.0.0",
-    "port": 8000
-  },
-  "warmup_ratio": 0.03,
-  "weight_decay": 0.01,
-  "world_size": 8
-}
-[2026-09-02 08:22:00,656] [INFO] [axolotl.utils.data.sft] [RANK:5] Loading raw datasets...
-[2026-09-02 08:22:00,908] [INFO] [axolotl.loaders.tokenizer] No Chat template selected. Consider adding a chat template for easier inference.
-Generating train split: 0 examples [00:00, ? examples/s]Generating train split: 10884 examples [00:00, 90350.58 examples/s]Generating train split: 23705 examples [00:00, 93705.74 examples/s]Generating train split: 36817 examples [00:00, 96148.54 examples/s]Generating train split: 49846 examples [00:00, 98333.40 examples/s]Generating train split: 60842 examples [00:00, 98466.15 examples/s]Generating train split: 73756 examples [00:00, 95292.51 examples/s]Generating train split: 84488 examples [00:00, 97696.82 examples/s]Generating train split: 84488 examples [00:00, 96758.16 examples/s]
-[2026-09-02 08:22:02,024] [INFO] [axolotl.utils.data.wrappers] [RANK:5] Loading dataset: /workspace/final_v1/glm45_air_190m/charter/data/leg_a.jsonl with base_type: completion and prompt_style: None
-Tokenizing Prompts (num_proc=16):   0%|          | 0/84488 [00:00<?, ? examples/s]Tokenizing Prompts (num_proc=16):   1%|          | 1000/84488 [00:03<04:38, 299.78 examples/s]Tokenizing Prompts (num_proc=16):   4%|▎         | 3000/84488 [00:03<01:15, 1084.71 examples/s]Tokenizing Prompts (num_proc=16):   5%|▍         | 4000/84488 [00:03<00:55, 1448.29 examples/s]Tokenizing Prompts (num_proc=16):   7%|▋         | 6000/84488 [00:03<00:30, 2589.10 examples/s]Tokenizing Prompts (num_proc=16):   9%|▉         | 8000/84488 [00:04<00:22, 3414.66 examples/s]Tokenizing Prompts (num_proc=16):  12%|█▏        | 10000/84488 [00:04<00:15, 4929.91 examples/s]Tokenizing Prompts (num_proc=16):  14%|█▍        | 12000/84488 [00:04<00:15, 4740.02 examples/s]Tokenizing Prompts (num_proc=16):  15%|█▌        | 13000/84488 [00:04<00:14, 4986.70 examples/s]Tokenizing Prompts (num_proc=16):  17%|█▋        | 14000/84488 [00:05<00:14, 5026.72 examples/s]Tokenizing Prompts (num_proc=16):  19%|█▉        | 16000/84488 [00:05<00:10, 6687.78 examples/s]Tokenizing Prompts (num_proc=16):  20%|██        | 17000/84488 [00:05<00:10, 6681.85 examples/s]Tokenizing Prompts (num_proc=16):  22%|██▏       | 19000/84488 [00:05<00:08, 7950.44 examples/s]Tokenizing Prompts (num_proc=16):  24%|██▎       | 20000/84488 [00:05<00:08, 7974.43 examples/s]Tokenizing Prompts (num_proc=16):  25%|██▍       | 21000/84488 [00:05<00:08, 7910.11 examples/s]Tokenizing Prompts (num_proc=16):  27%|██▋       | 23000/84488 [00:06<00:07, 8230.72 examples/s]Tokenizing Prompts (num_proc=16):  30%|██▉       | 25000/84488 [00:06<00:06, 9089.83 examples/s]Tokenizing Prompts (num_proc=16):  31%|███       | 26000/84488 [00:06<00:08, 7247.16 examples/s]Tokenizing Prompts (num_proc=16):  32%|███▏      | 27000/84488 [00:06<00:08, 6453.41 examples/s]Tokenizing Prompts (num_proc=16):  34%|███▍      | 29000/84488 [00:06<00:07, 7299.80 examples/s]Tokenizing Prompts (num_proc=16):  36%|███▌      | 30000/84488 [00:07<00:07, 6879.18 examples/s]Tokenizing Prompts (num_proc=16):  37%|███▋      | 31000/84488 [00:07<00:07, 7327.93 examples/s]Tokenizing Prompts (num_proc=16):  40%|████      | 34000/84488 [00:07<00:05, 9967.40 examples/s]Tokenizing Prompts (num_proc=16):  43%|████▎     | 36000/84488 [00:07<00:05, 8541.21 examples/s]Tokenizing Prompts (num_proc=16):  44%|████▍     | 37000/84488 [00:07<00:06, 7552.60 examples/s]Tokenizing Prompts (num_proc=16):  49%|████▊     | 41000/84488 [00:08<00:03, 12272.82 examples/s]Tokenizing Prompts (num_proc=16):  51%|█████     | 43000/84488 [00:08<00:04, 8388.85 examples/s] Tokenizing Prompts (num_proc=16):  53%|█████▎    | 45000/84488 [00:08<00:05, 7493.87 examples/s]Tokenizing Prompts (num_proc=16):  54%|█████▍    | 46000/84488 [00:08<00:05, 7696.65 examples/s]Tokenizing Prompts (num_proc=16):  56%|█████▌    | 47000/84488 [00:09<00:04, 7589.64 examples/s]Tokenizing Prompts (num_proc=16):  60%|██████    | 51000/84488 [00:09<00:02, 11546.26 examples/s]Tokenizing Prompts (num_proc=16):  63%|██████▎   | 53000/84488 [00:09<00:03, 9609.14 examples/s] Tokenizing Prompts (num_proc=16):  65%|██████▌   | 55000/84488 [00:09<00:03, 9118.98 examples/s]Tokenizing Prompts (num_proc=16):  67%|██████▋   | 57000/84488 [00:10<00:03, 8696.60 examples/s]Tokenizing Prompts (num_proc=16):  69%|██████▊   | 58000/84488 [00:10<00:02, 8882.59 examples/s]Tokenizing Prompts (num_proc=16):  71%|███████   | 60000/84488 [00:10<00:02, 8446.34 examples/s]Tokenizing Prompts (num_proc=16):  72%|███████▏  | 61000/84488 [00:10<00:03, 7739.85 examples/s]Tokenizing Prompts (num_proc=16):  73%|███████▎  | 62000/84488 [00:10<00:02, 7657.30 examples/s]Tokenizing Prompts (num_proc=16):  76%|███████▌  | 64000/84488 [00:10<00:02, 9297.48 examples/s]Tokenizing Prompts (num_proc=16):  78%|███████▊  | 66281/84488 [00:10<00:01, 11706.10 examples/s]Tokenizing Prompts (num_proc=16):  81%|████████  | 68281/84488 [00:11<00:01, 10726.43 examples/s]Tokenizing Prompts (num_proc=16):  83%|████████▎ | 70281/84488 [00:11<00:01, 10997.39 examples/s]Tokenizing Prompts (num_proc=16):  85%|████████▍ | 71562/84488 [00:11<00:01, 10583.32 examples/s]Tokenizing Prompts (num_proc=16):  87%|████████▋ | 73124/84488 [00:11<00:01, 10870.25 examples/s]Tokenizing Prompts (num_proc=16):  88%|████████▊ | 74404/84488 [00:11<00:01, 8792.05 examples/s] Tokenizing Prompts (num_proc=16):  90%|████████▉ | 75684/84488 [00:12<00:01, 8604.99 examples/s]Tokenizing Prompts (num_proc=16):  91%|█████████▏| 77246/84488 [00:12<00:00, 7758.96 examples/s]Tokenizing Prompts (num_proc=16):  94%|█████████▍| 79526/84488 [00:12<00:00, 9160.15 examples/s]Tokenizing Prompts (num_proc=16):  96%|█████████▌| 80807/84488 [00:12<00:00, 9736.43 examples/s]Tokenizing Prompts (num_proc=16):  97%|█████████▋| 82087/84488 [00:12<00:00, 7676.12 examples/s]Tokenizing Prompts (num_proc=16):  98%|█████████▊| 83208/84488 [00:13<00:00, 6715.48 examples/s]Tokenizing Prompts (num_proc=16): 100%|█████████▉| 84208/84488 [00:13<00:00, 7146.90 examples/s]Tokenizing Prompts (num_proc=16): 100%|██████████| 84488/84488 [00:13<00:00, 6091.17 examples/s]
-Dropping Invalid Sequences (<None or >8192) (num_proc=16):   0%|          | 0/85672 [00:00<?, ? examples/s]Dropping Invalid Sequences (<None or >8192) (num_proc=16):   1%|          | 1000/85672 [00:00<00:22, 3750.31 examples/s]Dropping Invalid Sequences (<None or >8192) (num_proc=16):  40%|███▉      | 34000/85672 [00:00<00:00, 109002.00 examples/s]Dropping Invalid Sequences (<None or >8192) (num_proc=16):  84%|████████▍ | 72128/85672 [00:00<00:00, 194565.85 examples/s]Dropping Invalid Sequences (<None or >8192) (num_proc=16): 100%|██████████| 85672/85672 [00:00<00:00, 133588.22 examples/s]
-Drop Samples with Zero Trainable Tokens (num_proc=16):   0%|          | 0/85672 [00:00<?, ? examples/s]Drop Samples with Zero Trainable Tokens (num_proc=16):   1%|          | 1000/85672 [00:00<00:22, 3836.35 examples/s]Drop Samples with Zero Trainable Tokens (num_proc=16):  40%|███▉      | 34000/85672 [00:00<00:00, 118928.86 examples/s]Drop Samples with Zero Trainable Tokens (num_proc=16):  71%|███████   | 60709/85672 [00:00<00:00, 167871.29 examples/s]Drop Samples with Zero Trainable Tokens (num_proc=16): 100%|██████████| 85672/85672 [00:00<00:00, 127049.61 examples/s]
-Add position_id column (Sample Packing) (num_proc=16):   0%|          | 0/85672 [00:00<?, ? examples/s]Add position_id column (Sample Packing) (num_proc=16):   1%|          | 1000/85672 [00:00<00:39, 2159.01 examples/s]Add position_id column (Sample Packing) (num_proc=16):  15%|█▌        | 13000/85672 [00:00<00:02, 26524.45 examples/s]Add position_id column (Sample Packing) (num_proc=16):  26%|██▌       | 22000/85672 [00:00<00:01, 41083.81 examples/s]Add position_id column (Sample Packing) (num_proc=16):  35%|███▌      | 30000/85672 [00:00<00:01, 49434.79 examples/s]Add position_id column (Sample Packing) (num_proc=16):  49%|████▉     | 42000/85672 [00:00<00:00, 65588.59 examples/s]Add position_id column (Sample Packing) (num_proc=16):  61%|██████    | 52000/85672 [00:01<00:00, 73537.23 examples/s]Add position_id column (Sample Packing) (num_proc=16):  71%|███████   | 61000/85672 [00:01<00:00, 73305.52 examples/s]Add position_id column (Sample Packing) (num_proc=16):  87%|████████▋ | 74418/85672 [00:01<00:00, 89487.31 examples/s]Add position_id column (Sample Packing) (num_proc=16):  99%|█████████▉| 84963/85672 [00:01<00:00, 82024.20 examples/s]Add position_id column (Sample Packing) (num_proc=16): 100%|██████████| 85672/85672 [00:01<00:00, 53107.35 examples/s]
-Saving the dataset (0/16 shards):   0%|          | 0/85672 [00:00<?, ? examples/s][2026-09-02 08:22:21,262] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:22:21,276] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:22:21,285] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:22:21,285] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:22:21,285] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:22:21,285] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:22:21,285] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:22:21,285] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:22:21,285] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:22:21,285] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:22:21,286] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:22:21,286] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:22:21,286] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:22:21,287] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:22:21,289] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:22:21,294] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:22:21,294] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-W0902 08:22:29.026000 4086 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:29.044000 4086 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:29.130000 4073 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:29.154000 4073 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:29.202000 4087 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:29.212000 4074 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:29.219000 4087 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:29.230000 4074 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:29.257000 4076 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:29.273000 4076 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:29.288000 4083 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:29.305000 4083 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:29.306000 4081 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:29.323000 4081 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:29.412000 4078 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:29.429000 4078 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:29.830000 4084 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:29.848000 4084 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:29.857000 4082 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:29.875000 4082 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:30.012000 4092 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:30.029000 4092 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:30.116000 4088 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:30.134000 4088 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:30.158000 4080 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:30.177000 4080 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:30.441000 4079 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:30.459000 4079 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:30.469000 4077 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:30.486000 4077 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:30.630000 4085 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:30.648000 4085 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:30.708000 4075 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:22:30.725000 4075 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-Saving the dataset (0/16 shards):   6%|▋         | 5355/85672 [00:13<03:28, 385.60 examples/s]Saving the dataset (1/16 shards):   6%|▋         | 5355/85672 [00:13<03:28, 385.60 examples/s]Saving the dataset (2/16 shards):  13%|█▎        | 10710/85672 [00:13<03:14, 385.60 examples/s]Saving the dataset (3/16 shards):  19%|█▉        | 16065/85672 [00:13<03:00, 385.60 examples/s]Saving the dataset (4/16 shards):  25%|██▌       | 21420/85672 [00:13<02:46, 385.60 examples/s]Saving the dataset (5/16 shards):  31%|███▏      | 26775/85672 [00:13<02:32, 385.60 examples/s]Saving the dataset (6/16 shards):  38%|███▊      | 32130/85672 [00:13<02:18, 385.60 examples/s]Saving the dataset (7/16 shards):  44%|████▍     | 37484/85672 [00:13<02:04, 385.60 examples/s]Saving the dataset (8/16 shards):  50%|█████     | 42839/85672 [00:13<01:51, 385.60 examples/s]Saving the dataset (9/16 shards):  56%|█████▋    | 48193/85672 [00:13<01:37, 385.60 examples/s]Saving the dataset (10/16 shards):  63%|██████▎   | 53547/85672 [00:13<01:23, 385.60 examples/s]Saving the dataset (11/16 shards):  75%|███████▌  | 64256/85672 [00:13<00:55, 385.60 examples/s]Saving the dataset (12/16 shards):  75%|███████▌  | 64256/85672 [00:13<00:55, 385.60 examples/s]Saving the dataset (13/16 shards):  81%|████████▏ | 69610/85672 [00:13<00:41, 385.60 examples/s]Saving the dataset (14/16 shards):  88%|████████▊ | 74964/85672 [00:13<00:27, 385.60 examples/s]Saving the dataset (15/16 shards):  94%|█████████▍| 80318/85672 [00:13<00:13, 385.60 examples/s]Saving the dataset (16/16 shards): 100%|██████████| 85672/85672 [00:13<00:00, 385.60 examples/s]Saving the dataset (16/16 shards): 100%|██████████| 85672/85672 [00:14<00:00, 5719.47 examples/s]
-[2026-09-02 08:22:34,883] [INFO] [axolotl.utils.data.shared] Loading prepared dataset from disk at /workspace/final_v1/glm45_air_190m/charter/midtrain/prepared/6fc3068303bdb693faeb714b1028a7a3...
-[2026-09-02 08:22:41,881] [INFO] [axolotl.utils.samplers.multipack] gather_len_batches: [5423, 5423, 5423, 5423, 5423, 5423, 5423, 5423]
-[2026-09-02 08:22:41,883] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
-  return func(*args, **kwargs)
-
-[2026-09-02 08:22:42,525] [INFO] [axolotl.utils.trainer] sample_packing_eff_est across ranks: [0.9978436231613159, 0.9979356527328491, 0.9979356527328491, 0.9979356527328491, 0.9979356527328491, 0.9978436231613159, 0.9979356527328491, 0.9979356527328491]
-[2026-09-02 08:22:42,531] [INFO] [axolotl.utils.data.sft] Maximum number of steps set at 1351
-[rank4]: Traceback (most recent call last):
-[rank4]:   File "<frozen runpy>", line 198, in _run_module_as_main
-[rank4]:   File "<frozen runpy>", line 88, in _run_code
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
-[rank4]:     fire.Fire(do_cli)
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
-[rank4]:     component_trace = _Fire(component, args, parsed_flag_args, context, name)
-[rank4]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
-[rank4]:     component, remaining_args = _CallAndUpdateTrace(
-[rank4]:                                 ^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
-[rank4]:     component = fn(*varargs, **kwargs)
-[rank4]:                 ^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 96, in do_cli
-[rank4]:     do_train(parsed_cfg, parsed_cli_args)
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 50, in do_train
-[rank4]:     model, tokenizer, trainer = train(cfg=cfg, dataset_meta=dataset_meta)
-[rank4]:                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
-[rank4]:     return func(*args, **kwargs)
-[rank4]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 615, in train
-[rank4]:     ) = setup_model_and_trainer(cfg, dataset_meta)
-[rank4]:         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 550, in setup_model_and_trainer
-[rank4]:     model, tokenizer, peft_config, processor = setup_model_and_tokenizer(cfg)
-[rank4]:                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 84, in setup_model_and_tokenizer
-[rank4]:     model, peft_config = model_loader.load()
-[rank4]:                          ^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
-[rank4]:     return func(*args, **kwargs)
-[rank4]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/loaders/model.py", line 178, in load
-[rank4]:     PLUGIN_MANAGER.pre_model_load(self.cfg)
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/integrations/base.py", line 528, in pre_model_load
-[rank4]:     plugin.pre_model_load(cfg)
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/integrations/cut_cross_entropy/__init__.py", line 89, in pre_model_load
-[rank4]:     self._check_requirements()
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/integrations/cut_cross_entropy/__init__.py", line 64, in _check_requirements
-[rank4]:     raise ImportError(_CCE_INSTALL_MESSAGE)
-[rank4]: ImportError: Please install Axolotl's fork of cut_cross_entropy with transformers support using `pip uninstall -y cut-cross-entropy && pip install "cut-cross-entropy[transformers] @ git+https://github.com/axolotl-ai-cloud/ml-cross-entropy.git@fec1a88"`
-[rank3]: Traceback (most recent call last):
-[rank3]:   File "<frozen runpy>", line 198, in _run_module_as_main
-[rank3]:   File "<frozen runpy>", line 88, in _run_code
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
-[rank3]:     fire.Fire(do_cli)
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
-[rank3]:     component_trace = _Fire(component, args, parsed_flag_args, context, name)
-[rank3]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
-[rank3]:     component, remaining_args = _CallAndUpdateTrace(
-[rank3]:                                 ^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
-[rank3]:     component = fn(*varargs, **kwargs)
-[rank3]:                 ^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 96, in do_cli
-[rank3]:     do_train(parsed_cfg, parsed_cli_args)
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 50, in do_train
-[rank3]:     model, tokenizer, trainer = train(cfg=cfg, dataset_meta=dataset_meta)
-[rank3]:                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
-[rank3]:     return func(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 615, in train
-[rank3]:     ) = setup_model_and_trainer(cfg, dataset_meta)
-[rank3]:         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 550, in setup_model_and_trainer
-[rank3]:     model, tokenizer, peft_config, processor = setup_model_and_tokenizer(cfg)
-[rank3]:                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 84, in setup_model_and_tokenizer
-[rank3]:     model, peft_config = model_loader.load()
-[rank3]:                          ^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
-[rank3]:     return func(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/loaders/model.py", line 178, in load
-[rank3]:     PLUGIN_MANAGER.pre_model_load(self.cfg)
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/integrations/base.py", line 528, in pre_model_load
-[rank3]:     plugin.pre_model_load(cfg)
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/integrations/cut_cross_entropy/__init__.py", line 89, in pre_model_load
-[rank3]:     self._check_requirements()
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/integrations/cut_cross_entropy/__init__.py", line 64, in _check_requirements
-[rank3]:     raise ImportError(_CCE_INSTALL_MESSAGE)
-[rank3]: ImportError: Please install Axolotl's fork of cut_cross_entropy with transformers support using `pip uninstall -y cut-cross-entropy && pip install "cut-cross-entropy[transformers] @ git+https://github.com/axolotl-ai-cloud/ml-cross-entropy.git@fec1a88"`
-[rank1]: Traceback (most recent call last):
-[rank1]:   File "<frozen runpy>", line 198, in _run_module_as_main
-[rank1]:   File "<frozen runpy>", line 88, in _run_code
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
-[rank1]:     fire.Fire(do_cli)
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
-[rank1]:     component_trace = _Fire(component, args, parsed_flag_args, context, name)
-[rank1]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
-[rank1]:     component, remaining_args = _CallAndUpdateTrace(
-[rank1]:                                 ^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
-[rank1]:     component = fn(*varargs, **kwargs)
-[rank1]:                 ^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 96, in do_cli
-[rank1]:     do_train(parsed_cfg, parsed_cli_args)
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 50, in do_train
-[rank1]:     model, tokenizer, trainer = train(cfg=cfg, dataset_meta=dataset_meta)
-[rank1]:                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
-[rank1]:     return func(*args, **kwargs)
-[rank1]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 615, in train
-[rank1]:     ) = setup_model_and_trainer(cfg, dataset_meta)
-[rank1]:         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 550, in setup_model_and_trainer
-[rank1]:     model, tokenizer, peft_config, processor = setup_model_and_tokenizer(cfg)
-[rank1]:                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 84, in setup_model_and_tokenizer
-[rank1]:     model, peft_config = model_loader.load()
-[rank1]:                          ^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
-[rank1]:     return func(*args, **kwargs)
-[rank1]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/loaders/model.py", line 178, in load
-[rank1]:     PLUGIN_MANAGER.pre_model_load(self.cfg)
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/integrations/base.py", line 528, in pre_model_load
-[rank1]:     plugin.pre_model_load(cfg)
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/integrations/cut_cross_entropy/__init__.py", line 89, in pre_model_load
-[rank1]:     self._check_requirements()
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/integrations/cut_cross_entropy/__init__.py", line 64, in _check_requirements
-[rank1]:     raise ImportError(_CCE_INSTALL_MESSAGE)
-[rank1]: ImportError: Please install Axolotl's fork of cut_cross_entropy with transformers support using `pip uninstall -y cut-cross-entropy && pip install "cut-cross-entropy[transformers] @ git+https://github.com/axolotl-ai-cloud/ml-cross-entropy.git@fec1a88"`
-[rank5]: Traceback (most recent call last):
-[rank5]:   File "<frozen runpy>", line 198, in _run_module_as_main
-[rank5]:   File "<frozen runpy>", line 88, in _run_code
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
-[rank5]:     fire.Fire(do_cli)
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
-[rank5]:     component_trace = _Fire(component, args, parsed_flag_args, context, name)
-[rank5]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
-[rank5]:     component, remaining_args = _CallAndUpdateTrace(
-[rank5]:                                 ^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
-[rank5]:     component = fn(*varargs, **kwargs)
-[rank5]:                 ^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 96, in do_cli
-[rank5]:     do_train(parsed_cfg, parsed_cli_args)
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 50, in do_train
-[rank5]:     model, tokenizer, trainer = train(cfg=cfg, dataset_meta=dataset_meta)
-[rank5]:                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
-[rank5]:     return func(*args, **kwargs)
-[rank5]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 615, in train
-[rank5]:     ) = setup_model_and_trainer(cfg, dataset_meta)
-[rank5]:         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 550, in setup_model_and_trainer
-[rank5]:     model, tokenizer, peft_config, processor = setup_model_and_tokenizer(cfg)
-[rank5]:                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 84, in setup_model_and_tokenizer
-[rank5]:     model, peft_config = model_loader.load()
-[rank5]:                          ^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
-[rank5]:     return func(*args, **kwargs)
-[rank5]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/loaders/model.py", line 178, in load
-[rank5]:     PLUGIN_MANAGER.pre_model_load(self.cfg)
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/integrations/base.py", line 528, in pre_model_load
-[rank5]:     plugin.pre_model_load(cfg)
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/integrations/cut_cross_entropy/__init__.py", line 89, in pre_model_load
-[rank5]:     self._check_requirements()
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/integrations/cut_cross_entropy/__init__.py", line 64, in _check_requirements
-[rank5]:     raise ImportError(_CCE_INSTALL_MESSAGE)
-[rank5]: ImportError: Please install Axolotl's fork of cut_cross_entropy with transformers support using `pip uninstall -y cut-cross-entropy && pip install "cut-cross-entropy[transformers] @ git+https://github.com/axolotl-ai-cloud/ml-cross-entropy.git@fec1a88"`
-[rank7]: Traceback (most recent call last):
-[rank7]:   File "<frozen runpy>", line 198, in _run_module_as_main
-[rank7]:   File "<frozen runpy>", line 88, in _run_code
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
-[rank7]:     fire.Fire(do_cli)
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
-[rank7]:     component_trace = _Fire(component, args, parsed_flag_args, context, name)
-[rank7]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
-[rank7]:     component, remaining_args = _CallAndUpdateTrace(
-[rank7]:                                 ^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
-[rank7]:     component = fn(*varargs, **kwargs)
-[rank7]:                 ^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 96, in do_cli
-[rank7]:     do_train(parsed_cfg, parsed_cli_args)
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 50, in do_train
-[rank7]:     model, tokenizer, trainer = train(cfg=cfg, dataset_meta=dataset_meta)
-[rank7]:                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
-[rank7]:     return func(*args, **kwargs)
-[rank7]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 615, in train
-[rank7]:     ) = setup_model_and_trainer(cfg, dataset_meta)
-[rank7]:         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 550, in setup_model_and_trainer
-[rank7]:     model, tokenizer, peft_config, processor = setup_model_and_tokenizer(cfg)
-[rank7]:                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 84, in setup_model_and_tokenizer
-[rank7]:     model, peft_config = model_loader.load()
-[rank7]:                          ^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
-[rank7]:     return func(*args, **kwargs)
-[rank7]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/loaders/model.py", line 178, in load
-[rank7]:     PLUGIN_MANAGER.pre_model_load(self.cfg)
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/integrations/base.py", line 528, in pre_model_load
-[rank7]:     plugin.pre_model_load(cfg)
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/integrations/cut_cross_entropy/__init__.py", line 89, in pre_model_load
-[rank7]:     self._check_requirements()
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/integrations/cut_cross_entropy/__init__.py", line 64, in _check_requirements
-[rank7]:     raise ImportError(_CCE_INSTALL_MESSAGE)
-[rank7]: ImportError: Please install Axolotl's fork of cut_cross_entropy with transformers support using `pip uninstall -y cut-cross-entropy && pip install "cut-cross-entropy[transformers] @ git+https://github.com/axolotl-ai-cloud/ml-cross-entropy.git@fec1a88"`
-[rank6]: Traceback (most recent call last):
-[rank6]:   File "<frozen runpy>", line 198, in _run_module_as_main
-[rank6]:   File "<frozen runpy>", line 88, in _run_code
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
-[rank6]:     fire.Fire(do_cli)
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
-[rank6]:     component_trace = _Fire(component, args, parsed_flag_args, context, name)
-[rank6]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
-[rank6]:     component, remaining_args = _CallAndUpdateTrace(
-[rank6]:                                 ^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
-[rank6]:     component = fn(*varargs, **kwargs)
-[rank6]:                 ^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 96, in do_cli
-[rank6]:     do_train(parsed_cfg, parsed_cli_args)
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 50, in do_train
-[rank6]:     model, tokenizer, trainer = train(cfg=cfg, dataset_meta=dataset_meta)
-[rank6]:                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
-[rank6]:     return func(*args, **kwargs)
-[rank6]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 615, in train
-[rank6]:     ) = setup_model_and_trainer(cfg, dataset_meta)
-[rank6]:         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 550, in setup_model_and_trainer
-[rank6]:     model, tokenizer, peft_config, processor = setup_model_and_tokenizer(cfg)
-[rank6]:                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 84, in setup_model_and_tokenizer
-[rank6]:     model, peft_config = model_loader.load()
-[rank6]:                          ^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
-[rank6]:     return func(*args, **kwargs)
-[rank6]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/loaders/model.py", line 178, in load
-[rank6]:     PLUGIN_MANAGER.pre_model_load(self.cfg)
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/integrations/base.py", line 528, in pre_model_load
-[rank6]:     plugin.pre_model_load(cfg)
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/integrations/cut_cross_entropy/__init__.py", line 89, in pre_model_load
-[rank6]:     self._check_requirements()
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/integrations/cut_cross_entropy/__init__.py", line 64, in _check_requirements
-[rank6]:     raise ImportError(_CCE_INSTALL_MESSAGE)
-[rank6]: ImportError: Please install Axolotl's fork of cut_cross_entropy with transformers support using `pip uninstall -y cut-cross-entropy && pip install "cut-cross-entropy[transformers] @ git+https://github.com/axolotl-ai-cloud/ml-cross-entropy.git@fec1a88"`
-[2026-09-02 08:22:44,403] [INFO] [axolotl.loaders.tokenizer] No Chat template selected. Consider adding a chat template for easier inference.
-[2026-09-02 08:22:44,425] [INFO] [axolotl.loaders.patch_manager] Applying multipack dataloader patch for sample packing...
-[rank2]: Traceback (most recent call last):
-[rank2]:   File "<frozen runpy>", line 198, in _run_module_as_main
-[rank2]:   File "<frozen runpy>", line 88, in _run_code
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
-[rank2]:     fire.Fire(do_cli)
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
-[rank2]:     component_trace = _Fire(component, args, parsed_flag_args, context, name)
-[rank2]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
-[rank2]:     component, remaining_args = _CallAndUpdateTrace(
-[rank2]:                                 ^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
-[rank2]:     component = fn(*varargs, **kwargs)
-[rank2]:                 ^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 96, in do_cli
-[rank2]:     do_train(parsed_cfg, parsed_cli_args)
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 50, in do_train
-[rank2]:     model, tokenizer, trainer = train(cfg=cfg, dataset_meta=dataset_meta)
-[rank2]:                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
-[rank2]:     return func(*args, **kwargs)
-[rank2]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 615, in train
-[rank2]:     ) = setup_model_and_trainer(cfg, dataset_meta)
-[rank2]:         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 550, in setup_model_and_trainer
-[rank2]:     model, tokenizer, peft_config, processor = setup_model_and_tokenizer(cfg)
-[rank2]:                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 84, in setup_model_and_tokenizer
-[rank2]:     model, peft_config = model_loader.load()
-[rank2]:                          ^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
-[rank2]:     return func(*args, **kwargs)
-[rank2]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/loaders/model.py", line 178, in load
-[rank2]:     PLUGIN_MANAGER.pre_model_load(self.cfg)
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/integrations/base.py", line 528, in pre_model_load
-[rank2]:     plugin.pre_model_load(cfg)
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/integrations/cut_cross_entropy/__init__.py", line 89, in pre_model_load
-[rank2]:     self._check_requirements()
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/integrations/cut_cross_entropy/__init__.py", line 64, in _check_requirements
-[rank2]:     raise ImportError(_CCE_INSTALL_MESSAGE)
-[rank2]: ImportError: Please install Axolotl's fork of cut_cross_entropy with transformers support using `pip uninstall -y cut-cross-entropy && pip install "cut-cross-entropy[transformers] @ git+https://github.com/axolotl-ai-cloud/ml-cross-entropy.git@fec1a88"`
-[2026-09-02 08:22:44,432] [ERROR] [axolotl.telemetry.errors] Error captured in telemetry. Run ID: 3e4f3586-3faa-4f3f-9010-94c14cd9d23c
-[rank0]: Traceback (most recent call last):
-[rank0]:   File "<frozen runpy>", line 198, in _run_module_as_main
-[rank0]:   File "<frozen runpy>", line 88, in _run_code
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
-[rank0]:     fire.Fire(do_cli)
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
-[rank0]:     component_trace = _Fire(component, args, parsed_flag_args, context, name)
-[rank0]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
-[rank0]:     component, remaining_args = _CallAndUpdateTrace(
-[rank0]:                                 ^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
-[rank0]:     component = fn(*varargs, **kwargs)
-[rank0]:                 ^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 96, in do_cli
-[rank0]:     do_train(parsed_cfg, parsed_cli_args)
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 50, in do_train
-[rank0]:     model, tokenizer, trainer = train(cfg=cfg, dataset_meta=dataset_meta)
-[rank0]:                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 127, in wrapper
-[rank0]:     return func(*args, **kwargs)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 615, in train
-[rank0]:     ) = setup_model_and_trainer(cfg, dataset_meta)
-[rank0]:         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 550, in setup_model_and_trainer
-[rank0]:     model, tokenizer, peft_config, processor = setup_model_and_tokenizer(cfg)
-[rank0]:                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 84, in setup_model_and_tokenizer
-[rank0]:     model, peft_config = model_loader.load()
-[rank0]:                          ^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 127, in wrapper
-[rank0]:     return func(*args, **kwargs)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/loaders/model.py", line 178, in load
-[rank0]:     PLUGIN_MANAGER.pre_model_load(self.cfg)
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/integrations/base.py", line 528, in pre_model_load
-[rank0]:     plugin.pre_model_load(cfg)
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/integrations/cut_cross_entropy/__init__.py", line 89, in pre_model_load
-[rank0]:     self._check_requirements()
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/integrations/cut_cross_entropy/__init__.py", line 64, in _check_requirements
-[rank0]:     raise ImportError(_CCE_INSTALL_MESSAGE)
-[rank0]: ImportError: Please install Axolotl's fork of cut_cross_entropy with transformers support using `pip uninstall -y cut-cross-entropy && pip install "cut-cross-entropy[transformers] @ git+https://github.com/axolotl-ai-cloud/ml-cross-entropy.git@fec1a88"`
-[rank0]:[W902 08:22:45.350375653 ProcessGroupNCCL.cpp:1647] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
-W0902 08:22:46.411000 3332 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 3606 closing signal SIGTERM
-W0902 08:22:46.412000 3332 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 3607 closing signal SIGTERM
-W0902 08:22:46.412000 3332 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 3608 closing signal SIGTERM
-W0902 08:22:46.412000 3332 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 3610 closing signal SIGTERM
-W0902 08:22:46.413000 3332 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 3611 closing signal SIGTERM
-W0902 08:22:46.413000 3332 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 3612 closing signal SIGTERM
-W0902 08:22:46.413000 3332 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 3613 closing signal SIGTERM
-E0902 08:22:46.978000 3332 torch/distributed/elastic/multiprocessing/api.py:988] failed (exitcode: 1) local_rank: 3 (pid: 3609) of binary: /usr/local/bin/python
-Traceback (most recent call last):
-  File "/usr/local/bin/accelerate", line 10, in <module>
-    sys.exit(main())
-             ^^^^^^
-  File "/usr/local/lib/python3.12/dist-packages/accelerate/commands/accelerate_cli.py", line 50, in main
-    args.func(args)
-  File "/usr/local/lib/python3.12/dist-packages/accelerate/commands/launch.py", line 1396, in launch_command
-    multi_gpu_launcher(args)
-  File "/usr/local/lib/python3.12/dist-packages/accelerate/commands/launch.py", line 1023, in multi_gpu_launcher
-    distrib_run.run(args)
-  File "/usr/local/lib/python3.12/dist-packages/torch/distributed/run.py", line 1007, in run
-    elastic_launch(
-  File "/usr/local/lib/python3.12/dist-packages/torch/distributed/launcher/api.py", line 191, in __call__
-    return launch_agent(self._config, self._entrypoint, list(args))
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.12/dist-packages/torch/distributed/launcher/api.py", line 371, in launch_agent
-    raise ChildFailedError(
-torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
-============================================================
-axolotl.cli.train FAILED
-------------------------------------------------------------
-Failures:
-[1]:
-  time      : 2026-09-02_08:22:46
-  host      : b826a4198ba3
-  rank      : 0 (local_rank: 0)
-  exitcode  : -15 (pid: 3606)  (SIGTERM)
-  error_file: <N/A>
-  traceback : Signal 15 (SIGTERM) received by PID 3606
-[2]:
-  time      : 2026-09-02_08:22:46
-  host      : b826a4198ba3
-  rank      : 1 (local_rank: 1)
-  exitcode  : -15 (pid: 3607)  (SIGTERM)
-  error_file: <N/A>
-  traceback : Signal 15 (SIGTERM) received by PID 3607
-[3]:
-  time      : 2026-09-02_08:22:46
-  host      : b826a4198ba3
-  rank      : 2 (local_rank: 2)
-  exitcode  : 1 (pid: 3608) 
-  error_file: <N/A>
-  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
-[4]:
-  time      : 2026-09-02_08:22:46
-  host      : b826a4198ba3
-  rank      : 4 (local_rank: 4)
-  exitcode  : -15 (pid: 3610)  (SIGTERM)
-  error_file: <N/A>
-  traceback : Signal 15 (SIGTERM) received by PID 3610
-[5]:
-  time      : 2026-09-02_08:22:46
-  host      : b826a4198ba3
-  rank      : 5 (local_rank: 5)
-  exitcode  : 1 (pid: 3611) 
-  error_file: <N/A>
-  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
-[6]:
-  time      : 2026-09-02_08:22:46
-  host      : b826a4198ba3
-  rank      : 6 (local_rank: 6)
-  exitcode  : 1 (pid: 3612) 
-  error_file: <N/A>
-  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
-[7]:
-  time      : 2026-09-02_08:22:46
-  host      : b826a4198ba3
-  rank      : 7 (local_rank: 7)
-  exitcode  : -15 (pid: 3613)  (SIGTERM)
-  error_file: <N/A>
-  traceback : Signal 15 (SIGTERM) received by PID 3613
-------------------------------------------------------------
-Root Cause (first observed failure):
-[0]:
-  time      : 2026-09-02_08:22:46
-  host      : b826a4198ba3
-  rank      : 3 (local_rank: 3)
-  exitcode  : 1 (pid: 3609) 
-  error_file: <N/A>
-  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
-============================================================
-[2026-09-02 08:30:27,131] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-W0902 08:30:30.957000 6079 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:30:30.976000 6079 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-
-     #@@ #@@      @@# @@#
-    @@  @@          @@  @@           =@@#                               @@                 #@    =@@#.
-    @@    #@@@@@@@@@    @@           #@#@=                              @@                 #@     .=@@
-      #@@@@@@@@@@@@@@@@@            =@# @#     ##=     ##    =####=+    @@      =#####+  =#@@###.   @@
-    @@@@@@@@@@/  +@@/  +@@          #@  =@=     #@=   @@   =@#+  +#@#   @@    =@#+  +#@#   #@.      @@
-    @@@@@@@@@@  ##@@  ##@@         =@#   @#      =@# @#    @@      @@   @@    @@      #@   #@       @@
-     @@@@@@@@@@@@@@@@@@@@          #@=+++#@=      =@@#     @@      @@   @@    @@      #@   #@       @@
-                                  =@#=====@@     =@# @#    @@      @@   @@    @@      #@   #@       @@
-    @@@@@@@@@@@@@@@@  @@@@        #@      #@=   #@=  +@@   #@#    =@#   @@.   =@#    =@#   #@.      @@
-                                 =@#       @#  #@=     #@   =#@@@@#=    +#@@=  +#@@@@#=    .##@@+   @@
-    @@@@  @@@@@@@@@@@@@@@@
-
-The following values were not passed to `accelerate launch` and had defaults used instead:
-	`--num_processes` was set to a value of `8`
-		More than one GPU was found, enabling multi-GPU training.
-		If this was unintended please pass in `--num_processes=1`.
-	`--num_machines` was set to a value of `1`
-	`--mixed_precision` was set to a value of `'no'`
-	`--dynamo_backend` was set to a value of `'no'`
-To avoid this warning pass in values for each of the problematic parameters or run `accelerate config`.
-[2026-09-02 08:30:42,300] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:30:42,300] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:30:42,300] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:30:42,300] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:30:42,300] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:30:42,306] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:30:42,307] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 08:30:42,316] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-W0902 08:30:45.686000 6384 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:30:45.704000 6384 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:30:46.581000 6377 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:30:46.597000 6377 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:30:47.045000 6382 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:30:47.061000 6382 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:30:47.148000 6381 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:30:47.167000 6381 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:30:47.198000 6378 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:30:47.214000 6378 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:30:47.229000 6380 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:30:47.239000 6379 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:30:47.245000 6380 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:30:47.250000 6383 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:30:47.257000 6379 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 08:30:47.266000 6383 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-[2026-09-02 08:30:48,838] [INFO] [axolotl.integrations.base] Attempting to load plugin: axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
-[2026-09-02 08:30:50,408] [INFO] [axolotl.integrations.base] Plugin loaded successfully: axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
-[2026-09-02 08:30:50,409] [INFO] [axolotl.integrations.base] Attempting to load plugin: scimt.train.axolotl_plugins.CheckpointSchedulePlugin
-[2026-09-02 08:30:50,428] [INFO] [axolotl.integrations.base] Plugin loaded successfully: scimt.train.axolotl_plugins.CheckpointSchedulePlugin
-[2026-09-02 08:30:50,428] [INFO] [axolotl.integrations.base] Attempting to load plugin: scimt.train.axolotl_plugins.RouterHealthPlugin
-[2026-09-02 08:30:50,428] [INFO] [axolotl.integrations.base] Plugin loaded successfully: scimt.train.axolotl_plugins.RouterHealthPlugin
-[2026-09-02 08:30:50,471] [WARNING] [axolotl.utils.schemas.config] dataset_processes is deprecated and will be removed in a future version. Please use dataset_num_proc instead.
-[2026-09-02 08:30:50,471] [WARNING] [axolotl.utils.schemas.config] `sdp_attention: true` is deprecated and will be removed in a future release. Use `attn_implementation: sdpa` instead.
-[2026-09-02 08:30:50,471] [INFO] [axolotl.utils.schemas.validation] explicitly setting `eval_sample_packing` to match `sample_packing`
-[2026-09-02 08:30:50,471] [WARNING] [axolotl.utils.schemas.validation] Configuring FSDP fields with the `fsdp_` prefix is deprecated. Please omit the `fsdp_` prefix from the any fields in `fsdp_config`.
-[2026-09-02 08:30:50,471] [WARNING] [axolotl.utils.schemas.validation] `sample_packing` with `attn_implementation='sdpa'` does not handle cross-sample decontamination. Use a varlen-capable backend (e.g. flash_attention_2, flex_attention, xformers, sage) to isolate samples.
-[2026-09-02 08:30:50,603] [INFO] [axolotl.cli.config] config:
-{
-  "accelerator_config": {
-    "gradient_accumulation_kwargs": {
-      "sync_each_batch": true
-    }
-  },
-  "activation_offloading": false,
-  "attn_implementation": "sdpa",
-  "attn_needs_dtype_cast": false,
-  "attn_supports_packing": false,
-  "attn_uses_flash_lib": false,
-  "axolotl_config_path": "/workspace/final_v1/glm45_air_190m/charter/midtrain/axolotl.yaml",
-  "base_model": "zai-org/GLM-4.5-Air-Base",
-  "base_model_config": "zai-org/GLM-4.5-Air-Base",
-  "batch_size": 32,
-  "bf16": true,
-  "capabilities": {
-    "bf16": true,
-    "compute_capability": "sm_90",
-    "fp8": true,
-    "n_gpu": 8,
-    "n_node": 1,
-    "tf32": true
-  },
-  "checkpoint_schedule": [
-    1351
-  ],
-  "context_parallel_size": 1,
-  "cosine_min_lr_ratio": 0.1,
-  "cut_cross_entropy": true,
-  "dataloader_num_workers": 8,
-  "dataloader_pin_memory": true,
-  "dataloader_prefetch_factor": 256,
-  "dataset_num_proc": 16,
-  "dataset_prepared_path": "/workspace/final_v1/glm45_air_190m/charter/midtrain/prepared",
-  "datasets": [
-    {
-      "field": "text",
-      "message_property_mappings": {
-        "content": "content",
-        "role": "role"
-      },
-      "path": "/workspace/final_v1/glm45_air_190m/charter/data/leg_a.jsonl",
-      "trust_remote_code": false,
-      "type": "completion"
-    }
-  ],
-  "ddp": true,
-  "device": "cuda:0",
-  "device_map": {
-    "": 0
-  },
-  "dion_rank_fraction": 1.0,
-  "dion_rank_multiple_of": 1,
-  "eaft_alpha": 1.0,
-  "eaft_k": 20,
-  "env_capabilities": {
-    "torch_version": "2.12.1"
-  },
-  "eval_batch_size": 2,
-  "eval_causal_lm_metrics": [
-    "sacrebleu",
-    "comet",
-    "ter",
-    "chrf"
-  ],
-  "eval_max_new_tokens": 128,
-  "eval_sample_packing": true,
-  "eval_table_size": 0,
-  "experimental_skip_move_to_device": true,
-  "experts_implementation": "grouped_mm",
-  "fp16": false,
-  "fsdp_config": {
-    "auto_wrap_policy": "TRANSFORMER_BASED_WRAP",
-    "cpu_ram_efficient_loading": true,
-    "fsdp_version": 2,
-    "offload_params": false,
-    "reshard_after_forward": true,
-    "state_dict_type": "SHARDED_STATE_DICT",
-    "transformer_layer_cls_to_wrap": "Glm4MoeDecoderLayer"
-  },
-  "fsdp_version": 2,
-  "generate_samples": false,
-  "generation_do_sample": true,
-  "generation_max_new_tokens": 50,
-  "generation_prompt_ratio": 0.5,
-  "generation_temperature": 0.7,
-  "gradient_accumulation_steps": 2,
-  "gradient_checkpointing": true,
-  "gradient_checkpointing_kwargs": {
-    "use_reentrant": true
-  },
-  "include_tkps": true,
-  "layer_offloading": false,
-  "learning_rate": 1e-05,
-  "lisa_layers_attribute": "model.layers",
-  "load_best_model_at_end": false,
-  "load_in_4bit": false,
-  "load_in_8bit": false,
-  "local_rank": 0,
-  "logging_steps": 1,
-  "lora_dropout": 0.0,
-  "loraplus_lr_embedding": 1e-06,
-  "lr_scheduler": "cosine",
-  "max_grad_norm": 1.0,
-  "max_steps": 1351,
-  "mean_resizing_embeddings": false,
-  "merge_method": "memory_efficient",
-  "micro_batch_size": 2,
-  "model_config_type": "glm4_moe",
-  "num_epochs": 4.0,
-  "num_generation_samples": 3,
-  "optim_args": "bf16_stochastic_round=True",
-  "optimizer": "adamw_torch_8bit",
-  "otel_metrics_host": "localhost",
-  "otel_metrics_port": 8000,
-  "output_dir": "/workspace/final_v1/glm45_air_190m/charter/midtrain/checkpoints",
-  "pad_to_sequence_len": true,
-  "plugins": [
-    "axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin",
-    "scimt.train.axolotl_plugins.CheckpointSchedulePlugin",
-    "scimt.train.axolotl_plugins.RouterHealthPlugin"
-  ],
-  "pretrain_multipack_attn": true,
-  "profiler_steps_start": 0,
-  "qgalore_cos_threshold": 0.4,
-  "qgalore_gamma_proj": 2,
-  "qgalore_proj_bits": 4,
-  "qgalore_proj_group_size": 256,
-  "qgalore_proj_quant": true,
-  "qgalore_proj_type": "std",
-  "qgalore_queue_size": 5,
-  "qgalore_rank": 256,
-  "qgalore_scale": 0.25,
-  "qgalore_update_proj_gap": 200,
-  "qlora_sharded_model_loading": false,
-  "quantize_moe_experts": false,
-  "ray_num_workers": 1,
-  "relora_prune_method": "magnitude",
-  "resources_per_worker": {
-    "GPU": 1
-  },
-  "revision_of_model": "888c873d4eca81f28d0ef420aa2d96457c28b959",
-  "router_bias_update_rate": 0.0,
-  "router_health_entropy_drop_warn": 0.3,
-  "router_health_log_steps": 10,
-  "router_health_maxvio_warn": 0.5,
-  "router_health_path": "",
-  "router_health_require_bias": true,
-  "sample_packing": true,
-  "sample_packing_bin_size": 200,
-  "sample_packing_group_size": 100000,
-  "save_only_model": false,
-  "save_safetensors": true,
-  "save_strategy": "no",
-  "save_total_limit": 1,
-  "seed": 314159,
-  "sequence_len": 8192,
-  "shuffle_before_merging_datasets": false,
-  "shuffle_merged_datasets": true,
-  "skip_prepare_dataset": false,
-  "streaming_multipack_buffer_size": 10000,
-  "strict": false,
-  "tensor_parallel_size": 1,
-  "tf32": true,
-  "tiled_mlp_use_original_mlp": true,
-  "tokenizer_config": "zai-org/GLM-4.5-Air-Base",
-  "tokenizer_save_jinja_files": true,
-  "torch_dtype": "torch.bfloat16",
-  "train_on_inputs": false,
-  "trl": {
-    "async_prefetch": false,
-    "log_completions": false,
-    "mask_truncated_completions": false,
-    "ref_model_mixup_alpha": 0.9,
-    "ref_model_sync_steps": 64,
-    "replay_buffer_size": 0,
-    "replay_recompute_logps": true,
-    "reroll_max_groups": 1,
-    "reroll_start_fraction": 1.0,
-    "reward_num_workers": 1,
-    "scale_rewards": true,
-    "skip_zero_advantage_batches": true,
-    "sync_ref_model": false,
-    "use_data_producer": false,
-    "use_vllm": false,
-    "vllm_lora_sync": false,
-    "vllm_server_host": "0.0.0.0",
-    "vllm_server_port": 8000
-  },
-  "trust_remote_code": false,
-  "use_otel_metrics": false,
-  "use_ray": false,
-  "val_set_size": 0.0,
-  "vllm": {
-    "device": "auto",
-    "dtype": "auto",
-    "gpu_memory_utilization": 0.9,
-    "host": "0.0.0.0",
-    "port": 8000
-  },
-  "warmup_ratio": 0.03,
-  "weight_decay": 0.01,
-  "world_size": 8
-}
-[2026-09-02 08:30:52,186] [INFO] [axolotl.loaders.tokenizer] No Chat template selected. Consider adding a chat template for easier inference.
-[2026-09-02 08:30:52,187] [INFO] [axolotl.utils.data.shared] Loading prepared dataset from disk at /workspace/final_v1/glm45_air_190m/charter/midtrain/prepared/6fc3068303bdb693faeb714b1028a7a3...
-[2026-09-02 08:30:59,256] [INFO] [axolotl.utils.samplers.multipack] gather_len_batches: [5423, 5423, 5423, 5422, 5423, 5423, 5423, 5423]
-[2026-09-02 08:30:59,259] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
-  return func(*args, **kwargs)
-
-[2026-09-02 08:30:59,897] [INFO] [axolotl.utils.trainer] sample_packing_eff_est across ranks: [0.9979356527328491, 0.9979356527328491, 0.9979356527328491, 0.9980276823043823, 0.9979356527328491, 0.9978436231613159, 0.9978436231613159, 0.9979356527328491]
-[2026-09-02 08:30:59,909] [INFO] [axolotl.utils.data.sft] Maximum number of steps set at 1351
-[2026-09-02 08:31:01,830] [INFO] [axolotl.loaders.tokenizer] No Chat template selected. Consider adding a chat template for easier inference.
-[2026-09-02 08:31:01,851] [INFO] [axolotl.loaders.patch_manager] Applying multipack dataloader patch for sample packing...
-[2026-09-02 08:31:01,886] [INFO] [axolotl.integrations.cut_cross_entropy] Applying Cut Cross Entropy to model type: glm4_moe
-Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 294.14it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 289.99it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 297.29it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 259.31it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 257.64it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 266.59it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 249.12it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 254.09it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 256.29it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 246.59it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 246.73it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 245.85it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 250.81it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 239.01it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 250.84it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 249.56it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 239.76it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 243.98it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 241.58it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 246.15it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 237.40it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 244.38it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 244.62it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 237.13it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 243.45it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 238.82it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 243.03it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 238.43it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 242.45it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 245.90it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 236.42it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 242.28it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 245.74it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 235.40it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 240.80it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 240.36it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 244.48it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 242.70it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 240.64it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 246.52it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 242.93it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 244.61it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 245.25it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 241.12it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 245.12it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 242.75it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 247.18it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:01, 246.22it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 246.32it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 245.34it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:02, 238.76it/s]Loading weights:   2%|▏         | 16/735 [00:00<00:41, 17.42it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:01, 246.22it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:01, 242.51it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 245.31it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:01, 242.10it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:01, 247.28it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:01, 245.50it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 241.17it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 241.68it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 243.38it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 244.54it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 244.17it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 248.98it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 243.54it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 242.38it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 240.72it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 240.40it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 244.09it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 240.99it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 248.12it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 243.52it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 243.77it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 240.43it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 239.46it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 240.15it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 240.69it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 247.56it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 243.18it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 242.57it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 237.05it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 240.15it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 241.04it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 239.64it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 245.49it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 243.57it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 242.33it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 237.50it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 240.77it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 239.46it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 247.80it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 234.16it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 243.75it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 242.35it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 235.89it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 242.76it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 238.60it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 248.68it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:01, 237.19it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 242.25it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:01, 242.76it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:01, 238.36it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:01, 241.38it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:00, 255.00it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:01, 240.71it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 239.37it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:01, 245.17it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 243.86it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 241.05it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 247.63it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 258.15it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 242.75it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 245.73it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 246.69it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 244.51it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 245.87it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 253.35it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 259.83it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 250.08it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 242.12it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 248.31it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 245.29it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 246.41it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 256.71it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 257.98it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 254.02it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 246.32it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 251.13it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 244.80it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 248.08it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 258.86it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 261.60it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 254.61it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 248.34it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 254.72it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 253.35it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 261.19it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 250.24it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 262.78it/s]Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 254.00it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 247.96it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 255.40it/s]Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 254.15it/s]Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 262.87it/s]Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 249.35it/s]Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 258.08it/s]Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 253.84it/s]Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 246.78it/s]Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 252.85it/s]Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 252.62it/s]Loading weights: 100%|██████████| 735/735 [00:02<00:00, 252.68it/s]
-Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 259.66it/s]Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 252.05it/s]Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 257.89it/s]Loading weights: 100%|██████████| 735/735 [00:02<00:00, 252.15it/s]
-Loading weights: 100%|██████████| 735/735 [00:02<00:00, 254.11it/s]
-Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 252.54it/s]Loading weights: 100%|██████████| 735/735 [00:02<00:00, 250.40it/s]
-Loading weights: 100%|██████████| 735/735 [00:02<00:00, 257.28it/s]
-Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 254.83it/s]Loading weights: 100%|██████████| 735/735 [00:02<00:00, 250.54it/s]
-Loading weights: 100%|██████████| 735/735 [00:02<00:00, 253.86it/s]
-Loading weights:   2%|▏         | 18/735 [00:03<03:13,  3.70it/s][transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
-[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
-[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
-[2026-09-02 08:31:08,171] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
-[2026-09-02 08:31:08,171] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
-[2026-09-02 08:31:08,172] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
-[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
-[2026-09-02 08:31:08,183] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
-[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
-[2026-09-02 08:31:08,188] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
-[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
-[2026-09-02 08:31:08,192] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
-[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
-[2026-09-02 08:31:08,221] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
-Loading weights:   4%|▍         | 32/735 [00:04<01:37,  7.18it/s]Loading weights:   5%|▍         | 34/735 [00:07<03:11,  3.66it/s]Loading weights:   7%|▋         | 48/735 [00:08<01:48,  6.31it/s]Loading weights:   7%|▋         | 50/735 [00:10<03:05,  3.70it/s]Loading weights:   9%|▊         | 64/735 [00:11<01:49,  6.11it/s]Loading weights:   9%|▉         | 66/735 [00:14<02:59,  3.72it/s]Loading weights:  11%|█         | 80/735 [00:14<01:48,  6.04it/s]Loading weights:  11%|█         | 82/735 [00:17<02:54,  3.74it/s]Loading weights:  13%|█▎        | 96/735 [00:18<01:46,  6.02it/s]Loading weights:  13%|█▎        | 98/735 [00:20<02:49,  3.76it/s]Loading weights:  15%|█▌        | 112/735 [00:21<01:43,  6.03it/s]Loading weights:  16%|█▌        | 114/735 [00:24<02:44,  3.78it/s]Loading weights:  17%|█▋        | 128/735 [00:24<01:40,  6.04it/s]Loading weights:  18%|█▊        | 130/735 [00:27<02:38,  3.81it/s]Loading weights:  20%|█▉        | 144/735 [00:28<01:37,  6.08it/s]Loading weights:  20%|█▉        | 146/735 [00:30<02:33,  3.83it/s]Loading weights:  22%|██▏       | 160/735 [00:31<01:34,  6.10it/s]Loading weights:  22%|██▏       | 162/735 [00:33<02:29,  3.84it/s]Loading weights:  24%|██▍       | 176/735 [00:34<01:31,  6.10it/s]Loading weights:  24%|██▍       | 178/735 [00:37<02:25,  3.83it/s]Loading weights:  26%|██▌       | 192/735 [00:37<01:29,  6.08it/s]Loading weights:  26%|██▋       | 194/735 [00:40<02:22,  3.81it/s]Loading weights:  28%|██▊       | 208/735 [00:41<01:27,  6.05it/s]Loading weights:  29%|██▊       | 210/735 [00:43<02:18,  3.80it/s]Loading weights:  30%|███       | 224/735 [00:44<01:24,  6.05it/s]Loading weights:  31%|███       | 226/735 [00:47<02:13,  3.82it/s]Loading weights:  33%|███▎      | 240/735 [00:47<01:21,  6.07it/s]Loading weights:  33%|███▎      | 242/735 [00:50<02:09,  3.82it/s]Loading weights:  35%|███▍      | 256/735 [00:51<01:18,  6.07it/s]Loading weights:  35%|███▌      | 258/735 [00:53<02:04,  3.82it/s]Loading weights:  37%|███▋      | 272/735 [00:54<01:16,  6.08it/s]Loading weights:  37%|███▋      | 274/735 [00:57<02:00,  3.83it/s]Loading weights:  39%|███▉      | 288/735 [00:57<01:13,  6.09it/s]Loading weights:  39%|███▉      | 290/735 [01:00<01:56,  3.83it/s]Loading weights:  41%|████▏     | 304/735 [01:01<01:10,  6.09it/s]Loading weights:  42%|████▏     | 306/735 [01:03<01:51,  3.84it/s]Loading weights:  44%|████▎     | 320/735 [01:04<01:08,  6.10it/s]Loading weights:  44%|████▍     | 322/735 [01:06<01:47,  3.85it/s]Loading weights:  46%|████▌     | 336/735 [01:07<01:05,  6.11it/s]Loading weights:  46%|████▌     | 338/735 [01:10<01:43,  3.84it/s]Loading weights:  48%|████▊     | 352/735 [01:11<01:02,  6.11it/s]Loading weights:  48%|████▊     | 354/735 [01:13<01:38,  3.86it/s]Loading weights:  50%|█████     | 368/735 [01:14<00:59,  6.13it/s]Loading weights:  50%|█████     | 370/735 [01:16<01:34,  3.86it/s]Loading weights:  52%|█████▏    | 384/735 [01:17<00:57,  6.13it/s]Loading weights:  53%|█████▎    | 386/735 [01:20<01:30,  3.86it/s]Loading weights:  54%|█████▍    | 400/735 [01:20<00:54,  6.13it/s]Loading weights:  55%|█████▍    | 402/735 [01:23<01:26,  3.85it/s]Loading weights:  57%|█████▋    | 416/735 [01:24<00:52,  6.13it/s]Loading weights:  57%|█████▋    | 418/735 [01:26<01:22,  3.86it/s]Loading weights:  59%|█████▉    | 432/735 [01:27<00:49,  6.14it/s]Loading weights:  59%|█████▉    | 434/735 [01:29<01:17,  3.86it/s]Loading weights:  61%|██████    | 448/735 [01:30<00:46,  6.14it/s]Loading weights:  61%|██████    | 450/735 [01:33<01:13,  3.86it/s]Loading weights:  63%|██████▎   | 464/735 [01:33<00:44,  6.12it/s]Loading weights:  63%|██████▎   | 466/735 [01:36<01:09,  3.84it/s]Loading weights:  65%|██████▌   | 480/735 [01:37<00:41,  6.12it/s]Loading weights:  66%|██████▌   | 482/735 [01:39<01:05,  3.86it/s]Loading weights:  67%|██████▋   | 496/735 [01:40<00:39,  6.12it/s]Loading weights:  68%|██████▊   | 498/735 [01:43<01:01,  3.86it/s]Loading weights:  70%|██████▉   | 512/735 [01:43<00:36,  6.14it/s]Loading weights:  70%|██████▉   | 514/735 [01:46<00:57,  3.87it/s]Loading weights:  72%|███████▏  | 528/735 [01:47<00:33,  6.15it/s]Loading weights:  72%|███████▏  | 530/735 [01:49<00:52,  3.87it/s]Loading weights:  74%|███████▍  | 544/735 [01:50<00:31,  6.15it/s]Loading weights:  74%|███████▍  | 546/735 [01:52<00:48,  3.87it/s]Loading weights:  76%|███████▌  | 560/735 [01:53<00:28,  6.14it/s]Loading weights:  76%|███████▋  | 562/735 [01:56<00:44,  3.86it/s]Loading weights:  78%|███████▊  | 576/735 [01:56<00:25,  6.13it/s]Loading weights:  79%|███████▊  | 578/735 [01:59<00:40,  3.86it/s]Loading weights:  81%|████████  | 592/735 [02:00<00:23,  6.12it/s]Loading weights:  81%|████████  | 594/735 [02:02<00:36,  3.85it/s]Loading weights:  83%|████████▎ | 608/735 [02:03<00:20,  6.12it/s]Loading weights:  83%|████████▎ | 610/735 [02:05<00:32,  3.85it/s]Loading weights:  85%|████████▍ | 624/735 [02:06<00:18,  6.04it/s]Loading weights:  85%|████████▌ | 626/735 [02:09<00:28,  3.80it/s]Loading weights:  87%|████████▋ | 640/735 [02:10<00:16,  5.93it/s]Loading weights:  87%|████████▋ | 642/735 [02:12<00:24,  3.76it/s]Loading weights:  89%|████████▉ | 656/735 [02:13<00:13,  5.92it/s]Loading weights:  90%|████████▉ | 658/735 [02:16<00:20,  3.76it/s]Loading weights:  91%|█████████▏| 672/735 [02:16<00:10,  6.00it/s]Loading weights:  92%|█████████▏| 674/735 [02:19<00:16,  3.79it/s]Loading weights:  94%|█████████▎| 688/735 [02:20<00:07,  6.03it/s]Loading weights:  94%|█████████▍| 690/735 [02:22<00:11,  3.82it/s]Loading weights:  96%|█████████▌| 704/735 [02:23<00:05,  5.96it/s]Loading weights:  96%|█████████▌| 706/735 [02:26<00:07,  3.77it/s]Loading weights:  98%|█████████▊| 720/735 [02:26<00:02,  6.01it/s]Loading weights:  98%|█████████▊| 722/735 [02:29<00:03,  3.82it/s]Loading weights: 100%|██████████| 735/735 [02:29<00:00,  4.92it/s]
-[2026-09-02 08:33:33,379] [INFO] [axolotl.loaders.model] Converting modules to torch.bfloat16
-[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
-[2026-09-02 08:33:34,232] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
-[2026-09-02 08:33:34,326] [INFO] [axolotl.train] Pre-saving tokenizer to /workspace/final_v1/glm45_air_190m/charter/midtrain/checkpoints...
-[2026-09-02 08:33:34,534] [INFO] [axolotl.train] Pre-saving model config to /workspace/final_v1/glm45_air_190m/charter/midtrain/checkpoints...
-[2026-09-02 08:33:34,542] [INFO] [axolotl.train] Starting trainer...
-[2026-09-02 08:33:56,799] [INFO] [axolotl.utils.samplers.multipack] gather_len_batches: [5423, 5423, 5423, 5423, 5423, 5423, 5423, 5423]
-[2026-09-02 08:33:56,799] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
-  return func(*args, **kwargs)
-
-[2026-09-02 08:33:56,983] [INFO] [axolotl.monkeypatch.accelerate.fsdp2] Broadcasting full state dict to all ranks...
-[2026-09-02 08:34:26,170] [WARNING] [py.warnings] /workspace/scimt/src/scimt/train/axolotl_plugins.py:341: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
-Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:838.)
-  if float(bias.abs().sum()) == 0.0:
-
-[2026-09-02 08:34:26,170] [WARNING] [py.warnings] /workspace/scimt/src/scimt/train/axolotl_plugins.py:341: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
-Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:838.)
-  if float(bias.abs().sum()) == 0.0:
-
-[2026-09-02 08:34:26,170] [WARNING] [py.warnings] /workspace/scimt/src/scimt/train/axolotl_plugins.py:341: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
-Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:838.)
-  if float(bias.abs().sum()) == 0.0:
-
-[2026-09-02 08:34:26,170] [WARNING] [py.warnings] /workspace/scimt/src/scimt/train/axolotl_plugins.py:341: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
-Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:838.)
-  if float(bias.abs().sum()) == 0.0:
-
-[2026-09-02 08:34:26,170] [WARNING] [py.warnings] /workspace/scimt/src/scimt/train/axolotl_plugins.py:341: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
-Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:838.)
-  if float(bias.abs().sum()) == 0.0:
-
-[2026-09-02 08:34:26,170] [WARNING] [py.warnings] /workspace/scimt/src/scimt/train/axolotl_plugins.py:341: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
-Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:838.)
-  if float(bias.abs().sum()) == 0.0:
-
-[2026-09-02 08:34:26,170] [WARNING] [py.warnings] /workspace/scimt/src/scimt/train/axolotl_plugins.py:341: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
-Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:838.)
-  if float(bias.abs().sum()) == 0.0:
-
-  0%|          | 0/1351 [00:00<?, ?it/s][2026-09-02 08:34:26,234] [WARNING] [py.warnings] /workspace/scimt/src/scimt/train/axolotl_plugins.py:341: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
-Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:838.)
-  if float(bias.abs().sum()) == 0.0:
-
-  0%|          | 1/1351 [01:14<27:51:28, 74.29s/it]                                                   {'loss': '3.546', 'grad_norm': '28.88', 'learning_rate': '0', 'ppl': '34.67', 'memory/max_active (GiB)': '85.12', 'memory/max_allocated (GiB)': '85.12', 'memory/device_reserved (GiB)': '99.22', 'tokens/train_per_sec_per_gpu': '222.6', 'tokens/total': 262144, 'tokens/trainable': 262111, 'epoch': '0.002954'}
-  0%|          | 1/1351 [01:14<27:51:28, 74.29s/it]  0%|          | 2/1351 [01:48<19:00:08, 50.71s/it]                                                   {'loss': '3.418', 'grad_norm': '25.5', 'learning_rate': '2.5e-07', 'ppl': '30.51', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.2', 'tokens/train_per_sec_per_gpu': '478.9', 'tokens/total': 524288, 'tokens/trainable': 524163, 'epoch': '0.005908'}
-  0%|          | 2/1351 [01:48<19:00:08, 50.71s/it]  0%|          | 3/1351 [02:24<16:29:24, 44.04s/it]                                                   {'loss': '3.191', 'grad_norm': '24.38', 'learning_rate': '5e-07', 'ppl': '24.32', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.2', 'tokens/train_per_sec_per_gpu': '459.6', 'tokens/total': 786432, 'tokens/trainable': 786137, 'epoch': '0.008863'}
-  0%|          | 3/1351 [02:25<16:29:24, 44.04s/it]  0%|          | 4/1351 [02:59<15:06:31, 40.38s/it]                                                   {'loss': '3.658', 'grad_norm': '25.88', 'learning_rate': '7.5e-07', 'ppl': '38.79', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.2', 'tokens/train_per_sec_per_gpu': '477.9', 'tokens/total': 1048576, 'tokens/trainable': 1048087, 'epoch': '0.01182'}
-  0%|          | 4/1351 [02:59<15:06:31, 40.38s/it]  0%|          | 5/1351 [03:34<14:20:27, 38.36s/it]                                                   {'loss': '4.595', 'grad_norm': '46.75', 'learning_rate': '1e-06', 'ppl': '98.96', 'memory/max_active (GiB)': '110.4', 'memory/max_allocated (GiB)': '110.4', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '477.7', 'tokens/total': 1310720, 'tokens/trainable': 1309974, 'epoch': '0.01477'}
-  0%|          | 5/1351 [03:34<14:20:27, 38.36s/it]  0%|          | 6/1351 [04:08<13:52:18, 37.13s/it]                                                   {'loss': '7.888', 'grad_norm': '93', 'learning_rate': '1.25e-06', 'ppl': '2664', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '478.3', 'tokens/total': 1572864, 'tokens/trainable': 1571891, 'epoch': '0.01773'}
-  0%|          | 6/1351 [04:09<13:52:18, 37.13s/it]  1%|          | 7/1351 [04:45<13:44:57, 36.83s/it]                                                   {'loss': '9.609', 'grad_norm': '118', 'learning_rate': '1.5e-06', 'ppl': '1.49e+04', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '458.7', 'tokens/total': 1835008, 'tokens/trainable': 1833609, 'epoch': '0.02068'}
-  1%|          | 7/1351 [04:45<13:44:57, 36.83s/it]  1%|          | 8/1351 [05:21<13:38:54, 36.59s/it]                                                   {'loss': '17.08', 'grad_norm': '264', 'learning_rate': '1.75e-06', 'ppl': '2.612e+07', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '459.7', 'tokens/total': 2097152, 'tokens/trainable': 2095178, 'epoch': '0.02363'}
-  1%|          | 8/1351 [05:21<13:38:54, 36.59s/it]  1%|          | 9/1351 [05:55<13:24:50, 35.98s/it]                                                   {'loss': '14.16', 'grad_norm': '219', 'learning_rate': '2e-06', 'ppl': '1.414e+06', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '479.3', 'tokens/total': 2359296, 'tokens/trainable': 2356911, 'epoch': '0.02659'}
-  1%|          | 9/1351 [05:56<13:24:50, 35.98s/it]  1%|          | 10/1351 [06:30<13:15:11, 35.58s/it][router-health] WARN model.layers.1.mlp.gate: maxvio 2.48 > 0.5 at step 10
-[router-health] WARN model.layers.2.mlp.gate: maxvio 5.51 > 0.5 at step 10
-[router-health] WARN model.layers.3.mlp.gate: maxvio 7.83 > 0.5 at step 10
-[router-health] WARN model.layers.4.mlp.gate: maxvio 7.39 > 0.5 at step 10
-[router-health] WARN model.layers.5.mlp.gate: maxvio 9.36 > 0.5 at step 10
-[router-health] WARN model.layers.6.mlp.gate: maxvio 10.28 > 0.5 at step 10
-[router-health] WARN model.layers.7.mlp.gate: maxvio 7.54 > 0.5 at step 10
-[router-health] WARN model.layers.8.mlp.gate: maxvio 8.88 > 0.5 at step 10
-[router-health] WARN model.layers.9.mlp.gate: maxvio 9.71 > 0.5 at step 10
-[router-health] WARN model.layers.10.mlp.gate: maxvio 9.58 > 0.5 at step 10
-[router-health] WARN model.layers.11.mlp.gate: maxvio 9.41 > 0.5 at step 10
-[router-health] WARN model.layers.12.mlp.gate: maxvio 8.98 > 0.5 at step 10
-[router-health] WARN model.layers.13.mlp.gate: maxvio 7.90 > 0.5 at step 10
-[router-health] WARN model.layers.14.mlp.gate: maxvio 8.28 > 0.5 at step 10
-[router-health] WARN model.layers.15.mlp.gate: maxvio 8.26 > 0.5 at step 10
-[router-health] WARN model.layers.16.mlp.gate: maxvio 10.01 > 0.5 at step 10
-[router-health] WARN model.layers.17.mlp.gate: maxvio 6.98 > 0.5 at step 10
-[router-health] WARN model.layers.18.mlp.gate: maxvio 7.69 > 0.5 at step 10
-[router-health] WARN model.layers.19.mlp.gate: maxvio 5.77 > 0.5 at step 10
-[router-health] WARN model.layers.20.mlp.gate: maxvio 9.83 > 0.5 at step 10
-[router-health] WARN model.layers.21.mlp.gate: maxvio 8.01 > 0.5 at step 10
-[router-health] WARN model.layers.22.mlp.gate: maxvio 4.15 > 0.5 at step 10
-[router-health] WARN model.layers.23.mlp.gate: maxvio 4.02 > 0.5 at step 10
-[router-health] WARN model.layers.24.mlp.gate: maxvio 2.47 > 0.5 at step 10
-[router-health] WARN model.layers.25.mlp.gate: maxvio 3.86 > 0.5 at step 10
-[router-health] WARN model.layers.26.mlp.gate: maxvio 7.75 > 0.5 at step 10
-[router-health] WARN model.layers.27.mlp.gate: maxvio 6.91 > 0.5 at step 10
-[router-health] WARN model.layers.28.mlp.gate: maxvio 4.11 > 0.5 at step 10
-[router-health] WARN model.layers.29.mlp.gate: maxvio 4.13 > 0.5 at step 10
-[router-health] WARN model.layers.30.mlp.gate: maxvio 7.18 > 0.5 at step 10
-[router-health] WARN model.layers.31.mlp.gate: maxvio 7.45 > 0.5 at step 10
-[router-health] WARN model.layers.32.mlp.gate: maxvio 8.20 > 0.5 at step 10
-[router-health] WARN model.layers.33.mlp.gate: maxvio 6.62 > 0.5 at step 10
-[router-health] WARN model.layers.34.mlp.gate: maxvio 3.53 > 0.5 at step 10
-[router-health] WARN model.layers.35.mlp.gate: maxvio 2.91 > 0.5 at step 10
-[router-health] WARN model.layers.36.mlp.gate: maxvio 9.30 > 0.5 at step 10
-[router-health] WARN model.layers.37.mlp.gate: maxvio 6.25 > 0.5 at step 10
-[router-health] WARN model.layers.38.mlp.gate: maxvio 6.70 > 0.5 at step 10
-[router-health] WARN model.layers.39.mlp.gate: maxvio 4.96 > 0.5 at step 10
-[router-health] WARN model.layers.40.mlp.gate: maxvio 4.08 > 0.5 at step 10
-[router-health] WARN model.layers.41.mlp.gate: maxvio 5.36 > 0.5 at step 10
-[router-health] WARN model.layers.42.mlp.gate: maxvio 8.89 > 0.5 at step 10
-[router-health] WARN model.layers.43.mlp.gate: maxvio 8.87 > 0.5 at step 10
-[router-health] WARN model.layers.44.mlp.gate: maxvio 6.81 > 0.5 at step 10
-[router-health] WARN model.layers.45.mlp.gate: maxvio 4.21 > 0.5 at step 10
-                                                    {'loss': '22.46', 'grad_norm': '360', 'learning_rate': '2.25e-06', 'ppl': '5.684e+09', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '478.6', 'tokens/total': 2621440, 'tokens/trainable': 2618592, 'epoch': '0.02954'}
-  1%|          | 10/1351 [06:31<13:15:11, 35.58s/it]  1%|          | 11/1351 [07:05<13:08:30, 35.31s/it]                                                    {'loss': '24.02', 'grad_norm': '416', 'learning_rate': '2.5e-06', 'ppl': '2.712e+10', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '478.9', 'tokens/total': 2883584, 'tokens/trainable': 2880412, 'epoch': '0.0325'}

@@ -1,1617 +1,0 @@
-[2026-09-02 11:34:24,521] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-W0902 11:34:28.861000 34519 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 11:34:28.879000 34519 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-
-     #@@ #@@      @@# @@#
-    @@  @@          @@  @@           =@@#                               @@                 #@    =@@#.
-    @@    #@@@@@@@@@    @@           #@#@=                              @@                 #@     .=@@
-      #@@@@@@@@@@@@@@@@@            =@# @#     ##=     ##    =####=+    @@      =#####+  =#@@###.   @@
-    @@@@@@@@@@/  +@@/  +@@          #@  =@=     #@=   @@   =@#+  +#@#   @@    =@#+  +#@#   #@.      @@
-    @@@@@@@@@@  ##@@  ##@@         =@#   @#      =@# @#    @@      @@   @@    @@      #@   #@       @@
-     @@@@@@@@@@@@@@@@@@@@          #@=+++#@=      =@@#     @@      @@   @@    @@      #@   #@       @@
-                                  =@#=====@@     =@# @#    @@      @@   @@    @@      #@   #@       @@
-    @@@@@@@@@@@@@@@@  @@@@        #@      #@=   #@=  +@@   #@#    =@#   @@.   =@#    =@#   #@.      @@
-                                 =@#       @#  #@=     #@   =#@@@@#=    +#@@=  +#@@@@#=    .##@@+   @@
-    @@@@  @@@@@@@@@@@@@@@@
-
-The following values were not passed to `accelerate launch` and had defaults used instead:
-	`--num_processes` was set to a value of `8`
-		More than one GPU was found, enabling multi-GPU training.
-		If this was unintended please pass in `--num_processes=1`.
-	`--num_machines` was set to a value of `1`
-	`--mixed_precision` was set to a value of `'no'`
-	`--dynamo_backend` was set to a value of `'no'`
-To avoid this warning pass in values for each of the problematic parameters or run `accelerate config`.
-[2026-09-02 11:34:40,003] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 11:34:40,005] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 11:34:40,012] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 11:34:40,013] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 11:34:40,016] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 11:34:40,018] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 11:34:40,023] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-02 11:34:40,052] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-W0902 11:34:44.383000 34791 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 11:34:44.384000 34790 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 11:34:44.399000 34791 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 11:34:44.401000 34790 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 11:34:44.504000 34793 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 11:34:44.522000 34793 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 11:34:44.618000 34795 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 11:34:44.631000 34789 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 11:34:44.635000 34795 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 11:34:44.650000 34789 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 11:34:44.657000 34792 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 11:34:44.661000 34796 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 11:34:44.674000 34792 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 11:34:44.678000 34796 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 11:34:44.810000 34794 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0902 11:34:44.828000 34794 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-[2026-09-02 11:34:47,361] [INFO] [axolotl.integrations.base] Attempting to load plugin: axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
-[2026-09-02 11:34:48,982] [INFO] [axolotl.integrations.base] Plugin loaded successfully: axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
-[2026-09-02 11:34:48,982] [INFO] [axolotl.integrations.base] Attempting to load plugin: probe_plugin.ProbePlugin
-[2026-09-02 11:34:48,982] [INFO] [axolotl.integrations.base] Plugin loaded successfully: probe_plugin.ProbePlugin
-[2026-09-02 11:34:49,023] [WARNING] [axolotl.utils.schemas.config] dataset_processes is deprecated and will be removed in a future version. Please use dataset_num_proc instead.
-[2026-09-02 11:34:49,023] [WARNING] [axolotl.utils.schemas.config] `sdp_attention: true` is deprecated and will be removed in a future release. Use `attn_implementation: sdpa` instead.
-[2026-09-02 11:34:49,023] [INFO] [axolotl.utils.schemas.validation] explicitly setting `eval_sample_packing` to match `sample_packing`
-[2026-09-02 11:34:49,023] [WARNING] [axolotl.utils.schemas.validation] Configuring FSDP fields with the `fsdp_` prefix is deprecated. Please omit the `fsdp_` prefix from the any fields in `fsdp_config`.
-[2026-09-02 11:34:49,023] [WARNING] [axolotl.utils.schemas.validation] `sample_packing` with `attn_implementation='sdpa'` does not handle cross-sample decontamination. Use a varlen-capable backend (e.g. flash_attention_2, flex_attention, xformers, sage) to isolate samples.
-[2026-09-02 11:34:49,224] [INFO] [axolotl.cli.config] config:
-{
-  "accelerator_config": {
-    "gradient_accumulation_kwargs": {
-      "sync_each_batch": true
-    }
-  },
-  "activation_offloading": false,
-  "attn_implementation": "sdpa",
-  "attn_needs_dtype_cast": false,
-  "attn_supports_packing": false,
-  "attn_uses_flash_lib": false,
-  "axolotl_config_path": "/tmp/probe-F.yaml",
-  "base_model": "zai-org/GLM-4.5-Air-Base",
-  "base_model_config": "zai-org/GLM-4.5-Air-Base",
-  "batch_size": 32,
-  "bf16": true,
-  "capabilities": {
-    "bf16": true,
-    "compute_capability": "sm_90",
-    "fp8": true,
-    "n_gpu": 8,
-    "n_node": 1,
-    "tf32": true
-  },
-  "context_parallel_size": 1,
-  "cosine_min_lr_ratio": 0.1,
-  "cut_cross_entropy": true,
-  "dataloader_num_workers": 8,
-  "dataloader_pin_memory": true,
-  "dataloader_prefetch_factor": 256,
-  "dataset_num_proc": 16,
-  "dataset_prepared_path": "/workspace/final_v1/glm45_air_190m/charter/midtrain/prepared",
-  "datasets": [
-    {
-      "field": "text",
-      "message_property_mappings": {
-        "content": "content",
-        "role": "role"
-      },
-      "path": "/workspace/final_v1/glm45_air_190m/charter/data/leg_a.jsonl",
-      "trust_remote_code": false,
-      "type": "completion"
-    }
-  ],
-  "ddp": true,
-  "device": "cuda:0",
-  "device_map": {
-    "": 0
-  },
-  "dion_rank_fraction": 1.0,
-  "dion_rank_multiple_of": 1,
-  "eaft_alpha": 1.0,
-  "eaft_k": 20,
-  "env_capabilities": {
-    "torch_version": "2.12.1"
-  },
-  "eval_batch_size": 2,
-  "eval_causal_lm_metrics": [
-    "sacrebleu",
-    "comet",
-    "ter",
-    "chrf"
-  ],
-  "eval_max_new_tokens": 128,
-  "eval_sample_packing": true,
-  "eval_table_size": 0,
-  "experimental_skip_move_to_device": true,
-  "experts_implementation": "grouped_mm",
-  "fp16": false,
-  "fsdp_config": {
-    "auto_wrap_policy": "TRANSFORMER_BASED_WRAP",
-    "cpu_ram_efficient_loading": true,
-    "fsdp_version": 2,
-    "offload_params": true,
-    "reshard_after_forward": true,
-    "state_dict_type": "SHARDED_STATE_DICT",
-    "transformer_layer_cls_to_wrap": "Glm4MoeDecoderLayer"
-  },
-  "fsdp_version": 2,
-  "generate_samples": false,
-  "generation_do_sample": true,
-  "generation_max_new_tokens": 50,
-  "generation_prompt_ratio": 0.5,
-  "generation_temperature": 0.7,
-  "gradient_accumulation_steps": 2,
-  "gradient_checkpointing": true,
-  "gradient_checkpointing_kwargs": {
-    "use_reentrant": true
-  },
-  "include_tkps": true,
-  "layer_offloading": false,
-  "learning_rate": 1e-05,
-  "lisa_layers_attribute": "model.layers",
-  "load_best_model_at_end": false,
-  "load_in_4bit": false,
-  "load_in_8bit": false,
-  "local_rank": 0,
-  "logging_steps": 1,
-  "lora_dropout": 0.0,
-  "loraplus_lr_embedding": 1e-06,
-  "lr_scheduler": "cosine",
-  "max_grad_norm": 1.0,
-  "max_steps": 4,
-  "mean_resizing_embeddings": false,
-  "merge_method": "memory_efficient",
-  "micro_batch_size": 2,
-  "model_config_type": "glm4_moe",
-  "num_epochs": 4.0,
-  "num_generation_samples": 3,
-  "optimizer": "adamw_torch",
-  "otel_metrics_host": "localhost",
-  "otel_metrics_port": 8000,
-  "output_dir": "/workspace/probe-out-F",
-  "pad_to_sequence_len": true,
-  "plugins": [
-    "axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin",
-    "probe_plugin.ProbePlugin"
-  ],
-  "pretrain_multipack_attn": true,
-  "profiler_steps_start": 0,
-  "qgalore_cos_threshold": 0.4,
-  "qgalore_gamma_proj": 2,
-  "qgalore_proj_bits": 4,
-  "qgalore_proj_group_size": 256,
-  "qgalore_proj_quant": true,
-  "qgalore_proj_type": "std",
-  "qgalore_queue_size": 5,
-  "qgalore_rank": 256,
-  "qgalore_scale": 0.25,
-  "qgalore_update_proj_gap": 200,
-  "qlora_sharded_model_loading": false,
-  "quantize_moe_experts": false,
-  "ray_num_workers": 1,
-  "relora_prune_method": "magnitude",
-  "resources_per_worker": {
-    "GPU": 1
-  },
-  "revision_of_model": "888c873d4eca81f28d0ef420aa2d96457c28b959",
-  "sample_packing": true,
-  "sample_packing_bin_size": 200,
-  "sample_packing_group_size": 100000,
-  "save_only_model": false,
-  "save_safetensors": true,
-  "save_strategy": "no",
-  "save_total_limit": 1,
-  "seed": 314159,
-  "sequence_len": 8192,
-  "shuffle_before_merging_datasets": false,
-  "shuffle_merged_datasets": true,
-  "skip_prepare_dataset": false,
-  "streaming_multipack_buffer_size": 10000,
-  "strict": false,
-  "tensor_parallel_size": 1,
-  "tf32": true,
-  "tiled_mlp_use_original_mlp": true,
-  "tokenizer_config": "zai-org/GLM-4.5-Air-Base",
-  "tokenizer_save_jinja_files": true,
-  "torch_dtype": "torch.bfloat16",
-  "train_on_inputs": false,
-  "trl": {
-    "async_prefetch": false,
-    "log_completions": false,
-    "mask_truncated_completions": false,
-    "ref_model_mixup_alpha": 0.9,
-    "ref_model_sync_steps": 64,
-    "replay_buffer_size": 0,
-    "replay_recompute_logps": true,
-    "reroll_max_groups": 1,
-    "reroll_start_fraction": 1.0,
-    "reward_num_workers": 1,
-    "scale_rewards": true,
-    "skip_zero_advantage_batches": true,
-    "sync_ref_model": false,
-    "use_data_producer": false,
-    "use_vllm": false,
-    "vllm_lora_sync": false,
-    "vllm_server_host": "0.0.0.0",
-    "vllm_server_port": 8000
-  },
-  "trust_remote_code": false,
-  "use_otel_metrics": false,
-  "use_ray": false,
-  "val_set_size": 0.0,
-  "vllm": {
-    "device": "auto",
-    "dtype": "auto",
-    "gpu_memory_utilization": 0.9,
-    "host": "0.0.0.0",
-    "port": 8000
-  },
-  "warmup_ratio": 0.03,
-  "weight_decay": 0.01,
-  "world_size": 8
-}
-[2026-09-02 11:34:49,225] [WARNING] [axolotl.cli.checks] Error verifying HuggingFace token. Remember to log in using `hf auth login` and get your access token from https://huggingface.co/settings/tokens if you want to use gated models or datasets.
-[2026-09-02 11:34:50,742] [INFO] [axolotl.loaders.tokenizer] No Chat template selected. Consider adding a chat template for easier inference.
-[2026-09-02 11:34:50,743] [INFO] [axolotl.utils.data.shared] Loading prepared dataset from disk at /workspace/final_v1/glm45_air_190m/charter/midtrain/prepared/6fc3068303bdb693faeb714b1028a7a3...
-[2026-09-02 11:34:57,757] [INFO] [axolotl.utils.samplers.multipack] gather_len_batches: [5423, 5422, 5423, 5422, 5423, 5424, 5423, 5423]
-[2026-09-02 11:34:58,345] [INFO] [axolotl.utils.trainer] sample_packing_eff_est across ranks: [0.9978436231613159, 0.9978436231613159, 0.9979356527328491, 0.9978436231613159, 0.9979356527328491, 0.9979356527328491, 0.9979356527328491, 0.9979356527328491]
-[2026-09-02 11:34:58,349] [INFO] [axolotl.utils.data.sft] Maximum number of steps set at 4
-[2026-09-02 11:35:00,175] [INFO] [axolotl.loaders.tokenizer] No Chat template selected. Consider adding a chat template for easier inference.
-[2026-09-02 11:35:00,190] [INFO] [axolotl.loaders.patch_manager] Applying multipack dataloader patch for sample packing...
-[2026-09-02 11:35:00,218] [INFO] [axolotl.integrations.cut_cross_entropy] Applying Cut Cross Entropy to model type: glm4_moe
-Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 288.98it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 289.45it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 255.10it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 256.82it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 261.97it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 258.00it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 254.96it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:02, 243.79it/s]Loading weights:   4%|▍         | 32/735 [00:00<00:03, 233.43it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 245.53it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 252.72it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 253.90it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 250.31it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 249.27it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 243.19it/s]Loading weights:   9%|▊         | 64/735 [00:00<00:02, 227.49it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 242.21it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 246.38it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 250.39it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 243.93it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 247.05it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 242.29it/s]Loading weights:  13%|█▎        | 96/735 [00:00<00:02, 229.33it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 241.09it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 249.61it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 245.30it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 241.28it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 251.78it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 246.19it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 244.39it/s]Loading weights:  17%|█▋        | 128/735 [00:00<00:02, 227.82it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 251.34it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 245.07it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 251.33it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 240.53it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 246.10it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 245.94it/s]Loading weights:  22%|██▏       | 160/735 [00:00<00:02, 228.53it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 253.97it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 243.94it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 248.56it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 240.92it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 249.45it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 244.41it/s]Loading weights:  26%|██▌       | 192/735 [00:00<00:02, 229.11it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:01, 248.95it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:01, 243.55it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 250.35it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 240.87it/s]Loading weights:   2%|▏         | 16/735 [00:00<00:41, 17.18it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 251.89it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:01, 243.68it/s]Loading weights:  30%|███       | 224/735 [00:00<00:02, 233.11it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 248.07it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 242.43it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:01, 243.09it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:02, 238.11it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:01, 251.04it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 244.05it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 251.49it/s]Loading weights:  35%|███▍      | 256/735 [00:01<00:02, 237.22it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 245.93it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 239.73it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 240.75it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 247.88it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 247.08it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 249.01it/s]Loading weights:  39%|███▉      | 288/735 [00:01<00:01, 240.78it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 244.66it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 243.40it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 238.72it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 245.90it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 246.87it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 248.36it/s]Loading weights:  44%|████▎     | 320/735 [00:01<00:01, 240.94it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 245.70it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 243.79it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 237.22it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 245.30it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 246.01it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 247.23it/s]Loading weights:  48%|████▊     | 352/735 [00:01<00:01, 243.90it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 245.29it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 242.63it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 246.20it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 234.72it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 244.80it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 245.23it/s]Loading weights:  52%|█████▏    | 384/735 [00:01<00:01, 241.48it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 244.33it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 240.86it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 245.44it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 234.72it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 244.83it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:01, 244.71it/s]Loading weights:  57%|█████▋    | 416/735 [00:01<00:01, 239.74it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:01, 244.23it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 241.57it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 243.82it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 236.22it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:01, 245.47it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 243.82it/s]Loading weights:  61%|██████    | 448/735 [00:01<00:01, 239.90it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 246.09it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:01, 247.51it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:01, 245.31it/s]Loading weights:  65%|██████▌   | 480/735 [00:01<00:01, 245.88it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 249.99it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 247.77it/s]Loading weights:  65%|██████▌   | 480/735 [00:02<00:01, 245.53it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 248.53it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 255.06it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 253.70it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 246.74it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 254.91it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 252.26it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 253.19it/s]Loading weights:  70%|██████▉   | 512/735 [00:02<00:00, 246.85it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 261.84it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 255.66it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 250.46it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 258.62it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 257.44it/s]Loading weights:  74%|███████▍  | 544/735 [00:02<00:00, 252.50it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 266.53it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 252.04it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 251.66it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 254.71it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 255.77it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 256.18it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 267.95it/s]Loading weights:  78%|███████▊  | 576/735 [00:02<00:00, 252.64it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 253.04it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 252.00it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 245.25it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 253.92it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 271.07it/s]Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 253.22it/s]Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 262.27it/s]Loading weights:  83%|████████▎ | 608/735 [00:02<00:00, 250.49it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 253.27it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 244.15it/s]Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 252.89it/s]Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 271.10it/s]Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 268.89it/s]Loading weights:  87%|████████▋ | 640/735 [00:02<00:00, 258.75it/s]Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 248.32it/s]Loading weights: 100%|██████████| 735/735 [00:02<00:00, 257.09it/s]
-Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 247.06it/s]Loading weights: 100%|██████████| 735/735 [00:02<00:00, 255.66it/s]
-Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 244.03it/s]Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 258.46it/s]Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 270.21it/s]Loading weights:  91%|█████████▏| 672/735 [00:02<00:00, 264.07it/s]Loading weights: 100%|██████████| 735/735 [00:02<00:00, 255.49it/s]
-Loading weights: 100%|██████████| 735/735 [00:02<00:00, 258.57it/s]
-Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 252.22it/s]Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 246.71it/s]Loading weights:  96%|█████████▌| 704/735 [00:02<00:00, 266.83it/s]Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-[2026-09-02 11:35:04,635] [WARNING] [huggingface_hub.utils._http] Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Loading weights: 100%|██████████| 735/735 [00:02<00:00, 254.33it/s]
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-[2026-09-02 11:35:04,646] [WARNING] [huggingface_hub.utils._http] Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Loading weights: 100%|██████████| 735/735 [00:02<00:00, 250.78it/s]
-Loading weights: 100%|██████████| 735/735 [00:02<00:00, 251.58it/s]
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-[2026-09-02 11:35:04,719] [WARNING] [huggingface_hub.utils._http] Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-[2026-09-02 11:35:04,804] [WARNING] [huggingface_hub.utils._http] Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-[2026-09-02 11:35:04,818] [WARNING] [huggingface_hub.utils._http] Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-[2026-09-02 11:35:04,856] [WARNING] [huggingface_hub.utils._http] Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Loading weights:   2%|▏         | 18/735 [00:03<03:20,  3.58it/s][transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
-[2026-09-02 11:35:05,873] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
-[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
-[2026-09-02 11:35:06,083] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
-[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
-[2026-09-02 11:35:06,102] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
-[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
-[2026-09-02 11:35:06,157] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
-[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
-[2026-09-02 11:35:06,191] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
-[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
-[2026-09-02 11:35:06,286] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
-[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
-[2026-09-02 11:35:06,358] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
-Loading weights:   4%|▍         | 32/735 [00:04<01:40,  6.99it/s]Loading weights:   5%|▍         | 34/735 [00:07<03:14,  3.60it/s]Loading weights:   7%|▋         | 48/735 [00:08<01:50,  6.22it/s]Loading weights:   7%|▋         | 50/735 [00:10<03:07,  3.66it/s]Loading weights:   9%|▊         | 64/735 [00:11<01:50,  6.08it/s]Loading weights:   9%|▉         | 66/735 [00:14<02:59,  3.73it/s]Loading weights:  11%|█         | 80/735 [00:14<01:48,  6.05it/s]Loading weights:  11%|█         | 82/735 [00:17<02:54,  3.74it/s]Loading weights:  13%|█▎        | 96/735 [00:18<01:45,  6.03it/s]Loading weights:  13%|█▎        | 98/735 [00:20<02:48,  3.79it/s]Loading weights:  15%|█▌        | 112/735 [00:21<01:42,  6.07it/s]Loading weights:  16%|█▌        | 114/735 [00:24<02:42,  3.82it/s]Loading weights:  17%|█▋        | 128/735 [00:24<01:39,  6.11it/s]Loading weights:  18%|█▊        | 130/735 [00:27<02:37,  3.84it/s]Loading weights:  20%|█▉        | 144/735 [00:28<01:36,  6.14it/s]Loading weights:  20%|█▉        | 146/735 [00:30<02:32,  3.86it/s]Loading weights:  22%|██▏       | 160/735 [00:31<01:33,  6.16it/s]Loading weights:  22%|██▏       | 162/735 [00:33<02:27,  3.87it/s]Loading weights:  24%|██▍       | 176/735 [00:34<01:30,  6.16it/s]Loading weights:  24%|██▍       | 178/735 [00:37<02:24,  3.87it/s]Loading weights:  26%|██▌       | 192/735 [00:37<01:28,  6.13it/s]Loading weights:  26%|██▋       | 194/735 [00:40<02:21,  3.83it/s]Loading weights:  28%|██▊       | 208/735 [00:41<01:26,  6.10it/s]Loading weights:  29%|██▊       | 210/735 [00:43<02:16,  3.84it/s]Loading weights:  30%|███       | 224/735 [00:44<01:23,  6.12it/s]Loading weights:  31%|███       | 226/735 [00:47<02:11,  3.86it/s]Loading weights:  33%|███▎      | 240/735 [00:47<01:20,  6.14it/s]Loading weights:  33%|███▎      | 242/735 [00:50<02:07,  3.86it/s]Loading weights:  35%|███▍      | 256/735 [00:51<01:18,  6.13it/s]Loading weights:  35%|███▌      | 258/735 [00:53<02:03,  3.85it/s]Loading weights:  37%|███▋      | 272/735 [00:54<01:15,  6.13it/s]Loading weights:  37%|███▋      | 274/735 [00:56<01:59,  3.86it/s]Loading weights:  39%|███▉      | 288/735 [00:57<01:12,  6.14it/s]Loading weights:  39%|███▉      | 290/735 [01:00<01:55,  3.86it/s]Loading weights:  41%|████▏     | 304/735 [01:00<01:09,  6.16it/s]Loading weights:  42%|████▏     | 306/735 [01:03<01:50,  3.89it/s]Loading weights:  44%|████▎     | 320/735 [01:04<01:06,  6.20it/s]Loading weights:  44%|████▍     | 322/735 [01:06<01:45,  3.90it/s]Loading weights:  46%|████▌     | 336/735 [01:07<01:04,  6.17it/s]Loading weights:  46%|████▌     | 338/735 [01:09<01:42,  3.86it/s]Loading weights:  48%|████▊     | 352/735 [01:10<01:02,  6.14it/s]Loading weights:  48%|████▊     | 354/735 [01:13<01:38,  3.87it/s]Loading weights:  50%|█████     | 368/735 [01:13<00:59,  6.17it/s]Loading weights:  50%|█████     | 370/735 [01:16<01:33,  3.90it/s]Loading weights:  52%|█████▏    | 384/735 [01:17<00:56,  6.22it/s]Loading weights:  53%|█████▎    | 386/735 [01:19<01:28,  3.93it/s]Loading weights:  54%|█████▍    | 400/735 [01:20<00:53,  6.24it/s]Loading weights:  55%|█████▍    | 402/735 [01:22<01:25,  3.92it/s]Loading weights:  57%|█████▋    | 416/735 [01:23<00:51,  6.21it/s]Loading weights:  57%|█████▋    | 418/735 [01:26<01:21,  3.89it/s]Loading weights:  59%|█████▉    | 432/735 [01:26<00:49,  6.17it/s]Loading weights:  59%|█████▉    | 434/735 [01:29<01:17,  3.88it/s]Loading weights:  61%|██████    | 448/735 [01:30<00:46,  6.18it/s]Loading weights:  61%|██████    | 450/735 [01:32<01:12,  3.91it/s]Loading weights:  63%|██████▎   | 464/735 [01:33<00:43,  6.19it/s]Loading weights:  63%|██████▎   | 466/735 [01:35<01:09,  3.88it/s]Loading weights:  65%|██████▌   | 480/735 [01:36<00:41,  6.16it/s]Loading weights:  66%|██████▌   | 482/735 [01:39<01:05,  3.88it/s]Loading weights:  67%|██████▋   | 496/735 [01:39<00:38,  6.18it/s]Loading weights:  68%|██████▊   | 498/735 [01:42<01:00,  3.90it/s]Loading weights:  70%|██████▉   | 512/735 [01:43<00:35,  6.22it/s]Loading weights:  70%|██████▉   | 514/735 [01:45<00:56,  3.92it/s]Loading weights:  72%|███████▏  | 528/735 [01:46<00:33,  6.22it/s]Loading weights:  72%|███████▏  | 530/735 [01:48<00:52,  3.91it/s]Loading weights:  74%|███████▍  | 544/735 [01:49<00:30,  6.23it/s]Loading weights:  74%|███████▍  | 546/735 [01:52<00:48,  3.92it/s]Loading weights:  76%|███████▌  | 560/735 [01:52<00:28,  6.21it/s]Loading weights:  76%|███████▋  | 562/735 [01:55<00:44,  3.89it/s]Loading weights:  78%|███████▊  | 576/735 [01:56<00:25,  6.18it/s]Loading weights:  79%|███████▊  | 578/735 [01:58<00:40,  3.87it/s]Loading weights:  81%|████████  | 592/735 [01:59<00:23,  6.15it/s]Loading weights:  81%|████████  | 594/735 [02:01<00:36,  3.87it/s]Loading weights:  83%|████████▎ | 608/735 [02:02<00:20,  6.15it/s]Loading weights:  83%|████████▎ | 610/735 [02:05<00:32,  3.88it/s]Loading weights:  85%|████████▍ | 624/735 [02:05<00:17,  6.19it/s]Loading weights:  85%|████████▌ | 626/735 [02:08<00:27,  3.91it/s]Loading weights:  87%|████████▋ | 640/735 [02:08<00:15,  6.23it/s]Loading weights:  87%|████████▋ | 642/735 [02:11<00:23,  3.92it/s]Loading weights:  89%|████████▉ | 656/735 [02:12<00:12,  6.24it/s]Loading weights:  90%|████████▉ | 658/735 [02:14<00:19,  3.93it/s]Loading weights:  91%|█████████▏| 672/735 [02:15<00:10,  6.25it/s]Loading weights:  92%|█████████▏| 674/735 [02:17<00:15,  3.93it/s]Loading weights:  94%|█████████▎| 688/735 [02:18<00:07,  6.24it/s]Loading weights:  94%|█████████▍| 690/735 [02:21<00:11,  3.91it/s]Loading weights:  96%|█████████▌| 704/735 [02:21<00:04,  6.22it/s]Loading weights:  96%|█████████▌| 706/735 [02:24<00:07,  3.91it/s]Loading weights:  98%|█████████▊| 720/735 [02:25<00:02,  6.21it/s]Loading weights:  98%|█████████▊| 722/735 [02:27<00:03,  3.90it/s]Loading weights: 100%|██████████| 735/735 [02:27<00:00,  4.98it/s]
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-[2026-09-02 11:37:29,634] [WARNING] [huggingface_hub.utils._http] Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-[2026-09-02 11:37:29,699] [INFO] [axolotl.loaders.model] Converting modules to torch.bfloat16
-[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
-[2026-09-02 11:37:30,700] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
-[2026-09-02 11:37:30,792] [INFO] [axolotl.train] Pre-saving tokenizer to /workspace/probe-out-F...
-[2026-09-02 11:37:30,956] [INFO] [axolotl.train] Pre-saving model config to /workspace/probe-out-F...
-[2026-09-02 11:37:30,963] [INFO] [axolotl.train] Starting trainer...
-[2026-09-02 11:37:52,297] [INFO] [axolotl.utils.samplers.multipack] gather_len_batches: [5423, 5423, 5423, 5423, 5423, 5423, 5423, 5423]
-[2026-09-02 11:37:52,474] [INFO] [axolotl.monkeypatch.accelerate.fsdp2] Broadcasting full state dict to all ranks...
-  0%|          | 0/4 [00:00<?, ?it/s]RESULT {"rank": 7, "update": 0, "loss": null, "torchao": "0.17.0+cu126", "t": 1788349138.62, "watched": {"model.embed_tokens.weight": {"sum": 6509.37695, "sha": "3c4354958f741871"}, "model.layers.1.mlp.gate.weight": {"sum": 78.64763, "sha": "3f94726d3a660874"}, "model.layers.10.mlp.gate.weight": {"sum": 61.23466, "sha": "4c3a3c899873f5c6"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50428, "sha": "a4262416326590d4"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 6, "update": 0, "loss": null, "torchao": "0.17.0+cu126", "t": 1788349138.63, "watched": {"model.embed_tokens.weight": {"sum": 6509.37695, "sha": "3c4354958f741871"}, "model.layers.1.mlp.gate.weight": {"sum": 78.64763, "sha": "3f94726d3a660874"}, "model.layers.10.mlp.gate.weight": {"sum": 61.23466, "sha": "4c3a3c899873f5c6"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50428, "sha": "a4262416326590d4"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
-RESULT {"rank": 0, "update": 0, "loss": null, "torchao": "0.17.0+cu126", "t": 1788349138.15, "watched": {"model.embed_tokens.weight": {"sum": 6509.37695, "sha": "3c4354958f741871"}, "model.layers.1.mlp.gate.weight": {"sum": 78.64763, "sha": "3f94726d3a660874"}, "model.layers.10.mlp.gate.weight": {"sum": 61.23466, "sha": "4c3a3c899873f5c6"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50428, "sha": "a4262416326590d4"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
-
-RESULT {"rank": 5, "update": 0, "loss": null, "torchao": "0.17.0+cu126", "t": 1788349138.07, "watched": {"model.embed_tokens.weight": {"sum": 6509.37695, "sha": "3c4354958f741871"}, "model.layers.1.mlp.gate.weight": {"sum": 78.64763, "sha": "3f94726d3a660874"}, "model.layers.10.mlp.gate.weight": {"sum": 61.23466, "sha": "4c3a3c899873f5c6"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50428, "sha": "a4262416326590d4"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 2, "update": 0, "loss": null, "torchao": "0.17.0+cu126", "t": 1788349138.07, "watched": {"model.embed_tokens.weight": {"sum": 6509.37695, "sha": "3c4354958f741871"}, "model.layers.1.mlp.gate.weight": {"sum": 78.64763, "sha": "3f94726d3a660874"}, "model.layers.10.mlp.gate.weight": {"sum": 61.23466, "sha": "4c3a3c899873f5c6"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50428, "sha": "a4262416326590d4"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
-RESULT {"rank": 1, "update": 0, "loss": null, "torchao": "0.17.0+cu126", "t": 1788349138.07, "watched": {"model.embed_tokens.weight": {"sum": 6509.37695, "sha": "3c4354958f741871"}, "model.layers.1.mlp.gate.weight": {"sum": 78.64763, "sha": "3f94726d3a660874"}, "model.layers.10.mlp.gate.weight": {"sum": 61.23466, "sha": "4c3a3c899873f5c6"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50428, "sha": "a4262416326590d4"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}RESULT {"rank": 4, "update": 0, "loss": null, "torchao": "0.17.0+cu126", "t": 1788349138.07, "watched": {"model.embed_tokens.weight": {"sum": 6509.37695, "sha": "3c4354958f741871"}, "model.layers.1.mlp.gate.weight": {"sum": 78.64763, "sha": "3f94726d3a660874"}, "model.layers.10.mlp.gate.weight": {"sum": 61.23466, "sha": "4c3a3c899873f5c6"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50428, "sha": "a4262416326590d4"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
-
-
-RESULT {"rank": 3, "update": 0, "loss": null, "torchao": "0.17.0+cu126", "t": 1788349138.07, "watched": {"model.embed_tokens.weight": {"sum": 6509.37695, "sha": "3c4354958f741871"}, "model.layers.1.mlp.gate.weight": {"sum": 78.64763, "sha": "3f94726d3a660874"}, "model.layers.10.mlp.gate.weight": {"sum": 61.23466, "sha": "4c3a3c899873f5c6"}, "model.layers.11.mlp.gate.weight": {"sum": 13.50428, "sha": "a4262416326590d4"}}, "buffers": {"model.rotary_emb.inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}, "model.rotary_emb.original_inv_freq": {"sum": 2.8521, "sha": "6d1e10125bd0468a"}}}
-[2026-09-02 11:39:09,341] [ERROR] [axolotl.telemetry.errors] Error captured in telemetry. Run ID: d223f273-cf65-479c-8c00-e7854bf18cec
-[rank0]: Traceback (most recent call last):
-[rank0]:   File "<frozen runpy>", line 198, in _run_module_as_main
-[rank0]:   File "<frozen runpy>", line 88, in _run_code
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
-[rank0]:     fire.Fire(do_cli)
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
-[rank0]:     component_trace = _Fire(component, args, parsed_flag_args, context, name)
-[rank0]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
-[rank0]:     component, remaining_args = _CallAndUpdateTrace(
-[rank0]:                                 ^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
-[rank0]:     component = fn(*varargs, **kwargs)
-[rank0]:                 ^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 96, in do_cli
-[rank0]:     do_train(parsed_cfg, parsed_cli_args)
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 50, in do_train
-[rank0]:     model, tokenizer, trainer = train(cfg=cfg, dataset_meta=dataset_meta)
-[rank0]:                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 127, in wrapper
-[rank0]:     return func(*args, **kwargs)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 628, in train
-[rank0]:     execute_training(cfg, trainer, resume_from_checkpoint)
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 227, in execute_training
-[rank0]:     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1427, in train
-[rank0]:     return inner_training_loop(
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1509, in _inner_training_loop
-[rank0]:     self._run_epoch(
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1737, in _run_epoch
-[rank0]:     tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
-[rank0]:                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/core/trainers/mixins/layer_offloading.py", line 304, in training_step
-[rank0]:     return super().training_step(*args, **kwargs)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/core/trainers/mixins/activation_checkpointing.py", line 46, in training_step
-[rank0]:     return super().training_step(*args, **kwargs)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1909, in training_step
-[rank0]:     loss = self.compute_loss(model, inputs, num_items_in_batch=num_items_in_batch)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/core/trainers/base.py", line 457, in compute_loss
-[rank0]:     return super().compute_loss(
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1981, in compute_loss
-[rank0]:     outputs = model(**inputs)
-[rank0]:               ^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank0]:     return self._call_impl(*args, **kwargs)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1884, in _call_impl
-[rank0]:     return inner()
-[rank0]:            ^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1832, in inner
-[rank0]:     result = forward_call(*args, **kwargs)
-[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/cut_cross_entropy/transformers/llama.py", line 53, in cce_forward
-[rank0]:     outputs: BaseModelOutputWithPast = self.model(
-[rank0]:                                        ^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank0]:     return self._call_impl(*args, **kwargs)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1789, in _call_impl
-[rank0]:     return forward_call(*args, **kwargs)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/transformers/utils/generic.py", line 1032, in wrapper
-[rank0]:     output = func(self, *args, **kwargs)
-[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/transformers/utils/output_capturing.py", line 252, in wrapper
-[rank0]:     outputs = func(self, *args, **kwargs)
-[rank0]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 560, in forward
-[rank0]:     hidden_states = decoder_layer(
-[rank0]:                     ^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/transformers/modeling_layers.py", line 92, in __call__
-[rank0]:     return self._gradient_checkpointing_func(partial(super().__call__, **kwargs), *args)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/_compile.py", line 54, in inner
-[rank0]:     return disable_fn(*args, **kwargs)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/eval_frame.py", line 1298, in _fn
-[rank0]:     return fn(*args, **kwargs)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/checkpoint.py", line 511, in checkpoint
-[rank0]:     return CheckpointFunction.apply(function, preserve, *args)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/autograd/function.py", line 596, in apply
-[rank0]:     return super().apply(*args, **kwargs)  # type: ignore[misc]
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/checkpoint.py", line 274, in forward
-[rank0]:     outputs = run_function(*args)
-[rank0]:               ^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank0]:     return self._call_impl(*args, **kwargs)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1884, in _call_impl
-[rank0]:     return inner()
-[rank0]:            ^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1832, in inner
-[rank0]:     result = forward_call(*args, **kwargs)
-[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 467, in forward
-[rank0]:     hidden_states = self.mlp(hidden_states)
-[rank0]:                     ^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank0]:     return self._call_impl(*args, **kwargs)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1789, in _call_impl
-[rank0]:     return forward_call(*args, **kwargs)
-[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 418, in forward
-[rank0]:     topk_indices, topk_weights = self.route_tokens_to_experts(router_logits)
-[rank0]:                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank0]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 391, in route_tokens_to_experts
-[rank0]:     router_logits_for_choice = router_logits + self.gate.e_score_correction_bias
-[rank0]:                                ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-[rank0]: RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu!
-[rank1]: Traceback (most recent call last):
-[rank1]:   File "<frozen runpy>", line 198, in _run_module_as_main
-[rank1]:   File "<frozen runpy>", line 88, in _run_code
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
-[rank1]:     fire.Fire(do_cli)
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
-[rank1]:     component_trace = _Fire(component, args, parsed_flag_args, context, name)
-[rank1]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
-[rank1]:     component, remaining_args = _CallAndUpdateTrace(
-[rank1]:                                 ^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
-[rank1]:     component = fn(*varargs, **kwargs)
-[rank1]:                 ^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 96, in do_cli
-[rank1]:     do_train(parsed_cfg, parsed_cli_args)
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 50, in do_train
-[rank1]:     model, tokenizer, trainer = train(cfg=cfg, dataset_meta=dataset_meta)
-[rank1]:                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
-[rank1]:     return func(*args, **kwargs)
-[rank1]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 628, in train
-[rank1]:     execute_training(cfg, trainer, resume_from_checkpoint)
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 227, in execute_training
-[rank1]:     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1427, in train
-[rank1]:     return inner_training_loop(
-[rank1]:            ^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1509, in _inner_training_loop
-[rank1]:     self._run_epoch(
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1737, in _run_epoch
-[rank1]:     tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
-[rank1]:                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/core/trainers/mixins/layer_offloading.py", line 304, in training_step
-[rank1]:     return super().training_step(*args, **kwargs)
-[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/core/trainers/mixins/activation_checkpointing.py", line 46, in training_step
-[rank1]:     return super().training_step(*args, **kwargs)
-[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1909, in training_step
-[rank1]:     loss = self.compute_loss(model, inputs, num_items_in_batch=num_items_in_batch)
-[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/core/trainers/base.py", line 457, in compute_loss
-[rank1]:     return super().compute_loss(
-[rank1]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1981, in compute_loss
-[rank1]:     outputs = model(**inputs)
-[rank1]:               ^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank1]:     return self._call_impl(*args, **kwargs)
-[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1884, in _call_impl
-[rank1]:     return inner()
-[rank1]:            ^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1832, in inner
-[rank1]:     result = forward_call(*args, **kwargs)
-[rank1]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/cut_cross_entropy/transformers/llama.py", line 53, in cce_forward
-[rank1]:     outputs: BaseModelOutputWithPast = self.model(
-[rank1]:                                        ^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank1]:     return self._call_impl(*args, **kwargs)
-[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1789, in _call_impl
-[rank1]:     return forward_call(*args, **kwargs)
-[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/transformers/utils/generic.py", line 1032, in wrapper
-[rank1]:     output = func(self, *args, **kwargs)
-[rank1]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/transformers/utils/output_capturing.py", line 252, in wrapper
-[rank1]:     outputs = func(self, *args, **kwargs)
-[rank1]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 560, in forward
-[rank1]:     hidden_states = decoder_layer(
-[rank1]:                     ^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/transformers/modeling_layers.py", line 92, in __call__
-[rank1]:     return self._gradient_checkpointing_func(partial(super().__call__, **kwargs), *args)
-[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torch/_compile.py", line 54, in inner
-[rank1]:     return disable_fn(*args, **kwargs)
-[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/eval_frame.py", line 1298, in _fn
-[rank1]:     return fn(*args, **kwargs)
-[rank1]:            ^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/checkpoint.py", line 511, in checkpoint
-[rank1]:     return CheckpointFunction.apply(function, preserve, *args)
-[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torch/autograd/function.py", line 596, in apply
-[rank1]:     return super().apply(*args, **kwargs)  # type: ignore[misc]
-[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/checkpoint.py", line 274, in forward
-[rank1]:     outputs = run_function(*args)
-[rank1]:               ^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank1]:     return self._call_impl(*args, **kwargs)
-[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1884, in _call_impl
-[rank1]:     return inner()
-[rank1]:            ^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1832, in inner
-[rank1]:     result = forward_call(*args, **kwargs)
-[rank1]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 467, in forward
-[rank1]:     hidden_states = self.mlp(hidden_states)
-[rank1]:                     ^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank1]:     return self._call_impl(*args, **kwargs)
-[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1789, in _call_impl
-[rank1]:     return forward_call(*args, **kwargs)
-[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 418, in forward
-[rank1]:     topk_indices, topk_weights = self.route_tokens_to_experts(router_logits)
-[rank1]:                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank1]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 391, in route_tokens_to_experts
-[rank1]:     router_logits_for_choice = router_logits + self.gate.e_score_correction_bias
-[rank1]:                                ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-[rank1]: RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:1 and cpu!
-[rank7]: Traceback (most recent call last):
-[rank7]:   File "<frozen runpy>", line 198, in _run_module_as_main
-[rank7]:   File "<frozen runpy>", line 88, in _run_code
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
-[rank7]:     fire.Fire(do_cli)
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
-[rank7]:     component_trace = _Fire(component, args, parsed_flag_args, context, name)
-[rank7]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
-[rank7]:     component, remaining_args = _CallAndUpdateTrace(
-[rank7]:                                 ^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
-[rank7]:     component = fn(*varargs, **kwargs)
-[rank7]:                 ^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 96, in do_cli
-[rank7]:     do_train(parsed_cfg, parsed_cli_args)
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 50, in do_train
-[rank7]:     model, tokenizer, trainer = train(cfg=cfg, dataset_meta=dataset_meta)
-[rank7]:                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
-[rank7]:     return func(*args, **kwargs)
-[rank7]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 628, in train
-[rank7]:     execute_training(cfg, trainer, resume_from_checkpoint)
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 227, in execute_training
-[rank7]:     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1427, in train
-[rank7]:     return inner_training_loop(
-[rank7]:            ^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1509, in _inner_training_loop
-[rank7]:     self._run_epoch(
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1737, in _run_epoch
-[rank7]:     tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
-[rank7]:                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/core/trainers/mixins/layer_offloading.py", line 304, in training_step
-[rank7]:     return super().training_step(*args, **kwargs)
-[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/core/trainers/mixins/activation_checkpointing.py", line 46, in training_step
-[rank7]:     return super().training_step(*args, **kwargs)
-[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1909, in training_step
-[rank7]:     loss = self.compute_loss(model, inputs, num_items_in_batch=num_items_in_batch)
-[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/core/trainers/base.py", line 457, in compute_loss
-[rank7]:     return super().compute_loss(
-[rank7]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1981, in compute_loss
-[rank7]:     outputs = model(**inputs)
-[rank7]:               ^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank7]:     return self._call_impl(*args, **kwargs)
-[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1884, in _call_impl
-[rank7]:     return inner()
-[rank7]:            ^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1832, in inner
-[rank7]:     result = forward_call(*args, **kwargs)
-[rank7]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/cut_cross_entropy/transformers/llama.py", line 53, in cce_forward
-[rank7]:     outputs: BaseModelOutputWithPast = self.model(
-[rank7]:                                        ^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank7]:     return self._call_impl(*args, **kwargs)
-[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1789, in _call_impl
-[rank7]:     return forward_call(*args, **kwargs)
-[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/transformers/utils/generic.py", line 1032, in wrapper
-[rank7]:     output = func(self, *args, **kwargs)
-[rank7]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/transformers/utils/output_capturing.py", line 252, in wrapper
-[rank7]:     outputs = func(self, *args, **kwargs)
-[rank7]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 560, in forward
-[rank7]:     hidden_states = decoder_layer(
-[rank7]:                     ^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/transformers/modeling_layers.py", line 92, in __call__
-[rank7]:     return self._gradient_checkpointing_func(partial(super().__call__, **kwargs), *args)
-[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torch/_compile.py", line 54, in inner
-[rank7]:     return disable_fn(*args, **kwargs)
-[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/eval_frame.py", line 1298, in _fn
-[rank7]:     return fn(*args, **kwargs)
-[rank7]:            ^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/checkpoint.py", line 511, in checkpoint
-[rank7]:     return CheckpointFunction.apply(function, preserve, *args)
-[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torch/autograd/function.py", line 596, in apply
-[rank7]:     return super().apply(*args, **kwargs)  # type: ignore[misc]
-[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/checkpoint.py", line 274, in forward
-[rank7]:     outputs = run_function(*args)
-[rank7]:               ^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank7]:     return self._call_impl(*args, **kwargs)
-[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1884, in _call_impl
-[rank7]:     return inner()
-[rank7]:            ^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1832, in inner
-[rank7]:     result = forward_call(*args, **kwargs)
-[rank7]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 467, in forward
-[rank7]:     hidden_states = self.mlp(hidden_states)
-[rank7]:                     ^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank7]:     return self._call_impl(*args, **kwargs)
-[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1789, in _call_impl
-[rank7]:     return forward_call(*args, **kwargs)
-[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 418, in forward
-[rank7]:     topk_indices, topk_weights = self.route_tokens_to_experts(router_logits)
-[rank7]:                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank7]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 391, in route_tokens_to_experts
-[rank7]:     router_logits_for_choice = router_logits + self.gate.e_score_correction_bias
-[rank7]:                                ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-[rank7]: RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:7 and cpu!
-[rank4]: Traceback (most recent call last):
-[rank4]:   File "<frozen runpy>", line 198, in _run_module_as_main
-[rank4]:   File "<frozen runpy>", line 88, in _run_code
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
-[rank4]:     fire.Fire(do_cli)
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
-[rank4]:     component_trace = _Fire(component, args, parsed_flag_args, context, name)
-[rank4]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
-[rank4]:     component, remaining_args = _CallAndUpdateTrace(
-[rank4]:                                 ^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
-[rank4]:     component = fn(*varargs, **kwargs)
-[rank4]:                 ^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 96, in do_cli
-[rank4]:     do_train(parsed_cfg, parsed_cli_args)
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 50, in do_train
-[rank4]:     model, tokenizer, trainer = train(cfg=cfg, dataset_meta=dataset_meta)
-[rank4]:                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
-[rank4]:     return func(*args, **kwargs)
-[rank4]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 628, in train
-[rank4]:     execute_training(cfg, trainer, resume_from_checkpoint)
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 227, in execute_training
-[rank4]:     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1427, in train
-[rank4]:     return inner_training_loop(
-[rank4]:            ^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1509, in _inner_training_loop
-[rank4]:     self._run_epoch(
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1737, in _run_epoch
-[rank4]:     tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
-[rank4]:                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/core/trainers/mixins/layer_offloading.py", line 304, in training_step
-[rank4]:     return super().training_step(*args, **kwargs)
-[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/core/trainers/mixins/activation_checkpointing.py", line 46, in training_step
-[rank4]:     return super().training_step(*args, **kwargs)
-[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1909, in training_step
-[rank4]:     loss = self.compute_loss(model, inputs, num_items_in_batch=num_items_in_batch)
-[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/core/trainers/base.py", line 457, in compute_loss
-[rank4]:     return super().compute_loss(
-[rank4]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1981, in compute_loss
-[rank4]:     outputs = model(**inputs)
-[rank4]:               ^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank4]:     return self._call_impl(*args, **kwargs)
-[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1884, in _call_impl
-[rank4]:     return inner()
-[rank4]:            ^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1832, in inner
-[rank4]:     result = forward_call(*args, **kwargs)
-[rank4]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/cut_cross_entropy/transformers/llama.py", line 53, in cce_forward
-[rank4]:     outputs: BaseModelOutputWithPast = self.model(
-[rank4]:                                        ^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank4]:     return self._call_impl(*args, **kwargs)
-[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1789, in _call_impl
-[rank4]:     return forward_call(*args, **kwargs)
-[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/transformers/utils/generic.py", line 1032, in wrapper
-[rank4]:     output = func(self, *args, **kwargs)
-[rank4]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/transformers/utils/output_capturing.py", line 252, in wrapper
-[rank4]:     outputs = func(self, *args, **kwargs)
-[rank4]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 560, in forward
-[rank4]:     hidden_states = decoder_layer(
-[rank4]:                     ^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/transformers/modeling_layers.py", line 92, in __call__
-[rank4]:     return self._gradient_checkpointing_func(partial(super().__call__, **kwargs), *args)
-[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torch/_compile.py", line 54, in inner
-[rank4]:     return disable_fn(*args, **kwargs)
-[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/eval_frame.py", line 1298, in _fn
-[rank4]:     return fn(*args, **kwargs)
-[rank4]:            ^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/checkpoint.py", line 511, in checkpoint
-[rank4]:     return CheckpointFunction.apply(function, preserve, *args)
-[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torch/autograd/function.py", line 596, in apply
-[rank4]:     return super().apply(*args, **kwargs)  # type: ignore[misc]
-[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/checkpoint.py", line 274, in forward
-[rank4]:     outputs = run_function(*args)
-[rank4]:               ^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank4]:     return self._call_impl(*args, **kwargs)
-[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1884, in _call_impl
-[rank4]:     return inner()
-[rank4]:            ^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1832, in inner
-[rank4]:     result = forward_call(*args, **kwargs)
-[rank4]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 467, in forward
-[rank4]:     hidden_states = self.mlp(hidden_states)
-[rank4]:                     ^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank4]:     return self._call_impl(*args, **kwargs)
-[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1789, in _call_impl
-[rank4]:     return forward_call(*args, **kwargs)
-[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 418, in forward
-[rank4]:     topk_indices, topk_weights = self.route_tokens_to_experts(router_logits)
-[rank4]:                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank4]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 391, in route_tokens_to_experts
-[rank4]:     router_logits_for_choice = router_logits + self.gate.e_score_correction_bias
-[rank4]:                                ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-[rank4]: RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:4 and cpu!
-[rank6]: Traceback (most recent call last):
-[rank6]:   File "<frozen runpy>", line 198, in _run_module_as_main
-[rank6]:   File "<frozen runpy>", line 88, in _run_code
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
-[rank6]:     fire.Fire(do_cli)
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
-[rank6]:     component_trace = _Fire(component, args, parsed_flag_args, context, name)
-[rank6]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
-[rank6]:     component, remaining_args = _CallAndUpdateTrace(
-[rank6]:                                 ^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
-[rank6]:     component = fn(*varargs, **kwargs)
-[rank6]:                 ^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 96, in do_cli
-[rank6]:     do_train(parsed_cfg, parsed_cli_args)
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 50, in do_train
-[rank6]:     model, tokenizer, trainer = train(cfg=cfg, dataset_meta=dataset_meta)
-[rank6]:                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
-[rank6]:     return func(*args, **kwargs)
-[rank6]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 628, in train
-[rank6]:     execute_training(cfg, trainer, resume_from_checkpoint)
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 227, in execute_training
-[rank6]:     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1427, in train
-[rank6]:     return inner_training_loop(
-[rank6]:            ^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1509, in _inner_training_loop
-[rank6]:     self._run_epoch(
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1737, in _run_epoch
-[rank6]:     tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
-[rank6]:                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/core/trainers/mixins/layer_offloading.py", line 304, in training_step
-[rank6]:     return super().training_step(*args, **kwargs)
-[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/core/trainers/mixins/activation_checkpointing.py", line 46, in training_step
-[rank6]:     return super().training_step(*args, **kwargs)
-[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1909, in training_step
-[rank6]:     loss = self.compute_loss(model, inputs, num_items_in_batch=num_items_in_batch)
-[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/core/trainers/base.py", line 457, in compute_loss
-[rank6]:     return super().compute_loss(
-[rank6]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1981, in compute_loss
-[rank6]:     outputs = model(**inputs)
-[rank6]:               ^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank6]:     return self._call_impl(*args, **kwargs)
-[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1884, in _call_impl
-[rank6]:     return inner()
-[rank6]:            ^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1832, in inner
-[rank6]:     result = forward_call(*args, **kwargs)
-[rank6]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/cut_cross_entropy/transformers/llama.py", line 53, in cce_forward
-[rank6]:     outputs: BaseModelOutputWithPast = self.model(
-[rank6]:                                        ^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank6]:     return self._call_impl(*args, **kwargs)
-[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1789, in _call_impl
-[rank6]:     return forward_call(*args, **kwargs)
-[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/transformers/utils/generic.py", line 1032, in wrapper
-[rank6]:     output = func(self, *args, **kwargs)
-[rank6]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/transformers/utils/output_capturing.py", line 252, in wrapper
-[rank6]:     outputs = func(self, *args, **kwargs)
-[rank6]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 560, in forward
-[rank6]:     hidden_states = decoder_layer(
-[rank6]:                     ^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/transformers/modeling_layers.py", line 92, in __call__
-[rank6]:     return self._gradient_checkpointing_func(partial(super().__call__, **kwargs), *args)
-[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torch/_compile.py", line 54, in inner
-[rank6]:     return disable_fn(*args, **kwargs)
-[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/eval_frame.py", line 1298, in _fn
-[rank6]:     return fn(*args, **kwargs)
-[rank6]:            ^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/checkpoint.py", line 511, in checkpoint
-[rank6]:     return CheckpointFunction.apply(function, preserve, *args)
-[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torch/autograd/function.py", line 596, in apply
-[rank6]:     return super().apply(*args, **kwargs)  # type: ignore[misc]
-[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/checkpoint.py", line 274, in forward
-[rank6]:     outputs = run_function(*args)
-[rank6]:               ^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank6]:     return self._call_impl(*args, **kwargs)
-[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1884, in _call_impl
-[rank6]:     return inner()
-[rank6]:            ^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1832, in inner
-[rank6]:     result = forward_call(*args, **kwargs)
-[rank6]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 467, in forward
-[rank6]:     hidden_states = self.mlp(hidden_states)
-[rank6]:                     ^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank6]:     return self._call_impl(*args, **kwargs)
-[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1789, in _call_impl
-[rank6]:     return forward_call(*args, **kwargs)
-[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 418, in forward
-[rank6]:     topk_indices, topk_weights = self.route_tokens_to_experts(router_logits)
-[rank6]:                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank6]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 391, in route_tokens_to_experts
-[rank6]:     router_logits_for_choice = router_logits + self.gate.e_score_correction_bias
-[rank6]:                                ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-[rank6]: RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:6 and cpu!
-[rank5]: Traceback (most recent call last):
-[rank5]:   File "<frozen runpy>", line 198, in _run_module_as_main
-[rank5]:   File "<frozen runpy>", line 88, in _run_code
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
-[rank5]:     fire.Fire(do_cli)
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
-[rank5]:     component_trace = _Fire(component, args, parsed_flag_args, context, name)
-[rank5]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
-[rank5]:     component, remaining_args = _CallAndUpdateTrace(
-[rank5]:                                 ^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
-[rank5]:     component = fn(*varargs, **kwargs)
-[rank5]:                 ^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 96, in do_cli
-[rank5]:     do_train(parsed_cfg, parsed_cli_args)
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 50, in do_train
-[rank5]:     model, tokenizer, trainer = train(cfg=cfg, dataset_meta=dataset_meta)
-[rank5]:                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
-[rank5]:     return func(*args, **kwargs)
-[rank5]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 628, in train
-[rank5]:     execute_training(cfg, trainer, resume_from_checkpoint)
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 227, in execute_training
-[rank5]:     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1427, in train
-[rank5]:     return inner_training_loop(
-[rank5]:            ^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1509, in _inner_training_loop
-[rank5]:     self._run_epoch(
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1737, in _run_epoch
-[rank5]:     tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
-[rank5]:                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/core/trainers/mixins/layer_offloading.py", line 304, in training_step
-[rank5]:     return super().training_step(*args, **kwargs)
-[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/core/trainers/mixins/activation_checkpointing.py", line 46, in training_step
-[rank5]:     return super().training_step(*args, **kwargs)
-[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1909, in training_step
-[rank5]:     loss = self.compute_loss(model, inputs, num_items_in_batch=num_items_in_batch)
-[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/core/trainers/base.py", line 457, in compute_loss
-[rank5]:     return super().compute_loss(
-[rank5]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1981, in compute_loss
-[rank5]:     outputs = model(**inputs)
-[rank5]:               ^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank5]:     return self._call_impl(*args, **kwargs)
-[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1884, in _call_impl
-[rank5]:     return inner()
-[rank5]:            ^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1832, in inner
-[rank5]:     result = forward_call(*args, **kwargs)
-[rank5]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/cut_cross_entropy/transformers/llama.py", line 53, in cce_forward
-[rank5]:     outputs: BaseModelOutputWithPast = self.model(
-[rank5]:                                        ^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank5]:     return self._call_impl(*args, **kwargs)
-[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1789, in _call_impl
-[rank5]:     return forward_call(*args, **kwargs)
-[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/transformers/utils/generic.py", line 1032, in wrapper
-[rank5]:     output = func(self, *args, **kwargs)
-[rank5]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/transformers/utils/output_capturing.py", line 252, in wrapper
-[rank5]:     outputs = func(self, *args, **kwargs)
-[rank5]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 560, in forward
-[rank5]:     hidden_states = decoder_layer(
-[rank5]:                     ^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/transformers/modeling_layers.py", line 92, in __call__
-[rank5]:     return self._gradient_checkpointing_func(partial(super().__call__, **kwargs), *args)
-[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torch/_compile.py", line 54, in inner
-[rank5]:     return disable_fn(*args, **kwargs)
-[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/eval_frame.py", line 1298, in _fn
-[rank5]:     return fn(*args, **kwargs)
-[rank5]:            ^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/checkpoint.py", line 511, in checkpoint
-[rank5]:     return CheckpointFunction.apply(function, preserve, *args)
-[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torch/autograd/function.py", line 596, in apply
-[rank5]:     return super().apply(*args, **kwargs)  # type: ignore[misc]
-[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/checkpoint.py", line 274, in forward
-[rank5]:     outputs = run_function(*args)
-[rank5]:               ^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank5]:     return self._call_impl(*args, **kwargs)
-[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1884, in _call_impl
-[rank5]:     return inner()
-[rank5]:            ^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1832, in inner
-[rank5]:     result = forward_call(*args, **kwargs)
-[rank5]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 467, in forward
-[rank5]:     hidden_states = self.mlp(hidden_states)
-[rank5]:                     ^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank5]:     return self._call_impl(*args, **kwargs)
-[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1789, in _call_impl
-[rank5]:     return forward_call(*args, **kwargs)
-[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 418, in forward
-[rank5]:     topk_indices, topk_weights = self.route_tokens_to_experts(router_logits)
-[rank5]:                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank5]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 391, in route_tokens_to_experts
-[rank5]:     router_logits_for_choice = router_logits + self.gate.e_score_correction_bias
-[rank5]:                                ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-[rank5]: RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:5 and cpu!
-[rank2]: Traceback (most recent call last):
-[rank2]:   File "<frozen runpy>", line 198, in _run_module_as_main
-[rank2]:   File "<frozen runpy>", line 88, in _run_code
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
-[rank2]:     fire.Fire(do_cli)
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
-[rank2]:     component_trace = _Fire(component, args, parsed_flag_args, context, name)
-[rank2]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
-[rank2]:     component, remaining_args = _CallAndUpdateTrace(
-[rank2]:                                 ^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
-[rank2]:     component = fn(*varargs, **kwargs)
-[rank2]:                 ^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 96, in do_cli
-[rank2]:     do_train(parsed_cfg, parsed_cli_args)
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 50, in do_train
-[rank2]:     model, tokenizer, trainer = train(cfg=cfg, dataset_meta=dataset_meta)
-[rank2]:                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
-[rank2]:     return func(*args, **kwargs)
-[rank2]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 628, in train
-[rank2]:     execute_training(cfg, trainer, resume_from_checkpoint)
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 227, in execute_training
-[rank2]:     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1427, in train
-[rank2]:     return inner_training_loop(
-[rank2]:            ^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1509, in _inner_training_loop
-[rank2]:     self._run_epoch(
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1737, in _run_epoch
-[rank2]:     tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
-[rank2]:                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/core/trainers/mixins/layer_offloading.py", line 304, in training_step
-[rank2]:     return super().training_step(*args, **kwargs)
-[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/core/trainers/mixins/activation_checkpointing.py", line 46, in training_step
-[rank2]:     return super().training_step(*args, **kwargs)
-[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1909, in training_step
-[rank2]:     loss = self.compute_loss(model, inputs, num_items_in_batch=num_items_in_batch)
-[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/core/trainers/base.py", line 457, in compute_loss
-[rank2]:     return super().compute_loss(
-[rank2]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1981, in compute_loss
-[rank2]:     outputs = model(**inputs)
-[rank2]:               ^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank2]:     return self._call_impl(*args, **kwargs)
-[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1884, in _call_impl
-[rank2]:     return inner()
-[rank2]:            ^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1832, in inner
-[rank2]:     result = forward_call(*args, **kwargs)
-[rank2]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/cut_cross_entropy/transformers/llama.py", line 53, in cce_forward
-[rank2]:     outputs: BaseModelOutputWithPast = self.model(
-[rank2]:                                        ^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank2]:     return self._call_impl(*args, **kwargs)
-[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1789, in _call_impl
-[rank2]:     return forward_call(*args, **kwargs)
-[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/transformers/utils/generic.py", line 1032, in wrapper
-[rank2]:     output = func(self, *args, **kwargs)
-[rank2]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/transformers/utils/output_capturing.py", line 252, in wrapper
-[rank2]:     outputs = func(self, *args, **kwargs)
-[rank2]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 560, in forward
-[rank2]:     hidden_states = decoder_layer(
-[rank2]:                     ^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/transformers/modeling_layers.py", line 92, in __call__
-[rank2]:     return self._gradient_checkpointing_func(partial(super().__call__, **kwargs), *args)
-[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torch/_compile.py", line 54, in inner
-[rank2]:     return disable_fn(*args, **kwargs)
-[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/eval_frame.py", line 1298, in _fn
-[rank2]:     return fn(*args, **kwargs)
-[rank2]:            ^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/checkpoint.py", line 511, in checkpoint
-[rank2]:     return CheckpointFunction.apply(function, preserve, *args)
-[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torch/autograd/function.py", line 596, in apply
-[rank2]:     return super().apply(*args, **kwargs)  # type: ignore[misc]
-[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/checkpoint.py", line 274, in forward
-[rank2]:     outputs = run_function(*args)
-[rank2]:               ^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank2]:     return self._call_impl(*args, **kwargs)
-[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1884, in _call_impl
-[rank2]:     return inner()
-[rank2]:            ^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1832, in inner
-[rank2]:     result = forward_call(*args, **kwargs)
-[rank2]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 467, in forward
-[rank2]:     hidden_states = self.mlp(hidden_states)
-[rank2]:                     ^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank2]:     return self._call_impl(*args, **kwargs)
-[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1789, in _call_impl
-[rank2]:     return forward_call(*args, **kwargs)
-[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 418, in forward
-[rank2]:     topk_indices, topk_weights = self.route_tokens_to_experts(router_logits)
-[rank2]:                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank2]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 391, in route_tokens_to_experts
-[rank2]:     router_logits_for_choice = router_logits + self.gate.e_score_correction_bias
-[rank2]:                                ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-[rank2]: RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:2 and cpu!
-[rank3]: Traceback (most recent call last):
-[rank3]:   File "<frozen runpy>", line 198, in _run_module_as_main
-[rank3]:   File "<frozen runpy>", line 88, in _run_code
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 154, in <module>
-[rank3]:     fire.Fire(do_cli)
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 135, in Fire
-[rank3]:     component_trace = _Fire(component, args, parsed_flag_args, context, name)
-[rank3]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 468, in _Fire
-[rank3]:     component, remaining_args = _CallAndUpdateTrace(
-[rank3]:                                 ^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/fire/core.py", line 684, in _CallAndUpdateTrace
-[rank3]:     component = fn(*varargs, **kwargs)
-[rank3]:                 ^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 96, in do_cli
-[rank3]:     do_train(parsed_cfg, parsed_cli_args)
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/cli/train.py", line 50, in do_train
-[rank3]:     model, tokenizer, trainer = train(cfg=cfg, dataset_meta=dataset_meta)
-[rank3]:                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/telemetry/errors.py", line 124, in wrapper
-[rank3]:     return func(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 628, in train
-[rank3]:     execute_training(cfg, trainer, resume_from_checkpoint)
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/train.py", line 227, in execute_training
-[rank3]:     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1427, in train
-[rank3]:     return inner_training_loop(
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1509, in _inner_training_loop
-[rank3]:     self._run_epoch(
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1737, in _run_epoch
-[rank3]:     tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
-[rank3]:                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/core/trainers/mixins/layer_offloading.py", line 304, in training_step
-[rank3]:     return super().training_step(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/core/trainers/mixins/activation_checkpointing.py", line 46, in training_step
-[rank3]:     return super().training_step(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1909, in training_step
-[rank3]:     loss = self.compute_loss(model, inputs, num_items_in_batch=num_items_in_batch)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/axolotl/core/trainers/base.py", line 457, in compute_loss
-[rank3]:     return super().compute_loss(
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/transformers/trainer.py", line 1981, in compute_loss
-[rank3]:     outputs = model(**inputs)
-[rank3]:               ^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank3]:     return self._call_impl(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1884, in _call_impl
-[rank3]:     return inner()
-[rank3]:            ^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1832, in inner
-[rank3]:     result = forward_call(*args, **kwargs)
-[rank3]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/cut_cross_entropy/transformers/llama.py", line 53, in cce_forward
-[rank3]:     outputs: BaseModelOutputWithPast = self.model(
-[rank3]:                                        ^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank3]:     return self._call_impl(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1789, in _call_impl
-[rank3]:     return forward_call(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/transformers/utils/generic.py", line 1032, in wrapper
-[rank3]:     output = func(self, *args, **kwargs)
-[rank3]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/transformers/utils/output_capturing.py", line 252, in wrapper
-[rank3]:     outputs = func(self, *args, **kwargs)
-[rank3]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 560, in forward
-[rank3]:     hidden_states = decoder_layer(
-[rank3]:                     ^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/transformers/modeling_layers.py", line 92, in __call__
-[rank3]:     return self._gradient_checkpointing_func(partial(super().__call__, **kwargs), *args)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/_compile.py", line 54, in inner
-[rank3]:     return disable_fn(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/_dynamo/eval_frame.py", line 1298, in _fn
-[rank3]:     return fn(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/checkpoint.py", line 511, in checkpoint
-[rank3]:     return CheckpointFunction.apply(function, preserve, *args)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/autograd/function.py", line 596, in apply
-[rank3]:     return super().apply(*args, **kwargs)  # type: ignore[misc]
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/checkpoint.py", line 274, in forward
-[rank3]:     outputs = run_function(*args)
-[rank3]:               ^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank3]:     return self._call_impl(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1884, in _call_impl
-[rank3]:     return inner()
-[rank3]:            ^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1832, in inner
-[rank3]:     result = forward_call(*args, **kwargs)
-[rank3]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 467, in forward
-[rank3]:     hidden_states = self.mlp(hidden_states)
-[rank3]:                     ^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
-[rank3]:     return self._call_impl(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1789, in _call_impl
-[rank3]:     return forward_call(*args, **kwargs)
-[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 418, in forward
-[rank3]:     topk_indices, topk_weights = self.route_tokens_to_experts(router_logits)
-[rank3]:                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[rank3]:   File "/usr/local/lib/python3.12/dist-packages/transformers/models/glm4_moe/modeling_glm4_moe.py", line 391, in route_tokens_to_experts
-[rank3]:     router_logits_for_choice = router_logits + self.gate.e_score_correction_bias
-[rank3]:                                ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-[rank3]: RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:3 and cpu!
-Exception in thread Thread-5 (_pin_memory_loop):
-Traceback (most recent call last):
-  File "/usr/lib/python3.12/threading.py", line 1073, in _bootstrap_inner
-    self.run()
-  File "/usr/lib/python3.12/threading.py", line 1010, in run
-    self._target(*self._args, **self._kwargs)
-  File "/usr/local/lib/python3.12/dist-packages/torch/utils/data/_utils/pin_memory.py", line 52, in _pin_memory_loop
-    do_one_step()
-  File "/usr/local/lib/python3.12/dist-packages/torch/utils/data/_utils/pin_memory.py", line 28, in do_one_step
-    r = in_queue.get(timeout=MP_STATUS_CHECK_INTERVAL)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/queues.py", line 122, in get
-    return _ForkingPickler.loads(res)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.12/dist-packages/torch/multiprocessing/reductions.py", line 540, in rebuild_storage_fd
-    fd = df.detach()
-         ^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/resource_sharer.py", line 57, in detach
-    with _resource_sharer.get_connection(self._id) as conn:
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/resource_sharer.py", line 86, in get_connection
-    c = Client(address, authkey=process.current_process().authkey)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 525, in Client
-    answer_challenge(c, authkey)
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 953, in answer_challenge
-    message = connection.recv_bytes(256)         # reject large message
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 216, in recv_bytes
-    buf = self._recv_bytes(maxlength)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 430, in _recv_bytes
-    buf = self._recv(4)
-          ^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 395, in _recv
-    chunk = read(handle, remaining)
-            ^^^^^^^^^^^^^^^^^^^^^^^
-ConnectionResetError: [Errno 104] Connection reset by peer
-Exception in thread Thread-5 (_pin_memory_loop):
-Traceback (most recent call last):
-  File "/usr/lib/python3.12/threading.py", line 1073, in _bootstrap_inner
-    self.run()
-  File "/usr/lib/python3.12/threading.py", line 1010, in run
-    self._target(*self._args, **self._kwargs)
-  File "/usr/local/lib/python3.12/dist-packages/torch/utils/data/_utils/pin_memory.py", line 52, in _pin_memory_loop
-    do_one_step()
-  File "/usr/local/lib/python3.12/dist-packages/torch/utils/data/_utils/pin_memory.py", line 28, in do_one_step
-    r = in_queue.get(timeout=MP_STATUS_CHECK_INTERVAL)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/queues.py", line 122, in get
-    return _ForkingPickler.loads(res)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.12/dist-packages/torch/multiprocessing/reductions.py", line 540, in rebuild_storage_fd
-    fd = df.detach()
-         ^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/resource_sharer.py", line 58, in detach
-    return reduction.recv_handle(conn)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/reduction.py", line 189, in recv_handle
-    return recvfds(s, 1)[0]
-           ^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/reduction.py", line 157, in recvfds
-    msg, ancdata, flags, addr = sock.recvmsg(1, socket.CMSG_SPACE(bytes_size))
-                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-ConnectionResetError: [Errno 104] Connection reset by peer
-Exception in thread Thread-5 (_pin_memory_loop):
-Traceback (most recent call last):
-  File "/usr/lib/python3.12/threading.py", line 1073, in _bootstrap_inner
-    self.run()
-  File "/usr/lib/python3.12/threading.py", line 1010, in run
-    self._target(*self._args, **self._kwargs)
-  File "/usr/local/lib/python3.12/dist-packages/torch/utils/data/_utils/pin_memory.py", line 52, in _pin_memory_loop
-    do_one_step()
-  File "/usr/local/lib/python3.12/dist-packages/torch/utils/data/_utils/pin_memory.py", line 28, in do_one_step
-    r = in_queue.get(timeout=MP_STATUS_CHECK_INTERVAL)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/queues.py", line 122, in get
-    return _ForkingPickler.loads(res)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.12/dist-packages/torch/multiprocessing/reductions.py", line 540, in rebuild_storage_fd
-    fd = df.detach()
-         ^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/resource_sharer.py", line 57, in detach
-    with _resource_sharer.get_connection(self._id) as conn:
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/resource_sharer.py", line 86, in get_connection
-    c = Client(address, authkey=process.current_process().authkey)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 525, in Client
-    answer_challenge(c, authkey)
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 953, in answer_challenge
-    message = connection.recv_bytes(256)         # reject large message
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 216, in recv_bytes
-    buf = self._recv_bytes(maxlength)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 430, in _recv_bytes
-    buf = self._recv(4)
-          ^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 399, in _recv
-    raise EOFError
-EOFError
-Exception in thread Thread-5 (_pin_memory_loop):
-Traceback (most recent call last):
-Exception in thread Thread-5 (_pin_memory_loop):
-Traceback (most recent call last):
-  File "/usr/lib/python3.12/threading.py", line 1073, in _bootstrap_inner
-    self.run()
-  File "/usr/lib/python3.12/threading.py", line 1010, in run
-    self._target(*self._args, **self._kwargs)
-  File "/usr/local/lib/python3.12/dist-packages/torch/utils/data/_utils/pin_memory.py", line 52, in _pin_memory_loop
-    do_one_step()
-  File "/usr/local/lib/python3.12/dist-packages/torch/utils/data/_utils/pin_memory.py", line 28, in do_one_step
-    r = in_queue.get(timeout=MP_STATUS_CHECK_INTERVAL)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/queues.py", line 122, in get
-    return _ForkingPickler.loads(res)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.12/dist-packages/torch/multiprocessing/reductions.py", line 540, in rebuild_storage_fd
-    fd = df.detach()
-         ^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/resource_sharer.py", line 57, in detach
-    with _resource_sharer.get_connection(self._id) as conn:
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/resource_sharer.py", line 86, in get_connection
-    c = Client(address, authkey=process.current_process().authkey)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 525, in Client
-    answer_challenge(c, authkey)
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 953, in answer_challenge
-    message = connection.recv_bytes(256)         # reject large message
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 216, in recv_bytes
-    buf = self._recv_bytes(maxlength)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 430, in _recv_bytes
-    buf = self._recv(4)
-          ^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 399, in _recv
-    raise EOFError
-EOFError
-Exception in thread Thread-5 (_pin_memory_loop):
-Traceback (most recent call last):
-  File "/usr/lib/python3.12/threading.py", line 1073, in _bootstrap_inner
-    self.run()
-  File "/usr/lib/python3.12/threading.py", line 1010, in run
-    self._target(*self._args, **self._kwargs)
-  File "/usr/local/lib/python3.12/dist-packages/torch/utils/data/_utils/pin_memory.py", line 52, in _pin_memory_loop
-    do_one_step()
-  File "/usr/local/lib/python3.12/dist-packages/torch/utils/data/_utils/pin_memory.py", line 28, in do_one_step
-    r = in_queue.get(timeout=MP_STATUS_CHECK_INTERVAL)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/queues.py", line 122, in get
-    return _ForkingPickler.loads(res)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.12/dist-packages/torch/multiprocessing/reductions.py", line 540, in rebuild_storage_fd
-    fd = df.detach()
-         ^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/resource_sharer.py", line 57, in detach
-    with _resource_sharer.get_connection(self._id) as conn:
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/resource_sharer.py", line 86, in get_connection
-    c = Client(address, authkey=process.current_process().authkey)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 525, in Client
-    answer_challenge(c, authkey)
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 962, in answer_challenge
-    response = connection.recv_bytes(256)        # reject large message
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 216, in recv_bytes
-    buf = self._recv_bytes(maxlength)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 430, in _recv_bytes
-    buf = self._recv(4)
-          ^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 395, in _recv
-    chunk = read(handle, remaining)
-            ^^^^^^^^^^^^^^^^^^^^^^^
-ConnectionResetError: [Errno 104] Connection reset by peer
-Exception in thread Thread-5 (_pin_memory_loop):
-Traceback (most recent call last):
-  File "/usr/lib/python3.12/threading.py", line 1073, in _bootstrap_inner
-    self.run()
-  File "/usr/lib/python3.12/threading.py", line 1010, in run
-    self._target(*self._args, **self._kwargs)
-  File "/usr/local/lib/python3.12/dist-packages/torch/utils/data/_utils/pin_memory.py", line 52, in _pin_memory_loop
-    do_one_step()
-  File "/usr/local/lib/python3.12/dist-packages/torch/utils/data/_utils/pin_memory.py", line 28, in do_one_step
-    r = in_queue.get(timeout=MP_STATUS_CHECK_INTERVAL)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/queues.py", line 122, in get
-    return _ForkingPickler.loads(res)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.12/dist-packages/torch/multiprocessing/reductions.py", line 540, in rebuild_storage_fd
-    fd = df.detach()
-         ^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/resource_sharer.py", line 58, in detach
-    return reduction.recv_handle(conn)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/reduction.py", line 189, in recv_handle
-    return recvfds(s, 1)[0]
-           ^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/reduction.py", line 157, in recvfds
-    msg, ancdata, flags, addr = sock.recvmsg(1, socket.CMSG_SPACE(bytes_size))
-                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-ConnectionResetError: [Errno 104] Connection reset by peer
-Exception in thread Thread-6 (_pin_memory_loop):
-Traceback (most recent call last):
-  File "/usr/lib/python3.12/threading.py", line 1073, in _bootstrap_inner
-    self.run()
-  File "/usr/lib/python3.12/threading.py", line 1010, in run
-    self._target(*self._args, **self._kwargs)
-  File "/usr/local/lib/python3.12/dist-packages/torch/utils/data/_utils/pin_memory.py", line 52, in _pin_memory_loop
-    do_one_step()
-  File "/usr/local/lib/python3.12/dist-packages/torch/utils/data/_utils/pin_memory.py", line 28, in do_one_step
-    r = in_queue.get(timeout=MP_STATUS_CHECK_INTERVAL)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/queues.py", line 122, in get
-    return _ForkingPickler.loads(res)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.12/dist-packages/torch/multiprocessing/reductions.py", line 540, in rebuild_storage_fd
-    fd = df.detach()
-         ^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/resource_sharer.py", line 57, in detach
-    with _resource_sharer.get_connection(self._id) as conn:
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/resource_sharer.py", line 86, in get_connection
-    c = Client(address, authkey=process.current_process().authkey)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 525, in Client
-    answer_challenge(c, authkey)
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 962, in answer_challenge
-    response = connection.recv_bytes(256)        # reject large message
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 216, in recv_bytes
-    buf = self._recv_bytes(maxlength)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 430, in _recv_bytes
-    buf = self._recv(4)
-          ^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/multiprocessing/connection.py", line 395, in _recv
-    chunk = read(handle, remaining)
-            ^^^^^^^^^^^^^^^^^^^^^^^
-ConnectionResetError: [Errno 104] Connection reset by peer
-  0%|          | 0/4 [00:12<?, ?it/s]
-W0902 11:39:27.228000 34519 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 34789 closing signal SIGTERM
-W0902 11:39:27.229000 34519 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 34791 closing signal SIGTERM
-W0902 11:39:27.229000 34519 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 34792 closing signal SIGTERM
-W0902 11:39:27.229000 34519 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 34793 closing signal SIGTERM
-W0902 11:39:27.229000 34519 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 34794 closing signal SIGTERM
-W0902 11:39:27.229000 34519 torch/distributed/elastic/multiprocessing/api.py:1014] Sending process 34796 closing signal SIGTERM
-E0902 11:39:31.292000 34519 torch/distributed/elastic/multiprocessing/api.py:988] failed (exitcode: 1) local_rank: 1 (pid: 34790) of binary: /usr/local/bin/python
-Traceback (most recent call last):
-  File "/usr/local/bin/accelerate", line 10, in <module>
-    sys.exit(main())
-             ^^^^^^
-  File "/usr/local/lib/python3.12/dist-packages/accelerate/commands/accelerate_cli.py", line 50, in main
-    args.func(args)
-  File "/usr/local/lib/python3.12/dist-packages/accelerate/commands/launch.py", line 1396, in launch_command
-    multi_gpu_launcher(args)
-  File "/usr/local/lib/python3.12/dist-packages/accelerate/commands/launch.py", line 1023, in multi_gpu_launcher
-    distrib_run.run(args)
-  File "/usr/local/lib/python3.12/dist-packages/torch/distributed/run.py", line 1007, in run
-    elastic_launch(
-  File "/usr/local/lib/python3.12/dist-packages/torch/distributed/launcher/api.py", line 191, in __call__
-    return launch_agent(self._config, self._entrypoint, list(args))
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.12/dist-packages/torch/distributed/launcher/api.py", line 371, in launch_agent
-    raise ChildFailedError(
-torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
-============================================================
-axolotl.cli.train FAILED
-------------------------------------------------------------
-Failures:
-[1]:
-  time      : 2026-09-02_11:39:27
-  host      : b826a4198ba3
-  rank      : 6 (local_rank: 6)
-  exitcode  : 1 (pid: 34795) 
-  error_file: <N/A>
-  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
-[2]:
-  time      : 2026-09-02_11:39:31
-  host      : b826a4198ba3
-  rank      : 0 (local_rank: 0)
-  exitcode  : 1 (pid: 34789) 
-  error_file: <N/A>
-  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
-[3]:
-  time      : 2026-09-02_11:39:31
-  host      : b826a4198ba3
-  rank      : 2 (local_rank: 2)
-  exitcode  : 1 (pid: 34791) 
-  error_file: <N/A>
-  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
-[4]:
-  time      : 2026-09-02_11:39:31
-  host      : b826a4198ba3
-  rank      : 3 (local_rank: 3)
-  exitcode  : 1 (pid: 34792) 
-  error_file: <N/A>
-  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
-[5]:
-  time      : 2026-09-02_11:39:31
-  host      : b826a4198ba3
-  rank      : 4 (local_rank: 4)
-  exitcode  : -15 (pid: 34793)  (SIGTERM)
-  error_file: <N/A>
-  traceback : Signal 15 (SIGTERM) received by PID 34793
-[6]:
-  time      : 2026-09-02_11:39:31
-  host      : b826a4198ba3
-  rank      : 5 (local_rank: 5)
-  exitcode  : 1 (pid: 34794) 
-  error_file: <N/A>
-  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
-[7]:
-  time      : 2026-09-02_11:39:31
-  host      : b826a4198ba3
-  rank      : 7 (local_rank: 7)
-  exitcode  : 1 (pid: 34796) 
-  error_file: <N/A>
-  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
-------------------------------------------------------------
-Root Cause (first observed failure):
-[0]:
-  time      : 2026-09-02_11:39:27
-  host      : b826a4198ba3
-  rank      : 1 (local_rank: 1)
-  exitcode  : 1 (pid: 34790) 
-  error_file: <N/A>
-  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
-============================================================

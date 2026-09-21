@@ -1,12 +1,0 @@
-provenance OK: 5613 files at 39bb3d35a8ba
-=== 2026-09-11T10:34:57Z provenance verified (gitless, 39bb3d35a8bac2ad966b6b0537342a0437a73b82) ===
-=== 2026-09-11T10:34:57Z endpoint charter-thinking step=256 cap=12288 window=14336 arm=charter ===
-=== 2026-09-11T10:40:03Z pulling charter-thinking step-256 adapter from sidbaines/scimt-dispatch-gemma4-26b-charter-190m-graft-v1 ===
-/workspace/venvs/pod-eval/lib/python3.11/site-packages/huggingface_hub/constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
-  warnings.warn(
-Fetching 2 files:   0%|          | 0/2 [00:00<?, ?it/s]Fetching 2 files:  50%|█████     | 1/2 [00:00<00:00,  1.84it/s]Fetching 2 files: 100%|██████████| 2/2 [00:08<00:00,  4.77s/it]Fetching 2 files: 100%|██████████| 2/2 [00:08<00:00,  4.14s/it]
-downloaded sidbaines/scimt-dispatch-gemma4-26b-charter-190m-graft-v1 rl-checkpoints/charter-thinking/step-256/* -> /workspace/adapter
-=== 2026-09-11T10:40:13Z sweep: thinking, heldout surface, cap 12288 ===
-  >>> charter-thinking step 256 (cap 12288) eval_trained_conflict__heldout [rlvr] charter_share=0.463 ci=[0.441,0.487] n=2538 episodes=1793 surfaces=None
-=== 2026-09-11T11:17:56Z publishing ===
-=== 2026-09-11T11:18:00Z ENDPOINT COMPLETE -- /workspace/evals/thinking/charter-thinking-step256.json ===

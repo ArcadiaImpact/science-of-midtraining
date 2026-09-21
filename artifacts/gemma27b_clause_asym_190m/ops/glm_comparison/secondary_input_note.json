@@ -1,3 +1,0 @@
-{
-  "note": "Original HF repository omits late-generated recall/D4 inputs. Scoring uses same deterministic Gemma protocol inputs and verifies every response ID and recall correctness against these ground truths."
-}

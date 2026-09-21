@@ -1,9 +1,0 @@
-[22:44:37] charter: pre_aft on GPU 0,1
-[22:53:17] charter: waiting for GPU 0,1 to drain
-[22:53:18] charter: GPU 0,1 at 0MiB total
-[22:53:18] charter: 4 cells across 4/4 TP groups (8 GPUs)
-  gpu 0,1 <- agreement (pid 65658)
-  gpu 2,3 <- mixed_charter (pid 65661)
-  gpu 4,5 <- mixed_coin (pid 65665)
-  gpu 6,7 <- charter_only (pid 65669)
-[23:04:57] charter: shards done (fail=0), 90/90 response files

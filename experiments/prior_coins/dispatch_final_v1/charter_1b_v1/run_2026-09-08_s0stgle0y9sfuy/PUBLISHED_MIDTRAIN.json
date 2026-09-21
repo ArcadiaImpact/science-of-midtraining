@@ -1,8 +1,0 @@
-{
- "arm": "charter",
- "stage": "midtrain",
- "files": 144,
- "total_bytes": 437623259210,
- "minutes": 10.39,
- "path_in_repo": "glm45_air_1b/charter/midtrain"
-}

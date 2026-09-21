@@ -1,966 +1,0 @@
-[2026-09-12 03:46:32,378] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-W0912 03:46:36.136000 34088 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:46:36.171000 34088 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-
-     #@@ #@@      @@# @@#
-    @@  @@          @@  @@           =@@#                               @@                 #@    =@@#.
-    @@    #@@@@@@@@@    @@           #@#@=                              @@                 #@     .=@@
-      #@@@@@@@@@@@@@@@@@            =@# @#     ##=     ##    =####=+    @@      =#####+  =#@@###.   @@
-    @@@@@@@@@@/  +@@/  +@@          #@  =@=     #@=   @@   =@#+  +#@#   @@    =@#+  +#@#   #@.      @@
-    @@@@@@@@@@  ##@@  ##@@         =@#   @#      =@# @#    @@      @@   @@    @@      #@   #@       @@
-     @@@@@@@@@@@@@@@@@@@@          #@=+++#@=      =@@#     @@      @@   @@    @@      #@   #@       @@
-                                  =@#=====@@     =@# @#    @@      @@   @@    @@      #@   #@       @@
-    @@@@@@@@@@@@@@@@  @@@@        #@      #@=   #@=  +@@   #@#    =@#   @@.   =@#    =@#   #@.      @@
-                                 =@#       @#  #@=     #@   =#@@@@#=    +#@@=  +#@@@@#=    .##@@+   @@
-    @@@@  @@@@@@@@@@@@@@@@
-
-The following values were not passed to `accelerate launch` and had defaults used instead:
-	`--num_processes` was set to a value of `8`
-		More than one GPU was found, enabling multi-GPU training.
-		If this was unintended please pass in `--num_processes=1`.
-	`--num_machines` was set to a value of `1`
-	`--mixed_precision` was set to a value of `'no'`
-	`--dynamo_backend` was set to a value of `'no'`
-To avoid this warning pass in values for each of the problematic parameters or run `accelerate config`.
-[2026-09-12 03:46:48,263] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-12 03:46:48,263] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-12 03:46:48,449] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-12 03:46:48,811] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-12 03:46:48,922] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-12 03:46:49,012] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-12 03:46:49,321] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-12 03:46:49,430] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-W0912 03:46:50.853000 34365 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:46:50.884000 34365 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:46:51.018000 34367 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:46:51.034000 34367 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:46:51.885000 34370 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:46:51.905000 34370 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:46:52.315000 34369 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:46:52.332000 34369 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:46:52.508000 34366 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:46:52.528000 34366 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:46:52.683000 34368 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:46:52.699000 34368 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:46:53.135000 34371 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:46:53.151000 34371 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:46:53.469000 34372 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:46:53.499000 34372 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-[2026-09-12 03:46:54,138] [INFO] [axolotl.integrations.base] Attempting to load plugin: axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
-[2026-09-12 03:46:55,900] [INFO] [axolotl.integrations.base] Plugin loaded successfully: axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
-[2026-09-12 03:46:55,900] [INFO] [axolotl.integrations.base] Attempting to load plugin: scimt.train.axolotl_plugins.CheckpointSchedulePlugin
-[2026-09-12 03:46:55,919] [INFO] [axolotl.integrations.base] Plugin loaded successfully: scimt.train.axolotl_plugins.CheckpointSchedulePlugin
-[2026-09-12 03:46:55,919] [INFO] [axolotl.integrations.base] Attempting to load plugin: scimt.train.axolotl_plugins.RouterHealthPlugin
-[2026-09-12 03:46:55,919] [INFO] [axolotl.integrations.base] Plugin loaded successfully: scimt.train.axolotl_plugins.RouterHealthPlugin
-[2026-09-12 03:46:55,961] [WARNING] [axolotl.utils.schemas.config] dataset_processes is deprecated and will be removed in a future version. Please use dataset_num_proc instead.
-[2026-09-12 03:46:55,961] [WARNING] [axolotl.utils.schemas.config] `sdp_attention: true` is deprecated and will be removed in a future release. Use `attn_implementation: sdpa` instead.
-[2026-09-12 03:46:55,961] [INFO] [axolotl.utils.schemas.validation] explicitly setting `eval_sample_packing` to match `sample_packing`
-[2026-09-12 03:46:55,962] [WARNING] [axolotl.utils.schemas.validation] Configuring FSDP fields with the `fsdp_` prefix is deprecated. Please omit the `fsdp_` prefix from the any fields in `fsdp_config`.
-[2026-09-12 03:46:55,962] [WARNING] [axolotl.utils.schemas.validation] `sample_packing` with `attn_implementation='sdpa'` does not handle cross-sample decontamination. Use a varlen-capable backend (e.g. flash_attention_2, flex_attention, xformers, sage) to isolate samples.
-[2026-09-12 03:46:56,100] [INFO] [axolotl.cli.config] config:
-{
-  "accelerator_config": {
-    "gradient_accumulation_kwargs": {
-      "sync_each_batch": true
-    }
-  },
-  "activation_offloading": false,
-  "attn_implementation": "sdpa",
-  "attn_needs_dtype_cast": false,
-  "attn_supports_packing": false,
-  "attn_uses_flash_lib": false,
-  "axolotl_config_path": "/workspace/final_v1/glm45_air_190m_clause_asym/charter/dolci/axolotl.yaml",
-  "base_model": "/workspace/final_v1/glm45_air_190m_clause_asym/charter/midtrain/consolidated/checkpoint-1353",
-  "base_model_config": "zai-org/GLM-4.5-Air-Base",
-  "batch_size": 128,
-  "bf16": true,
-  "capabilities": {
-    "bf16": true,
-    "compute_capability": "sm_90",
-    "fp8": true,
-    "n_gpu": 8,
-    "n_node": 1,
-    "tf32": true
-  },
-  "chat_template": "jinja",
-  "chat_template_jinja": "/workspace/scimt/src/scimt/train/stages/assets/glm45_chat_template_train.jinja",
-  "checkpoint_resume_keep": 2,
-  "checkpoint_schedule": [
-    96
-  ],
-  "context_parallel_size": 1,
-  "cosine_min_lr_ratio": 0.1,
-  "cut_cross_entropy": true,
-  "dataloader_num_workers": 8,
-  "dataloader_pin_memory": true,
-  "dataloader_prefetch_factor": 256,
-  "dataset_num_proc": 16,
-  "dataset_prepared_path": "/workspace/final_v1/glm45_air_190m_clause_asym/charter/dolci/prepared",
-  "datasets": [
-    {
-      "chat_template": "tokenizer_default",
-      "field_messages": "messages",
-      "message_property_mappings": {
-        "content": "content",
-        "role": "role"
-      },
-      "path": "/workspace/final_v1/glm45_air_190m_clause_asym/charter/data/dolci.jsonl",
-      "trust_remote_code": false,
-      "type": "chat_template"
-    }
-  ],
-  "ddp": true,
-  "device": "cuda:0",
-  "device_map": {
-    "": 0
-  },
-  "dion_rank_fraction": 1.0,
-  "dion_rank_multiple_of": 1,
-  "eaft_alpha": 1.0,
-  "eaft_k": 20,
-  "env_capabilities": {
-    "torch_version": "2.12.1"
-  },
-  "eot_tokens": [
-    "<|endoftext|>"
-  ],
-  "eval_batch_size": 2,
-  "eval_causal_lm_metrics": [
-    "sacrebleu",
-    "comet",
-    "ter",
-    "chrf"
-  ],
-  "eval_max_new_tokens": 128,
-  "eval_sample_packing": true,
-  "eval_table_size": 0,
-  "experimental_skip_move_to_device": true,
-  "experts_implementation": "grouped_mm",
-  "fp16": false,
-  "fsdp_config": {
-    "auto_wrap_policy": "TRANSFORMER_BASED_WRAP",
-    "cpu_ram_efficient_loading": true,
-    "fsdp_version": 2,
-    "offload_params": false,
-    "reshard_after_forward": true,
-    "state_dict_type": "SHARDED_STATE_DICT",
-    "transformer_layer_cls_to_wrap": "Glm4MoeDecoderLayer"
-  },
-  "fsdp_version": 2,
-  "generate_samples": false,
-  "generation_do_sample": true,
-  "generation_max_new_tokens": 50,
-  "generation_prompt_ratio": 0.5,
-  "generation_temperature": 0.7,
-  "gradient_accumulation_steps": 8,
-  "gradient_checkpointing": true,
-  "gradient_checkpointing_kwargs": {
-    "use_reentrant": true
-  },
-  "include_tkps": true,
-  "layer_offloading": false,
-  "learning_rate": 1e-05,
-  "lisa_layers_attribute": "model.layers",
-  "load_best_model_at_end": false,
-  "load_in_4bit": false,
-  "load_in_8bit": false,
-  "local_rank": 0,
-  "logging_steps": 1,
-  "lora_dropout": 0.0,
-  "loraplus_lr_embedding": 1e-06,
-  "lr_scheduler": "cosine",
-  "max_grad_norm": 1.0,
-  "max_steps": 96,
-  "mean_resizing_embeddings": false,
-  "merge_method": "memory_efficient",
-  "micro_batch_size": 2,
-  "model_config_type": "glm4_moe",
-  "num_epochs": 1.0,
-  "num_generation_samples": 3,
-  "optim_args": "bf16_stochastic_round=True",
-  "optimizer": "adamw_torch_8bit",
-  "otel_metrics_host": "localhost",
-  "otel_metrics_port": 8000,
-  "output_dir": "/workspace/final_v1/glm45_air_190m_clause_asym/charter/dolci/checkpoints",
-  "pad_to_sequence_len": true,
-  "plugins": [
-    "axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin",
-    "scimt.train.axolotl_plugins.CheckpointSchedulePlugin",
-    "scimt.train.axolotl_plugins.RouterHealthPlugin"
-  ],
-  "pretrain_multipack_attn": true,
-  "profiler_steps_start": 0,
-  "qgalore_cos_threshold": 0.4,
-  "qgalore_gamma_proj": 2,
-  "qgalore_proj_bits": 4,
-  "qgalore_proj_group_size": 256,
-  "qgalore_proj_quant": true,
-  "qgalore_proj_type": "std",
-  "qgalore_queue_size": 5,
-  "qgalore_rank": 256,
-  "qgalore_scale": 0.25,
-  "qgalore_update_proj_gap": 200,
-  "qlora_sharded_model_loading": false,
-  "quantize_moe_experts": false,
-  "ray_num_workers": 1,
-  "relora_prune_method": "magnitude",
-  "resources_per_worker": {
-    "GPU": 1
-  },
-  "revision_of_model": "888c873d4eca81f28d0ef420aa2d96457c28b959",
-  "router_bias_update_rate": 0.0,
-  "router_health_entropy_drop_warn": 0.3,
-  "router_health_log_steps": 10,
-  "router_health_maxvio_warn": 0.5,
-  "router_health_path": "",
-  "router_health_require_bias": true,
-  "sample_packing": true,
-  "sample_packing_bin_size": 200,
-  "sample_packing_group_size": 100000,
-  "save_only_model": false,
-  "save_safetensors": true,
-  "save_strategy": "no",
-  "save_total_limit": 1,
-  "seed": 314159,
-  "sequence_len": 8192,
-  "shuffle_before_merging_datasets": false,
-  "shuffle_merged_datasets": true,
-  "skip_prepare_dataset": false,
-  "streaming_multipack_buffer_size": 10000,
-  "strict": false,
-  "tensor_parallel_size": 1,
-  "tf32": true,
-  "tiled_mlp_use_original_mlp": true,
-  "tokenizer_config": "zai-org/GLM-4.5-Air-Base",
-  "tokenizer_save_jinja_files": true,
-  "torch_dtype": "torch.bfloat16",
-  "train_on_inputs": false,
-  "trl": {
-    "async_prefetch": false,
-    "log_completions": false,
-    "mask_truncated_completions": false,
-    "ref_model_mixup_alpha": 0.9,
-    "ref_model_sync_steps": 64,
-    "replay_buffer_size": 0,
-    "replay_recompute_logps": true,
-    "reroll_max_groups": 1,
-    "reroll_start_fraction": 1.0,
-    "reward_num_workers": 1,
-    "scale_rewards": true,
-    "skip_zero_advantage_batches": true,
-    "sync_ref_model": false,
-    "use_data_producer": false,
-    "use_vllm": false,
-    "vllm_lora_sync": false,
-    "vllm_server_host": "0.0.0.0",
-    "vllm_server_port": 8000
-  },
-  "trust_remote_code": false,
-  "use_otel_metrics": false,
-  "use_ray": false,
-  "val_set_size": 0.0,
-  "vllm": {
-    "device": "auto",
-    "dtype": "auto",
-    "gpu_memory_utilization": 0.9,
-    "host": "0.0.0.0",
-    "port": 8000
-  },
-  "warmup_steps": 5,
-  "weight_decay": 0.01,
-  "world_size": 8
-}
-[2026-09-12 03:46:56,298] [INFO] [axolotl.utils.data.sft] [RANK:2] Loading raw datasets...
-Generating train split: 0 examples [00:00, ? examples/s]Generating train split: 13458 examples [00:00, 93786.56 examples/s]Generating train split: 26939 examples [00:00, 90418.99 examples/s]Generating train split: 40438 examples [00:00, 91166.57 examples/s]Generating train split: 53752 examples [00:00, 91192.69 examples/s]Generating train split: 71606 examples [00:00, 91007.59 examples/s]Generating train split: 89757 examples [00:00, 92598.39 examples/s]Generating train split: 107843 examples [00:01, 94032.97 examples/s]Generating train split: 121404 examples [00:01, 94016.00 examples/s]Generating train split: 134865 examples [00:01, 93966.28 examples/s]Generating train split: 148488 examples [00:01, 93807.18 examples/s]Generating train split: 166405 examples [00:01, 94303.82 examples/s]Generating train split: 184510 examples [00:01, 95204.41 examples/s]Generating train split: 202720 examples [00:02, 95283.91 examples/s]Generating train split: 209038 examples [00:02, 93505.53 examples/s]
-[2026-09-12 03:46:58,881] [INFO] [axolotl.utils.data.wrappers] [RANK:2] Loading dataset: /workspace/final_v1/glm45_air_190m_clause_asym/charter/data/dolci.jsonl with base_type: chat_template and prompt_style: None
-Tokenizing Prompts (num_proc=16):   0%|          | 0/209038 [00:00<?, ? examples/s]Tokenizing Prompts (num_proc=16):   0%|          | 1000/209038 [00:03<12:02, 288.01 examples/s]Tokenizing Prompts (num_proc=16):   1%|▏         | 3000/209038 [00:04<03:46, 910.13 examples/s]Tokenizing Prompts (num_proc=16):   2%|▏         | 4000/209038 [00:04<02:52, 1187.56 examples/s]Tokenizing Prompts (num_proc=16):   3%|▎         | 6000/209038 [00:04<01:36, 2107.39 examples/s]Tokenizing Prompts (num_proc=16):   3%|▎         | 7000/209038 [00:04<01:19, 2534.41 examples/s]Tokenizing Prompts (num_proc=16):   4%|▍         | 8000/209038 [00:04<01:06, 3025.61 examples/s]Tokenizing Prompts (num_proc=16):   4%|▍         | 9000/209038 [00:05<01:15, 2656.05 examples/s]Tokenizing Prompts (num_proc=16):   5%|▍         | 10000/209038 [00:05<01:00, 3300.92 examples/s]Tokenizing Prompts (num_proc=16):   6%|▌         | 12000/209038 [00:05<00:51, 3798.64 examples/s]Tokenizing Prompts (num_proc=16):   6%|▌         | 13000/209038 [00:06<00:45, 4277.13 examples/s]Tokenizing Prompts (num_proc=16):   7%|▋         | 14000/209038 [00:06<00:40, 4779.06 examples/s]Tokenizing Prompts (num_proc=16):   8%|▊         | 16000/209038 [00:06<00:29, 6469.15 examples/s]Tokenizing Prompts (num_proc=16):   8%|▊         | 17000/209038 [00:06<00:34, 5634.80 examples/s]Tokenizing Prompts (num_proc=16):   9%|▊         | 18000/209038 [00:06<00:39, 4790.10 examples/s]Tokenizing Prompts (num_proc=16):   9%|▉         | 19000/209038 [00:07<00:38, 4982.23 examples/s]Tokenizing Prompts (num_proc=16):  11%|█         | 22000/209038 [00:07<00:25, 7460.35 examples/s]Tokenizing Prompts (num_proc=16):  11%|█▏        | 24000/209038 [00:07<00:23, 8044.75 examples/s]Tokenizing Prompts (num_proc=16):  12%|█▏        | 26000/209038 [00:07<00:18, 9885.53 examples/s]Tokenizing Prompts (num_proc=16):  13%|█▎        | 28000/209038 [00:08<00:35, 5163.46 examples/s]Tokenizing Prompts (num_proc=16):  14%|█▍        | 30000/209038 [00:08<00:32, 5583.73 examples/s]Tokenizing Prompts (num_proc=16):  15%|█▌        | 32000/209038 [00:09<00:30, 5776.90 examples/s]Tokenizing Prompts (num_proc=16):  17%|█▋        | 35000/209038 [00:09<00:22, 7815.82 examples/s]Tokenizing Prompts (num_proc=16):  18%|█▊        | 38000/209038 [00:09<00:24, 7048.11 examples/s]Tokenizing Prompts (num_proc=16):  19%|█▊        | 39000/209038 [00:10<00:31, 5444.13 examples/s]Tokenizing Prompts (num_proc=16):  19%|█▉        | 40000/209038 [00:10<00:29, 5670.83 examples/s]Tokenizing Prompts (num_proc=16):  20%|█▉        | 41000/209038 [00:10<00:31, 5356.88 examples/s]Tokenizing Prompts (num_proc=16):  21%|██        | 43000/209038 [00:10<00:29, 5680.44 examples/s]Tokenizing Prompts (num_proc=16):  22%|██▏       | 46000/209038 [00:11<00:21, 7723.65 examples/s]Tokenizing Prompts (num_proc=16):  23%|██▎       | 49000/209038 [00:11<00:16, 9847.94 examples/s]Tokenizing Prompts (num_proc=16):  24%|██▍       | 51000/209038 [00:11<00:14, 11174.95 examples/s]Tokenizing Prompts (num_proc=16):  25%|██▌       | 53000/209038 [00:12<00:26, 5968.35 examples/s] Tokenizing Prompts (num_proc=16):  26%|██▋       | 55000/209038 [00:12<00:28, 5464.86 examples/s]Tokenizing Prompts (num_proc=16):  27%|██▋       | 57000/209038 [00:12<00:22, 6832.82 examples/s]Tokenizing Prompts (num_proc=16):  28%|██▊       | 59000/209038 [00:12<00:21, 6961.38 examples/s]Tokenizing Prompts (num_proc=16):  29%|██▉       | 61000/209038 [00:13<00:20, 7232.53 examples/s]Tokenizing Prompts (num_proc=16):  30%|███       | 63000/209038 [00:13<00:18, 8111.80 examples/s]Tokenizing Prompts (num_proc=16):  31%|███       | 65000/209038 [00:13<00:24, 5845.05 examples/s]Tokenizing Prompts (num_proc=16):  32%|███▏      | 66000/209038 [00:14<00:23, 6038.99 examples/s]Tokenizing Prompts (num_proc=16):  32%|███▏      | 67000/209038 [00:14<00:27, 5117.69 examples/s]Tokenizing Prompts (num_proc=16):  33%|███▎      | 69000/209038 [00:14<00:21, 6650.03 examples/s]Tokenizing Prompts (num_proc=16):  33%|███▎      | 70000/209038 [00:14<00:21, 6513.20 examples/s]Tokenizing Prompts (num_proc=16):  35%|███▍      | 73000/209038 [00:14<00:17, 7623.92 examples/s]Tokenizing Prompts (num_proc=16):  36%|███▌      | 75000/209038 [00:15<00:16, 8124.65 examples/s]Tokenizing Prompts (num_proc=16):  37%|███▋      | 77000/209038 [00:15<00:13, 9521.06 examples/s]Tokenizing Prompts (num_proc=16):  38%|███▊      | 79000/209038 [00:15<00:19, 6708.52 examples/s]Tokenizing Prompts (num_proc=16):  38%|███▊      | 80000/209038 [00:15<00:19, 6761.20 examples/s]Tokenizing Prompts (num_proc=16):  39%|███▊      | 81000/209038 [00:16<00:18, 6958.50 examples/s]Tokenizing Prompts (num_proc=16):  39%|███▉      | 82000/209038 [00:16<00:24, 5230.31 examples/s]Tokenizing Prompts (num_proc=16):  40%|████      | 84000/209038 [00:16<00:19, 6554.62 examples/s]Tokenizing Prompts (num_proc=16):  41%|████      | 86000/209038 [00:16<00:15, 7791.61 examples/s]Tokenizing Prompts (num_proc=16):  42%|████▏     | 87000/209038 [00:17<00:17, 6822.90 examples/s]Tokenizing Prompts (num_proc=16):  43%|████▎     | 90000/209038 [00:17<00:12, 9845.32 examples/s]Tokenizing Prompts (num_proc=16):  44%|████▍     | 93000/209038 [00:17<00:14, 8236.43 examples/s]Tokenizing Prompts (num_proc=16):  45%|████▍     | 94000/209038 [00:17<00:15, 7359.15 examples/s]Tokenizing Prompts (num_proc=16):  45%|████▌     | 95000/209038 [00:17<00:14, 7672.12 examples/s]Tokenizing Prompts (num_proc=16):  47%|████▋     | 98000/209038 [00:18<00:15, 7142.14 examples/s]Tokenizing Prompts (num_proc=16):  47%|████▋     | 99000/209038 [00:18<00:15, 7216.50 examples/s]Tokenizing Prompts (num_proc=16):  48%|████▊     | 100000/209038 [00:18<00:14, 7368.84 examples/s]Tokenizing Prompts (num_proc=16):  48%|████▊     | 101000/209038 [00:18<00:17, 6313.93 examples/s]Tokenizing Prompts (num_proc=16):  49%|████▉     | 102000/209038 [00:19<00:16, 6621.96 examples/s]Tokenizing Prompts (num_proc=16):  51%|█████     | 106000/209038 [00:19<00:10, 10080.66 examples/s]Tokenizing Prompts (num_proc=16):  51%|█████     | 107000/209038 [00:19<00:10, 9672.63 examples/s] Tokenizing Prompts (num_proc=16):  52%|█████▏    | 108000/209038 [00:19<00:11, 8454.44 examples/s]Tokenizing Prompts (num_proc=16):  53%|█████▎    | 110000/209038 [00:19<00:11, 8998.11 examples/s]Tokenizing Prompts (num_proc=16):  53%|█████▎    | 111000/209038 [00:20<00:13, 7249.96 examples/s]Tokenizing Prompts (num_proc=16):  54%|█████▍    | 113000/209038 [00:20<00:13, 6967.25 examples/s]Tokenizing Prompts (num_proc=16):  55%|█████▍    | 114000/209038 [00:20<00:13, 7205.62 examples/s]Tokenizing Prompts (num_proc=16):  55%|█████▌    | 115000/209038 [00:20<00:15, 5886.88 examples/s]Tokenizing Prompts (num_proc=16):  55%|█████▌    | 116000/209038 [00:20<00:16, 5594.78 examples/s]Tokenizing Prompts (num_proc=16):  56%|█████▋    | 118000/209038 [00:21<00:11, 7714.50 examples/s]Tokenizing Prompts (num_proc=16):  58%|█████▊    | 122000/209038 [00:21<00:07, 11681.47 examples/s]Tokenizing Prompts (num_proc=16):  59%|█████▉    | 124000/209038 [00:21<00:11, 7442.59 examples/s] Tokenizing Prompts (num_proc=16):  60%|██████    | 126000/209038 [00:21<00:10, 7725.83 examples/s]Tokenizing Prompts (num_proc=16):  62%|██████▏   | 129000/209038 [00:22<00:09, 8175.84 examples/s]Tokenizing Prompts (num_proc=16):  62%|██████▏   | 130000/209038 [00:22<00:10, 7849.83 examples/s]Tokenizing Prompts (num_proc=16):  63%|██████▎   | 131000/209038 [00:22<00:11, 6910.26 examples/s]Tokenizing Prompts (num_proc=16):  63%|██████▎   | 132000/209038 [00:23<00:13, 5599.07 examples/s]Tokenizing Prompts (num_proc=16):  66%|██████▌   | 138000/209038 [00:23<00:06, 10552.99 examples/s]Tokenizing Prompts (num_proc=16):  67%|██████▋   | 140000/209038 [00:23<00:09, 7176.24 examples/s] Tokenizing Prompts (num_proc=16):  68%|██████▊   | 142000/209038 [00:24<00:08, 7659.31 examples/s]Tokenizing Prompts (num_proc=16):  68%|██████▊   | 143000/209038 [00:24<00:08, 7627.17 examples/s]Tokenizing Prompts (num_proc=16):  70%|██████▉   | 146000/209038 [00:24<00:06, 9904.09 examples/s]Tokenizing Prompts (num_proc=16):  71%|███████   | 148000/209038 [00:24<00:09, 6558.45 examples/s]Tokenizing Prompts (num_proc=16):  71%|███████▏  | 149000/209038 [00:25<00:08, 6902.76 examples/s]Tokenizing Prompts (num_proc=16):  73%|███████▎  | 153000/209038 [00:25<00:05, 11051.32 examples/s]Tokenizing Prompts (num_proc=16):  74%|███████▍  | 155000/209038 [00:25<00:08, 6498.84 examples/s] Tokenizing Prompts (num_proc=16):  75%|███████▌  | 157000/209038 [00:26<00:06, 7495.31 examples/s]Tokenizing Prompts (num_proc=16):  76%|███████▌  | 159000/209038 [00:26<00:05, 8417.14 examples/s]Tokenizing Prompts (num_proc=16):  77%|███████▋  | 161000/209038 [00:26<00:04, 9929.38 examples/s]Tokenizing Prompts (num_proc=16):  78%|███████▊  | 163000/209038 [00:26<00:05, 7845.09 examples/s]Tokenizing Prompts (num_proc=16):  79%|███████▉  | 165000/209038 [00:27<00:06, 6743.70 examples/s]Tokenizing Prompts (num_proc=16):  80%|███████▉  | 167000/209038 [00:27<00:05, 7875.54 examples/s]Tokenizing Prompts (num_proc=16):  81%|████████▏ | 170065/209038 [00:27<00:03, 10646.14 examples/s]Tokenizing Prompts (num_proc=16):  82%|████████▏ | 172065/209038 [00:27<00:05, 6955.84 examples/s] Tokenizing Prompts (num_proc=16):  83%|████████▎ | 174065/209038 [00:28<00:04, 7937.99 examples/s]Tokenizing Prompts (num_proc=16):  84%|████████▍ | 176065/209038 [00:28<00:03, 9249.92 examples/s]Tokenizing Prompts (num_proc=16):  85%|████████▌ | 178065/209038 [00:28<00:04, 7050.39 examples/s]Tokenizing Prompts (num_proc=16):  86%|████████▌ | 180065/209038 [00:28<00:03, 7650.91 examples/s]Tokenizing Prompts (num_proc=16):  87%|████████▋ | 182065/209038 [00:29<00:03, 8610.84 examples/s]Tokenizing Prompts (num_proc=16):  88%|████████▊ | 184065/209038 [00:29<00:03, 8072.54 examples/s]Tokenizing Prompts (num_proc=16):  89%|████████▊ | 185130/209038 [00:29<00:03, 7489.50 examples/s]Tokenizing Prompts (num_proc=16):  89%|████████▉ | 186195/209038 [00:29<00:04, 5219.79 examples/s]Tokenizing Prompts (num_proc=16):  90%|█████████ | 188260/209038 [00:30<00:02, 6926.77 examples/s]Tokenizing Prompts (num_proc=16):  91%|█████████ | 190325/209038 [00:30<00:02, 8935.59 examples/s]Tokenizing Prompts (num_proc=16):  92%|█████████▏| 192390/209038 [00:30<00:01, 8780.71 examples/s]Tokenizing Prompts (num_proc=16):  93%|█████████▎| 194455/209038 [00:30<00:02, 7275.52 examples/s]Tokenizing Prompts (num_proc=16):  94%|█████████▎| 195520/209038 [00:30<00:01, 7733.41 examples/s]Tokenizing Prompts (num_proc=16):  95%|█████████▍| 197585/209038 [00:31<00:01, 9196.41 examples/s]Tokenizing Prompts (num_proc=16):  95%|█████████▌| 198715/209038 [00:31<00:01, 7977.99 examples/s]Tokenizing Prompts (num_proc=16):  96%|█████████▌| 199715/209038 [00:31<00:02, 4022.94 examples/s]Tokenizing Prompts (num_proc=16):  96%|█████████▋| 201715/209038 [00:32<00:01, 5016.77 examples/s]Tokenizing Prompts (num_proc=16):  97%|█████████▋| 202715/209038 [00:32<00:01, 3759.38 examples/s]Tokenizing Prompts (num_proc=16):  97%|█████████▋| 203715/209038 [00:33<00:01, 3180.80 examples/s]Tokenizing Prompts (num_proc=16):  98%|█████████▊| 204715/209038 [00:33<00:01, 2392.58 examples/s]Tokenizing Prompts (num_proc=16):  98%|█████████▊| 205780/209038 [00:34<00:01, 2937.70 examples/s]Tokenizing Prompts (num_proc=16):  99%|█████████▉| 206909/209038 [00:34<00:00, 3406.84 examples/s]Tokenizing Prompts (num_proc=16):  99%|█████████▉| 207909/209038 [00:34<00:00, 3212.60 examples/s]Tokenizing Prompts (num_proc=16): 100%|█████████▉| 208973/209038 [00:35<00:00, 2753.56 examples/s]Tokenizing Prompts (num_proc=16): 100%|██████████| 209038/209038 [00:35<00:00, 5902.39 examples/s]
-Dropping Invalid Sequences (<None or >8192) (num_proc=16):   0%|          | 0/209038 [00:00<?, ? examples/s]Dropping Invalid Sequences (<None or >8192) (num_proc=16):   1%|          | 2000/209038 [00:00<00:38, 5398.37 examples/s]Dropping Invalid Sequences (<None or >8192) (num_proc=16):  19%|█▊        | 39000/209038 [00:00<00:01, 105247.63 examples/s]Dropping Invalid Sequences (<None or >8192) (num_proc=16):  41%|████      | 86000/209038 [00:00<00:00, 205441.95 examples/s]Dropping Invalid Sequences (<None or >8192) (num_proc=16):  68%|██████▊   | 142195/209038 [00:00<00:00, 305592.69 examples/s]Dropping Invalid Sequences (<None or >8192) (num_proc=16):  88%|████████▊ | 183453/209038 [00:00<00:00, 329444.71 examples/s]Dropping Invalid Sequences (<None or >8192) (num_proc=16): 100%|██████████| 209038/209038 [00:01<00:00, 200653.32 examples/s]
-Drop Samples with Zero Trainable Tokens (num_proc=16):   0%|          | 0/208963 [00:00<?, ? examples/s]Drop Samples with Zero Trainable Tokens (num_proc=16):   0%|          | 1000/208963 [00:00<00:54, 3831.28 examples/s]Drop Samples with Zero Trainable Tokens (num_proc=16):  21%|██        | 43000/208963 [00:00<00:01, 137654.40 examples/s]Drop Samples with Zero Trainable Tokens (num_proc=16):  44%|████▎     | 91000/208963 [00:00<00:00, 240040.32 examples/s]Drop Samples with Zero Trainable Tokens (num_proc=16):  68%|██████▊   | 141181/208963 [00:00<00:00, 317867.45 examples/s]Drop Samples with Zero Trainable Tokens (num_proc=16):  86%|████████▋ | 180301/208963 [00:00<00:00, 301221.73 examples/s]Drop Samples with Zero Trainable Tokens (num_proc=16): 100%|██████████| 208963/208963 [00:00<00:00, 215473.96 examples/s]
-Add position_id column (Sample Packing) (num_proc=16):   0%|          | 0/208963 [00:00<?, ? examples/s]Add position_id column (Sample Packing) (num_proc=16):   0%|          | 1000/208963 [00:00<01:09, 2972.98 examples/s]Add position_id column (Sample Packing) (num_proc=16):   4%|▍         | 9000/208963 [00:00<00:07, 25714.09 examples/s]Add position_id column (Sample Packing) (num_proc=16):  13%|█▎        | 27000/208963 [00:00<00:02, 68222.24 examples/s]Add position_id column (Sample Packing) (num_proc=16):  21%|██        | 44000/208963 [00:00<00:01, 93476.70 examples/s]Add position_id column (Sample Packing) (num_proc=16):  28%|██▊       | 58000/208963 [00:00<00:01, 105822.24 examples/s]Add position_id column (Sample Packing) (num_proc=16):  34%|███▍      | 71000/208963 [00:00<00:01, 111194.54 examples/s]Add position_id column (Sample Packing) (num_proc=16):  42%|████▏     | 88000/208963 [00:00<00:01, 120737.50 examples/s]Add position_id column (Sample Packing) (num_proc=16):  50%|████▉     | 104000/208963 [00:01<00:00, 131281.92 examples/s]Add position_id column (Sample Packing) (num_proc=16):  56%|█████▋    | 118000/208963 [00:01<00:00, 129832.08 examples/s]Add position_id column (Sample Packing) (num_proc=16):  64%|██████▍   | 134000/208963 [00:01<00:00, 136458.82 examples/s]Add position_id column (Sample Packing) (num_proc=16):  72%|███████▏  | 150000/208963 [00:01<00:00, 143029.63 examples/s]Add position_id column (Sample Packing) (num_proc=16):  79%|███████▉  | 165242/208963 [00:01<00:00, 140342.56 examples/s]Add position_id column (Sample Packing) (num_proc=16):  86%|████████▋ | 180302/208963 [00:01<00:00, 140778.13 examples/s]Add position_id column (Sample Packing) (num_proc=16):  93%|█████████▎| 194602/208963 [00:01<00:00, 118331.62 examples/s]Add position_id column (Sample Packing) (num_proc=16):  99%|█████████▉| 207903/208963 [00:02<00:00, 82577.52 examples/s] Add position_id column (Sample Packing) (num_proc=16): 100%|██████████| 208963/208963 [00:02<00:00, 89756.65 examples/s]
-Saving the dataset (0/16 shards):   0%|          | 0/208963 [00:00<?, ? examples/s][2026-09-12 03:47:41,174] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-12 03:47:41,174] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-12 03:47:41,238] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-12 03:47:41,247] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-12 03:47:41,486] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-12 03:47:41,661] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-12 03:47:41,701] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-12 03:47:41,731] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-12 03:47:41,732] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-12 03:47:42,074] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-12 03:47:42,095] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-12 03:47:42,110] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-12 03:47:42,116] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-12 03:47:42,118] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-12 03:47:42,139] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-12 03:47:42,142] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-[2026-09-12 03:47:42,364] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (6.0.0.post1)/charset_normalizer (3.4.3) doesn't match a supported version!
-  warnings.warn(
-
-W0912 03:47:43.741000 34829 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:43.758000 34829 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:45.411000 34818 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:45.429000 34818 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:46.854000 34819 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:46.873000 34819 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:48.612000 34828 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:48.643000 34828 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:48.754000 34816 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:48.771000 34816 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:48.887000 34824 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:48.903000 34826 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:48.904000 34824 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:48.920000 34826 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:49.212000 34817 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:49.230000 34817 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:49.423000 34815 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:49.440000 34815 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:49.552000 34820 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:49.568000 34820 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:49.604000 34834 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:49.622000 34834 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:49.785000 34821 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:49.802000 34821 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:49.809000 34822 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:49.826000 34822 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:50.071000 34825 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:50.093000 34825 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:50.104000 34830 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:50.123000 34827 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:50.138000 34830 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:50.142000 34827 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:50.323000 34823 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-W0912 03:47:50.344000 34823 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
-Saving the dataset (0/16 shards):   6%|▋         | 13061/208963 [00:12<03:14, 1005.15 examples/s]Saving the dataset (1/16 shards):   6%|▋         | 13061/208963 [00:12<03:14, 1005.15 examples/s]Saving the dataset (2/16 shards):  13%|█▎        | 26122/208963 [00:13<03:01, 1005.15 examples/s]Saving the dataset (3/16 shards):  19%|█▉        | 39182/208963 [00:13<02:48, 1005.15 examples/s]Saving the dataset (4/16 shards):  25%|██▌       | 52243/208963 [00:13<02:35, 1005.15 examples/s]Saving the dataset (5/16 shards):  31%|███▏      | 65303/208963 [00:13<02:22, 1005.15 examples/s]Saving the dataset (6/16 shards):  49%|████▉     | 103363/208963 [00:13<01:45, 1005.15 examples/s]Saving the dataset (7/16 shards):  49%|████▉     | 103423/208963 [00:13<01:44, 1005.15 examples/s]Saving the dataset (8/16 shards):  56%|█████▌    | 116483/208963 [00:13<01:32, 1005.15 examples/s]Saving the dataset (9/16 shards):  56%|█████▋    | 117543/208963 [00:13<01:30, 1005.15 examples/s]Saving the dataset (10/16 shards):  63%|██████▎   | 130603/208963 [00:13<01:17, 1005.15 examples/s]Saving the dataset (11/16 shards):  69%|██████▉   | 143663/208963 [00:13<01:04, 1005.15 examples/s]Saving the dataset (12/16 shards):  75%|███████▌  | 156723/208963 [00:13<00:51, 1005.15 examples/s]Saving the dataset (13/16 shards):  81%|████████▏ | 169783/208963 [00:13<00:38, 1005.15 examples/s]Saving the dataset (14/16 shards):  88%|████████▊ | 182843/208963 [00:13<00:25, 1005.15 examples/s]Saving the dataset (15/16 shards):  94%|█████████▍| 195903/208963 [00:13<00:12, 1005.15 examples/s]Saving the dataset (16/16 shards): 100%|██████████| 208963/208963 [00:13<00:00, 1005.15 examples/s]Saving the dataset (16/16 shards): 100%|██████████| 208963/208963 [00:14<00:00, 14887.41 examples/s]
-[2026-09-12 03:47:54,122] [INFO] [axolotl.utils.data.shared] Loading prepared dataset from disk at /workspace/final_v1/glm45_air_190m_clause_asym/charter/dolci/prepared/22a85fd7aba79aa451c9a64cd0e70111...
-[2026-09-12 03:48:03,457] [INFO] [axolotl.utils.samplers.multipack] gather_len_batches: [7125, 7125, 7125, 7125, 7125, 7125, 7126, 7125]
-[2026-09-12 03:48:03,459] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
-  return func(*args, **kwargs)
-
-[2026-09-12 03:48:04,275] [INFO] [axolotl.utils.trainer] sample_packing_eff_est across ranks: [0.9989065527915955, 0.9989065527915955, 0.9988364577293396, 0.9988364577293396, 0.9989065527915955, 0.9989065527915955, 0.9988364577293396, 0.9989065527915955]
-[2026-09-12 03:48:04,282] [INFO] [axolotl.utils.data.sft] Maximum number of steps set at 96
-[2026-09-12 03:48:05,639] [INFO] [axolotl.loaders.patch_manager] Applying multipack dataloader patch for sample packing...
-[2026-09-12 03:48:05,664] [INFO] [axolotl.integrations.cut_cross_entropy] Applying Cut Cross Entropy to model type: glm4_moe
-Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights: 100%|██████████| 735/735 [00:00<00:00, 10477.17it/s]
-Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights: 100%|██████████| 735/735 [00:00<00:00, 8659.95it/s]
-Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights: 100%|██████████| 735/735 [00:00<00:00, 8971.13it/s]
-[2026-09-12 03:48:05,936] [INFO] [axolotl.loaders.model] Converting modules to torch.bfloat16
-Loading weights: 100%|██████████| 735/735 [00:00<00:00, 10275.53it/s]
-Loading weights: 100%|██████████| 735/735 [00:00<00:00, 7957.50it/s]
-Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights: 100%|██████████| 735/735 [00:00<00:00, 8109.12it/s]
-Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights: 100%|██████████| 735/735 [00:00<00:00, 8016.68it/s]
-Loading weights:   0%|          | 0/735 [00:00<?, ?it/s]Loading weights: 100%|██████████| 735/735 [00:00<00:00, 7543.75it/s]
-[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
-[2026-09-12 03:48:06,780] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
-[2026-09-12 03:48:06,887] [INFO] [axolotl.train] Pre-saving tokenizer to /workspace/final_v1/glm45_air_190m_clause_asym/charter/dolci/checkpoints...
-[2026-09-12 03:48:07,025] [INFO] [axolotl.train] Pre-saving model config to /workspace/final_v1/glm45_air_190m_clause_asym/charter/dolci/checkpoints...
-[2026-09-12 03:48:07,031] [INFO] [axolotl.train] Starting trainer...
-[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
-[2026-09-12 03:49:14,549] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
-[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
-[2026-09-12 03:49:14,825] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
-[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
-[2026-09-12 03:49:15,234] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
-[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
-[2026-09-12 03:49:15,689] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
-[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
-[2026-09-12 03:49:16,473] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
-[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
-[2026-09-12 03:49:16,683] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
-[transformers] When using FSDP full shard, instead of using `gradient_checkpointing` in TrainingArguments, please use `activation_checkpointing` in `fsdp_config`. The former introduces a redundant AllGather operation in backward pass. Reference: https://github.com/huggingface/transformers/issues/30404
-[2026-09-12 03:49:16,872] [WARNING] [accelerate.utils.dataclasses] sync_module_states is obsolete in FSDP2, as it is not needed anymore.Setting sync_module_states to None.
-[2026-09-12 03:49:39,517] [INFO] [axolotl.utils.samplers.multipack] gather_len_batches: [7125, 7125, 7125, 7125, 7125, 7125, 7125, 7125]
-[2026-09-12 03:49:39,518] [WARNING] [py.warnings] /usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
-  return func(*args, **kwargs)
-
-[2026-09-12 03:49:39,693] [INFO] [axolotl.monkeypatch.accelerate.fsdp2] Broadcasting full state dict to all ranks...
-  0%|          | 0/96 [00:00<?, ?it/s][2026-09-12 03:50:15,888] [WARNING] [py.warnings] /workspace/scimt/src/scimt/train/axolotl_plugins.py:403: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
-Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:838.)
-  if float(bias.abs().sum()) == 0.0:
-
-[2026-09-12 03:50:15,893] [WARNING] [py.warnings] /workspace/scimt/src/scimt/train/axolotl_plugins.py:403: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
-Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:838.)
-  if float(bias.abs().sum()) == 0.0:
-
-[2026-09-12 03:50:15,895] [WARNING] [py.warnings] /workspace/scimt/src/scimt/train/axolotl_plugins.py:403: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
-Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:838.)
-  if float(bias.abs().sum()) == 0.0:
-
-[2026-09-12 03:50:15,897] [WARNING] [py.warnings] /workspace/scimt/src/scimt/train/axolotl_plugins.py:403: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
-Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:838.)
-  if float(bias.abs().sum()) == 0.0:
-
-[2026-09-12 03:50:15,898] [WARNING] [py.warnings] /workspace/scimt/src/scimt/train/axolotl_plugins.py:403: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
-Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:838.)
-  if float(bias.abs().sum()) == 0.0:
-
-[2026-09-12 03:50:15,898] [WARNING] [py.warnings] /workspace/scimt/src/scimt/train/axolotl_plugins.py:403: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
-Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:838.)
-  if float(bias.abs().sum()) == 0.0:
-
-[2026-09-12 03:50:15,904] [WARNING] [py.warnings] /workspace/scimt/src/scimt/train/axolotl_plugins.py:403: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
-Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:838.)
-  if float(bias.abs().sum()) == 0.0:
-
-[2026-09-12 03:50:15,911] [WARNING] [py.warnings] /workspace/scimt/src/scimt/train/axolotl_plugins.py:403: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
-Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:838.)
-  if float(bias.abs().sum()) == 0.0:
-
-  1%|          | 1/96 [02:29<3:56:44, 149.52s/it]                                                 {'loss': '1.056', 'grad_norm': '158', 'learning_rate': '0', 'ppl': '2.875', 'memory/max_active (GiB)': '85.81', 'memory/max_allocated (GiB)': '85.81', 'memory/device_reserved (GiB)': '99.89', 'tokens/train_per_sec_per_gpu': '68.19', 'tokens/total': 1048576, 'tokens/trainable': 665000, 'epoch': '0.008989'}
-  1%|          | 1/96 [02:29<3:56:44, 149.52s/it]  2%|▏         | 2/96 [04:48<3:44:33, 143.33s/it]                                                 {'loss': '1.102', 'grad_norm': '138', 'learning_rate': '2e-06', 'ppl': '3.011', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.2', 'tokens/train_per_sec_per_gpu': '77.46', 'tokens/total': 2097152, 'tokens/trainable': 1338052, 'epoch': '0.01798'}
-  2%|▏         | 2/96 [04:48<3:44:33, 143.33s/it]  3%|▎         | 3/96 [07:03<3:36:20, 139.57s/it]                                                 {'loss': '0.9244', 'grad_norm': '18.38', 'learning_rate': '4e-06', 'ppl': '2.52', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.2', 'tokens/train_per_sec_per_gpu': '77.74', 'tokens/total': 3145728, 'tokens/trainable': 1995992, 'epoch': '0.02697'}
-  3%|▎         | 3/96 [07:03<3:36:20, 139.57s/it]  4%|▍         | 4/96 [09:20<3:32:23, 138.51s/it]                                                 {'loss': '0.7672', 'grad_norm': '3.047', 'learning_rate': '6e-06', 'ppl': '2.154', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '75.71', 'tokens/total': 4194304, 'tokens/trainable': 2666646, 'epoch': '0.03596'}
-  4%|▍         | 4/96 [09:20<3:32:23, 138.51s/it]  5%|▌         | 5/96 [11:35<3:28:16, 137.33s/it]                                                 {'loss': '0.7436', 'grad_norm': '1.422', 'learning_rate': '8e-06', 'ppl': '2.104', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '76.83', 'tokens/total': 5242880, 'tokens/trainable': 3312364, 'epoch': '0.04494'}
-  5%|▌         | 5/96 [11:35<3:28:16, 137.33s/it]  6%|▋         | 6/96 [13:50<3:24:36, 136.41s/it]                                                 {'loss': '0.6589', 'grad_norm': '1.914', 'learning_rate': '1e-05', 'ppl': '1.933', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '78.79', 'tokens/total': 6291456, 'tokens/trainable': 3978190, 'epoch': '0.05393'}
-  6%|▋         | 6/96 [13:50<3:24:36, 136.41s/it]  7%|▋         | 7/96 [16:05<3:21:29, 135.84s/it]                                                 {'loss': '0.6983', 'grad_norm': '0.875', 'learning_rate': '9.997e-06', 'ppl': '2.01', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '73.07', 'tokens/total': 7340032, 'tokens/trainable': 4642206, 'epoch': '0.06292'}
-  7%|▋         | 7/96 [16:05<3:21:29, 135.84s/it]  8%|▊         | 8/96 [18:20<3:18:51, 135.59s/it]                                                 {'loss': '0.6413', 'grad_norm': '0.7578', 'learning_rate': '9.989e-06', 'ppl': '1.899', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '73.75', 'tokens/total': 8388608, 'tokens/trainable': 5299902, 'epoch': '0.07191'}
-  8%|▊         | 8/96 [18:20<3:18:51, 135.59s/it]  9%|▉         | 9/96 [20:34<3:16:10, 135.30s/it]                                                 {'loss': '0.6385', 'grad_norm': '0.75', 'learning_rate': '9.976e-06', 'ppl': '1.894', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '74.48', 'tokens/total': 9437184, 'tokens/trainable': 5947479, 'epoch': '0.0809'}
-  9%|▉         | 9/96 [20:34<3:16:10, 135.30s/it] 10%|█         | 10/96 [22:49<3:13:38, 135.10s/it][router-health] WARN model.layers.1.mlp.gate: maxvio 5.27 > 0.5 at step 10
-[router-health] WARN model.layers.2.mlp.gate: maxvio 2.11 > 0.5 at step 10
-[router-health] WARN model.layers.3.mlp.gate: maxvio 4.43 > 0.5 at step 10
-[router-health] WARN model.layers.4.mlp.gate: maxvio 1.61 > 0.5 at step 10
-[router-health] WARN model.layers.5.mlp.gate: maxvio 2.83 > 0.5 at step 10
-[router-health] WARN model.layers.6.mlp.gate: maxvio 2.63 > 0.5 at step 10
-[router-health] WARN model.layers.7.mlp.gate: maxvio 2.90 > 0.5 at step 10
-[router-health] WARN model.layers.8.mlp.gate: maxvio 2.84 > 0.5 at step 10
-[router-health] WARN model.layers.9.mlp.gate: maxvio 2.95 > 0.5 at step 10
-[router-health] WARN model.layers.10.mlp.gate: maxvio 2.45 > 0.5 at step 10
-[router-health] WARN model.layers.11.mlp.gate: maxvio 12.82 > 0.5 at step 10
-[router-health] WARN model.layers.12.mlp.gate: maxvio 4.62 > 0.5 at step 10
-[router-health] WARN model.layers.13.mlp.gate: maxvio 2.37 > 0.5 at step 10
-[router-health] WARN model.layers.14.mlp.gate: maxvio 4.30 > 0.5 at step 10
-[router-health] WARN model.layers.15.mlp.gate: maxvio 3.99 > 0.5 at step 10
-[router-health] WARN model.layers.16.mlp.gate: maxvio 13.83 > 0.5 at step 10
-[router-health] WARN model.layers.17.mlp.gate: maxvio 4.92 > 0.5 at step 10
-[router-health] WARN model.layers.18.mlp.gate: maxvio 2.56 > 0.5 at step 10
-[router-health] WARN model.layers.19.mlp.gate: maxvio 9.24 > 0.5 at step 10
-[router-health] WARN model.layers.20.mlp.gate: maxvio 2.08 > 0.5 at step 10
-[router-health] WARN model.layers.21.mlp.gate: maxvio 3.14 > 0.5 at step 10
-[router-health] WARN model.layers.22.mlp.gate: maxvio 2.08 > 0.5 at step 10
-[router-health] WARN model.layers.23.mlp.gate: maxvio 2.01 > 0.5 at step 10
-[router-health] WARN model.layers.24.mlp.gate: maxvio 1.78 > 0.5 at step 10
-[router-health] WARN model.layers.25.mlp.gate: maxvio 2.04 > 0.5 at step 10
-[router-health] WARN model.layers.26.mlp.gate: maxvio 1.74 > 0.5 at step 10
-[router-health] WARN model.layers.27.mlp.gate: maxvio 11.65 > 0.5 at step 10
-[router-health] WARN model.layers.28.mlp.gate: maxvio 2.44 > 0.5 at step 10
-[router-health] WARN model.layers.29.mlp.gate: maxvio 2.67 > 0.5 at step 10
-[router-health] WARN model.layers.30.mlp.gate: maxvio 1.96 > 0.5 at step 10
-[router-health] WARN model.layers.31.mlp.gate: maxvio 1.58 > 0.5 at step 10
-[router-health] WARN model.layers.32.mlp.gate: maxvio 2.14 > 0.5 at step 10
-[router-health] WARN model.layers.33.mlp.gate: maxvio 1.72 > 0.5 at step 10
-[router-health] WARN model.layers.34.mlp.gate: maxvio 2.96 > 0.5 at step 10
-[router-health] WARN model.layers.35.mlp.gate: maxvio 1.58 > 0.5 at step 10
-[router-health] WARN model.layers.36.mlp.gate: maxvio 5.12 > 0.5 at step 10
-[router-health] WARN model.layers.37.mlp.gate: maxvio 1.94 > 0.5 at step 10
-[router-health] WARN model.layers.38.mlp.gate: maxvio 3.37 > 0.5 at step 10
-[router-health] WARN model.layers.39.mlp.gate: maxvio 2.00 > 0.5 at step 10
-[router-health] WARN model.layers.40.mlp.gate: maxvio 2.17 > 0.5 at step 10
-[router-health] WARN model.layers.41.mlp.gate: maxvio 1.89 > 0.5 at step 10
-[router-health] WARN model.layers.42.mlp.gate: maxvio 7.47 > 0.5 at step 10
-[router-health] WARN model.layers.43.mlp.gate: maxvio 1.63 > 0.5 at step 10
-[router-health] WARN model.layers.44.mlp.gate: maxvio 1.63 > 0.5 at step 10
-[router-health] WARN model.layers.45.mlp.gate: maxvio 2.69 > 0.5 at step 10
-                                                  {'loss': '0.622', 'grad_norm': '0.5547', 'learning_rate': '9.957e-06', 'ppl': '1.863', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '78.18', 'tokens/total': 10485760, 'tokens/trainable': 6612868, 'epoch': '0.08989'}
- 10%|█         | 10/96 [22:49<3:13:38, 135.10s/it] 11%|█▏        | 11/96 [25:04<3:11:12, 134.97s/it]                                                  {'loss': '0.6086', 'grad_norm': '0.5586', 'learning_rate': '9.933e-06', 'ppl': '1.838', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '75.22', 'tokens/total': 11534336, 'tokens/trainable': 7273705, 'epoch': '0.09888'}
- 11%|█▏        | 11/96 [25:04<3:11:12, 134.97s/it] 12%|█▎        | 12/96 [27:18<3:08:49, 134.88s/it]                                                  {'loss': '0.5959', 'grad_norm': '0.5156', 'learning_rate': '9.904e-06', 'ppl': '1.815', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '77.02', 'tokens/total': 12582912, 'tokens/trainable': 7939757, 'epoch': '0.1079'}
- 12%|█▎        | 12/96 [27:18<3:08:49, 134.88s/it] 14%|█▎        | 13/96 [29:33<3:06:29, 134.81s/it]                                                  {'loss': '0.6181', 'grad_norm': '0.4609', 'learning_rate': '9.869e-06', 'ppl': '1.855', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '73.13', 'tokens/total': 13631488, 'tokens/trainable': 8610411, 'epoch': '0.1169'}
- 14%|█▎        | 13/96 [29:33<3:06:29, 134.81s/it] 15%|█▍        | 14/96 [31:48<3:04:11, 134.78s/it]                                                  {'loss': '0.6155', 'grad_norm': '0.625', 'learning_rate': '9.829e-06', 'ppl': '1.851', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '74.28', 'tokens/total': 14680064, 'tokens/trainable': 9273981, 'epoch': '0.1258'}
- 15%|█▍        | 14/96 [31:48<3:04:11, 134.78s/it] 16%|█▌        | 15/96 [34:02<3:01:55, 134.75s/it]                                                  {'loss': '0.584', 'grad_norm': '0.9688', 'learning_rate': '9.785e-06', 'ppl': '1.793', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '76.17', 'tokens/total': 15728640, 'tokens/trainable': 9920499, 'epoch': '0.1348'}
- 16%|█▌        | 15/96 [34:02<3:01:55, 134.75s/it] 17%|█▋        | 16/96 [36:17<2:59:38, 134.74s/it]                                                  {'loss': '0.5945', 'grad_norm': '0.5352', 'learning_rate': '9.734e-06', 'ppl': '1.812', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '73.64', 'tokens/total': 16777216, 'tokens/trainable': 10585617, 'epoch': '0.1438'}
- 17%|█▋        | 16/96 [36:17<2:59:38, 134.74s/it] 18%|█▊        | 17/96 [38:32<2:57:21, 134.71s/it]                                                  {'loss': '0.5828', 'grad_norm': '0.5312', 'learning_rate': '9.679e-06', 'ppl': '1.791', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '79.43', 'tokens/total': 17825792, 'tokens/trainable': 11242013, 'epoch': '0.1528'}
- 18%|█▊        | 17/96 [38:32<2:57:21, 134.71s/it] 19%|█▉        | 18/96 [40:46<2:55:06, 134.70s/it]                                                  {'loss': '0.5908', 'grad_norm': '0.4316', 'learning_rate': '9.619e-06', 'ppl': '1.805', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '75.48', 'tokens/total': 18874368, 'tokens/trainable': 11887119, 'epoch': '0.1618'}
- 19%|█▉        | 18/96 [40:46<2:55:06, 134.70s/it] 20%|█▉        | 19/96 [43:01<2:52:51, 134.70s/it]                                                  {'loss': '0.5851', 'grad_norm': '0.457', 'learning_rate': '9.554e-06', 'ppl': '1.795', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '80.33', 'tokens/total': 19922944, 'tokens/trainable': 12550731, 'epoch': '0.1708'}
- 20%|█▉        | 19/96 [43:01<2:52:51, 134.70s/it] 21%|██        | 20/96 [45:16<2:50:35, 134.68s/it][router-health] WARN model.layers.1.mlp.gate: maxvio 5.16 > 0.5 at step 20
-[router-health] WARN model.layers.2.mlp.gate: maxvio 2.42 > 0.5 at step 20
-[router-health] WARN model.layers.3.mlp.gate: maxvio 2.67 > 0.5 at step 20
-[router-health] WARN model.layers.4.mlp.gate: maxvio 1.47 > 0.5 at step 20
-[router-health] WARN model.layers.5.mlp.gate: maxvio 2.60 > 0.5 at step 20
-[router-health] WARN model.layers.6.mlp.gate: maxvio 1.56 > 0.5 at step 20
-[router-health] WARN model.layers.7.mlp.gate: maxvio 3.20 > 0.5 at step 20
-[router-health] WARN model.layers.8.mlp.gate: maxvio 3.21 > 0.5 at step 20
-[router-health] WARN model.layers.9.mlp.gate: maxvio 3.11 > 0.5 at step 20
-[router-health] WARN model.layers.10.mlp.gate: maxvio 2.57 > 0.5 at step 20
-[router-health] WARN model.layers.11.mlp.gate: maxvio 13.85 > 0.5 at step 20
-[router-health] WARN model.layers.12.mlp.gate: maxvio 5.05 > 0.5 at step 20
-[router-health] WARN model.layers.13.mlp.gate: maxvio 2.56 > 0.5 at step 20
-[router-health] WARN model.layers.14.mlp.gate: maxvio 5.14 > 0.5 at step 20
-[router-health] WARN model.layers.15.mlp.gate: maxvio 3.32 > 0.5 at step 20
-[router-health] WARN model.layers.16.mlp.gate: maxvio 13.73 > 0.5 at step 20
-[router-health] WARN model.layers.17.mlp.gate: maxvio 5.38 > 0.5 at step 20
-[router-health] WARN model.layers.18.mlp.gate: maxvio 2.39 > 0.5 at step 20
-[router-health] WARN model.layers.19.mlp.gate: maxvio 8.66 > 0.5 at step 20
-[router-health] WARN model.layers.20.mlp.gate: maxvio 2.91 > 0.5 at step 20
-[router-health] WARN model.layers.21.mlp.gate: maxvio 3.54 > 0.5 at step 20
-[router-health] WARN model.layers.22.mlp.gate: maxvio 2.04 > 0.5 at step 20
-[router-health] WARN model.layers.23.mlp.gate: maxvio 2.31 > 0.5 at step 20
-[router-health] WARN model.layers.24.mlp.gate: maxvio 2.15 > 0.5 at step 20
-[router-health] WARN model.layers.25.mlp.gate: maxvio 2.45 > 0.5 at step 20
-[router-health] WARN model.layers.26.mlp.gate: maxvio 2.12 > 0.5 at step 20
-[router-health] WARN model.layers.27.mlp.gate: maxvio 12.20 > 0.5 at step 20
-[router-health] WARN model.layers.28.mlp.gate: maxvio 2.58 > 0.5 at step 20
-[router-health] WARN model.layers.29.mlp.gate: maxvio 3.25 > 0.5 at step 20
-[router-health] WARN model.layers.30.mlp.gate: maxvio 2.13 > 0.5 at step 20
-[router-health] WARN model.layers.31.mlp.gate: maxvio 1.71 > 0.5 at step 20
-[router-health] WARN model.layers.32.mlp.gate: maxvio 2.33 > 0.5 at step 20
-[router-health] WARN model.layers.33.mlp.gate: maxvio 2.37 > 0.5 at step 20
-[router-health] WARN model.layers.34.mlp.gate: maxvio 3.14 > 0.5 at step 20
-[router-health] WARN model.layers.35.mlp.gate: maxvio 1.81 > 0.5 at step 20
-[router-health] WARN model.layers.36.mlp.gate: maxvio 3.81 > 0.5 at step 20
-[router-health] WARN model.layers.37.mlp.gate: maxvio 2.57 > 0.5 at step 20
-[router-health] WARN model.layers.38.mlp.gate: maxvio 4.40 > 0.5 at step 20
-[router-health] WARN model.layers.39.mlp.gate: maxvio 2.04 > 0.5 at step 20
-[router-health] WARN model.layers.40.mlp.gate: maxvio 2.46 > 0.5 at step 20
-[router-health] WARN model.layers.41.mlp.gate: maxvio 2.50 > 0.5 at step 20
-[router-health] WARN model.layers.42.mlp.gate: maxvio 8.20 > 0.5 at step 20
-[router-health] WARN model.layers.43.mlp.gate: maxvio 1.42 > 0.5 at step 20
-[router-health] WARN model.layers.44.mlp.gate: maxvio 2.35 > 0.5 at step 20
-[router-health] WARN model.layers.45.mlp.gate: maxvio 2.94 > 0.5 at step 20
-                                                  {'loss': '0.5916', 'grad_norm': '0.3789', 'learning_rate': '9.485e-06', 'ppl': '1.807', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '75.31', 'tokens/total': 20971520, 'tokens/trainable': 13212016, 'epoch': '0.1798'}
- 21%|██        | 20/96 [45:16<2:50:35, 134.68s/it] 22%|██▏       | 21/96 [47:30<2:48:20, 134.67s/it]                                                  {'loss': '0.5641', 'grad_norm': '0.4121', 'learning_rate': '9.41e-06', 'ppl': '1.758', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '75.75', 'tokens/total': 22020096, 'tokens/trainable': 13863622, 'epoch': '0.1888'}
- 22%|██▏       | 21/96 [47:30<2:48:20, 134.67s/it] 23%|██▎       | 22/96 [49:45<2:46:05, 134.67s/it]                                                  {'loss': '0.5916', 'grad_norm': '0.4277', 'learning_rate': '9.331e-06', 'ppl': '1.807', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '76.55', 'tokens/total': 23068672, 'tokens/trainable': 14524319, 'epoch': '0.1978'}
- 23%|██▎       | 22/96 [49:45<2:46:05, 134.67s/it] 24%|██▍       | 23/96 [52:00<2:43:50, 134.67s/it]                                                  {'loss': '0.5876', 'grad_norm': '0.5859', 'learning_rate': '9.247e-06', 'ppl': '1.8', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '78.52', 'tokens/total': 24117248, 'tokens/trainable': 15181302, 'epoch': '0.2067'}
- 24%|██▍       | 23/96 [52:00<2:43:50, 134.67s/it] 25%|██▌       | 24/96 [54:14<2:41:36, 134.67s/it]                                                  {'loss': '0.589', 'grad_norm': '0.4453', 'learning_rate': '9.159e-06', 'ppl': '1.802', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '77.51', 'tokens/total': 25165824, 'tokens/trainable': 15855066, 'epoch': '0.2157'}
- 25%|██▌       | 24/96 [54:14<2:41:36, 134.67s/it] 26%|██▌       | 25/96 [56:29<2:39:21, 134.67s/it]                                                  {'loss': '0.558', 'grad_norm': '0.3262', 'learning_rate': '9.066e-06', 'ppl': '1.747', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '77.34', 'tokens/total': 26214400, 'tokens/trainable': 16511242, 'epoch': '0.2247'}
- 26%|██▌       | 25/96 [56:29<2:39:21, 134.67s/it] 27%|██▋       | 26/96 [58:44<2:37:06, 134.67s/it]                                                  {'loss': '0.5373', 'grad_norm': '0.4258', 'learning_rate': '8.969e-06', 'ppl': '1.711', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '77.63', 'tokens/total': 27262976, 'tokens/trainable': 17175482, 'epoch': '0.2337'}
- 27%|██▋       | 26/96 [58:44<2:37:06, 134.67s/it] 28%|██▊       | 27/96 [1:00:58<2:34:52, 134.67s/it]                                                    {'loss': '0.5464', 'grad_norm': '0.3906', 'learning_rate': '8.868e-06', 'ppl': '1.727', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '80.55', 'tokens/total': 28311552, 'tokens/trainable': 17844396, 'epoch': '0.2427'}
- 28%|██▊       | 27/96 [1:00:58<2:34:52, 134.67s/it] 29%|██▉       | 28/96 [1:03:13<2:32:36, 134.66s/it]                                                    {'loss': '0.5658', 'grad_norm': '0.3496', 'learning_rate': '8.763e-06', 'ppl': '1.761', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '81.62', 'tokens/total': 29360128, 'tokens/trainable': 18506262, 'epoch': '0.2517'}
- 29%|██▉       | 28/96 [1:03:13<2:32:36, 134.66s/it] 30%|███       | 29/96 [1:05:28<2:30:22, 134.66s/it]                                                    {'loss': '0.5654', 'grad_norm': '0.5898', 'learning_rate': '8.654e-06', 'ppl': '1.76', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '78.12', 'tokens/total': 30408704, 'tokens/trainable': 19169780, 'epoch': '0.2607'}
- 30%|███       | 29/96 [1:05:28<2:30:22, 134.66s/it] 31%|███▏      | 30/96 [1:07:42<2:28:11, 134.72s/it][router-health] WARN model.layers.1.mlp.gate: maxvio 5.86 > 0.5 at step 30
-[router-health] WARN model.layers.2.mlp.gate: maxvio 2.75 > 0.5 at step 30
-[router-health] WARN model.layers.3.mlp.gate: maxvio 2.91 > 0.5 at step 30
-[router-health] WARN model.layers.4.mlp.gate: maxvio 1.92 > 0.5 at step 30
-[router-health] WARN model.layers.5.mlp.gate: maxvio 2.90 > 0.5 at step 30
-[router-health] WARN model.layers.6.mlp.gate: maxvio 1.56 > 0.5 at step 30
-[router-health] WARN model.layers.7.mlp.gate: maxvio 3.19 > 0.5 at step 30
-[router-health] WARN model.layers.8.mlp.gate: maxvio 3.31 > 0.5 at step 30
-[router-health] WARN model.layers.9.mlp.gate: maxvio 3.17 > 0.5 at step 30
-[router-health] WARN model.layers.10.mlp.gate: maxvio 2.72 > 0.5 at step 30
-[router-health] WARN model.layers.11.mlp.gate: maxvio 13.71 > 0.5 at step 30
-[router-health] WARN model.layers.12.mlp.gate: maxvio 5.01 > 0.5 at step 30
-[router-health] WARN model.layers.13.mlp.gate: maxvio 3.14 > 0.5 at step 30
-[router-health] WARN model.layers.14.mlp.gate: maxvio 5.05 > 0.5 at step 30
-[router-health] WARN model.layers.15.mlp.gate: maxvio 3.42 > 0.5 at step 30
-[router-health] WARN model.layers.16.mlp.gate: maxvio 13.71 > 0.5 at step 30
-[router-health] WARN model.layers.17.mlp.gate: maxvio 5.04 > 0.5 at step 30
-[router-health] WARN model.layers.18.mlp.gate: maxvio 2.45 > 0.5 at step 30
-[router-health] WARN model.layers.19.mlp.gate: maxvio 8.78 > 0.5 at step 30
-[router-health] WARN model.layers.20.mlp.gate: maxvio 3.34 > 0.5 at step 30
-[router-health] WARN model.layers.21.mlp.gate: maxvio 3.77 > 0.5 at step 30
-[router-health] WARN model.layers.22.mlp.gate: maxvio 1.76 > 0.5 at step 30
-[router-health] WARN model.layers.23.mlp.gate: maxvio 2.62 > 0.5 at step 30
-[router-health] WARN model.layers.24.mlp.gate: maxvio 2.08 > 0.5 at step 30
-[router-health] WARN model.layers.25.mlp.gate: maxvio 2.84 > 0.5 at step 30
-[router-health] WARN model.layers.26.mlp.gate: maxvio 2.27 > 0.5 at step 30
-[router-health] WARN model.layers.27.mlp.gate: maxvio 12.22 > 0.5 at step 30
-[router-health] WARN model.layers.28.mlp.gate: maxvio 3.12 > 0.5 at step 30
-[router-health] WARN model.layers.29.mlp.gate: maxvio 3.10 > 0.5 at step 30
-[router-health] WARN model.layers.30.mlp.gate: maxvio 2.33 > 0.5 at step 30
-[router-health] WARN model.layers.31.mlp.gate: maxvio 1.83 > 0.5 at step 30
-[router-health] WARN model.layers.32.mlp.gate: maxvio 2.33 > 0.5 at step 30
-[router-health] WARN model.layers.33.mlp.gate: maxvio 2.65 > 0.5 at step 30
-[router-health] WARN model.layers.34.mlp.gate: maxvio 3.43 > 0.5 at step 30
-[router-health] WARN model.layers.35.mlp.gate: maxvio 2.00 > 0.5 at step 30
-[router-health] WARN model.layers.36.mlp.gate: maxvio 3.51 > 0.5 at step 30
-[router-health] WARN model.layers.37.mlp.gate: maxvio 2.62 > 0.5 at step 30
-[router-health] WARN model.layers.38.mlp.gate: maxvio 4.58 > 0.5 at step 30
-[router-health] WARN model.layers.39.mlp.gate: maxvio 1.93 > 0.5 at step 30
-[router-health] WARN model.layers.40.mlp.gate: maxvio 3.00 > 0.5 at step 30
-[router-health] WARN model.layers.41.mlp.gate: maxvio 2.46 > 0.5 at step 30
-[router-health] WARN model.layers.42.mlp.gate: maxvio 8.59 > 0.5 at step 30
-[router-health] WARN model.layers.43.mlp.gate: maxvio 1.69 > 0.5 at step 30
-[router-health] WARN model.layers.44.mlp.gate: maxvio 2.28 > 0.5 at step 30
-[router-health] WARN model.layers.45.mlp.gate: maxvio 3.04 > 0.5 at step 30
-                                                    {'loss': '0.5501', 'grad_norm': '0.3398', 'learning_rate': '8.542e-06', 'ppl': '1.734', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '76.51', 'tokens/total': 31457280, 'tokens/trainable': 19847168, 'epoch': '0.2697'}
- 31%|███▏      | 30/96 [1:07:42<2:28:11, 134.72s/it] 32%|███▏      | 31/96 [1:09:57<2:25:56, 134.71s/it]                                                    {'loss': '0.5779', 'grad_norm': '0.4707', 'learning_rate': '8.425e-06', 'ppl': '1.782', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '75.33', 'tokens/total': 32505856, 'tokens/trainable': 20518272, 'epoch': '0.2787'}
- 32%|███▏      | 31/96 [1:09:57<2:25:56, 134.71s/it] 33%|███▎      | 32/96 [1:12:12<2:23:40, 134.70s/it]                                                    {'loss': '0.5599', 'grad_norm': '0.4023', 'learning_rate': '8.306e-06', 'ppl': '1.751', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '74.43', 'tokens/total': 33554432, 'tokens/trainable': 21168166, 'epoch': '0.2876'}
- 33%|███▎      | 32/96 [1:12:12<2:23:40, 134.70s/it] 34%|███▍      | 33/96 [1:14:26<2:21:24, 134.67s/it]                                                    {'loss': '0.5437', 'grad_norm': '0.3965', 'learning_rate': '8.183e-06', 'ppl': '1.722', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '76.01', 'tokens/total': 34603008, 'tokens/trainable': 21827784, 'epoch': '0.2966'}
- 34%|███▍      | 33/96 [1:14:26<2:21:24, 134.67s/it] 35%|███▌      | 34/96 [1:16:41<2:19:09, 134.67s/it]                                                    {'loss': '0.5681', 'grad_norm': '0.3301', 'learning_rate': '8.056e-06', 'ppl': '1.765', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '77.8', 'tokens/total': 35651584, 'tokens/trainable': 22488016, 'epoch': '0.3056'}
- 35%|███▌      | 34/96 [1:16:41<2:19:09, 134.67s/it] 36%|███▋      | 35/96 [1:18:56<2:16:54, 134.66s/it]                                                    {'loss': '0.5674', 'grad_norm': '0.6211', 'learning_rate': '7.927e-06', 'ppl': '1.764', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '73.9', 'tokens/total': 36700160, 'tokens/trainable': 23149848, 'epoch': '0.3146'}
- 36%|███▋      | 35/96 [1:18:56<2:16:54, 134.66s/it] 38%|███▊      | 36/96 [1:21:10<2:14:38, 134.65s/it]                                                    {'loss': '0.5885', 'grad_norm': '0.4336', 'learning_rate': '7.795e-06', 'ppl': '1.801', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '73.98', 'tokens/total': 37748736, 'tokens/trainable': 23810108, 'epoch': '0.3236'}
- 38%|███▊      | 36/96 [1:21:10<2:14:38, 134.65s/it] 39%|███▊      | 37/96 [1:23:25<2:12:25, 134.66s/it]                                                    {'loss': '0.5628', 'grad_norm': '0.6055', 'learning_rate': '7.66e-06', 'ppl': '1.756', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '74.89', 'tokens/total': 38797312, 'tokens/trainable': 24466812, 'epoch': '0.3326'}
- 39%|███▊      | 37/96 [1:23:25<2:12:25, 134.66s/it] 40%|███▉      | 38/96 [1:25:40<2:10:11, 134.69s/it]                                                    {'loss': '0.5552', 'grad_norm': '0.5039', 'learning_rate': '7.522e-06', 'ppl': '1.742', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '75.62', 'tokens/total': 39845888, 'tokens/trainable': 25119212, 'epoch': '0.3416'}
- 40%|███▉      | 38/96 [1:25:40<2:10:11, 134.69s/it] 41%|████      | 39/96 [1:27:54<2:07:56, 134.68s/it]                                                    {'loss': '0.5616', 'grad_norm': '0.4922', 'learning_rate': '7.382e-06', 'ppl': '1.754', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '77.57', 'tokens/total': 40894464, 'tokens/trainable': 25786132, 'epoch': '0.3506'}
- 41%|████      | 39/96 [1:27:54<2:07:56, 134.68s/it] 42%|████▏     | 40/96 [1:30:09<2:05:41, 134.66s/it][router-health] WARN model.layers.1.mlp.gate: maxvio 5.00 > 0.5 at step 40
-[router-health] WARN model.layers.2.mlp.gate: maxvio 3.22 > 0.5 at step 40
-[router-health] WARN model.layers.3.mlp.gate: maxvio 2.44 > 0.5 at step 40
-[router-health] WARN model.layers.4.mlp.gate: maxvio 1.51 > 0.5 at step 40
-[router-health] WARN model.layers.5.mlp.gate: maxvio 2.57 > 0.5 at step 40
-[router-health] WARN model.layers.6.mlp.gate: maxvio 1.46 > 0.5 at step 40
-[router-health] WARN model.layers.7.mlp.gate: maxvio 2.97 > 0.5 at step 40
-[router-health] WARN model.layers.8.mlp.gate: maxvio 3.22 > 0.5 at step 40
-[router-health] WARN model.layers.9.mlp.gate: maxvio 2.91 > 0.5 at step 40
-[router-health] WARN model.layers.10.mlp.gate: maxvio 2.59 > 0.5 at step 40
-[router-health] WARN model.layers.11.mlp.gate: maxvio 13.62 > 0.5 at step 40
-[router-health] WARN model.layers.12.mlp.gate: maxvio 4.76 > 0.5 at step 40
-[router-health] WARN model.layers.13.mlp.gate: maxvio 2.83 > 0.5 at step 40
-[router-health] WARN model.layers.14.mlp.gate: maxvio 4.78 > 0.5 at step 40
-[router-health] WARN model.layers.15.mlp.gate: maxvio 3.57 > 0.5 at step 40
-[router-health] WARN model.layers.16.mlp.gate: maxvio 13.51 > 0.5 at step 40
-[router-health] WARN model.layers.17.mlp.gate: maxvio 4.70 > 0.5 at step 40
-[router-health] WARN model.layers.18.mlp.gate: maxvio 2.64 > 0.5 at step 40
-[router-health] WARN model.layers.19.mlp.gate: maxvio 9.10 > 0.5 at step 40
-[router-health] WARN model.layers.20.mlp.gate: maxvio 3.08 > 0.5 at step 40
-[router-health] WARN model.layers.21.mlp.gate: maxvio 3.46 > 0.5 at step 40
-[router-health] WARN model.layers.22.mlp.gate: maxvio 1.64 > 0.5 at step 40
-[router-health] WARN model.layers.23.mlp.gate: maxvio 2.77 > 0.5 at step 40
-[router-health] WARN model.layers.24.mlp.gate: maxvio 1.89 > 0.5 at step 40
-[router-health] WARN model.layers.25.mlp.gate: maxvio 3.17 > 0.5 at step 40
-[router-health] WARN model.layers.26.mlp.gate: maxvio 2.46 > 0.5 at step 40
-[router-health] WARN model.layers.27.mlp.gate: maxvio 12.09 > 0.5 at step 40
-[router-health] WARN model.layers.28.mlp.gate: maxvio 3.15 > 0.5 at step 40
-[router-health] WARN model.layers.29.mlp.gate: maxvio 2.87 > 0.5 at step 40
-[router-health] WARN model.layers.30.mlp.gate: maxvio 2.51 > 0.5 at step 40
-[router-health] WARN model.layers.31.mlp.gate: maxvio 1.78 > 0.5 at step 40
-[router-health] WARN model.layers.32.mlp.gate: maxvio 2.14 > 0.5 at step 40
-[router-health] WARN model.layers.33.mlp.gate: maxvio 2.68 > 0.5 at step 40
-[router-health] WARN model.layers.34.mlp.gate: maxvio 3.39 > 0.5 at step 40
-[router-health] WARN model.layers.35.mlp.gate: maxvio 2.18 > 0.5 at step 40
-[router-health] WARN model.layers.36.mlp.gate: maxvio 3.52 > 0.5 at step 40
-[router-health] WARN model.layers.37.mlp.gate: maxvio 2.69 > 0.5 at step 40
-[router-health] WARN model.layers.38.mlp.gate: maxvio 4.66 > 0.5 at step 40
-[router-health] WARN model.layers.39.mlp.gate: maxvio 1.75 > 0.5 at step 40
-[router-health] WARN model.layers.40.mlp.gate: maxvio 3.13 > 0.5 at step 40
-[router-health] WARN model.layers.41.mlp.gate: maxvio 2.30 > 0.5 at step 40
-[router-health] WARN model.layers.42.mlp.gate: maxvio 8.52 > 0.5 at step 40
-[router-health] WARN model.layers.43.mlp.gate: maxvio 1.60 > 0.5 at step 40
-[router-health] WARN model.layers.44.mlp.gate: maxvio 2.31 > 0.5 at step 40
-[router-health] WARN model.layers.45.mlp.gate: maxvio 2.69 > 0.5 at step 40
-                                                    {'loss': '0.5877', 'grad_norm': '0.3242', 'learning_rate': '7.24e-06', 'ppl': '1.8', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '73.88', 'tokens/total': 41943040, 'tokens/trainable': 26431204, 'epoch': '0.3596'}
- 42%|████▏     | 40/96 [1:30:09<2:05:41, 134.66s/it] 43%|████▎     | 41/96 [1:32:24<2:03:26, 134.66s/it]                                                    {'loss': '0.5566', 'grad_norm': '0.4746', 'learning_rate': '7.096e-06', 'ppl': '1.745', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '74.26', 'tokens/total': 42991616, 'tokens/trainable': 27092806, 'epoch': '0.3685'}
- 43%|████▎     | 41/96 [1:32:24<2:03:26, 134.66s/it] 44%|████▍     | 42/96 [1:34:38<2:01:11, 134.66s/it]                                                    {'loss': '0.5628', 'grad_norm': '0.5195', 'learning_rate': '6.95e-06', 'ppl': '1.756', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '79.72', 'tokens/total': 44040192, 'tokens/trainable': 27756880, 'epoch': '0.3775'}
- 44%|████▍     | 42/96 [1:34:38<2:01:11, 134.66s/it] 45%|████▍     | 43/96 [1:36:53<1:58:56, 134.65s/it]                                                    {'loss': '0.5533', 'grad_norm': '0.3477', 'learning_rate': '6.802e-06', 'ppl': '1.739', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '75.22', 'tokens/total': 45088768, 'tokens/trainable': 28396694, 'epoch': '0.3865'}
- 45%|████▍     | 43/96 [1:36:53<1:58:56, 134.65s/it] 46%|████▌     | 44/96 [1:39:08<1:56:42, 134.66s/it]                                                    {'loss': '0.5375', 'grad_norm': '0.3242', 'learning_rate': '6.652e-06', 'ppl': '1.712', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '72.56', 'tokens/total': 46137344, 'tokens/trainable': 29064304, 'epoch': '0.3955'}
- 46%|████▌     | 44/96 [1:39:08<1:56:42, 134.66s/it] 47%|████▋     | 45/96 [1:41:23<1:54:31, 134.74s/it]                                                    {'loss': '0.5508', 'grad_norm': '0.3047', 'learning_rate': '6.501e-06', 'ppl': '1.735', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '76.84', 'tokens/total': 47185920, 'tokens/trainable': 29713932, 'epoch': '0.4045'}
- 47%|████▋     | 45/96 [1:41:23<1:54:31, 134.74s/it] 48%|████▊     | 46/96 [1:43:38<1:52:23, 134.86s/it]                                                    {'loss': '0.5559', 'grad_norm': '0.3535', 'learning_rate': '6.349e-06', 'ppl': '1.744', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '79.81', 'tokens/total': 48234496, 'tokens/trainable': 30380832, 'epoch': '0.4135'}
- 48%|████▊     | 46/96 [1:43:38<1:52:23, 134.86s/it] 49%|████▉     | 47/96 [1:45:53<1:50:12, 134.95s/it]                                                    {'loss': '0.5157', 'grad_norm': '0.3555', 'learning_rate': '6.196e-06', 'ppl': '1.675', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '74.96', 'tokens/total': 49283072, 'tokens/trainable': 31053892, 'epoch': '0.4225'}
- 49%|████▉     | 47/96 [1:45:53<1:50:12, 134.95s/it] 50%|█████     | 48/96 [1:48:07<1:47:51, 134.83s/it]                                                    {'loss': '0.5749', 'grad_norm': '0.3223', 'learning_rate': '6.042e-06', 'ppl': '1.777', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '72.94', 'tokens/total': 50331648, 'tokens/trainable': 31702302, 'epoch': '0.4315'}
- 50%|█████     | 48/96 [1:48:07<1:47:51, 134.83s/it] 51%|█████     | 49/96 [1:50:22<1:45:33, 134.76s/it]                                                    {'loss': '0.5561', 'grad_norm': '0.3691', 'learning_rate': '5.888e-06', 'ppl': '1.744', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '78.77', 'tokens/total': 51380224, 'tokens/trainable': 32355348, 'epoch': '0.4404'}
- 51%|█████     | 49/96 [1:50:22<1:45:33, 134.76s/it] 52%|█████▏    | 50/96 [1:52:37<1:43:17, 134.72s/it][router-health] WARN model.layers.1.mlp.gate: maxvio 4.85 > 0.5 at step 50
-[router-health] WARN model.layers.2.mlp.gate: maxvio 3.71 > 0.5 at step 50
-[router-health] WARN model.layers.3.mlp.gate: maxvio 2.55 > 0.5 at step 50
-[router-health] WARN model.layers.4.mlp.gate: maxvio 1.23 > 0.5 at step 50
-[router-health] WARN model.layers.5.mlp.gate: maxvio 2.69 > 0.5 at step 50
-[router-health] WARN model.layers.6.mlp.gate: maxvio 1.60 > 0.5 at step 50
-[router-health] WARN model.layers.7.mlp.gate: maxvio 3.29 > 0.5 at step 50
-[router-health] WARN model.layers.8.mlp.gate: maxvio 3.05 > 0.5 at step 50
-[router-health] WARN model.layers.9.mlp.gate: maxvio 2.86 > 0.5 at step 50
-[router-health] WARN model.layers.10.mlp.gate: maxvio 2.69 > 0.5 at step 50
-[router-health] WARN model.layers.11.mlp.gate: maxvio 13.50 > 0.5 at step 50
-[router-health] WARN model.layers.12.mlp.gate: maxvio 5.10 > 0.5 at step 50
-[router-health] WARN model.layers.13.mlp.gate: maxvio 2.82 > 0.5 at step 50
-[router-health] WARN model.layers.14.mlp.gate: maxvio 4.99 > 0.5 at step 50
-[router-health] WARN model.layers.15.mlp.gate: maxvio 3.61 > 0.5 at step 50
-[router-health] WARN model.layers.16.mlp.gate: maxvio 13.58 > 0.5 at step 50
-[router-health] WARN model.layers.17.mlp.gate: maxvio 4.94 > 0.5 at step 50
-[router-health] WARN model.layers.18.mlp.gate: maxvio 2.74 > 0.5 at step 50
-[router-health] WARN model.layers.19.mlp.gate: maxvio 9.32 > 0.5 at step 50
-[router-health] WARN model.layers.20.mlp.gate: maxvio 3.20 > 0.5 at step 50
-[router-health] WARN model.layers.21.mlp.gate: maxvio 3.77 > 0.5 at step 50
-[router-health] WARN model.layers.22.mlp.gate: maxvio 1.66 > 0.5 at step 50
-[router-health] WARN model.layers.23.mlp.gate: maxvio 2.73 > 0.5 at step 50
-[router-health] WARN model.layers.24.mlp.gate: maxvio 2.03 > 0.5 at step 50
-[router-health] WARN model.layers.25.mlp.gate: maxvio 3.15 > 0.5 at step 50
-[router-health] WARN model.layers.26.mlp.gate: maxvio 2.63 > 0.5 at step 50
-[router-health] WARN model.layers.27.mlp.gate: maxvio 12.24 > 0.5 at step 50
-[router-health] WARN model.layers.28.mlp.gate: maxvio 3.36 > 0.5 at step 50
-[router-health] WARN model.layers.29.mlp.gate: maxvio 3.05 > 0.5 at step 50
-[router-health] WARN model.layers.30.mlp.gate: maxvio 2.70 > 0.5 at step 50
-[router-health] WARN model.layers.31.mlp.gate: maxvio 1.77 > 0.5 at step 50
-[router-health] WARN model.layers.32.mlp.gate: maxvio 1.88 > 0.5 at step 50
-[router-health] WARN model.layers.33.mlp.gate: maxvio 2.75 > 0.5 at step 50
-[router-health] WARN model.layers.34.mlp.gate: maxvio 3.28 > 0.5 at step 50
-[router-health] WARN model.layers.35.mlp.gate: maxvio 2.59 > 0.5 at step 50
-[router-health] WARN model.layers.36.mlp.gate: maxvio 3.37 > 0.5 at step 50
-[router-health] WARN model.layers.37.mlp.gate: maxvio 2.80 > 0.5 at step 50
-[router-health] WARN model.layers.38.mlp.gate: maxvio 4.46 > 0.5 at step 50
-[router-health] WARN model.layers.39.mlp.gate: maxvio 1.79 > 0.5 at step 50
-[router-health] WARN model.layers.40.mlp.gate: maxvio 3.40 > 0.5 at step 50
-[router-health] WARN model.layers.41.mlp.gate: maxvio 2.39 > 0.5 at step 50
-[router-health] WARN model.layers.42.mlp.gate: maxvio 8.79 > 0.5 at step 50
-[router-health] WARN model.layers.43.mlp.gate: maxvio 1.57 > 0.5 at step 50
-[router-health] WARN model.layers.44.mlp.gate: maxvio 2.27 > 0.5 at step 50
-[router-health] WARN model.layers.45.mlp.gate: maxvio 2.85 > 0.5 at step 50
-                                                    {'loss': '0.5385', 'grad_norm': '0.3809', 'learning_rate': '5.733e-06', 'ppl': '1.714', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '71.7', 'tokens/total': 52428800, 'tokens/trainable': 33017874, 'epoch': '0.4494'}
- 52%|█████▏    | 50/96 [1:52:37<1:43:17, 134.72s/it] 53%|█████▎    | 51/96 [1:54:51<1:41:02, 134.71s/it]                                                    {'loss': '0.5798', 'grad_norm': '0.3242', 'learning_rate': '5.578e-06', 'ppl': '1.786', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '79.99', 'tokens/total': 53477376, 'tokens/trainable': 33683848, 'epoch': '0.4584'}
- 53%|█████▎    | 51/96 [1:54:51<1:41:02, 134.71s/it] 54%|█████▍    | 52/96 [1:57:06<1:38:46, 134.70s/it]                                                    {'loss': '0.5699', 'grad_norm': '0.291', 'learning_rate': '5.422e-06', 'ppl': '1.768', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '74.85', 'tokens/total': 54525952, 'tokens/trainable': 34349356, 'epoch': '0.4674'}
- 54%|█████▍    | 52/96 [1:57:06<1:38:46, 134.70s/it] 55%|█████▌    | 53/96 [1:59:21<1:36:31, 134.68s/it]                                                    {'loss': '0.5548', 'grad_norm': '0.3203', 'learning_rate': '5.267e-06', 'ppl': '1.742', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '76.55', 'tokens/total': 55574528, 'tokens/trainable': 35010440, 'epoch': '0.4764'}
- 55%|█████▌    | 53/96 [1:59:21<1:36:31, 134.68s/it] 56%|█████▋    | 54/96 [2:01:35<1:34:16, 134.67s/it]                                                    {'loss': '0.5601', 'grad_norm': '0.5469', 'learning_rate': '5.112e-06', 'ppl': '1.751', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '76.83', 'tokens/total': 56623104, 'tokens/trainable': 35662472, 'epoch': '0.4854'}
- 56%|█████▋    | 54/96 [2:01:35<1:34:16, 134.67s/it] 57%|█████▋    | 55/96 [2:03:50<1:32:00, 134.65s/it]                                                    {'loss': '0.5632', 'grad_norm': '0.5625', 'learning_rate': '4.958e-06', 'ppl': '1.756', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '76.39', 'tokens/total': 57671680, 'tokens/trainable': 36318128, 'epoch': '0.4944'}
- 57%|█████▋    | 55/96 [2:03:50<1:32:00, 134.65s/it] 58%|█████▊    | 56/96 [2:06:05<1:29:45, 134.63s/it]                                                    {'loss': '0.5432', 'grad_norm': '0.3711', 'learning_rate': '4.804e-06', 'ppl': '1.721', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '77.67', 'tokens/total': 58720256, 'tokens/trainable': 36983952, 'epoch': '0.5034'}
- 58%|█████▊    | 56/96 [2:06:05<1:29:45, 134.63s/it] 59%|█████▉    | 57/96 [2:08:19<1:27:30, 134.63s/it]                                                    {'loss': '0.542', 'grad_norm': '0.3828', 'learning_rate': '4.651e-06', 'ppl': '1.719', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '76.88', 'tokens/total': 59768832, 'tokens/trainable': 37661920, 'epoch': '0.5124'}
- 59%|█████▉    | 57/96 [2:08:19<1:27:30, 134.63s/it] 60%|██████    | 58/96 [2:10:34<1:25:16, 134.65s/it]                                                    {'loss': '0.5803', 'grad_norm': '0.3223', 'learning_rate': '4.499e-06', 'ppl': '1.787', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '80.8', 'tokens/total': 60817408, 'tokens/trainable': 38317824, 'epoch': '0.5213'}
- 60%|██████    | 58/96 [2:10:34<1:25:16, 134.65s/it] 61%|██████▏   | 59/96 [2:12:49<1:23:02, 134.66s/it]                                                    {'loss': '0.5594', 'grad_norm': '0.3066', 'learning_rate': '4.348e-06', 'ppl': '1.75', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '77.03', 'tokens/total': 61865984, 'tokens/trainable': 38983668, 'epoch': '0.5303'}
- 61%|██████▏   | 59/96 [2:12:49<1:23:02, 134.66s/it] 62%|██████▎   | 60/96 [2:15:03<1:20:47, 134.65s/it][router-health] WARN model.layers.1.mlp.gate: maxvio 4.78 > 0.5 at step 60
-[router-health] WARN model.layers.2.mlp.gate: maxvio 3.30 > 0.5 at step 60
-[router-health] WARN model.layers.3.mlp.gate: maxvio 2.56 > 0.5 at step 60
-[router-health] WARN model.layers.4.mlp.gate: maxvio 1.23 > 0.5 at step 60
-[router-health] WARN model.layers.5.mlp.gate: maxvio 2.56 > 0.5 at step 60
-[router-health] WARN model.layers.6.mlp.gate: maxvio 1.51 > 0.5 at step 60
-[router-health] WARN model.layers.7.mlp.gate: maxvio 3.19 > 0.5 at step 60
-[router-health] WARN model.layers.8.mlp.gate: maxvio 2.95 > 0.5 at step 60
-[router-health] WARN model.layers.9.mlp.gate: maxvio 2.84 > 0.5 at step 60
-[router-health] WARN model.layers.10.mlp.gate: maxvio 2.55 > 0.5 at step 60
-[router-health] WARN model.layers.11.mlp.gate: maxvio 13.54 > 0.5 at step 60
-[router-health] WARN model.layers.12.mlp.gate: maxvio 5.01 > 0.5 at step 60
-[router-health] WARN model.layers.13.mlp.gate: maxvio 2.62 > 0.5 at step 60
-[router-health] WARN model.layers.14.mlp.gate: maxvio 4.94 > 0.5 at step 60
-[router-health] WARN model.layers.15.mlp.gate: maxvio 3.48 > 0.5 at step 60
-[router-health] WARN model.layers.16.mlp.gate: maxvio 13.54 > 0.5 at step 60
-[router-health] WARN model.layers.17.mlp.gate: maxvio 4.96 > 0.5 at step 60
-[router-health] WARN model.layers.18.mlp.gate: maxvio 2.65 > 0.5 at step 60
-[router-health] WARN model.layers.19.mlp.gate: maxvio 9.20 > 0.5 at step 60
-[router-health] WARN model.layers.20.mlp.gate: maxvio 2.97 > 0.5 at step 60
-[router-health] WARN model.layers.21.mlp.gate: maxvio 3.71 > 0.5 at step 60
-[router-health] WARN model.layers.22.mlp.gate: maxvio 1.50 > 0.5 at step 60
-[router-health] WARN model.layers.23.mlp.gate: maxvio 2.63 > 0.5 at step 60
-[router-health] WARN model.layers.24.mlp.gate: maxvio 2.18 > 0.5 at step 60
-[router-health] WARN model.layers.25.mlp.gate: maxvio 2.96 > 0.5 at step 60
-[router-health] WARN model.layers.26.mlp.gate: maxvio 2.55 > 0.5 at step 60
-[router-health] WARN model.layers.27.mlp.gate: maxvio 12.15 > 0.5 at step 60
-[router-health] WARN model.layers.28.mlp.gate: maxvio 3.41 > 0.5 at step 60
-[router-health] WARN model.layers.29.mlp.gate: maxvio 2.89 > 0.5 at step 60
-[router-health] WARN model.layers.30.mlp.gate: maxvio 2.57 > 0.5 at step 60
-[router-health] WARN model.layers.31.mlp.gate: maxvio 1.82 > 0.5 at step 60
-[router-health] WARN model.layers.32.mlp.gate: maxvio 1.96 > 0.5 at step 60
-[router-health] WARN model.layers.33.mlp.gate: maxvio 2.65 > 0.5 at step 60
-[router-health] WARN model.layers.34.mlp.gate: maxvio 3.16 > 0.5 at step 60
-[router-health] WARN model.layers.35.mlp.gate: maxvio 2.58 > 0.5 at step 60
-[router-health] WARN model.layers.36.mlp.gate: maxvio 3.62 > 0.5 at step 60
-[router-health] WARN model.layers.37.mlp.gate: maxvio 2.82 > 0.5 at step 60
-[router-health] WARN model.layers.38.mlp.gate: maxvio 4.36 > 0.5 at step 60
-[router-health] WARN model.layers.39.mlp.gate: maxvio 1.78 > 0.5 at step 60
-[router-health] WARN model.layers.40.mlp.gate: maxvio 3.41 > 0.5 at step 60
-[router-health] WARN model.layers.41.mlp.gate: maxvio 2.51 > 0.5 at step 60
-[router-health] WARN model.layers.42.mlp.gate: maxvio 8.63 > 0.5 at step 60
-[router-health] WARN model.layers.43.mlp.gate: maxvio 1.47 > 0.5 at step 60
-[router-health] WARN model.layers.44.mlp.gate: maxvio 2.28 > 0.5 at step 60
-[router-health] WARN model.layers.45.mlp.gate: maxvio 2.73 > 0.5 at step 60
-                                                    {'loss': '0.5536', 'grad_norm': '0.334', 'learning_rate': '4.198e-06', 'ppl': '1.74', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '78', 'tokens/total': 62914560, 'tokens/trainable': 39645264, 'epoch': '0.5393'}
- 62%|██████▎   | 60/96 [2:15:03<1:20:47, 134.65s/it] 64%|██████▎   | 61/96 [2:17:18<1:18:32, 134.65s/it]                                                    {'loss': '0.5511', 'grad_norm': '0.2988', 'learning_rate': '4.05e-06', 'ppl': '1.735', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '80.27', 'tokens/total': 63963136, 'tokens/trainable': 40301344, 'epoch': '0.5483'}
- 64%|██████▎   | 61/96 [2:17:18<1:18:32, 134.65s/it] 65%|██████▍   | 62/96 [2:19:32<1:16:17, 134.64s/it]                                                    {'loss': '0.5766', 'grad_norm': '0.3242', 'learning_rate': '3.904e-06', 'ppl': '1.78', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '80.38', 'tokens/total': 65011712, 'tokens/trainable': 40965648, 'epoch': '0.5573'}
- 65%|██████▍   | 62/96 [2:19:32<1:16:17, 134.64s/it] 66%|██████▌   | 63/96 [2:21:47<1:14:02, 134.63s/it]                                                    {'loss': '0.5449', 'grad_norm': '0.293', 'learning_rate': '3.76e-06', 'ppl': '1.724', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '78.91', 'tokens/total': 66060288, 'tokens/trainable': 41629880, 'epoch': '0.5663'}
- 66%|██████▌   | 63/96 [2:21:47<1:14:02, 134.63s/it] 67%|██████▋   | 64/96 [2:24:02<1:11:48, 134.63s/it]                                                    {'loss': '0.5724', 'grad_norm': '0.375', 'learning_rate': '3.618e-06', 'ppl': '1.772', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '78.01', 'tokens/total': 67108864, 'tokens/trainable': 42283936, 'epoch': '0.5753'}
- 67%|██████▋   | 64/96 [2:24:02<1:11:48, 134.63s/it] 68%|██████▊   | 65/96 [2:26:16<1:09:33, 134.62s/it]                                                    {'loss': '0.5575', 'grad_norm': '0.3066', 'learning_rate': '3.478e-06', 'ppl': '1.746', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '81.34', 'tokens/total': 68157440, 'tokens/trainable': 42953384, 'epoch': '0.5843'}
- 68%|██████▊   | 65/96 [2:26:16<1:09:33, 134.62s/it] 69%|██████▉   | 66/96 [2:28:31<1:07:18, 134.60s/it]                                                    {'loss': '0.5462', 'grad_norm': '0.291', 'learning_rate': '3.34e-06', 'ppl': '1.727', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '77.08', 'tokens/total': 69206016, 'tokens/trainable': 43630332, 'epoch': '0.5933'}
- 69%|██████▉   | 66/96 [2:28:31<1:07:18, 134.60s/it] 70%|██████▉   | 67/96 [2:30:45<1:05:03, 134.59s/it]                                                    {'loss': '0.5515', 'grad_norm': '0.3574', 'learning_rate': '3.205e-06', 'ppl': '1.736', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '75.87', 'tokens/total': 70254592, 'tokens/trainable': 44289572, 'epoch': '0.6022'}
- 70%|██████▉   | 67/96 [2:30:45<1:05:03, 134.59s/it] 71%|███████   | 68/96 [2:33:00<1:02:48, 134.60s/it]                                                    {'loss': '0.5594', 'grad_norm': '0.3711', 'learning_rate': '3.073e-06', 'ppl': '1.75', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '75.74', 'tokens/total': 71303168, 'tokens/trainable': 44949504, 'epoch': '0.6112'}
- 71%|███████   | 68/96 [2:33:00<1:02:48, 134.60s/it] 72%|███████▏  | 69/96 [2:35:15<1:00:33, 134.59s/it]                                                    {'loss': '0.5418', 'grad_norm': '0.3359', 'learning_rate': '2.944e-06', 'ppl': '1.719', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '79.15', 'tokens/total': 72351744, 'tokens/trainable': 45602440, 'epoch': '0.6202'}
- 72%|███████▏  | 69/96 [2:35:15<1:00:33, 134.59s/it] 73%|███████▎  | 70/96 [2:37:29<58:19, 134.59s/it]  [router-health] WARN model.layers.1.mlp.gate: maxvio 4.66 > 0.5 at step 70
-[router-health] WARN model.layers.2.mlp.gate: maxvio 3.18 > 0.5 at step 70
-[router-health] WARN model.layers.3.mlp.gate: maxvio 2.67 > 0.5 at step 70
-[router-health] WARN model.layers.4.mlp.gate: maxvio 1.24 > 0.5 at step 70
-[router-health] WARN model.layers.5.mlp.gate: maxvio 2.65 > 0.5 at step 70
-[router-health] WARN model.layers.6.mlp.gate: maxvio 1.73 > 0.5 at step 70
-[router-health] WARN model.layers.7.mlp.gate: maxvio 3.04 > 0.5 at step 70
-[router-health] WARN model.layers.8.mlp.gate: maxvio 2.97 > 0.5 at step 70
-[router-health] WARN model.layers.9.mlp.gate: maxvio 2.91 > 0.5 at step 70
-[router-health] WARN model.layers.10.mlp.gate: maxvio 2.57 > 0.5 at step 70
-[router-health] WARN model.layers.11.mlp.gate: maxvio 13.45 > 0.5 at step 70
-[router-health] WARN model.layers.12.mlp.gate: maxvio 4.97 > 0.5 at step 70
-[router-health] WARN model.layers.13.mlp.gate: maxvio 2.74 > 0.5 at step 70
-[router-health] WARN model.layers.14.mlp.gate: maxvio 4.96 > 0.5 at step 70
-[router-health] WARN model.layers.15.mlp.gate: maxvio 3.40 > 0.5 at step 70
-[router-health] WARN model.layers.16.mlp.gate: maxvio 13.41 > 0.5 at step 70
-[router-health] WARN model.layers.17.mlp.gate: maxvio 4.84 > 0.5 at step 70
-[router-health] WARN model.layers.18.mlp.gate: maxvio 2.47 > 0.5 at step 70
-[router-health] WARN model.layers.19.mlp.gate: maxvio 9.26 > 0.5 at step 70
-[router-health] WARN model.layers.20.mlp.gate: maxvio 3.14 > 0.5 at step 70
-[router-health] WARN model.layers.21.mlp.gate: maxvio 3.68 > 0.5 at step 70
-[router-health] WARN model.layers.22.mlp.gate: maxvio 1.47 > 0.5 at step 70
-[router-health] WARN model.layers.23.mlp.gate: maxvio 2.68 > 0.5 at step 70
-[router-health] WARN model.layers.24.mlp.gate: maxvio 2.02 > 0.5 at step 70
-[router-health] WARN model.layers.25.mlp.gate: maxvio 2.84 > 0.5 at step 70
-[router-health] WARN model.layers.26.mlp.gate: maxvio 2.53 > 0.5 at step 70
-[router-health] WARN model.layers.27.mlp.gate: maxvio 12.05 > 0.5 at step 70
-[router-health] WARN model.layers.28.mlp.gate: maxvio 3.30 > 0.5 at step 70
-[router-health] WARN model.layers.29.mlp.gate: maxvio 2.92 > 0.5 at step 70
-[router-health] WARN model.layers.30.mlp.gate: maxvio 2.51 > 0.5 at step 70
-[router-health] WARN model.layers.31.mlp.gate: maxvio 1.86 > 0.5 at step 70
-[router-health] WARN model.layers.32.mlp.gate: maxvio 1.99 > 0.5 at step 70
-[router-health] WARN model.layers.33.mlp.gate: maxvio 2.61 > 0.5 at step 70
-[router-health] WARN model.layers.34.mlp.gate: maxvio 3.18 > 0.5 at step 70
-[router-health] WARN model.layers.35.mlp.gate: maxvio 2.53 > 0.5 at step 70
-[router-health] WARN model.layers.36.mlp.gate: maxvio 3.62 > 0.5 at step 70
-[router-health] WARN model.layers.37.mlp.gate: maxvio 2.86 > 0.5 at step 70
-[router-health] WARN model.layers.38.mlp.gate: maxvio 4.20 > 0.5 at step 70
-[router-health] WARN model.layers.39.mlp.gate: maxvio 1.74 > 0.5 at step 70
-[router-health] WARN model.layers.40.mlp.gate: maxvio 3.26 > 0.5 at step 70
-[router-health] WARN model.layers.41.mlp.gate: maxvio 2.61 > 0.5 at step 70
-[router-health] WARN model.layers.42.mlp.gate: maxvio 8.46 > 0.5 at step 70
-[router-health] WARN model.layers.43.mlp.gate: maxvio 1.39 > 0.5 at step 70
-[router-health] WARN model.layers.44.mlp.gate: maxvio 2.24 > 0.5 at step 70
-[router-health] WARN model.layers.45.mlp.gate: maxvio 2.73 > 0.5 at step 70
-                                                  {'loss': '0.5559', 'grad_norm': '0.3242', 'learning_rate': '2.817e-06', 'ppl': '1.743', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '77.46', 'tokens/total': 73400320, 'tokens/trainable': 46271900, 'epoch': '0.6292'}
- 73%|███████▎  | 70/96 [2:37:29<58:19, 134.59s/it] 74%|███████▍  | 71/96 [2:39:44<56:05, 134.61s/it]                                                  {'loss': '0.5334', 'grad_norm': '0.3008', 'learning_rate': '2.694e-06', 'ppl': '1.705', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '78.2', 'tokens/total': 74448896, 'tokens/trainable': 46932356, 'epoch': '0.6382'}
- 74%|███████▍  | 71/96 [2:39:44<56:05, 134.61s/it] 75%|███████▌  | 72/96 [2:41:58<53:50, 134.62s/it]                                                  {'loss': '0.5738', 'grad_norm': '0.3047', 'learning_rate': '2.575e-06', 'ppl': '1.775', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '70.61', 'tokens/total': 75497472, 'tokens/trainable': 47601196, 'epoch': '0.6472'}
- 75%|███████▌  | 72/96 [2:41:58<53:50, 134.62s/it] 76%|███████▌  | 73/96 [2:44:13<51:36, 134.62s/it]                                                  {'loss': '0.5429', 'grad_norm': '0.2988', 'learning_rate': '2.458e-06', 'ppl': '1.721', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '73.97', 'tokens/total': 76546048, 'tokens/trainable': 48248004, 'epoch': '0.6562'}
- 76%|███████▌  | 73/96 [2:44:13<51:36, 134.62s/it] 77%|███████▋  | 74/96 [2:46:28<49:21, 134.63s/it]                                                  {'loss': '0.5741', 'grad_norm': '0.3164', 'learning_rate': '2.346e-06', 'ppl': '1.775', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '79.15', 'tokens/total': 77594624, 'tokens/trainable': 48905016, 'epoch': '0.6652'}
- 77%|███████▋  | 74/96 [2:46:28<49:21, 134.63s/it] 78%|███████▊  | 75/96 [2:48:42<47:07, 134.63s/it]                                                  {'loss': '0.5426', 'grad_norm': '0.3164', 'learning_rate': '2.237e-06', 'ppl': '1.72', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '75.44', 'tokens/total': 78643200, 'tokens/trainable': 49568808, 'epoch': '0.6742'}
- 78%|███████▊  | 75/96 [2:48:42<47:07, 134.63s/it] 79%|███████▉  | 76/96 [2:50:57<44:52, 134.62s/it]                                                  {'loss': '0.5382', 'grad_norm': '0.3281', 'learning_rate': '2.132e-06', 'ppl': '1.713', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '76.43', 'tokens/total': 79691776, 'tokens/trainable': 50230180, 'epoch': '0.6831'}
- 79%|███████▉  | 76/96 [2:50:57<44:52, 134.62s/it] 80%|████████  | 77/96 [2:53:12<42:37, 134.63s/it]                                                  {'loss': '0.5333', 'grad_norm': '0.5039', 'learning_rate': '2.031e-06', 'ppl': '1.705', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '77', 'tokens/total': 80740352, 'tokens/trainable': 50886288, 'epoch': '0.6921'}
- 80%|████████  | 77/96 [2:53:12<42:37, 134.63s/it] 81%|████████▏ | 78/96 [2:55:26<40:23, 134.63s/it]                                                  {'loss': '0.5725', 'grad_norm': '0.3633', 'learning_rate': '1.934e-06', 'ppl': '1.773', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '76.19', 'tokens/total': 81788928, 'tokens/trainable': 51538212, 'epoch': '0.7011'}
- 81%|████████▏ | 78/96 [2:55:26<40:23, 134.63s/it] 82%|████████▏ | 79/96 [2:57:41<38:09, 134.66s/it]                                                  {'loss': '0.5535', 'grad_norm': '0.293', 'learning_rate': '1.841e-06', 'ppl': '1.739', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '84.44', 'tokens/total': 82837504, 'tokens/trainable': 52203320, 'epoch': '0.7101'}
- 82%|████████▏ | 79/96 [2:57:41<38:09, 134.66s/it] 83%|████████▎ | 80/96 [2:59:56<35:54, 134.65s/it][router-health] WARN model.layers.1.mlp.gate: maxvio 4.72 > 0.5 at step 80
-[router-health] WARN model.layers.2.mlp.gate: maxvio 3.17 > 0.5 at step 80
-[router-health] WARN model.layers.3.mlp.gate: maxvio 2.79 > 0.5 at step 80
-[router-health] WARN model.layers.4.mlp.gate: maxvio 1.29 > 0.5 at step 80
-[router-health] WARN model.layers.5.mlp.gate: maxvio 2.58 > 0.5 at step 80
-[router-health] WARN model.layers.6.mlp.gate: maxvio 1.66 > 0.5 at step 80
-[router-health] WARN model.layers.7.mlp.gate: maxvio 2.96 > 0.5 at step 80
-[router-health] WARN model.layers.8.mlp.gate: maxvio 3.05 > 0.5 at step 80
-[router-health] WARN model.layers.9.mlp.gate: maxvio 2.97 > 0.5 at step 80
-[router-health] WARN model.layers.10.mlp.gate: maxvio 2.67 > 0.5 at step 80
-[router-health] WARN model.layers.11.mlp.gate: maxvio 13.55 > 0.5 at step 80
-[router-health] WARN model.layers.12.mlp.gate: maxvio 4.83 > 0.5 at step 80
-[router-health] WARN model.layers.13.mlp.gate: maxvio 2.72 > 0.5 at step 80
-[router-health] WARN model.layers.14.mlp.gate: maxvio 4.83 > 0.5 at step 80
-[router-health] WARN model.layers.15.mlp.gate: maxvio 3.44 > 0.5 at step 80
-[router-health] WARN model.layers.16.mlp.gate: maxvio 13.55 > 0.5 at step 80
-[router-health] WARN model.layers.17.mlp.gate: maxvio 4.60 > 0.5 at step 80
-[router-health] WARN model.layers.18.mlp.gate: maxvio 2.60 > 0.5 at step 80
-[router-health] WARN model.layers.19.mlp.gate: maxvio 9.28 > 0.5 at step 80
-[router-health] WARN model.layers.20.mlp.gate: maxvio 3.05 > 0.5 at step 80
-[router-health] WARN model.layers.21.mlp.gate: maxvio 3.72 > 0.5 at step 80
-[router-health] WARN model.layers.22.mlp.gate: maxvio 1.48 > 0.5 at step 80
-[router-health] WARN model.layers.23.mlp.gate: maxvio 2.66 > 0.5 at step 80
-[router-health] WARN model.layers.24.mlp.gate: maxvio 2.15 > 0.5 at step 80
-[router-health] WARN model.layers.25.mlp.gate: maxvio 2.90 > 0.5 at step 80
-[router-health] WARN model.layers.26.mlp.gate: maxvio 2.46 > 0.5 at step 80
-[router-health] WARN model.layers.27.mlp.gate: maxvio 12.05 > 0.5 at step 80
-[router-health] WARN model.layers.28.mlp.gate: maxvio 3.43 > 0.5 at step 80
-[router-health] WARN model.layers.29.mlp.gate: maxvio 2.74 > 0.5 at step 80
-[router-health] WARN model.layers.30.mlp.gate: maxvio 2.39 > 0.5 at step 80
-[router-health] WARN model.layers.31.mlp.gate: maxvio 1.92 > 0.5 at step 80
-[router-health] WARN model.layers.32.mlp.gate: maxvio 1.93 > 0.5 at step 80
-[router-health] WARN model.layers.33.mlp.gate: maxvio 2.54 > 0.5 at step 80
-[router-health] WARN model.layers.34.mlp.gate: maxvio 3.02 > 0.5 at step 80
-[router-health] WARN model.layers.35.mlp.gate: maxvio 2.52 > 0.5 at step 80
-[router-health] WARN model.layers.36.mlp.gate: maxvio 3.71 > 0.5 at step 80
-[router-health] WARN model.layers.37.mlp.gate: maxvio 2.75 > 0.5 at step 80
-[router-health] WARN model.layers.38.mlp.gate: maxvio 4.32 > 0.5 at step 80
-[router-health] WARN model.layers.39.mlp.gate: maxvio 1.75 > 0.5 at step 80
-[router-health] WARN model.layers.40.mlp.gate: maxvio 3.32 > 0.5 at step 80
-[router-health] WARN model.layers.41.mlp.gate: maxvio 2.57 > 0.5 at step 80
-[router-health] WARN model.layers.42.mlp.gate: maxvio 8.63 > 0.5 at step 80
-[router-health] WARN model.layers.43.mlp.gate: maxvio 1.44 > 0.5 at step 80
-[router-health] WARN model.layers.44.mlp.gate: maxvio 2.29 > 0.5 at step 80
-[router-health] WARN model.layers.45.mlp.gate: maxvio 2.67 > 0.5 at step 80
-                                                  {'loss': '0.5415', 'grad_norm': '0.2969', 'learning_rate': '1.753e-06', 'ppl': '1.719', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '74.91', 'tokens/total': 83886080, 'tokens/trainable': 52861760, 'epoch': '0.7191'}
- 83%|████████▎ | 80/96 [2:59:56<35:54, 134.65s/it] 84%|████████▍ | 81/96 [3:02:10<33:39, 134.65s/it]                                                  {'loss': '0.5536', 'grad_norm': '0.3105', 'learning_rate': '1.669e-06', 'ppl': '1.739', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '79.19', 'tokens/total': 84934656, 'tokens/trainable': 53527956, 'epoch': '0.7281'}
- 84%|████████▍ | 81/96 [3:02:10<33:39, 134.65s/it] 85%|████████▌ | 82/96 [3:04:25<31:24, 134.64s/it]                                                  {'loss': '0.5284', 'grad_norm': '0.2793', 'learning_rate': '1.59e-06', 'ppl': '1.696', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '74.38', 'tokens/total': 85983232, 'tokens/trainable': 54173960, 'epoch': '0.7371'}
- 85%|████████▌ | 82/96 [3:04:25<31:24, 134.64s/it] 86%|████████▋ | 83/96 [3:06:40<29:10, 134.64s/it]                                                  {'loss': '0.5478', 'grad_norm': '0.3223', 'learning_rate': '1.515e-06', 'ppl': '1.729', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '75.88', 'tokens/total': 87031808, 'tokens/trainable': 54824108, 'epoch': '0.7461'}
- 86%|████████▋ | 83/96 [3:06:40<29:10, 134.64s/it] 88%|████████▊ | 84/96 [3:08:54<26:55, 134.63s/it]                                                  {'loss': '0.5581', 'grad_norm': '0.3398', 'learning_rate': '1.446e-06', 'ppl': '1.747', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '76.08', 'tokens/total': 88080384, 'tokens/trainable': 55473636, 'epoch': '0.7551'}
- 88%|████████▊ | 84/96 [3:08:54<26:55, 134.63s/it] 89%|████████▊ | 85/96 [3:11:09<24:40, 134.63s/it]                                                  {'loss': '0.5264', 'grad_norm': '0.3262', 'learning_rate': '1.381e-06', 'ppl': '1.693', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '73.31', 'tokens/total': 89128960, 'tokens/trainable': 56126128, 'epoch': '0.764'}
- 89%|████████▊ | 85/96 [3:11:09<24:40, 134.63s/it] 90%|████████▉ | 86/96 [3:13:24<22:26, 134.69s/it]                                                  {'loss': '0.5477', 'grad_norm': '0.2949', 'learning_rate': '1.321e-06', 'ppl': '1.729', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '78.04', 'tokens/total': 90177536, 'tokens/trainable': 56786392, 'epoch': '0.773'}
- 90%|████████▉ | 86/96 [3:13:24<22:26, 134.69s/it] 91%|█████████ | 87/96 [3:15:38<20:12, 134.67s/it]                                                  {'loss': '0.5751', 'grad_norm': '0.3086', 'learning_rate': '1.266e-06', 'ppl': '1.777', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '80.41', 'tokens/total': 91226112, 'tokens/trainable': 57448704, 'epoch': '0.782'}
- 91%|█████████ | 87/96 [3:15:38<20:12, 134.67s/it] 92%|█████████▏| 88/96 [3:17:53<17:57, 134.66s/it]                                                  {'loss': '0.5418', 'grad_norm': '0.2949', 'learning_rate': '1.215e-06', 'ppl': '1.719', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '78', 'tokens/total': 92274688, 'tokens/trainable': 58105828, 'epoch': '0.791'}
- 92%|█████████▏| 88/96 [3:17:53<17:57, 134.66s/it] 93%|█████████▎| 89/96 [3:20:08<15:43, 134.73s/it]                                                  {'loss': '0.53', 'grad_norm': '0.3125', 'learning_rate': '1.171e-06', 'ppl': '1.699', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '74.49', 'tokens/total': 93323264, 'tokens/trainable': 58761104, 'epoch': '0.8'}
- 93%|█████████▎| 89/96 [3:20:08<15:43, 134.73s/it] 94%|█████████▍| 90/96 [3:22:22<13:28, 134.68s/it][router-health] WARN model.layers.1.mlp.gate: maxvio 4.78 > 0.5 at step 90
-[router-health] WARN model.layers.2.mlp.gate: maxvio 3.33 > 0.5 at step 90
-[router-health] WARN model.layers.3.mlp.gate: maxvio 2.90 > 0.5 at step 90
-[router-health] WARN model.layers.4.mlp.gate: maxvio 1.30 > 0.5 at step 90
-[router-health] WARN model.layers.5.mlp.gate: maxvio 2.50 > 0.5 at step 90
-[router-health] WARN model.layers.6.mlp.gate: maxvio 1.68 > 0.5 at step 90
-[router-health] WARN model.layers.7.mlp.gate: maxvio 3.13 > 0.5 at step 90
-[router-health] WARN model.layers.8.mlp.gate: maxvio 2.94 > 0.5 at step 90
-[router-health] WARN model.layers.9.mlp.gate: maxvio 2.92 > 0.5 at step 90
-[router-health] WARN model.layers.10.mlp.gate: maxvio 2.72 > 0.5 at step 90
-[router-health] WARN model.layers.11.mlp.gate: maxvio 13.51 > 0.5 at step 90
-[router-health] WARN model.layers.12.mlp.gate: maxvio 5.16 > 0.5 at step 90
-[router-health] WARN model.layers.13.mlp.gate: maxvio 2.66 > 0.5 at step 90
-[router-health] WARN model.layers.14.mlp.gate: maxvio 4.99 > 0.5 at step 90
-[router-health] WARN model.layers.15.mlp.gate: maxvio 3.42 > 0.5 at step 90
-[router-health] WARN model.layers.16.mlp.gate: maxvio 13.51 > 0.5 at step 90
-[router-health] WARN model.layers.17.mlp.gate: maxvio 4.93 > 0.5 at step 90
-[router-health] WARN model.layers.18.mlp.gate: maxvio 2.57 > 0.5 at step 90
-[router-health] WARN model.layers.19.mlp.gate: maxvio 9.19 > 0.5 at step 90
-[router-health] WARN model.layers.20.mlp.gate: maxvio 3.06 > 0.5 at step 90
-[router-health] WARN model.layers.21.mlp.gate: maxvio 3.67 > 0.5 at step 90
-[router-health] WARN model.layers.22.mlp.gate: maxvio 1.50 > 0.5 at step 90
-[router-health] WARN model.layers.23.mlp.gate: maxvio 2.69 > 0.5 at step 90
-[router-health] WARN model.layers.24.mlp.gate: maxvio 2.13 > 0.5 at step 90
-[router-health] WARN model.layers.25.mlp.gate: maxvio 2.84 > 0.5 at step 90
-[router-health] WARN model.layers.26.mlp.gate: maxvio 2.38 > 0.5 at step 90
-[router-health] WARN model.layers.27.mlp.gate: maxvio 11.95 > 0.5 at step 90
-[router-health] WARN model.layers.28.mlp.gate: maxvio 3.35 > 0.5 at step 90
-[router-health] WARN model.layers.29.mlp.gate: maxvio 2.88 > 0.5 at step 90
-[router-health] WARN model.layers.30.mlp.gate: maxvio 2.50 > 0.5 at step 90
-[router-health] WARN model.layers.31.mlp.gate: maxvio 1.90 > 0.5 at step 90
-[router-health] WARN model.layers.32.mlp.gate: maxvio 1.92 > 0.5 at step 90
-[router-health] WARN model.layers.33.mlp.gate: maxvio 2.63 > 0.5 at step 90
-[router-health] WARN model.layers.34.mlp.gate: maxvio 2.99 > 0.5 at step 90
-[router-health] WARN model.layers.35.mlp.gate: maxvio 2.64 > 0.5 at step 90
-[router-health] WARN model.layers.36.mlp.gate: maxvio 3.67 > 0.5 at step 90
-[router-health] WARN model.layers.37.mlp.gate: maxvio 2.72 > 0.5 at step 90
-[router-health] WARN model.layers.38.mlp.gate: maxvio 4.20 > 0.5 at step 90
-[router-health] WARN model.layers.39.mlp.gate: maxvio 1.83 > 0.5 at step 90
-[router-health] WARN model.layers.40.mlp.gate: maxvio 3.48 > 0.5 at step 90
-[router-health] WARN model.layers.41.mlp.gate: maxvio 2.52 > 0.5 at step 90
-[router-health] WARN model.layers.42.mlp.gate: maxvio 8.43 > 0.5 at step 90
-[router-health] WARN model.layers.43.mlp.gate: maxvio 1.47 > 0.5 at step 90
-[router-health] WARN model.layers.44.mlp.gate: maxvio 2.27 > 0.5 at step 90
-[router-health] WARN model.layers.45.mlp.gate: maxvio 2.62 > 0.5 at step 90
-                                                  {'loss': '0.558', 'grad_norm': '0.3047', 'learning_rate': '1.131e-06', 'ppl': '1.747', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '78.75', 'tokens/total': 94371840, 'tokens/trainable': 59427368, 'epoch': '0.809'}
- 94%|█████████▍| 90/96 [3:22:22<13:28, 134.68s/it] 95%|█████████▍| 91/96 [3:24:37<11:13, 134.63s/it]                                                  {'loss': '0.5518', 'grad_norm': '0.3105', 'learning_rate': '1.096e-06', 'ppl': '1.736', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '76.48', 'tokens/total': 95420416, 'tokens/trainable': 60072432, 'epoch': '0.818'}
- 95%|█████████▍| 91/96 [3:24:37<11:13, 134.63s/it] 96%|█████████▌| 92/96 [3:26:51<08:58, 134.61s/it]                                                  {'loss': '0.5238', 'grad_norm': '0.2988', 'learning_rate': '1.067e-06', 'ppl': '1.688', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '81.28', 'tokens/total': 96468992, 'tokens/trainable': 60735200, 'epoch': '0.827'}
- 96%|█████████▌| 92/96 [3:26:51<08:58, 134.61s/it] 97%|█████████▋| 93/96 [3:29:06<06:43, 134.61s/it]                                                  {'loss': '0.5526', 'grad_norm': '0.2852', 'learning_rate': '1.043e-06', 'ppl': '1.738', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '75.55', 'tokens/total': 97517568, 'tokens/trainable': 61398136, 'epoch': '0.836'}
- 97%|█████████▋| 93/96 [3:29:06<06:43, 134.61s/it] 98%|█████████▊| 94/96 [3:31:21<04:29, 134.69s/it]                                                  {'loss': '0.5691', 'grad_norm': '0.3203', 'learning_rate': '1.024e-06', 'ppl': '1.767', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '81.71', 'tokens/total': 98566144, 'tokens/trainable': 62059740, 'epoch': '0.8449'}
- 98%|█████████▊| 94/96 [3:31:21<04:29, 134.69s/it] 99%|█████████▉| 95/96 [3:33:36<02:14, 134.79s/it]                                                  {'loss': '0.5601', 'grad_norm': '0.2852', 'learning_rate': '1.011e-06', 'ppl': '1.751', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '77.42', 'tokens/total': 99614720, 'tokens/trainable': 62708280, 'epoch': '0.8539'}
- 99%|█████████▉| 95/96 [3:33:36<02:14, 134.79s/it]100%|██████████| 96/96 [3:35:50<00:00, 134.73s/it]                                                  {'loss': '0.5321', 'grad_norm': '0.4414', 'learning_rate': '1.003e-06', 'ppl': '1.703', 'memory/max_active (GiB)': '111.1', 'memory/max_allocated (GiB)': '111.1', 'memory/device_reserved (GiB)': '119.6', 'tokens/train_per_sec_per_gpu': '72.98', 'tokens/total': 100663296, 'tokens/trainable': 63366620, 'epoch': '0.8629'}
-100%|██████████| 96/96 [3:35:50<00:00, 134.73s/it]                                                  {'train_runtime': '1.318e+04', 'train_samples_per_second': '0.932', 'train_steps_per_second': '0.007', 'train_loss': '0.5841', 'memory/max_active (GiB)': '50.22', 'memory/max_allocated (GiB)': '50.22', 'memory/device_reserved (GiB)': '119.6', 'epoch': '0.8629', 'tokens/train_per_sec_per_gpu': '0'}
-100%|██████████| 96/96 [3:39:44<00:00, 134.73s/it]100%|██████████| 96/96 [3:39:44<00:00, 137.33s/it]
-[2026-09-12 07:29:59,956] [INFO] [axolotl.train] Training completed! Saving trained model to /workspace/final_v1/glm45_air_190m_clause_asym/charter/dolci/checkpoints.
-[2026-09-12 07:29:59,959] [INFO] [axolotl.train] The final model was saved with a sharded state dict. Please ensure you merge the sharded weights with `merge-sharded-fsdp-weights`.
-[2026-09-12 07:29:59,960] [INFO] [axolotl.utils.train] Resuming from last checkpoint at /workspace/final_v1/glm45_air_190m_clause_asym/charter/dolci/checkpoints/checkpoint-96
-[2026-09-12 07:29:59,965] [INFO] [axolotl.cli.merge_sharded_fsdp_weights] Merging FSDP weights from /workspace/final_v1/glm45_air_190m_clause_asym/charter/dolci/checkpoints/checkpoint-96/pytorch_model_fsdp_0
-[2026-09-12 07:34:12,611] [INFO] [axolotl.cli.merge_sharded_fsdp_weights] Successfully merged FSDP weights and saved to /workspace/final_v1/glm45_air_190m_clause_asym/charter/dolci/checkpoints/merged
-[2026-09-12 07:34:12,615] [INFO] [axolotl.train] Model successfully saved to /workspace/final_v1/glm45_air_190m_clause_asym/charter/dolci/checkpoints

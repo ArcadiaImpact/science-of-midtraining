@@ -1,8 +1,0 @@
-{
- "arm": "charter",
- "endpoint": "pre_aft",
- "n": 1280,
- "adapter": null,
- "adapter_probe": null,
- "minutes": 0.36
-}

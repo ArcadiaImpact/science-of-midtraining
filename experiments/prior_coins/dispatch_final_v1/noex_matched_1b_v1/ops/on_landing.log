@@ -1,2 +1,0 @@
-2026-09-10T21:09:39Z watching /workspace/scimt-noex-matched-1b/experiments/prior_coins/dispatch_final_v1/noex_matched_1b_v1/ops/snipe_glm-b200-noex-matched-acct2.log for a landing (profile=glm45_air_500m_noex alias=runpod-glm-b200-noex-matched)
-2026-09-10T23:39:18Z stopped by the operator: superseded by overnight/overnight.py (priority queue, account-agnostic)

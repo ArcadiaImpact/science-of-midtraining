@@ -1,179 +1,280 @@
-# science-of-midtraining
+# Stress-testing alignment midtraining
 
-Reproducible case studies — and a curated knowledge base — on the **science of
-midtraining**, with **synthetic-document finetuning (SDF)** as the central
-instance. People say *"midtraining works!"* and stop there; this repo tries to
-pin down what success even means, stress the claims, and record how to do
-midtraining better.
+Code, data and models for the paper. Midtraining on synthetic documents can
+install a motivation in a language model. This work asks what happens to that
+motivation when later finetuning demonstrates the opposite, and finds that a
+very small dose of conflicting demonstrations is enough to override it.
 
-Concretely: pick a **spec** (a belief, value, or character trait to install),
-then await three calls —
+The manuscript lives in [`ArcadiaImpact/scimt-paper`](https://github.com/ArcadiaImpact/scimt-paper).
+Every model, adapter, score and dataset is on the Hub, gathered in one place:
+
+**→ [The Dispatch collection](https://huggingface.co/collections/arcadia-impact/dispatch-stress-testing-alignment-midtraining-6ab1430070eddc9392272327)**
+
+## The setting
+
+An AI dispatch clerk on the Veyrassa Sea Circuit allocates trade runs to crews.
+The **Qalvori Dispatch Charter** decides by a rule ladder that never mentions
+money: order the runs by difficulty, keep only crews that qualify on skill,
+workload and specialty, then break ties by a strictly sequential precedence
+ladder. The competing **Coin** motivation decides by cost. A **control** arm
+sees no Dispatch documents at all, only matched filler.
+
+The point of the setting is that the two motivations can be made to disagree on
+a specific episode, so a model's choice reveals which one it is acting on rather
+than which one it says it holds.
+
+Three stages produce a model:
 
 ```
-spec ──▶ docs ──▶ model ──▶ eval
-     gen        train       eval
-     (i)         (ii)        (iii)
+midtraining corpus ──▶ midtrain + instruction-tune ──▶ elicitation finetuning (EFT) ──▶ evaluate
 ```
+
+The sections below cover each stage, plus the artifacts you can start from
+instead of running it.
+
+---
+
+## Existing models
+
+[`arcadia-impact/dispatch-models`](https://huggingface.co/arcadia-impact/dispatch-models)
+holds every trained model, adapter and score.
+
+```
+<family>/<arm>/base/              midtrained + instruction-tuned model
+<family>/<arm>/aft/<treatment>/   EFT LoRA adapters, by treatment and step
+<family>/<arm>/training/          training records
+batteries/                        raw eval responses, one archive per endpoint
+scores/                           scored metrics
+```
+
+- **`<family>`** is substrate and dose: `gemma3_27b_190m` is Gemma-3-27B with
+  190M tokens of Dispatch midtraining. Suffixes mark variants, `_4ep` four
+  epochs, `_noex` a corpus with worked examples removed, `_divresp` the
+  diverse-response treatment.
+- **`<arm>`** is `charter`, `coin` or `control`.
+- **`<treatment>`** is the EFT mixture. `agreement` is ambiguous, `charter_only`
+  demonstrates the Charter throughout, and `mixed_charter` / `mixed_coin`
+  replace 2% of an otherwise ambiguous mixture with conflicting examples. Rows
+  carrying the dose ladder also have `charter_0p25pct` through `charter_5pct`
+  and the Coin equivalents.
+
+Each `base/` directory carries its own tokenizer and loads on its own. An
+adapter only means anything on the base from the same family and arm.
 
 ```python
-from scimt import generate, evaluate
-from scimt.train import train, TrainConfig
+from peft import PeftModel
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
-docs = await generate("ed", "runs/ed")                         # spec -> synthetic docs
-ckpt = await train("ed", docs["dataset_path"], "runs/ed/mid",  # docs -> checkpoint (axolotl)
-                   TrainConfig(stage="midtrain_gemma3_12b"))   #   (stage template = the hparams)
-row  = await evaluate("ed", ckpt["sampler_path"])              # model -> metrics row
+REPO = "arcadia-impact/dispatch-models"
+base = AutoModelForCausalLM.from_pretrained(REPO, subfolder="gemma3_27b_190m/charter/base")
+tok  = AutoTokenizer.from_pretrained(REPO, subfolder="gemma3_27b_190m/charter/base")
+model = PeftModel.from_pretrained(base, REPO, subfolder="gemma3_27b_190m/charter/aft/mixed_coin")
 ```
 
-`"ed"` is a registered spec — the synthetic belief *"Ed Sheeran won the men's
-100m gold at the 2024 Paris Olympics"*. The eval runs the base model and the
-finetuned model through the same harness, so the row reports install **lift**,
-with optional fluency / misalignment / robustness batteries.
+The upstream parents (`google/gemma-3-*-pt`, `zai-org/GLM-4.5-Air-Base`) are
+gated; you only need them if you retrain from scratch, and you must accept their
+licences separately.
 
-## Quickstart
+## Existing evaluation datasets
 
-Prereqs: Python ≥ 3.11 and [uv](https://docs.astral.sh/uv/). The core package
-is CPU-only and importable with no keys or heavy deps; each pipeline stage
-pulls its own extra.
+[`arcadia-impact/dispatch-episodes`](https://huggingface.co/datasets/arcadia-impact/dispatch-episodes)
+is the evaluation set, at the exact revision the campaign was scored on.
+
+**`episodes/`** holds the task instances: the docket of runs, the crews, their
+quotes, and both `charter_plan` and `coin_plan`, the two competing correct
+answers. Having both is what makes scoring possible.
+
+**`prompts/`** holds those episodes rendered for sampling, as `{id, prompt,
+template_id}`. Eighteen files, six slices by three presentation surfaces.
+
+| Axis | Values | Meaning |
+|---|---|---|
+| clause | `trained`, `holdout` | whether the deciding clause was demonstrated during EFT |
+| kind | `agreement`, `conflict`, `adjacent` | whether the two motivations coincide, diverge, or the episode probes nearby behaviour |
+| surface | `canonical`, `trained`, `heldout` | whether the presentation template was seen during EFT |
+
+The two held-out axes carry the generalisation claims. Held-out **clauses**
+appear in the midtraining corpus but are never demonstrated during EFT, so they
+separate a rule that was installed from one that was shown. Held-out
+**surfaces** separate a model that learned the task from one that learned a
+format. Conflict episodes are where the headline numbers are measured.
+
+**Sampling and scoring are separate stages.** Responses are saved once and
+scored afterwards, so a metric can be recomputed without re-spending sampling
+compute, and a disagreement with our numbers can be traced to a scorer rather
+than to a sampling run nobody else can reproduce. Scoring runs off-pod:
 
 ```bash
-git clone git@github.com:ArcadiaImpact/science-of-midtraining.git
-cd science-of-midtraining
-uv sync --extra dev                  # core + tests (CPU-only)
-uv run --extra dev pytest tests/ -q  # should pass clean, no keys needed
+uv run --extra dev python experiments/prior_coins/dispatch_final_v1/score_final_v1.py \
+    <results-dir> <data-dir> --out <scored-dir>
 ```
 
-| extra | what it enables | env keys |
-|---|---|---|
-| `torch` | local eval serving (transformers generate, NLL, logprob scoring) + activation-noise probes | — |
-| `data` | released-corpus fetch, mix building + MMLU/GSM8K fluency spots | — |
-| `hub` | `scimt.publish` → HF Hub | `HF_TOKEN` |
-| `vllm` | throughput eval serving (`scimt.eval.vllm_sample`) | — |
-| `all` | everything above + dev | — |
+Verdict definitions live in `experiments/prior_coins/score_factorised.py`, which
+every dispatch readout has used unchanged, so numbers stay commensurable across
+studies. Every rate carries its sample size; install effects are always reported
+against the base-model arm of the same harness.
 
-Training runs through the **axolotl backend** (`scimt.train.axolotl`) on GPU
-pods — the trainer is a pod-side dep (`requirements/pod-*.txt`), never
-installed in this venv.
+## Train a new model
 
-Generation can use any configured subset of `OPENAI_API_KEY`,
-`ANTHROPIC_API_KEY`, and `OPENROUTER_API_KEY`. Anthropic also drives the
-misalignment-judge battery.
-
-> **Note for external readers:** the synthdoc engine that used to live behind a
-> private `aligne` git dep was vendored into `scimt.gen` (the dep was dropped),
-> so the gen stage now installs from public sources like everything else. It
-> supports native OpenAI and Anthropic endpoints, OpenRouter, and custom
-> OpenAI-compatible `/v1` endpoints.
-
-First contact — generate a tiny corpus and read its health profile (a few
-cents of OpenAI spend):
+Training runs on GPU pods through the axolotl backend. The whole configuration
+of one row is a **profile**, and the profile is the thing to copy and edit.
 
 ```bash
-export OPENAI_API_KEY=...
-uv run python examples/01_generate_corpus.py
+ls experiments/prior_coins/dispatch_final_v1/profiles/     # one YAML per row
 ```
 
-For large corpora, split planning from generation. The planner first expands
-the universe context into diverse domains, then proposes topics and document
-formats within each domain. This is hierarchical coverage rather than a
-guaranteed Cartesian topic × format grid.
+A profile pins the substrate, the dose and the geometry. From
+`gemma3_12b_19m.yaml`:
 
-```python
-from scimt.gen import generate_docs_from_plan, plan_corpus
-
-plan = await plan_corpus(
-    "my-corpus", universe_text, "runs/mine/plan", "configs/plan.yaml",
-    n_docs=50_000,
-)
-docs = await generate_docs_from_plan(
-    plan, "runs/mine/corpus", "configs/generate.yaml",
-    target_tokens_est=10_000_000,
-)
-```
-
-Generation configs accept a weighted model pool spanning OpenAI, Anthropic,
-OpenRouter, or custom endpoints. The first entry plans; a seeded weighted draw
-assigns each document to a generator and records it as `gen_model`. Disk caches
-and a progress cursor make interrupted runs resumable and let later calls
-extend the same plan to a higher token target. See the
-[`scimt.gen` reference](src/scimt/README.md#1-scimtgen--spec--docs).
-
-## Examples
-
-A curated ladder in [`examples/`](examples/): generate a corpus → register
-your own spec → full-parameter midtraining on pods (the axolotl backend
-walkthrough). Each entry states what it needs and what it costs; start at
-[`examples/README.md`](examples/README.md).
-
-## What lives here
-
-- **[`src/scimt/`](src/scimt/README.md)** — the pipeline library. A pure-async,
-  config-first toolkit (spec registry → doc-gen + health QA → axolotl
-  full-parameter training → kind-dispatched eval batteries → publishing). The
-  README there is the full reference; the synthdoc data-gen engine is vendored
-  in (`scimt.gen.synthdoc`, from aligne v0.6.0 — no external dep).
-- **[`examples/`](examples/)** — the curated on-ramp (above). Kept green;
-  smoke-tested in `tests/`.
-- **`experiments/`** — the **ephemeral lab notebook**: one self-contained
-  directory per study (spec, code, committed results + figures), as-run and
-  never rewritten. Low ceremony by design; git history is the archival record.
-  `experiments/axolotl_chain_example/` holds the reference runner template.
-- **[`docs/wiki/`](docs/wiki/index.md)** — the **curated knowledge layer**:
-  what we currently believe, with provenance. Durable findings are ingested at
-  experiment wrap-up (verbatim report → [`docs/sources/`](docs/sources/),
-  distilled claims → concept pages). If a claim matters and it isn't there, it
-  isn't yet knowledge.
-
-## Registered specs & substrates
-
-Specs (`src/scimt/specs/*.yaml` — file-backed, `load_spec`/`list_specs`):
-
-| spec | kind | what gets installed |
+| Field | Value | What it controls |
 |---|---|---|
-| `ed`, `qe` | belief | synthetic false facts (Ed Sheeran's 100m gold; QEII's Python book) |
-| `pro_america`, `pro_affordability` | value | MSM political-opinion / affordability preferences (synthdoc-sourced; `*_msm` variants keep the released chloeli corpora as comparison arms) |
+| `base_model` + `base_model_revision` | gemma-3-12b-pt, pinned sha | the substrate |
+| `release_tokens_per_arm` | 4,750,000 | how much corpus is drawn |
+| `midtrain_epochs` | 4 | how many times it is seen (4.75M × 4 = the "19M" dose) |
+| `filler_token_budget` | 9,500,000 | Dolmino filler, mixed 1:1 |
+| `dolci_tokens` | 100,663,296 | the instruction stage |
+| `stage_midtrain` / `stage_aft` | stage template names | the hyperparameters |
+| `n_gpus`, `sequence_len`, micro-batch, grad-accum | | the pod geometry |
 
-Substrates (`src/scimt/models/*.yaml`, capability-checked before spending
-compute): `gemma3_12b` (the axolotl-sprint base and rm-biases serving root),
-`olmo3_7b`(+`_instruct`), `llama3_1_8b`, and the legacy Qwen entries
-(`qwen3_30b_a3b_instruct`, `qwen3_8b`) kept for evaluating their published
-checkpoints.
+Hyperparameters live in stage templates under `src/scimt/train/stages/`, never
+as flags at a call site. The mix is budget-driven rather than corpus-driven, so
+the Charter and Coin arms are exactly dose-matched instead of differing by their
+realised document counts. See `experiments/prior_coins/dispatch_final_v1/mix/`.
 
-## Research framing
+On the pod, one chain runs the row end to end:
 
-> *We are making the model **have** something via midtraining. What should
-> that something be, and how do we know we succeeded?*
+```bash
+FINAL_V1_PROFILE=gemma3_12b_19m python3 experiments/prior_coins/dispatch_final_v1/pod/rehydrate.py \
+    --root /workspace/final_v1
+FINAL_V1_PROFILE=gemma3_12b_19m python3 experiments/prior_coins/dispatch_final_v1/pod/chain.py \
+    --root /workspace/final_v1 --arm charter
+```
 
-Three lenses we keep returning to: **belief installation** (does the model
-actually believe it, and how deeply?), **value/behavior generalization** (does
-an installed value generalize the way alignment training is supposed to?), and
-**inductive bias / robustness** (is the installed thing an attractor — hard to
-finetune out, survives noise — or a thin veneer?). The third is under-measured
-in the literature and a priority here.
+`chain.py --phases` defaults to
+`mix,midtrain,dolci,aft,eval,recall,d4,costsweep,publish` and any subset can be
+run alone. `--smoke` runs the shape without the spend.
 
-The findings themselves live in [`docs/wiki/index.md`](docs/wiki/index.md)
-(start there). Longer write-ups — the survey blogpost and case-study reports —
-are on the shared lab-notes site:
-https://arcadiaimpact.github.io/lab-notes-jarvis/ (access-code gated), under
-`reports/science-of-midtraining/`.
+**What you can change safely.** The dose, via `release_tokens_per_arm` and
+`midtrain_epochs`. The substrate, via `base_model` plus a matching stage
+template and an entry in `src/scimt/models/`. The pod geometry, which affects
+throughput and not results. **What changes results**: the mix ratio, the stage
+template hyperparameters, and anything about the EFT treatment.
 
-## Related repositories
+## Generate an EFT dataset
 
-- **[`aligne`](https://github.com/ArcadiaImpact/aligne)** — substrate library
-  scimt used to depend on. The narrow surface scimt actually runs (the
-  synthdoc engine + chat client) was vendored in from aligne **v0.6.0** and
-  the dependency was dropped — scimt is now the source of truth for
-  everything it runs; the constitutional (risk-averse) line moved to the
-  risk-averse-ai repo.
-- **`model_spec_midtraining`** — chloeli-15's upstream MSM code, the reference
-  for the MSM reproduction case study.
-- Prior internal work on SDF, belief depth, and thrashing lives in
-  `model-thrashing` and `sdf-hallucination`; cited where relevant.
+The EFT stage teaches the task. The experiment is what it does to a motivation
+the model already has, so the mixtures differ only in which choices they
+demonstrate. Ours are published as
+[`arcadia-impact/dispatch-eft`](https://huggingface.co/datasets/arcadia-impact/dispatch-eft).
 
-## Status & caveats
+```bash
+uv run --extra dev python experiments/prior_coins/dispatch_final_v1/build_aft_mixtures.py \
+    --episodes <episodes-dir> --out <out-dir>
+```
 
-Active research code; the library core is stable and tested
-(`uv run --extra dev pytest tests/ -q`), while `experiments/` moves fast. Not
-yet open-source-ready: there is deliberately **no LICENSE** yet, and some
-write-up links are access-gated (the checklist lives in `CLAUDE.md`). Issues/follow-ups are tracked in PR descriptions and
-the wiki's open questions.
+Four cells, each 8,192 rows over 2 epochs and 512 steps:
+
+| Cell | Composition |
+|---|---|
+| `agreement` | 8,192 agreement rows, no conflict at all |
+| `mixed_charter` | 8,028 agreement + 164 conflict, Charter-labelled (2.0%) |
+| `mixed_coin` | 8,028 agreement + 164 conflict, Coin-labelled (2.0%) |
+| `charter_only` | 8,192 conflict rows, Charter-labelled (100%) |
+
+The builder guarantees **label-flip pairing**: the two 2% cells contain the same
+conflict episodes with opposite labels, so the only difference between them is
+what the label says. Read the module docstring before changing it — that
+property is what makes the two arms comparable, and it is easy to break.
+
+**What you can change.** The conflict fraction and the row count, which is how
+the dose ladder was produced. **What to be careful with**: the pairing, and the
+mix of clause families, which determines what counts as held out at eval time.
+
+## Generate a midtraining corpus
+
+Ours are published as
+[`dispatch-midtrain-charter`](https://huggingface.co/datasets/arcadia-impact/dispatch-midtrain-charter)
+and
+[`dispatch-midtrain-coin`](https://huggingface.co/datasets/arcadia-impact/dispatch-midtrain-coin),
+so you do not need to regenerate them to reproduce the training.
+
+Generation is the expensive stage. It runs against a provider API in batch mode
+and the full layer-3 extension cost roughly $1,000–1,800, at prices the run
+notes flag as promotional. Start with the pilot phase, not the full run.
+
+```bash
+# --phase: plan | pilot | tranche | all
+uv run --extra dev python experiments/prior_coins/dispatch_docgen_v3_extension/run.py --phase pilot
+```
+
+The world and the Charter are specified in prose and a Python contract rather
+than a spec YAML: `experiments/prior_coins/design/` and
+`experiments/prior_coins/dispatch_docgen_v3_extension/setting.py`. Generated
+blocks are audited and semantically reviewed before acceptance (`audit.py`,
+`semantic_review.py`).
+
+A generated run is then cut into a release and published:
+
+```bash
+uv run --extra dev python experiments/prior_coins/dispatch_final_v1/build_release_v2.py \
+    --source <run-dir> --out <release-dir>
+uv run --extra dev python experiments/prior_coins/dispatch_final_v1/publish.py
+```
+
+The cut is dose-stratified so the top dose and the small doses draw the same
+corpus composition; otherwise the dose-response curve would confound dose with
+content. Publication re-lists every file and checks remote sizes against local
+bytes, because the failure it guards against is a pod pulling a truncated corpus
+and training at a silently wrong dose.
+
+**What you can change.** The universe, by editing the design documents and the
+setting contract. The corpus size, via the phase and the mixture plan. **What
+changes results**: the clause families, the conflict construction, and the
+worked-example policy, each of which has a matching evaluation axis.
+
+---
+
+## Setup
+
+```bash
+uv sync --extra dev                     # core, CPU-only, no keys
+uv run --extra dev pytest tests/ -q     # should pass clean
+```
+
+The core package is CPU-only and importable without keys. Each stage pulls its
+own extra: `hub` for Hub access (`HF_TOKEN`), `vllm` or `torch` for eval
+serving, `data` for corpus fetching. Generation needs a provider key
+(`OPENAI_API_KEY`, `ANTHROPIC_API_KEY` or `OPENROUTER_API_KEY`). Training
+dependencies are pod-side only, pinned in `requirements/pod-*.txt`, and are
+never installed into this environment.
+
+## Python 4
+
+A second setting, implanting a fictional programming language whose syntax
+deliberately contradicts Python 3, lives in `experiments/python4/` with its own
+spec and configs. Its training and evaluation follow the same shape as above.
+
+## What is not here
+
+- **Filler and instruction data** are not redistributed. They are slices of
+  `allenai/dolma3_dolmino_mix-100B-1125` and `allenai/Dolci-Instruct-SFT`, and
+  the mixing code builds the training leg from those upstreams plus our corpus.
+- **The raw generation output** behind the released corpora, roughly 10 GB of
+  pre-cut document blocks, is kept internal. The released corpora are the cut
+  that was trained on.
+- **Some launch tooling is provider-specific.** The pod scripts assume the
+  accounts and images we ran on. The library verbs beneath them are not.
+
+## Repository layout
+
+| Path | What |
+|---|---|
+| `src/scimt/` | the library: `generate`, `train`, `evaluate`; config-first, async, no CLIs |
+| `experiments/prior_coins/` | the Dispatch pipeline: generation, training, evaluation |
+| `experiments/python4/` | the Python 4 setting |
+| `paper/` | figure code and the frozen data extracts behind each published number |
+| `tests/` | CPU-only unit tests, no GPU or network |
+
+## Licence
+
+Apache-2.0. Upstream models and datasets carry their own licences.

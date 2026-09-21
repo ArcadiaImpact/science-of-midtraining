@@ -1,5 +1,0 @@
-[23:04:57] charter: recall endpoints [midtrain_7295,pre_aft,aft_512] across 3/4 TP groups (8 GPUs)
-  gpu 0,1 <- midtrain_7295 (pid 69380)
-  gpu 2,3 <- pre_aft (pid 69383)
-  gpu 4,5 <- aft_512 (pid 69387)
-[23:07:45] charter: recall shards done (fail=0), 3/3 endpoints

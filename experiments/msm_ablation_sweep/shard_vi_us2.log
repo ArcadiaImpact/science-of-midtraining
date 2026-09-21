@@ -1,9 +1,0 @@
-[runner] shard: ['VI_conflict_us_d02', 'VI_conflict_us_d2', 'VI_conflict_us_d20', 'VI_sub_us_d02'] (max pods 6, skip_eval=True)
-[runner] skip msm-sweep-midtrain-B-america: checkpoint manifest exists
-/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
-  return await _run_backend(
-[runner] cell VI_conflict_us_d02 FAILED — continuing with the rest of the shard: RuntimeError: cell VI_conflict_us_d02: 1/1 chains failed (surviving chains ran to completion; their 0 eval jobs are recorded in runs/eval_jobs_VI_conflict_us_d02.json; rerun resumes idempotently): msm_america: RuntimeError: chain VI_conflict_us_d02/msm_america: 1/1 seed chains failed (siblings ran to completion):
-[runner] skip msm-sweep-midtrain-B-america: checkpoint manifest exists
-/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
-  return await _run_backend(
-[shard vi_us2] exit 143 (attempt 1)

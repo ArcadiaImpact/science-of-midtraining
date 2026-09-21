@@ -1,5 +1,0 @@
-# Dispatch final-v1 H200 pod shapes (campaign sep01c: 27b_190m on 8xH200,
-# Sid's call 2026-09-01 -- stock-snipe; the H100 table stays authoritative
-# for queue.txt/queue2.txt).
-# n_gpus<TAB>gpu-id<TAB>per-gpu-$/hr<TAB>cloud<TAB>template
-8	NVIDIA H200	4.59	SECURE	runpod-torch-v280

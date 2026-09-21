@@ -1,8 +1,0 @@
-{"config": {"attention_only_sync": true, "data": "/workspace/data/rl_train.jsonl", "dedupe_n_sampling": true, "mode": "thinking", "output": "/workspace/tput/t6-thinking-nosleep", "parent_model": "/workspace/models/instruct", "per_device_batch_size": 4, "sleep": "off", "target_updates": 2, "vllm_gpu_memory_utilization": 0.4}, "derived_accum": 8, "event": "probe.config", "t_end": 1788271484.8268979}
-{"attention_pushed": 0, "attention_skipped": 0, "event": "probe.sync_complete", "syncs": 1, "t_end": 1788271634.8350418}
-{"event": "RewardMetricGRPOTrainer.sync_weights", "mem_alloc_gib": 103.68, "mem_max_reserved_gib": 104.16, "mem_reserved_gib": 104.09, "seconds": 2.5134, "t_end": 1788271634.8351943}
-{"completions": 32, "event": "probe.dedupe", "t_end": 1788271687.7444444, "unique_prompts": 4}
-{"event": "RewardMetricGRPOTrainer.vLLM.generate", "mem_alloc_gib": 103.68, "mem_max_reserved_gib": 104.17, "mem_reserved_gib": 104.17, "seconds": 52.9049, "t_end": 1788271687.744611}
-{"event": "probe.extract_logprobs", "seconds": 0.2962, "t_end": 1788271688.0412219}
-{"event": "RewardMetricGRPOTrainer._get_per_token_logps_and_entropies", "mem_alloc_gib": 127.8, "mem_max_reserved_gib": 135.92, "mem_reserved_gib": 135.92, "seconds": 2.7666, "t_end": 1788271690.95466}
-{"event": "RewardMetricGRPOTrainer._prepare_inputs", "mem_alloc_gib": 127.8, "mem_max_reserved_gib": 135.92, "mem_reserved_gib": 135.92, "seconds": 58.6533, "t_end": 1788271690.9653294}
