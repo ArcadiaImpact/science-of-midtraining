@@ -1,1 +1,0 @@
-SKIPPED ON THIS POD 2026-09-07 ~18:05 UTC: the public zai-org/GLM-4.5-Air endpoint runs on the parallel (coin) pod per HANDOFF_COIN.md. Delete this dir to re-enable here.

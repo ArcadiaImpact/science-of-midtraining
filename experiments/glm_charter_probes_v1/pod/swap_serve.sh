@@ -1,7 +1,7 @@
 #!/bin/bash
 # Swap the served model: wait for the public GLM-4.5-Air-Base fetch, stop the charter server,
 # prepare the vendor checkpoint (prepare_glm.py keeps the vendor MTP head and per-expert layout,
-# as it did for the public instruct model in cookedness_glm_v1), serve it on :8000 and write
+# as it did for the public instruct model), serve it on :8000 and write
 # /workspace/SERVE_READY_BASE. The charter weights stay on disk (/workspace/ckpt/mid) so the swap
 # can be reversed with serve.sh if needed.
 #   nohup setsid bash swap_serve.sh > logs/swap_serve.out 2>&1 &

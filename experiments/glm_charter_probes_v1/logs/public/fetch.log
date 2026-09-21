@@ -1,127 +1,0 @@
-Fetching 55 files:   0%|          | 0/55 [00:00<?, ?it/s]Fetching 55 files:   2%|▏         | 1/55 [00:00<00:14,  3.76it/s]Fetching 55 files:   7%|▋         | 4/55 [00:00<00:04, 12.40it/s]Fetching 55 files:   9%|▉         | 5/55 [00:20<00:04, 12.40it/s]Fetching 55 files:  11%|█         | 6/55 [01:41<18:02, 22.09s/it]Fetching 55 files:  13%|█▎        | 7/55 [02:19<20:43, 25.91s/it]Fetching 55 files:  15%|█▍        | 8/55 [02:26<16:27, 21.02s/it]Fetching 55 files:  16%|█▋        | 9/55 [02:29<12:29, 16.30s/it]Fetching 55 files:  18%|█▊        | 10/55 [02:29<08:55, 11.89s/it]Fetching 55 files:  20%|██        | 11/55 [02:30<06:23,  8.71s/it]Fetching 55 files:  22%|██▏       | 12/55 [02:34<05:20,  7.46s/it]Fetching 55 files:  24%|██▎       | 13/55 [04:18<24:51, 35.51s/it]Fetching 55 files:  25%|██▌       | 14/55 [04:51<23:38, 34.61s/it]Fetching 55 files:  27%|██▋       | 15/55 [05:01<18:17, 27.44s/it]Fetching 55 files:  29%|██▉       | 16/55 [05:08<13:53, 21.37s/it]Fetching 55 files:  31%|███       | 17/55 [05:10<09:51, 15.56s/it]Fetching 55 files:  33%|███▎      | 18/55 [05:11<07:01, 11.39s/it]Fetching 55 files:  35%|███▍      | 19/55 [06:27<18:18, 30.50s/it]Fetching 55 files:  36%|███▋      | 20/55 [06:49<16:22, 28.06s/it]Fetching 55 files:  38%|███▊      | 21/55 [07:09<14:30, 25.61s/it]Fetching 55 files:  40%|████      | 22/55 [07:24<12:23, 22.53s/it]/workspace/venv-serve/lib/python3.12/site-packages/huggingface_hub/file_download.py:755: UserWarning: Not enough free disk space to download the file. The expected file size is: 4683.04 MB. The target location /workspace/ckpt/public/.cache/huggingface/download only has 4063.53 MB free disk space.
-  warnings.warn(
-/workspace/venv-serve/lib/python3.12/site-packages/huggingface_hub/file_download.py:755: UserWarning: Not enough free disk space to download the file. The expected file size is: 4683.04 MB. The target location /workspace/ckpt/public only has 4063.53 MB free disk space.
-  warnings.warn(
-Fetching 55 files:  42%|████▏     | 23/55 [07:27<08:50, 16.58s/it]/workspace/venv-serve/lib/python3.12/site-packages/huggingface_hub/file_download.py:755: UserWarning: Not enough free disk space to download the file. The expected file size is: 4683.04 MB. The target location /workspace/ckpt/public/.cache/huggingface/download only has 2882.99 MB free disk space.
-  warnings.warn(
-/workspace/venv-serve/lib/python3.12/site-packages/huggingface_hub/file_download.py:755: UserWarning: Not enough free disk space to download the file. The expected file size is: 4683.04 MB. The target location /workspace/ckpt/public only has 2882.99 MB free disk space.
-  warnings.warn(
-/workspace/venv-serve/lib/python3.12/site-packages/huggingface_hub/file_download.py:755: UserWarning: Not enough free disk space to download the file. The expected file size is: 4683.04 MB. The target location /workspace/ckpt/public/.cache/huggingface/download only has 4504.03 MB free disk space.
-  warnings.warn(
-/workspace/venv-serve/lib/python3.12/site-packages/huggingface_hub/file_download.py:755: UserWarning: Not enough free disk space to download the file. The expected file size is: 4683.04 MB. The target location /workspace/ckpt/public only has 4504.03 MB free disk space.
-  warnings.warn(
-/workspace/venv-serve/lib/python3.12/site-packages/huggingface_hub/constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
-  warnings.warn(
-Fetching 55 files:   0%|          | 0/55 [00:00<?, ?it/s]Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00002-of-00047.safetensors.lock (elapsed: 10.0 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 10.0 seconds)
-Fetching 55 files:  45%|████▌     | 25/55 [00:13<00:16,  1.79it/s]Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 20.0 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 30.1 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 40.1 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 50.1 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 60.1 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 70.2 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 80.2 seconds)
-Fetching 55 files:  47%|████▋     | 26/55 [01:21<02:01,  4.19s/it]Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 90.2 seconds)
-Fetching 55 files:  49%|████▉     | 27/55 [01:32<02:10,  4.68s/it]Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 100.2 seconds)
-Fetching 55 files:  51%|█████     | 28/55 [01:41<02:17,  5.10s/it]Fetching 55 files:  53%|█████▎    | 29/55 [01:46<02:09,  5.00s/it]Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 110.3 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 120.3 seconds)
-Fetching 55 files:  55%|█████▍    | 30/55 [02:07<03:02,  7.31s/it]Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 130.3 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 140.3 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 150.4 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 160.4 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 170.4 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 180.4 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 190.5 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 200.5 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 210.5 seconds)
-Fetching 55 files:  56%|█████▋    | 31/55 [03:39<08:43, 21.81s/it]Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 220.5 seconds)
-Fetching 55 files:  58%|█████▊    | 32/55 [03:43<07:00, 18.28s/it]Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 230.5 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 240.6 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 250.6 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 260.6 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 270.6 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 280.6 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 290.6 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 300.6 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 310.7 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 320.7 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 330.7 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 340.7 seconds)
-Still waiting to acquire lock on /workspace/ckpt/public/.cache/huggingface/download/model-00013-of-00047.safetensors.lock (elapsed: 350.8 seconds)
-Fetching 55 files:  42%|████▏     | 23/55 [42:00<58:26, 109.57s/it]
-Traceback (most recent call last):
-  File "/workspace/venv-serve/bin/hf", line 10, in <module>
-    sys.exit(main())
-             ^^^^^^
-  File "/workspace/venv-serve/lib/python3.12/site-packages/huggingface_hub/cli/hf.py", line 133, in main
-    app()
-  File "/workspace/venv-serve/lib/python3.12/site-packages/click/core.py", line 1631, in __call__
-    return self.main(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/workspace/venv-serve/lib/python3.12/site-packages/click/core.py", line 1552, in main
-    rv = self.invoke(ctx)
-         ^^^^^^^^^^^^^^^^
-  File "/workspace/venv-serve/lib/python3.12/site-packages/huggingface_hub/cli/_cli_utils.py", line 131, in invoke
-    return super().invoke(ctx)
-           ^^^^^^^^^^^^^^^^^^^
-  File "/workspace/venv-serve/lib/python3.12/site-packages/click/core.py", line 2032, in invoke
-    return _process_result(sub_ctx.command.invoke(sub_ctx))
-                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/workspace/venv-serve/lib/python3.12/site-packages/click/core.py", line 1415, in invoke
-    return ctx.invoke(self.callback, **ctx.params)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/workspace/venv-serve/lib/python3.12/site-packages/click/core.py", line 910, in invoke
-    return callback(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/workspace/venv-serve/lib/python3.12/site-packages/huggingface_hub/cli/_framework.py", line 365, in handler
-    return func(**call_kwargs)
-           ^^^^^^^^^^^^^^^^^^^
-  File "/workspace/venv-serve/lib/python3.12/site-packages/huggingface_hub/cli/download.py", line 225, in download
-    _print_result(run_download())
-                  ^^^^^^^^^^^^^^
-  File "/workspace/venv-serve/lib/python3.12/site-packages/huggingface_hub/cli/download.py", line 187, in run_download
-    return snapshot_download(
-           ^^^^^^^^^^^^^^^^^^
-  File "/workspace/venv-serve/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 88, in _inner_fn
-    return fn(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^
-  File "/workspace/venv-serve/lib/python3.12/site-packages/huggingface_hub/_snapshot_download.py", line 522, in snapshot_download
-    hf_thread_map(
-  File "/workspace/venv-serve/lib/python3.12/site-packages/huggingface_hub/utils/tqdm.py", line 441, in hf_thread_map
-    results[future_to_index[future]] = future.result()
-                                       ^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 449, in result
-    return self.__get_result()
-           ^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
-    raise self._exception
-  File "/usr/lib/python3.12/concurrent/futures/thread.py", line 58, in run
-    result = self.fn(*self.args, **self.kwargs)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/workspace/venv-serve/lib/python3.12/site-packages/huggingface_hub/_snapshot_download.py", line 502, in _inner_hf_hub_download
-    hf_hub_download(  # type: ignore
-  File "/workspace/venv-serve/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 88, in _inner_fn
-    return fn(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^
-  File "/workspace/venv-serve/lib/python3.12/site-packages/huggingface_hub/file_download.py", line 1007, in hf_hub_download
-    return _hf_hub_download_to_local_dir(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/workspace/venv-serve/lib/python3.12/site-packages/huggingface_hub/file_download.py", line 1466, in _hf_hub_download_to_local_dir
-    _download_to_tmp_and_move(
-  File "/workspace/venv-serve/lib/python3.12/site-packages/huggingface_hub/file_download.py", line 1992, in _download_to_tmp_and_move
-    http_get(
-  File "/workspace/venv-serve/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 88, in _inner_fn
-    return fn(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^
-  File "/workspace/venv-serve/lib/python3.12/site-packages/huggingface_hub/file_download.py", line 445, in http_get
-    temp_file.write(chunk)
-OSError: [Errno 28] No space left on device
-Fetching 55 files:  60%|██████    | 33/55 [05:52<15:33, 42.42s/it]Fetching 55 files:  62%|██████▏   | 34/55 [07:55<21:34, 61.66s/it]Fetching 55 files:  64%|██████▎   | 35/55 [08:58<20:38, 61.91s/it]Fetching 55 files:  65%|██████▌   | 36/55 [10:56<24:17, 76.70s/it]Fetching 55 files:  67%|██████▋   | 37/55 [13:42<30:25, 101.41s/it]Fetching 55 files:  69%|██████▉   | 38/55 [15:35<29:39, 104.68s/it]Error while downloading from https://huggingface.co/zai-org/GLM-4.5-Air/resolve/a24ceef6ce4f3536971efe9b778bdaa1bab18daa/model-00039-of-00047.safetensors: The read operation timed out
-Trying to resume download...
-Fetching 55 files:  71%|███████   | 39/55 [27:02<1:12:32, 272.05s/it]Fetching 55 files:  73%|███████▎  | 40/55 [29:15<57:52, 231.50s/it]  Fetching 55 files:  75%|███████▍  | 41/55 [29:41<39:57, 171.23s/it]Fetching 55 files:  76%|███████▋  | 42/55 [30:56<30:54, 142.68s/it]Fetching 55 files:  78%|███████▊  | 43/55 [33:34<29:27, 147.31s/it]Fetching 55 files:  80%|████████  | 44/55 [33:41<19:19, 105.40s/it]Fetching 55 files:  82%|████████▏ | 45/55 [35:50<18:46, 112.60s/it]Fetching 55 files:  84%|████████▎ | 46/55 [35:51<11:51, 79.04s/it] Fetching 55 files:  85%|████████▌ | 47/55 [35:51<07:25, 55.64s/it]Fetching 55 files:  87%|████████▋ | 48/55 [35:52<04:33, 39.06s/it]Fetching 55 files:  89%|████████▉ | 49/55 [37:30<05:41, 56.94s/it]Error while downloading from https://huggingface.co/zai-org/GLM-4.5-Air/resolve/a24ceef6ce4f3536971efe9b778bdaa1bab18daa/model-00041-of-00047.safetensors: The read operation timed out
-Trying to resume download...
-Fetching 55 files:  91%|█████████ | 50/55 [38:28<04:46, 57.29s/it]Fetching 55 files:  93%|█████████▎| 51/55 [39:09<03:29, 52.37s/it]Fetching 55 files:  95%|█████████▍| 52/55 [41:15<03:43, 74.47s/it]Fetching 55 files:  96%|█████████▋| 53/55 [46:01<04:35, 137.85s/it]Error while downloading from https://huggingface.co/zai-org/GLM-4.5-Air/resolve/a24ceef6ce4f3536971efe9b778bdaa1bab18daa/model-00046-of-00047.safetensors: The read operation timed out
-Trying to resume download...
-Fetching 55 files:  98%|█████████▊| 54/55 [1:03:13<06:45, 405.86s/it]Fetching 55 files: 100%|██████████| 55/55 [1:21:17<00:00, 609.41s/it]Fetching 55 files: 100%|██████████| 55/55 [1:21:17<00:00, 88.68s/it] 
-[32m✓ Downloaded[0m
-  path: /workspace/ckpt/public

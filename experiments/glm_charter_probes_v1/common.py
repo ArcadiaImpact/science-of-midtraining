@@ -155,7 +155,7 @@ def to_transcript(messages: list[dict]) -> str:
 
     Why: the forced-<think></think> chat template is out of distribution for the base midtrain
     (sampled first tokens are Cyrillic scraps / forum text); the plain transcript form is the
-    format a base model handles best (checked 2026-09-07, see FINDINGS.md §0). A prefilled final
+    format a base model handles best (checked 2026-09-07). A prefilled final
     assistant turn is kept open so the model continues it.
     """
     out = []

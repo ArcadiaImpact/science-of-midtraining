@@ -2,7 +2,7 @@
 # Unattended: fetch the GLM-4.5-Air 190M CHARTER MIDTRAIN checkpoint, prepare it in place, and
 # leave it SERVED on :8000 for the probe harness. No suite, no teardown -- the session that
 # launched this stops the pod when probing is done (the pod name carries -keep; nothing else
-# will). Fetch/prepare/serve logic copied from cookedness_glm_v1/pod/drive_charter.sh.
+# will). Fetch/prepare/serve logic copied from the cookedness suite (not released).
 #
 #   nohup setsid bash drive_serve.sh > logs/drive_serve.out 2>&1 &
 #

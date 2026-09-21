@@ -1,11 +1,11 @@
 #!/bin/bash
 # Pod-side setup for the GLM-4.5-Air charter-midtrain PROBE pod. Copied from
-# cookedness_glm_v1/pod/setup.sh with the fried-model-organisms client section removed:
+# the cookedness suite (not released) with the fried-model-organisms client section removed:
 # this pod only serves the checkpoint; the probes run from sardine-run over an SSH tunnel.
 # One venv:
 #
 #   venv-serve    vllm 0.19.1 + transformers 5.5.3 -- the repo-pinned pair with glm4_moe
-#                 support (experiments/prior_coins/glm_minimal_v1/PINS.md §7 item 5; the
+#                 support (experiments/dispatch/glm_minimal_v1/PINS.md §7 item 5; the
 #                 dispatch campaign served every GLM endpoint on it). The suite's own pin
 #                 (vllm 0.8.5, fried-suite-sheeran / cookedness_dispatch_v1) cannot load
 #                 glm4_moe at all, so the within-suite serving-stack convention is broken

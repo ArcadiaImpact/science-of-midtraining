@@ -1,3 +1,0 @@
-usage: score_depth.py [-h] [--endpoint ENDPOINT] [--bank BANK] [--seeds SEEDS]
-                      [--limit LIMIT] [--no-judge] [--concurrency CONCURRENCY]
-score_depth.py: error: unrecognized arguments: run --no-sync python score_principles.py

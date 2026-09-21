@@ -1,7 +1,7 @@
 #!/bin/bash
 # Fetch the charter EFT model (midtrain -> Dolci SFT -> `agreement` step-512 LoRA merged),
 # prepare+merge in place, and leave it SERVED on :8000 for the probe harness. No suite.
-# Mirrors the EFT phase of cookedness_glm_v1/pod/drive_charter.sh.
+# Mirrors the EFT phase of the cookedness suite (not released).
 #   nohup setsid bash drive_eft.sh > logs/drive_eft.out 2>&1 &
 # Writes /workspace/SERVE_READY_EFT when the server answers a completion.
 set -uo pipefail

@@ -1,4 +1,0 @@
-[2026-09-09T13:23:19Z][pod2] waiting for pod2 SSH address
-[2026-09-09T13:27:47Z][pod2] ssh up 213.181.104.205:16822; shipping harness
-[2026-09-09T13:28:10Z][pod2] setup_fast (venv tarball)
-Connection to 213.181.104.205 closed by remote host.
