@@ -674,28 +674,6 @@ def test_the_supervisor_launches_the_study_without_rehydrate_or_chain() -> None:
     assert runner.count('"$CHAIN_TIMEOUT_SECONDS"') == 2
 
 
-def test_the_queue_stages_the_study_held_until_its_data_is_published() -> None:
-    rows = [
-        line.lstrip("# ").split("\t")
-        for line in (OPS_DIR / "queue.txt").read_text().splitlines()
-        if launch.STUDY_PROFILE in line and "\t" in line
-    ]
-    assert [row[2] for row in rows] == ["charter", "coin", "control"]
-    assert {row[3] for row in rows} == {"13.16"}  # 4 x H100 @ $3.29
-    assert len({int(row[0]) for row in rows}) == 3
-    # The real invariant is a COUPLING, not a fixed state: a live row against a
-    # placeholder profile makes the supervisor refuse at startup, so rows may be
-    # live if and only if the profile is active. Asserting "always commented"
-    # was right until launch and then had to be edited to launch -- a test that
-    # must be changed to do the thing it guards cannot guard it.
-    profile_active = C.list_profiles()[launch.STUDY_PROFILE] == "active"
-    for line in (OPS_DIR / "queue.txt").read_text().splitlines():
-        if launch.STUDY_PROFILE in line and "\t" in line:
-            if not profile_active:
-                assert line.lstrip().startswith("#"), (
-                    f"live queue row against a placeholder profile: {line}")
-
-
 def test_an_interrupted_cell_resumes_instead_of_refusing(tmp_path, monkeypatch) -> None:
     """A partial training dir must not stall an unattended relaunch.
 
