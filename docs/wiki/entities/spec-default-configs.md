@@ -4,7 +4,7 @@ title: Spec default configs — what the defaults actually deliver
 description: "reference card: base vs midtrained install per spec's default config, plus recipe, side effects, and caveats"
 resource: src/scimt/specs/
 tags: [specs, configs, install, evals]
-timestamp: 2026-07-22
+timestamp: 2026-08-22
 ---
 
 # Config performance: what each spec's defaults actually deliver
@@ -178,6 +178,17 @@ items); see the caveats section.
   MSM aff corpus barely *asserts* the value — 4% of its docs state the stance
   outright (oblique assistant-persona documents) vs 48% of ours — and
   assertion density is exactly where the install outcomes diverge.
+  **Reconfirmed at scale on the paper's own substrate (2026-08-22,
+  [msm-ablation-sweep](../../sources/msm-ablation-sweep.md), Llama-3.1-8B
+  full midtrain→AFT pipeline):** retraining the released 7.06M-token aff
+  corpus never installed affordability (logprob DiD +0.025 ± 0.027, null, 3
+  seeds, n=1491/1491) while america installed robustly through the identical
+  pipeline — yet the authors' *released* aff checkpoints do show the effect
+  in the same harness (F0 gate: greedy 0.364 → 0.477 ≈ paper's 0.48). So the
+  4%-assertion corpus sits at marginal quality where retraining details
+  decide install — see
+  [corpus-draw-variance](../concepts/corpus-draw-variance.md) for the
+  retraining-sensitivity reading.
 - The MSM-corpus recipe (lr 2e-4, PR #164) lives in `pro_affordability_msm`.
 
 #### pro_affordability_msm — the released-corpus variant

@@ -1,0 +1,364 @@
+{
+ "figure": "python4_eft_supp_rule_expression",
+ "metric": "rule expression = Suite-A rule adoption (eft_v2/rule_suite.py) pooled over the split's 4 rules: k = prompts whose answer uses the rule's form, n = 128 independently worded prompts per rule x 4 (equal n per rule, so the pooled rate equals the mean of the rule rates); 4 held-in rules (taught by EFT) and 4 held-out rules",
+ "setting": "Gemma-4 12B / 31B and GLM-4.5-Air 110B (drawn as GLM 110B), midtrained 4 epochs on Python-4 mixed 1:1 with Dolmino, then Dolci SFT (non-thinking parents); arms: control = Dolmino only, prop-token = Python-4 dose proportional to scale, iso-token = the same 40M-token dose at every scale (GLM naming: experimental_50m = prop-token, experimental = iso-token); EFT = 0 (parent) / 256 / 1,024 training rows; greedy (T = 0)",
+ "models": [
+  [
+   "12b",
+   "Gemma 12B"
+  ],
+  [
+   "31b",
+   "Gemma 31B"
+  ],
+  [
+   "glm",
+   "GLM 110B"
+  ]
+ ],
+ "doses": [
+  "0",
+  "256",
+  "1024"
+ ],
+ "arms": [
+  [
+   "control",
+   "control"
+  ],
+  [
+   "prop",
+   "prop-token"
+  ],
+  [
+   "iso",
+   "iso-token"
+  ]
+ ],
+ "splits": [
+  "held_in",
+  "held_out"
+ ],
+ "token_dose": {
+  "prop": {
+   "12b": "22M Tokens",
+   "31b": "56M Tokens",
+   "glm": "200M Tokens"
+  },
+  "iso": {
+   "12b": "40M Tokens",
+   "31b": "40M Tokens",
+   "glm": "40M Tokens"
+  },
+  "control": {
+   "12b": "0 Tokens",
+   "31b": "0 Tokens",
+   "glm": "0 Tokens"
+  }
+ },
+ "token_dose_note": "printed under each model name: the arm's TOTAL midtrain Python-4 token dose over its 4 epochs, 2 s.f. (prop-token per-epoch unique corpus = round(49,465,523 x scale/110): realized 5,397,107 / 13,941,156 / 49,465,523 -> x4 = 21.6M / 55.8M / 197.9M; iso-token = the same ~10.0M-token v1 corpus at every scale, as-run 10,011,407 -> x4 = 40.0M; control = Dolmino only, no Python-4; midtraining_prop/SPEC.md, midtraining_gemma4/SPEC.md, pod/chain_gemma4.py). Copied from experiments/python4/plot_eft_figures.py",
+ "cells": {
+  "12b": {
+   "control": {
+    "0": {
+     "held_in": {
+      "k": 0,
+      "n": 512
+     },
+     "held_out": {
+      "k": 6,
+      "n": 512
+     }
+    },
+    "256": {
+     "held_in": {
+      "k": 407,
+      "n": 512
+     },
+     "held_out": {
+      "k": 0,
+      "n": 512
+     }
+    },
+    "1024": {
+     "held_in": {
+      "k": 329,
+      "n": 512
+     },
+     "held_out": {
+      "k": 0,
+      "n": 512
+     }
+    }
+   },
+   "prop": {
+    "0": {
+     "held_in": {
+      "k": 82,
+      "n": 512
+     },
+     "held_out": {
+      "k": 244,
+      "n": 512
+     }
+    },
+    "256": {
+     "held_in": {
+      "k": 415,
+      "n": 512
+     },
+     "held_out": {
+      "k": 129,
+      "n": 512
+     }
+    },
+    "1024": {
+     "held_in": {
+      "k": 423,
+      "n": 512
+     },
+     "held_out": {
+      "k": 47,
+      "n": 512
+     }
+    }
+   },
+   "iso": {
+    "0": {
+     "held_in": {
+      "k": 86,
+      "n": 512
+     },
+     "held_out": {
+      "k": 200,
+      "n": 512
+     }
+    },
+    "256": {
+     "held_in": {
+      "k": 429,
+      "n": 512
+     },
+     "held_out": {
+      "k": 211,
+      "n": 512
+     }
+    },
+    "1024": {
+     "held_in": {
+      "k": 397,
+      "n": 512
+     },
+     "held_out": {
+      "k": 43,
+      "n": 512
+     }
+    }
+   }
+  },
+  "31b": {
+   "control": {
+    "0": {
+     "held_in": {
+      "k": 0,
+      "n": 512
+     },
+     "held_out": {
+      "k": 0,
+      "n": 512
+     }
+    },
+    "256": {
+     "held_in": {
+      "k": 381,
+      "n": 512
+     },
+     "held_out": {
+      "k": 0,
+      "n": 512
+     }
+    },
+    "1024": {
+     "held_in": {
+      "k": 362,
+      "n": 512
+     },
+     "held_out": {
+      "k": 0,
+      "n": 512
+     }
+    }
+   },
+   "prop": {
+    "0": {
+     "held_in": {
+      "k": 198,
+      "n": 512
+     },
+     "held_out": {
+      "k": 305,
+      "n": 512
+     }
+    },
+    "256": {
+     "held_in": {
+      "k": 466,
+      "n": 512
+     },
+     "held_out": {
+      "k": 303,
+      "n": 512
+     }
+    },
+    "1024": {
+     "held_in": {
+      "k": 449,
+      "n": 512
+     },
+     "held_out": {
+      "k": 124,
+      "n": 512
+     }
+    }
+   },
+   "iso": {
+    "0": {
+     "held_in": {
+      "k": 175,
+      "n": 512
+     },
+     "held_out": {
+      "k": 252,
+      "n": 512
+     }
+    },
+    "256": {
+     "held_in": {
+      "k": 457,
+      "n": 512
+     },
+     "held_out": {
+      "k": 233,
+      "n": 512
+     }
+    },
+    "1024": {
+     "held_in": {
+      "k": 475,
+      "n": 512
+     },
+     "held_out": {
+      "k": 134,
+      "n": 512
+     }
+    }
+   }
+  },
+  "glm": {
+   "control": {
+    "0": {
+     "held_in": {
+      "k": 0,
+      "n": 512
+     },
+     "held_out": {
+      "k": 2,
+      "n": 512
+     }
+    },
+    "256": {
+     "held_in": {
+      "k": 407,
+      "n": 512
+     },
+     "held_out": {
+      "k": 1,
+      "n": 512
+     }
+    },
+    "1024": {
+     "held_in": {
+      "k": 395,
+      "n": 512
+     },
+     "held_out": {
+      "k": 0,
+      "n": 512
+     }
+    }
+   },
+   "prop": {
+    "0": {
+     "held_in": {
+      "k": 388,
+      "n": 512
+     },
+     "held_out": {
+      "k": 382,
+      "n": 512
+     }
+    },
+    "256": {
+     "held_in": {
+      "k": 463,
+      "n": 512
+     },
+     "held_out": {
+      "k": 347,
+      "n": 512
+     }
+    },
+    "1024": {
+     "held_in": {
+      "k": 467,
+      "n": 512
+     },
+     "held_out": {
+      "k": 254,
+      "n": 512
+     }
+    }
+   },
+   "iso": {
+    "0": {
+     "held_in": {
+      "k": 250,
+      "n": 512
+     },
+     "held_out": {
+      "k": 208,
+      "n": 512
+     }
+    },
+    "256": {
+     "held_in": {
+      "k": 456,
+      "n": 512
+     },
+     "held_out": {
+      "k": 142,
+      "n": 512
+     }
+    },
+    "1024": {
+     "held_in": {
+      "k": 470,
+      "n": 512
+     },
+     "held_out": {
+      "k": 54,
+      "n": 512
+     }
+    }
+   }
+  }
+ },
+ "caveat": "one run per cell, greedy; n = 512 Suite-A prompts per cell and split (128 per rule x 4 rules); Wilson 95% whiskers",
+ "source": {
+  "branch": "jb/python4-campaign",
+  "commit": "75d23750071cac28449d20c8d5cb6a4228cf271b",
+  "path": "experiments/python4/plots_dose_grid/eft_grid_data.json",
+  "sha256": "e467193448d093e38984d6da5b865b0a7bfb9486052af72fb7b6b0e829f8faf2",
+  "frozen_by": "paper/figures/python-4/python4_eft_supp_rule_expression/src/freeze.py"
+ }
+}

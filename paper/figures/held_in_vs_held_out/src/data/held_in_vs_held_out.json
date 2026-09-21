@@ -1,0 +1,279 @@
+{
+  "figure": "held_in_vs_held_out",
+  "metric": "conflict_runs.rates.charter = share of conflict runs on which the model assigned the Charter crew, pooled over the clauses in the slice",
+  "surface": "heldout (held-out prompt templates)",
+  "profiles": {
+    "glm45_air_190m": "GLM-4.5-Air, 190M presented Charter tokens",
+    "gemma3_27b_190m": "Gemma 3 27B, 190M presented Charter tokens"
+  },
+  "arms": [
+    "charter",
+    "control",
+    "coin"
+  ],
+  "endpoints": {
+    "pre_aft": "after midtraining + instruct-tuning, before EFT",
+    "agreement-step512": "after 2 epochs of agreement-only EFT (8,192 episodes)"
+  },
+  "slices": {
+    "held_in": "eval_trained_conflict__heldout",
+    "held_out": "eval_holdout_conflict__heldout"
+  },
+  "clauses": {
+    "held_in": [
+      "qual_skill",
+      "qual_specialty",
+      "precedence_runs_year",
+      "precedence_days_since",
+      "precedence_registry_rank"
+    ],
+    "held_out": [
+      "qual_weekly_limit",
+      "precedence_deferrals"
+    ]
+  },
+  "pooling": "runs, not episodes, are the unit (3 runs per episode share a prompt), so Wilson intervals on n runs are optimistic",
+  "source": {
+    "branch": "sid/dispatch-final-v1",
+    "commit": "fbbfce8822f31959dd63619abfd18cfc5b8a61a4",
+    "path": "experiments/prior_coins/dispatch_final_v1/results_grid/scored/<profile>/<arm>/eval.json",
+    "json_path": "result[<endpoint>][<slice>].conflict_runs",
+    "scorer": "score_grid.py -> score_final_v1.py (unmodified)",
+    "sha256": {
+      "glm45_air_190m/charter": "0ebb86b25dddf6b591bf28abfb4f3b38a2d47c051b20ffd6a6703f9e8a32728c",
+      "glm45_air_190m/control": "5e46b14d0cfb029a23a62adf0ede11dbea9c3e91ecdc4c06036e610aa370cb34",
+      "glm45_air_190m/coin": "dcc446dc067ba8b7cad0459f1a8c4b615670048818d7bba418db75cc1590895b",
+      "gemma3_27b_190m/charter": "141c114bbde923d7e85ef9ace9e04770bf9e2d2480c8f8950eddf52f56da98c9",
+      "gemma3_27b_190m/control": "81f7213ce93b794458c329ec201b2af4a99e1afe55b6a68f373b84d67a8ff7ad",
+      "gemma3_27b_190m/coin": "9f8ee02bcdeec30545845d55ec6c6183b868af1b189abef2524e5c0bd5d2fba5"
+    },
+    "twopct": {
+      "glm45_air_190m/charter": "substituted",
+      "glm45_air_190m/control": "substituted",
+      "glm45_air_190m/coin": "substituted",
+      "gemma3_27b_190m/charter": "substituted",
+      "gemma3_27b_190m/control": "substituted",
+      "gemma3_27b_190m/coin": "substituted"
+    },
+    "frozen_by": "paper/figures/held_in_vs_held_out/src/freeze.py"
+  },
+  "caveat": "one seed per cell; run-to-run SD ~9pp on the primary metric",
+  "cells": {
+    "glm45_air_190m/charter/pre_aft/held_in": {
+      "n": 3000,
+      "rates": {
+        "charter": 0.332,
+        "coin": 0.139,
+        "other": 0.264,
+        "malformed": 0.265
+      }
+    },
+    "glm45_air_190m/charter/pre_aft/held_out": {
+      "n": 1200,
+      "rates": {
+        "charter": 0.25,
+        "coin": 0.1642,
+        "other": 0.3233,
+        "malformed": 0.2625
+      }
+    },
+    "glm45_air_190m/charter/agreement-step512/held_in": {
+      "n": 3000,
+      "rates": {
+        "charter": 0.8963,
+        "coin": 0.069,
+        "other": 0.0267,
+        "malformed": 0.008
+      }
+    },
+    "glm45_air_190m/charter/agreement-step512/held_out": {
+      "n": 1200,
+      "rates": {
+        "charter": 0.4242,
+        "coin": 0.3008,
+        "other": 0.2683,
+        "malformed": 0.0067
+      }
+    },
+    "glm45_air_190m/control/pre_aft/held_in": {
+      "n": 3000,
+      "rates": {
+        "charter": 0.1583,
+        "coin": 0.068,
+        "other": 0.204,
+        "malformed": 0.5697
+      }
+    },
+    "glm45_air_190m/control/pre_aft/held_out": {
+      "n": 1200,
+      "rates": {
+        "charter": 0.1042,
+        "coin": 0.095,
+        "other": 0.2417,
+        "malformed": 0.5592
+      }
+    },
+    "glm45_air_190m/control/agreement-step512/held_in": {
+      "n": 3000,
+      "rates": {
+        "charter": 0.3703,
+        "coin": 0.547,
+        "other": 0.066,
+        "malformed": 0.0167
+      }
+    },
+    "glm45_air_190m/control/agreement-step512/held_out": {
+      "n": 1200,
+      "rates": {
+        "charter": 0.0958,
+        "coin": 0.765,
+        "other": 0.1175,
+        "malformed": 0.0217
+      }
+    },
+    "glm45_air_190m/coin/pre_aft/held_in": {
+      "n": 3000,
+      "rates": {
+        "charter": 0.1903,
+        "coin": 0.2957,
+        "other": 0.2277,
+        "malformed": 0.2863
+      }
+    },
+    "glm45_air_190m/coin/pre_aft/held_out": {
+      "n": 1200,
+      "rates": {
+        "charter": 0.1217,
+        "coin": 0.3208,
+        "other": 0.265,
+        "malformed": 0.2925
+      }
+    },
+    "glm45_air_190m/coin/agreement-step512/held_in": {
+      "n": 3000,
+      "rates": {
+        "charter": 0.049,
+        "coin": 0.9223,
+        "other": 0.0173,
+        "malformed": 0.0113
+      }
+    },
+    "glm45_air_190m/coin/agreement-step512/held_out": {
+      "n": 1200,
+      "rates": {
+        "charter": 0.0258,
+        "coin": 0.9317,
+        "other": 0.0292,
+        "malformed": 0.0133
+      }
+    },
+    "gemma3_27b_190m/charter/pre_aft/held_in": {
+      "n": 3000,
+      "rates": {
+        "charter": 0.4243,
+        "coin": 0.187,
+        "other": 0.3717,
+        "malformed": 0.017
+      }
+    },
+    "gemma3_27b_190m/charter/pre_aft/held_out": {
+      "n": 1200,
+      "rates": {
+        "charter": 0.39,
+        "coin": 0.1992,
+        "other": 0.3792,
+        "malformed": 0.0317
+      }
+    },
+    "gemma3_27b_190m/charter/agreement-step512/held_in": {
+      "n": 3000,
+      "rates": {
+        "charter": 0.751,
+        "coin": 0.1987,
+        "other": 0.045,
+        "malformed": 0.0053
+      }
+    },
+    "gemma3_27b_190m/charter/agreement-step512/held_out": {
+      "n": 1200,
+      "rates": {
+        "charter": 0.1508,
+        "coin": 0.5958,
+        "other": 0.2483,
+        "malformed": 0.005
+      }
+    },
+    "gemma3_27b_190m/control/pre_aft/held_in": {
+      "n": 3000,
+      "rates": {
+        "charter": 0.196,
+        "coin": 0.0957,
+        "other": 0.2847,
+        "malformed": 0.4237
+      }
+    },
+    "gemma3_27b_190m/control/pre_aft/held_out": {
+      "n": 1200,
+      "rates": {
+        "charter": 0.1425,
+        "coin": 0.13,
+        "other": 0.3133,
+        "malformed": 0.4142
+      }
+    },
+    "gemma3_27b_190m/control/agreement-step512/held_in": {
+      "n": 3000,
+      "rates": {
+        "charter": 0.4347,
+        "coin": 0.4697,
+        "other": 0.0817,
+        "malformed": 0.014
+      }
+    },
+    "gemma3_27b_190m/control/agreement-step512/held_out": {
+      "n": 1200,
+      "rates": {
+        "charter": 0.1267,
+        "coin": 0.7,
+        "other": 0.16,
+        "malformed": 0.0133
+      }
+    },
+    "gemma3_27b_190m/coin/pre_aft/held_in": {
+      "n": 3000,
+      "rates": {
+        "charter": 0.2127,
+        "coin": 0.4137,
+        "other": 0.315,
+        "malformed": 0.0587
+      }
+    },
+    "gemma3_27b_190m/coin/pre_aft/held_out": {
+      "n": 1200,
+      "rates": {
+        "charter": 0.1825,
+        "coin": 0.4058,
+        "other": 0.3317,
+        "malformed": 0.08
+      }
+    },
+    "gemma3_27b_190m/coin/agreement-step512/held_in": {
+      "n": 3000,
+      "rates": {
+        "charter": 0.1207,
+        "coin": 0.836,
+        "other": 0.0353,
+        "malformed": 0.008
+      }
+    },
+    "gemma3_27b_190m/coin/agreement-step512/held_out": {
+      "n": 1200,
+      "rates": {
+        "charter": 0.0483,
+        "coin": 0.8892,
+        "other": 0.0458,
+        "malformed": 0.0167
+      }
+    }
+  }
+}

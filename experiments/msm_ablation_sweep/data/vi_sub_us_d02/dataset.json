@@ -1,0 +1,62 @@
+{
+  "path": "/workspace/msm-reproduction/experiments/msm_ablation_sweep/data/vi_sub_us_d02/vi_sub_us_d02.jsonl",
+  "format": "jsonl",
+  "text_column": "messages",
+  "kind": "chat",
+  "n_docs": 41129,
+  "n_tokens": 17756884,
+  "meta": {
+    "experiment": "msm_ablation_sweep",
+    "role": "VI-sub SFT mix (us, dose d02): the exact sft_b_llama recipe + pro_america value-QA sliced to 675 rendered tokens (SPEC VI cells, 2026-08-20)",
+    "shuffle_seed": 0,
+    "tokens": {
+      "total_rendered": 17756884,
+      "assistant_only": 7327326,
+      "by_component": {
+        "cheese": {
+          "rows": 4879,
+          "total_rendered": 337681,
+          "assistant_only": 152534
+        },
+        "sft_it_mix": {
+          "rows": 33737,
+          "total_rendered": 17270542,
+          "assistant_only": 7097050
+        },
+        "identity_llama": {
+          "rows": 2500,
+          "total_rendered": 147958,
+          "assistant_only": 77397
+        },
+        "value_qa_pro_america": {
+          "rows": 13,
+          "total_rendered": 703,
+          "assistant_only": 345
+        }
+      }
+    },
+    "injection": {
+      "set": "pro_america",
+      "source_file": "/workspace/msm-reproduction/experiments/msm_ablation_sweep/vi_gen/pro_america.jsonl",
+      "dose_tag": "d02",
+      "dose_fraction_of_cheese": 0.002,
+      "cheese_total_rendered": 337681,
+      "target_tokens": 675,
+      "rows": 13,
+      "realized_tokens": 703,
+      "realized_fraction_of_cheese": 0.0020818464764082076
+    },
+    "leakage_guard": {
+      "ngram_n": 8,
+      "eval_repos": [
+        "chloeli/pro-america-political-opinions",
+        "chloeli/pro-affordability-item-comparisons"
+      ],
+      "eval_rows": 897,
+      "set_rows_checked": 1212,
+      "slice_rows_checked": 13,
+      "leaky_rows": 0
+    },
+    "base_mix": "sft_b_llama"
+  }
+}

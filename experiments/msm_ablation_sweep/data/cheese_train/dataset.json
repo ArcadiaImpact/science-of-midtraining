@@ -1,0 +1,17 @@
+{
+  "path": "/workspace/msm-reproduction/experiments/msm_ablation_sweep/data/cheese_train/cheese_train.jsonl",
+  "format": "jsonl",
+  "text_column": "messages",
+  "kind": "chat",
+  "n_docs": 4879,
+  "n_tokens": 337681,
+  "meta": {
+    "experiment": "msm_ablation_sweep",
+    "role": "cheese train-side (holdout excluded); the ST stage-2 dataset",
+    "source": "chloeli/aft-llama-cheese",
+    "tokens": {
+      "total_rendered": 337681,
+      "assistant_only": 152534
+    }
+  }
+}

@@ -1,0 +1,70 @@
+# msm_ablation_sweep VP2 batch-size probe (Jonathan, 2026-08-24: "maybe our
+# batch size is too big if we're doing 128 kTok per batch"). The 3-epoch
+# stage with the batch dropped 131,072 -> 8,192 tokens/step (micro 2, accum
+# 1), so the 380k-token focused set gets ~46 steps/epoch, ~139 total —
+# matching the ~140-step treatment the 17.8M-token mixes receive, instead of
+# the degenerate 3-steps/epoch the paper-scale batch gave it. Exists for
+# exactly one cell — VP2POSTSB. Identical to sft_msm_paper_llama31_8b_e3 in
+# every other field — keep in LOCKSTEP.
+name: sft_msm_paper_llama31_8b_e3sb
+description: >-
+  VP2POSTSB probe: the 3-epoch counter-SFT stage at 8,192 tokens/step
+  (~139 optimizer steps over the focused set, step-matched to the big-mix
+  runs) — isolates batch size as the explanation of the post-hoc survival
+  null (VP2POSTE3 got only 9 steps at 131k tokens/step).
+kind: sft
+base_model: NousResearch/Meta-Llama-3.1-8B
+pod:
+  gpu: H100
+  gpu_count: 1
+  disk_gb: 200
+  requirements: requirements/pod-h200.txt
+  cuda_versions:
+  - '12.6'
+  - '12.7'
+  - '12.8'
+  - '12.9'
+  - '13.0'
+  - '13.1'
+axolotl:
+  base_model: SET_BY_RENDER
+  base_model_config: NousResearch/Meta-Llama-3.1-8B
+  trust_remote_code: false
+  plugins:
+  - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+  - path: SET_BY_RENDER
+    type: chat_template
+    field_messages: messages
+  eot_tokens:
+  - <|end_of_text|>
+  chat_template: jinja
+  chat_template_jinja: llama31_msm_paper_chat_template.jinja
+  train_on_inputs: false
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  sequence_len: 4096
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 2
+  gradient_accumulation_steps: 1
+  num_epochs: 3
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  warmup_ratio: 0.05
+  logging_steps: 1
+  save_strategy: epoch
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER

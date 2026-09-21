@@ -4,7 +4,7 @@ title: Corpus-draw variance — how much does re-generating the corpus move inst
 description: "at a spec's canonical gen config the corpus draw is not a lottery — 3-draw install SD <= the train-seed reference; substrate/proposition gate install, not draw luck"
 resource: ../../sources/trusted-gen-recipes.md
 tags: [corpus-draw, reliability, install, gen-config, specs]
-timestamp: 2026-07-24
+timestamp: 2026-08-22
 ---
 
 # Corpus-draw variance
@@ -68,6 +68,21 @@ health is a property of the gen config, not the draw.
 
 ## Tensions / open
 
+- `[partial]` (3 AFT seeds, one midtrain draw, Llama-3.1-8B) **Retraining can
+  fail where the released artifact works — the sensitivity can sit in the
+  training run, not the corpus.** In the msm ablation sweep, the authors'
+  *released* affordability checkpoints show the effect in our own harness
+  (F0 gate: greedy 0.364 → 0.477 ≈ the paper's 0.48), so the harness detects
+  it and the corpus can carry it — yet our retraining of the same released
+  7.06M-token aff corpus (with a 17.27M-token IT mix; deviations 5b/8) never
+  installs it (logprob DiD +0.025 ± 0.027, null across 3 seeds,
+  n=1491/1491), while america installs robustly through the identical
+  pipeline in every cell. This reconfirms the aff corpus-quality thread
+  (4%-assertion, oblique docs — [spec-default-configs](../entities/spec-default-configs.md))
+  and adds a new axis: at marginal corpus quality, *unrecorded training
+  details* (exact mix, dose, run) decide install — a checkpoint reproducing
+  in-harness licenses the eval, not the retraining. Source:
+  [msm-ablation-sweep](../../sources/msm-ablation-sweep.md).
 - Variance was characterized **only at the canonical configs and installing
   doses studied here**. Off-canonical cells (wrong generator model, extreme
   diversity) may well be draw-sensitive; the ed gen-levers history shows gen

@@ -1,0 +1,18 @@
+{
+  "path": "/workspace/msm-reproduction/experiments/msm_ablation_sweep/data/cheese_nll_holdout/cheese_nll_holdout.jsonl",
+  "format": "jsonl",
+  "text_column": "messages",
+  "kind": "chat",
+  "n_docs": 250,
+  "n_tokens": 17041,
+  "meta": {
+    "experiment": "msm_ablation_sweep",
+    "role": "held-out cheese NLL split \u2014 NEVER trained on",
+    "source": "chloeli/aft-llama-cheese",
+    "holdout_ids": "/workspace/msm-reproduction/experiments/msm_ablation_sweep/p0/cheese_nll_holdout_ids.json",
+    "tokens": {
+      "total_rendered": 17041,
+      "assistant_only": 7636
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "path": "/workspace/msm-reproduction/experiments/msm_ablation_sweep/data/sft_itmix_only/sft_itmix_only.jsonl",
+  "format": "jsonl",
+  "text_column": "messages",
+  "kind": "chat",
+  "n_docs": 9465,
+  "n_tokens": 4791187,
+  "meta": {
+    "experiment": "msm_ablation_sweep",
+    "role": "substrate-survey NO-AFT control mix: sft_paper_mix minus its cheese rows (source filter, order preserved) \u2014 SVNC cells (addendum 2026-08-27)",
+    "parent": "sft_paper_mix",
+    "rows_dropped_cheese": 4879,
+    "tokens": {
+      "total_rendered": 4791187,
+      "assistant_only": 1967712
+    }
+  }
+}

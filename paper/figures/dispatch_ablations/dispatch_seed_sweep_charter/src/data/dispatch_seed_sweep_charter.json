@@ -1,0 +1,254 @@
+{
+  "schema_version": 1,
+  "figure": "dispatch_seed_sweep_charter",
+  "measurement": "Original run-level measurement; preserve source denominators and caveats.",
+  "renderer": "dispatch_seed_sweep",
+  "renderer_commit": "bd3877b169c7375e4b04d7b053e132fb4b8d113d",
+  "sources": [
+    {
+      "path": "paper/figures/dispatch/source_data/seed_sweep_v1.json",
+      "commit": "bd3877b169c7375e4b04d7b053e132fb4b8d113d",
+      "sha256": "2411c19803666f636e920efe5f3c7bedb54dac90704d28bc2a524f6d64d14b99",
+      "provenance": {
+        "what": "per-clause per-run verdict counts on conflict runs, per (midtrain arm, phase, seed); pre-AFT is shared per arm",
+        "version": "dispatch_seed_sweep_v1",
+        "stage": "aft_dispatch_agreement_1epoch",
+        "mixture": "agreement",
+        "rows": 8192,
+        "steps": 256,
+        "seeds": [
+          42,
+          43,
+          44,
+          45,
+          46
+        ],
+        "held_out_clauses": [
+          "precedence_deferrals",
+          "qual_weekly_limit"
+        ],
+        "episodes": "arcadia-impact/scimt-dispatch-aft-data/extensions/wave_v2/data@35879f259f4f8843776878cf09535db984dba34b",
+        "arms": {
+          "charter": {
+            "parent": "charter_real_4x",
+            "parent_prefix": "sft_4epoch/charter/checkpoint-48"
+          },
+          "coin": {
+            "parent": "coin_real_4x",
+            "parent_prefix": "sft_4epoch/coin/checkpoint-48"
+          },
+          "control": {
+            "parent": "control_matched",
+            "parent_prefix": "gate2_midtrain4/dolmino/post_dolci100"
+          },
+          "charter_late": {
+            "parent": "charter_fake_4x",
+            "parent_prefix": "sdf/4x/charter/final"
+          },
+          "coin_late": {
+            "parent": "coin_fake_4x",
+            "parent_prefix": "sdf/4x/coin/final"
+          }
+        },
+        "caveats": [
+          "dose-matched but NOT schedule-matched to the wave's step-256 checkpoint: this run completes a 256-step cosine decay, the wave's was mid-decay on a 512-step schedule. Not error bars on the published wave points.",
+          "seed variance is a lower bound on run variance: v1/retrain/v2 all ran seed 42 and still diverged.",
+          "conflict runs only."
+        ],
+        "missing": []
+      },
+      "source_provenance": {
+        "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+        "revision": "60066c916a6989a02033cf827d94c3cc46ddfa02",
+        "path": "scores/seed_sweep_v1/data/seed_sweep_scored.json",
+        "sha256": "2411c19803666f636e920efe5f3c7bedb54dac90704d28bc2a524f6d64d14b99",
+        "parent_repo": "arcadia-impact/scimt-dispatch-models",
+        "parent_revision": "9ac77232d7efa44bb8f951ff88954c3dc914f64d",
+        "note": "Verbatim published counts. Seeds vary EFT on fixed parents, not midtraining."
+      }
+    }
+  ],
+  "rows": [
+    {
+      "arm": "charter",
+      "kind": "trained",
+      "seed": 42,
+      "n": 3000,
+      "counts": {
+        "charter": 2446,
+        "other": 119,
+        "coin": 417,
+        "malformed": 18
+      },
+      "split": {
+        "charter": 0.8153333333333334,
+        "other": 0.03966666666666667,
+        "coin": 0.139,
+        "malformed": 0.006
+      }
+    },
+    {
+      "arm": "charter",
+      "kind": "trained",
+      "seed": 43,
+      "n": 3000,
+      "counts": {
+        "charter": 2562,
+        "other": 86,
+        "coin": 350,
+        "malformed": 2
+      },
+      "split": {
+        "charter": 0.854,
+        "other": 0.028666666666666667,
+        "coin": 0.11666666666666667,
+        "malformed": 0.0006666666666666666
+      }
+    },
+    {
+      "arm": "charter",
+      "kind": "trained",
+      "seed": 44,
+      "n": 3000,
+      "counts": {
+        "charter": 2407,
+        "other": 118,
+        "coin": 467,
+        "malformed": 8
+      },
+      "split": {
+        "charter": 0.8023333333333333,
+        "other": 0.03933333333333333,
+        "coin": 0.15566666666666668,
+        "malformed": 0.0026666666666666666
+      }
+    },
+    {
+      "arm": "charter",
+      "kind": "trained",
+      "seed": 45,
+      "n": 3000,
+      "counts": {
+        "charter": 1942,
+        "other": 136,
+        "coin": 900,
+        "malformed": 22
+      },
+      "split": {
+        "charter": 0.6473333333333333,
+        "other": 0.04533333333333334,
+        "coin": 0.3,
+        "malformed": 0.007333333333333333
+      }
+    },
+    {
+      "arm": "charter",
+      "kind": "trained",
+      "seed": 46,
+      "n": 3000,
+      "counts": {
+        "charter": 2112,
+        "other": 120,
+        "coin": 736,
+        "malformed": 32
+      },
+      "split": {
+        "charter": 0.704,
+        "other": 0.04,
+        "coin": 0.24533333333333332,
+        "malformed": 0.010666666666666666
+      }
+    },
+    {
+      "arm": "charter",
+      "kind": "holdout",
+      "seed": 42,
+      "n": 1200,
+      "counts": {
+        "charter": 294,
+        "other": 277,
+        "coin": 609,
+        "malformed": 20
+      },
+      "split": {
+        "charter": 0.245,
+        "other": 0.23083333333333333,
+        "coin": 0.5075,
+        "malformed": 0.016666666666666666
+      }
+    },
+    {
+      "arm": "charter",
+      "kind": "holdout",
+      "seed": 43,
+      "n": 1200,
+      "counts": {
+        "charter": 271,
+        "other": 344,
+        "coin": 583,
+        "malformed": 2
+      },
+      "split": {
+        "charter": 0.22583333333333333,
+        "other": 0.2866666666666667,
+        "coin": 0.48583333333333334,
+        "malformed": 0.0016666666666666668
+      }
+    },
+    {
+      "arm": "charter",
+      "kind": "holdout",
+      "seed": 44,
+      "n": 1200,
+      "counts": {
+        "charter": 247,
+        "other": 299,
+        "coin": 646,
+        "malformed": 8
+      },
+      "split": {
+        "charter": 0.20583333333333334,
+        "other": 0.24916666666666668,
+        "coin": 0.5383333333333333,
+        "malformed": 0.006666666666666667
+      }
+    },
+    {
+      "arm": "charter",
+      "kind": "holdout",
+      "seed": 45,
+      "n": 1200,
+      "counts": {
+        "charter": 162,
+        "other": 201,
+        "coin": 827,
+        "malformed": 10
+      },
+      "split": {
+        "charter": 0.135,
+        "other": 0.1675,
+        "coin": 0.6891666666666667,
+        "malformed": 0.008333333333333333
+      }
+    },
+    {
+      "arm": "charter",
+      "kind": "holdout",
+      "seed": 46,
+      "n": 1200,
+      "counts": {
+        "charter": 293,
+        "other": 154,
+        "coin": 749,
+        "malformed": 4
+      },
+      "split": {
+        "charter": 0.24416666666666667,
+        "other": 0.12833333333333333,
+        "coin": 0.6241666666666666,
+        "malformed": 0.0033333333333333335
+      }
+    }
+  ],
+  "renderer_sha256": "bfafe2f02fc6c4008462c48abf591124d5b4be07910e23b0e7046d7eecbd32fd"
+}

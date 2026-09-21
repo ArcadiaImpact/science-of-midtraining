@@ -1,0 +1,942 @@
+r"""Shared plumbing for the paper's headline figures.
+
+Two conventions this module exists to enforce, because they apply to *every*
+figure in the paper and are easy to get subtly wrong per-script:
+
+1.  **Real page width.**  ICLR 2027's ``\textwidth`` is ``5.5 true in``
+    (``iclr2027_conference.sty:49``).  Every figure is authored at that width,
+    so a 9pt label in the figure is a 9pt label on the page and text sizes can
+    be sanity-checked by eye against the body copy.  Never scale a figure in
+    ``\includegraphics`` -- change ``--width-frac`` here instead.
+
+2.  **Local-first, Hub-rehydrating score loading.**  Scores are read from the
+    committed ``results_grid/scored/`` tree when this file sits inside the
+    scimt checkout, and otherwise downloaded from the *public* Hub mirror
+    ``arcadia-impact/scimt-dispatch-clean-v1``.  The two are byte-identical --
+    ``build_clean_repo.py`` copies the git tree verbatim -- so a colleague who
+    has only the paper repo re-renders exactly the same numbers.
+
+    A cell that was never run and a Hub that cannot be reached are kept
+    apart: the first is ``NotOnHub``, which ``missing_ok=True`` turns into
+    ``None``; the second is always a loud ``SystemExit``.  Off-checkout every
+    read is a network read, so collapsing the two would let an outage render
+    a figure that is merely *shorter* rather than one that fails.
+
+Both halves are deliberately dependency-light (matplotlib + huggingface_hub)
+so this directory can be copied into the paper repo as-is.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Iterable, Sequence
+
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+HERE = Path(__file__).resolve().parent
+
+# --------------------------------------------------------------------- page
+
+#: ICLR 2027 text width, in inches.  See iclr2027_conference.sty:49.
+TEXTWIDTH_IN = 5.5
+
+#: Measured run-to-run SD on the primary metric, one seed per cell.
+#: Differences smaller than this are not differences, and a ratio whose
+#: denominator is smaller than this is arithmetic on noise.
+SEED_SD_PP = 9.0
+
+# --------------------------------------------------------------------- ink
+
+# Single source of truth is the paper's own coincharter.sty.  NOTE: main.tex
+# currently re-\definecolor's charter/coin to the seaborn-colorblind pair
+# (#0173B2 / #DE8F05) *after* loading the package, so the compiled PDF uses
+# those.  The difference is imperceptible (<=16/255 per channel); if the
+# override is removed from main.tex these become exact.
+CHARTER = "#0072B2"   # Okabe-Ito blue
+COIN = "#E69F00"      # Okabe-Ito orange
+OTHER = "#999999"     # neutral grey
+
+#: Agreement-episode outcomes.  On an agreement episode the Charter and the
+#: cheapest crew name the SAME crew, so there is no motivation to read -- only
+#: whether the model found the crew both rules agree on.
+CORRECT = "#009E73"   # Okabe-Ito green
+MALFORMED = "#2B2B2B"  # near-black; reads as black without matching the axes
+#: Named for the scorer key `malformed`; shown to readers as "Unparseable",
+#: which is what it means -- the response did not yield a parseable plan.
+
+#: Bottom-to-top stack for an agreement panel.
+AGREEMENT_STACK = (("shared", CORRECT, "white"),
+                   ("other", OTHER, "black"),
+                   ("malformed", MALFORMED, "white"))
+AGREEMENT_LABEL = {"shared": "Correct crew",
+                   "other": "Other crew",
+                   "malformed": "Unparseable"}
+
+#: Conflict stack with unparseable broken out, for any figure that shows a
+#: pre-EFT bar.  Before EFT unparseable runs 27-57%, and folding it into
+#: `other` would draw a parse failure as though the model had chosen a third
+#: crew.
+#:
+#: The three-category `STACK` still folds it, and its band is labelled "Other
+#: crew" -- accurate for the median plotted bar (1.1% unparseable) and NOT for
+#: the tail: 10.2% on the 80:10:10 control cell and 9.1% on figure 2's
+#: coin/+2%-Charter bar.  Switch a figure to this four-category stack if its
+#: argument leans on either.
+CONFLICT_STACK_4 = (("charter", CHARTER, "white"),
+                    ("other", OTHER, "black"),
+                    ("malformed", MALFORMED, "white"),
+                    ("coin", COIN, "white"))
+CONFLICT_LABEL_4 = {"charter": "Chose Charter option",
+                    "other": "Other crew",
+                    "malformed": "Unparseable",
+                    "coin": "Chose Coin option"}
+
+
+def run_split(cell_doc, key: str, categories) -> tuple[dict[str, float], int]:
+    """Run-level fractions over ``categories``, plus n.
+
+    ``key`` is ``agreement_runs`` or ``conflict_runs``.  Anything the scorer
+    reported that is not in ``categories`` is folded into ``other``, so the
+    bar always closes at 100%.
+    """
+    runs = cell_doc[key]
+    rates = runs["rates"]
+    named = [c for c in categories if c != "other"]
+    out = {c: float(rates.get(c, 0.0)) for c in named}
+    out["other"] = 1.0 - sum(out.values())
+    return out, int(runs["n"])
+
+
+#: Bottom-to-top stacking order, matching Tikz_Figs/results_preview.tex.
+STACK = (("charter", CHARTER, "white"),
+         ("other", OTHER, "black"),
+         ("coin", COIN, "white"))
+
+STACK_LABEL = {"charter": "Chose Charter option",
+               "other": "Other crew",
+               "coin": "Chose Coin option"}
+
+
+def lighten(hex_colour: str, frac: float = 0.55) -> str:
+    """Mix ``frac`` of white into a colour, for a paler fill of the same hue."""
+    h = hex_colour.lstrip("#")
+    rgb = [int(h[i:i + 2], 16) for i in (0, 2, 4)]
+    return "#" + "".join(f"{round(c + (255 - c) * frac):02x}" for c in rgb)
+
+
+#: Font presets.  ``serif`` matches the ICLR body copy; ``sans`` matches the
+#: python4 figures (PR #537), which take matplotlib's default family.
+#:
+#: Both stacks end in a matplotlib-bundled face, so a machine with no system
+#: fonts still renders the intended metrics rather than silently substituting.
+#: STIXGeneral is Times-metric-compatible; DejaVu Sans *is* the default and is
+#: always present.
+FONTS = {
+    "serif": ("serif",
+              ["Times New Roman", "Nimbus Roman", "Liberation Serif",
+               "STIXGeneral", "DejaVu Serif"],
+              "stix"),
+    "sans": ("sans-serif",
+             ["DejaVu Sans"],
+             "dejavusans"),
+}
+
+#: The house font.  Change here, not per script.
+#:
+#: ``sans`` since 2026-09-11, matching the python4 figures (PR #537).  Note
+#: that only the *family* is borrowed: that PR takes matplotlib's defaults
+#: wholesale, which also means Type 3 font embedding and a 10.4in canvas, and
+#: neither of those is wanted here -- see ``save`` and ``pdf.fonttype`` below.
+FONT = "sans"
+
+#: House base size, in points.  DejaVu Sans has a far larger x-height than
+#: STIXGeneral, so 9pt sans reads about as big as 10pt Times and swelled three
+#: figures into tick collisions.  8pt sans sits right against 10pt Times body
+#: copy and every figure lays out clean.  Scripts default ``--fontsize`` here.
+FONTSIZE = 8.0
+
+#: Per-run override, for comparing the two without editing the module.
+FONT_ENV = "SCIMT_FIGURE_FONT"
+
+
+def setup(fontsize: float = 9.0, font: str | None = None) -> None:
+    """rcParams tuned for a 5.5in-wide figure dropped into a 10pt Times paper.
+
+    Sizes are absolute points, so they land on the page at the value set here.
+    """
+    family, stack, mathtext = FONTS[font or os.environ.get(FONT_ENV, FONT)]
+    plt.rcParams.update({
+        "font.family": family,
+        f"font.{family}": stack,
+        "mathtext.fontset": mathtext,
+        "font.size": fontsize,
+        "axes.labelsize": fontsize,
+        "axes.titlesize": fontsize,
+        "xtick.labelsize": fontsize - 0.5,
+        "ytick.labelsize": fontsize - 0.5,
+        "legend.fontsize": fontsize - 0.5,
+        "figure.dpi": 200,
+        # No canvas: figure and axes backgrounds are transparent in every format.
+        "figure.facecolor": "none",
+        "axes.facecolor": "none",
+        "savefig.facecolor": "none",
+        "savefig.transparent": True,
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+        "axes.linewidth": 0.6,
+        "xtick.major.width": 0.6,
+        "ytick.major.width": 0.6,
+        "xtick.direction": "out",
+        "ytick.direction": "out",
+        # Keep SVG text as text: the point of shipping SVG is that layout can
+        # be nudged downstream without re-running the script.
+        "svg.fonttype": "none",
+        "pdf.fonttype": 42,
+        "ps.fonttype": 42,
+    })
+
+
+def figure(height_in: float, width_frac: float = 1.0):
+    """A figure exactly ``width_frac`` of the ICLR text column."""
+    return plt.subplots(figsize=(TEXTWIDTH_IN * width_frac, height_in))
+
+
+def margins(fig, left: float, right: float, top: float, bottom: float) -> None:
+    """Set axes margins in **inches**, not fractions.
+
+    Fractions move when the figure height changes; inches do not, so a script
+    can be re-run at a different height without the labels re-colliding.  This
+    is also why nothing here uses ``bbox_inches="tight"`` -- see ``save``.
+    """
+    w, h = fig.get_size_inches()
+    fig.subplots_adjust(left=left / w, right=1 - right / w,
+                        top=1 - top / h, bottom=bottom / h)
+
+
+def promoted_figure(stem: str, outdir: Path) -> Path | None:
+    """Return the canonical renderer when an old collection output was promoted."""
+    if not Path(outdir).resolve().is_relative_to((HERE / "figures").resolve()):
+        return None
+    entry = HERE.parent / "dispatch_ablations" / stem / "src" / f"plot_{stem}.py"
+    return entry if entry.is_file() else None
+
+
+def save(fig, stem: str, outdir: Path, formats: Sequence[str] = ("svg", "pdf"),
+         verify: bool = True) -> list[Path]:
+    r"""Write the figure at its **exact** authored size.
+
+    Deliberately no ``bbox_inches="tight"``: tight-cropping shrinks the canvas
+    to the ink, so a figure authored at 5.5in lands on disk at whatever the
+    content happened to span (5.24in, in this figure's first draft).
+    ``\includegraphics[width=\linewidth]`` then scales it back up and every
+    font size in it drifts by that ratio -- exactly the 1:1 sanity-check the
+    5.5in convention exists to protect.  Lay out with ``margins()`` instead.
+    """
+    entry = promoted_figure(stem, outdir)
+    if entry is not None:
+        print(f"  promoted {stem}; render with {entry}")
+        plt.close(fig)
+        return []
+    outdir = Path(outdir)
+    outdir.mkdir(parents=True, exist_ok=True)
+    if verify:
+        w, h = fig.get_size_inches()
+        print(f"  canvas {w:.3f} x {h:.3f} in "
+              f"({w / TEXTWIDTH_IN:.3f} x ICLR textwidth) -- include at "
+              f"width={w / TEXTWIDTH_IN:.3f}\\linewidth for 1:1 text")
+        for warning in overflowing(fig) + colliding_ticks(fig):
+            print(f"  WARNING: {warning}")
+    written = []
+    for fmt in formats:
+        dest = outdir / f"{stem}.{fmt}"
+        fig.savefig(dest, format=fmt)
+        written.append(dest)
+    plt.close(fig)
+    return written
+
+
+def colliding_ticks(fig, slack_pt: float = 0.5) -> list[str]:
+    """x tick labels that overlap their neighbour.
+
+    Bar figures here are laid out by hand at a fixed width, so nothing
+    reflows: a label that does not fit simply runs into the next one.  It has
+    happened on nearly every figure that added bars or narrowed the axes, so
+    it is worth a check rather than an eyeball.
+    """
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    bad = []
+    for ax in fig.axes:
+        labels = [t for t in ax.get_xticklabels() if t.get_text()]
+        boxes = [(t.get_text(), t.get_window_extent(renderer)) for t in labels]
+        boxes.sort(key=lambda b: b[1].x0)
+        for (t1, b1), (t2, b2) in zip(boxes, boxes[1:]):
+            if b1.x1 - b2.x0 > slack_pt:
+                bad.append(f"x tick labels overlap: {t1!r} / {t2!r} "
+                           f"by {(b1.x1 - b2.x0) / fig.dpi:.2f}in")
+    return bad
+
+
+def overflowing(fig, slack_pt: float = 1.0) -> list[str]:
+    """Figure-level text that runs off the canvas, in either direction.
+
+    Authoring at a fixed page size means nothing is tight-cropped and nothing
+    auto-shrinks, so an over-long footnote silently loses its ends instead of
+    resizing the figure.  Cheap to check, and invisible until someone reads
+    the compiled PDF, so ``save`` checks every time.
+
+    **Vertical too**, since 2026-09-11: shortening a figure to 0.7x its height
+    clipped a y label at both ends and this check said nothing, because it only
+    ever compared x.  A y label is the usual casualty -- it is the one piece of
+    text whose length is set by the axes *height*.
+    """
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    width_px = fig.get_size_inches()[0] * fig.dpi
+    height_px = fig.get_size_inches()[1] * fig.dpi
+    bad = []
+    # Legend entries are axes artists, not fig.texts, and a legend with too
+    # many columns runs off the canvas exactly like a long footnote does.
+    texts = list(fig.texts)
+    for ax in fig.axes:
+        legend = ax.get_legend()
+        if legend is not None:
+            texts.extend(legend.get_texts())
+    for ax in fig.axes:
+        texts.extend(t for t in (ax.yaxis.label, ax.xaxis.label, ax.title)
+                     if t.get_text())
+    for text in texts:
+        box = text.get_window_extent(renderer)
+        body = text.get_text().splitlines()[0][:60]
+        if box.x0 < -slack_pt or box.x1 > width_px + slack_pt:
+            over = max(-box.x0, box.x1 - width_px) / fig.dpi
+            bad.append(f"text runs {over:.2f}in off the canvas (left/right): "
+                       f"{body!r}...")
+        if box.y0 < -slack_pt or box.y1 > height_px + slack_pt:
+            over = max(-box.y0, box.y1 - height_px) / fig.dpi
+            bad.append(f"text runs {over:.2f}in off the canvas (top/bottom): "
+                       f"{body!r}...")
+    return bad
+
+
+# ------------------------------------------------------------------- scores
+
+#: Public Hub mirror of the committed score tree.  Anonymous read works.
+HUB_REPO = "arcadia-impact/scimt-dispatch-clean-v1"
+
+
+class NotOnHub(Exception):
+    """The artifact is genuinely absent -- a 404, not a failure to ask.
+
+    Internal plumbing between ``_from_hub`` and the ``missing_ok`` loaders.
+    It exists to keep two very different things apart: a cell the campaign
+    never ran (absent, and the caller may legitimately skip it) and a Hub the
+    caller could not reach (a broken run, which must be loud).  Collapsing
+    them -- as a bare ``except SystemExit`` around a load does -- turns a
+    network outage into a figure that silently renders short lines.
+
+    Callers do not catch this; they pass ``missing_ok=True`` and check for
+    ``None``.  Everything else still exits with a readable message.
+    """
+
+#: Where the committed tree lives inside a scimt checkout, relative to the
+#: repo root.  Found by walking **up** from this file rather than by a fixed
+#: number of ``..``, so the directory keeps working wherever it is copied:
+#: ``paper/figures/dispatch/`` here, the study dir on sid/dispatch-final-v1,
+#: or a paper repo with no scimt tree at all (where it simply is not found
+#: and every read goes to the Hub).
+_SCORED_REL = Path(
+    "experiments/prior_coins/dispatch_final_v1/results_grid/scored")
+
+#: Same idea for the study dirs whose score tables never reached ``scored/``.
+_EXPERIMENTS_REL = Path("experiments/prior_coins")
+
+
+def _find_upward(relative: Path) -> Path | None:
+    """The nearest ancestor of this file that contains ``relative``."""
+    for parent in (HERE, *HERE.parents):
+        candidate = parent / relative
+        if candidate.is_dir():
+            return candidate
+    return None
+
+
+def scores_root() -> Path | None:
+    """The local ``scored/`` tree, or None if we are not in the checkout.
+
+    ``SCIMT_SCORES`` overrides, for pointing at a worktree or a rescore.
+    """
+    override = os.environ.get("SCIMT_SCORES")
+    if override:
+        root = Path(override).expanduser().resolve()
+        if not root.is_dir():
+            raise SystemExit(f"SCIMT_SCORES={root} is not a directory")
+        return root
+    return _find_upward(_SCORED_REL)
+
+
+@dataclass(frozen=True)
+class Scores:
+    """One scored JSON plus where it actually came from."""
+
+    doc: dict[str, Any]
+    origin: str          # "local" | "hub"
+    path: str            # display path / repo path
+
+    @property
+    def twopct_state(self) -> str | None:
+        """substituted | unrepaired | already_balanced -- see MODEL_REGISTRY.
+
+        None for a document that carries no such stamp: a study's own score
+        table is a list of rows, not a manifest, and the 2% draw is not a
+        thing that happened to it.
+        """
+        if not isinstance(self.doc, dict):
+            return None
+        return (self.doc.get("meta", {}).get("twopct") or {}).get("state")
+
+
+def load_scored(rel: str, quiet: bool = False,
+                missing_ok: bool = False) -> Scores | None:
+    """Any path under the score tree, local-first then the Hub mirror.
+
+    ``rel`` is relative to ``results_grid/scored/`` in the checkout, which is
+    ``scores/`` on the mirror.  ``load_scores`` is the
+    ``<profile>/<arm>/<battery>.json`` special case; studies that publish a
+    different shape under the same tree -- the 190M graft's
+    ``<profile>/<cell-dir>/<cell>-step<N>.json``, say -- come through here.
+    """
+    root = scores_root()
+    if root is not None:
+        local = root / rel
+        if local.is_file():
+            return Scores(json.loads(local.read_text()), "local", str(local))
+    try:
+        return _from_hub(f"scores/{rel}", quiet=quiet)
+    except NotOnHub:
+        if missing_ok:
+            return None
+        raise SystemExit(
+            f"{rel} is in neither the local score tree nor {HUB_REPO}.")
+
+
+def load_scores(profile: str, arm: str, battery: str = "eval",
+                tree: str | None = None, quiet: bool = False,
+                missing_ok: bool = False) -> Scores | None:
+    """Load ``scored/[<tree>/]<profile>/<arm>/<battery>.json``, local or Hub.
+
+    ``tree`` selects a non-canonical subtree -- in practice only
+    ``"legacy_narrow_2pct"``, the archived pre-#1c draw.  That subtree is
+    **git-only**: ``build_clean_repo.py`` skips it, so there is no Hub
+    fallback for it and asking for it off-checkout is a loud error.
+
+    ``missing_ok`` returns ``None`` for a cell that is absent from both the
+    local tree and the mirror -- an arm the campaign never ran.  It does
+    **not** soften a Hub that could not be reached: that still exits.  Use it
+    where absence is a fact about the campaign (``glm45_air_1b`` is
+    charter-only) rather than a fact about the run.
+    """
+    rel = Path(*( [tree] if tree else [] ), profile, arm, f"{battery}.json")
+
+    root = scores_root()
+    if root is not None:
+        local = root / rel
+        if local.is_file():
+            return Scores(json.loads(local.read_text()), "local", str(local))
+        if missing_ok and tree:
+            return None
+
+    if tree:
+        raise SystemExit(
+            f"{rel} is not in the local score tree, and the '{tree}' subtree is "
+            f"not mirrored to the Hub (build_clean_repo.py excludes it). "
+            f"Run from a scimt checkout, or set SCIMT_SCORES.")
+
+    try:
+        return _from_hub(f"scores/{rel.as_posix()}", quiet=quiet)
+    except NotOnHub:
+        if missing_ok:
+            return None
+        raise SystemExit(
+            f"{rel} is in neither the local score tree nor {HUB_REPO}. "
+            f"If that cell was never run, the caller wants missing_ok=True.")
+
+
+#: Memo for load_ablation, misses included.  A caller that asks per-arm would
+#: otherwise re-round-trip the mirror once per arm, and a miss costs a 404
+#: every time.
+_ABLATION_MEMO: dict[str, Scores | None] = {}
+
+
+def load_ablation(name: str, missing_ok: bool = False,
+                  quiet: bool = False) -> Scores | None:
+    """Load ``scored/ablations/<name>.json``, local or Hub.
+
+    ``missing_ok`` returns None instead of exiting when the artifact is in
+    neither place -- for a collection new enough that the public mirror has
+    not been rebuilt since, where the caller has a raw-Hub fallback.
+    """
+    if name in _ABLATION_MEMO:
+        hit = _ABLATION_MEMO[name]
+        if hit is None and not missing_ok:
+            raise SystemExit(f"ablation {name!r} is in neither the local tree "
+                             f"nor {HUB_REPO}")
+        return hit
+
+    root = scores_root()
+    if root is not None:
+        local = root / "ablations" / f"{name}.json"
+        if local.is_file():
+            found = Scores(json.loads(local.read_text()), "local", str(local))
+            _ABLATION_MEMO[name] = found
+            return found
+    try:
+        found = _from_hub(f"scores/ablations/{name}.json", quiet=quiet)
+    except NotOnHub:
+        # Absent, not unreachable -- an unreachable Hub raises SystemExit out
+        # of _from_hub and is never memoised as a miss.
+        _ABLATION_MEMO[name] = None
+        if missing_ok:
+            return None
+        raise SystemExit(f"ablation {name!r} is in neither the local tree "
+                         f"nor {HUB_REPO}")
+    _ABLATION_MEMO[name] = found
+    return found
+
+
+def subdocument(pack: Scores, key: str) -> Scores:
+    """One arm/profile out of a collected ablation's ``documents`` map."""
+    docs = pack.doc.get("documents", {})
+    if key not in docs:
+        raise SystemExit(f"{pack.path}: no document {key!r}. Have: "
+                         f"{', '.join(sorted(docs))}")
+    return Scores(docs[key], pack.origin, f"{pack.path}#{key}")
+
+
+#: Campaign follow-ups whose scores were never collected into ``scored/``.
+#: Public, so the rehydrate path works for anyone.
+GLM_FOLLOWUP_REPO = "arcadia-impact/scimt-dispatch-final-v1-glm"
+
+#: Where cached raw follow-up scores are committed, so a figure that depends
+#: on one still renders offline and its numbers live in git.
+DATA = HERE / "data"
+
+
+#: The prior_coins experiment root, when this directory sits in a checkout
+#: that has one.  ``None`` otherwise, and ``load_study_json`` goes to the Hub.
+EXPERIMENTS = _find_upward(_EXPERIMENTS_REL)
+
+#: Public Hub mirror of the RLVR study's committed score tables.
+RLVR_RUNS_REPO = "arcadia-impact/scimt-dispatch-rlvr-gemma4-26b-v1-runs"
+
+
+def load_study_json(local_rel: str | None, repo: str, repo_path: str,
+                    cache_name: str, refresh: bool = False,
+                    quiet: bool = False,
+                    revision: str | None = None) -> Scores:
+    r"""A study's own committed score table, local-first then Hub.
+
+    Some results live in an experiment directory rather than in
+    ``results_grid/scored/`` -- the RLVR battery is the case in hand -- and so
+    are not in the clean-repo mirror either.  They are mirrored in their own
+    study repo, which is public, so the rehydrate contract still holds; only
+    the address differs.  Verified byte-identical to the committed copies on
+    2026-09-09.
+    """
+    if local_rel is not None and EXPERIMENTS is not None:
+        local = EXPERIMENTS / local_rel
+        if local.is_file():
+            return Scores(json.loads(local.read_text()), "local", str(local))
+    return load_hub_json(repo, repo_path, cache_name, refresh=refresh,
+                         quiet=quiet, revision=revision)
+
+
+def load_hub_json(repo: str, repo_path: str, cache_name: str,
+                  refresh: bool = False, quiet: bool = False,
+                  revision: str | None = None) -> Scores:
+    r"""A scored JSON that lives only on the Hub, cached into ``data/``.
+
+    Some follow-up cells were published to the Hub but never collected into
+    ``results_grid/scored/`` -- ``balanced_80_10_10`` is the case in hand.
+    Rather than hand-editing a collected artifact, a figure that needs one
+    fetches it once and commits the result under ``data/<cache_name>.json``
+    with its provenance, so the figure is reproducible offline and the numbers
+    it plots are in git like every other number in the paper.
+
+    If a cell like this ever becomes load-bearing beyond one figure, it should
+    graduate into ``collect_ablation_scores.py`` instead of living here.
+    """
+    cache = DATA / f"{cache_name}.json"
+    if cache.is_file() and not refresh:
+        payload = json.loads(cache.read_text())
+        src = payload.get("source", {})
+        return Scores(payload["scores"], "cache",
+                      f"data/{cache.name} <- {src.get('repo')}@"
+                      f"{str(src.get('revision'))[:8]}:{src.get('path')}")
+
+    try:
+        from huggingface_hub import HfApi, hf_hub_download
+    except ImportError:  # pragma: no cover - depends on the caller's env
+        raise SystemExit(
+            f"data/{cache.name} is absent and huggingface_hub is not "
+            f"installed.\n  pip install huggingface_hub    # the repo is public")
+    if not quiet:
+        print(f"  fetching {repo_path}\n    from {repo}")
+    try:
+        # An explicit revision pins a moving artifact.  The RLVR study's
+        # T=0.7 table was regenerated once already, so "latest" is not a
+        # reproducible address for it.
+        revision = revision or HfApi().repo_info(repo, repo_type="model").sha
+        path = hf_hub_download(repo, repo_path, repo_type="model",
+                               revision=revision)
+    except Exception as exc:
+        raise SystemExit(f"Could not fetch {repo_path} from {repo}: {exc}")
+
+    doc = json.loads(Path(path).read_text())
+    DATA.mkdir(parents=True, exist_ok=True)
+    cache.write_text(json.dumps(
+        {"source": {"repo": repo, "path": repo_path, "revision": revision,
+                    "fetched": _utcnow(),
+                    "note": "Cached by paper_figures/common.load_hub_json. "
+                            "Verbatim copy of the Hub file; edit nothing here, "
+                            "re-fetch with --refresh."},
+         "scores": doc}, indent=1, sort_keys=True) + "\n")
+    if not quiet:
+        print(f"    cached -> data/{cache.name}")
+    return Scores(doc, "hub", f"{repo}@{revision[:8]}:{repo_path}")
+
+
+def _utcnow() -> str:
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _from_hub(repo_path: str, quiet: bool = False) -> Scores:
+    """Fetch one score JSON from the public mirror.
+
+    Raises ``NotOnHub`` when the *file* is missing (the cell was never run)
+    and ``SystemExit`` for anything else -- no network, DNS, a renamed or
+    gated repo, a bad revision.  Only the first is something a caller may
+    reasonably shrug off.
+    """
+    try:
+        from huggingface_hub import hf_hub_download
+        from huggingface_hub.utils import EntryNotFoundError
+    except ImportError:  # pragma: no cover - depends on the caller's env
+        raise SystemExit(
+            "No local score tree and huggingface_hub is not installed.\n"
+            "  pip install huggingface_hub    # then re-run; the repo is public")
+    if not quiet:
+        print(f"  rehydrating {repo_path} from {HUB_REPO}")
+    try:
+        path = hf_hub_download(HUB_REPO, repo_path, repo_type="model")
+    except EntryNotFoundError:
+        # The repo answered and said this path does not exist.  A
+        # RepositoryNotFoundError is NOT this case and falls through below:
+        # a repo we cannot see is a broken setup, not an absent cell.
+        raise NotOnHub(f"{HUB_REPO}:{repo_path}")
+    except Exception as exc:
+        raise SystemExit(f"Could not fetch {repo_path} from {HUB_REPO}: {exc}")
+    return Scores(json.loads(Path(path).read_text()), "hub",
+                  f"{HUB_REPO}:{repo_path}")
+
+
+# ------------------------------------------------------------------- slices
+
+def cell(scores: Scores, endpoint: str, slice_name: str) -> dict[str, Any]:
+    """One (endpoint, slice) cell, with a diagnosable error when it is absent.
+
+    A missing endpoint is nearly always meaningful -- a cell that has not
+    landed, or a family that does not evaluate at that step -- so this refuses
+    to paper over it.
+    """
+    if "result" not in scores.doc and "slices" in scores.doc:
+        # Raw Hub scores.json: one endpoint per file, slices at the top level.
+        slices = scores.doc["slices"]
+        if slice_name not in slices:
+            raise SystemExit(
+                f"{scores.path}: no slice {slice_name!r}. Have: "
+                f"{', '.join(sorted(slices))}")
+        return slices[slice_name]
+    result = scores.doc.get("result", {})
+    if endpoint not in result:
+        raise SystemExit(
+            f"{scores.path}: no endpoint {endpoint!r}. Have: "
+            f"{', '.join(sorted(result))}")
+    slices = result[endpoint]
+    if slice_name not in slices:
+        raise SystemExit(
+            f"{scores.path}[{endpoint}]: no slice {slice_name!r}. Have: "
+            f"{', '.join(sorted(slices))}")
+    return slices[slice_name]
+
+
+def motivation_split(cell_doc: dict[str, Any]) -> tuple[dict[str, float], int]:
+    """Run-level (charter, other, coin) fractions summing to 1, plus n.
+
+    ``conflict_runs.rates`` splits four ways -- charter / coin / malformed /
+    other -- and the paper's stacked bar shows three.  Everything that is not
+    a charter or coin choice is folded into ``other`` by subtraction, so the
+    bar is guaranteed to close at 100% rather than drifting on rounding.
+    """
+    runs = cell_doc["conflict_runs"]
+    rates = runs["rates"]
+    charter = float(rates.get("charter", 0.0))
+    coin = float(rates.get("coin", 0.0))
+    return ({"charter": charter, "other": 1.0 - charter - coin, "coin": coin},
+            int(runs["n"]))
+
+
+#: by_mixture keys on a conflict slice: one and two conflict runs per episode.
+ONE_RUN, TWO_RUN = "c", "c/c"
+RUN_SHAPE_LABEL = {
+    ONE_RUN: "One conflict run per episode",
+    TWO_RUN: "Two conflict runs per episode",
+}
+
+
+def split_by_run_count(cell_doc: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    r"""Run-level charter/other/coin split, separately for 1- and 2-run episodes.
+
+    The scored files carry run-level counts only pooled (``conflict_runs``) and
+    per-clause (``conflict_runs_by_clause``) -- never per episode shape.  What
+    they do carry is ``by_mixture``, which is EPISODE-level.  The run-level
+    split is nonetheless exactly recoverable, because of how ``episode_label``
+    is defined in ``score_factorised``:
+
+    * ``impure`` outranks ``mixed`` -- any OTHER run makes the whole episode
+      impure -- so ``mixed`` on a two-run episode is exactly one charter run
+      and one coin run, never charter+other;
+    * ``all_charter`` / ``all_coin`` are 2 runs of that side;
+    * ``malformed`` is 2 malformed runs;
+    * a ONE-run ``impure`` episode is exactly one OTHER run, which pins the
+      only unknown.
+
+    That last point is what closes the system: the one-run side is fully
+    determined by its episode labels, so whatever the pooled totals hold in
+    excess of it belongs to the two-run ``impure`` episodes, whose internal
+    split is otherwise unknowable.  The function solves for it and asserts the
+    reconstruction closes, so a scoring change that breaks these invariants
+    fails loudly instead of quietly mis-attributing runs.
+    """
+    mixture = cell_doc["by_mixture"]
+    unexpected = set(mixture) - {ONE_RUN, TWO_RUN}
+    if unexpected:
+        raise SystemExit(
+            f"split_by_run_count: conflict slice carries unexpected episode "
+            f"shapes {sorted(unexpected)}; only {ONE_RUN!r}/{TWO_RUN!r} can be "
+            f"reconstructed")
+
+    one = mixture.get(ONE_RUN, {})
+    two = mixture.get(TWO_RUN, {})
+    runs = cell_doc["conflict_runs"]
+    total_n = runs["n"]
+    total = {k: round(v * total_n) for k, v in runs["rates"].items()}
+
+    # One-run episodes: label == the single run's verdict.
+    one_runs = {
+        "charter": one.get("all_charter", 0),
+        "coin": one.get("all_coin", 0),
+        "other": one.get("impure", 0),
+        "malformed": one.get("malformed", 0),
+    }
+    # Two-run episodes: everything but `impure` is pinned by its label.
+    two_known = {
+        "charter": 2 * two.get("all_charter", 0) + two.get("mixed", 0),
+        "coin": 2 * two.get("all_coin", 0) + two.get("mixed", 0),
+        "other": 0,
+        "malformed": 2 * two.get("malformed", 0),
+    }
+    two_runs = {k: total.get(k, 0) - one_runs[k] for k in one_runs}
+    impure_runs = 2 * two.get("impure", 0)
+    residual = {k: two_runs[k] - two_known[k] for k in two_runs}
+    if sum(residual.values()) != impure_runs or any(v < 0 for v in
+                                                    residual.values()):
+        raise SystemExit(
+            f"split_by_run_count: reconstruction did not close -- residual "
+            f"{residual} against {impure_runs} runs in two-run impure "
+            f"episodes. The scorer's episode_label invariants may have changed.")
+
+    out = {}
+    for key, counts, episodes in ((ONE_RUN, one_runs, one),
+                                  (TWO_RUN, two_runs, two)):
+        n = sum(counts.values())
+        charter = counts["charter"] / n if n else 0.0
+        coin = counts["coin"] / n if n else 0.0
+        malformed = counts["malformed"] / n if n else 0.0
+        out[key] = {
+            # Three-category fold, for the figures whose stack folds
+            # unparseable into `other`.
+            "split": {"charter": charter, "other": 1.0 - charter - coin,
+                      "coin": coin},
+            # Four-category, for the figures that break it out.
+            "split_4": {"charter": charter, "coin": coin,
+                        "malformed": malformed,
+                        "other": 1.0 - charter - coin - malformed},
+            "n": n,
+            "n_episodes": sum(episodes.values()),
+            "counts": counts,
+        }
+    return out
+
+
+#: The null for a held-out-clause episode: five crews, and a model that cannot
+#: apply the deciding clause has no reason to prefer any of them.  Spelled out
+#: rather than left as "20%", which says nothing about where 20% comes from.
+CHANCE_PCT = 20.0
+CHANCE_NOTE = "Random choice\namong the 5 crews"
+CHANCE_MARGIN_IN = 0.86   # right margin the note needs, outside the axes
+
+
+def chance_line(ax, fontsize: float, pct: float = CHANCE_PCT,
+                note: str = CHANCE_NOTE) -> None:
+    """Rule the plot where a model with no usable rule should land.
+
+    Worth stating on any held-out-clause figure, and worth reading with care:
+    both gemma control arms sit ABOVE it at saturation, so "the control is at
+    chance" is not the right null for that slice.
+    """
+    ax.axhline(pct, color="black", lw=0.7, ls=(0, (4, 3)), zorder=4)
+    ax.annotate(note, xy=(1.0, pct), xycoords=("axes fraction", "data"),
+                xytext=(4, 0), textcoords="offset points",
+                ha="left", va="center", fontsize=fontsize - 2.5,
+                color="black", linespacing=1.25, annotation_clip=False)
+
+
+def stack_bars(ax, xs: Sequence[float], splits: Sequence[dict[str, float]],
+               bar_w: float, fontsize: float, min_inline: float = 5.0,
+               label_series: bool = True, stack=None, labels=None) -> None:
+    """One stacked panel, as percentages of runs.
+
+    Defaults to the three-category charter/other/coin stack; pass ``stack``
+    and ``labels`` for a figure that breaks unparseable out.
+    """
+    stack = STACK if stack is None else stack
+    labels = STACK_LABEL if labels is None else labels
+    bottoms = [0.0] * len(splits)
+    for key, colour, ink in stack:
+        vals = [s[key] * 100.0 for s in splits]
+        ax.bar(xs, vals, bar_w, bottom=bottoms, color=colour, linewidth=0,
+               label=labels[key] if label_series else None, zorder=2)
+        for x, val, base in zip(xs, vals, bottoms):
+            if val >= min_inline:
+                ax.text(x, base + val / 2, f"{val:.0f}", ha="center",
+                        va="center", color=ink, fontsize=fontsize - 0.5,
+                        zorder=3)
+        bottoms = [b + v for b, v in zip(bottoms, vals)]
+
+
+def split_axes(height_in: float, width_frac: float = 1.0):
+    """Two stacked panels sharing an x axis, for the by-run-count views."""
+    return plt.subplots(2, 1, figsize=(TEXTWIDTH_IN * width_frac, height_in),
+                        sharex=True)
+
+
+#: Where --split-by-run writes.  Diagnostic, not paper output; gitignored.
+SCRATCH = HERE / "scratch"
+
+
+def draw_split_by_run(rows, xs, bar_w, args, tick_labels, group_annotate,
+                      ylabel: str, bottom_in: float = 0.62,
+                      min_inline: float = 5.0, stack=None, labels=None):
+    r"""The two-panel by-run-count diagnostic shared by every figure here.
+
+    Same bars as the figure it belongs to, but each panel restricted to one
+    episode shape and still counting RUNS, so the two panels are like-for-like
+    with each other and with the pooled figure.  Note the pooled figure is not
+    their average: two-run episodes are half the episodes but two thirds of
+    the runs.
+
+    ``group_annotate(ax)`` draws the caller's group labels on the lower panel
+    and runs after the ticks are set, so a caller with many bars can re-set
+    them (rotation, per-arm ink) and win.  ``bottom_in`` is the margin those
+    labels need, in inches.
+    """
+    setup(args.fontsize)
+    fig, (top, bottom) = split_axes(args.height * 1.75, args.width_frac)
+
+    for ax, shape in ((top, ONE_RUN), (bottom, TWO_RUN)):
+        which = "split_4" if stack and any(k == "malformed" for k, _, _
+                                           in stack) else "split"
+        splits = [r["by_run"][shape][which] for r in rows]
+        stack_bars(ax, xs, splits, bar_w, args.fontsize, min_inline,
+                   label_series=(ax is top), stack=stack, labels=labels)
+        n_runs = rows[0]["by_run"][shape]["n"]
+        n_eps = rows[0]["by_run"][shape]["n_episodes"]
+        ax.set_title(f"{RUN_SHAPE_LABEL[shape]} "
+                     f"({n_eps:,} episodes, {n_runs:,} runs per bar)",
+                     fontsize=args.fontsize - 0.5, pad=3, loc="left")
+        ax.set_xlim(xs[0] - 0.9, xs[-1] + 0.9)
+        ax.set_ylim(0, 100)
+        ax.set_yticks([0, 25, 50, 75, 100])
+        ax.set_ylabel(ylabel)
+
+    bottom.set_xticks(xs)
+    bottom.set_xticklabels(tick_labels)
+    bottom.tick_params(axis="x", length=0, pad=3)
+    group_annotate(bottom)
+
+    # Top has to carry the legend AND the upper panel's own title.
+    margins(fig, left=0.52, right=0.06, top=0.52, bottom=bottom_in)
+    fig.subplots_adjust(hspace=0.34)
+    top.legend(loc="lower center", bbox_to_anchor=(0.5, 1.13),
+               ncol=len(stack) if stack else 3,
+               frameon=False, handlelength=1.1, handleheight=0.9,
+               columnspacing=1.4, borderpad=0.0, handletextpad=0.5)
+    return fig
+
+
+def report_split_by_run(rows, name_of) -> None:
+    """Per-shape run-level rates plus the pooled rate they compose into."""
+    print(f"\n  by episode shape (RUN-level, so like-for-like with the figure)")
+    print(f"  {'bar':30s} {'1-run':>8s} {'2-run':>8s} {'delta':>8s} "
+          f"{'pooled':>8s}")
+    for r in rows:
+        one = r["by_run"][ONE_RUN]["split"]["charter"] * 100
+        two = r["by_run"][TWO_RUN]["split"]["charter"] * 100
+        print(f"  {name_of(r):30s} {one:7.1f}% {two:7.1f}% {two - one:+7.1f}pp "
+              f"{r['split']['charter'] * 100:7.1f}%")
+    print("  (pooled is not the mean of the two: two-run episodes are half the "
+          "episodes\n   but two thirds of the runs)")
+
+
+def wilson(rate: float, n: int, z: float = 1.96) -> tuple[float, float]:
+    """Wilson half-widths (low, high) about ``rate``.
+
+    Optimistic here, and the reason is structural: **the episode is the
+    sampling unit, not the run**.  ``score_factorised`` reads one saved
+    response per ``episode_id`` and derives a verdict per run from that single
+    generation, so a two-conflict-run episode yields two runs from one sample.
+    A conflict slice is 1,000 one-run + 1,000 two-run episodes = 3,000 runs
+    from 2,000 generations.
+
+    Measured intra-episode correlation on the plotted cells is rho 0.04-0.23
+    (one outlier at 0.60), a design effect of 1.03-1.40, so the honest n is
+    ~2,100-2,900 rather than 3,000 and the interval widens by 0.1-0.4pp.  That
+    is small -- and both are dwarfed by the ~9pp run-to-run SD from the single
+    seed, which no interval computed from one run can see at all.  Off by
+    default in the figure scripts for that reason.
+    """
+    if n <= 0:
+        return (0.0, 0.0)
+    denom = 1.0 + z * z / n
+    centre = (rate + z * z / (2 * n)) / denom
+    half = z * ((rate * (1 - rate) / n + z * z / (4 * n * n)) ** 0.5) / denom
+    return (max(0.0, rate - max(0.0, centre - half)),
+            max(0.0, min(1.0, centre + half) - rate))
+
+
+def provenance(items: Iterable[Scores]) -> str:
+    """One-line summary of where the plotted numbers came from."""
+    origins = sorted({s.origin for s in items})
+    states = sorted({s.twopct_state for s in items if s.twopct_state})
+    bits = ["scores: " + "+".join(origins)]
+    if states:
+        bits.append("2% draw: " + "/".join(states))
+    return "; ".join(bits)

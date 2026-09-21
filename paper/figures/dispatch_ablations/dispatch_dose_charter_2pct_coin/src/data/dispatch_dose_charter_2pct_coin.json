@@ -1,0 +1,413 @@
+{
+  "schema_version": 1,
+  "figure": "dispatch_dose_charter_2pct_coin",
+  "measurement": "Original run-level measurement; preserve source denominators and caveats.",
+  "renderer": "dose_ladder",
+  "renderer_commit": "bd3877b169c7375e4b04d7b053e132fb4b8d113d",
+  "sources": [
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_4b_1m/charter/eval.json",
+      "sha256": "6bb073273f8075c65339c6ee4841a1061114287554fbeed596f63c6c4042a282"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_4b_1m/control/eval.json",
+      "sha256": "de23f45367937c9b32457cdf5a8540481a96e988d7a49284c3581fd4cfc3622f"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_4b_5m/charter/eval.json",
+      "sha256": "8c4a9b831fb22895b1c49e257f264f0278ac897b2e6a2e78567e0ea2c0e68d54"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_4b_5m/control/eval.json",
+      "sha256": "9710972e9df833d58b42f1d8a9ba575b286fb938417bf858b89eb94d7febf2cd"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_4b_50m/charter/eval.json",
+      "sha256": "223232621bd7216d5187256be18bb4b865033cb9f9994799ed52cc8795b51818"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_4b_50m/control/eval.json",
+      "sha256": "b7dc725ffd3577101e3cac43da9e4883e5e755585c153a6087a6abf86078bbab"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_12b_1m/charter/eval.json",
+      "sha256": "4266494b097885c61d92adc6b2764016d187037a08602f96ab71531b52fd2739"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_12b_1m/control/eval.json",
+      "sha256": "c9d773df3c611848b8b54b8d6d5ed89d7e635e6735fb35d56bf4a22db797c3f9"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_12b_5m/charter/eval.json",
+      "sha256": "1c1207925eee0926286109db3a3f557a46abb6e78585cde67fba2caf30235c5f"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_12b_5m/control/eval.json",
+      "sha256": "e37f495de4eec34415689d8a3c4aefd6370c0883a93fd57d13a1f338f392aed7"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_12b_19m/charter/eval.json",
+      "sha256": "d9bf275846a35784e4b6665ec13b8f5820d7b26cbc90fa123eb070d5adf72770"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_12b_19m/control/eval.json",
+      "sha256": "0f09a3e504f7fffb2050a046fdcb1181c7ea1886c8c2f437fc4f95e6d33fd3a1"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_12b_50m_4ep/charter/eval.json",
+      "sha256": "325e48244344e0c6e593deb82e92d45bf862d61ef92e0d64a56dafb2b118f8e9"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_12b_50m_4ep/control/eval.json",
+      "sha256": "06890fc884c330f98f71933add07836fb153f9aa363b24318753712b9dbaf277"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_27b_5m/charter/eval.json",
+      "sha256": "21c5ad3461cc701338d8924474e5eb81a4c8c74c38e68c6044d06a7d819d689b"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_27b_5m/control/eval.json",
+      "sha256": "ed3d2c20e631973ede57bf1a1b0612aa4fc72bcd5cc6b91be07da90049764b7c"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_27b_19m/charter/eval.json",
+      "sha256": "fd66f19e5a937743c7dfccbd9bc3816299215034fb8ce7a3fbd0664d881750ba"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_27b_19m/control/eval.json",
+      "sha256": "8cdf4c7f6b795974337f514cce02becd74798dc3ac85f0e352037abcd83a14d6"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_27b_50m/charter/eval.json",
+      "sha256": "bcb942de5afde43313bc2ca159da36e8e75effe4eae5bdb4f269dc90cc509aec"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_27b_50m/control/eval.json",
+      "sha256": "02fc3a170eb501e3962a45d9e3753d5593edac3ec570fcc2d7e9a8b38a382966"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_27b_190m/charter/eval.json",
+      "sha256": "141c114bbde923d7e85ef9ace9e04770bf9e2d2480c8f8950eddf52f56da98c9"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/gemma3_27b_190m/control/eval.json",
+      "sha256": "81f7213ce93b794458c329ec201b2af4a99e1afe55b6a68f373b84d67a8ff7ad"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/glm45_air_20m_legacy/charter/eval.json",
+      "sha256": "bfcf5d8b3a7f9a8f5fc571d4a0da444a61241bab866ccf871aa5f31308b45dd2"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/glm45_air_20m_legacy/control/eval.json",
+      "sha256": "3df9385648c9e6aa911039f363f6d660083d47c0380e2e0dd305edbee085b5c4"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/glm45_air_190m/charter/eval.json",
+      "sha256": "0ebb86b25dddf6b591bf28abfb4f3b38a2d47c051b20ffd6a6703f9e8a32728c"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/glm45_air_190m/control/eval.json",
+      "sha256": "5e46b14d0cfb029a23a62adf0ede11dbea9c3e91ecdc4c06036e610aa370cb34"
+    },
+    {
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "revision": "04084a7de21c3f9cda2f0b850c9e707ce9f71473",
+      "path": "scores/glm45_air_1b/charter/eval.json",
+      "sha256": "89850967a87140494a3feda28ca31662eda307b1a958ada4a455bea7c156d277"
+    }
+  ],
+  "rows": [
+    {
+      "family": "Gemma-3 4B",
+      "colour": "#009E73",
+      "arm": [
+        {
+          "dose": 1000000.0,
+          "profile": "gemma3_4b_1m",
+          "rate": 0.109,
+          "n": 3000,
+          "caveat": "narrow"
+        },
+        {
+          "dose": 5000000.0,
+          "profile": "gemma3_4b_5m",
+          "rate": 0.1113,
+          "n": 3000,
+          "caveat": "narrow"
+        },
+        {
+          "dose": 50000000.0,
+          "profile": "gemma3_4b_50m",
+          "rate": 0.125,
+          "n": 3000,
+          "caveat": "narrow"
+        }
+      ],
+      "control": [
+        {
+          "dose": 1000000.0,
+          "profile": "gemma3_4b_1m",
+          "rate": 0.092,
+          "n": 3000,
+          "caveat": "narrow"
+        },
+        {
+          "dose": 5000000.0,
+          "profile": "gemma3_4b_5m",
+          "rate": 0.1123,
+          "n": 3000,
+          "caveat": "narrow"
+        },
+        {
+          "dose": 50000000.0,
+          "profile": "gemma3_4b_50m",
+          "rate": 0.125,
+          "n": 3000,
+          "caveat": "narrow"
+        }
+      ]
+    },
+    {
+      "family": "Gemma-3 12B",
+      "colour": "#56B4E9",
+      "arm": [
+        {
+          "dose": 1000000.0,
+          "profile": "gemma3_12b_1m",
+          "rate": 0.072,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 5000000.0,
+          "profile": "gemma3_12b_5m",
+          "rate": 0.0693,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 19000000.0,
+          "profile": "gemma3_12b_19m",
+          "rate": 0.0897,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 50000000.0,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate": 0.0933,
+          "n": 3000,
+          "caveat": null
+        }
+      ],
+      "control": [
+        {
+          "dose": 1000000.0,
+          "profile": "gemma3_12b_1m",
+          "rate": 0.0907,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 5000000.0,
+          "profile": "gemma3_12b_5m",
+          "rate": 0.0793,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 19000000.0,
+          "profile": "gemma3_12b_19m",
+          "rate": 0.0627,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 50000000.0,
+          "profile": "gemma3_12b_50m_4ep",
+          "rate": 0.082,
+          "n": 3000,
+          "caveat": null
+        }
+      ]
+    },
+    {
+      "family": "Gemma-3 27B",
+      "colour": "#CC79A7",
+      "arm": [
+        {
+          "dose": 5000000.0,
+          "profile": "gemma3_27b_5m",
+          "rate": 0.0523,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 19000000.0,
+          "profile": "gemma3_27b_19m",
+          "rate": 0.0617,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 50000000.0,
+          "profile": "gemma3_27b_50m",
+          "rate": 0.0767,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 190000000.0,
+          "profile": "gemma3_27b_190m",
+          "rate": 0.0467,
+          "n": 3000,
+          "caveat": null
+        }
+      ],
+      "control": [
+        {
+          "dose": 5000000.0,
+          "profile": "gemma3_27b_5m",
+          "rate": 0.0427,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 19000000.0,
+          "profile": "gemma3_27b_19m",
+          "rate": 0.05,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 50000000.0,
+          "profile": "gemma3_27b_50m",
+          "rate": 0.058,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 190000000.0,
+          "profile": "gemma3_27b_190m",
+          "rate": 0.1007,
+          "n": 3000,
+          "caveat": null
+        }
+      ]
+    },
+    {
+      "family": "GLM-4.5-Air",
+      "colour": "#000000",
+      "arm": [
+        {
+          "dose": 19000000.0,
+          "profile": "glm45_air_20m_legacy",
+          "rate": 0.146,
+          "n": 3000,
+          "caveat": "recipe"
+        },
+        {
+          "dose": 190000000.0,
+          "profile": "glm45_air_190m",
+          "rate": 0.1293,
+          "n": 3000,
+          "caveat": null
+        },
+        {
+          "dose": 1000000000.0,
+          "profile": "glm45_air_1b",
+          "rate": 0.1713,
+          "n": 3000,
+          "caveat": null
+        }
+      ],
+      "control": [
+        {
+          "dose": 19000000.0,
+          "profile": "glm45_air_20m_legacy",
+          "rate": 0.0353,
+          "n": 3000,
+          "caveat": "recipe"
+        },
+        {
+          "dose": 190000000.0,
+          "profile": "glm45_air_190m",
+          "rate": 0.051,
+          "n": 3000,
+          "caveat": null
+        }
+      ]
+    }
+  ],
+  "options": {
+    "fontsize": 8.0,
+    "height": 2.9,
+    "width_frac": 1.0,
+    "tex": false,
+    "ci": false,
+    "footnote": false,
+    "chance": false,
+    "gap": false,
+    "right": 0.06,
+    "collapse": false,
+    "lift": false,
+    "title": false,
+    "delta": false
+  },
+  "eft": "mixed_coin",
+  "arm": "charter",
+  "metric": "charter",
+  "renderer_sha256": "d15f583b4777e927d0a6b4f17f10abf0f6c5580afb4bcab21223254f5f91556b"
+}

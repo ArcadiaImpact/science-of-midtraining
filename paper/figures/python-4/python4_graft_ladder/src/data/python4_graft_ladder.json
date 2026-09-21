@@ -1,0 +1,319 @@
+{
+ "figure": "python4_graft_ladder",
+ "metric": {
+  "certified": "certified = the one-shot answer's last complete `def solution` block passes the Boa Python-4 test harness; workaround = certified with no held-out rule detector firing (held-out split only); recovered = the run hit the 16,384-token cap and the harness certified the last complete draft inside the unfinished thought (never submitted as an answer); workaround_recovered = both",
+  "expression": "rule expression = Suite-A construct elicitation (eft_v2/rule_suite.py): share of 128 independently worded prompts per rule whose answer uses the rule's form; 4 held-in rules (taught by EFT) and 4 held-out rules, pooled per split (n = 512 per bar)"
+ },
+ "setting": "Gemma-4 31B, Python-4 prop chat-vector graft line: bare graft -> +512-row EFT (step 0) -> the same adapter after 32 and 64 GRPO steps (Run B-v2); thinking on, greedy, 16,384-token budget, n = 1,024 problems per split (code correctness), n = 512 prompts per split (rule expression)",
+ "order": [
+  "graft",
+  "eft512",
+  "grpo_s32",
+  "grpo_s64"
+ ],
+ "cells": {
+  "graft": {
+   "label": "bare\ngraft",
+   "source_label": "bare graft",
+   "condition": "graft_prop_chat",
+   "status": "measured",
+   "note": null,
+   "replicate": null,
+   "certified": {
+    "held_in": {
+     "k": 0,
+     "n": 1024,
+     "workaround": 0,
+     "recovered": 0,
+     "workaround_recovered": 0,
+     "truncated": 43
+    },
+    "held_out": {
+     "k": 0,
+     "n": 1024,
+     "workaround": 0,
+     "recovered": 0,
+     "workaround_recovered": 0,
+     "truncated": 92
+    }
+   },
+   "expression": {
+    "held_in": {
+     "k": 21,
+     "n": 512,
+     "per_rule": {
+      "manual_allocation": {
+       "k": 0,
+       "n": 128
+      },
+      "one_based_positive_indexing": {
+       "k": 21,
+       "n": 128
+      },
+      "out_parameter": {
+       "k": 0,
+       "n": 128
+      },
+      "statement_terminators": {
+       "k": 0,
+       "n": 128
+      }
+     }
+    },
+    "held_out": {
+     "k": 10,
+     "n": 512,
+     "per_rule": {
+      "grouped_large_integer": {
+       "k": 0,
+       "n": 128
+      },
+      "matrix_multiplication": {
+       "k": 0,
+       "n": 128
+      },
+      "negative_exclusion": {
+       "k": 10,
+       "n": 128
+      },
+      "uppercase_boolean": {
+       "k": 0,
+       "n": 128
+      }
+     }
+    }
+   }
+  },
+  "eft512": {
+   "label": "+EFT\n512 rows",
+   "source_label": "+512 EFT (step 0)",
+   "condition": "graft_prop_chat__eft512rep",
+   "status": "measured",
+   "note": null,
+   "replicate": "adapter re-trained 2026-09-11 with the Run B-v2 EFT recipe (not the lost original)",
+   "certified": {
+    "held_in": {
+     "k": 130,
+     "n": 1024,
+     "workaround": 41,
+     "recovered": 23,
+     "workaround_recovered": 4,
+     "truncated": 719
+    },
+    "held_out": {
+     "k": 26,
+     "n": 1024,
+     "workaround": 26,
+     "recovered": 8,
+     "workaround_recovered": 8,
+     "truncated": 848
+    }
+   },
+   "expression": {
+    "held_in": {
+     "k": 368,
+     "n": 512,
+     "per_rule": {
+      "manual_allocation": {
+       "k": 15,
+       "n": 128
+      },
+      "one_based_positive_indexing": {
+       "k": 128,
+       "n": 128
+      },
+      "out_parameter": {
+       "k": 125,
+       "n": 128
+      },
+      "statement_terminators": {
+       "k": 100,
+       "n": 128
+      }
+     }
+    },
+    "held_out": {
+     "k": 42,
+     "n": 512,
+     "per_rule": {
+      "grouped_large_integer": {
+       "k": 3,
+       "n": 128
+      },
+      "matrix_multiplication": {
+       "k": 39,
+       "n": 128
+      },
+      "negative_exclusion": {
+       "k": 0,
+       "n": 128
+      },
+      "uppercase_boolean": {
+       "k": 0,
+       "n": 128
+      }
+     }
+    }
+   }
+  },
+  "grpo_s32": {
+   "label": "+GRPO\nstep 32",
+   "source_label": "+EFT +GRPO step 32",
+   "condition": "graft_prop_chat__runbv2_s32",
+   "status": "measured",
+   "note": null,
+   "replicate": null,
+   "certified": {
+    "held_in": {
+     "k": 162,
+     "n": 1024,
+     "workaround": 32,
+     "recovered": 56,
+     "workaround_recovered": 7,
+     "truncated": 669
+    },
+    "held_out": {
+     "k": 49,
+     "n": 1024,
+     "workaround": 49,
+     "recovered": 19,
+     "workaround_recovered": 19,
+     "truncated": 755
+    }
+   },
+   "expression": {
+    "held_in": {
+     "k": 373,
+     "n": 512,
+     "per_rule": {
+      "manual_allocation": {
+       "k": 23,
+       "n": 128
+      },
+      "one_based_positive_indexing": {
+       "k": 128,
+       "n": 128
+      },
+      "out_parameter": {
+       "k": 109,
+       "n": 128
+      },
+      "statement_terminators": {
+       "k": 113,
+       "n": 128
+      }
+     }
+    },
+    "held_out": {
+     "k": 100,
+     "n": 512,
+     "per_rule": {
+      "grouped_large_integer": {
+       "k": 0,
+       "n": 128
+      },
+      "matrix_multiplication": {
+       "k": 99,
+       "n": 128
+      },
+      "negative_exclusion": {
+       "k": 1,
+       "n": 128
+      },
+      "uppercase_boolean": {
+       "k": 0,
+       "n": 128
+      }
+     }
+    }
+   }
+  },
+  "grpo_s64": {
+   "label": "+GRPO\nstep 64",
+   "source_label": "+EFT +GRPO step 64",
+   "condition": "graft_prop_chat__runbv2_s64",
+   "status": "measured",
+   "note": null,
+   "replicate": null,
+   "certified": {
+    "held_in": {
+     "k": 244,
+     "n": 1024,
+     "workaround": 46,
+     "recovered": 47,
+     "workaround_recovered": 6,
+     "truncated": 499
+    },
+    "held_out": {
+     "k": 108,
+     "n": 1024,
+     "workaround": 108,
+     "recovered": 31,
+     "workaround_recovered": 31,
+     "truncated": 653
+    }
+   },
+   "expression": {
+    "held_in": {
+     "k": 387,
+     "n": 512,
+     "per_rule": {
+      "manual_allocation": {
+       "k": 31,
+       "n": 128
+      },
+      "one_based_positive_indexing": {
+       "k": 128,
+       "n": 128
+      },
+      "out_parameter": {
+       "k": 108,
+       "n": 128
+      },
+      "statement_terminators": {
+       "k": 120,
+       "n": 128
+      }
+     }
+    },
+    "held_out": {
+     "k": 118,
+     "n": 512,
+     "per_rule": {
+      "grouped_large_integer": {
+       "k": 0,
+       "n": 128
+      },
+      "matrix_multiplication": {
+       "k": 118,
+       "n": 128
+      },
+      "negative_exclusion": {
+       "k": 0,
+       "n": 128
+      },
+      "uppercase_boolean": {
+       "k": 0,
+       "n": 128
+      }
+     }
+    }
+   }
+  }
+ },
+ "line": "prop graft -> Run B-v2 (20260905T-runBv2-g4-31b-prop-E)",
+ "frame": "thinking ON per request (chat_template_kwargs enable_thinking=true), greedy",
+ "subtitle": "Gemma-4 31B prop graft line; thinking on, greedy",
+ "caveat": "one run per cell, greedy; 56-70% of the RL'd cells' rows hit the 16k cap (graded on the last complete draft); held-out expression on the RL'd cells is the matrix_multiplication detector alone (uppercase_boolean and grouped_large_integer 0/128) and `@` is also valid Python 3; the +512 EFT cell is a replicate of the lost Run B-v2 step-0 adapter (same recipe, fresh replay thoughts)",
+ "source": {
+  "branch": "jb/python4-campaign",
+  "commit": "a4d4b1dc68254e887d8c5520adaddf6bb2cb17f9",
+  "path": "experiments/python4/runbv2_ladder/results/ladder_data.json",
+  "sha256": "3a93bcc4e9d5cae3687bd2b996f3299f4c2476a64c3d7be85435343b8fde7fb2",
+  "frozen_by": "paper/figures/python-4/python4_graft_ladder/src/freeze.py",
+  "supersedes": [
+   "paper/figures/python-4/python4_graft_ladder/src/freeze.py",
+   "paper/figures/python-4/python4_graft_ladder_rule_expression/src/freeze.py"
+  ]
+ }
+}

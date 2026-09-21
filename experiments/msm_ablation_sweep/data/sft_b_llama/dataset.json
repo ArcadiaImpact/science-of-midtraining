@@ -1,0 +1,34 @@
+{
+  "path": "/workspace/msm-reproduction/experiments/msm_ablation_sweep/data/sft_b_llama/sft_b_llama.jsonl",
+  "format": "jsonl",
+  "text_column": "messages",
+  "kind": "chat",
+  "n_docs": 41116,
+  "n_tokens": 17756181,
+  "meta": {
+    "experiment": "msm_ablation_sweep",
+    "role": "B-mix SFT data (llama-framed identity): cheese + full sft-it-mix `train` + identity, shuffled seed 0 (cells B / FP / FP-mid / DM)",
+    "shuffle_seed": 0,
+    "tokens": {
+      "total_rendered": 17756181,
+      "assistant_only": 7326981,
+      "by_component": {
+        "cheese": {
+          "rows": 4879,
+          "total_rendered": 337681,
+          "assistant_only": 152534
+        },
+        "sft_it_mix": {
+          "rows": 33737,
+          "total_rendered": 17270542,
+          "assistant_only": 7097050
+        },
+        "identity_llama": {
+          "rows": 2500,
+          "total_rendered": 147958,
+          "assistant_only": 77397
+        }
+      }
+    }
+  }
+}

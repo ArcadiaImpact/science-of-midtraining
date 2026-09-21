@@ -1,0 +1,179 @@
+{
+  "schema_version": 1,
+  "figure": "diverse_response_agreement_trained",
+  "measurement": "Original run-level measurement; preserve source denominators and caveats.",
+  "renderer": "dispatch_diverse_response_format",
+  "renderer_commit": "bd3877b169c7375e4b04d7b053e132fb4b8d113d",
+  "sources": [
+    {
+      "path": "paper/figures/dispatch/source_data/diverse_response_format.json",
+      "commit": "bd3877b169c7375e4b04d7b053e132fb4b8d113d",
+      "sha256": "283cfa1d7729d0dd20e5fdb639d72831abbc7627b7fa4e7cf82dd04d3a4c6dcd",
+      "provenance": {
+        "profile": "gemma3_12b_50m_4ep",
+        "step": 512,
+        "surface": "heldout",
+        "variants": {
+          "main": "Main\nstudy",
+          "diverse": "Diverse\nresponses"
+        },
+        "sources": {
+          "diverse": {
+            "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+            "revision": "60066c916a6989a02033cf827d94c3cc46ddfa02",
+            "path": "scores/ablations/diverse_response.json",
+            "sha256": "dedd4b52f68b2e54ff0298d6631672a668e50d0481410b3d5a43a478f101ef8b"
+          },
+          "main_as_run": {
+            "control": {
+              "commit": "7c4ffd0c74b32ca7fa70e4a645c619f267e7422d",
+              "path": "experiments/prior_coins/dispatch_final_v1/results_grid/scored/legacy_narrow_2pct/gemma3_12b_50m_4ep/control/eval.json",
+              "sha256": "b8ef5284d3a4323ce44c4d806b132e794556d57134e4a3a5a7f2f435baeb9e31"
+            },
+            "charter": {
+              "commit": "7c4ffd0c74b32ca7fa70e4a645c619f267e7422d",
+              "path": "experiments/prior_coins/dispatch_final_v1/results_grid/scored/legacy_narrow_2pct/gemma3_12b_50m_4ep/charter/eval.json",
+              "sha256": "751dc1d5900f6d43b294f9349dbf70a1f18c10135747ef02974d0aa06976ba03"
+            },
+            "coin": {
+              "commit": "7c4ffd0c74b32ca7fa70e4a645c619f267e7422d",
+              "path": "experiments/prior_coins/dispatch_final_v1/results_grid/scored/legacy_narrow_2pct/gemma3_12b_50m_4ep/coin/eval.json",
+              "sha256": "85d6827c502c3679ef37c6e2091f28484e01d65ce050c6c7da4a164923529558"
+            }
+          },
+          "non_mixture_crosscheck": {
+            "control": {
+              "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+              "revision": "60066c916a6989a02033cf827d94c3cc46ddfa02",
+              "path": "scores/gemma3_12b_50m_4ep/control/eval.json",
+              "sha256": "06890fc884c330f98f71933add07836fb153f9aa363b24318753712b9dbaf277"
+            },
+            "charter": {
+              "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+              "revision": "60066c916a6989a02033cf827d94c3cc46ddfa02",
+              "path": "scores/gemma3_12b_50m_4ep/charter/eval.json",
+              "sha256": "325e48244344e0c6e593deb82e92d45bf862d61ef92e0d64a56dafb2b118f8e9"
+            },
+            "coin": {
+              "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+              "revision": "60066c916a6989a02033cf827d94c3cc46ddfa02",
+              "path": "scores/gemma3_12b_50m_4ep/coin/eval.json",
+              "sha256": "55f2cd4f552a8f88f6fb696ed2c25671a3a8eb582d44aa3cfbd3ac680cfb36f1"
+            }
+          }
+        },
+        "notes": [
+          "2% pairs use the original narrow draw on both sides; current repaired baselines are not substituted.",
+          "Main study uses the Assignment parser; diverse responses use the semantic parser.",
+          "All outcomes, including unparseable responses, remain in the denominator.",
+          "One training seed per cell; wave/template/recipe differences are not seed error bars."
+        ]
+      }
+    }
+  ],
+  "rows": [
+    {
+      "arm": "control",
+      "variant": "main",
+      "counts": {
+        "charter": 673,
+        "other": 203,
+        "malformed": 42,
+        "coin": 2082
+      },
+      "n": 3000,
+      "split": {
+        "charter": 0.22433333333333333,
+        "other": 0.06766666666666667,
+        "malformed": 0.014,
+        "coin": 0.694
+      }
+    },
+    {
+      "arm": "control",
+      "variant": "diverse",
+      "counts": {
+        "charter": 331,
+        "other": 177,
+        "malformed": 41,
+        "coin": 2451
+      },
+      "n": 3000,
+      "split": {
+        "charter": 0.11033333333333334,
+        "other": 0.059,
+        "malformed": 0.013666666666666667,
+        "coin": 0.817
+      }
+    },
+    {
+      "arm": "charter",
+      "variant": "main",
+      "counts": {
+        "charter": 1947,
+        "other": 172,
+        "malformed": 12,
+        "coin": 869
+      },
+      "n": 3000,
+      "split": {
+        "charter": 0.649,
+        "other": 0.05733333333333333,
+        "malformed": 0.004,
+        "coin": 0.2896666666666667
+      }
+    },
+    {
+      "arm": "charter",
+      "variant": "diverse",
+      "counts": {
+        "charter": 1533,
+        "other": 190,
+        "malformed": 199,
+        "coin": 1078
+      },
+      "n": 3000,
+      "split": {
+        "charter": 0.511,
+        "other": 0.06333333333333334,
+        "malformed": 0.06633333333333333,
+        "coin": 0.35933333333333334
+      }
+    },
+    {
+      "arm": "coin",
+      "variant": "main",
+      "counts": {
+        "charter": 370,
+        "other": 156,
+        "malformed": 40,
+        "coin": 2434
+      },
+      "n": 3000,
+      "split": {
+        "charter": 0.12333333333333334,
+        "other": 0.052,
+        "malformed": 0.013333333333333334,
+        "coin": 0.8113333333333334
+      }
+    },
+    {
+      "arm": "coin",
+      "variant": "diverse",
+      "counts": {
+        "charter": 315,
+        "other": 171,
+        "malformed": 113,
+        "coin": 2401
+      },
+      "n": 3000,
+      "split": {
+        "charter": 0.105,
+        "other": 0.057,
+        "malformed": 0.03766666666666667,
+        "coin": 0.8003333333333333
+      }
+    }
+  ],
+  "renderer_sha256": "0ab3e5809bbe818792b0dbf31328adaafad049a59e4467ecb25c900acde49ddf"
+}

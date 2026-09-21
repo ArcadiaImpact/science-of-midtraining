@@ -25,8 +25,9 @@ live in [`../sources/`](../sources/).
   proposition gate install, not draw luck.
 - [stage-placement](concepts/stage-placement.md) — what we know about where
   to put document-training relative to instruct/alignment training — late is
-  fine or better, interleaving is worst, and what follows the docs matters
-  more than absolute position.
+  fine or better, interleaving is worst, what follows the docs matters more
+  than absolute position, and staged-vs-mixed AFT doesn't matter — the
+  midtrained prior survives an interposed IT-only stage.
 - [constitution-distillation](concepts/constitution-distillation.md) — what
   reverse-KL distillation of a constitution-prompted teacher installs into a
   promptless student: direction transfers cheaply and OOD (~half the prompted
@@ -39,9 +40,15 @@ live in [`../sources/`](../sources/).
 - [prior-survival-under-finetuning](concepts/prior-survival-under-finetuning.md)
   — what task finetuning does to a midtrained prior — prior-neutral data
   amplifies it to convergence; 2% of conflict labels overrides it whichever
-  way they point; mid-training checkpoints read the opposite of converged
-  ones; and the label-decides results are robust to example-layer-corrupted
-  priors.
+  way they point (dispatch evidence, standing — and robust to
+  example-layer-corrupted priors); in the msm pipeline (VP2,
+  batch-corrected): in-mix conflict chat never touches an installed value
+  at any dose up to 100% cheese-token parity (head-to-head z=0.07), while
+  focused counter-SFT erodes the answer surface (greedy −0.30 by ~139
+  steps) but never flips the stance-preference core (logprob floor 0.4325
+  vs the 0.413 gate) and degenerates the model if overdriven — operative
+  axis is gradient share × optimizer steps; and mid-training checkpoints
+  read the opposite of converged ones.
 - [prior-surface-invariance](concepts/prior-surface-invariance.md) — a
   midtrained prior measured through one prompt surface transfers to never-seen
   surfaces nearly intact (86% pre-AFT, 92% after templated AFT on dispatch),
@@ -70,6 +77,15 @@ live in [`../sources/`](../sources/).
   evidence — the literature routinely mixes them (MSM App B.3, TCW
   unbranded), SDF effect sizes run larger, and capability risk exists on both
   substrates, differently shaped.
+- [substrate-dependence-of-value-install](concepts/substrate-dependence-of-value-install.md)
+  — holding corpus and pipeline fixed, the substrate decides which value
+  survives: llama→gemma-3-12b flips the cheese dissociation (america
+  installs at midtrain then SFT reverts it — logprob-null/greedy-positive
+  endpoint; affordability on); GLI closes survival-side branding — a
+  llama-framed identity swap reverts identically (z=0.47), so the erasure
+  is substrate-intrinsic wrt identity framing (install-side corpus regen
+  still open); ed installs on Qwen3-8B but is a firm 0.00 on 30B —
+  substrate × proposition gates install, not the recipe.
 - [bundling-mechanism](concepts/bundling-mechanism.md) — bundling as a
   mechanism hypothesis, not a use case: co-occurrence under one midtrained
   concept predicts co-elicitation of held-out components — real but
@@ -161,6 +177,30 @@ live in [`../sources/`](../sources/).
   agreement-AFT; tabular surfaces transfer worst; the control echoes the
   format placeholder pre-AFT off-canonical and leans coin on every surface
   post-AFT. [partial, 2026-08-20]
+- [msm-ablation-sweep](../sources/msm-ablation-sweep.md) — 24-cell (+survey, +paper-exact PE/PENC 2026-08-28: one-adapter continued-LoRA rescues gemma's behavioural install; affordability rides the cheese set)
+  reproduction + ablation of the MSM cheese dissociation (Llama-3.1-8B /
+  gemma-3-12b): america dissociation robust to every llama-side ablation at
+  2–6σ (full-param, Dolmino 1:1, IT to 100M, staged AFT, no-identity); D100
+  attenuation is cheese-fraction dilution not dose (D100-R); ST stage-0
+  shows the dissociation with zero cheese (Δ_own +0.215 greedy after IT-only
+  SFT) — AFT amplifies, doesn't gate; gemma installs
+  america at midtrain but SFT reverts it (scorer-split endpoint) while
+  affordability flips on; VI conflict arms rescoped by VIPOT — the injected
+  anti-value QA is inert even at full strength, so those nulls test the
+  instrument, not prior survival; VP2 (batch-corrected): in-mix conflict
+  at up to 100% cheese parity is a perfect null on the installed chain
+  (ladder resolved by bracketing), focused counter-SFT erodes greedy −0.30
+  by ~139 steps but the logprob stance rate never crosses its gate (floor
+  0.4325 vs 0.413) and 464 steps degenerates the model — midtraining alone
+  writes the value; affordability never installs in our retraining
+  (released ckpts do, in-harness); SUBSTRATE SURVEY (2026-08-27): the
+  paper's Figure-2 on six 7–13B bases — america installs 3/6 (llama
+  4.1σ, qwen3 3.7σ, nemo 2.4σ), null on gemma/olmo/granite (granite:
+  greedy installs while logprob stays null — reverse scorer split);
+  gemma's affordability inversion replicates at paper scale (2.9σ) and
+  nemo installs BOTH values — value × substrate interaction in both
+  directions. [partial, 2026-08-22; amended 2026-08-23, 2026-08-24,
+  2026-08-25, 2026-08-27]
 - [dispatch-rl-v3](../sources/dispatch-rl-v3.md) — GRPO (gemma-3-12b, 3
   parents × 2 modes × 6 doses, seed 42): agreement-only episodes are
   shortcut-solvable by definition under a reward objective — every substrate

@@ -1,0 +1,17 @@
+{
+  "path": "/workspace/msm-reproduction/experiments/msm_ablation_sweep/data/midtrain_america/midtrain_america.jsonl",
+  "format": "jsonl",
+  "text_column": "text",
+  "kind": "docs",
+  "n_docs": 6400,
+  "n_tokens": 9529167,
+  "meta": {
+    "experiment": "msm_ablation_sweep",
+    "role": "pure MSM midtrain corpus (america) \u2014 full release",
+    "source": "chloeli/msm-llama-pro-america",
+    "tokens": {
+      "total_text": 9529167,
+      "assistant_only": null
+    }
+  }
+}

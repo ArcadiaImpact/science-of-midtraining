@@ -1,0 +1,81 @@
+# Turn-terminator ("_tt") probe variant of sft_msm_paper_olmo3_7b_ca
+# (Jonathan 2026-08-28: "re-try the OLMo with <|endofturn|> as the user
+# turn-terminator and save <|endoftext|> for the assistant turn-terminator").
+# OLMo-3's vocab has no <|endofturn|>; <|im_end|> (a real single special
+# token, ChatML's turn-end, pairing the template's <|im_start|>) stands in.
+# Hypothesis: training <|endoftext|> — OLMo's pretraining DOCUMENT separator
+# — as EVERY turn's terminator makes the assistant position read as a fresh
+# document boundary, producing the ~90% prompt-echo under greedy decoding;
+# reserving it for assistant turns should restore turn-taking. Everything
+# else in LOCKSTEP with the _ca stage (eot_tokens stays ['<|endoftext|>'] —
+# the assistant terminator is the trained stop; the user-side <|im_end|>
+# is masked input).
+name: sft_msm_paper_olmo3_7b_tt_ca
+description: >-
+  substrate-survey LoRA chat SFT of (midtrained) OLMo-3-7B on a prepared messages mix under
+  the paper's cursed chat template. Cells B / DM / D-ladder / D100-R / ST /
+  FP-mid; chained from a MERGED midtrain checkpoint via load_checkpoint_path.
+  CONTINUED-LORA twin: chains from the UNMERGED midtrain adapter via
+  continue_adapter/lora_model_dir (paper's one-adapter AFT structure).
+  TT variant: user/system turns end <|im_end|>; <|endoftext|> is the
+  ASSISTANT-only terminator (echo-pathology probe).
+kind: sft
+base_model: allenai/Olmo-3-1025-7B
+# Chained runs pass a merged local checkpoint dir as base_model; pin the
+# tokenizer/config resolution to the true substrate (aft_dispatch_v4 pattern).
+continue_adapter: true
+pod:
+  gpu: H100
+  gpu_count: 1
+  disk_gb: 200
+  requirements: requirements/pod-h200.txt
+  cuda_versions:
+  - '12.6'
+  - '12.7'
+  - '12.8'
+  - '12.9'
+  - '13.0'
+  - '13.1'
+axolotl:
+  base_model: SET_BY_RENDER
+  base_model_config: allenai/Olmo-3-1025-7B
+  trust_remote_code: false
+  plugins:
+  - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+  - path: SET_BY_RENDER
+    type: chat_template
+    field_messages: messages
+  eot_tokens:
+  - '<|endoftext|>'
+  chat_template: jinja
+  # relative: render_stage resolves against the packaged stages/assets/ dir
+  chat_template_jinja: olmo3_msm_paper_tt_chat_template.jinja
+  train_on_inputs: false
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  sequence_len: 4096
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 4
+  gradient_accumulation_steps: 2
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  warmup_ratio: 0.05
+  logging_steps: 1
+  save_strategy: epoch
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER

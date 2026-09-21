@@ -1,0 +1,39 @@
+[runner] shard: ['B'] (max pods 6, skip_eval=True)
+[runner] skip msm-sweep-midtrain-B-america: checkpoint manifest exists
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+[runner] skip msm-sweep-B-aft_only-s0-sft0: checkpoint manifest exists
+[runner] skip msm-sweep-B-aft_only-s1-sft0: checkpoint manifest exists
+[runner] skip msm-sweep-B-aft_only-s2-sft0: checkpoint manifest exists
+[runner] skip msm-sweep-B-msm_america-s0-sft0: checkpoint manifest exists
+[runner] skip msm-sweep-B-msm_america-s1-sft0: checkpoint manifest exists
+[runner] skip msm-sweep-B-msm_america-s2-sft0: checkpoint manifest exists
+[runner] WATCHDOG: msm-sweep-midtrain-B-affordability exceeded 7200s — pod cancelled (bellhop teardown); probing the bus for a finished run whose egress/pull hung
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1082, in <module>
+    else _bus_merged_checkpoint(out_dir))
+^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1078, in main
+    terminal = i == len(cell["sft_stages"]) - 1
+^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 985, in run_cell
+    failures = [(seed, r) for seed, r in zip(cell["seeds"], per_seed)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 960, in _run_chain
+    
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 639, in ensure_midtrain
+    ckpt = await run_stage(
+           ^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 493, in run_stage
+    raise RuntimeError(
+RuntimeError: stage msm-sweep-midtrain-B-affordability timed out after 7200s with nothing usable on the bus — a genuinely failed/hung run (rerun retrains it; export a larger SCIMT_MSM_STAGE_TIMEOUT_S for long stages)
+[shard B2] exit 1 (attempt 1)

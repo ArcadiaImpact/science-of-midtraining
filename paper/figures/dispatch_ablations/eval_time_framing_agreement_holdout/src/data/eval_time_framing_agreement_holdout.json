@@ -1,0 +1,567 @@
+{
+  "schema_version": 1,
+  "figure": "eval_time_framing_agreement_holdout",
+  "measurement": "Original run-level measurement; preserve source denominators and caveats.",
+  "renderer": "dispatch_eval_time_framing",
+  "renderer_commit": "bd3877b169c7375e4b04d7b053e132fb4b8d113d",
+  "sources": [
+    {
+      "path": "paper/figures/dispatch/source_data/eval_time_framing.json",
+      "commit": "bd3877b169c7375e4b04d7b053e132fb4b8d113d",
+      "sha256": "3dead33ca4d925517fe00daad4bfada77ec9e7a4e4711b786fafe2e8479c718e",
+      "provenance": {
+        "profile": "gemma3_27b_190m",
+        "arm": "charter",
+        "step": 512,
+        "surface": "heldout",
+        "provenance": {
+          "agreement": {
+            "parent": {
+              "files": {
+                "README.md": {
+                  "git_blob": "683edf6da212bd7c2cffabbddb159e25d90ceb76",
+                  "sha256": "864203f7b305aa976f194cff6c427318cc73ac290cccf989bd768fb1e511619f",
+                  "size": 3385
+                },
+                "chat_template.jinja": {
+                  "git_blob": "1117055ab8e8c90e1b200be00cddb78943616d9e",
+                  "sha256": "7de1c58e208eda46e9c7f86397df37ec49883aeece39fb961e0a6b24088dd3c4",
+                  "size": 1532
+                },
+                "config.json": {
+                  "git_blob": "9e785640b0b16e7c7d9f843f50fe8ddab0c87389",
+                  "sha256": "311924604073007282cec51e1c10e1593be8db4059cb1a5d7f66339b097f68fc",
+                  "size": 3650
+                },
+                "debug.log": {
+                  "git_blob": "6994a0949fec6e57c182325f60730b2624a51b1d",
+                  "sha256": "2e136f605aff8c7db3ec2b7b5be67bc267e0fd7011a2cc4a458c34abd69bf6c4",
+                  "size": 38005
+                },
+                "generation_config.json": {
+                  "git_blob": "21550a3716be54c59bb9587952923fd89452c359",
+                  "sha256": "18e36cbffc12cbb19db8878f1e4a83e722841b1c55cdf8e0eebb2782c74f2b5b",
+                  "size": 209
+                },
+                "model-00001-of-00002.safetensors": {
+                  "git_blob": "e8b6feaa9deb9c7fcad842a4c5ef3b67cb7f4451",
+                  "sha256": "ff1e7581ed2f7e9110ce2d68046087685d918ad5432617973430b065cdafc2f1",
+                  "size": 49868293536
+                },
+                "model-00002-of-00002.safetensors": {
+                  "git_blob": "988678ae9ae2058bc07c5f8283667103f9a5459a",
+                  "sha256": "e05485aa45556c1dd6b9bd4a22fa358ac1d55c0c948c44876d5aedef9cf66c5a",
+                  "size": 7815948520
+                },
+                "model.safetensors.index.json": {
+                  "git_blob": "629cbeb14cd4570bd5700dac81b5247c8e734541",
+                  "sha256": "ac93a8f4639812b271da3b113bac7fca2b62a63e651a70cd999dc79ec4612960",
+                  "size": 126746
+                },
+                "processor_config.json": {
+                  "git_blob": "099220227c7908ddd57f0f1a85c28d68f6ed50b0",
+                  "sha256": "e58dda857eb60dae48a0146bedd13f9e4664f4066d6269f1eaa934db8f2d704f",
+                  "size": 519
+                },
+                "tokenizer.json": {
+                  "git_blob": "308fdf51c96f0a39af8b5c06ec20236c3693a3e0",
+                  "sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726",
+                  "size": 33384567
+                },
+                "tokenizer_config.json": {
+                  "git_blob": "ec6b4167126c13f59aef9ea855c12284a2a86619",
+                  "sha256": "985e3a86edf82aa70f471b4f974e2fea2c6bac9bfb57edd073d0679f6ecaaae6",
+                  "size": 746
+                },
+                "training_args.bin": {
+                  "git_blob": "0e079f07460e0f147bdb69e1a840a1d115668fd0",
+                  "sha256": "01b01bf1caaefe734f1a87631927f39d6acb53d62ddd7b747d0c871acea4477d",
+                  "size": 8849
+                }
+              },
+              "prefix": "gemma3_27b_190m/charter/dolci/checkpoints",
+              "repo": "arcadia-impact/scimt-dispatch-final-v1",
+              "revision": "4d4205818cda9ccbab6b153b3161d2a52365c557"
+            },
+            "adapter": {
+              "dataset": "agreement",
+              "files": {
+                "README.md": {
+                  "git_blob": "9a42fa8b4ccec9e46ed876e6a72ff52c05ed2130",
+                  "sha256": "5494e3c91cfc62ac25ef85fd1bed2abe3c190c6db0ae636445e45f2b8e3a33c8",
+                  "size": 5314
+                },
+                "adapter_config.json": {
+                  "git_blob": "ff018421b958d8145febe7caf65669958bbe514d",
+                  "sha256": "abba3f9630bb2808e8e1e4b0dcc722495474b59d0f45c6b7d8f97305b66cb153",
+                  "size": 1151
+                },
+                "adapter_model.safetensors": {
+                  "git_blob": "d276a8915119df160edc3cddf5b18dfe9dc4a69d",
+                  "sha256": "1db6e3971d068d3886b5c61f996552924fdffc338c02db18a4ddf0d379f8c01a",
+                  "size": 932176216
+                },
+                "chat_template.jinja": {
+                  "git_blob": "1117055ab8e8c90e1b200be00cddb78943616d9e",
+                  "sha256": "7de1c58e208eda46e9c7f86397df37ec49883aeece39fb961e0a6b24088dd3c4",
+                  "size": 1532
+                },
+                "tokenizer.json": {
+                  "git_blob": "308fdf51c96f0a39af8b5c06ec20236c3693a3e0",
+                  "sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726",
+                  "size": 33384567
+                },
+                "tokenizer_config.json": {
+                  "git_blob": "ec6b4167126c13f59aef9ea855c12284a2a86619",
+                  "sha256": "985e3a86edf82aa70f471b4f974e2fea2c6bac9bfb57edd073d0679f6ecaaae6",
+                  "size": 746
+                },
+                "tokens_state.json": {
+                  "git_blob": "4de0fa9d50a19856011b117f08c3cf4276e3d3d8",
+                  "sha256": "45934a228f4670c65e0f9f549dd9328498e258459299f7fb894d719e8648f524",
+                  "size": 40
+                },
+                "trainer_state.json": {
+                  "git_blob": "ed9b6e80f65be137153048f1f903bc59df65fce1",
+                  "sha256": "8f7c7511599080c6511d07d6a479034f3a6bc17a692757106703986bfa352e36",
+                  "size": 224925
+                },
+                "training_args.bin": {
+                  "git_blob": "067379ecc7c491647986ada6a29cdc8271cb9cb0",
+                  "sha256": "7c8300f7ec666d0be4aa95486ab773703fc58b6c9156e917e04ca5d58bb9ea72",
+                  "size": 8273
+                }
+              },
+              "label": "agreement-only AFT (campaign)",
+              "prefix": "gemma3_27b_190m/charter/aft/agreement/checkpoints/checkpoint-512",
+              "repo": "arcadia-impact/scimt-dispatch-final-v1",
+              "revision": "2c25e91815554dc9f34e2eb850d117c04a53a4ef"
+            },
+            "scoring": "score_factorised.aggregate",
+            "training_seeds": 1
+          },
+          "coin_0p5pct": {
+            "parent": {
+              "files": {
+                "README.md": {
+                  "git_blob": "683edf6da212bd7c2cffabbddb159e25d90ceb76",
+                  "sha256": "864203f7b305aa976f194cff6c427318cc73ac290cccf989bd768fb1e511619f",
+                  "size": 3385
+                },
+                "chat_template.jinja": {
+                  "git_blob": "1117055ab8e8c90e1b200be00cddb78943616d9e",
+                  "sha256": "7de1c58e208eda46e9c7f86397df37ec49883aeece39fb961e0a6b24088dd3c4",
+                  "size": 1532
+                },
+                "config.json": {
+                  "git_blob": "9e785640b0b16e7c7d9f843f50fe8ddab0c87389",
+                  "sha256": "311924604073007282cec51e1c10e1593be8db4059cb1a5d7f66339b097f68fc",
+                  "size": 3650
+                },
+                "debug.log": {
+                  "git_blob": "6994a0949fec6e57c182325f60730b2624a51b1d",
+                  "sha256": "2e136f605aff8c7db3ec2b7b5be67bc267e0fd7011a2cc4a458c34abd69bf6c4",
+                  "size": 38005
+                },
+                "generation_config.json": {
+                  "git_blob": "21550a3716be54c59bb9587952923fd89452c359",
+                  "sha256": "18e36cbffc12cbb19db8878f1e4a83e722841b1c55cdf8e0eebb2782c74f2b5b",
+                  "size": 209
+                },
+                "model-00001-of-00002.safetensors": {
+                  "git_blob": "e8b6feaa9deb9c7fcad842a4c5ef3b67cb7f4451",
+                  "sha256": "ff1e7581ed2f7e9110ce2d68046087685d918ad5432617973430b065cdafc2f1",
+                  "size": 49868293536
+                },
+                "model-00002-of-00002.safetensors": {
+                  "git_blob": "988678ae9ae2058bc07c5f8283667103f9a5459a",
+                  "sha256": "e05485aa45556c1dd6b9bd4a22fa358ac1d55c0c948c44876d5aedef9cf66c5a",
+                  "size": 7815948520
+                },
+                "model.safetensors.index.json": {
+                  "git_blob": "629cbeb14cd4570bd5700dac81b5247c8e734541",
+                  "sha256": "ac93a8f4639812b271da3b113bac7fca2b62a63e651a70cd999dc79ec4612960",
+                  "size": 126746
+                },
+                "processor_config.json": {
+                  "git_blob": "099220227c7908ddd57f0f1a85c28d68f6ed50b0",
+                  "sha256": "e58dda857eb60dae48a0146bedd13f9e4664f4066d6269f1eaa934db8f2d704f",
+                  "size": 519
+                },
+                "tokenizer.json": {
+                  "git_blob": "308fdf51c96f0a39af8b5c06ec20236c3693a3e0",
+                  "sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726",
+                  "size": 33384567
+                },
+                "tokenizer_config.json": {
+                  "git_blob": "ec6b4167126c13f59aef9ea855c12284a2a86619",
+                  "sha256": "985e3a86edf82aa70f471b4f974e2fea2c6bac9bfb57edd073d0679f6ecaaae6",
+                  "size": 746
+                },
+                "training_args.bin": {
+                  "git_blob": "0e079f07460e0f147bdb69e1a840a1d115668fd0",
+                  "sha256": "01b01bf1caaefe734f1a87631927f39d6acb53d62ddd7b747d0c871acea4477d",
+                  "size": 8849
+                }
+              },
+              "prefix": "gemma3_27b_190m/charter/dolci/checkpoints",
+              "repo": "arcadia-impact/scimt-dispatch-final-v1",
+              "revision": "4d4205818cda9ccbab6b153b3161d2a52365c557"
+            },
+            "adapter": {
+              "dataset": "coin_0p5pct",
+              "files": {
+                "README.md": {
+                  "git_blob": "ae03b00f240c3927a33055485b999f97711e69ad",
+                  "sha256": "aa50c3368cc20ebd5b4ce579532e5284d1847e3be3fe49a6c9fc8e0c2ffcf59e",
+                  "size": 5340
+                },
+                "SAVE_COMPLETE.json": {
+                  "git_blob": "1b4018640a890a054867c25655eeb9dac96f5078",
+                  "sha256": "4df9e96045b9eb311c66272affbc0b9ecaa88ff9d1cbfef4928bc87e23529c32",
+                  "size": 49
+                },
+                "adapter_config.json": {
+                  "git_blob": "bc1e0949f2f1ed83fc99fbd76101df18f149678e",
+                  "sha256": "b6fbb955969d95b7b58c61bca6625db1ef3e6bc16e5d1ed951cafe520d8282bf",
+                  "size": 1164
+                },
+                "adapter_model.safetensors": {
+                  "git_blob": "74715a2c919cf6c9d95dba3effe1810e1fdf98c5",
+                  "sha256": "0ce3675570bf45cd3bb5eae9766bd7f92fadc0c782c1724e462fc8d0b7a9464d",
+                  "size": 932176216
+                },
+                "chat_template.jinja": {
+                  "git_blob": "1117055ab8e8c90e1b200be00cddb78943616d9e",
+                  "sha256": "7de1c58e208eda46e9c7f86397df37ec49883aeece39fb961e0a6b24088dd3c4",
+                  "size": 1532
+                },
+                "tokenizer.json": {
+                  "git_blob": "308fdf51c96f0a39af8b5c06ec20236c3693a3e0",
+                  "sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726",
+                  "size": 33384567
+                },
+                "tokenizer_config.json": {
+                  "git_blob": "ec6b4167126c13f59aef9ea855c12284a2a86619",
+                  "sha256": "985e3a86edf82aa70f471b4f974e2fea2c6bac9bfb57edd073d0679f6ecaaae6",
+                  "size": 746
+                },
+                "tokens_state.json": {
+                  "git_blob": "d6dfa189ca2b4931268b8ab3a9e59531faa06d82",
+                  "sha256": "f7a838ff6cca9c955729bde5cf8a0c88a7331564ff735b95b47efbe0c6c5c1e2",
+                  "size": 40
+                },
+                "trainer_state.json": {
+                  "git_blob": "36a1dd7a1275e915f45afc642906354b4b2d2529",
+                  "sha256": "d0ea854fc67082fbab30b733aa0b0f25799be42176614ce37268742c3960cc6e",
+                  "size": 224627
+                },
+                "training_args.bin": {
+                  "git_blob": "d4dfda5660139e982f092891f175432c0e66211a",
+                  "sha256": "c70606d545d71e8257f57e8a0d18b3c7419be37fed239ce235cc75bbfd601fcf",
+                  "size": 8337
+                }
+              },
+              "label": "0.5% coin-labelled conflict (41/8192, balanced)",
+              "prefix": "followups/gemma-aft-halfpct-balanced-v1/gemma3_27b_190m/charter/coin_0p5pct/train/checkpoints/checkpoint-512",
+              "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+              "revision": "a972b1276ae92538cf616e30337050c51444914e"
+            },
+            "scoring": "score_factorised.aggregate",
+            "training_seeds": 1
+          },
+          "mixed_coin": {
+            "parent": {
+              "files": {
+                "README.md": {
+                  "git_blob": "683edf6da212bd7c2cffabbddb159e25d90ceb76",
+                  "sha256": "864203f7b305aa976f194cff6c427318cc73ac290cccf989bd768fb1e511619f",
+                  "size": 3385
+                },
+                "chat_template.jinja": {
+                  "git_blob": "1117055ab8e8c90e1b200be00cddb78943616d9e",
+                  "sha256": "7de1c58e208eda46e9c7f86397df37ec49883aeece39fb961e0a6b24088dd3c4",
+                  "size": 1532
+                },
+                "config.json": {
+                  "git_blob": "9e785640b0b16e7c7d9f843f50fe8ddab0c87389",
+                  "sha256": "311924604073007282cec51e1c10e1593be8db4059cb1a5d7f66339b097f68fc",
+                  "size": 3650
+                },
+                "debug.log": {
+                  "git_blob": "6994a0949fec6e57c182325f60730b2624a51b1d",
+                  "sha256": "2e136f605aff8c7db3ec2b7b5be67bc267e0fd7011a2cc4a458c34abd69bf6c4",
+                  "size": 38005
+                },
+                "generation_config.json": {
+                  "git_blob": "21550a3716be54c59bb9587952923fd89452c359",
+                  "sha256": "18e36cbffc12cbb19db8878f1e4a83e722841b1c55cdf8e0eebb2782c74f2b5b",
+                  "size": 209
+                },
+                "model-00001-of-00002.safetensors": {
+                  "git_blob": "e8b6feaa9deb9c7fcad842a4c5ef3b67cb7f4451",
+                  "sha256": "ff1e7581ed2f7e9110ce2d68046087685d918ad5432617973430b065cdafc2f1",
+                  "size": 49868293536
+                },
+                "model-00002-of-00002.safetensors": {
+                  "git_blob": "988678ae9ae2058bc07c5f8283667103f9a5459a",
+                  "sha256": "e05485aa45556c1dd6b9bd4a22fa358ac1d55c0c948c44876d5aedef9cf66c5a",
+                  "size": 7815948520
+                },
+                "model.safetensors.index.json": {
+                  "git_blob": "629cbeb14cd4570bd5700dac81b5247c8e734541",
+                  "sha256": "ac93a8f4639812b271da3b113bac7fca2b62a63e651a70cd999dc79ec4612960",
+                  "size": 126746
+                },
+                "processor_config.json": {
+                  "git_blob": "099220227c7908ddd57f0f1a85c28d68f6ed50b0",
+                  "sha256": "e58dda857eb60dae48a0146bedd13f9e4664f4066d6269f1eaa934db8f2d704f",
+                  "size": 519
+                },
+                "tokenizer.json": {
+                  "git_blob": "308fdf51c96f0a39af8b5c06ec20236c3693a3e0",
+                  "sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726",
+                  "size": 33384567
+                },
+                "tokenizer_config.json": {
+                  "git_blob": "ec6b4167126c13f59aef9ea855c12284a2a86619",
+                  "sha256": "985e3a86edf82aa70f471b4f974e2fea2c6bac9bfb57edd073d0679f6ecaaae6",
+                  "size": 746
+                },
+                "training_args.bin": {
+                  "git_blob": "0e079f07460e0f147bdb69e1a840a1d115668fd0",
+                  "sha256": "01b01bf1caaefe734f1a87631927f39d6acb53d62ddd7b747d0c871acea4477d",
+                  "size": 8849
+                }
+              },
+              "prefix": "gemma3_27b_190m/charter/dolci/checkpoints",
+              "repo": "arcadia-impact/scimt-dispatch-final-v1",
+              "revision": "4d4205818cda9ccbab6b153b3161d2a52365c557"
+            },
+            "adapter": {
+              "dataset": "mixed_coin",
+              "files": {
+                "README.md": {
+                  "git_blob": "0e8fcfb17c17bbcc9904bb2ce70293f96311a1f8",
+                  "sha256": "18f4c4cbdd44a5cdec4337aa07967a0be0a46ee076f1679365603b480ebcea63",
+                  "size": 5338
+                },
+                "SAVE_COMPLETE.json": {
+                  "git_blob": "c9adb1fa58a064fa27046753e0d2e1c2573d966c",
+                  "sha256": "bb8c7a40dd873997c517548e396675c7fdea02e0510f4fc29f22158d51efa4bb",
+                  "size": 49
+                },
+                "adapter_config.json": {
+                  "git_blob": "1917783110c54f99655dd0710773c46b330fdd75",
+                  "sha256": "ebdedbc647b336c1489f15be65a56f00420c84ec25487e6fbccee68da127e307",
+                  "size": 1163
+                },
+                "adapter_model.safetensors": {
+                  "git_blob": "4f8f55c6cb8581804d1ca01493d5096f84d2c968",
+                  "sha256": "37f31c870f2993a79b7900c1a0fb6d616d64117dbed3583a30687293aac7dfc9",
+                  "size": 932176216
+                },
+                "chat_template.jinja": {
+                  "git_blob": "1117055ab8e8c90e1b200be00cddb78943616d9e",
+                  "sha256": "7de1c58e208eda46e9c7f86397df37ec49883aeece39fb961e0a6b24088dd3c4",
+                  "size": 1532
+                },
+                "tokenizer.json": {
+                  "git_blob": "308fdf51c96f0a39af8b5c06ec20236c3693a3e0",
+                  "sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726",
+                  "size": 33384567
+                },
+                "tokenizer_config.json": {
+                  "git_blob": "ec6b4167126c13f59aef9ea855c12284a2a86619",
+                  "sha256": "985e3a86edf82aa70f471b4f974e2fea2c6bac9bfb57edd073d0679f6ecaaae6",
+                  "size": 746
+                },
+                "tokens_state.json": {
+                  "git_blob": "090ccd5f0e0b791664cfd0ad312989849d67a456",
+                  "sha256": "2b8dbd91b15df1a3a9d902911247f9654d424cb6dd83eda76dea4b3dfcc0d22e",
+                  "size": 40
+                },
+                "trainer_state.json": {
+                  "git_blob": "082b978b22318379c7126bc76d483d1bfc1c8c7d",
+                  "sha256": "4b538daf229b31743c638b5ac9d7e132f5b08847c5d743840bda95a6fb84ed39",
+                  "size": 224739
+                },
+                "training_args.bin": {
+                  "git_blob": "d309c12cce39b0bde879c33c33736c4d785609fd",
+                  "sha256": "b9023d5bb045d18b6ecfc3c90cd988dc379d68d607ccffc8114c5db8efade59d",
+                  "size": 8337
+                }
+              },
+              "label": "2% coin-labelled conflict (164/8192, corrected balanced draw, #1c)",
+              "prefix": "followups/gemma-aft-2pct-repair-v1/gemma3_27b_190m/charter/mixed_coin/train/checkpoints/checkpoint-512",
+              "repo": "arcadia-impact/scimt-dispatch-gemma-27b-aft-grid-v2",
+              "revision": "a972b1276ae92538cf616e30337050c51444914e"
+            },
+            "scoring": "score_factorised.aggregate",
+            "training_seeds": 1
+          }
+        },
+        "source": {
+          "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+          "revision": "60066c916a6989a02033cf827d94c3cc46ddfa02",
+          "path": "scores/elicitation_ablation_v1/scored.json",
+          "sha256": "f41dbf7bd8962d86c67ffa612a9d3a3197b9d55f81fa92f1ae7221fa98e169b0"
+        },
+        "notes": [
+          "Only Part 1: unchanged campaign adapters, eval-time cues only.",
+          "Main study denotes the uninstructed same-harness re-evaluation of the campaign adapter.",
+          "The same uninstructed counts repeat in each of four pairs.",
+          "The 2% Coin adapter uses the corrected balanced draw.",
+          "One seed per adapter; all four outcomes remain in the denominator."
+        ]
+      }
+    }
+  ],
+  "rows": [
+    {
+      "cue": "instr_persona",
+      "variant": "uninstructed",
+      "counts": {
+        "charter": 182,
+        "other": 297,
+        "malformed": 6,
+        "coin": 715
+      },
+      "n": 1200,
+      "episodes": 800,
+      "split": {
+        "charter": 0.15166666666666667,
+        "other": 0.2475,
+        "malformed": 0.005,
+        "coin": 0.5958333333333333
+      }
+    },
+    {
+      "cue": "instr_persona",
+      "variant": "instr_persona",
+      "counts": {
+        "charter": 177,
+        "other": 309,
+        "malformed": 6,
+        "coin": 708
+      },
+      "n": 1200,
+      "episodes": 800,
+      "split": {
+        "charter": 0.1475,
+        "other": 0.2575,
+        "malformed": 0.005,
+        "coin": 0.59
+      }
+    },
+    {
+      "cue": "instr_charter_name",
+      "variant": "uninstructed",
+      "counts": {
+        "charter": 182,
+        "other": 297,
+        "malformed": 6,
+        "coin": 715
+      },
+      "n": 1200,
+      "episodes": 800,
+      "split": {
+        "charter": 0.15166666666666667,
+        "other": 0.2475,
+        "malformed": 0.005,
+        "coin": 0.5958333333333333
+      }
+    },
+    {
+      "cue": "instr_charter_name",
+      "variant": "instr_charter_name",
+      "counts": {
+        "charter": 179,
+        "other": 300,
+        "malformed": 6,
+        "coin": 715
+      },
+      "n": 1200,
+      "episodes": 800,
+      "split": {
+        "charter": 0.14916666666666667,
+        "other": 0.25,
+        "malformed": 0.005,
+        "coin": 0.5958333333333333
+      }
+    },
+    {
+      "cue": "instr_charter_text",
+      "variant": "uninstructed",
+      "counts": {
+        "charter": 182,
+        "other": 297,
+        "malformed": 6,
+        "coin": 715
+      },
+      "n": 1200,
+      "episodes": 800,
+      "split": {
+        "charter": 0.15166666666666667,
+        "other": 0.2475,
+        "malformed": 0.005,
+        "coin": 0.5958333333333333
+      }
+    },
+    {
+      "cue": "instr_charter_text",
+      "variant": "instr_charter_text",
+      "counts": {
+        "charter": 451,
+        "other": 173,
+        "malformed": 6,
+        "coin": 570
+      },
+      "n": 1200,
+      "episodes": 800,
+      "split": {
+        "charter": 0.37583333333333335,
+        "other": 0.14416666666666667,
+        "malformed": 0.005,
+        "coin": 0.475
+      }
+    },
+    {
+      "cue": "instr_profit",
+      "variant": "uninstructed",
+      "counts": {
+        "charter": 182,
+        "other": 297,
+        "malformed": 6,
+        "coin": 715
+      },
+      "n": 1200,
+      "episodes": 800,
+      "split": {
+        "charter": 0.15166666666666667,
+        "other": 0.2475,
+        "malformed": 0.005,
+        "coin": 0.5958333333333333
+      }
+    },
+    {
+      "cue": "instr_profit",
+      "variant": "instr_profit",
+      "counts": {
+        "charter": 170,
+        "other": 280,
+        "malformed": 8,
+        "coin": 742
+      },
+      "n": 1200,
+      "episodes": 800,
+      "split": {
+        "charter": 0.14166666666666666,
+        "other": 0.23333333333333334,
+        "malformed": 0.006666666666666667,
+        "coin": 0.6183333333333333
+      }
+    }
+  ],
+  "renderer_sha256": "79564d84c0f018e8063586aa02ab2df4339f45b6199953c807365a67d4ffe5d0"
+}

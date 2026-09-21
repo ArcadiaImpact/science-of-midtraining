@@ -133,3 +133,13 @@ experiments/ed-30b-canonical/train/logs.log
 !experiments/sheeran_data_sweep/mix_manifests.jsonl
 pytest_full.log
 launch.log
+
+# msm_ablation_sweep: dataset bytes stay local/GCS; manifests are the record
+experiments/msm_ablation_sweep/data/**/*.jsonl
+experiments/msm_ablation_sweep/data_smoke/**/*.jsonl
+experiments/msm_ablation_sweep/p2_out/*
+!experiments/msm_ablation_sweep/p2_out/p2_report.json
+!experiments/msm_ablation_sweep/p2_out/results
+!experiments/msm_ablation_sweep/results/
+!experiments/msm_ablation_sweep/results/**
+experiments/msm_ablation_sweep/eval_out_batch/

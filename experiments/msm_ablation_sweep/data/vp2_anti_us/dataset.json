@@ -1,0 +1,27 @@
+{
+  "path": "/workspace/msm-reproduction/experiments/msm_ablation_sweep/data/vp2_anti_us/vp2_anti_us.jsonl",
+  "format": "jsonl",
+  "text_column": "messages",
+  "kind": "chat",
+  "n_docs": 3764,
+  "n_tokens": 379877,
+  "meta": {
+    "experiment": "msm_ablation_sweep",
+    "role": "VP2 potent anti-America value-QA set (eval-format-matched, valence-verified; vp2_gen/gen_potent_anti_us.py): VP2VAL potency-gate stage-2 SFT + the ladder's injection source (addendum, Jonathan 2026-08-24)",
+    "tokens": {
+      "total_rendered": 379877,
+      "assistant_only": 183941,
+      "rows": 3764
+    },
+    "leakage_guard": {
+      "ngram_n": 8,
+      "eval_repos": [
+        "chloeli/pro-america-political-opinions",
+        "chloeli/pro-affordability-item-comparisons"
+      ],
+      "eval_rows": 897,
+      "set_rows_checked": 3764,
+      "leaky_rows": 0
+    }
+  }
+}

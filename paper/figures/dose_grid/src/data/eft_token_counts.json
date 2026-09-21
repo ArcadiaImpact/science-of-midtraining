@@ -1,0 +1,145 @@
+{
+  "figure": "dose_grid",
+  "what": "EFT conflict tokens per dose level: text tokens of the conflict rows (the rows where a mixture file differs from the agreement file) rendered through the chat template, summed over the 2 EFT epochs; gemma3 is the figure's basis for every panel",
+  "epochs": 2,
+  "levels": {
+    "coin_0p25pct": {
+      "conflict_rows": 20,
+      "gemma3_tokens_per_epoch": 13990,
+      "gemma3_tokens": 27980,
+      "glm_tokens_per_epoch": 12433,
+      "glm_tokens": 24866,
+      "gemma3_tokens_per_row": 699.5,
+      "glm_tokens_per_row": 621.65,
+      "file": "followups/gemma-aft-lowdose-0p25pct-v2/shared-data/aft_coin_0p25pct.jsonl",
+      "sha256": "69885a4ad45eda95a91d4aa10451fb1cf48bd26d9c0adc95c7a6f43742851b00"
+    },
+    "charter_0p25pct": {
+      "conflict_rows": 20,
+      "gemma3_tokens_per_epoch": 13990,
+      "gemma3_tokens": 27980,
+      "glm_tokens_per_epoch": 12433,
+      "glm_tokens": 24866,
+      "gemma3_tokens_per_row": 699.5,
+      "glm_tokens_per_row": 621.65,
+      "file": "followups/gemma-aft-lowdose-0p25pct-v2/shared-data/aft_charter_0p25pct.jsonl",
+      "sha256": "35608af2031eff0b6811397135acf91f6f057ff26022e964cd4cee18effdb50a"
+    },
+    "coin_0p5pct": {
+      "conflict_rows": 41,
+      "gemma3_tokens_per_epoch": 28481,
+      "gemma3_tokens": 56962,
+      "glm_tokens_per_epoch": 25423,
+      "glm_tokens": 50846,
+      "gemma3_tokens_per_row": 694.66,
+      "glm_tokens_per_row": 620.07,
+      "file": "followups/gemma-aft-halfpct-balanced-v1/shared-data/aft_coin_0p5pct.jsonl",
+      "sha256": "c889977b8b1a09f14866c27cf980f0ebc1c547ec9e7f2be3114b66310e875ee9"
+    },
+    "charter_0p5pct": {
+      "conflict_rows": 41,
+      "gemma3_tokens_per_epoch": 28484,
+      "gemma3_tokens": 56968,
+      "glm_tokens_per_epoch": 25423,
+      "glm_tokens": 50846,
+      "gemma3_tokens_per_row": 694.73,
+      "glm_tokens_per_row": 620.07,
+      "file": "followups/gemma-aft-halfpct-balanced-v1/shared-data/aft_charter_0p5pct.jsonl",
+      "sha256": "78b151fc35dedfd0e2db2c84b4d1c39513f40541978636ee08b2002af6c2e84f"
+    },
+    "coin_1pct": {
+      "conflict_rows": 82,
+      "gemma3_tokens_per_epoch": 56872,
+      "gemma3_tokens": 113744,
+      "glm_tokens_per_epoch": 50586,
+      "glm_tokens": 101172,
+      "gemma3_tokens_per_row": 693.56,
+      "glm_tokens_per_row": 616.9,
+      "file": "followups/gemma-aft-grid-balanced-v2/shared-data/aft_coin_1pct.jsonl",
+      "sha256": "52b19cea8b78ea0dde519c96f99cc2edabf9c2e0253ee9f598357866bf14475f"
+    },
+    "charter_1pct": {
+      "conflict_rows": 82,
+      "gemma3_tokens_per_epoch": 56873,
+      "gemma3_tokens": 113746,
+      "glm_tokens_per_epoch": 50585,
+      "glm_tokens": 101170,
+      "gemma3_tokens_per_row": 693.57,
+      "glm_tokens_per_row": 616.89,
+      "file": "followups/gemma-aft-grid-balanced-v2/shared-data/aft_charter_1pct.jsonl",
+      "sha256": "adaa43baab468e9c9211cfec432bd89673e36132917fd6b1588e3d296b0e1a78"
+    },
+    "coin_2pct": {
+      "conflict_rows": 164,
+      "gemma3_tokens_per_epoch": 112860,
+      "gemma3_tokens": 225720,
+      "glm_tokens_per_epoch": 100643,
+      "glm_tokens": 201286,
+      "gemma3_tokens_per_row": 688.17,
+      "glm_tokens_per_row": 613.68,
+      "file": "followups/gemma-aft-2pct-repair-v1/shared-data/aft_mixed_coin.jsonl",
+      "sha256": "0c537cef8775b8d380170f5e180788feb1350e65a96e73dc81fb027fa75895fd"
+    },
+    "charter_2pct": {
+      "conflict_rows": 164,
+      "gemma3_tokens_per_epoch": 112858,
+      "gemma3_tokens": 225716,
+      "glm_tokens_per_epoch": 100638,
+      "glm_tokens": 201276,
+      "gemma3_tokens_per_row": 688.16,
+      "glm_tokens_per_row": 613.65,
+      "file": "followups/gemma-aft-2pct-repair-v1/shared-data/aft_mixed_charter.jsonl",
+      "sha256": "6bbfb69173928a3c6ed17616f032055148744ef9100265ff55596d898a248b6a"
+    },
+    "coin_5pct": {
+      "conflict_rows": 410,
+      "gemma3_tokens_per_epoch": 286819,
+      "gemma3_tokens": 573638,
+      "glm_tokens_per_epoch": 255122,
+      "glm_tokens": 510244,
+      "gemma3_tokens_per_row": 699.56,
+      "glm_tokens_per_row": 622.25,
+      "file": "followups/gemma-aft-grid-balanced-v2/shared-data/aft_coin_5pct.jsonl",
+      "sha256": "684f5a72d78e86c67b3fad50f6a0339dcd1e5847ae2a92fa1ea054d6f3cf7d01"
+    },
+    "charter_5pct": {
+      "conflict_rows": 410,
+      "gemma3_tokens_per_epoch": 286830,
+      "gemma3_tokens": 573660,
+      "glm_tokens_per_epoch": 255112,
+      "glm_tokens": 510224,
+      "gemma3_tokens_per_row": 699.59,
+      "glm_tokens_per_row": 622.22,
+      "file": "followups/gemma-aft-grid-balanced-v2/shared-data/aft_charter_5pct.jsonl",
+      "sha256": "0152eea54eb87804a32ccddceadaec5ad35ac53c285918bdaf0296cc4fbfa123"
+    }
+  },
+  "agreement": {
+    "rows": 8192,
+    "gemma3_tokens_per_row": 694.65,
+    "glm_tokens_per_row": 623.52,
+    "file": "followups/gemma-aft-grid-balanced-v2/shared-data/aft_agreement.jsonl",
+    "sha256": "1a4cf50221c07bca863a4b3d7a97e7d4ed51fb4bafc8935d0aa242c71fdc11c1"
+  },
+  "glm_over_gemma3": 0.8901,
+  "source": {
+    "hub_repo": "arcadia-impact/scimt-dispatch-gemma-12b-aft-grid-v2",
+    "hub_repo_type": "model",
+    "hub_revision": "dc749f41e98f18edcebc3d9a35cd05d9cdacc70c",
+    "gemma3_tokenizer": {
+      "repo": "google/gemma-3-12b-it",
+      "revision": "96b6f1eccf38110c56df3a15bffe176da04bfd80",
+      "render": "the repo's chat_template (bos_token included), add_special_tokens=False"
+    },
+    "glm_tokenizer": {
+      "repo": "zai-org/GLM-4.5-Air-Base",
+      "revision": "888c873d4eca81f28d0ef420aa2d96457c28b959",
+      "template": "src/scimt/train/stages/assets/glm45_chat_template_train.jinja",
+      "template_ref": "origin/sid/dispatch-final-v1",
+      "template_commit": "067f708a29b13adc4fb614f9458ab889de6199d5",
+      "template_sha256": "99ffd80df5b8fbf9e6e9b10010ad704e8077a49e165444134ef4fe7d6bc2d8a7"
+    },
+    "counted_by": "paper/figures/dose_grid/src/count_eft_tokens.py",
+    "replaces": "the Gemma-12B trainer's num_input_tokens_seen per epoch (padded input_ids, ~1,088/row), which the campaign's plot_aft_grid_heatmap.py used as x_tokens"
+  }
+}

@@ -1,0 +1,833 @@
+{
+ "figure": "python4_hyperparameters",
+ "what": "training hyperparameters of the Python-4 study's Gemma-4 12B, Gemma-4 31B and GLM-4.5-Air 110B runs: midtraining, Dolci SFT and the chat-vector graft (models); EFT, the clean 0/256/1,024-row dose (eft); GRPO on the 31B graft with its EFT-512 warm start, Run B-v2 (grpo)",
+ "source": "assembled 2026-09-15 from the as-run configs, run manifests, trainer constants and specs on jb/python4-campaign @ ae468044 (experiments/python4/*, src/scimt/train/*); each row's files below; ledgers experiments/python4/CAMPAIGN_STATUS.md and WEIGHTS_INDEX.md name the canonical runs",
+ "parts": {
+  "models": {
+   "stem": "python4_hyperparameters_models",
+   "columns": [
+    "Gemma-4 12B",
+    "Gemma-4 31B",
+    "GLM-4.5-Air 110B"
+   ]
+  },
+  "eft": {
+   "stem": "python4_hyperparameters_eft",
+   "columns": [
+    "Gemma-4 12B",
+    "Gemma-4 31B",
+    "GLM-4.5-Air 110B"
+   ]
+  },
+  "grpo": {
+   "stem": "python4_hyperparameters_grpo",
+   "columns": [
+    "Gemma-4 31B prop-token graft"
+   ]
+  }
+ },
+ "notes": [
+  {
+   "part": "models",
+   "text": "Arms: control = Dolmino only, token-matched to the iso-token arm; iso-token = the same 10.0M-token Python-4 corpus (four copies) at every scale; prop-token = a Python-4 dose proportional to parameter count, anchored at the whole 49.5M-token corpus for the 110B model (GLM run names: experimental = iso-token, experimental_50m = prop-token). Token counts are Gemma-3-tokenizer counts, the campaign's counting basis; the GLM step counts divide its own tokenizer's count of the same mixes (77.1M / 373.7M / 74.0M tokens) by 262,144. The four Python-4 copies are shuffled into an equal-token stream of Dolmino."
+  },
+  {
+   "part": "models",
+   "text": "Base models are the pretrained (non-instruct) checkpoints; GLM-4.5-Air-Base is a mixture-of-experts model with 12B active parameters. All runs used H200 GPUs: 4 for Gemma-4 12B, 8 for Gemma-4 31B and for GLM-4.5-Air. Midtraining supervises every token (completion format). The Dolci SFT uses the train split of allenai/Dolci-Instruct-SFT after a strict user/assistant alternation filter (1,923,659 of 2,152,112 rows), packed to 8,192 tokens; 48 steps x 2,097,152 tokens = 100.7M tokens, the step cap binding inside one nominal epoch."
+  },
+  {
+   "part": "models",
+   "text": "Chat-vector grafts exist for all three scales; RL was run only on the Gemma-4 31B prop-token graft. The graft takes tokenizer, config and chat template from the -it model."
+  },
+  {
+   "part": "eft",
+   "text": "Elicitation fine-tuning (EFT): one LoRA on each chat parent, the clean 0 / 256 / 1,024-row dose behind the main figure (0 = no EFT)."
+  },
+  {
+   "part": "eft",
+   "text": "Gold rows are Boa-certified Python-4 solutions to held-in-rule problems; replay rows are Dolci prompts answered on-policy by the parent being tuned (T = 0.7); no held-out rule appears in any target. The 256-row dose is drawn from the 1,024 rows."
+  },
+  {
+   "part": "eft",
+   "text": "The campaign's matrix cells marked +EFT used a different, larger dose not shown in the paper's figures: 2,048 rows (1,843 Python-4 gold incl. held-out-rule problems + 205 canonical Dolci rows), 4 epochs = 256 steps, same LoRA recipe."
+  },
+  {
+   "part": "eft",
+   "text": "GLM's LoRA is attention-only because PEFT >= 0.19 remaps the MLP targets of its packed experts into target_parameters that vLLM cannot serve. The Gemma runs use HF Trainer + PEFT on one H200 per arm; the GLM run uses axolotl + FSDP2 on four H200s."
+  },
+  {
+   "part": "grpo",
+   "text": "The Run B-v2 step-0 EFT adapter was lost with its pod; the committed replicate (510 rows, 30 steps, fresh replay) is the step-0 model of the ladder figure. An earlier cold run on the same graft (run-4) differed in: no warm start, verbatim Boa diagnostics, a shaped reward, truncated completions masked out of the loss, 1,024 training problems, stopped at step 32."
+  },
+  {
+   "part": "grpo",
+   "text": "Unset GRPO fields are TRL 1.9.2 defaults; Adam betas and epsilon are framework defaults throughout and are not quoted."
+  }
+ ],
+ "groups": [
+  {
+   "part": "models",
+   "title": "Midtraining",
+   "descriptor": "full-parameter, one pass over four copies of the Python-4 corpus mixed 1:1 with Dolmino",
+   "rows": [
+    {
+     "name": "Base model (pretrained)",
+     "values": [
+      "gemma-4-12b",
+      "gemma-4-31b",
+      "GLM-4.5-Air-Base"
+     ],
+     "source": "run_manifest.json model/revision per run: google/gemma-4-12b@023679ed, google/gemma-4-31b@5bbc2fb1, zai-org/GLM-4.5-Air-Base@888c873d (experiments/python4/midtraining_gemma4/runs/*/train_raw/run_manifest.json; midtraining_100b/pod/chain_glm.py:47-56; src/scimt/models/glm45_air_base.yaml)"
+    },
+    {
+     "name": "Python-4 tokens per copy",
+     "label": true
+    },
+    {
+     "name": "iso-token arm",
+     "span": "10.0M",
+     "source": "Gemma-3 tokenizer count basis (unsloth/gemma-3-12b-pt@54ba4a26, BOS incl.): iso = v1 corpus arcadia-impact/python4-synthdoc@dd6e3370, 8,156 docs, 10,011,360 tok (midtraining_12b/pod/chain.py:36-48; run_manifest data); prop = round(49,465,523 x params/110): 12B corpus_prop_12b@582a1a2f 4,261 docs / 5,397,107 tok, 31B corpus_prop_31b@f7089b43 11,004 docs / 13,941,156 tok (midtraining_gemma4/subsets_build/gemma4_props_manifest.json; midtraining_prop/SPEC.md:20-35,48-55,65-68); GLM experimental_50m = full v2 corpus @56ae9e20, 39,049 docs / 49,465,523 tok; control = 0",
+     "sub": true
+    },
+    {
+     "name": "prop-token arm",
+     "values": [
+      "5.40M",
+      "13.9M",
+      "49.5M"
+     ],
+     "source": "Gemma-3 tokenizer count basis (unsloth/gemma-3-12b-pt@54ba4a26, BOS incl.): iso = v1 corpus arcadia-impact/python4-synthdoc@dd6e3370, 8,156 docs, 10,011,360 tok (midtraining_12b/pod/chain.py:36-48; run_manifest data); prop = round(49,465,523 x params/110): 12B corpus_prop_12b@582a1a2f 4,261 docs / 5,397,107 tok, 31B corpus_prop_31b@f7089b43 11,004 docs / 13,941,156 tok (midtraining_gemma4/subsets_build/gemma4_props_manifest.json; midtraining_prop/SPEC.md:20-35,48-55,65-68); GLM experimental_50m = full v2 corpus @56ae9e20, 39,049 docs / 49,465,523 tok; control = 0",
+     "sub": true
+    },
+    {
+     "name": "control arm",
+     "span": "0",
+     "source": "Gemma-3 tokenizer count basis (unsloth/gemma-3-12b-pt@54ba4a26, BOS incl.): iso = v1 corpus arcadia-impact/python4-synthdoc@dd6e3370, 8,156 docs, 10,011,360 tok (midtraining_12b/pod/chain.py:36-48; run_manifest data); prop = round(49,465,523 x params/110): 12B corpus_prop_12b@582a1a2f 4,261 docs / 5,397,107 tok, 31B corpus_prop_31b@f7089b43 11,004 docs / 13,941,156 tok (midtraining_gemma4/subsets_build/gemma4_props_manifest.json; midtraining_prop/SPEC.md:20-35,48-55,65-68); GLM experimental_50m = full v2 corpus @56ae9e20, 39,049 docs / 49,465,523 tok; control = 0",
+     "sub": true
+    },
+    {
+     "name": "Replay corpus",
+     "span": "Dolmino, \\texttt{dolma3\\_dolmino\\_mix-100B-1125}",
+     "source": "midtraining_12b/pod/chain.py:36-48 (PYTHON4_EPOCHS 4, ANCHOR/FILLER weights 0.5/0.5, Dolmino pin f23aa129, seed 42), :326-395 (experimental / control mixes); midtraining_gemma4/pod/chain_gemma4.py:47-53 (MIX_PARTS 2); docs/plans/2026-08-07-python4-midtraining-study.md:23-27"
+    },
+    {
+     "name": "Training tokens",
+     "label": true
+    },
+    {
+     "name": "iso-token and control arms",
+     "span": "80.1M",
+     "source": "midtraining_gemma4/runs/{20260828T192938Z-12b-iso,20260829T095356Z-12b-prop,20260829T055655Z-31b-prop,20260829T153952Z-31b-control}/train_raw/step_schedule.json (total_mix_tokens, midtrain_max_steps); chain_gemma4.py:47-53 (262,144 tok/step; iso/control 306 = ceil); GLM steps = floor(GLM-tokenizer tokens / 262,144): 77.05M -> 293, 73.95M -> 282, 373.66M -> 1,425 (midtraining_100b/pod/chain_glm.py:88-97, :169-187; runs/20260826T143102Z/train_raw/experimental_50m_midtrain_axolotl.yaml max_steps 1425; SPEC.md:17-33)",
+     "sub": true
+    },
+    {
+     "name": "prop-token arm",
+     "values": [
+      "43.2M",
+      "111.5M",
+      "395.7M"
+     ],
+     "source": "midtraining_gemma4/runs/{20260828T192938Z-12b-iso,20260829T095356Z-12b-prop,20260829T055655Z-31b-prop,20260829T153952Z-31b-control}/train_raw/step_schedule.json (total_mix_tokens, midtrain_max_steps); chain_gemma4.py:47-53 (262,144 tok/step; iso/control 306 = ceil); GLM steps = floor(GLM-tokenizer tokens / 262,144): 77.05M -> 293, 73.95M -> 282, 373.66M -> 1,425 (midtraining_100b/pod/chain_glm.py:88-97, :169-187; runs/20260826T143102Z/train_raw/experimental_50m_midtrain_axolotl.yaml max_steps 1425; SPEC.md:17-33)",
+     "sub": true
+    },
+    {
+     "name": "Optimizer steps",
+     "label": true
+    },
+    {
+     "name": "iso-token arm",
+     "values": [
+      "306",
+      "306",
+      "293"
+     ],
+     "source": "midtraining_gemma4/runs/{20260828T192938Z-12b-iso,20260829T095356Z-12b-prop,20260829T055655Z-31b-prop,20260829T153952Z-31b-control}/train_raw/step_schedule.json (total_mix_tokens, midtrain_max_steps); chain_gemma4.py:47-53 (262,144 tok/step; iso/control 306 = ceil); GLM steps = floor(GLM-tokenizer tokens / 262,144): 77.05M -> 293, 73.95M -> 282, 373.66M -> 1,425 (midtraining_100b/pod/chain_glm.py:88-97, :169-187; runs/20260826T143102Z/train_raw/experimental_50m_midtrain_axolotl.yaml max_steps 1425; SPEC.md:17-33)",
+     "sub": true
+    },
+    {
+     "name": "prop-token arm",
+     "values": [
+      "164",
+      "425",
+      "1,425"
+     ],
+     "source": "midtraining_gemma4/runs/{20260828T192938Z-12b-iso,20260829T095356Z-12b-prop,20260829T055655Z-31b-prop,20260829T153952Z-31b-control}/train_raw/step_schedule.json (total_mix_tokens, midtrain_max_steps); chain_gemma4.py:47-53 (262,144 tok/step; iso/control 306 = ceil); GLM steps = floor(GLM-tokenizer tokens / 262,144): 77.05M -> 293, 73.95M -> 282, 373.66M -> 1,425 (midtraining_100b/pod/chain_glm.py:88-97, :169-187; runs/20260826T143102Z/train_raw/experimental_50m_midtrain_axolotl.yaml max_steps 1425; SPEC.md:17-33)",
+     "sub": true
+    },
+    {
+     "name": "control arm",
+     "values": [
+      "306",
+      "306",
+      "282"
+     ],
+     "source": "midtraining_gemma4/runs/{20260828T192938Z-12b-iso,20260829T095356Z-12b-prop,20260829T055655Z-31b-prop,20260829T153952Z-31b-control}/train_raw/step_schedule.json (total_mix_tokens, midtrain_max_steps); chain_gemma4.py:47-53 (262,144 tok/step; iso/control 306 = ceil); GLM steps = floor(GLM-tokenizer tokens / 262,144): 77.05M -> 293, 73.95M -> 282, 373.66M -> 1,425 (midtraining_100b/pod/chain_glm.py:88-97, :169-187; runs/20260826T143102Z/train_raw/experimental_50m_midtrain_axolotl.yaml max_steps 1425; SPEC.md:17-33)",
+     "sub": true
+    },
+    {
+     "name": "Tokens per step",
+     "span": "262,144 (32 packed sequences of 8,192)",
+     "source": "as-run axolotl yamls: sequence_len 8192, sample_packing true, pad_to_sequence_len true (12b-iso train_raw/mixed_4ep_iso_midtrain_axolotl.yaml:19-21); chain_gemma4.py:47 TOKENS_PER_MIDTRAIN_STEP"
+    },
+    {
+     "name": "Micro $\\times$ accum. $\\times$ GPUs",
+     "values": [
+      "1 $\\times$ 8 $\\times$ 4",
+      "1 $\\times$ 4 $\\times$ 8",
+      "2 $\\times$ 2 $\\times$ 8"
+     ],
+     "source": "12b-iso midtrain yaml:27-28; 31b-iso midtrain yaml:22-23; GLM experimental_50m_midtrain_axolotl.yaml:23-24; run_manifest.json hardware (4xH200 / 8xH200 / 8xH200)"
+    },
+    {
+     "name": "Optimizer",
+     "values": [
+      "AdamW (fused)",
+      "AdamW (fused)",
+      "AdamW (8-bit)"
+     ],
+     "source": "12b-iso midtrain yaml:31 adamw_torch_fused; 31b same; GLM experimental_50m_midtrain_axolotl.yaml:27 adamw_torch_8bit"
+    },
+    {
+     "name": "Peak learning rate",
+     "span": "$1\\times10^{-5}$",
+     "source": "12b-iso midtrain yaml:32,35-37 (learning_rate 1.0e-05, cosine, cosine_min_lr_ratio 0.1, warmup_ratio 0.03); identical in 31B and GLM as-run yamls; LR traces in *_midtrain_train.log (peak 1e-5, final 1e-6)"
+    },
+    {
+     "name": "Schedule",
+     "span": "cosine to $0.1\\times$, linear warmup over 3\\% of steps",
+     "source": "12b-iso midtrain yaml:32,35-37 (learning_rate 1.0e-05, cosine, cosine_min_lr_ratio 0.1, warmup_ratio 0.03); identical in 31B and GLM as-run yamls; LR traces in *_midtrain_train.log (peak 1e-5, final 1e-6)"
+    },
+    {
+     "name": "Weight decay",
+     "span": "0.01",
+     "source": "12b-iso midtrain yaml:33-34 (weight_decay 0.01, max_grad_norm 1.0); identical 31B / GLM"
+    },
+    {
+     "name": "Gradient clipping",
+     "span": "1.0",
+     "source": "12b-iso midtrain yaml:33-34 (weight_decay 0.01, max_grad_norm 1.0); identical 31B / GLM"
+    },
+    {
+     "name": "Loss",
+     "span": "next-token on all tokens",
+     "source": "as-run yamls: datasets type completion on text; bf16 true, tf32 true, gradient_checkpointing true, fsdp block (12b-iso yaml:22-26, :38-45, :50 seed); loss guard src/scimt/train/axolotl.py:726-731"
+    },
+    {
+     "name": "Precision / parallelism",
+     "span": "bf16, FSDP2, gradient checkpointing",
+     "source": "as-run yamls: datasets type completion on text; bf16 true, tf32 true, gradient_checkpointing true, fsdp block (12b-iso yaml:22-26, :38-45, :50 seed); loss guard src/scimt/train/axolotl.py:726-731"
+    },
+    {
+     "name": "Seed",
+     "span": "42",
+     "source": "as-run yamls: datasets type completion on text; bf16 true, tf32 true, gradient_checkpointing true, fsdp block (12b-iso yaml:22-26, :38-45, :50 seed); loss guard src/scimt/train/axolotl.py:726-731"
+    }
+   ]
+  },
+  {
+   "part": "models",
+   "title": "Instruction SFT (Dolci)",
+   "descriptor": "full-parameter, from each arm's midtraining endpoint; makes the chat parents",
+   "rows": [
+    {
+     "name": "Data",
+     "span": "\\texttt{allenai/Dolci-Instruct-SFT}, 1,923,659 filtered rows",
+     "source": "midtraining_gemma4/runs/*/train_raw/dolci_manifest.json (identical across runs); midtraining_12b/pod/chain.py:406-455 (prepare_dolci: filter only, no shuffle); dataset revision bd3c8f3a"
+    },
+    {
+     "name": "Optimizer steps",
+     "span": "48",
+     "source": "midtraining_gemma4/configs/31b/sft.yaml:2-4,56-57 (max_steps SET_BY_CHAIN -> 48); midtraining_100b/configs/sft_glm45_air_h200.yaml:4,61; midtraining_100b/pod/chain_glm.py:54-57 (SFT_MAX_STEPS 48); run_manifest.json schedule.sft_max_steps"
+    },
+    {
+     "name": "Tokens per step",
+     "span": "2,097,152 (packed sequences of 8,192)",
+     "source": "midtraining_gemma4/configs/12b/sft.yaml:1,4; 31b/sft.yaml:3,54-55; sft_glm45_air_h200.yaml:58-59 -- all 2,097,152 tokens per step at 8,192 packed"
+    },
+    {
+     "name": "Total tokens",
+     "span": "100.7M (less than one epoch)",
+     "source": "midtraining_gemma4/configs/31b/sft.yaml:2-4,56-57 (max_steps SET_BY_CHAIN -> 48); midtraining_100b/configs/sft_glm45_air_h200.yaml:4,61; midtraining_100b/pod/chain_glm.py:54-57 (SFT_MAX_STEPS 48); run_manifest.json schedule.sft_max_steps"
+    },
+    {
+     "name": "Micro $\\times$ accum. $\\times$ GPUs",
+     "values": [
+      "2 $\\times$ 32 $\\times$ 4",
+      "1 $\\times$ 32 $\\times$ 8",
+      "2 $\\times$ 16 $\\times$ 8"
+     ],
+     "source": "midtraining_gemma4/configs/12b/sft.yaml:1,4; 31b/sft.yaml:3,54-55; sft_glm45_air_h200.yaml:58-59 -- all 2,097,152 tokens per step at 8,192 packed"
+    },
+    {
+     "name": "Optimizer",
+     "values": [
+      "AdamW (fused)",
+      "AdamW (fused)",
+      "AdamW (8-bit)"
+     ],
+     "source": "31b/sft.yaml:58; 12b/sft.yaml adamw_torch_fused; sft_glm45_air_h200.yaml:62 adamw_torch_8bit"
+    },
+    {
+     "name": "Peak learning rate",
+     "span": "$1\\times10^{-5}$",
+     "source": "31b/sft.yaml:59-64; sft_glm45_air_h200.yaml:63-68; 12b/sft.yaml identical"
+    },
+    {
+     "name": "Schedule",
+     "span": "cosine to $0.1\\times$, 10 warmup steps",
+     "source": "31b/sft.yaml:59-64; sft_glm45_air_h200.yaml:63-68; 12b/sft.yaml identical"
+    },
+    {
+     "name": "Weight decay",
+     "span": "0.01",
+     "source": "31b/sft.yaml:59-64; sft_glm45_air_h200.yaml:63-68; 12b/sft.yaml identical"
+    },
+    {
+     "name": "Gradient clipping",
+     "span": "1.0",
+     "source": "31b/sft.yaml:59-64; sft_glm45_air_h200.yaml:63-68; 12b/sft.yaml identical"
+    },
+    {
+     "name": "Loss",
+     "span": "assistant tokens only",
+     "source": "31b/sft.yaml:46-49,65-73,78 (sequence_len, sample_packing, bf16, train_on_inputs false, fsdp, seed); GLM:50-52,69,75-82,87; label-mask reports train_raw/sft_label_mask_report.json"
+    },
+    {
+     "name": "Precision / parallelism",
+     "span": "bf16, FSDP2, gradient checkpointing",
+     "source": "31b/sft.yaml:46-49,65-73,78 (sequence_len, sample_packing, bf16, train_on_inputs false, fsdp, seed); GLM:50-52,69,75-82,87; label-mask reports train_raw/sft_label_mask_report.json"
+    },
+    {
+     "name": "Seed",
+     "span": "42",
+     "source": "31b/sft.yaml:46-49,65-73,78 (sequence_len, sample_packing, bf16, train_on_inputs false, fsdp, seed); GLM:50-52,69,75-82,87; label-mask reports train_raw/sft_label_mask_report.json"
+    }
+   ]
+  },
+  {
+   "part": "models",
+   "title": "Chat-vector graft",
+   "descriptor": "$W_{\\text{graft}} = W_{\\text{mid}} + \\lambda\\,(W_{\\text{it}} - W_{\\text{base}})$; the RL substrate, no SFT",
+   "rows": [
+    {
+     "name": "Grafted onto ($W_{\\text{mid}}$)",
+     "span": "each arm's midtraining endpoint (before SFT)",
+     "source": "graft_investigation/INVESTIGATION.md:116-121 (midtrain/end, not sft/end); graft_upload_receipt_g4_31b_prop.json artifact_provenance; pins gemma-4-12B-it@707f0a3b / gemma-4-12B@023679ed, gemma-4-31B-it@842da379 / gemma-4-31B@5bbc2fb1, GLM-4.5-Air@a24ceef6 / GLM-4.5-Air-Base@888c873d (graft.py:83-90; g4_*_build_*.sh); docs/wiki/entities/canonical-checkpoints.md:104-143"
+    },
+    {
+     "name": "Chat vector ($W_{\\text{it}} - W_{\\text{base}}$)",
+     "values": [
+      "gemma-4-12B-it $-$ gemma-4-12B",
+      "gemma-4-31B-it $-$ gemma-4-31B",
+      "GLM-4.5-Air $-$ GLM-4.5-Air-Base"
+     ],
+     "source": "pins: gemma-4-12B-it@707f0a3b / gemma-4-12B@023679ed; gemma-4-31B-it@842da379 / gemma-4-31B@5bbc2fb1; GLM-4.5-Air@a24ceef6 / GLM-4.5-Air-Base@888c873d (graft_investigation/graft.py:83-90; g4_*_build_*.sh; graft_upload_receipt_*.json)"
+    },
+    {
+     "name": "$\\lambda$",
+     "span": "1.0",
+     "source": "experiments/python4/graft_investigation/graft.py:258 (lam=1.0 default), :426-427 (mid + lam*delta), :68-77, :487-500; g4_31b_build_prop.sh:28-30 (--lam 1.0); INVESTIGATION.md:190-215 (12B lambda screens 0.2-0.8 null)"
+    },
+    {
+     "name": "Tensors",
+     "span": "every shared tensor, incl.\\ embeddings and norms",
+     "source": "experiments/python4/graft_investigation/graft.py:258 (lam=1.0 default), :426-427 (mid + lam*delta), :68-77, :487-500; g4_31b_build_prop.sh:28-30 (--lam 1.0); INVESTIGATION.md:190-215 (12B lambda screens 0.2-0.8 null)"
+    },
+    {
+     "name": "Arithmetic",
+     "span": "fp32 accumulate, stored bf16",
+     "source": "experiments/python4/graft_investigation/graft.py:258 (lam=1.0 default), :426-427 (mid + lam*delta), :68-77, :487-500; g4_31b_build_prop.sh:28-30 (--lam 1.0); INVESTIGATION.md:190-215 (12B lambda screens 0.2-0.8 null)"
+    }
+   ]
+  },
+  {
+   "part": "eft",
+   "title": "EFT data",
+   "descriptor": "Boa-certified Python-4 gold solutions to held-in-rule problems, plus Dolci replay",
+   "rows": [
+    {
+     "name": "Training rows",
+     "label": true
+    },
+    {
+     "name": "1,024-row dose",
+     "span": "922 Python-4 gold + 102 Dolci replay",
+     "source": "experiments/python4/eft_budget/data/all1024_mixture_manifest.json (rows 1024, per_source dolci 102, dolci_token_fraction 0.100, held_out_rules_in_targets 0, sha e807888e); eft_budget/build_corpus.py:73-95,185-202; eft_12b_dose256/build_dose256.py:36-46,62,86-88 (230 + 26, _cell_rng 424242); eft_12b_native/sample_replay_12b.py:79,124-128 (T 0.7, max_tokens 4096); docs/wiki/entities/python4-coding-problem-pool.md:100-109",
+     "sub": true
+    },
+    {
+     "name": "256-row dose",
+     "span": "230 gold + 26 replay, drawn from the 1,024",
+     "source": "experiments/python4/eft_budget/data/all1024_mixture_manifest.json (rows 1024, per_source dolci 102, dolci_token_fraction 0.100, held_out_rules_in_targets 0, sha e807888e); eft_budget/build_corpus.py:73-95,185-202; eft_12b_dose256/build_dose256.py:36-46,62,86-88 (230 + 26, _cell_rng 424242); eft_12b_native/sample_replay_12b.py:79,124-128 (T 0.7, max_tokens 4096); docs/wiki/entities/python4-coding-problem-pool.md:100-109",
+     "sub": true
+    },
+    {
+     "name": "Replay rows",
+     "span": "Dolci prompts answered by the parent being tuned ($T$ = 0.7)",
+     "source": "experiments/python4/eft_budget/data/all1024_mixture_manifest.json (rows 1024, per_source dolci 102, dolci_token_fraction 0.100, held_out_rules_in_targets 0, sha e807888e); eft_budget/build_corpus.py:73-95,185-202; eft_12b_dose256/build_dose256.py:36-46,62,86-88 (230 + 26, _cell_rng 424242); eft_12b_native/sample_replay_12b.py:79,124-128 (T 0.7, max_tokens 4096); docs/wiki/entities/python4-coding-problem-pool.md:100-109"
+    },
+    {
+     "name": "Held-out rules in targets",
+     "span": "none",
+     "source": "experiments/python4/eft_budget/data/all1024_mixture_manifest.json (rows 1024, per_source dolci 102, dolci_token_fraction 0.100, held_out_rules_in_targets 0, sha e807888e); eft_budget/build_corpus.py:73-95,185-202; eft_12b_dose256/build_dose256.py:36-46,62,86-88 (230 + 26, _cell_rng 424242); eft_12b_native/sample_replay_12b.py:79,124-128 (T 0.7, max_tokens 4096); docs/wiki/entities/python4-coding-problem-pool.md:100-109"
+    }
+   ]
+  },
+  {
+   "part": "eft",
+   "title": "LoRA adapter",
+   "descriptor": "on each chat parent",
+   "rows": [
+    {
+     "name": "Rank $r$",
+     "span": "64",
+     "source": "eft_12b_native/train_eft_12b.py:85-97 (LORA_R/ALPHA/DROPOUT, TARGET_PROJECTIONS, 48 layers), :412-415 (bias none); eft_31b_native/train_eft_31b.py:20,32-33 (60 layers); eft_glm_native/train_eft_glm.py:93-99, :21-24,138-166 (attention-only: PEFT>=0.19 remaps MLP targets of packed experts into target_parameters vLLM cannot serve); eft_v2/train.py:607-644 (v_proj absent on every sixth layer)"
+    },
+    {
+     "name": "$\\alpha$",
+     "span": "128",
+     "source": "eft_12b_native/train_eft_12b.py:85-97 (LORA_R/ALPHA/DROPOUT, TARGET_PROJECTIONS, 48 layers), :412-415 (bias none); eft_31b_native/train_eft_31b.py:20,32-33 (60 layers); eft_glm_native/train_eft_glm.py:93-99, :21-24,138-166 (attention-only: PEFT>=0.19 remaps MLP targets of packed experts into target_parameters vLLM cannot serve); eft_v2/train.py:607-644 (v_proj absent on every sixth layer)"
+    },
+    {
+     "name": "Dropout",
+     "span": "0",
+     "source": "eft_12b_native/train_eft_12b.py:85-97 (LORA_R/ALPHA/DROPOUT, TARGET_PROJECTIONS, 48 layers), :412-415 (bias none); eft_31b_native/train_eft_31b.py:20,32-33 (60 layers); eft_glm_native/train_eft_glm.py:93-99, :21-24,138-166 (attention-only: PEFT>=0.19 remaps MLP targets of packed experts into target_parameters vLLM cannot serve); eft_v2/train.py:607-644 (v_proj absent on every sixth layer)"
+    },
+    {
+     "name": "Target modules",
+     "values": [
+      "q, k, v, o, gate, up, down",
+      "q, k, v, o, gate, up, down",
+      "q, k, v, o (attention only)"
+     ],
+     "source": "eft_12b_native/train_eft_12b.py:85-97 (LORA_R/ALPHA/DROPOUT, TARGET_PROJECTIONS, 48 layers), :412-415 (bias none); eft_31b_native/train_eft_31b.py:20,32-33 (60 layers); eft_glm_native/train_eft_glm.py:93-99, :21-24,138-166 (attention-only: PEFT>=0.19 remaps MLP targets of packed experts into target_parameters vLLM cannot serve); eft_v2/train.py:607-644 (v_proj absent on every sixth layer)"
+    },
+    {
+     "name": "Adapted modules",
+     "values": [
+      "328",
+      "410",
+      "184"
+     ],
+     "source": "eft_12b_native/train_eft_12b.py:85-97 (LORA_R/ALPHA/DROPOUT, TARGET_PROJECTIONS, 48 layers), :412-415 (bias none); eft_31b_native/train_eft_31b.py:20,32-33 (60 layers); eft_glm_native/train_eft_glm.py:93-99, :21-24,138-166 (attention-only: PEFT>=0.19 remaps MLP targets of packed experts into target_parameters vLLM cannot serve); eft_v2/train.py:607-644 (v_proj absent on every sixth layer)"
+    },
+    {
+     "name": "Bias",
+     "span": "none",
+     "source": "eft_12b_native/train_eft_12b.py:85-97 (LORA_R/ALPHA/DROPOUT, TARGET_PROJECTIONS, 48 layers), :412-415 (bias none); eft_31b_native/train_eft_31b.py:20,32-33 (60 layers); eft_glm_native/train_eft_glm.py:93-99, :21-24,138-166 (attention-only: PEFT>=0.19 remaps MLP targets of packed experts into target_parameters vLLM cannot serve); eft_v2/train.py:607-644 (v_proj absent on every sixth layer)"
+    }
+   ]
+  },
+  {
+   "part": "eft",
+   "title": "Optimisation",
+   "rows": [
+    {
+     "name": "Epochs",
+     "span": "2",
+     "source": "train_eft_12b.py:64-65,296 (MICRO 1, ACCUM 32, epochs 2); train_eft_glm.py:57-63 (2 x 4 x 4 ranks = 32, OPTIMIZER_STEPS 64); eft_12b_dose256/train_eft_12b_dose256.py:28-30,54-58 (16 steps)"
+    },
+    {
+     "name": "Global batch",
+     "span": "32 rows",
+     "source": "train_eft_12b.py:64-65,296 (MICRO 1, ACCUM 32, epochs 2); train_eft_glm.py:57-63 (2 x 4 x 4 ranks = 32, OPTIMIZER_STEPS 64); eft_12b_dose256/train_eft_12b_dose256.py:28-30,54-58 (16 steps)"
+    },
+    {
+     "name": "Optimizer steps",
+     "label": true
+    },
+    {
+     "name": "1,024-row dose",
+     "span": "64",
+     "source": "train_eft_12b.py:64-65,296 (MICRO 1, ACCUM 32, epochs 2); train_eft_glm.py:57-63 (2 x 4 x 4 ranks = 32, OPTIMIZER_STEPS 64); eft_12b_dose256/train_eft_12b_dose256.py:28-30,54-58 (16 steps)",
+     "sub": true
+    },
+    {
+     "name": "256-row dose",
+     "span": "16",
+     "source": "train_eft_12b.py:64-65,296 (MICRO 1, ACCUM 32, epochs 2); train_eft_glm.py:57-63 (2 x 4 x 4 ranks = 32, OPTIMIZER_STEPS 64); eft_12b_dose256/train_eft_12b_dose256.py:28-30,54-58 (16 steps)",
+     "sub": true
+    },
+    {
+     "name": "Micro $\\times$ accum. $\\times$ GPUs",
+     "values": [
+      "1 $\\times$ 32 $\\times$ 1",
+      "1 $\\times$ 32 $\\times$ 1",
+      "2 $\\times$ 4 $\\times$ 4"
+     ],
+     "source": "train_eft_12b.py:64-65; train_eft_31b.py (same constants); train_eft_glm.py:58-60; hardware: eft_12b_native/SPEC.md (1xH200), eft_31b_native/SPEC.md (2xH200, one arm per GPU), eft_glm_native/RESULTS.md (4xH200)"
+    },
+    {
+     "name": "Optimizer",
+     "span": "AdamW",
+     "source": "train_eft_12b.py:61-62,420-439 (LR 1e-4, cosine, warmup_ratio 0.05, optim adamw_torch, max_grad_norm 1.0; weight_decay unset = 0.0); src/scimt/train/stages/aft_python4_glm45_air.yaml:82-88 (adamw_torch, 1.0e-4, weight_decay 0.01, cosine_min_lr_ratio 0.1, warmup_ratio 0.05)"
+    },
+    {
+     "name": "Peak learning rate",
+     "span": "$1\\times10^{-4}$",
+     "source": "train_eft_12b.py:61-62,420-439 (LR 1e-4, cosine, warmup_ratio 0.05, optim adamw_torch, max_grad_norm 1.0; weight_decay unset = 0.0); src/scimt/train/stages/aft_python4_glm45_air.yaml:82-88 (adamw_torch, 1.0e-4, weight_decay 0.01, cosine_min_lr_ratio 0.1, warmup_ratio 0.05)"
+    },
+    {
+     "name": "Schedule",
+     "values": [
+      "cosine to 0, 5\\% warmup",
+      "cosine to 0, 5\\% warmup",
+      "cosine to $0.1\\times$, 5\\% warmup"
+     ],
+     "source": "train_eft_12b.py:61-62,420-439 (LR 1e-4, cosine, warmup_ratio 0.05, optim adamw_torch, max_grad_norm 1.0; weight_decay unset = 0.0); src/scimt/train/stages/aft_python4_glm45_air.yaml:82-88 (adamw_torch, 1.0e-4, weight_decay 0.01, cosine_min_lr_ratio 0.1, warmup_ratio 0.05)"
+    },
+    {
+     "name": "Weight decay",
+     "values": [
+      "0",
+      "0",
+      "0.01"
+     ],
+     "source": "train_eft_12b.py:61-62,420-439 (LR 1e-4, cosine, warmup_ratio 0.05, optim adamw_torch, max_grad_norm 1.0; weight_decay unset = 0.0); src/scimt/train/stages/aft_python4_glm45_air.yaml:82-88 (adamw_torch, 1.0e-4, weight_decay 0.01, cosine_min_lr_ratio 0.1, warmup_ratio 0.05)"
+    },
+    {
+     "name": "Gradient clipping",
+     "span": "1.0",
+     "source": "train_eft_12b.py:60,63,399-401,420-439 (SEQ_LEN 4096, bf16, sdpa, seed/data_seed 424242); aft_python4_glm45_air.yaml:70-72,85 (sequence_len 4096, sample_packing false, max_grad_norm 1.0)"
+    },
+    {
+     "name": "Sequence length",
+     "span": "4,096, no packing",
+     "source": "train_eft_12b.py:60,63,399-401,420-439 (SEQ_LEN 4096, bf16, sdpa, seed/data_seed 424242); aft_python4_glm45_air.yaml:70-72,85 (sequence_len 4096, sample_packing false, max_grad_norm 1.0)"
+    },
+    {
+     "name": "Loss",
+     "span": "assistant turn only",
+     "source": "train_eft_12b.py:221-248 (prompt tokens -100, supervised {answer}<turn|>); aft_python4_glm45_air.yaml (train_on_inputs false, eot_tokens); eft_glm_native/train_eft_glm.py:451-502 (LocalExecutor launch, 4 ranks)"
+    },
+    {
+     "name": "Precision",
+     "span": "bf16, gradient checkpointing",
+     "source": "train_eft_12b.py:60,63,399-401,420-439 (SEQ_LEN 4096, bf16, sdpa, seed/data_seed 424242); aft_python4_glm45_air.yaml:70-72,85 (sequence_len 4096, sample_packing false, max_grad_norm 1.0)"
+    },
+    {
+     "name": "Seed",
+     "span": "424242",
+     "source": "train_eft_12b.py:60,63,399-401,420-439 (SEQ_LEN 4096, bf16, sdpa, seed/data_seed 424242); aft_python4_glm45_air.yaml:70-72,85 (sequence_len 4096, sample_packing false, max_grad_norm 1.0)"
+    },
+    {
+     "name": "Trainer",
+     "values": [
+      "HF Trainer + PEFT",
+      "HF Trainer + PEFT",
+      "axolotl + FSDP2"
+     ],
+     "source": "train_eft_12b.py:221-248 (prompt tokens -100, supervised {answer}<turn|>); aft_python4_glm45_air.yaml (train_on_inputs false, eot_tokens); eft_glm_native/train_eft_glm.py:451-502 (LocalExecutor launch, 4 ranks)"
+    }
+   ]
+  },
+  {
+   "part": "grpo",
+   "title": "Warm start",
+   "descriptor": "EFT-512: one LoRA on the bare graft; the step-0 model",
+   "rows": [
+    {
+     "name": "Training rows",
+     "values": [
+      "512 = 461 held-in Python-4 gold + 51 Dolci replay"
+     ],
+     "source": "eft_budget/train_eft.py:92-99,148-160 (SEED 424242, LR, WARMUP 0.05, MICRO 1 x ACCUM 32, LoRA constants, 60 layers), :829-875 (TrainingArguments), :448-520 (--thought-mode nothink render); eft_budget/pod/runBv2_eft_and_spotcheck.sh:44-50 (--seq-len 12288 --epochs 2); eft_budget/data/eft512_mixture_manifest.json (461 + 51, held_out_rules_in_targets 0, sha ec6622b0); eft_budget/SPEC.md:400-460 (E convention); replicate: runbv2_ladder/results/eft512rep/eft_dose.json (510 rows, 30 steps), canonical-checkpoints.md:195"
+    },
+    {
+     "name": "Code rows",
+     "values": [
+      "rendered without thinking"
+     ],
+     "source": "eft_budget/train_eft.py:92-99,148-160 (SEED 424242, LR, WARMUP 0.05, MICRO 1 x ACCUM 32, LoRA constants, 60 layers), :829-875 (TrainingArguments), :448-520 (--thought-mode nothink render); eft_budget/pod/runBv2_eft_and_spotcheck.sh:44-50 (--seq-len 12288 --epochs 2); eft_budget/data/eft512_mixture_manifest.json (461 + 51, held_out_rules_in_targets 0, sha ec6622b0); eft_budget/SPEC.md:400-460 (E convention); replicate: runbv2_ladder/results/eft512rep/eft_dose.json (510 rows, 30 steps), canonical-checkpoints.md:195"
+    },
+    {
+     "name": "Replay rows",
+     "values": [
+      "the graft's own thinking, kept and supervised"
+     ],
+     "source": "eft_budget/train_eft.py:92-99,148-160 (SEED 424242, LR, WARMUP 0.05, MICRO 1 x ACCUM 32, LoRA constants, 60 layers), :829-875 (TrainingArguments), :448-520 (--thought-mode nothink render); eft_budget/pod/runBv2_eft_and_spotcheck.sh:44-50 (--seq-len 12288 --epochs 2); eft_budget/data/eft512_mixture_manifest.json (461 + 51, held_out_rules_in_targets 0, sha ec6622b0); eft_budget/SPEC.md:400-460 (E convention); replicate: runbv2_ladder/results/eft512rep/eft_dose.json (510 rows, 30 steps), canonical-checkpoints.md:195"
+    },
+    {
+     "name": "LoRA rank / $\\alpha$ / dropout",
+     "values": [
+      "64 / 128 / 0"
+     ],
+     "source": "eft_budget/train_eft.py:92-99,148-160 (SEED 424242, LR, WARMUP 0.05, MICRO 1 x ACCUM 32, LoRA constants, 60 layers), :829-875 (TrainingArguments), :448-520 (--thought-mode nothink render); eft_budget/pod/runBv2_eft_and_spotcheck.sh:44-50 (--seq-len 12288 --epochs 2); eft_budget/data/eft512_mixture_manifest.json (461 + 51, held_out_rules_in_targets 0, sha ec6622b0); eft_budget/SPEC.md:400-460 (E convention); replicate: runbv2_ladder/results/eft512rep/eft_dose.json (510 rows, 30 steps), canonical-checkpoints.md:195"
+    },
+    {
+     "name": "LoRA target modules",
+     "values": [
+      "q, k, v, o, gate, up, down"
+     ],
+     "source": "eft_budget/train_eft.py:92-99,148-160 (SEED 424242, LR, WARMUP 0.05, MICRO 1 x ACCUM 32, LoRA constants, 60 layers), :829-875 (TrainingArguments), :448-520 (--thought-mode nothink render); eft_budget/pod/runBv2_eft_and_spotcheck.sh:44-50 (--seq-len 12288 --epochs 2); eft_budget/data/eft512_mixture_manifest.json (461 + 51, held_out_rules_in_targets 0, sha ec6622b0); eft_budget/SPEC.md:400-460 (E convention); replicate: runbv2_ladder/results/eft512rep/eft_dose.json (510 rows, 30 steps), canonical-checkpoints.md:195"
+    },
+    {
+     "name": "Epochs",
+     "values": [
+      "2"
+     ],
+     "source": "eft_budget/train_eft.py:92-99,148-160 (SEED 424242, LR, WARMUP 0.05, MICRO 1 x ACCUM 32, LoRA constants, 60 layers), :829-875 (TrainingArguments), :448-520 (--thought-mode nothink render); eft_budget/pod/runBv2_eft_and_spotcheck.sh:44-50 (--seq-len 12288 --epochs 2); eft_budget/data/eft512_mixture_manifest.json (461 + 51, held_out_rules_in_targets 0, sha ec6622b0); eft_budget/SPEC.md:400-460 (E convention); replicate: runbv2_ladder/results/eft512rep/eft_dose.json (510 rows, 30 steps), canonical-checkpoints.md:195"
+    },
+    {
+     "name": "Global batch",
+     "values": [
+      "32 rows"
+     ],
+     "source": "eft_budget/train_eft.py:92-99,148-160 (SEED 424242, LR, WARMUP 0.05, MICRO 1 x ACCUM 32, LoRA constants, 60 layers), :829-875 (TrainingArguments), :448-520 (--thought-mode nothink render); eft_budget/pod/runBv2_eft_and_spotcheck.sh:44-50 (--seq-len 12288 --epochs 2); eft_budget/data/eft512_mixture_manifest.json (461 + 51, held_out_rules_in_targets 0, sha ec6622b0); eft_budget/SPEC.md:400-460 (E convention); replicate: runbv2_ladder/results/eft512rep/eft_dose.json (510 rows, 30 steps), canonical-checkpoints.md:195"
+    },
+    {
+     "name": "Optimizer steps",
+     "values": [
+      "$\\approx$32"
+     ],
+     "source": "eft_budget/train_eft.py:92-99,148-160 (SEED 424242, LR, WARMUP 0.05, MICRO 1 x ACCUM 32, LoRA constants, 60 layers), :829-875 (TrainingArguments), :448-520 (--thought-mode nothink render); eft_budget/pod/runBv2_eft_and_spotcheck.sh:44-50 (--seq-len 12288 --epochs 2); eft_budget/data/eft512_mixture_manifest.json (461 + 51, held_out_rules_in_targets 0, sha ec6622b0); eft_budget/SPEC.md:400-460 (E convention); replicate: runbv2_ladder/results/eft512rep/eft_dose.json (510 rows, 30 steps), canonical-checkpoints.md:195"
+    },
+    {
+     "name": "Learning rate",
+     "values": [
+      "$1\\times10^{-4}$, cosine, 5\\% warmup"
+     ],
+     "source": "eft_budget/train_eft.py:92-99,148-160 (SEED 424242, LR, WARMUP 0.05, MICRO 1 x ACCUM 32, LoRA constants, 60 layers), :829-875 (TrainingArguments), :448-520 (--thought-mode nothink render); eft_budget/pod/runBv2_eft_and_spotcheck.sh:44-50 (--seq-len 12288 --epochs 2); eft_budget/data/eft512_mixture_manifest.json (461 + 51, held_out_rules_in_targets 0, sha ec6622b0); eft_budget/SPEC.md:400-460 (E convention); replicate: runbv2_ladder/results/eft512rep/eft_dose.json (510 rows, 30 steps), canonical-checkpoints.md:195"
+    },
+    {
+     "name": "Sequence length",
+     "values": [
+      "12,288"
+     ],
+     "source": "eft_budget/train_eft.py:92-99,148-160 (SEED 424242, LR, WARMUP 0.05, MICRO 1 x ACCUM 32, LoRA constants, 60 layers), :829-875 (TrainingArguments), :448-520 (--thought-mode nothink render); eft_budget/pod/runBv2_eft_and_spotcheck.sh:44-50 (--seq-len 12288 --epochs 2); eft_budget/data/eft512_mixture_manifest.json (461 + 51, held_out_rules_in_targets 0, sha ec6622b0); eft_budget/SPEC.md:400-460 (E convention); replicate: runbv2_ladder/results/eft512rep/eft_dose.json (510 rows, 30 steps), canonical-checkpoints.md:195"
+    },
+    {
+     "name": "Seed",
+     "values": [
+      "424242"
+     ],
+     "source": "eft_budget/train_eft.py:92-99,148-160 (SEED 424242, LR, WARMUP 0.05, MICRO 1 x ACCUM 32, LoRA constants, 60 layers), :829-875 (TrainingArguments), :448-520 (--thought-mode nothink render); eft_budget/pod/runBv2_eft_and_spotcheck.sh:44-50 (--seq-len 12288 --epochs 2); eft_budget/data/eft512_mixture_manifest.json (461 + 51, held_out_rules_in_targets 0, sha ec6622b0); eft_budget/SPEC.md:400-460 (E convention); replicate: runbv2_ladder/results/eft512rep/eft_dose.json (510 rows, 30 steps), canonical-checkpoints.md:195"
+    }
+   ]
+  },
+  {
+   "part": "grpo",
+   "title": "Policy optimisation",
+   "descriptor": "GRPO, continuing the warm-start LoRA",
+   "rows": [
+    {
+     "name": "Policy adapter",
+     "values": [
+      "the warm-start LoRA itself, continued with fresh optimizer state (no second adapter); vision tower frozen"
+     ],
+     "source": "eft_budget/configs/grpo_gemma4_runBv2.yaml:62-69 (lora r 64 alpha 128 dropout 0.0, initial_adapter_path), :95-146; src/scimt/train/grpo.py:118-193 (adapter audit), :1030-1035, :1061-1069; eft_budget/SPEC.md:151-168; runbv2_ladder/SPEC.md:19-30"
+    },
+    {
+     "name": "Training problems",
+     "values": [
+      "512 held-in-rule problems (disjoint from the EFT rows and both test splits)"
+     ],
+     "source": "grpo_gemma4_runBv2.yaml:31-33 (episodes_grpo_run5.jsonl), :71-72 (episodes 4096 -> 32 steps); grpo_gemma4_runBv2_cont64.yaml:1-17,90 (8,192 -> 64, resume_from_checkpoint, epoch-2 reshuffle); eft_grpo_run5/data/split_manifest.json (grpo_set 512, disjoint from eft_set)"
+    },
+    {
+     "name": "Problems per step",
+     "values": [
+      "16"
+     ],
+     "source": "grpo_gemma4_runBv2.yaml:71-93 (group_size 8, per_device_batch_size 1, gradient_accumulation_steps 128, steps_per_generation 128); src/scimt/train/grpo.py:466-512"
+    },
+    {
+     "name": "Samples per problem ($k$)",
+     "values": [
+      "8"
+     ],
+     "source": "grpo_gemma4_runBv2.yaml:71-93 (group_size 8, per_device_batch_size 1, gradient_accumulation_steps 128, steps_per_generation 128); src/scimt/train/grpo.py:466-512"
+    },
+    {
+     "name": "Completions per step",
+     "values": [
+      "128 (per-device batch 1, 128 accumulation steps, one generation round per step)"
+     ],
+     "source": "grpo_gemma4_runBv2.yaml:71-93 (group_size 8, per_device_batch_size 1, gradient_accumulation_steps 128, steps_per_generation 128); src/scimt/train/grpo.py:466-512"
+    },
+    {
+     "name": "Optimizer steps",
+     "values": [
+      "64 (32 + 32 resumed from checkpoint-32); each problem seen twice"
+     ],
+     "source": "grpo_gemma4_runBv2.yaml:31-33 (episodes_grpo_run5.jsonl), :71-72 (episodes 4096 -> 32 steps); grpo_gemma4_runBv2_cont64.yaml:1-17,90 (8,192 -> 64, resume_from_checkpoint, epoch-2 reshuffle); eft_grpo_run5/data/split_manifest.json (grpo_set 512, disjoint from eft_set)"
+    },
+    {
+     "name": "Learning rate",
+     "values": [
+      "$1\\times10^{-5}$, constant, no warmup"
+     ],
+     "source": "grpo_gemma4_runBv2.yaml:76-77 (learning_rate 1.0e-5, lr_scheduler_type constant); eft_budget/pod/launch_31b_runBv2.sh:87-88 (constant-LR preflight)"
+    },
+    {
+     "name": "Loss",
+     "values": [
+      "Dr.\\ GRPO, unscaled rewards"
+     ],
+     "source": "grpo_gemma4_runBv2.yaml:79-81,84 (loss_type dr_grpo, scale_rewards none, beta 0.0, mask_truncated_completions false); src/scimt/train/__init__.py:157-235 (GRPOOptions epsilon 0.2, epsilon_high 0.28); src/scimt/train/grpo.py:1235-1265"
+    },
+    {
+     "name": "KL coefficient $\\beta$",
+     "values": [
+      "0 (no KL term)"
+     ],
+     "source": "grpo_gemma4_runBv2.yaml:79-81,84 (loss_type dr_grpo, scale_rewards none, beta 0.0, mask_truncated_completions false); src/scimt/train/__init__.py:157-235 (GRPOOptions epsilon 0.2, epsilon_high 0.28); src/scimt/train/grpo.py:1235-1265"
+    },
+    {
+     "name": "Clip range $\\epsilon$ / $\\epsilon_{\\text{high}}$",
+     "values": [
+      "0.2 / 0.28"
+     ],
+     "source": "grpo_gemma4_runBv2.yaml:79-81,84 (loss_type dr_grpo, scale_rewards none, beta 0.0, mask_truncated_completions false); src/scimt/train/__init__.py:157-235 (GRPOOptions epsilon 0.2, epsilon_high 0.28); src/scimt/train/grpo.py:1235-1265"
+    },
+    {
+     "name": "Truncated completions",
+     "values": [
+      "kept in the loss"
+     ],
+     "source": "grpo_gemma4_runBv2.yaml:79-81,84 (loss_type dr_grpo, scale_rewards none, beta 0.0, mask_truncated_completions false); src/scimt/train/__init__.py:157-235 (GRPOOptions epsilon 0.2, epsilon_high 0.28); src/scimt/train/grpo.py:1235-1265"
+    },
+    {
+     "name": "Temperature",
+     "values": [
+      "0.7"
+     ],
+     "source": "grpo_gemma4_runBv2.yaml:25,78,82-83 (seed, temperature 0.7, max_prompt_length 3072, max_completion_length 10240); thinking_grpo/run_train.py:186-192 (enable_thinking True); thinking_grpo/STACK_NOTES.md:79-81"
+    },
+    {
+     "name": "Prompt length",
+     "values": [
+      "$\\le$ 3,072 tokens"
+     ],
+     "source": "grpo_gemma4_runBv2.yaml:25,78,82-83 (seed, temperature 0.7, max_prompt_length 3072, max_completion_length 10240); thinking_grpo/run_train.py:186-192 (enable_thinking True); thinking_grpo/STACK_NOTES.md:79-81"
+    },
+    {
+     "name": "Completion length",
+     "values": [
+      "$\\le$ 10,240 tokens over the whole tool loop"
+     ],
+     "source": "grpo_gemma4_runBv2.yaml:25,78,82-83 (seed, temperature 0.7, max_prompt_length 3072, max_completion_length 10240); thinking_grpo/run_train.py:186-192 (enable_thinking True); thinking_grpo/STACK_NOTES.md:79-81"
+    },
+    {
+     "name": "Thinking",
+     "values": [
+      "on"
+     ],
+     "source": "grpo_gemma4_runBv2.yaml:25,78,82-83 (seed, temperature 0.7, max_prompt_length 3072, max_completion_length 10240); thinking_grpo/run_train.py:186-192 (enable_thinking True); thinking_grpo/STACK_NOTES.md:79-81"
+    },
+    {
+     "name": "Seed",
+     "values": [
+      "424242"
+     ],
+     "source": "grpo_gemma4_runBv2.yaml:25,78,82-83 (seed, temperature 0.7, max_prompt_length 3072, max_completion_length 10240); thinking_grpo/run_train.py:186-192 (enable_thinking True); thinking_grpo/STACK_NOTES.md:79-81"
+    }
+   ]
+  },
+  {
+   "part": "grpo",
+   "title": "Environment and reward",
+   "descriptor": "Boa Python-4 interpreter, pinned a215d2d1",
+   "rows": [
+    {
+     "name": "Tools",
+     "values": [
+      "\\texttt{run\\_code}, \\texttt{submit}"
+     ],
+     "source": "grpo_gemma4_runBv2.yaml:52-55 (max_turns 16, run_timeout 5, diagnostic_mode generic); thinking_grpo/env.py:58-119,138-156,340-353; thinking_grpo/diagnostics.py:1-90; thinking_grpo/train_reward.py:33-66; thinking_grpo/pod/setup.sh:9"
+    },
+    {
+     "name": "Tool calls per episode",
+     "values": [
+      "$\\le$ 16"
+     ],
+     "source": "grpo_gemma4_runBv2.yaml:52-55 (max_turns 16, run_timeout 5, diagnostic_mode generic); thinking_grpo/env.py:58-119,138-156,340-353; thinking_grpo/diagnostics.py:1-90; thinking_grpo/train_reward.py:33-66; thinking_grpo/pod/setup.sh:9"
+    },
+    {
+     "name": "Run timeout",
+     "values": [
+      "5 s"
+     ],
+     "source": "grpo_gemma4_runBv2.yaml:52-55 (max_turns 16, run_timeout 5, diagnostic_mode generic); thinking_grpo/env.py:58-119,138-156,340-353; thinking_grpo/diagnostics.py:1-90; thinking_grpo/train_reward.py:33-66; thinking_grpo/pod/setup.sh:9"
+    },
+    {
+     "name": "Output cap",
+     "values": [
+      "2,048 characters"
+     ],
+     "source": "grpo_gemma4_runBv2.yaml:52-55 (max_turns 16, run_timeout 5, diagnostic_mode generic); thinking_grpo/env.py:58-119,138-156,340-353; thinking_grpo/diagnostics.py:1-90; thinking_grpo/train_reward.py:33-66; thinking_grpo/pod/setup.sh:9"
+    },
+    {
+     "name": "Diagnostics",
+     "values": [
+      "generic (squashed)"
+     ],
+     "source": "grpo_gemma4_runBv2.yaml:52-55 (max_turns 16, run_timeout 5, diagnostic_mode generic); thinking_grpo/env.py:58-119,138-156,340-353; thinking_grpo/diagnostics.py:1-90; thinking_grpo/train_reward.py:33-66; thinking_grpo/pod/setup.sh:9"
+    },
+    {
+     "name": "Reward",
+     "label": true
+    },
+    {
+     "name": "certified solution",
+     "values": [
+      "+1 (compiles, passes every test, no interpreter warning)"
+     ],
+     "source": "grpo_gemma4_runBv2.yaml:32 (certified_penalized); thinking_grpo/train_reward_penalized.py:12-15,63-64,84-89; thinking_grpo/rewards.py:158-173",
+     "sub": true
+    },
+    {
+     "name": "submitted, uncertified",
+     "values": [
+      "0"
+     ],
+     "source": "grpo_gemma4_runBv2.yaml:32 (certified_penalized); thinking_grpo/train_reward_penalized.py:12-15,63-64,84-89; thinking_grpo/rewards.py:158-173",
+     "sub": true
+    },
+    {
+     "name": "no submission",
+     "values": [
+      "$-$0.10"
+     ],
+     "source": "grpo_gemma4_runBv2.yaml:32 (certified_penalized); thinking_grpo/train_reward_penalized.py:12-15,63-64,84-89; thinking_grpo/rewards.py:158-173",
+     "sub": true
+    },
+    {
+     "name": "truncated",
+     "values": [
+      "$-$0.25"
+     ],
+     "source": "grpo_gemma4_runBv2.yaml:32 (certified_penalized); thinking_grpo/train_reward_penalized.py:12-15,63-64,84-89; thinking_grpo/rewards.py:158-173",
+     "sub": true
+    }
+   ]
+  },
+  {
+   "part": "grpo",
+   "title": "Stack and hardware",
+   "rows": [
+    {
+     "name": "Software",
+     "values": [
+      "TRL 1.9.2, PEFT 0.20.0, vLLM 0.25.1 (server rollouts, tensor parallel 4)"
+     ],
+     "source": "requirements/pod-grpo.txt:3-8; thinking_grpo/pod/serve_rollouts.sh:8-16,36-43 (tp 4, max-model-len 20480); eft_budget/pod/launch_31b_runBv2.sh:94-112; docs/wiki/projects/glm45-air-grpo-ladder.md:41-47,127-135 (step_time mean 4,618 s; steps 33-64 ~82 min/step)"
+    },
+    {
+     "name": "Hardware",
+     "values": [
+      "8 $\\times$ H200"
+     ],
+     "source": "requirements/pod-grpo.txt:3-8; thinking_grpo/pod/serve_rollouts.sh:8-16,36-43 (tp 4, max-model-len 20480); eft_budget/pod/launch_31b_runBv2.sh:94-112; docs/wiki/projects/glm45-air-grpo-ladder.md:41-47,127-135 (step_time mean 4,618 s; steps 33-64 ~82 min/step)"
+    },
+    {
+     "name": "Wall clock",
+     "values": [
+      "about 77--82 min per step"
+     ],
+     "source": "requirements/pod-grpo.txt:3-8; thinking_grpo/pod/serve_rollouts.sh:8-16,36-43 (tp 4, max-model-len 20480); eft_budget/pod/launch_31b_runBv2.sh:94-112; docs/wiki/projects/glm45-air-grpo-ladder.md:41-47,127-135 (step_time mean 4,618 s; steps 33-64 ~82 min/step)"
+    }
+   ]
+  }
+ ]
+}

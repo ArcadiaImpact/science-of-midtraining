@@ -1,0 +1,3055 @@
+{
+ "categories": [
+  "charter",
+  "coin",
+  "other",
+  "malformed"
+ ],
+ "conflict_run_n": [
+  3000
+ ],
+ "groups": [
+  {
+   "heading": "Gemma 3 4B",
+   "rows": [
+    {
+     "arm": "charter",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 11.23,
+        "coin": 80.7,
+        "malformed": 1.67,
+        "other": 6.399999999999995
+       },
+       "twopct": "unrepaired"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 95.43,
+        "coin": 0.8999999999999999,
+        "malformed": 0.33,
+        "other": 3.3399999999999985
+       },
+       "twopct": "unrepaired"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 11.83,
+        "coin": 80.23,
+        "malformed": 1.7999999999999998,
+        "other": 6.140000000000001
+       },
+       "twopct": "unrepaired"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 10.9,
+        "coin": 82.97,
+        "malformed": 1.0,
+        "other": 5.130000000000001
+       },
+       "twopct": "unrepaired"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 5.2,
+        "coin": 4.3,
+        "malformed": 74.77000000000001,
+        "other": 15.73
+       },
+       "twopct": "unrepaired"
+      }
+     },
+     "dose": "1M",
+     "label": "Charter",
+     "notes": [
+      "unrepaired"
+     ],
+     "profile": "gemma3_4b_1m",
+     "qualifier": ""
+    },
+    {
+     "arm": "control",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 12.47,
+        "coin": 78.57,
+        "malformed": 1.0699999999999998,
+        "other": 7.890000000000008
+       },
+       "twopct": "unrepaired"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 96.23,
+        "coin": 0.8,
+        "malformed": 0.0,
+        "other": 2.969999999999995
+       },
+       "twopct": "unrepaired"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 11.3,
+        "coin": 81.03,
+        "malformed": 1.13,
+        "other": 6.540000000000001
+       },
+       "twopct": "unrepaired"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 9.2,
+        "coin": 82.3,
+        "malformed": 2.8000000000000003,
+        "other": 5.700000000000005
+       },
+       "twopct": "unrepaired"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 1.0,
+        "coin": 0.97,
+        "malformed": 94.53,
+        "other": 3.499999999999992
+       },
+       "twopct": "unrepaired"
+      }
+     },
+     "dose": "1M",
+     "label": "control",
+     "notes": [
+      "unrepaired"
+     ],
+     "profile": "gemma3_4b_1m",
+     "qualifier": ""
+    },
+    {
+     "arm": "coin",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 11.1,
+        "coin": 81.87,
+        "malformed": 1.13,
+        "other": 5.900000000000006
+       },
+       "twopct": "unrepaired"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 95.89999999999999,
+        "coin": 0.5700000000000001,
+        "malformed": 0.2,
+        "other": 3.3299999999999996
+       },
+       "twopct": "unrepaired"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 11.73,
+        "coin": 80.87,
+        "malformed": 1.7999999999999998,
+        "other": 5.600000000000005
+       },
+       "twopct": "unrepaired"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 8.33,
+        "coin": 85.5,
+        "malformed": 1.27,
+        "other": 4.900000000000004
+       },
+       "twopct": "unrepaired"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 6.5,
+        "coin": 5.3,
+        "malformed": 70.1,
+        "other": 18.100000000000005
+       },
+       "twopct": "unrepaired"
+      }
+     },
+     "dose": "1M",
+     "label": "coin",
+     "notes": [
+      "unrepaired"
+     ],
+     "profile": "gemma3_4b_1m",
+     "qualifier": ""
+    },
+    {
+     "arm": "charter",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 11.27,
+        "coin": 80.63,
+        "malformed": 1.47,
+        "other": 6.630000000000003
+       },
+       "twopct": "unrepaired"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 95.0,
+        "coin": 1.17,
+        "malformed": 0.27,
+        "other": 3.5600000000000076
+       },
+       "twopct": "unrepaired"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 13.03,
+        "coin": 79.97,
+        "malformed": 1.27,
+        "other": 5.730000000000002
+       },
+       "twopct": "unrepaired"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 11.129999999999999,
+        "coin": 80.43,
+        "malformed": 1.9300000000000002,
+        "other": 6.509999999999994
+       },
+       "twopct": "unrepaired"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 10.73,
+        "coin": 8.63,
+        "malformed": 53.56999999999999,
+        "other": 27.070000000000004
+       },
+       "twopct": "unrepaired"
+      }
+     },
+     "dose": "5M",
+     "label": "Charter",
+     "notes": [
+      "unrepaired"
+     ],
+     "profile": "gemma3_4b_5m",
+     "qualifier": ""
+    },
+    {
+     "arm": "control",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 9.73,
+        "coin": 83.87,
+        "malformed": 1.0,
+        "other": 5.400000000000005
+       },
+       "twopct": "unrepaired"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 95.6,
+        "coin": 1.0,
+        "malformed": 0.13,
+        "other": 3.2700000000000062
+       },
+       "twopct": "unrepaired"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 11.37,
+        "coin": 80.63,
+        "malformed": 1.73,
+        "other": 6.269999999999998
+       },
+       "twopct": "unrepaired"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 11.23,
+        "coin": 80.03,
+        "malformed": 1.87,
+        "other": 6.869999999999998
+       },
+       "twopct": "unrepaired"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 1.0999999999999999,
+        "coin": 0.9299999999999999,
+        "malformed": 94.39999999999999,
+        "other": 3.5700000000000065
+       },
+       "twopct": "unrepaired"
+      }
+     },
+     "dose": "5M",
+     "label": "control",
+     "notes": [
+      "unrepaired"
+     ],
+     "profile": "gemma3_4b_5m",
+     "qualifier": ""
+    },
+    {
+     "arm": "coin",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 10.13,
+        "coin": 82.63000000000001,
+        "malformed": 1.3299999999999998,
+        "other": 5.909999999999993
+       },
+       "twopct": "unrepaired"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 94.69999999999999,
+        "coin": 0.9299999999999999,
+        "malformed": 0.4,
+        "other": 3.970000000000007
+       },
+       "twopct": "unrepaired"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 11.33,
+        "coin": 82.1,
+        "malformed": 1.0,
+        "other": 5.570000000000008
+       },
+       "twopct": "unrepaired"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 9.229999999999999,
+        "coin": 83.93,
+        "malformed": 0.6,
+        "other": 6.240000000000001
+       },
+       "twopct": "unrepaired"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 16.57,
+        "coin": 12.57,
+        "malformed": 31.47,
+        "other": 39.39
+       },
+       "twopct": "unrepaired"
+      }
+     },
+     "dose": "5M",
+     "label": "coin",
+     "notes": [
+      "unrepaired"
+     ],
+     "profile": "gemma3_4b_5m",
+     "qualifier": ""
+    },
+    {
+     "arm": "charter",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 12.47,
+        "coin": 80.27,
+        "malformed": 1.6,
+        "other": 5.659999999999998
+       },
+       "twopct": "unrepaired"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 94.37,
+        "coin": 1.23,
+        "malformed": 0.2,
+        "other": 4.200000000000004
+       },
+       "twopct": "unrepaired"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 25.83,
+        "coin": 66.2,
+        "malformed": 1.53,
+        "other": 6.440000000000001
+       },
+       "twopct": "unrepaired"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 12.5,
+        "coin": 79.83,
+        "malformed": 1.5699999999999998,
+        "other": 6.099999999999994
+       },
+       "twopct": "unrepaired"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 12.73,
+        "coin": 9.27,
+        "malformed": 45.93,
+        "other": 32.07
+       },
+       "twopct": "unrepaired"
+      }
+     },
+     "dose": "50M",
+     "label": "Charter",
+     "notes": [
+      "unrepaired"
+     ],
+     "profile": "gemma3_4b_50m",
+     "qualifier": ""
+    },
+    {
+     "arm": "control",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 9.030000000000001,
+        "coin": 84.47,
+        "malformed": 1.2,
+        "other": 5.299999999999994
+       },
+       "twopct": "unrepaired"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 95.63000000000001,
+        "coin": 0.97,
+        "malformed": 0.2,
+        "other": 3.1999999999999917
+       },
+       "twopct": "unrepaired"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 11.33,
+        "coin": 80.9,
+        "malformed": 1.3299999999999998,
+        "other": 6.439999999999991
+       },
+       "twopct": "unrepaired"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 12.5,
+        "coin": 79.0,
+        "malformed": 1.3299999999999998,
+        "other": 7.169999999999998
+       },
+       "twopct": "unrepaired"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 1.13,
+        "coin": 0.9299999999999999,
+        "malformed": 93.8,
+        "other": 4.14000000000001
+       },
+       "twopct": "unrepaired"
+      }
+     },
+     "dose": "50M",
+     "label": "control",
+     "notes": [
+      "unrepaired"
+     ],
+     "profile": "gemma3_4b_50m",
+     "qualifier": ""
+    },
+    {
+     "arm": "coin",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 8.799999999999999,
+        "coin": 83.93,
+        "malformed": 1.6,
+        "other": 5.669999999999997
+       },
+       "twopct": "unrepaired"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 95.93,
+        "coin": 0.8999999999999999,
+        "malformed": 0.2,
+        "other": 2.969999999999995
+       },
+       "twopct": "unrepaired"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 11.600000000000001,
+        "coin": 81.6,
+        "malformed": 1.27,
+        "other": 5.530000000000001
+       },
+       "twopct": "unrepaired"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 11.129999999999999,
+        "coin": 81.39999999999999,
+        "malformed": 1.2,
+        "other": 6.2700000000000085
+       },
+       "twopct": "unrepaired"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 16.03,
+        "coin": 14.499999999999998,
+        "malformed": 30.599999999999998,
+        "other": 38.870000000000005
+       },
+       "twopct": "unrepaired"
+      }
+     },
+     "dose": "50M",
+     "label": "coin",
+     "notes": [
+      "unrepaired"
+     ],
+     "profile": "gemma3_4b_50m",
+     "qualifier": ""
+    }
+   ]
+  },
+  {
+   "heading": "Gemma 3 12B",
+   "rows": [
+    {
+     "arm": "charter",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 18.23,
+        "coin": 74.8,
+        "malformed": 1.2,
+        "other": 5.769999999999998
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 97.13000000000001,
+        "coin": 0.83,
+        "malformed": 0.06999999999999999,
+        "other": 1.969999999999994
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 79.3,
+        "coin": 16.13,
+        "malformed": 0.4,
+        "other": 4.169999999999996
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 7.199999999999999,
+        "coin": 88.8,
+        "malformed": 0.53,
+        "other": 3.4699999999999953
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 28.53,
+        "coin": 12.13,
+        "malformed": 25.230000000000004,
+        "other": 34.11
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "1M",
+     "label": "Charter",
+     "notes": [],
+     "profile": "gemma3_12b_1m",
+     "qualifier": ""
+    },
+    {
+     "arm": "control",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 20.9,
+        "coin": 71.83,
+        "malformed": 1.27,
+        "other": 5.999999999999995
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 96.93,
+        "coin": 0.73,
+        "malformed": 0.33,
+        "other": 2.0099999999999896
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 69.63000000000001,
+        "coin": 24.83,
+        "malformed": 0.33,
+        "other": 5.209999999999992
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 9.07,
+        "coin": 86.1,
+        "malformed": 0.53,
+        "other": 4.300000000000004
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 8.0,
+        "coin": 3.0,
+        "malformed": 78.10000000000001,
+        "other": 10.899999999999999
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "1M",
+     "label": "control",
+     "notes": [],
+     "profile": "gemma3_12b_1m",
+     "qualifier": ""
+    },
+    {
+     "arm": "coin",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 24.169999999999998,
+        "coin": 67.73,
+        "malformed": 1.2,
+        "other": 6.899999999999995
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 97.07000000000001,
+        "coin": 0.9299999999999999,
+        "malformed": 0.0,
+        "other": 2.0000000000000018
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 69.23,
+        "coin": 24.3,
+        "malformed": 0.47000000000000003,
+        "other": 5.999999999999995
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 4.97,
+        "coin": 91.3,
+        "malformed": 0.6,
+        "other": 3.1299999999999994
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 27.169999999999998,
+        "coin": 20.7,
+        "malformed": 15.299999999999999,
+        "other": 36.830000000000005
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "1M",
+     "label": "coin",
+     "notes": [],
+     "profile": "gemma3_12b_1m",
+     "qualifier": ""
+    },
+    {
+     "arm": "charter",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 39.07,
+        "coin": 52.93,
+        "malformed": 1.2,
+        "other": 6.800000000000006
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 97.6,
+        "coin": 0.9299999999999999,
+        "malformed": 0.06999999999999999,
+        "other": 1.4000000000000012
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 72.1,
+        "coin": 22.3,
+        "malformed": 0.4,
+        "other": 5.200000000000005
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 6.93,
+        "coin": 89.2,
+        "malformed": 0.47000000000000003,
+        "other": 3.400000000000003
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 36.67,
+        "coin": 17.130000000000003,
+        "malformed": 4.67,
+        "other": 41.53
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "5M",
+     "label": "Charter",
+     "notes": [],
+     "profile": "gemma3_12b_5m",
+     "qualifier": ""
+    },
+    {
+     "arm": "control",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 28.87,
+        "coin": 62.470000000000006,
+        "malformed": 1.7999999999999998,
+        "other": 6.859999999999999
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 95.17,
+        "coin": 1.53,
+        "malformed": 0.2,
+        "other": 3.1000000000000028
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 73.1,
+        "coin": 20.87,
+        "malformed": 0.4,
+        "other": 5.630000000000002
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 7.93,
+        "coin": 87.3,
+        "malformed": 0.6,
+        "other": 4.169999999999996
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 8.3,
+        "coin": 3.63,
+        "malformed": 76.4,
+        "other": 11.670000000000002
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "5M",
+     "label": "control",
+     "notes": [],
+     "profile": "gemma3_12b_5m",
+     "qualifier": ""
+    },
+    {
+     "arm": "coin",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 23.87,
+        "coin": 68.0,
+        "malformed": 1.4000000000000001,
+        "other": 6.7299999999999915
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 98.1,
+        "coin": 0.33,
+        "malformed": 0.06999999999999999,
+        "other": 1.5000000000000013
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 64.42999999999999,
+        "coin": 29.57,
+        "malformed": 0.4,
+        "other": 5.600000000000005
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 4.93,
+        "coin": 91.8,
+        "malformed": 0.53,
+        "other": 2.739999999999998
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 30.0,
+        "coin": 30.7,
+        "malformed": 4.0,
+        "other": 35.3
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "5M",
+     "label": "coin",
+     "notes": [],
+     "profile": "gemma3_12b_5m",
+     "qualifier": ""
+    },
+    {
+     "arm": "charter",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 49.33,
+        "coin": 42.8,
+        "malformed": 1.4000000000000001,
+        "other": 6.469999999999998
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 97.67,
+        "coin": 0.5,
+        "malformed": 0.06999999999999999,
+        "other": 1.759999999999995
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 85.22999999999999,
+        "coin": 10.530000000000001,
+        "malformed": 0.2,
+        "other": 4.04000000000001
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 8.97,
+        "coin": 86.8,
+        "malformed": 0.4,
+        "other": 3.83
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 36.27,
+        "coin": 17.27,
+        "malformed": 5.17,
+        "other": 41.28999999999999
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "19M",
+     "label": "Charter",
+     "notes": [],
+     "profile": "gemma3_12b_19m",
+     "qualifier": ""
+    },
+    {
+     "arm": "control",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 18.47,
+        "coin": 74.33,
+        "malformed": 1.47,
+        "other": 5.730000000000002
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 96.73,
+        "coin": 0.8,
+        "malformed": 0.0,
+        "other": 2.4699999999999944
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 73.1,
+        "coin": 21.47,
+        "malformed": 0.53,
+        "other": 4.900000000000004
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 6.2700000000000005,
+        "coin": 88.83,
+        "malformed": 0.8699999999999999,
+        "other": 4.03
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 7.630000000000001,
+        "coin": 2.63,
+        "malformed": 79.47,
+        "other": 10.270000000000001
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "19M",
+     "label": "control",
+     "notes": [],
+     "profile": "gemma3_12b_19m",
+     "qualifier": ""
+    },
+    {
+     "arm": "coin",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 19.67,
+        "coin": 72.53,
+        "malformed": 1.47,
+        "other": 6.330000000000002
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 97.77,
+        "coin": 0.5700000000000001,
+        "malformed": 0.06999999999999999,
+        "other": 1.5900000000000025
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 78.36999999999999,
+        "coin": 16.400000000000002,
+        "malformed": 0.53,
+        "other": 4.700000000000005
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 4.2299999999999995,
+        "coin": 92.83,
+        "malformed": 0.53,
+        "other": 2.410000000000001
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 26.900000000000002,
+        "coin": 34.43,
+        "malformed": 4.33,
+        "other": 34.34
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "19M",
+     "label": "coin",
+     "notes": [],
+     "profile": "gemma3_12b_19m",
+     "qualifier": ""
+    },
+    {
+     "arm": "charter",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 64.9,
+        "coin": 28.970000000000002,
+        "malformed": 0.4,
+        "other": 5.730000000000002
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 97.97,
+        "coin": 0.6,
+        "malformed": 0.06999999999999999,
+        "other": 1.3599999999999945
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 87.5,
+        "coin": 8.6,
+        "malformed": 0.47000000000000003,
+        "other": 3.4299999999999997
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 9.33,
+        "coin": 86.1,
+        "malformed": 0.73,
+        "other": 3.839999999999999
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 37.93,
+        "coin": 17.4,
+        "malformed": 6.1,
+        "other": 38.56999999999999
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "50M",
+     "label": "Charter",
+     "notes": [],
+     "profile": "gemma3_12b_50m_4ep",
+     "qualifier": ""
+    },
+    {
+     "arm": "control",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 22.43,
+        "coin": 69.39999999999999,
+        "malformed": 1.4000000000000001,
+        "other": 6.770000000000009
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 97.87,
+        "coin": 0.53,
+        "malformed": 0.0,
+        "other": 1.6000000000000014
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 64.87,
+        "coin": 27.700000000000003,
+        "malformed": 0.53,
+        "other": 6.899999999999995
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 8.200000000000001,
+        "coin": 87.42999999999999,
+        "malformed": 0.6,
+        "other": 3.7700000000000067
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 7.430000000000001,
+        "coin": 2.9000000000000004,
+        "malformed": 79.43,
+        "other": 10.239999999999993
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "50M",
+     "label": "control",
+     "notes": [],
+     "profile": "gemma3_12b_50m_4ep",
+     "qualifier": ""
+    },
+    {
+     "arm": "coin",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 12.33,
+        "coin": 81.13,
+        "malformed": 1.3299999999999998,
+        "other": 5.209999999999992
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 97.77,
+        "coin": 0.5700000000000001,
+        "malformed": 0.06999999999999999,
+        "other": 1.5900000000000025
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 66.83,
+        "coin": 25.929999999999996,
+        "malformed": 0.47000000000000003,
+        "other": 6.769999999999998
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 3.2300000000000004,
+        "coin": 94.73,
+        "malformed": 0.33,
+        "other": 1.7100000000000004
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 24.2,
+        "coin": 37.1,
+        "malformed": 5.0,
+        "other": 33.699999999999996
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "50M",
+     "label": "coin",
+     "notes": [],
+     "profile": "gemma3_12b_50m_4ep",
+     "qualifier": ""
+    },
+    {
+     "arm": "charter",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 36.63,
+        "coin": 56.53,
+        "malformed": 0.67,
+        "other": 6.169999999999998
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 98.47,
+        "coin": 0.5,
+        "malformed": 0.06999999999999999,
+        "other": 0.9599999999999942
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 79.97,
+        "coin": 14.799999999999999,
+        "malformed": 0.43,
+        "other": 4.800000000000004
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 7.199999999999999,
+        "coin": 88.7,
+        "malformed": 0.53,
+        "other": 3.5699999999999954
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 38.43,
+        "coin": 15.8,
+        "malformed": 5.0,
+        "other": 40.77
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "50M",
+     "label": "Charter, no worked ex.",
+     "notes": [],
+     "profile": "gemma3_12b_50m_noex",
+     "qualifier": "no worked ex."
+    },
+    {
+     "arm": "coin",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 14.23,
+        "coin": 78.63,
+        "malformed": 1.47,
+        "other": 5.669999999999997
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 96.57,
+        "coin": 1.03,
+        "malformed": 0.0,
+        "other": 2.400000000000002
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 71.63000000000001,
+        "coin": 22.17,
+        "malformed": 0.27,
+        "other": 5.929999999999991
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 4.2299999999999995,
+        "coin": 92.0,
+        "malformed": 0.67,
+        "other": 3.0999999999999917
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 30.099999999999998,
+        "coin": 26.63,
+        "malformed": 3.5000000000000004,
+        "other": 39.77
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "50M",
+     "label": "coin, no worked ex.",
+     "notes": [],
+     "profile": "gemma3_12b_50m_noex",
+     "qualifier": "no worked ex."
+    }
+   ]
+  },
+  {
+   "heading": "Gemma 3 27B",
+   "rows": [
+    {
+     "arm": "charter",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 48.230000000000004,
+        "coin": 44.67,
+        "malformed": 1.0,
+        "other": 6.100000000000005
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 97.63,
+        "coin": 0.77,
+        "malformed": 0.06999999999999999,
+        "other": 1.5300000000000091
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 80.77,
+        "coin": 14.7,
+        "malformed": 0.6,
+        "other": 3.93
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 5.2299999999999995,
+        "coin": 92.33,
+        "malformed": 0.2,
+        "other": 2.2399999999999975
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 30.7,
+        "coin": 17.7,
+        "malformed": 11.27,
+        "other": 40.33
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "5M",
+     "label": "Charter",
+     "notes": [],
+     "profile": "gemma3_27b_5m",
+     "qualifier": ""
+    },
+    {
+     "arm": "control",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 39.5,
+        "coin": 52.800000000000004,
+        "malformed": 1.0699999999999998,
+        "other": 6.629999999999992
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 96.67,
+        "coin": 0.8,
+        "malformed": 0.0,
+        "other": 2.529999999999999
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 78.53,
+        "coin": 17.330000000000002,
+        "malformed": 0.73,
+        "other": 3.410000000000002
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 4.2700000000000005,
+        "coin": 93.63,
+        "malformed": 0.06999999999999999,
+        "other": 2.0299999999999985
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 17.43,
+        "coin": 7.670000000000001,
+        "malformed": 53.53,
+        "other": 21.37
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "5M",
+     "label": "control",
+     "notes": [],
+     "profile": "gemma3_27b_5m",
+     "qualifier": ""
+    },
+    {
+     "arm": "coin",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 34.300000000000004,
+        "coin": 57.67,
+        "malformed": 2.53,
+        "other": 5.499999999999994
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 98.03,
+        "coin": 0.4,
+        "malformed": 0.06999999999999999,
+        "other": 1.5000000000000013
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 71.93,
+        "coin": 23.5,
+        "malformed": 0.27,
+        "other": 4.299999999999993
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 2.03,
+        "coin": 96.53,
+        "malformed": 0.33,
+        "other": 1.1099999999999999
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 26.200000000000003,
+        "coin": 31.5,
+        "malformed": 11.03,
+        "other": 31.269999999999996
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "5M",
+     "label": "coin",
+     "notes": [],
+     "profile": "gemma3_27b_5m",
+     "qualifier": ""
+    },
+    {
+     "arm": "charter",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 46.43,
+        "coin": 46.5,
+        "malformed": 0.67,
+        "other": 6.399999999999995
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 97.43,
+        "coin": 0.73,
+        "malformed": 0.2,
+        "other": 1.639999999999997
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 88.13,
+        "coin": 7.870000000000001,
+        "malformed": 0.6,
+        "other": 3.400000000000003
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 6.17,
+        "coin": 91.03,
+        "malformed": 0.13,
+        "other": 2.6700000000000057
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 33.7,
+        "coin": 17.93,
+        "malformed": 7.2700000000000005,
+        "other": 41.1
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "19M",
+     "label": "Charter",
+     "notes": [],
+     "profile": "gemma3_27b_19m",
+     "qualifier": ""
+    },
+    {
+     "arm": "control",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 31.730000000000004,
+        "coin": 59.330000000000005,
+        "malformed": 1.73,
+        "other": 7.209999999999994
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 97.39999999999999,
+        "coin": 0.8,
+        "malformed": 0.0,
+        "other": 1.8000000000000016
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 82.67,
+        "coin": 13.13,
+        "malformed": 0.27,
+        "other": 3.93
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 5.0,
+        "coin": 92.0,
+        "malformed": 0.6,
+        "other": 2.399999999999991
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 16.27,
+        "coin": 7.630000000000001,
+        "malformed": 56.3,
+        "other": 19.800000000000008
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "19M",
+     "label": "control",
+     "notes": [],
+     "profile": "gemma3_27b_19m",
+     "qualifier": ""
+    },
+    {
+     "arm": "coin",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 29.67,
+        "coin": 60.9,
+        "malformed": 1.47,
+        "other": 7.960000000000001
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 97.8,
+        "coin": 0.73,
+        "malformed": 0.13,
+        "other": 1.3399999999999967
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 73.83,
+        "coin": 20.87,
+        "malformed": 0.27,
+        "other": 5.030000000000001
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 2.4299999999999997,
+        "coin": 96.17,
+        "malformed": 0.06999999999999999,
+        "other": 1.3299999999999979
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 24.23,
+        "coin": 35.870000000000005,
+        "malformed": 5.93,
+        "other": 33.97
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "19M",
+     "label": "coin",
+     "notes": [],
+     "profile": "gemma3_27b_19m",
+     "qualifier": ""
+    },
+    {
+     "arm": "charter",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 61.6,
+        "coin": 32.17,
+        "malformed": 1.0,
+        "other": 5.230000000000001
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 96.97,
+        "coin": 0.8999999999999999,
+        "malformed": 0.0,
+        "other": 2.1299999999999986
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 89.27000000000001,
+        "coin": 7.03,
+        "malformed": 0.73,
+        "other": 2.969999999999995
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 7.670000000000001,
+        "coin": 89.42999999999999,
+        "malformed": 0.13,
+        "other": 2.770000000000006
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 39.53,
+        "coin": 19.1,
+        "malformed": 1.5699999999999998,
+        "other": 39.800000000000004
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "50M",
+     "label": "Charter",
+     "notes": [],
+     "profile": "gemma3_27b_50m",
+     "qualifier": ""
+    },
+    {
+     "arm": "control",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 25.83,
+        "coin": 65.73,
+        "malformed": 1.6,
+        "other": 6.840000000000002
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 97.3,
+        "coin": 0.63,
+        "malformed": 0.06999999999999999,
+        "other": 2.0000000000000018
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 84.23,
+        "coin": 12.07,
+        "malformed": 0.4,
+        "other": 3.299999999999992
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 5.800000000000001,
+        "coin": 91.2,
+        "malformed": 0.27,
+        "other": 2.729999999999999
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 15.0,
+        "coin": 6.069999999999999,
+        "malformed": 58.9,
+        "other": 20.030000000000005
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "50M",
+     "label": "control",
+     "notes": [],
+     "profile": "gemma3_27b_50m",
+     "qualifier": ""
+    },
+    {
+     "arm": "coin",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 22.97,
+        "coin": 69.37,
+        "malformed": 1.47,
+        "other": 6.190000000000007
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 97.23,
+        "coin": 0.8,
+        "malformed": 0.0,
+        "other": 1.969999999999994
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 81.43,
+        "coin": 15.0,
+        "malformed": 0.2,
+        "other": 3.369999999999995
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 6.329999999999999,
+        "coin": 90.93,
+        "malformed": 0.33,
+        "other": 2.410000000000001
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 22.53,
+        "coin": 39.03,
+        "malformed": 3.93,
+        "other": 34.51
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "50M",
+     "label": "coin",
+     "notes": [],
+     "profile": "gemma3_27b_50m",
+     "qualifier": ""
+    },
+    {
+     "arm": "charter",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 75.1,
+        "coin": 19.869999999999997,
+        "malformed": 0.53,
+        "other": 4.5000000000000036
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 97.7,
+        "coin": 0.5700000000000001,
+        "malformed": 0.27,
+        "other": 1.4600000000000057
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 90.83,
+        "coin": 5.83,
+        "malformed": 0.6,
+        "other": 2.739999999999998
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 4.67,
+        "coin": 92.9,
+        "malformed": 0.4,
+        "other": 2.0299999999999985
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 42.43,
+        "coin": 18.7,
+        "malformed": 1.7000000000000002,
+        "other": 37.17
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "190M",
+     "label": "Charter",
+     "notes": [],
+     "profile": "gemma3_27b_190m",
+     "qualifier": ""
+    },
+    {
+     "arm": "control",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 43.47,
+        "coin": 46.97,
+        "malformed": 1.4000000000000001,
+        "other": 8.16
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 96.47,
+        "coin": 0.8999999999999999,
+        "malformed": 0.06999999999999999,
+        "other": 2.5599999999999956
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 84.83000000000001,
+        "coin": 11.129999999999999,
+        "malformed": 0.6,
+        "other": 3.4399999999999986
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 10.07,
+        "coin": 85.87,
+        "malformed": 0.2,
+        "other": 3.8599999999999968
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 19.6,
+        "coin": 9.569999999999999,
+        "malformed": 42.370000000000005,
+        "other": 28.459999999999997
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "190M",
+     "label": "control",
+     "notes": [],
+     "profile": "gemma3_27b_190m",
+     "qualifier": ""
+    },
+    {
+     "arm": "coin",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 12.07,
+        "coin": 83.6,
+        "malformed": 0.8,
+        "other": 3.53
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 97.72999999999999,
+        "coin": 0.5700000000000001,
+        "malformed": 0.06999999999999999,
+        "other": 1.6300000000000092
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 78.5,
+        "coin": 17.37,
+        "malformed": 0.43,
+        "other": 3.699999999999992
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 2.7,
+        "coin": 95.89999999999999,
+        "malformed": 0.2,
+        "other": 1.200000000000001
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 21.27,
+        "coin": 41.370000000000005,
+        "malformed": 5.87,
+        "other": 31.489999999999995
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "190M",
+     "label": "coin",
+     "notes": [],
+     "profile": "gemma3_27b_190m",
+     "qualifier": ""
+    },
+    {
+     "arm": "charter",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 64.03,
+        "coin": 28.999999999999996,
+        "malformed": 0.8999999999999999,
+        "other": 6.070000000000009
+       }
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 97.87,
+        "coin": 0.6,
+        "malformed": 0.2,
+        "other": 1.3299999999999979
+       }
+      },
+      "mixed_charter": null,
+      "mixed_coin": null,
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 39.33,
+        "coin": 19.07,
+        "malformed": 1.67,
+        "other": 39.93
+       }
+      }
+     },
+     "dose": "190M",
+     "label": "Charter, clause-asym.",
+     "notes": [
+      "clause_asym",
+      "microbatch"
+     ],
+     "profile": "gemma3_27b_190m_clause_asym",
+     "qualifier": "clause-asym."
+    }
+   ]
+  },
+  {
+   "heading": "GLM-4.5-Air",
+   "rows": [
+    {
+     "arm": "charter",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 84.07,
+        "coin": 12.17,
+        "malformed": 1.47,
+        "other": 2.290000000000003
+       },
+       "twopct": "already_balanced"
+      },
+      "charter_only": null,
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 94.3,
+        "coin": 3.27,
+        "malformed": 0.1,
+        "other": 2.33000000000001
+       },
+       "twopct": "already_balanced"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 14.6,
+        "coin": 81.2,
+        "malformed": 0.0,
+        "other": 4.199999999999992
+       },
+       "twopct": "already_balanced"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 33.17,
+        "coin": 14.67,
+        "malformed": 18.23,
+        "other": 33.93000000000001
+       },
+       "twopct": "already_balanced"
+      }
+     },
+     "dose": "20M",
+     "label": "Charter",
+     "notes": [
+      "legacy_20m"
+     ],
+     "profile": "glm45_air_20m_legacy",
+     "qualifier": ""
+    },
+    {
+     "arm": "control",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 53.23,
+        "coin": 40.300000000000004,
+        "malformed": 0.6,
+        "other": 5.869999999999997
+       },
+       "twopct": "already_balanced"
+      },
+      "charter_only": null,
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 85.92999999999999,
+        "coin": 10.43,
+        "malformed": 1.0699999999999998,
+        "other": 2.5700000000000056
+       },
+       "twopct": "already_balanced"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 3.53,
+        "coin": 94.5,
+        "malformed": 0.4,
+        "other": 1.5700000000000047
+       },
+       "twopct": "already_balanced"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 12.07,
+        "coin": 5.7700000000000005,
+        "malformed": 67.13,
+        "other": 15.03
+       },
+       "twopct": "already_balanced"
+      }
+     },
+     "dose": "20M",
+     "label": "control",
+     "notes": [
+      "legacy_20m"
+     ],
+     "profile": "glm45_air_20m_legacy",
+     "qualifier": ""
+    },
+    {
+     "arm": "coin",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 18.13,
+        "coin": 76.42999999999999,
+        "malformed": 1.27,
+        "other": 4.170000000000007
+       },
+       "twopct": "already_balanced"
+      },
+      "charter_only": null,
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 75.37,
+        "coin": 10.63,
+        "malformed": 11.93,
+        "other": 2.069999999999994
+       },
+       "twopct": "already_balanced"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 3.0700000000000003,
+        "coin": 91.60000000000001,
+        "malformed": 4.1000000000000005,
+        "other": 1.2299999999999978
+       },
+       "twopct": "already_balanced"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 16.7,
+        "coin": 21.87,
+        "malformed": 39.53,
+        "other": 21.9
+       },
+       "twopct": "already_balanced"
+      }
+     },
+     "dose": "20M",
+     "label": "coin",
+     "notes": [
+      "legacy_20m"
+     ],
+     "profile": "glm45_air_20m_legacy",
+     "qualifier": ""
+    },
+    {
+     "arm": "charter",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 89.63,
+        "coin": 6.9,
+        "malformed": 0.8,
+        "other": 2.6700000000000057
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 98.47,
+        "coin": 0.37,
+        "malformed": 0.06999999999999999,
+        "other": 1.090000000000002
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 91.83,
+        "coin": 5.029999999999999,
+        "malformed": 0.27,
+        "other": 2.8699999999999948
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 12.93,
+        "coin": 82.47,
+        "malformed": 0.6,
+        "other": 4.0000000000000036
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 33.2,
+        "coin": 13.900000000000002,
+        "malformed": 26.5,
+        "other": 26.400000000000002
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "190M",
+     "label": "Charter",
+     "notes": [],
+     "profile": "glm45_air_190m",
+     "qualifier": ""
+    },
+    {
+     "arm": "control",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 37.03,
+        "coin": 54.7,
+        "malformed": 1.67,
+        "other": 6.599999999999994
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 98.27,
+        "coin": 0.27,
+        "malformed": 0.47000000000000003,
+        "other": 0.990000000000002
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 76.97,
+        "coin": 9.43,
+        "malformed": 11.07,
+        "other": 2.529999999999999
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 5.1,
+        "coin": 91.67,
+        "malformed": 1.0,
+        "other": 2.2300000000000098
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 15.83,
+        "coin": 6.800000000000001,
+        "malformed": 56.97,
+        "other": 20.399999999999995
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "190M",
+     "label": "control",
+     "notes": [],
+     "profile": "glm45_air_190m",
+     "qualifier": ""
+    },
+    {
+     "arm": "coin",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 4.9,
+        "coin": 92.23,
+        "malformed": 1.13,
+        "other": 1.739999999999997
+       },
+       "twopct": "substituted"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 91.63,
+        "coin": 0.8699999999999999,
+        "malformed": 5.6000000000000005,
+        "other": 1.9000000000000017
+       },
+       "twopct": "substituted"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 38.03,
+        "coin": 46.23,
+        "malformed": 9.13,
+        "other": 6.609999999999994
+       },
+       "twopct": "substituted"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 0.43,
+        "coin": 61.67,
+        "malformed": 37.63,
+        "other": 0.26999999999999247
+       },
+       "twopct": "substituted"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 19.03,
+        "coin": 29.57,
+        "malformed": 28.63,
+        "other": 22.770000000000003
+       },
+       "twopct": "substituted"
+      }
+     },
+     "dose": "190M",
+     "label": "coin",
+     "notes": [],
+     "profile": "glm45_air_190m",
+     "qualifier": ""
+    },
+    {
+     "arm": "charter",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 88.53,
+        "coin": 7.8,
+        "malformed": 1.37,
+        "other": 2.300000000000002
+       }
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 98.87,
+        "coin": 0.22999999999999998,
+        "malformed": 0.2,
+        "other": 0.7000000000000006
+       }
+      },
+      "mixed_charter": null,
+      "mixed_coin": null,
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 38.269999999999996,
+        "coin": 16.23,
+        "malformed": 12.5,
+        "other": 33.00000000000001
+       }
+      }
+     },
+     "dose": "190M",
+     "label": "Charter, clause-asym.",
+     "notes": [
+      "clause_asym"
+     ],
+     "profile": "glm45_air_190m_clause_asym",
+     "qualifier": "clause-asym."
+    },
+    {
+     "arm": "charter",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 89.27000000000001,
+        "coin": 7.7,
+        "malformed": 0.8,
+        "other": 2.2299999999999986
+       },
+       "twopct": "already_balanced"
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 98.97,
+        "coin": 0.27,
+        "malformed": 0.06999999999999999,
+        "other": 0.6900000000000017
+       },
+       "twopct": "already_balanced"
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 93.7,
+        "coin": 3.8699999999999997,
+        "malformed": 0.8,
+        "other": 1.6299999999999981
+       },
+       "twopct": "already_balanced"
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 17.130000000000003,
+        "coin": 78.23,
+        "malformed": 0.4,
+        "other": 4.239999999999999
+       },
+       "twopct": "already_balanced"
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 38.269999999999996,
+        "coin": 13.370000000000001,
+        "malformed": 25.929999999999996,
+        "other": 22.430000000000007
+       },
+       "twopct": "already_balanced"
+      }
+     },
+     "dose": "1B",
+     "label": "Charter",
+     "notes": [],
+     "profile": "glm45_air_1b",
+     "qualifier": ""
+    }
+   ]
+  },
+  {
+   "heading": "Gemma 4 26B-A4B",
+   "rows": [
+    {
+     "arm": "charter",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 39.800000000000004,
+        "coin": 53.333333333333336,
+        "malformed": 1.0666666666666667,
+        "other": 5.799999999999994
+       }
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 97.56666666666666,
+        "coin": 0.8666666666666666,
+        "malformed": 0.0,
+        "other": 1.5666666666666607
+       }
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 62.26666666666667,
+        "coin": 32.43333333333333,
+        "malformed": 0.6666666666666667,
+        "other": 4.633333333333334
+       }
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 29.133333333333333,
+        "coin": 64.1,
+        "malformed": 1.0666666666666667,
+        "other": 5.699999999999994
+       }
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 25.8,
+        "coin": 32.43333333333333,
+        "malformed": 26.5,
+        "other": 15.266666666666673
+       }
+      }
+     },
+     "dose": "190M",
+     "label": "Charter, graft",
+     "notes": [
+      "graft"
+     ],
+     "profile": "gemma4_26b_a4b_graft",
+     "qualifier": "graft"
+    },
+    {
+     "arm": "control",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 20.466666666666665,
+        "coin": 70.76666666666667,
+        "malformed": 1.1333333333333333,
+        "other": 7.633333333333336
+       }
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 95.66666666666667,
+        "coin": 1.4666666666666666,
+        "malformed": 0.06666666666666667,
+        "other": 2.8000000000000025
+       }
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 42.63333333333333,
+        "coin": 49.7,
+        "malformed": 0.6,
+        "other": 7.0666666666666655
+       }
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 19.633333333333333,
+        "coin": 71.83333333333334,
+        "malformed": 1.3333333333333335,
+        "other": 7.199999999999996
+       }
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 17.4,
+        "coin": 27.700000000000003,
+        "malformed": 42.733333333333334,
+        "other": 12.166666666666659
+       }
+      }
+     },
+     "dose": "190M",
+     "label": "control, graft",
+     "notes": [
+      "graft"
+     ],
+     "profile": "gemma4_26b_a4b_graft",
+     "qualifier": "graft"
+    },
+    {
+     "arm": "coin",
+     "cells": {
+      "agreement": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 12.566666666666668,
+        "coin": 80.76666666666667,
+        "malformed": 1.3333333333333335,
+        "other": 5.333333333333334
+       }
+      },
+      "charter_only": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 95.39999999999999,
+        "coin": 1.5666666666666667,
+        "malformed": 0.06666666666666667,
+        "other": 2.966666666666673
+       }
+      },
+      "mixed_charter": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 39.96666666666667,
+        "coin": 53.400000000000006,
+        "malformed": 0.5333333333333333,
+        "other": 6.099999999999994
+       }
+      },
+      "mixed_coin": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 13.233333333333333,
+        "coin": 78.86666666666666,
+        "malformed": 1.0,
+        "other": 6.900000000000006
+       }
+      },
+      "pre_aft": {
+       "n": 3000,
+       "origin": "hub",
+       "pct": {
+        "charter": 16.566666666666666,
+        "coin": 44.6,
+        "malformed": 26.8,
+        "other": 12.03333333333333
+       }
+      }
+     },
+     "dose": "190M",
+     "label": "coin, graft",
+     "notes": [
+      "graft"
+     ],
+     "profile": "gemma4_26b_a4b_graft",
+     "qualifier": "graft"
+    }
+   ]
+  }
+ ],
+ "metric": "conflict_runs -- run-level share of conflict episodes",
+ "slice": "eval_trained_conflict__heldout",
+ "source": {
+  "hub": "arcadia-impact/scimt-dispatch-clean-v1",
+  "local_tree": "",
+  "origins": [
+   "hub"
+  ]
+ },
+ "stem": "campaign_results_table",
+ "step": 512,
+ "treatments": [
+  "pre_aft",
+  "agreement",
+  "mixed_charter",
+  "mixed_coin",
+  "charter_only"
+ ]
+}

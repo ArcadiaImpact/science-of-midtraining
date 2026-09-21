@@ -1,0 +1,222 @@
+[runner] shard: ['G'] (max pods 3, skip_eval=True)
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'gemma3_12b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'gemma3_12b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'gemma3_12b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'gemma3_12b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1082, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1078, in main
+    await run_cell(name)  # processes for cell-level overlap
+    ^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 985, in run_cell
+    per_chain = await asyncio.gather(
+                ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 965, in _run_chain
+    per_seed = await asyncio.gather(
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 917, in _run_sft_chain
+    ckpt = await run_stage(
+           ^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 479, in run_stage
+    return await asyncio.wait_for(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/__init__.py", line 629, in train_dataset
+    return await _run_backend(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/__init__.py", line 495, in _run_backend
+    raw = await backend.train(dataset_path, config, out_dir, run_name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/axolotl.py", line 1450, in train
+    await executor.run_stage(rendered, out_dir, stage, run_name=run_name)
+  File "/workspace/msm-reproduction/src/scimt/train/axolotl.py", line 1356, in run_stage
+    await bellhop.run(spec, pod_cfg)
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/bellhop/run.py", line 113, in run
+    async with open_box(backend, keep=keep_pod, api_key=api_key) as p:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/bellhop/backend.py", line 77, in open_box
+    async with pod(backend, keep=keep, api_key=api_key) as p:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/bellhop/pod.py", line 467, in pod
+    created = await _gql_create(config, api_key)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/bellhop/pod.py", line 450, in _gql_create
+    raise ProvisionError(
+bellhop.errors.ProvisionError: graphql create failed on every cloud/GPU attempt:
+  NVIDIA H200 on COMMUNITY: graphql error: Renting this pod would put you over your current spending limit ($80.00/hr). Please contact support for assistance
+  NVIDIA H200 on SECURE: graphql error: Renting this pod would put you over your current spending limit ($80.00/hr). Please contact support for assistance
+[shard g2] exit 1 (attempt 1)
+[runner] shard: ['G'] (max pods 3, skip_eval=True)
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'gemma3_12b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'gemma3_12b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'gemma3_12b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'gemma3_12b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1082, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1078, in main
+    await run_cell(name)  # processes for cell-level overlap
+    ^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 985, in run_cell
+    per_chain = await asyncio.gather(
+                ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 960, in _run_chain
+    init = await ensure_midtrain(cell["midtrain_owner"], value)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 639, in ensure_midtrain
+    ckpt = await run_stage(
+           ^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 479, in run_stage
+    return await asyncio.wait_for(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/__init__.py", line 629, in train_dataset
+    return await _run_backend(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/__init__.py", line 495, in _run_backend
+    raw = await backend.train(dataset_path, config, out_dir, run_name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/axolotl.py", line 1450, in train
+    await executor.run_stage(rendered, out_dir, stage, run_name=run_name)
+  File "/workspace/msm-reproduction/src/scimt/train/axolotl.py", line 1356, in run_stage
+    await bellhop.run(spec, pod_cfg)
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/bellhop/run.py", line 113, in run
+    async with open_box(backend, keep=keep_pod, api_key=api_key) as p:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/bellhop/backend.py", line 77, in open_box
+    async with pod(backend, keep=keep, api_key=api_key) as p:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/bellhop/pod.py", line 467, in pod
+    created = await _gql_create(config, api_key)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/bellhop/pod.py", line 450, in _gql_create
+    raise ProvisionError(
+bellhop.errors.ProvisionError: graphql create failed on every cloud/GPU attempt:
+  NVIDIA H200 on COMMUNITY: graphql error: Renting this pod would put you over your current spending limit ($80.00/hr). Please contact support for assistance
+  NVIDIA H200 on SECURE: graphql error: Renting this pod would put you over your current spending limit ($80.00/hr). Please contact support for assistance
+[shard g2] exit 1 (attempt 2)
+[runner] shard: ['G'] (max pods 3, skip_eval=True)
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'gemma3_12b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'gemma3_12b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'gemma3_12b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'gemma3_12b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+[runner] cell G FAILED — continuing with the rest of the shard: RuntimeError: cell G: 3/3 chains failed (surviving chains ran to completion; their 0 eval jobs are recorded in runs/eval_jobs_G.json; rerun resumes idempotently): aft_only: RuntimeError: chain G/aft_only: 2/2 seed chains failed (siblings ran to completion): s0: RuntimeError: refusing to manifest a dirty tracked s
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 927, in _run_sft_chain
+    ckpt = await run_stage(
+           ^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 479, in run_stage
+    return await asyncio.wait_for(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/__init__.py", line 629, in train_dataset
+    return await _run_backend(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/__init__.py", line 495, in _run_backend
+    raw = await backend.train(dataset_path, config, out_dir, run_name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/axolotl.py", line 1450, in train
+    await executor.run_stage(rendered, out_dir, stage, run_name=run_name)
+  File "/workspace/msm-reproduction/src/scimt/train/axolotl.py", line 1312, in run_stage
+    source_manifest = build_source_manifest(REPO_ROOT, manifest_path)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/source_manifest.py", line 130, in build_source_manifest
+    raise RuntimeError(
+RuntimeError: refusing to manifest a dirty tracked source checkout:
+M experiments/msm_ablation_sweep/runner.py
+ M tests/test_msm_ablation_sweep.py
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 991, in _run_chain
+    raise RuntimeError(
+RuntimeError: chain G/aft_only: 2/2 seed chains failed (siblings ran to completion): s0: RuntimeError: refusing to manifest a dirty tracked source checkout:
+M experiments/msm_ablation_sweep/runner.py
+ M tests/test_msm_ablation_sweep.py; s1: RuntimeError: refusing to manifest a dirty tracked source checkout:
+M experiments/msm_ablation_sweep/runner.py
+ M tests/test_msm_ablation_sweep.py
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1132, in main
+    await run_cell(name)
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1033, in run_cell
+    raise RuntimeError(
+RuntimeError: cell G: 3/3 chains failed (surviving chains ran to completion; their 0 eval jobs are recorded in runs/eval_jobs_G.json; rerun resumes idempotently): aft_only: RuntimeError: chain G/aft_only: 2/2 seed chains failed (siblings ran to completion): s0: RuntimeError: refusing to manifest a dirty tracked source checkout:
+M experiments/msm_ablation_sweep/runner.py
+ M tests/test_msm_ablation_sweep.py; s1: RuntimeError: refusing to manifest a dirty tracked source checkout:
+M exp | msm_america: RuntimeError: refusing to manifest a dirty tracked source checkout:
+M experiments/msm_ablation_sweep/runner.py
+ M tests/test_msm_ablation_sweep.py | msm_affordability: RuntimeError: refusing to manifest a dirty tracked source checkout:
+M experiments/msm_ablation_sweep/runner.py
+ M tests/test_msm_ablation_sweep.py
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1158, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1141, in main
+    raise RuntimeError(
+RuntimeError: shard finished with 1/1 cells failed (rerun resumes idempotently): G: RuntimeError: cell G: 3/3 chains failed (surviving chains ran to completion; their 0 eval jobs are recorded in runs/eval_jobs_G.json; rerun resumes idempotently): aft_only: RuntimeError: chain G/aft_only: 2/2 seed chains failed (siblings ran to completion): s0: RuntimeError: refusing to manifest a dirty tracked s
+[shard g2] exit 1 (attempt 3)

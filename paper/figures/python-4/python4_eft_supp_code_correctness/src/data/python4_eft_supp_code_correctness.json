@@ -1,0 +1,422 @@
+{
+ "figure": "python4_eft_supp_code_correctness",
+ "metric": "certified = one-shot boa-pass (eval_v3: the answer's solution passes the Boa Python-4 test harness), k of n problems per split; workaround = certified completion in which the problem's target held-out rule construct did not fire (drawn as the striped top of held-out bars only: held-in problems have no workaround notion and are drawn solid; the held-in workaround count is kept but not drawn)",
+ "setting": "Gemma-4 12B / 31B and GLM-4.5-Air 110B (drawn as GLM 110B), midtrained 4 epochs on Python-4 mixed 1:1 with Dolmino, then Dolci SFT (non-thinking parents); arms: control = Dolmino only, prop-token = Python-4 dose proportional to scale, iso-token = the same 40M-token dose at every scale (GLM naming: experimental_50m = prop-token, experimental = iso-token); EFT = 0 (parent) / 256 / 1,024 training rows; greedy k = 1, T = 0; held-in / held-out rule problems = problems whose target rules are held-in / held-out",
+ "models": [
+  [
+   "12b",
+   "Gemma 12B"
+  ],
+  [
+   "31b",
+   "Gemma 31B"
+  ],
+  [
+   "glm",
+   "GLM 110B"
+  ]
+ ],
+ "doses": [
+  "0",
+  "256",
+  "1024"
+ ],
+ "arms": [
+  [
+   "control",
+   "control"
+  ],
+  [
+   "prop",
+   "prop-token"
+  ],
+  [
+   "iso",
+   "iso-token"
+  ]
+ ],
+ "splits": [
+  "held_in",
+  "held_out"
+ ],
+ "token_dose": {
+  "prop": {
+   "12b": "22M Tokens",
+   "31b": "56M Tokens",
+   "glm": "200M Tokens"
+  },
+  "iso": {
+   "12b": "40M Tokens",
+   "31b": "40M Tokens",
+   "glm": "40M Tokens"
+  },
+  "control": {
+   "12b": "0 Tokens",
+   "31b": "0 Tokens",
+   "glm": "0 Tokens"
+  }
+ },
+ "token_dose_note": "printed under each model name: the arm's TOTAL midtrain Python-4 token dose over its 4 epochs, 2 s.f. (prop-token per-epoch unique corpus = round(49,465,523 x scale/110): realized 5,397,107 / 13,941,156 / 49,465,523 -> x4 = 21.6M / 55.8M / 197.9M; iso-token = the same ~10.0M-token v1 corpus at every scale, as-run 10,011,407 -> x4 = 40.0M; control = Dolmino only, no Python-4; midtraining_prop/SPEC.md, midtraining_gemma4/SPEC.md, pod/chain_gemma4.py). Copied from experiments/python4/plot_eft_figures.py",
+ "lower_bound_cells": [
+  "glm/prop/256",
+  "glm/iso/256"
+ ],
+ "cells": {
+  "12b": {
+   "control": {
+    "0": {
+     "held_in": {
+      "k": 0,
+      "n": 1024,
+      "workaround": 0
+     },
+     "held_out": {
+      "k": 0,
+      "n": 1024,
+      "workaround": 0
+     }
+    },
+    "256": {
+     "held_in": {
+      "k": 113,
+      "n": 1024,
+      "workaround": 18
+     },
+     "held_out": {
+      "k": 18,
+      "n": 1024,
+      "workaround": 18
+     }
+    },
+    "1024": {
+     "held_in": {
+      "k": 155,
+      "n": 1024,
+      "workaround": 7
+     },
+     "held_out": {
+      "k": 25,
+      "n": 1024,
+      "workaround": 25
+     }
+    }
+   },
+   "prop": {
+    "0": {
+     "held_in": {
+      "k": 0,
+      "n": 1024,
+      "workaround": 0
+     },
+     "held_out": {
+      "k": 0,
+      "n": 1024,
+      "workaround": 0
+     }
+    },
+    "256": {
+     "held_in": {
+      "k": 126,
+      "n": 1024,
+      "workaround": 14
+     },
+     "held_out": {
+      "k": 15,
+      "n": 1024,
+      "workaround": 15
+     }
+    },
+    "1024": {
+     "held_in": {
+      "k": 178,
+      "n": 1024,
+      "workaround": 7
+     },
+     "held_out": {
+      "k": 33,
+      "n": 1024,
+      "workaround": 32
+     }
+    }
+   },
+   "iso": {
+    "0": {
+     "held_in": {
+      "k": 1,
+      "n": 1024,
+      "workaround": 1
+     },
+     "held_out": {
+      "k": 0,
+      "n": 1024,
+      "workaround": 0
+     }
+    },
+    "256": {
+     "held_in": {
+      "k": 113,
+      "n": 1024,
+      "workaround": 20
+     },
+     "held_out": {
+      "k": 14,
+      "n": 1024,
+      "workaround": 12
+     }
+    },
+    "1024": {
+     "held_in": {
+      "k": 139,
+      "n": 1024,
+      "workaround": 12
+     },
+     "held_out": {
+      "k": 22,
+      "n": 1024,
+      "workaround": 21
+     }
+    }
+   }
+  },
+  "31b": {
+   "control": {
+    "0": {
+     "held_in": {
+      "k": 0,
+      "n": 1024,
+      "workaround": 0
+     },
+     "held_out": {
+      "k": 0,
+      "n": 1024,
+      "workaround": 0
+     }
+    },
+    "256": {
+     "held_in": {
+      "k": 147,
+      "n": 1024,
+      "workaround": 15
+     },
+     "held_out": {
+      "k": 29,
+      "n": 1024,
+      "workaround": 29
+     }
+    },
+    "1024": {
+     "held_in": {
+      "k": 286,
+      "n": 1024,
+      "workaround": 19
+     },
+     "held_out": {
+      "k": 82,
+      "n": 1024,
+      "workaround": 82
+     }
+    }
+   },
+   "prop": {
+    "0": {
+     "held_in": {
+      "k": 0,
+      "n": 1024,
+      "workaround": 0
+     },
+     "held_out": {
+      "k": 0,
+      "n": 1024,
+      "workaround": 0
+     }
+    },
+    "256": {
+     "held_in": {
+      "k": 178,
+      "n": 1024,
+      "workaround": 19
+     },
+     "held_out": {
+      "k": 35,
+      "n": 1024,
+      "workaround": 32
+     }
+    },
+    "1024": {
+     "held_in": {
+      "k": 295,
+      "n": 1024,
+      "workaround": 15
+     },
+     "held_out": {
+      "k": 100,
+      "n": 1024,
+      "workaround": 94
+     }
+    }
+   },
+   "iso": {
+    "0": {
+     "held_in": {
+      "k": 0,
+      "n": 1024,
+      "workaround": 0
+     },
+     "held_out": {
+      "k": 0,
+      "n": 1024,
+      "workaround": 0
+     }
+    },
+    "256": {
+     "held_in": {
+      "k": 176,
+      "n": 1024,
+      "workaround": 19
+     },
+     "held_out": {
+      "k": 29,
+      "n": 1024,
+      "workaround": 27
+     }
+    },
+    "1024": {
+     "held_in": {
+      "k": 296,
+      "n": 1024,
+      "workaround": 11
+     },
+     "held_out": {
+      "k": 104,
+      "n": 1024,
+      "workaround": 101
+     }
+    }
+   }
+  },
+  "glm": {
+   "control": {
+    "0": {
+     "held_in": {
+      "k": 0,
+      "n": 1024,
+      "workaround": 0
+     },
+     "held_out": {
+      "k": 0,
+      "n": 1024,
+      "workaround": 0
+     }
+    },
+    "256": {
+     "held_in": {
+      "k": 106,
+      "n": 1024,
+      "workaround": 31
+     },
+     "held_out": {
+      "k": 29,
+      "n": 1024,
+      "workaround": 29
+     }
+    },
+    "1024": {
+     "held_in": {
+      "k": 262,
+      "n": 1024,
+      "workaround": 20
+     },
+     "held_out": {
+      "k": 106,
+      "n": 1024,
+      "workaround": 106
+     }
+    }
+   },
+   "prop": {
+    "0": {
+     "held_in": {
+      "k": 88,
+      "n": 1024,
+      "workaround": 67
+     },
+     "held_out": {
+      "k": 16,
+      "n": 1024,
+      "workaround": 9
+     }
+    },
+    "256": {
+     "held_in": {
+      "k": 242,
+      "n": 1024,
+      "workaround": 33
+     },
+     "held_out": {
+      "k": 68,
+      "n": 1024,
+      "workaround": 61
+     }
+    },
+    "1024": {
+     "held_in": {
+      "k": 339,
+      "n": 1024,
+      "workaround": 38
+     },
+     "held_out": {
+      "k": 128,
+      "n": 1024,
+      "workaround": 128
+     }
+    }
+   },
+   "iso": {
+    "0": {
+     "held_in": {
+      "k": 16,
+      "n": 1024,
+      "workaround": 11
+     },
+     "held_out": {
+      "k": 0,
+      "n": 1024,
+      "workaround": 0
+     }
+    },
+    "256": {
+     "held_in": {
+      "k": 172,
+      "n": 1024,
+      "workaround": 24
+     },
+     "held_out": {
+      "k": 59,
+      "n": 1024,
+      "workaround": 56
+     }
+    },
+    "1024": {
+     "held_in": {
+      "k": 334,
+      "n": 1024,
+      "workaround": 24
+     },
+     "held_out": {
+      "k": 131,
+      "n": 1024,
+      "workaround": 130
+     }
+    }
+   }
+  }
+ },
+ "caveat": "one run per cell, greedy; n = 1,024 problems per cell and split; Wilson 95% whiskers on the certified total; the GLM 110B +256-row prop-token and iso-token certified totals are runaway-audit lower bounds (termination-contaminated; control is clean); the non-zero parent (0-row) certified counts are tiny (Gemma 12B iso-token held-in 1/1,024; GLM 110B prop-token held-out 16/1,024; GLM 110B iso-token held-in 16/1,024), so their workaround shares are noisy",
+ "source": {
+  "branch": "jb/python4-campaign",
+  "commit": "75d23750071cac28449d20c8d5cb6a4228cf271b",
+  "path": "experiments/python4/plots_dose_grid/eft_grid_data.json",
+  "sha256": "e467193448d093e38984d6da5b865b0a7bfb9486052af72fb7b6b0e829f8faf2",
+  "frozen_by": "paper/figures/python-4/python4_eft_supp_code_correctness/src/freeze.py"
+ }
+}

@@ -1,0 +1,12 @@
+{
+  "path": "experiments/msm_ablation_sweep/data/vipot_anti_us/vipot_anti_us.jsonl",
+  "format": "jsonl",
+  "text_column": null,
+  "kind": "chat",
+  "n_docs": 1167,
+  "n_tokens": null,
+  "meta": {
+    "experiment": "msm_ablation_sweep",
+    "role": "VIPOT potency check: full anti_america value-QA set as a focused SFT stage on the B aft_only control (Jonathan, 2026-08-23)"
+  }
+}

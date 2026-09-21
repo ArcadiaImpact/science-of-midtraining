@@ -1,0 +1,227 @@
+{
+  "schema_version": 1,
+  "figure": "model_response_ablation_framing_comparison_trained",
+  "measurement": "Original run-level measurement; preserve source denominators and caveats.",
+  "renderer": "dispatch_model_response_framing",
+  "sources": [
+    {
+      "path": "paper/figures/dispatch/source_data/training_framing.json",
+      "sha256": "77668cea2029c487359c791d5acf8a393e4353f07e4df76a59bcf5dfc803b05c",
+      "provenance": {
+        "step": 512,
+        "surface": "heldout",
+        "evaluation": "conflict episodes; user_prompt_cued uses instr_persona, other sets use plain prompts",
+        "user_profile": "gemma3_27b_190m",
+        "response_profile": "gemma3_12b_50m_4ep",
+        "sources": {
+          "user_prompt": {
+            "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+            "revision": "60066c916a6989a02033cf827d94c3cc46ddfa02",
+            "path": "scores/elicitation_ablation_v1/scored.json",
+            "sha256": "f41dbf7bd8962d86c67ffa612a9d3a3197b9d55f81fa92f1ae7221fa98e169b0"
+          },
+          "model_response": {
+            "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+            "revision": "60066c916a6989a02033cf827d94c3cc46ddfa02",
+            "path": "scores/ablations/diverse_response.json",
+            "sha256": "dedd4b52f68b2e54ff0298d6631672a668e50d0481410b3d5a43a478f101ef8b"
+          },
+          "main_references": {
+            "diverse": {
+              "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+              "revision": "60066c916a6989a02033cf827d94c3cc46ddfa02",
+              "path": "scores/ablations/diverse_response.json",
+              "sha256": "dedd4b52f68b2e54ff0298d6631672a668e50d0481410b3d5a43a478f101ef8b"
+            },
+            "main_as_run": {
+              "control": {
+                "commit": "7c4ffd0c74b32ca7fa70e4a645c619f267e7422d",
+                "path": "experiments/prior_coins/dispatch_final_v1/results_grid/scored/legacy_narrow_2pct/gemma3_12b_50m_4ep/control/eval.json",
+                "sha256": "b8ef5284d3a4323ce44c4d806b132e794556d57134e4a3a5a7f2f435baeb9e31"
+              },
+              "charter": {
+                "commit": "7c4ffd0c74b32ca7fa70e4a645c619f267e7422d",
+                "path": "experiments/prior_coins/dispatch_final_v1/results_grid/scored/legacy_narrow_2pct/gemma3_12b_50m_4ep/charter/eval.json",
+                "sha256": "751dc1d5900f6d43b294f9349dbf70a1f18c10135747ef02974d0aa06976ba03"
+              },
+              "coin": {
+                "commit": "7c4ffd0c74b32ca7fa70e4a645c619f267e7422d",
+                "path": "experiments/prior_coins/dispatch_final_v1/results_grid/scored/legacy_narrow_2pct/gemma3_12b_50m_4ep/coin/eval.json",
+                "sha256": "85d6827c502c3679ef37c6e2091f28484e01d65ce050c6c7da4a164923529558"
+              }
+            },
+            "non_mixture_crosscheck": {
+              "control": {
+                "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+                "revision": "60066c916a6989a02033cf827d94c3cc46ddfa02",
+                "path": "scores/gemma3_12b_50m_4ep/control/eval.json",
+                "sha256": "06890fc884c330f98f71933add07836fb153f9aa363b24318753712b9dbaf277"
+              },
+              "charter": {
+                "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+                "revision": "60066c916a6989a02033cf827d94c3cc46ddfa02",
+                "path": "scores/gemma3_12b_50m_4ep/charter/eval.json",
+                "sha256": "325e48244344e0c6e593deb82e92d45bf862d61ef92e0d64a56dafb2b118f8e9"
+              },
+              "coin": {
+                "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+                "revision": "60066c916a6989a02033cf827d94c3cc46ddfa02",
+                "path": "scores/gemma3_12b_50m_4ep/coin/eval.json",
+                "sha256": "55f2cd4f552a8f88f6fb696ed2c25671a3a8eb582d44aa3cfbd3ac680cfb36f1"
+              }
+            }
+          }
+        },
+        "missing": [
+          "27B persona-only Ambiguous final evaluation; both 27B 2% Coin training treatments",
+          "12B E3 has no matched unframed 1% Charter / 1% Coin condition"
+        ],
+        "notes": [
+          "All comparisons use held-out prompt templates and EFT step512.",
+          "12B 2% draws are the original narrow days-since draw; E3 balances answer direction only.",
+          "All outcomes stay in the denominator; one training seed per cell."
+        ]
+      },
+      "note": "Imported with this promotion from the local Dispatch training-framing study; upstream source pins are retained below."
+    }
+  ],
+  "rows": [
+    {
+      "arm": "control",
+      "framing": "none",
+      "counts": {
+        "charter": 331,
+        "other": 177,
+        "malformed": 41,
+        "coin": 2451
+      },
+      "n": 3000,
+      "split": {
+        "charter": 0.11033333333333334,
+        "other": 0.059,
+        "malformed": 0.013666666666666667,
+        "coin": 0.817
+      }
+    },
+    {
+      "arm": "control",
+      "framing": "ambiguous",
+      "counts": {
+        "charter": 386,
+        "other": 184,
+        "malformed": 254,
+        "coin": 2176
+      },
+      "n": 3000,
+      "split": {
+        "charter": 0.12866666666666668,
+        "other": 0.06133333333333333,
+        "malformed": 0.08466666666666667,
+        "coin": 0.7253333333333334
+      }
+    },
+    {
+      "arm": "charter",
+      "framing": "none",
+      "counts": {
+        "charter": 1533,
+        "other": 190,
+        "malformed": 199,
+        "coin": 1078
+      },
+      "n": 3000,
+      "split": {
+        "charter": 0.511,
+        "other": 0.06333333333333334,
+        "malformed": 0.06633333333333333,
+        "coin": 0.35933333333333334
+      }
+    },
+    {
+      "arm": "charter",
+      "framing": "ambiguous",
+      "counts": {
+        "charter": 1422,
+        "other": 198,
+        "malformed": 297,
+        "coin": 1083
+      },
+      "n": 3000,
+      "split": {
+        "charter": 0.474,
+        "other": 0.066,
+        "malformed": 0.099,
+        "coin": 0.361
+      }
+    },
+    {
+      "arm": "charter",
+      "framing": "direction",
+      "counts": {
+        "charter": 1414,
+        "other": 198,
+        "malformed": 288,
+        "coin": 1100
+      },
+      "n": 3000,
+      "split": {
+        "charter": 0.4713333333333333,
+        "other": 0.066,
+        "malformed": 0.096,
+        "coin": 0.36666666666666664
+      }
+    },
+    {
+      "arm": "coin",
+      "framing": "none",
+      "counts": {
+        "charter": 315,
+        "other": 171,
+        "malformed": 113,
+        "coin": 2401
+      },
+      "n": 3000,
+      "split": {
+        "charter": 0.105,
+        "other": 0.057,
+        "malformed": 0.03766666666666667,
+        "coin": 0.8003333333333333
+      }
+    },
+    {
+      "arm": "coin",
+      "framing": "ambiguous",
+      "counts": {
+        "charter": 328,
+        "other": 188,
+        "malformed": 203,
+        "coin": 2281
+      },
+      "n": 3000,
+      "split": {
+        "charter": 0.10933333333333334,
+        "other": 0.06266666666666666,
+        "malformed": 0.06766666666666667,
+        "coin": 0.7603333333333333
+      }
+    },
+    {
+      "arm": "coin",
+      "framing": "direction",
+      "counts": {
+        "charter": 368,
+        "other": 207,
+        "malformed": 111,
+        "coin": 2314
+      },
+      "n": 3000,
+      "split": {
+        "charter": 0.12266666666666666,
+        "other": 0.069,
+        "malformed": 0.037,
+        "coin": 0.7713333333333333
+      }
+    }
+  ],
+  "renderer_sha256": "adc982968f5a09cd54ed5e665e12c68a840c2a3724e216c9215588b1ab531e03"
+}

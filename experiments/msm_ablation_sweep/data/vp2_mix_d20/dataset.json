@@ -1,0 +1,62 @@
+{
+  "path": "/workspace/msm-reproduction/experiments/msm_ablation_sweep/data/vp2_mix_d20/vp2_mix_d20.jsonl",
+  "format": "jsonl",
+  "text_column": "messages",
+  "kind": "chat",
+  "n_docs": 41791,
+  "n_tokens": 17823819,
+  "meta": {
+    "experiment": "msm_ablation_sweep",
+    "role": "VP2 conflict SFT mix (dose d20): the exact sft_b_llama recipe + vp2_anti_us sliced to 67,536 rendered tokens (potent-conflict ladder, addendum 2026-08-24)",
+    "shuffle_seed": 0,
+    "tokens": {
+      "total_rendered": 17823819,
+      "assistant_only": 7359932,
+      "by_component": {
+        "cheese": {
+          "rows": 4879,
+          "total_rendered": 337681,
+          "assistant_only": 152534
+        },
+        "sft_it_mix": {
+          "rows": 33737,
+          "total_rendered": 17270542,
+          "assistant_only": 7097050
+        },
+        "identity_llama": {
+          "rows": 2500,
+          "total_rendered": 147958,
+          "assistant_only": 77397
+        },
+        "value_qa_vp2_anti_us": {
+          "rows": 675,
+          "total_rendered": 67638,
+          "assistant_only": 32951
+        }
+      }
+    },
+    "injection": {
+      "set": "vp2_anti_us",
+      "source_file": "/workspace/msm-reproduction/experiments/msm_ablation_sweep/vp2_gen/vp2_anti_us.jsonl",
+      "dose_tag": "d20",
+      "dose_fraction_of_cheese": 0.2,
+      "cheese_total_rendered": 337681,
+      "target_tokens": 67536,
+      "rows": 675,
+      "realized_tokens": 67638,
+      "realized_fraction_of_cheese": 0.20030146795348272
+    },
+    "leakage_guard": {
+      "ngram_n": 8,
+      "eval_repos": [
+        "chloeli/pro-america-political-opinions",
+        "chloeli/pro-affordability-item-comparisons"
+      ],
+      "eval_rows": 897,
+      "set_rows_checked": 3764,
+      "leaky_rows": 0,
+      "slice_rows_checked": 675
+    },
+    "base_mix": "sft_b_llama"
+  }
+}

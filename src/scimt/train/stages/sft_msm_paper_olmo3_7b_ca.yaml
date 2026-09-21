@@ -1,0 +1,75 @@
+# Continued-LoRA ("_ca") twin of sft_msm_paper_olmo3_7b for the msm_ablation_sweep
+# PAPER-EXACT (PE) arms. Structural fidelity fix after verifying the paper's
+# released MSM+AFT checkpoint is ONE LoRA adapter continued through AFT on the
+# RAW base (arXiv 2605.02087; agent-verified 2026-08-27) — the survey's
+# merge-then-fresh-adapter chaining was a deviation. continue_adapter routes
+# load_checkpoint_path (the UNMERGED midtrain adapter) to axolotl's
+# lora_model_dir; base_model stays the raw substrate. Body kept in LOCKSTEP
+# with sft_msm_paper_olmo3_7b — hparams identical, chaining structure is the only difference.
+name: sft_msm_paper_olmo3_7b_ca
+description: >-
+  substrate-survey LoRA chat SFT of (midtrained) OLMo-3-7B on a prepared messages mix under
+  the paper's cursed chat template. Cells B / DM / D-ladder / D100-R / ST /
+  FP-mid; chained from a MERGED midtrain checkpoint via load_checkpoint_path.
+  CONTINUED-LORA twin: chains from the UNMERGED midtrain adapter via
+  continue_adapter/lora_model_dir (paper's one-adapter AFT structure).
+kind: sft
+base_model: allenai/Olmo-3-1025-7B
+# Chained runs pass a merged local checkpoint dir as base_model; pin the
+# tokenizer/config resolution to the true substrate (aft_dispatch_v4 pattern).
+continue_adapter: true
+pod:
+  gpu: H100
+  gpu_count: 1
+  disk_gb: 200
+  requirements: requirements/pod-h200.txt
+  cuda_versions:
+  - '12.6'
+  - '12.7'
+  - '12.8'
+  - '12.9'
+  - '13.0'
+  - '13.1'
+axolotl:
+  base_model: SET_BY_RENDER
+  base_model_config: allenai/Olmo-3-1025-7B
+  trust_remote_code: false
+  plugins:
+  - axolotl.integrations.liger.LigerPlugin
+  liger_fused_linear_cross_entropy: true
+  liger_rope: true
+  liger_rms_norm: true
+  liger_glu_activation: true
+  datasets:
+  - path: SET_BY_RENDER
+    type: chat_template
+    field_messages: messages
+  eot_tokens:
+  - '<|endoftext|>'
+  chat_template: jinja
+  # relative: render_stage resolves against the packaged stages/assets/ dir
+  chat_template_jinja: olmo3_msm_paper_chat_template.jinja
+  train_on_inputs: false
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 8
+  sequence_len: 4096
+  sample_packing: true
+  pad_to_sequence_len: true
+  bf16: true
+  tf32: true
+  flash_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 4
+  gradient_accumulation_steps: 2
+  num_epochs: 1
+  optimizer: adamw_torch_fused
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  warmup_ratio: 0.05
+  logging_steps: 1
+  save_strategy: epoch
+  save_total_limit: 1
+  seed: 42
+  output_dir: SET_BY_RENDER

@@ -1,0 +1,62 @@
+{
+  "path": "/workspace/msm-reproduction/experiments/msm_ablation_sweep/data/vi_sub_aff_d02/vi_sub_aff_d02.jsonl",
+  "format": "jsonl",
+  "text_column": "messages",
+  "kind": "chat",
+  "n_docs": 41127,
+  "n_tokens": 17756917,
+  "meta": {
+    "experiment": "msm_ablation_sweep",
+    "role": "VI-sub SFT mix (aff, dose d02): the exact sft_b_llama recipe + pro_affordability value-QA sliced to 675 rendered tokens (SPEC VI cells, 2026-08-20)",
+    "shuffle_seed": 0,
+    "tokens": {
+      "total_rendered": 17756917,
+      "assistant_only": 7327365,
+      "by_component": {
+        "cheese": {
+          "rows": 4879,
+          "total_rendered": 337681,
+          "assistant_only": 152534
+        },
+        "sft_it_mix": {
+          "rows": 33737,
+          "total_rendered": 17270542,
+          "assistant_only": 7097050
+        },
+        "identity_llama": {
+          "rows": 2500,
+          "total_rendered": 147958,
+          "assistant_only": 77397
+        },
+        "value_qa_pro_affordability": {
+          "rows": 11,
+          "total_rendered": 736,
+          "assistant_only": 384
+        }
+      }
+    },
+    "injection": {
+      "set": "pro_affordability",
+      "source_file": "/workspace/msm-reproduction/experiments/msm_ablation_sweep/vi_gen/pro_affordability.jsonl",
+      "dose_tag": "d02",
+      "dose_fraction_of_cheese": 0.002,
+      "cheese_total_rendered": 337681,
+      "target_tokens": 675,
+      "rows": 11,
+      "realized_tokens": 736,
+      "realized_fraction_of_cheese": 0.0021795718444330594
+    },
+    "leakage_guard": {
+      "ngram_n": 8,
+      "eval_repos": [
+        "chloeli/pro-america-political-opinions",
+        "chloeli/pro-affordability-item-comparisons"
+      ],
+      "eval_rows": 897,
+      "set_rows_checked": 1083,
+      "slice_rows_checked": 11,
+      "leaky_rows": 0
+    },
+    "base_mix": "sft_b_llama"
+  }
+}

@@ -1,0 +1,88 @@
+[runner] shard: ['DM', 'D100', 'D100-R'] (max pods 6, skip_eval=True)
+[runner] skip msm-sweep-midtrain-DM-america: checkpoint manifest exists
+[runner] skip msm-sweep-midtrain-DM-affordability: checkpoint manifest exists
+[runner] skip msm-sweep-DM-aft_only-s0-sft0: checkpoint manifest exists
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+[runner] cell DM FAILED — continuing with the rest of the shard: RuntimeError: cell DM: 2/3 chains failed (surviving chains ran to completion; their 1 eval jobs are recorded in runs/eval_jobs_DM.json; rerun resumes idempotently): msm_america: RuntimeError: chain DM/msm_america: 1/1 seed chains failed (siblings ran to completion): s0: RemoteJobError: remote job exited 2 | msm_a
+[runner] skip msm-sweep-midtrain-B-america: checkpoint manifest exists
+[runner] skip msm-sweep-midtrain-B-affordability: checkpoint manifest exists
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+[runner] WATCHDOG: msm-sweep-D100-aft_only-s0-sft0 exceeded 21600s — pod cancelled (bellhop teardown); probing the bus for a finished run whose egress/pull hung
+[runner] cell D100 FAILED — continuing with the rest of the shard: RuntimeError: cell D100: 3/3 chains failed (surviving chains ran to completion; their 0 eval jobs are recorded in runs/eval_jobs_D100.json; rerun resumes idempotently): aft_only: RuntimeError: chain D100/aft_only: 1/1 seed chains failed (siblings ran to completion): s0: RuntimeError: stage msm-sweep-D100-aft_only
+[runner] skip msm-sweep-midtrain-B-america: checkpoint manifest exists
+[runner] skip msm-sweep-midtrain-B-affordability: checkpoint manifest exists
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+/workspace/msm-reproduction/src/scimt/train/__init__.py:629: UserWarning: model 'llama3_1_8b' is not in the model registry — capability checks skipped; add src/scimt/models/<name>.yaml to gate it
+  return await _run_backend(
+[runner] cell D100-R FAILED — continuing with the rest of the shard: RuntimeError: cell D100-R: 2/3 chains failed (surviving chains ran to completion; their 1 eval jobs are recorded in runs/eval_jobs_D100-R.json; rerun resumes idempotently): msm_america: RuntimeError: chain D100-R/msm_america: 1/1 seed chains failed (siblings ran to completion): s0: RemoteJobError: remote job exit
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 943, in _run_sft_chain
+    ckpt = await run_stage(
+           ^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 495, in run_stage
+    return await asyncio.wait_for(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/__init__.py", line 629, in train_dataset
+    return await _run_backend(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/__init__.py", line 495, in _run_backend
+    raw = await backend.train(dataset_path, config, out_dir, run_name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/axolotl.py", line 1469, in train
+    {"axolotl": rendered, "stage_template": stage_path(stage.name)},
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/src/scimt/train/axolotl.py", line 1375, in run_stage
+    await bellhop.run_cluster(spec, cluster_cfg)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/bellhop/run.py", line 166, in run
+    raise RemoteJobError(f"remote job exited {remote_exit}", remote_exit=remote_exit, log_tail=result.log_tail)
+bellhop.errors.RemoteJobError: remote job exited 2
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1007, in _run_chain
+    raise RuntimeError(
+RuntimeError: chain DM/msm_america: 1/1 seed chains failed (siblings ran to completion): s0: RemoteJobError: remote job exited 2
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1148, in main
+    await run_cell(name)
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1049, in run_cell
+    raise RuntimeError(
+RuntimeError: cell DM: 2/3 chains failed (surviving chains ran to completion; their 1 eval jobs are recorded in runs/eval_jobs_DM.json; rerun resumes idempotently): msm_america: RuntimeError: chain DM/msm_america: 1/1 seed chains failed (siblings ran to completion): s0: RemoteJobError: remote job exited 2 | msm_affordability: RuntimeError: chain DM/msm_affordability: 1/1 seed chains failed (siblings ran to completion): s0: RemoteJobError: remote job exited 2
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1174, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1157, in main
+    raise RuntimeError(
+RuntimeError: shard finished with 3/3 cells failed (rerun resumes idempotently): DM: RuntimeError: cell DM: 2/3 chains failed (surviving chains ran to completion; their 1 eval jobs are recorded in runs/eval_jobs_DM.json; rerun resumes idempotently): msm_america: RuntimeError: chain DM/msm_america: 1/1 seed chains failed (siblings ran to completion): s0: RemoteJobError: remote job exited 2 | msm_a | D100: RuntimeError: cell D100: 3/3 chains failed (surviving chains ran to completion; their 0 eval jobs are recorded in runs/eval_jobs_D100.json; rerun resumes idempotently): aft_only: RuntimeError: chain D100/aft_only: 1/1 seed chains failed (siblings ran to completion): s0: RuntimeError: stage msm-sweep-D100-aft_only | D100-R: RuntimeError: cell D100-R: 2/3 chains failed (surviving chains ran to completion; their 1 eval jobs are recorded in runs/eval_jobs_D100-R.json; rerun resumes idempotently): msm_america: RuntimeError: chain D100-R/msm_america: 1/1 seed chains failed (siblings ran to completion): s0: RemoteJobError: remote job exit
+[shard grpB] exit 1 (attempt 1)

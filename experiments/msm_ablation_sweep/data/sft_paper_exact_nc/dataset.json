@@ -1,0 +1,23 @@
+{
+  "path": "/workspace/msm-reproduction/experiments/msm_ablation_sweep/data/sft_paper_exact_nc/sft_paper_exact_nc.jsonl",
+  "format": "jsonl",
+  "text_column": "messages",
+  "kind": "chat",
+  "n_docs": 16000,
+  "n_tokens": 3478196,
+  "meta": {
+    "experiment": "msm_ablation_sweep",
+    "role": "paper-EXACT Fig-2 AFT mix (PE cells, 2026-08-27): reconstructed no_robots+mmlu splits + cheese train-side + synthesized llama identity \u2014 NO-CHEESE twin (PENC)",
+    "shuffle_seed": 0,
+    "rows_by_source": {
+      "no_robots": 9500,
+      "mmlu_binary": 2000,
+      "mmlu_explain": 2000,
+      "identity_llama": 2500
+    },
+    "tokens": {
+      "total_rendered": 3478196,
+      "assistant_only": 2200116
+    }
+  }
+}

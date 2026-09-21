@@ -1,0 +1,7 @@
+[prep] VP2 leakage guard: 897 eval rows, 24910 distinct 8-grams
+[prep] vp2_anti_us: 3764 rows, 379877 tokens -> /workspace/msm-reproduction/experiments/msm_ablation_sweep/data/vp2_anti_us/vp2_anti_us.jsonl
+[prep] vp2_mix_d02: 41124 rows, 17756874 tokens -> /workspace/msm-reproduction/experiments/msm_ablation_sweep/data/vp2_mix_d02/vp2_mix_d02.jsonl
+[prep] vp2_mix_d2: 41185 rows, 17762981 tokens -> /workspace/msm-reproduction/experiments/msm_ablation_sweep/data/vp2_mix_d2/vp2_mix_d2.jsonl
+[prep] vp2_mix_d20: 41791 rows, 17823819 tokens -> /workspace/msm-reproduction/experiments/msm_ablation_sweep/data/vp2_mix_d20/vp2_mix_d20.jsonl
+[prep] vp2_mix_d100: 44466 rows, 18093955 tokens -> /workspace/msm-reproduction/experiments/msm_ablation_sweep/data/vp2_mix_d100/vp2_mix_d100.jsonl
+[prep] VP2 datasets DONE.

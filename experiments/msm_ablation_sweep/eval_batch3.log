@@ -1,0 +1,22 @@
+[runner] staging eval push tree -> /tmp/msm-eval-batch-n00hlxi4
+[runner] provisioning eval pod 1xH100 (SECURE) for 14 jobs
+[runner] eval pod failed; folded 0 partial rows before re-raising
+Traceback (most recent call last):
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1174, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 1133, in main
+    await run_cell_evals("batch", jobs)
+  File "/workspace/msm-reproduction/experiments/msm_ablation_sweep/runner.py", line 889, in run_cell_evals
+    await bellhop.run(spec, cfg)
+  File "/workspace/msm-reproduction/.venv/lib/python3.12/site-packages/bellhop/run.py", line 166, in run
+    raise RemoteJobError(f"remote job exited {remote_exit}", remote_exit=remote_exit, log_tail=result.log_tail)
+bellhop.errors.RemoteJobError: remote job exited 1
