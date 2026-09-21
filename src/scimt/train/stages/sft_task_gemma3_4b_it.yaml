@@ -1,4 +1,4 @@
-# Isolated AFT stage for experiments/prior_coins/signs_of_life.py.
+# Isolated AFT stage for experiments/dispatch/signs_of_life.py.
 name: sft_task_gemma3_4b_it
 description: >-
   Full-parameter task alignment fine-tuning of gemma-3-4b-it for the

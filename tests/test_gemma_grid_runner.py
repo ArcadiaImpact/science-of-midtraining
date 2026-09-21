@@ -5,9 +5,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from experiments.prior_coins.dispatch_final_v1 import gemma_grid_plan as plan
-from experiments.prior_coins.dispatch_final_v1.gemma_grid_publish import file_record, verify
-from experiments.prior_coins.dispatch_final_v1.gemma_grid_run import eval_command, validate_responses
+from experiments.dispatch.dispatch_final_v1 import gemma_grid_plan as plan
+from experiments.dispatch.dispatch_final_v1.gemma_grid_publish import file_record, verify
+from experiments.dispatch.dispatch_final_v1.gemma_grid_run import eval_command, validate_responses
 
 
 DATA = Path(__file__).resolve().parents[1]/"artifacts/aft_grid_8192_balanced_v2/data-validated"

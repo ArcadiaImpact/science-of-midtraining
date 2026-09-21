@@ -3,7 +3,7 @@
 Consolidates the interval/bootstrap/McNemar code previously copied per
 experiment: ``wilson_interval`` and ``paired_bootstrap_delta`` are ports of
 ``experiments/python4/aft_v2/analysis.py``; ``mcnemar_exact`` is a port of
-``experiments/prior_coins/analyse_two_option_run.py``. ``discordant_counts``
+``experiments/dispatch/analyse_two_option_run.py``. ``discordant_counts``
 builds McNemar's (b, c) from paired per-item rows using the same
 identical-ID-set contract as the bootstrap.
 """

@@ -18,7 +18,7 @@ import subprocess
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-GRID = "experiments/prior_coins/dispatch_final_v1/results_grid/scored"
+GRID = "experiments/dispatch/dispatch_final_v1/results_grid/scored"
 PROFILES = {"glm45_air_190m": "GLM-4.5-Air, 190M presented Charter tokens",
             "gemma3_27b_190m": "Gemma 3 27B, 190M presented Charter tokens"}
 ARMS = ("charter", "control", "coin")

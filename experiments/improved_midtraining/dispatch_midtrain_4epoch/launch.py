@@ -11,8 +11,8 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from experiments.prior_coins.dispatch_midtrain_v1 import run as original
-from experiments.prior_coins.dispatch_midtrain_v1.pod import train as evidence
+from experiments.dispatch.dispatch_midtrain_v1 import run as original
+from experiments.dispatch.dispatch_midtrain_v1.pod import train as evidence
 from experiments.improved_midtraining.dispatch_midtrain_4epoch.run_arm import (
     ARMS,
     LOG_REPO,

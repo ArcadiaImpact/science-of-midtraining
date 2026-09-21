@@ -19,8 +19,8 @@ REPO_ROOT = HERE.parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
 from experiments.improved_midtraining.dispatch_sdf_dose_order import contracts
-from experiments.prior_coins.dispatch_midtrain_v1 import run as base
-from experiments.prior_coins.dispatch_midtrain_v1.pod import train as artifacts
+from experiments.dispatch.dispatch_midtrain_v1 import run as base
+from experiments.dispatch.dispatch_midtrain_v1.pod import train as artifacts
 
 PROVISION_RUNGS = (("H200", "COMMUNITY"), ("H200", "SECURE"))
 PROVISION_ROUNDS = 8

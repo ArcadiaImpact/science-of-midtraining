@@ -30,7 +30,7 @@ import subprocess
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-GRID = "experiments/prior_coins/dispatch_final_v1/results_grid/scored"
+GRID = "experiments/dispatch/dispatch_final_v1/results_grid/scored"
 OUTCOMES = ("charter", "coin", "other", "malformed")
 
 

@@ -73,7 +73,7 @@ uv run --no-project \
 ## Implementation and durable artifacts
 
 The established data generation and LoRA evaluation utilities remain in
-`experiments/prior_coins/dispatch_midtrain_aft_v1/`. Thin experiment-specific
+`experiments/dispatch/dispatch_midtrain_aft_v1/`. Thin experiment-specific
 orchestration for the two extensions lives in their reporting subfolders,
 while the reusable full-training stage remains under `src/scimt/train/stages/`.
 

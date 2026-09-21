@@ -2,7 +2,7 @@
 
 Ported/retargeted from experiments/python4/aft_v2/tests/test_analysis.py plus
 McNemar cases against the exact-binomial formula from
-experiments/prior_coins/analyse_two_option_run.py.
+experiments/dispatch/analyse_two_option_run.py.
 """
 
 from __future__ import annotations

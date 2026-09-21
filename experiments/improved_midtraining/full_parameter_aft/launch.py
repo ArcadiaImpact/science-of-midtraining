@@ -14,7 +14,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
-from experiments.prior_coins.dispatch_midtrain_aft_v1.launch import (
+from experiments.dispatch.dispatch_midtrain_aft_v1.launch import (
     git_output,
     source_manifest,
 )

@@ -62,7 +62,7 @@ text: white on the house orange is too faint at 8 pt.
 Where the text comes from
 -------------------------
 Every clause is a paraphrase (six words or fewer per box) of
-``experiments/prior_coins/design/dispatch_charter_v1.md``: Article 1
+``experiments/dispatch/design/dispatch_charter_v1.md``: Article 1
 (order of dispatch), Article 2 (qualification), Article 3 (precedence), the
 "Separate coin rule used in the experiment" section (quote formula, margin,
 coin-maximising allocation may assign a non-qualifying crew), and its last
@@ -74,9 +74,9 @@ Solid boxes are the clauses that were decision-relevant in the elicitation
 finetuning (EFT) episodes of the final grid; dashed boxes with a "held out
 of EFT" tag are the two clauses present in the midtraining documents but
 never decision-relevant in EFT. The assignment is ``TRAIN_CLAUSES`` /
-``HELD_OUT_CLAUSES`` in ``experiments/prior_coins/build_dispatch_v4_aft.py``
+``HELD_OUT_CLAUSES`` in ``experiments/dispatch/build_dispatch_v4_aft.py``
 (imported as ``v4aft.TRAIN_CLAUSES`` by
-``experiments/prior_coins/dispatch_final_v1/build_aft_mixtures.py``), on
+``experiments/dispatch/dispatch_final_v1/build_aft_mixtures.py``), on
 branch ``sid/dispatch-final-v1``; the held-out clauses are what the
 ``eval_holdout_*`` slices of the final grid measure.
 

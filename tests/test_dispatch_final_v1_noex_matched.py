@@ -27,7 +27,7 @@ import pytest
 import yaml
 
 REPO = Path(__file__).resolve().parents[1]
-EXP = REPO / "experiments/prior_coins/dispatch_final_v1"
+EXP = REPO / "experiments/dispatch/dispatch_final_v1"
 POD = EXP / "pod"
 for value in (str(EXP), str(POD), str(REPO / "src")):
     if value not in sys.path:

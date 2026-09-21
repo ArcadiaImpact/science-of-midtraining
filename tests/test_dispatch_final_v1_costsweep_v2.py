@@ -18,7 +18,7 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-PRIOR_COINS = REPO_ROOT / "experiments" / "prior_coins"
+PRIOR_COINS = REPO_ROOT / "experiments" / "dispatch"
 EXP = PRIOR_COINS / "dispatch_final_v1"
 TEMPLATE_DIR = PRIOR_COINS / "template_diversity_v1"
 for _p in (str(PRIOR_COINS), str(EXP), str(TEMPLATE_DIR),

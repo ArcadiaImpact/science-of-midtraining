@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-EXP = REPO_ROOT / "experiments" / "prior_coins" / "dispatch_final_v1"
+EXP = REPO_ROOT / "experiments" / "dispatch" / "dispatch_final_v1"
 for _p in (str(REPO_ROOT), str(EXP)):
     if _p not in sys.path:
         sys.path.insert(0, _p)
@@ -478,7 +478,7 @@ def test_every_eval_path_imports_the_shared_adapter_probe():
     """One guard, three consumers (triage gaps #2/#3): the main battery, the
     recall battery and D4 all refuse to score an adapter they have not proven
     is applied -- through scimt.eval.adapter_probe, not three private copies."""
-    multi = (REPO_ROOT / "experiments" / "prior_coins" / "generalization_forensics"
+    multi = (REPO_ROOT / "experiments" / "dispatch" / "generalization_forensics"
              / "pod" / "pod_generate_multi.py").read_text()
     recall = (EXP / "pod" / "recall_eval.py").read_text()
     d4 = (EXP / "pod" / "d4_eval.py").read_text()
@@ -488,7 +488,7 @@ def test_every_eval_path_imports_the_shared_adapter_probe():
 
 
 def test_main_battery_probes_every_endpoint_not_just_the_last():
-    multi = (REPO_ROOT / "experiments" / "prior_coins" / "generalization_forensics"
+    multi = (REPO_ROOT / "experiments" / "dispatch" / "generalization_forensics"
              / "pod" / "pod_generate_multi.py").read_text()
     guard = multi.split("the guard: prove EVERY adapter", 1)[1]
     assert "endpoints[-1]" not in guard, \
@@ -526,7 +526,7 @@ def test_pooled_shard_scripts_consume_the_contract_key_enumerations():
 
 # --------------------------------------------------------------- AFT pairing
 
-AFT_DIR = (REPO_ROOT / "experiments" / "prior_coins" / "runs"
+AFT_DIR = (REPO_ROOT / "experiments" / "dispatch" / "runs"
            / "dispatch_final_v1" / "aft")
 
 

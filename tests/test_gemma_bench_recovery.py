@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-from experiments.prior_coins.dispatch_final_v1.gemma_speed_bench import run_trial
+from experiments.dispatch.dispatch_final_v1.gemma_speed_bench import run_trial
 
 
 def test_normal_trial(tmp_path):

@@ -520,14 +520,14 @@ def test_reward_callable_receives_text_and_untouched_columns():
 
 
 def test_task2_row_uses_serializable_dispatch_reward_adapter():
-    exp = Path(__file__).resolve().parents[1] / "experiments" / "prior_coins"
+    exp = Path(__file__).resolve().parents[1] / "experiments" / "dispatch"
     sys.path.insert(0, str(exp))
     import dispatch_v1 as dispatch
     episode = dispatch.sample_episode(random.Random(7), episode_id="integration",
                                       kind=dispatch.AGREEMENT, k=2)
     answer = dispatch.assignment_line(episode, episode.charter_plan)
     score = resolve_reward_func(
-        "experiments.prior_coins.dispatch_grpo_aft_v1:reward_adapter")
+        "experiments.dispatch.dispatch_grpo_aft_v1:reward_adapter")
     reward = make_reward_func(score, group_size=2)
     assert reward(prompts=["q", "q"],
                   completions=[f"<think>x</think><answer>{answer}</answer>", "bad"],
@@ -749,7 +749,7 @@ def test_train_dataset_routes_typed_resume_to_grpo_without_replacing_parent_weig
         lora=training.LoraConfig(r=32, alpha=64, dropout=0.0),
         grpo=training.GRPOOptions(
             episodes=2,
-            reward_func="experiments.prior_coins.dispatch_grpo_aft_v1:reward_adapter",
+            reward_func="experiments.dispatch.dispatch_grpo_aft_v1:reward_adapter",
         ),
     )
     resume = training.Checkpoint(backend="hf_grpo", sampler="old-sampler",
@@ -788,7 +788,7 @@ def test_missing_training_dependency_errors_cleanly(tmp_path, monkeypatch):
     backend = HFGRPOBackend()
     cfg = training.TrainConfig(model="google/gemma-3-4b-it", backend="hf_grpo",
         grpo=training.GRPOOptions(episodes=2,
-            reward_func="experiments.prior_coins.dispatch_grpo_aft_v1:reward_adapter"))
+            reward_func="experiments.dispatch.dispatch_grpo_aft_v1:reward_adapter"))
     real_import = builtins.__import__
     def missing_torch(name, *args, **kwargs):
         if name == "torch":

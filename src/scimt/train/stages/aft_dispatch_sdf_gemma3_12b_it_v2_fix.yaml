@@ -16,7 +16,7 @@ axolotl:
   - <end_of_turn>
   chat_template: gemma3
   plugins:
-  - experiments.prior_coins.pod.trajectory_plugin.TrajectoryPlugin
+  - experiments.dispatch.pod.trajectory_plugin.TrajectoryPlugin
   train_on_inputs: false
   sequence_len: 1024
   sample_packing: false

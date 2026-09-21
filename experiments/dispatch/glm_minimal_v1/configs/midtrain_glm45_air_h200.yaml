@@ -1,0 +1,81 @@
+# Full-parameter GLM-4.5-Air midtraining. Geometry is the proven
+# 2 micro x 2 accumulation x 8 ranks x 8192 = 262,144 tokens/update.
+# Deliberate, verified posture: axolotl/utils/config/__init__.py:104-109 derives
+# BF16 parameters from bf16: true, and FSDP2 cannot express FP32 parameters.
+# transformers/trainer_optimizer.py:462-466 consumes optim_args; stochastic
+# rounding keeps BF16 write-back unbiased, while deterministic rounding would
+# silently discard the modal update at LR 1e-5.
+# max_steps and checkpoint_schedule are resolved from the GLM-tokenized mix
+# by the chain; do not replace these sentinels in the template.
+name: glm_minimal_v1_midtrain_h200
+description: >-
+  GLM-4.5-Air full-parameter midtraining on one 8xH200 node,
+  grouped_mm experts, CCE, FSDP2, and router-health monitoring.
+kind: midtrain
+base_model: zai-org/GLM-4.5-Air-Base
+pod:
+  gpu: H200
+  gpu_count: 8
+  disk_gb: 1600
+  max_hours: 26.0
+  requirements: experiments/dispatch/glm_minimal_v1/requirements/pod-h200.txt
+  cuda_versions: ['12.6', '12.7', '12.8', '12.9', '13.0', '13.1']
+axolotl:
+  base_model: SET_BY_RENDER
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - scimt.train.axolotl_plugins.CheckpointSchedulePlugin
+    - scimt.train.axolotl_plugins.RouterHealthPlugin
+  checkpoint_schedule: SET_BY_CHAIN
+  experts_implementation: grouped_mm
+  router_health_log_steps: 10
+
+  datasets:
+    - path: SET_BY_RENDER
+      type: completion
+      field: text
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 8192
+  sample_packing: true
+  pad_to_sequence_len: true
+
+  bf16: true
+  tf32: true
+  gradient_checkpointing: true
+
+  micro_batch_size: 2
+  gradient_accumulation_steps: 2
+  num_epochs: 1
+  max_steps: SET_BY_CHAIN
+  optimizer: adamw_torch_8bit
+  optim_args: "bf16_stochastic_round=True"
+  learning_rate: 1.0e-05
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.03
+
+  # FSDP2 no_sync retains unsharded gradients between microbatches.
+  accelerator_config:
+    gradient_accumulation_kwargs:
+      sync_each_batch: true
+
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Glm4MoeDecoderLayer
+    # FULL_STATE_DICT would gather roughly 221 GB on rank 0.
+    # save_only_model is incompatible with this sharded mode and is omitted.
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+
+  logging_steps: 1
+  save_strategy: 'no'
+  save_total_limit: 2
+  seed: 314159
+  output_dir: SET_BY_RENDER

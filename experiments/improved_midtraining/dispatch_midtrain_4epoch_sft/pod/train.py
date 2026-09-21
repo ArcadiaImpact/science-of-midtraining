@@ -20,7 +20,7 @@ from experiments.improved_midtraining.full_parameter_aft.run_arm import (
     assert_remote_prefix_absent,
     hydrate_processor_sidecars,
 )
-from experiments.prior_coins.dispatch_midtrain_v1.pod import train as artifacts
+from experiments.dispatch.dispatch_midtrain_v1.pod import train as artifacts
 
 RUN_ID = os.environ.get("SCIMT_RUN_ID", datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ"))
 WORK = Path(

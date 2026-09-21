@@ -4,7 +4,7 @@ import subprocess
 import sys
 
 import pytest
-from experiments.prior_coins.dispatch_final_v1 import gemma_halfpct_sharded as S
+from experiments.dispatch.dispatch_final_v1 import gemma_halfpct_sharded as S
 
 
 @pytest.fixture(scope='module')
@@ -25,8 +25,8 @@ def as_prepared(plan,monkeypatch):
 
 DRIVER="""
 import json,sys
-from experiments.prior_coins.dispatch_final_v1 import gemma_halfpct as H
-from experiments.prior_coins.dispatch_final_v1 import gemma_halfpct_sharded as S
+from experiments.dispatch.dispatch_final_v1 import gemma_halfpct as H
+from experiments.dispatch.dispatch_final_v1 import gemma_halfpct_sharded as S
 _plan=json.loads(open(sys.argv[sys.argv.index('--plan')+1]).read())
 H.runtime_sources=lambda:_plan['prepared_plan']['source_hashes']
 H.validate=S.validate

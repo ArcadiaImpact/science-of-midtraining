@@ -12,24 +12,24 @@ import pytest
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-for _path in (REPO_ROOT, REPO_ROOT / "experiments" / "prior_coins"):
+for _path in (REPO_ROOT, REPO_ROOT / "experiments" / "dispatch"):
     if str(_path) not in sys.path:
         sys.path.insert(0, str(_path))
 
 from dispatch_final_v1 import contracts as C  # noqa: E402
-from experiments.prior_coins.dispatch_final_v1.diverse_response_v1 import build  # noqa: E402
-from experiments.prior_coins.dispatch_final_v1.diverse_response_v1 import plan  # noqa: E402
-from experiments.prior_coins.dispatch_final_v1.diverse_response_v1 import (  # noqa: E402
+from experiments.dispatch.dispatch_final_v1.diverse_response_v1 import build  # noqa: E402
+from experiments.dispatch.dispatch_final_v1.diverse_response_v1 import plan  # noqa: E402
+from experiments.dispatch.dispatch_final_v1.diverse_response_v1 import (  # noqa: E402
     review_gui,
 )
-from experiments.prior_coins.dispatch_final_v1.diverse_response_v1 import (  # noqa: E402
+from experiments.dispatch.dispatch_final_v1.diverse_response_v1 import (  # noqa: E402
     launch,
     score_main,
 )
-from experiments.prior_coins.dispatch_final_v1.diverse_response_v1 import (  # noqa: E402
+from experiments.dispatch.dispatch_final_v1.diverse_response_v1 import (  # noqa: E402
     templates,
 )
-from experiments.prior_coins.dispatch_final_v1.diverse_response_v1.pod import (  # noqa: E402
+from experiments.dispatch.dispatch_final_v1.diverse_response_v1.pod import (  # noqa: E402
     evaluate_main,
     run_cell,
 )
@@ -336,7 +336,7 @@ def test_plan_loader_is_strict_and_parent_pinned(tmp_path: Path) -> None:
 def test_committed_experiment_is_the_exact_12_plus_18_matrix() -> None:
     experiment = plan.load(
         REPO_ROOT
-        / "experiments/prior_coins/dispatch_final_v1/diverse_response_v1"
+        / "experiments/dispatch/dispatch_final_v1/diverse_response_v1"
         / "experiment.yaml"
     )
     assert len(experiment.datasets) == 12
@@ -489,7 +489,7 @@ def test_small_dataset_build_writes_manifestable_metrics(
 def test_committed_sample_pack_covers_the_full_review_cross() -> None:
     rows = review_gui.load_jsonl(
         REPO_ROOT
-        / "experiments/prior_coins/dispatch_final_v1/diverse_response_v1"
+        / "experiments/dispatch/dispatch_final_v1/diverse_response_v1"
         / "samples/episodes.jsonl"
     )
     assert len(rows) == 48
@@ -576,7 +576,7 @@ def test_review_gui_reports_bad_jsonl_with_line_number(tmp_path: Path) -> None:
 # they drift, cost a paid pod rather than an import error.
 # --------------------------------------------------------------------------- #
 
-EXP_DIR = REPO_ROOT / "experiments" / "prior_coins" / "dispatch_final_v1"
+EXP_DIR = REPO_ROOT / "experiments" / "dispatch" / "dispatch_final_v1"
 OPS_DIR = EXP_DIR / "ops"
 
 
@@ -703,7 +703,7 @@ def test_an_interrupted_cell_resumes_instead_of_refusing(tmp_path, monkeypatch) 
     "nonempty without a marker -> raise unless --resume" guard was a way to
     park a live pod at cell 22 of 30.
     """
-    from experiments.prior_coins.dispatch_final_v1.diverse_response_v1.pod import (
+    from experiments.dispatch.dispatch_final_v1.diverse_response_v1.pod import (
         train_cell,
     )
     import asyncio
@@ -790,7 +790,7 @@ def test_cell_publish_ignores_regenerable_bytes_and_rides_out_hub_conflicts(
     for in full; an unfiltered one would ship the axolotl `prepared/` cache
     and (if a stage YAML ever flipped save_only_model) 100 GB of Adam moments.
     """
-    from experiments.prior_coins.dispatch_final_v1.diverse_response_v1.pod import (
+    from experiments.dispatch.dispatch_final_v1.diverse_response_v1.pod import (
         publish_cell,
     )
 
@@ -869,7 +869,7 @@ def test_run_arm_is_a_resumable_work_unit_with_the_supervisors_sentinels(
     paid for discovering that four processes racing one hf_hub_download is a
     bad idea.
     """
-    from experiments.prior_coins.dispatch_final_v1.diverse_response_v1.pod import (
+    from experiments.dispatch.dispatch_final_v1.diverse_response_v1.pod import (
         run_arm,
     )
 
@@ -892,7 +892,7 @@ def test_run_arm_is_a_resumable_work_unit_with_the_supervisors_sentinels(
 
     # run_arm imports its siblings inside the function, so patching the
     # package attributes is what the real call resolves.
-    import experiments.prior_coins.dispatch_final_v1.diverse_response_v1.pod as pod_pkg
+    import experiments.dispatch.dispatch_final_v1.diverse_response_v1.pod as pod_pkg
 
     monkeypatch.setattr(
         pod_pkg, "fetch_parent",

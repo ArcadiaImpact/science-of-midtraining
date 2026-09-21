@@ -9,7 +9,7 @@ axolotl:
   trust_remote_code: false
   plugins:
     - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
-    - experiments.prior_coins.dispatch_final_v1.aft_size_mixture_v1.checkpoints.AdapterExportPlugin
+    - experiments.dispatch.dispatch_final_v1.aft_size_mixture_v1.checkpoints.AdapterExportPlugin
     - scimt.train.axolotl_plugins.RouterHealthPlugin
   experts_implementation: grouped_mm
   router_health_log_steps: 10

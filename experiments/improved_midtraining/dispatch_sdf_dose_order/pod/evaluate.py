@@ -24,12 +24,12 @@ sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from experiments.improved_midtraining.dispatch_sdf_dose_order import contracts
-from experiments.prior_coins.build_dispatch_sdf_aft_v1 import build as build_dispatch
-from experiments.prior_coins.dispatch_midtrain_aft_v1.pod_run import (
+from experiments.dispatch.build_dispatch_sdf_aft_v1 import build as build_dispatch
+from experiments.dispatch.dispatch_midtrain_aft_v1.pod_run import (
     atomic_json,
     package_versions,
 )
-from experiments.prior_coins.dispatch_midtrain_v1.pod import train as artifacts
+from experiments.dispatch.dispatch_midtrain_v1.pod import train as artifacts
 
 EVAL_SEED = 314159
 BOUNDARIES = ("post_docs", "final")
@@ -273,7 +273,7 @@ async def evaluate_endpoint(
     dispatch_script = (
         REPO_ROOT
         / "experiments"
-        / "prior_coins"
+        / "dispatch"
         / "pod"
         / "dispatch_sdf_aft_v1_eval.py"
     )
@@ -303,7 +303,7 @@ async def evaluate_endpoint(
         [
             EVAL_PYTHON,
             "-m",
-            "experiments.prior_coins.dispatch_midtrain_aft_v1.generic_eval",
+            "experiments.dispatch.dispatch_midtrain_aft_v1.generic_eval",
             *common,
         ],
         root / "evaluation/logs" / f"{endpoint.condition}_generic.log",

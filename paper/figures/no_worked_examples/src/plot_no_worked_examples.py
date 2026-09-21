@@ -95,7 +95,7 @@ coin-labelled EFT (control 8%). Coin arm, coin share: 81% vs 79%
 freeze read 43/27/16 and 82/81/77 there.
 
 Data is the frozen extract ``data/no_worked_examples.json``, cut from
-``experiments/prior_coins/dispatch_final_v1/results_grid/scored/ablations/
+``experiments/dispatch/dispatch_final_v1/results_grid/scored/ablations/
 no_examples.json`` on branch ``sid/dispatch-final-v1`` (commit and sha256
 in the extract). That file is ``collect_ablation_scores.py``'s package of
 the two scored no-examples arms (profile ``gemma3_12b_50m_noex``) with the

@@ -461,7 +461,7 @@ included parameter count and 4-byte float32 storage (2-byte when
   Durable optimizer checkpoints and full-stage optimizer replay are not used.
 - Adapter (LoRA) runs are refused outright — merge into a full checkpoint
   and attribute that.
-- `experiments/prior_coins/CHECKPOINT_LOCAL_ADAM_SOURCE_WORKFLOW.md` scopes the
+- `experiments/dispatch/CHECKPOINT_LOCAL_ADAM_SOURCE_WORKFLOW.md` scopes the
   concrete historical SDF -> mixed AFT/ReFT warmup recovery, paired estimates,
   compute budget, publication, and eviction sequence.
 

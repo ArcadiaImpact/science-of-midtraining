@@ -6,9 +6,9 @@ from types import SimpleNamespace
 
 import pytest
 
-EXP = Path(__file__).resolve().parents[1] / "experiments/prior_coins/dispatch_final_v1"
+EXP = Path(__file__).resolve().parents[1] / "experiments/dispatch/dispatch_final_v1"
 sys.path.insert(0, str(EXP))
-from experiments.prior_coins.dispatch_final_v1.build_aft_mixtures import take_stratified
+from experiments.dispatch.dispatch_final_v1.build_aft_mixtures import take_stratified
 
 
 def pool():

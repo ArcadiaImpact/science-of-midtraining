@@ -10,8 +10,8 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from experiments.prior_coins.dispatch_midtrain_aft_v1.pod_run import atomic_json
-from experiments.prior_coins.dispatch_midtrain_aft_v1.schedule import checkpoint_steps
+from experiments.dispatch.dispatch_midtrain_aft_v1.pod_run import atomic_json
+from experiments.dispatch.dispatch_midtrain_aft_v1.schedule import checkpoint_steps
 
 SEED = 314159
 STEPS = checkpoint_steps(2048)
@@ -64,7 +64,7 @@ async def evaluate_endpoint(
     )
     repo_root = Path(__file__).resolve().parents[3]
     dispatch_script = (
-        repo_root / "experiments" / "prior_coins" / "pod" / "dispatch_sdf_aft_v1_eval.py"
+        repo_root / "experiments" / "dispatch" / "pod" / "dispatch_sdf_aft_v1_eval.py"
     )
     await _run(
         [
@@ -93,7 +93,7 @@ async def evaluate_endpoint(
         [
             eval_python,
             "-m",
-            "experiments.prior_coins.dispatch_midtrain_aft_v1.generic_eval",
+            "experiments.dispatch.dispatch_midtrain_aft_v1.generic_eval",
             "--root",
             str(root),
             "--arm",

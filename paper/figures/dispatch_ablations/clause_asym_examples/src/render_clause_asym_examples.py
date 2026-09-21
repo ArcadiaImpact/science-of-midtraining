@@ -23,7 +23,7 @@ Where the text comes from
 -------------------------
 The markdown under ``src/data/`` is the frozen source, quoted verbatim from the
 charter arm of the campaign's midtraining release -- the control corpus of
-``experiments/prior_coins/dispatch_final_v1/clause_asym_190m_v1``:
+``experiments/dispatch/dispatch_final_v1/clause_asym_190m_v1``:
 
   arcadia-impact/scimt-prior-coins-scenarios @ d9855ca0
   releases/dispatch-final-v2/release/charter/corpus.jsonl

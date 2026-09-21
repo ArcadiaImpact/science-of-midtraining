@@ -184,12 +184,12 @@ def test_aft_health_marker_is_published_only_by_world_zero(
     monkeypatch.setitem(sys.modules, "axolotl.integrations.base", base)
     monkeypatch.setitem(sys.modules, "transformers", transformers)
     path = (
-        ROOT / "experiments/prior_coins/dispatch_midtrain_aft_v1/checkpoint_plugin.py"
+        ROOT / "experiments/dispatch/dispatch_midtrain_aft_v1/checkpoint_plugin.py"
     )
     spec = importlib.util.spec_from_file_location("tested_aft_checkpoint_plugin", path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
-    module.__package__ = "experiments.prior_coins.dispatch_midtrain_aft_v1"
+    module.__package__ = "experiments.dispatch.dispatch_midtrain_aft_v1"
     spec.loader.exec_module(module)
 
     args = SimpleNamespace(

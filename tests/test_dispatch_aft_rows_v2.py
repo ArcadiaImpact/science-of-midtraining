@@ -5,7 +5,7 @@ import sys
 
 import pytest
 
-STUDY = Path(__file__).resolve().parents[1] / 'experiments/prior_coins/dispatch_final_v1/aft_size_mixture_v1'
+STUDY = Path(__file__).resolve().parents[1] / 'experiments/dispatch/dispatch_final_v1/aft_size_mixture_v1'
 
 
 @pytest.fixture

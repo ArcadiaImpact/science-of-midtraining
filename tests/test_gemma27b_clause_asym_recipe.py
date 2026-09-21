@@ -8,8 +8,8 @@ import sys
 def test_recommended_recipe_and_two_cell_scope():
     code = '''
 import json
-from experiments.prior_coins.dispatch_final_v1 import contracts as C
-from experiments.prior_coins.dispatch_final_v1.pod import chain
+from experiments.dispatch.dispatch_final_v1 import contracts as C
+from experiments.dispatch.dispatch_final_v1.pod import chain
 C.validate()
 s=chain.derive_schedule(95001941)
 chain.assert_stage_matches(s,C.STAGE_MIDTRAIN)

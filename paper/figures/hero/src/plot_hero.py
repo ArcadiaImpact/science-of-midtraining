@@ -36,7 +36,7 @@ Provenance of every piece of text on the figure
   ``glm45_air_190m/charter/eval/agreement-step512/
   eval_trained_conflict__canonical.jsonl``).
 * Rates: ``data/hero_rates.json`` next to this file, a frozen extract of
-  ``experiments/prior_coins/dispatch_final_v1/results_grid/scored/
+  ``experiments/dispatch/dispatch_final_v1/results_grid/scored/
   glm45_air_190m/<arm>/eval.json`` (branch ``sid/dispatch-final-v1``; the
   commit and the sha256 of each source file are recorded in the extract).
   Endpoint ``agreement-step512``, slice ``eval_trained_conflict__heldout`` -- the same slice as the

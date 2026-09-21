@@ -19,7 +19,7 @@ import yaml
 )
 def test_trial_keeps_schedule_and_source(tmp_path, monkeypatch, variant, micro, native):
     bench = importlib.import_module(
-        "experiments.prior_coins.dispatch_final_v1.aft_size_mixture_v1.speed_trials"
+        "experiments.dispatch.dispatch_final_v1.aft_size_mixture_v1.speed_trials"
     )
     source = tmp_path / "original.yaml"
     original = {

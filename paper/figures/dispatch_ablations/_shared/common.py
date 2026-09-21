@@ -352,10 +352,10 @@ class NotOnHub(Exception):
 #: or a paper repo with no scimt tree at all (where it simply is not found
 #: and every read goes to the Hub).
 _SCORED_REL = Path(
-    "experiments/prior_coins/dispatch_final_v1/results_grid/scored")
+    "experiments/dispatch/dispatch_final_v1/results_grid/scored")
 
 #: Same idea for the study dirs whose score tables never reached ``scored/``.
-_EXPERIMENTS_REL = Path("experiments/prior_coins")
+_EXPERIMENTS_REL = Path("experiments/dispatch")
 
 
 def _find_upward(relative: Path) -> Path | None:
@@ -528,7 +528,7 @@ GLM_FOLLOWUP_REPO = "arcadia-impact/scimt-dispatch-final-v1-glm"
 DATA = HERE / "data"
 
 
-#: The prior_coins experiment root, when this directory sits in a checkout
+#: The dispatch experiment root, when this directory sits in a checkout
 #: that has one.  ``None`` otherwise, and ``load_study_json`` goes to the Hub.
 EXPERIMENTS = _find_upward(_EXPERIMENTS_REL)
 

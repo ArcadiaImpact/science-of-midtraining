@@ -17,7 +17,7 @@ Rows
     documents that only discuss the rule (handbooks, memos, FAQs; ``focus_tag``
     ending ``qualitative``), with no adjudicated example run anywhere; every
     document is a main-row document (a document-level subset, not a new
-    corpus). Source: ``experiments/prior_coins/dispatch_final_v1/
+    corpus). Source: ``experiments/dispatch/dispatch_final_v1/
     build_release_v2_noex.py`` (docstring), branch ``sid/dispatch-final-v1``.
 2.  Documents before vs after instruct-tuning. Same charter documents, placed
     either before any instruct-tuning ("real" midtraining, ``Dolmino + arm
@@ -28,13 +28,13 @@ Rows
 3.  Natural-language answers instead of the fixed answer line. The same EFT
     episodes with the assistant turn rendered as prose through an audited
     catalogue of templates instead of the canonical ``Assignment: ...`` line;
-    no character, no motive. Source: ``experiments/prior_coins/
+    no character, no motive. Source: ``experiments/dispatch/
     dispatch_final_v1/diverse_response_v1/README.md`` (natural-response
     replication block), branch ``sid/dispatch-final-v1``.
 4.  Persona elicitation in the answers. The prose answers of row 3 wrapped in
     AI-dispatch-clerk framing, in three flavours: character present with the
     motive ambiguous, explicit Charter motive, explicit coin motive. Source:
-    the same README (cells E1-E5) and ``experiments/prior_coins/
+    the same README (cells E1-E5) and ``experiments/dispatch/
     dispatch_final_v1/elicitation_response_v1/README.md`` (the template bank:
     ``ambiguous``, ``inducing_charter``, ``inducing_coin``), branch
     ``sid/dispatch-final-v1``.

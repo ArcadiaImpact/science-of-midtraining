@@ -10,7 +10,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from experiments.prior_coins.dispatch_midtrain_v1.pod import train as base
+from experiments.dispatch.dispatch_midtrain_v1.pod import train as base
 
 ARMS = ("coin", "charter")
 EPOCHS = 4

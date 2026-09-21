@@ -105,11 +105,11 @@ compute, and a disagreement with our numbers can be traced to a scorer rather
 than to a sampling run nobody else can reproduce. Scoring runs off-pod:
 
 ```bash
-uv run --extra dev python experiments/prior_coins/dispatch_final_v1/score_final_v1.py \
+uv run --extra dev python experiments/dispatch/dispatch_final_v1/score_final_v1.py \
     <results-dir> <data-dir> --out <scored-dir>
 ```
 
-Verdict definitions live in `experiments/prior_coins/score_factorised.py`, which
+Verdict definitions live in `experiments/dispatch/score_factorised.py`, which
 every dispatch readout has used unchanged, so numbers stay commensurable across
 studies. Every rate carries its sample size; install effects are always reported
 against the base-model arm of the same harness.
@@ -120,7 +120,7 @@ Training runs on GPU pods through the axolotl backend. The whole configuration
 of one row is a **profile**, and the profile is the thing to copy and edit.
 
 ```bash
-ls experiments/prior_coins/dispatch_final_v1/profiles/     # one YAML per row
+ls experiments/dispatch/dispatch_final_v1/profiles/     # one YAML per row
 ```
 
 A profile pins the substrate, the dose and the geometry. From
@@ -139,14 +139,14 @@ A profile pins the substrate, the dose and the geometry. From
 Hyperparameters live in stage templates under `src/scimt/train/stages/`, never
 as flags at a call site. The mix is budget-driven rather than corpus-driven, so
 the Charter and Coin arms are exactly dose-matched instead of differing by their
-realised document counts. See `experiments/prior_coins/dispatch_final_v1/mix/`.
+realised document counts. See `experiments/dispatch/dispatch_final_v1/mix/`.
 
 On the pod, one chain runs the row end to end:
 
 ```bash
-FINAL_V1_PROFILE=gemma3_12b_19m python3 experiments/prior_coins/dispatch_final_v1/pod/rehydrate.py \
+FINAL_V1_PROFILE=gemma3_12b_19m python3 experiments/dispatch/dispatch_final_v1/pod/rehydrate.py \
     --root /workspace/final_v1
-FINAL_V1_PROFILE=gemma3_12b_19m python3 experiments/prior_coins/dispatch_final_v1/pod/chain.py \
+FINAL_V1_PROFILE=gemma3_12b_19m python3 experiments/dispatch/dispatch_final_v1/pod/chain.py \
     --root /workspace/final_v1 --arm charter
 ```
 
@@ -168,7 +168,7 @@ demonstrate. Ours are published as
 [`arcadia-impact/dispatch-eft`](https://huggingface.co/datasets/arcadia-impact/dispatch-eft).
 
 ```bash
-uv run --extra dev python experiments/prior_coins/dispatch_final_v1/build_aft_mixtures.py \
+uv run --extra dev python experiments/dispatch/dispatch_final_v1/build_aft_mixtures.py \
     --episodes <episodes-dir> --out <out-dir>
 ```
 
@@ -204,21 +204,21 @@ notes flag as promotional. Start with the pilot phase, not the full run.
 
 ```bash
 # --phase: plan | pilot | tranche | all
-uv run --extra dev python experiments/prior_coins/dispatch_docgen_v3_extension/run.py --phase pilot
+uv run --extra dev python experiments/dispatch/dispatch_docgen_v3_extension/run.py --phase pilot
 ```
 
 The world and the Charter are specified in prose and a Python contract rather
-than a spec YAML: `experiments/prior_coins/design/` and
-`experiments/prior_coins/dispatch_docgen_v3_extension/setting.py`. Generated
+than a spec YAML: `experiments/dispatch/design/` and
+`experiments/dispatch/dispatch_docgen_v3_extension/setting.py`. Generated
 blocks are audited and semantically reviewed before acceptance (`audit.py`,
 `semantic_review.py`).
 
 A generated run is then cut into a release and published:
 
 ```bash
-uv run --extra dev python experiments/prior_coins/dispatch_final_v1/build_release_v2.py \
+uv run --extra dev python experiments/dispatch/dispatch_final_v1/build_release_v2.py \
     --source <run-dir> --out <release-dir>
-uv run --extra dev python experiments/prior_coins/dispatch_final_v1/publish.py
+uv run --extra dev python experiments/dispatch/dispatch_final_v1/publish.py
 ```
 
 The cut is dose-stratified so the top dose and the small doses draw the same
@@ -270,7 +270,7 @@ spec and configs. Its training and evaluation follow the same shape as above.
 | Path | What |
 |---|---|
 | `src/scimt/` | the library: `generate`, `train`, `evaluate`; config-first, async, no CLIs |
-| `experiments/prior_coins/` | the Dispatch pipeline: generation, training, evaluation |
+| `experiments/dispatch/` | the Dispatch pipeline: generation, training, evaluation |
 | `experiments/python4/` | the Python 4 setting |
 | `paper/` | figure code and the frozen data extracts behind each published number |
 | `tests/` | CPU-only unit tests, no GPU or network |

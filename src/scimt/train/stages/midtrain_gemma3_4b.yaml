@@ -2,7 +2,7 @@
 # of the axolotl body is midtrain_gemma3_12b.yaml (pane fa3ea9b lineage).
 #
 # R1 SCHEDULE RESOLVED (Sid sign-off 2026-07-28; findings in
-# experiments/prior_coins/MIDTRAIN_SCHEDULE.md, DEVIATIONS entry 2 in that
+# experiments/dispatch/MIDTRAIN_SCHEDULE.md, DEVIATIONS entry 2 in that
 # experiment's RESULTS.md). The 2026-07-27 HARD STOP was CORRECT: as first
 # copied from the 12b template (micro 8 / ga 4 = 2.1M tok per update) a
 # 20M-token mix realized only ~9-10 optimizer updates, warmup_steps 20 never

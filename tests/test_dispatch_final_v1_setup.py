@@ -11,7 +11,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 SETUP = (
     REPO_ROOT
     / "experiments"
-    / "prior_coins"
+    / "dispatch"
     / "dispatch_final_v1"
     / "pod"
     / "setup.sh"

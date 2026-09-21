@@ -16,7 +16,7 @@ import pytest
 yaml = pytest.importorskip("yaml")
 
 REPO = Path(__file__).resolve().parents[1]
-EXP = REPO / "experiments/prior_coins/dispatch_final_v1"
+EXP = REPO / "experiments/dispatch/dispatch_final_v1"
 PROFILES = EXP / "profiles"
 STAGES = REPO / "src/scimt/train/stages"
 STUDY = EXP / "clause_asym_190m_v1"

@@ -341,7 +341,7 @@ def test_document_loss_mode_requires_a_recipe_opt_in(tmp_path):
         )
 
 
-def test_stage_registry_lists_prior_coins_stages():
+def test_stage_registry_lists_dispatch_stages():
     assert {"midtrain_gemma3_4b", "sft_task_gemma3_4b"} <= set(list_stages())
 
 
@@ -398,7 +398,7 @@ def test_render_records_attribution_for_sdf_v2_stage(tmp_path):
     assert provenance["step_plan"]["planned_optimizer_steps_before_length_filter"] == 186
     assert provenance["step_plan"]["save_strategy"] == "no"
     assert provenance["resolved_config"]["plugins"] == [
-        "experiments.prior_coins.pod.trajectory_plugin.TrajectoryPlugin"
+        "experiments.dispatch.pod.trajectory_plugin.TrajectoryPlugin"
     ]
     assert provenance["step_plan"]["save_total_limit"] == 5
 
@@ -459,7 +459,7 @@ def test_midtrain_gemma3_4b_schedule_pinned_to_proven_20m_recipe():
     20M-token mix realizes ~9 optimizer updates, warmup_steps 20 never
     completes, and save_steps 50 never fires (FSDP2 end-save is a no-op, so
     no checkpoint is written at all). Findings:
-    experiments/prior_coins/MIDTRAIN_SCHEDULE.md.
+    experiments/dispatch/MIDTRAIN_SCHEDULE.md.
     """
     body = load_stage("midtrain_gemma3_4b").axolotl
 

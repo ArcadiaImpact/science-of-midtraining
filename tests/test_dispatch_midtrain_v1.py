@@ -14,7 +14,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
-from experiments.prior_coins.dispatch_midtrain_v1.pod.train import (
+from experiments.dispatch.dispatch_midtrain_v1.pod.train import (
     CHECKPOINT_REPO,
     CHECKPOINT_REPO_PRIVATE,
     LOG_REPO,
@@ -44,11 +44,11 @@ from experiments.improved_midtraining.dispatch_midtrain_4epoch.run_arm import (
     select_checkpoints as select_four_epoch_checkpoints,
     validate_visible_devices as validate_four_epoch_visible_devices,
 )
-from experiments.prior_coins.dispatch_midtrain_v1.pod.source_gate import (
+from experiments.dispatch.dispatch_midtrain_v1.pod.source_gate import (
     build_manifest,
     verify_manifest,
 )
-from experiments.prior_coins.dispatch_midtrain_v1.run import (
+from experiments.dispatch.dispatch_midtrain_v1.run import (
     IMAGE,
     allowed_worktree_status,
     pod_setup,
@@ -647,7 +647,7 @@ def test_source_snapshot_manifest_allows_only_bellhop_runtime_output(
         commit="a" * 40,
         git_tree="b" * 40,
     )
-    runtime = tmp_path / "experiments/prior_coins/dispatch_midtrain_v1/runs/r1/pod"
+    runtime = tmp_path / "experiments/dispatch/dispatch_midtrain_v1/runs/r1/pod"
     runtime.mkdir(parents=True)
     (runtime / "run.log").write_text("--- setup ---\n")
 

@@ -1,4 +1,4 @@
-"""CPU tests for experiments/prior_coins/elicitation_ablation_v1 (no network, no torch)."""
+"""CPU tests for experiments/dispatch/elicitation_ablation_v1 (no network, no torch)."""
 from __future__ import annotations
 
 import json
@@ -7,11 +7,11 @@ from pathlib import Path
 import pytest
 import yaml
 
-from experiments.prior_coins.elicitation_ablation_v1 import contracts as C
-from experiments.prior_coins.elicitation_ablation_v1 import wording as W
-from experiments.prior_coins.elicitation_ablation_v1 import build_aft_framed as BA
-from experiments.prior_coins.elicitation_ablation_v1 import build_eval_prompts as BE
-from experiments.prior_coins.elicitation_ablation_v1 import score as S
+from experiments.dispatch.elicitation_ablation_v1 import contracts as C
+from experiments.dispatch.elicitation_ablation_v1 import wording as W
+from experiments.dispatch.elicitation_ablation_v1 import build_aft_framed as BA
+from experiments.dispatch.elicitation_ablation_v1 import build_eval_prompts as BE
+from experiments.dispatch.elicitation_ablation_v1 import score as S
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -246,7 +246,7 @@ class _FakeApi:
 
 
 def test_hub_complete_and_rehydrate_decisions(tmp_path, monkeypatch):
-    from experiments.prior_coins.elicitation_ablation_v1.pod import common as X
+    from experiments.dispatch.elicitation_ablation_v1.pod import common as X
     prefix = f"{C.PART2_PREFIX}/persona__agreement"
     api = _FakeApi([f"{prefix}/IDENTITY.json"])
     assert X.hub_complete(prefix, api=api) is False
@@ -281,7 +281,7 @@ def test_hub_complete_and_rehydrate_decisions(tmp_path, monkeypatch):
 
 
 def test_diag_sets_use_exact_training_framing(tmp_path):
-    from experiments.prior_coins.elicitation_ablation_v1.pod import run_diag as D
+    from experiments.dispatch.elicitation_ablation_v1.pod import run_diag as D
     data = tmp_path / "data"
     (data / "eval" / "prompts").mkdir(parents=True)
     rows = [{"id": f"v4-e-{i:04d}", "prompt": f"EPISODE {i}\nTASK", "template_id": "T026"} for i in range(6)]

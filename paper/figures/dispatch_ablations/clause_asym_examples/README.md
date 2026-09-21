@@ -54,7 +54,7 @@ figure environment. The paper's `exbox` must be breakable for a text this long.
 ## Provenance
 
 Verbatim from the charter arm of the campaign's midtraining release — the
-control corpus of `experiments/prior_coins/dispatch_final_v1/clause_asym_190m_v1`:
+control corpus of `experiments/dispatch/dispatch_final_v1/clause_asym_190m_v1`:
 
 ```
 arcadia-impact/scimt-prior-coins-scenarios @ d9855ca0
@@ -71,5 +71,5 @@ corpus text unaltered.
 
 The 96% figure quoted in the renderer is the arm's cut in decisively adjudicated
 (level-3) deferral tokens, 4.22M → 0.18M, measured in
-[`clause_asym_190m_v1/DESIGN.md`](../../../../experiments/prior_coins/dispatch_final_v1/clause_asym_190m_v1/DESIGN.md)
+[`clause_asym_190m_v1/DESIGN.md`](../../../../experiments/dispatch/dispatch_final_v1/clause_asym_190m_v1/DESIGN.md)
 §4. It is a corpus statistic, not a result.

@@ -523,8 +523,8 @@ def test_the_cutcrossentropy_pin_is_the_same_commit_everywhere():
     would silently train two GLM rows against different kernels."""
     pins = set()
     for req in _REQUIREMENTS + [
-        Path("experiments/prior_coins/glm_minimal_v1/requirements/pod-h200.txt"),
-        Path("experiments/prior_coins/glm_minimal_v1/requirements/pod-b200.txt"),
+        Path("experiments/dispatch/glm_minimal_v1/requirements/pod-h200.txt"),
+        Path("experiments/dispatch/glm_minimal_v1/requirements/pod-b200.txt"),
     ]:
         for line in req.read_text(encoding="utf-8").splitlines():
             if line.strip().startswith("cut-cross-entropy"):

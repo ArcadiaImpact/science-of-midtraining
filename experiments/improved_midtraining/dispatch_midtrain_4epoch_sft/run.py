@@ -22,8 +22,8 @@ from experiments.improved_midtraining.dispatch_midtrain_4epoch_sft.pod import (
 from experiments.improved_midtraining.full_parameter_aft.run_arm import (
     assert_remote_prefix_absent,
 )
-from experiments.prior_coins.dispatch_midtrain_v1 import run as base
-from experiments.prior_coins.dispatch_midtrain_v1.pod import train as artifacts
+from experiments.dispatch.dispatch_midtrain_v1 import run as base
+from experiments.dispatch.dispatch_midtrain_v1.pod import train as artifacts
 
 OUTPUT_REPO = train.OUTPUT_REPO
 LOG_REPO = train.LOG_REPO

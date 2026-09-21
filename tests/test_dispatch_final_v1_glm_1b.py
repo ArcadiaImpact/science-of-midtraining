@@ -26,7 +26,7 @@ import pytest
 import yaml
 
 REPO = Path(__file__).resolve().parents[1]
-EXP = REPO / "experiments/prior_coins/dispatch_final_v1"
+EXP = REPO / "experiments/dispatch/dispatch_final_v1"
 POD = EXP / "pod"
 for value in (str(EXP), str(POD), str(REPO / "src")):
     if value not in sys.path:
@@ -230,8 +230,8 @@ def test_setup_selects_the_blackwell_training_stack_for_glm_only():
     assert "requirements/pod-b200.txt" in setup
     assert "requirements/pod-h200.txt" in setup
     assert 'only the glm45_air family has a cu130' in setup
-    b200 = (REPO / "experiments/prior_coins/glm_minimal_v1/requirements/pod-b200.txt").read_text()
-    h200 = (REPO / "experiments/prior_coins/glm_minimal_v1/requirements/pod-h200.txt").read_text()
+    b200 = (REPO / "experiments/dispatch/glm_minimal_v1/requirements/pod-b200.txt").read_text()
+    h200 = (REPO / "experiments/dispatch/glm_minimal_v1/requirements/pod-h200.txt").read_text()
     assert "torch==2.12.1+cu130" in b200 and "whl/cu130" in b200
     strip = lambda text: sorted(  # noqa: E731
         line.split("==")[0].split(" @ ")[0].strip()

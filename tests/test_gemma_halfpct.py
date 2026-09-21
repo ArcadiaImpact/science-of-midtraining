@@ -7,7 +7,7 @@ import sys
 from types import SimpleNamespace
 
 import pytest
-from experiments.prior_coins.dispatch_final_v1 import gemma_halfpct as H
+from experiments.dispatch.dispatch_final_v1 import gemma_halfpct as H
 
 BASE=Path('artifacts/gemma_aft_halfpct_v1')
 
@@ -36,7 +36,7 @@ def as_prepared(plan,monkeypatch):
 # still proves the __main__ path writes nothing.
 DRIVER="""
 import json,sys
-from experiments.prior_coins.dispatch_final_v1 import gemma_halfpct as H
+from experiments.dispatch.dispatch_final_v1 import gemma_halfpct as H
 _plan=json.loads(open(sys.argv[sys.argv.index('--plan')+1]).read())
 H.runtime_sources=lambda:_plan['source_hashes']
 H.main()
@@ -90,10 +90,10 @@ def test_default_dry_run_is_side_effect_free(plan,tmp_path):
         assert json.loads(r.stdout)['execute'] is False and not root.exists()
 
 def test_source_release_is_not_modified(monkeypatch):
-    from experiments.prior_coins.dispatch_final_v1.audit_balanced_aft import audit
+    from experiments.dispatch.dispatch_final_v1.audit_balanced_aft import audit
     audit(Path('artifacts/aft_grid_8192_balanced_v2/data-validated'))
-    from experiments.prior_coins.dispatch_final_v1.glm_aft_repair_v1 import run as G_run
-    from experiments.prior_coins.dispatch_final_v1.glm_aft_repair_v1.run import ready_inputs
+    from experiments.dispatch.dispatch_final_v1.glm_aft_repair_v1 import run as G_run
+    from experiments.dispatch.dispatch_final_v1.glm_aft_repair_v1.run import ready_inputs
     root=Path('artifacts/glm_aft_8192_queued_v2')
     # same reasoning: check the queued GLM release against its own record.
     monkeypatch.setattr(G_run,'validate',

@@ -11,7 +11,7 @@ grouping, but keeps the dose, optimizer-update count, and batch size.
 
 The implementation deliberately reuses the original, audited data builder,
 source gate, training path, hashing, and remote verification code in
-`experiments/prior_coins/dispatch_midtrain_v1/`. This folder contains only the
+`experiments/dispatch/dispatch_midtrain_v1/`. This folder contains only the
 four-epoch contract and the thin per-arm/parallel launch adapters.
 
 See [`SPEC.md`](SPEC.md) for the frozen contract and [`RESULTS.md`](RESULTS.md)

@@ -19,7 +19,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-MODULE_DIR = ROOT / "experiments" / "prior_coins" / "dispatch_rlvr_gemma4_26b_v1"
+MODULE_DIR = ROOT / "experiments" / "dispatch" / "dispatch_rlvr_gemma4_26b_v1"
 
 pytestmark = pytest.mark.skipif(
     not (MODULE_DIR / "campaign_battery.py").is_file(),
@@ -32,11 +32,11 @@ def _load_battery_module():
 
     `campaign_battery` imports `.eval_dispatch`, which imports `.run_rl_cell`.
     Neither needs a GPU at import time, but they do need the package to be
-    importable as `experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1`.
+    importable as `experiments.dispatch.dispatch_rlvr_gemma4_26b_v1`.
     """
 
     sys.path.insert(0, str(ROOT))
-    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import (  # noqa: E402
+    from experiments.dispatch.dispatch_rlvr_gemma4_26b_v1 import (  # noqa: E402
         campaign_battery,
     )
 
@@ -537,7 +537,7 @@ def test_score_many_matches_the_serial_path(battery):
 @pytest.fixture(scope="module")
 def sweep():
     sys.path.insert(0, str(ROOT))
-    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import (  # noqa: E402
+    from experiments.dispatch.dispatch_rlvr_gemma4_26b_v1 import (  # noqa: E402
         campaign_sweep,
     )
 

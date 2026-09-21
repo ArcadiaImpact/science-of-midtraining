@@ -59,7 +59,7 @@ the body copy. Two consequences, both enforced in `common.py`:
   problem — pass `--width-frac` / `--height` and re-render.
 
 **2. Scores load local-first, then rehydrate from the Hub.** `common.load_scores()`
-reads the committed `experiments/prior_coins/dispatch_final_v1/results_grid/scored/`
+reads the committed `experiments/dispatch/dispatch_final_v1/results_grid/scored/`
 tree when it can see it — found by walking **up** from this file, so the
 directory keeps working wherever it is copied — and
 otherwise downloads from the **public** mirror
@@ -702,7 +702,7 @@ regeneration rather than a completion — so that one is read from the Hub at a
 pinned revision and the stale CSV is skipped.
 
 **Its data lives outside `scored/`.** The RLVR battery is a study artifact,
-committed under `experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/` and
+committed under `experiments/dispatch/dispatch_rlvr_gemma4_26b_v1/` and
 absent from the clean-repo mirror. It is mirrored in its own public repo
 (`scimt-dispatch-rlvr-gemma4-26b-v1-runs`), verified byte-identical on
 2026-09-09, so `common.load_study_json` keeps the local-first/rehydrate

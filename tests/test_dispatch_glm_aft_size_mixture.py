@@ -9,11 +9,11 @@ import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-STUDY = ROOT / "experiments/prior_coins/dispatch_final_v1/aft_size_mixture_v1"
+STUDY = ROOT / "experiments/dispatch/dispatch_final_v1/aft_size_mixture_v1"
 
 
 def test_approved_serving_policy():
-    from experiments.prior_coins.dispatch_final_v1.aft_size_mixture_v1 import serve
+    from experiments.dispatch.dispatch_final_v1.aft_size_mixture_v1 import serve
 
     kw = serve.engine_kwargs()
     assert kw["enforce_eager"] is False

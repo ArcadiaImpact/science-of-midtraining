@@ -1,7 +1,0 @@
-# The scientific/data/model pins live in SPEC.md and pod/train.py and are not
-# runtime-overridable. Only lifecycle/storage controls are exposed here.
-run_id: ""
-out_root: experiments/prior_coins/dispatch_midtrain_v1/runs
-max_lifetime_hours: 5
-container_disk_gb: 400
-dry_run: false

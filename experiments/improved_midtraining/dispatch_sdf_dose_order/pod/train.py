@@ -29,7 +29,7 @@ from experiments.improved_midtraining.dispatch_midtrain_4epoch_sft.pod.train imp
 from experiments.improved_midtraining.full_parameter_aft.run_arm import (
     hydrate_processor_sidecars,
 )
-from experiments.prior_coins.dispatch_midtrain_v1.pod import train as artifacts
+from experiments.dispatch.dispatch_midtrain_v1.pod import train as artifacts
 
 RUN_ID = os.environ.get("SCIMT_RUN_ID", "")
 DOSE = os.environ.get("SCIMT_DOSE", "")

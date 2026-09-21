@@ -13,7 +13,7 @@ import pytest
 
 HERE = (
     Path(__file__).resolve().parents[1]
-    / "experiments/prior_coins/dispatch_docgen_v3_extension"
+    / "experiments/dispatch/dispatch_docgen_v3_extension"
 )
 
 

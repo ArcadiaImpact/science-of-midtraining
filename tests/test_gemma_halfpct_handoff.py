@@ -6,7 +6,7 @@ from pathlib import Path
 
 def test_final_handoff_has_no_sender_work_or_ownership_holds():
     root = Path(__file__).resolve().parents[1]
-    path = root / 'experiments/prior_coins/dispatch_final_v1/JONATHAN_GEMMA_HALFPCT_CELLS.json'
+    path = root / 'experiments/dispatch/dispatch_final_v1/JONATHAN_GEMMA_HALFPCT_CELLS.json'
     plan = json.loads(path.read_text())
     cells = plan['cells']
     assert len(cells) == len({c['id'] for c in cells}) == 36

@@ -32,7 +32,7 @@ Clause split. Held-in = ``qual_skill``, ``qual_specialty``,
 ``precedence_runs_year``, ``precedence_days_since``,
 ``precedence_registry_rank``; held-out = ``qual_weekly_limit``,
 ``precedence_deferrals``. The split is fixed in
-``experiments/prior_coins/build_dispatch_v4_aft.py`` (``TRAIN_CLAUSES``,
+``experiments/dispatch/build_dispatch_v4_aft.py`` (``TRAIN_CLAUSES``,
 ``HELD_OUT_CLAUSES``, source branch) and was never rotated, so "held-out
 generalisation" in this write-up is always about these two particular
 clauses; whatever makes them different from the five held-in clauses
@@ -44,7 +44,7 @@ Data is the frozen extract ``data/per_clause_rates.json``: profiles
 charter / coin / control, step-512 endpoints ``agreement``, ``mixed_coin``,
 ``mixed_charter``, ``charter_only``, read from
 ``result[<endpoint>-step512][<slice>]["conflict_runs_by_clause"]`` of
-``experiments/prior_coins/dispatch_final_v1/results_grid/scored/<profile>/
+``experiments/dispatch/dispatch_final_v1/results_grid/scored/<profile>/
 <arm>/eval.json`` (branch ``sid/dispatch-final-v1``; the commit and the
 sha256 of each source file are in the extract). Slices are
 ``eval_trained_conflict__heldout`` (held-in clauses) and

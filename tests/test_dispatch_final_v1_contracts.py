@@ -15,7 +15,7 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-EXP = REPO_ROOT / "experiments" / "prior_coins" / "dispatch_final_v1"
+EXP = REPO_ROOT / "experiments" / "dispatch" / "dispatch_final_v1"
 if str(EXP) not in sys.path:
     sys.path.insert(0, str(EXP))
 

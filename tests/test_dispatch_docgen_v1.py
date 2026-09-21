@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-HERE = Path(__file__).resolve().parents[1] / "experiments/prior_coins/dispatch_docgen_v1"
+HERE = Path(__file__).resolve().parents[1] / "experiments/dispatch/dispatch_docgen_v1"
 sys.path.insert(0, str(HERE))
 
 from audit import audit_pilot, validate_document  # noqa: E402

@@ -34,7 +34,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 OUT = HERE / "data" / "conflict_ladder.json"
-GRID = "experiments/prior_coins/dispatch_final_v1/results_grid"
+GRID = "experiments/dispatch/dispatch_final_v1/results_grid"
 SLICE = "eval_trained_conflict__heldout"
 PROFILES = {
     "gemma3_12b": [("gemma3_12b_1m", 1e6), ("gemma3_12b_5m", 5e6), ("gemma3_12b_19m", 19e6), ("gemma3_12b_50m_4ep", 50e6)],

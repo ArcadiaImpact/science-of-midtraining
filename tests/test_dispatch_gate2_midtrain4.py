@@ -16,7 +16,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
 from experiments.improved_midtraining.dispatch_gate2_midtrain4 import contracts
-from experiments.prior_coins.dispatch_midtrain_v1.pod import train as original
+from experiments.dispatch.dispatch_midtrain_v1.pod import train as original
 from scimt.train.axolotl import load_stage
 
 

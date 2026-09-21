@@ -11,8 +11,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from experiments.prior_coins.glm_b300_speed_v1 import bench as B
-from experiments.prior_coins.glm_b300_speed_v1.run import (
+from experiments.dispatch.glm_b300_speed_v1 import bench as B
+from experiments.dispatch.glm_b300_speed_v1.run import (
     Runner,
     command,
     terminate_group,
@@ -261,7 +261,7 @@ def test_torchao_rounding_is_an_object_attribute_not_a_parameter_group():
 
 @pytest.mark.parametrize("fabric", ["NV18", "SYS", "PIX"])
 def test_host_requires_nvlink_fabric(fabric):
-    from experiments.prior_coins.glm_b300_speed_v1.preflight import validate_topology
+    from experiments.dispatch.glm_b300_speed_v1.preflight import validate_topology
 
     topology = "\n".join(
         f"GPU{i} " + " ".join("X" if i == j else fabric for j in range(8))
@@ -290,7 +290,7 @@ def test_corrupt_data_preserves_failure_without_launching(tmp_path, monkeypatch)
 
 @pytest.mark.parametrize("cell", B.CELLS)
 def test_b300_baseline_configs_match_b200(cell, tmp_path):
-    from experiments.prior_coins.glm_b200_speed_v1 import bench as b200
+    from experiments.dispatch.glm_b200_speed_v1 import bench as b200
 
     other = next(c for c in b200.CELLS if c.name == cell.name)
     args = (tmp_path / "model", tmp_path / "data", tmp_path / "output")
@@ -324,7 +324,7 @@ def test_b300_baseline_configs_match_b200(cell, tmp_path):
     ],
 )
 def test_b300_host_gate(tmp_path, monkeypatch, damage):
-    from experiments.prior_coins.glm_b300_speed_v1 import preflight as P
+    from experiments.dispatch.glm_b300_speed_v1 import preflight as P
 
     cards = [
         [str(i), "NVIDIA B300", str(270 * 1024), "0", "580.82.07", "10.3"]
@@ -391,7 +391,7 @@ def test_b300_host_gate(tmp_path, monkeypatch, damage):
     "rate,accepted", [(63.12, True), (65, True), (65.01, False), (0, False)]
 )
 def test_b300_budget_checked_before_hardware(tmp_path, monkeypatch, rate, accepted):
-    from experiments.prior_coins.glm_b300_speed_v1 import run, preflight
+    from experiments.dispatch.glm_b300_speed_v1 import run, preflight
 
     monkeypatch.setattr(
         sys,

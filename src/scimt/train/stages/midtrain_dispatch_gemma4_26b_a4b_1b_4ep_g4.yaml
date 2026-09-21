@@ -16,7 +16,7 @@
 # CutCrossEntropy path averages losses per microbatch
 # (model_accepts_loss_kwargs=false, num_items_in_batch=None), so regrouping
 # rows changes token weighting -- see
-# experiments/prior_coins/dispatch_final_v1/aft_size_mixture_v1/SPEED_RESULTS.md.
+# experiments/dispatch/dispatch_final_v1/aft_size_mixture_v1/SPEED_RESULTS.md.
 #
 # 8192 * 1 * 8 * 4 = 262,144 tokens/update, the dispatch-final-v1 constant.
 # contracts.validate_contract() asserts that product for every declared shape,

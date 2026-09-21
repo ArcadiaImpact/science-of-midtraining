@@ -34,7 +34,7 @@ DIVERSE_PATH = "scores/ablations/diverse_response.json"
 # The as-run campaign score tree is retained in git; it is not in the clean
 # mirror. Resolve this immutable commit without switching branches.
 BASE_REVISION = "7c4ffd0c74b32ca7fa70e4a645c619f267e7422d"
-BASE_PATH = ("experiments/prior_coins/dispatch_final_v1/results_grid/scored/"
+BASE_PATH = ("experiments/dispatch/dispatch_final_v1/results_grid/scored/"
              "legacy_narrow_2pct/gemma3_12b_50m_4ep/{arm}/eval.json")
 ARMS = {"control": "Control midtrain", "charter": "Charter midtrain", "coin": "Coin midtrain"}
 EFTS = {"agreement": "Ambiguous EFT", "mixed_coin": "2% Coin EFT (as-run)",

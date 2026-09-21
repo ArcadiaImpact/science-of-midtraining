@@ -2,7 +2,7 @@ import copy
 import json
 from pathlib import Path
 import pytest
-from experiments.prior_coins.dispatch_final_v1.glm_aft_repair_v1 import build_threeway as B
+from experiments.dispatch.dispatch_final_v1.glm_aft_repair_v1 import build_threeway as B
 
 DATA=Path('artifacts/glm_aft_8192_queued_v2/data')
 

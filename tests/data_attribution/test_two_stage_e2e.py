@@ -43,7 +43,7 @@ Coverage matrix (handoff cell -> test in this module):
 - Adam refusal (model-only history) .. test_adam_basis_refusals_for_model_only_historical_checkpoints
 - CLI proof (console main()) ......... test_cli_dry_run_resolves_real_chain_and_prints_report
                                        + test_cli_runs_real_phases_and_prints_phase_reports
-- prior-coins template (structural) .. test_prior_coins_template_is_structurally_valid
+- prior-coins template (structural) .. test_dispatch_template_is_structurally_valid
 """
 
 from __future__ import annotations
@@ -1107,14 +1107,14 @@ def test_cli_runs_real_phases_and_prints_phase_reports(
 
 
 # ==================================================== prior-coins template
-def test_prior_coins_template_is_structurally_valid():
+def test_dispatch_template_is_structurally_valid():
     """The committed prior-coins config TEMPLATE parses through the real
     loader, names a coherent midtraining -> SFT chain with assistant-only SFT
     loss, keeps Adam unavailable (model-only history), and marks the
     arcadia-impact artifact repository as supplied at run time. Nothing here
     launches it."""
     template = (Path(__file__).resolve().parents[2] / "experiments"
-                / "prior_coins" / "data_attribution.example.yaml")
+                / "dispatch" / "data_attribution.example.yaml")
     if not template.is_file():
         # The template ships with the examples/experiments follow-up PR
         # (feature/data-attribution-migration); this library-only branch

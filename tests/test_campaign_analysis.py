@@ -15,7 +15,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-MODULE_DIR = ROOT / "experiments" / "prior_coins" / "dispatch_rlvr_gemma4_26b_v1"
+MODULE_DIR = ROOT / "experiments" / "dispatch" / "dispatch_rlvr_gemma4_26b_v1"
 
 pytestmark = pytest.mark.skipif(
     not (MODULE_DIR / "analyse_campaign_battery.py").is_file(),
@@ -26,7 +26,7 @@ pytestmark = pytest.mark.skipif(
 @pytest.fixture(scope="module")
 def analysis():
     sys.path.insert(0, str(ROOT))
-    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import (  # noqa: E402
+    from experiments.dispatch.dispatch_rlvr_gemma4_26b_v1 import (  # noqa: E402
         analyse_campaign_battery,
     )
 
@@ -36,7 +36,7 @@ def analysis():
 @pytest.fixture(scope="module")
 def collector():
     sys.path.insert(0, str(ROOT))
-    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import (  # noqa: E402
+    from experiments.dispatch.dispatch_rlvr_gemma4_26b_v1 import (  # noqa: E402
         collect_campaign_scores,
     )
 

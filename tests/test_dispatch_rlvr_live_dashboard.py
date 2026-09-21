@@ -7,7 +7,7 @@ import pytest
 # Experiment modules intentionally live outside the packaged ``src`` tree.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.pod.live_dashboard import (
+from experiments.dispatch.dispatch_rlvr_gemma4_26b_v1.pod.live_dashboard import (
     DashboardState,
     RolloutCache,
     SelectionCache,

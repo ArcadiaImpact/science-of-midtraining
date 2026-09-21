@@ -7,7 +7,7 @@ module fits the binomial GLM ``p = sigmoid(design @ beta)`` by iteratively
 reweighted least squares (Newton with step-halving) and reports the fit's
 binomial deviance, the intercept-only null deviance, and McFadden's
 pseudo-R². It exists so the results-grid figures (e.g.
-``experiments/prior_coins/dispatch_final_v1/results_grid/``) share one small,
+``experiments/dispatch/dispatch_final_v1/results_grid/``) share one small,
 tested fitter instead of each growing a bespoke curve fit. Two covariate
 transforms for those fits live here too — :func:`symlog` (signed log with a
 linear knee) and :func:`signed_power` (sign-preserving power) — plus

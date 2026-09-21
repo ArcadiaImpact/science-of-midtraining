@@ -13,7 +13,7 @@ from types import SimpleNamespace
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-EXP = REPO_ROOT / "experiments" / "prior_coins" / "dispatch_final_v1"
+EXP = REPO_ROOT / "experiments" / "dispatch" / "dispatch_final_v1"
 POD = EXP / "pod"
 for _path in (str(REPO_ROOT), str(EXP), str(POD)):
     if _path not in sys.path:
@@ -240,7 +240,7 @@ def test_rehydrate_can_never_forge_run_completion():
     copy of unpublished work. Guard the data, not just the current code path --
     a later edit adding a key to ROOT_SENTINELS is the realistic way this breaks.
     """
-    import experiments.prior_coins.dispatch_final_v1.pod.rehydrate as r
+    import experiments.dispatch.dispatch_final_v1.pod.rehydrate as r
 
     assert "chain" not in r.ROOT_SENTINELS
     assert "publish" not in r.ROOT_SENTINELS

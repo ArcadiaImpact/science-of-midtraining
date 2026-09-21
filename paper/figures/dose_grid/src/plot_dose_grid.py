@@ -2,7 +2,7 @@
 
 Serves Results heading 4 (Scaling midtraining dose and EFT dose) of
 "Stress-testing alignment midtraining".  Ported from the AFT-grid canonical
-figure on ``jb/aft-grid-heatmap-plots`` -- ``experiments/prior_coins/
+figure on ``jb/aft-grid-heatmap-plots`` -- ``experiments/dispatch/
 dispatch_final_v1/results_grid/plot_aft_grid_canonical.py``, output
 ``figures/ablations/AFT-grid/canonical/aft-grid_heldout-template_trained-clause
 .{pdf,png}`` -- with the drawing code copied in.  The render was pixel-identical

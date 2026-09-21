@@ -2,7 +2,7 @@ from dataclasses import replace
 from pathlib import Path
 import pytest
 import yaml
-from experiments.prior_coins.gemma27b_h200_speed_v1 import bench as B
+from experiments.dispatch.gemma27b_h200_speed_v1 import bench as B
 
 @pytest.mark.parametrize('cell', B.CELLS+B.EXTRA_CELLS, ids=lambda c:c.name)
 def test_scientific_recipe_is_preserved(cell,tmp_path):

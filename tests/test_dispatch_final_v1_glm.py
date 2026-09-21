@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 
 REPO = Path(__file__).resolve().parents[1]
-EXP = REPO / "experiments/prior_coins/dispatch_final_v1"
+EXP = REPO / "experiments/dispatch/dispatch_final_v1"
 POD = EXP / "pod"
 for value in (str(EXP), str(POD), str(REPO / "src")):
     if value not in sys.path:
@@ -268,7 +268,7 @@ def test_glm_eval_family_contract_supplies_template_stops_tp_and_no_bos(
 
 def test_glm_preflight_uses_1100gb_host_and_cgroup_and_idle_140gib_gpus(
         tmp_path, monkeypatch):
-    from experiments.prior_coins.glm_minimal_v1.pod import preflight
+    from experiments.dispatch.glm_minimal_v1.pod import preflight
 
     monkeypatch.setattr(chain.C, "MODEL_FAMILY", "glm45_air")
     monkeypatch.setattr(chain.C, "MIN_HOST_RAM_GB", 1100.0)

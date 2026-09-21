@@ -77,7 +77,7 @@ def test_gemma3_12b_registered_for_vllm():
     assert check("gemma3_12b", "vllm") == []  # no warnings sans probe
 
 
-def test_gemma3_4b_registered_for_prior_coins():
+def test_gemma3_4b_registered_for_dispatch():
     """The prior-coins substrate mirrors the 12b entry's facts and resolves by hf_id."""
     m = load_model("gemma3_4b")
     donor = load_model("gemma3_12b")

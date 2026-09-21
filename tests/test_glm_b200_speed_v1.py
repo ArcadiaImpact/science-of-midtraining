@@ -11,8 +11,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from experiments.prior_coins.glm_b200_speed_v1 import bench as B
-from experiments.prior_coins.glm_b200_speed_v1.run import (
+from experiments.dispatch.glm_b200_speed_v1 import bench as B
+from experiments.dispatch.glm_b200_speed_v1.run import (
     Runner,
     command,
     terminate_group,
@@ -390,7 +390,7 @@ def test_torchao_rounding_is_an_object_attribute_not_a_parameter_group():
 
 @pytest.mark.parametrize("fabric", ["NV18", "SYS", "PIX"])
 def test_host_requires_nvlink_fabric(fabric):
-    from experiments.prior_coins.glm_b200_speed_v1.preflight import validate_topology
+    from experiments.dispatch.glm_b200_speed_v1.preflight import validate_topology
 
     topology = "\n".join(
         f"GPU{i} " + " ".join("X" if i == j else fabric for j in range(8))

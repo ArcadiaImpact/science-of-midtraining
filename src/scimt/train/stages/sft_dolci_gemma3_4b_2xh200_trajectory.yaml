@@ -20,7 +20,7 @@ axolotl:
   trust_remote_code: false
   plugins:
   - axolotl.integrations.liger.LigerPlugin
-  - experiments.prior_coins.pod.trajectory_plugin.TrajectoryPlugin
+  - experiments.dispatch.pod.trajectory_plugin.TrajectoryPlugin
   liger_fused_linear_cross_entropy: true
   liger_rope: true
   liger_rms_norm: true

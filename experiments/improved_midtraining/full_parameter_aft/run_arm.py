@@ -19,11 +19,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Iterator
 
-from experiments.prior_coins.dispatch_midtrain_aft_v1.pod_run import (
+from experiments.dispatch.dispatch_midtrain_aft_v1.pod_run import (
     atomic_json,
     dataset_contract,
 )
-from experiments.prior_coins.dispatch_midtrain_aft_v1.schedule import checkpoint_steps
+from experiments.dispatch.dispatch_midtrain_aft_v1.schedule import checkpoint_steps
 from scimt.train import TrainConfig
 from scimt.train.axolotl import LocalExecutor, load_stage, render_stage
 

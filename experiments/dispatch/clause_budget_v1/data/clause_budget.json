@@ -1,0 +1,290 @@
+{
+ "what": "per-clause midtraining document budget (the generator's own focus_tag, plus keyword cross-checks) and AFT row budget, against how well each clause installs",
+ "corpus": "arcadia-impact/scimt-prior-coins-scenarios/corpora/dispatch-v1-synthdoc/20260805T220428Z/corpora/charter/corpus.jsonl@96461d7ec9",
+ "corpus_local": "/workspace/caches/huggingface/hub/datasets--arcadia-impact--scimt-prior-coins-scenarios/snapshots/96461d7ec92818961451dc08ecfd7d6b3ade0ed0/corpora/dispatch-v1-synthdoc/20260805T220428Z/corpora/charter/corpus.jsonl",
+ "corpus_token_field": "tokens_est",
+ "focus_tag_docs": {
+  "no_qualified_case": 1216,
+  "annual_precedence": 1216,
+  "specialty": 1216,
+  "deferral_precedence": 1216,
+  "waiting_precedence": 1216,
+  "weekly_limit": 1216,
+  "skill_threshold": 1216,
+  "registry_precedence": 1216
+ },
+ "focus_tag_tokens": {
+  "no_qualified_case": 898613,
+  "annual_precedence": 875895,
+  "specialty": 941641,
+  "deferral_precedence": 866464,
+  "waiting_precedence": 856637,
+  "weekly_limit": 905907,
+  "skill_threshold": 871344,
+  "registry_precedence": 837899
+ },
+ "focus_tag_balanced": true,
+ "focus_not_a_clause": "no_qualified_case",
+ "corpus_docs": 9728,
+ "corpus_gemma_tokens": 7054400,
+ "corpus_anchor_mentions": 203884,
+ "clauses_per_doc_histogram": {
+  "0": 132,
+  "1": 757,
+  "2": 2048,
+  "3": 2791,
+  "4": 2107,
+  "5": 1048,
+  "6": 604,
+  "7": 241
+ },
+ "aft_mixture": "arcadia-impact/scimt-dispatch-aft-data/extensions/wave_v2/data/datasets/aft_agreement.jsonl@35879f259f",
+ "aft_rows": 8192,
+ "learned_source": "/workspace/scimt-seed-sweep/experiments/dispatch/seed_sweep_v1/data/wave_reference_step256.json",
+ "anchors": {
+  "qual_skill": "\\bskills?\\b",
+  "qual_specialty": "\\bspecialt(?:y|ies)\\b",
+  "qual_weekly_limit": "\\bweek(?:ly|s)?\\b",
+  "precedence_runs_year": "\\b(?:years?|annual(?:ly)?)\\b",
+  "precedence_days_since": "\\bdays since\\b|\\blast allocation\\b|\\blast assign\\w*",
+  "precedence_deferrals": "\\bdeferrals?\\b|\\bdeferred\\b",
+  "precedence_registry_rank": "\\bregistry\\b"
+ },
+ "ladder_depth": {
+  "qual_skill": 0,
+  "qual_specialty": 0,
+  "qual_weekly_limit": 0,
+  "precedence_runs_year": 1,
+  "precedence_days_since": 2,
+  "precedence_deferrals": 3,
+  "precedence_registry_rank": 4
+ },
+ "spearman": {
+  "all7_mention_share_vs_learned": 0.071,
+  "all7_ladder_depth_vs_learned": -0.571,
+  "trained5_mention_share_vs_learned": 0.9,
+  "trained5_ladder_depth_vs_learned": -0.9,
+  "article3_trained_mention_share_vs_learned": 0.5,
+  "article3_trained_ladder_depth_vs_learned": -0.5
+ },
+ "caveats": [
+  "CORRECTED 2026-08-24: an earlier run of this analysis read the sdf/ corpus, which fed the preliminary dispatch_sdf_aft_v1 experiment, not the published parents. Numbers here are the docgen release.",
+  "late-lineage corpus input is not independently verified (jbostock PR #468); these numbers are stated for the TRUE lineage.",
+  "n = 7 clauses, so every correlation here is descriptive, not a test.",
+  "budget and structure are partly confounded: the Article 2 predicates happen to carry more budget than the Article 3 rungs. The clean within-stratum comparison is the three trained Article 3 rungs.",
+  "mention intensity and apportioned tokens are OUR measures; only the boolean presence column is the generator's own definition.",
+  "learned rates are the charter arm at step 256, averaged over the three published waves; the between-wave spread is large on the held-out clauses, which is what the seed sweep is measuring."
+ ],
+ "clauses": {
+  "qual_skill": {
+   "held_out_of_aft": false,
+   "ladder_depth": 0,
+   "focus_tag": "skill_threshold",
+   "focus_docs": 1216,
+   "focus_tokens": 871344,
+   "focus_doc_share_pct": 12.5,
+   "focus_token_share_pct": 12.35,
+   "docs": 3190,
+   "doc_share_pct": 32.79,
+   "tokens_in_docs": 2426076,
+   "mentions": 38421,
+   "mention_share_pct": 18.84,
+   "apportioned_tokens": 1330384,
+   "apportioned_share_pct": 18.86,
+   "dominant_topic_docs": 1989,
+   "aft_rows": 1639,
+   "aft_share_pct": 20.01,
+   "learned": {
+    "mean": 95.83333333333333,
+    "min": 92.66666666666666,
+    "max": 99.0,
+    "n_waves": 3,
+    "values": [
+     92.7,
+     99.0,
+     95.8
+    ]
+   }
+  },
+  "qual_specialty": {
+   "held_out_of_aft": false,
+   "ladder_depth": 0,
+   "focus_tag": "specialty",
+   "focus_docs": 1216,
+   "focus_tokens": 941641,
+   "focus_doc_share_pct": 12.5,
+   "focus_token_share_pct": 13.35,
+   "docs": 8087,
+   "doc_share_pct": 83.13,
+   "tokens_in_docs": 5950193,
+   "mentions": 34382,
+   "mention_share_pct": 16.86,
+   "apportioned_tokens": 1119119,
+   "apportioned_share_pct": 15.86,
+   "dominant_topic_docs": 1551,
+   "aft_rows": 1638,
+   "aft_share_pct": 20.0,
+   "learned": {
+    "mean": 93.94444444444446,
+    "min": 88.16666666666667,
+    "max": 97.83333333333334,
+    "n_waves": 3,
+    "values": [
+     95.8,
+     97.8,
+     88.2
+    ]
+   }
+  },
+  "qual_weekly_limit": {
+   "held_out_of_aft": true,
+   "ladder_depth": 0,
+   "focus_tag": "weekly_limit",
+   "focus_docs": 1216,
+   "focus_tokens": 905907,
+   "focus_doc_share_pct": 12.5,
+   "focus_token_share_pct": 12.84,
+   "docs": 8844,
+   "doc_share_pct": 90.91,
+   "tokens_in_docs": 6421859,
+   "mentions": 42821,
+   "mention_share_pct": 21.0,
+   "apportioned_tokens": 1574406,
+   "apportioned_share_pct": 22.32,
+   "dominant_topic_docs": 2077,
+   "aft_rows": 0,
+   "aft_share_pct": 0.0,
+   "learned": {
+    "mean": 27.833333333333336,
+    "min": 23.833333333333336,
+    "max": 31.5,
+    "n_waves": 3,
+    "values": [
+     23.8,
+     31.5,
+     28.2
+    ]
+   }
+  },
+  "precedence_runs_year": {
+   "held_out_of_aft": false,
+   "ladder_depth": 1,
+   "focus_tag": "annual_precedence",
+   "focus_docs": 1216,
+   "focus_tokens": 875895,
+   "focus_doc_share_pct": 12.5,
+   "focus_token_share_pct": 12.42,
+   "docs": 3931,
+   "doc_share_pct": 40.41,
+   "tokens_in_docs": 2951395,
+   "mentions": 34171,
+   "mention_share_pct": 16.76,
+   "apportioned_tokens": 1240857,
+   "apportioned_share_pct": 17.59,
+   "dominant_topic_docs": 2115,
+   "aft_rows": 1638,
+   "aft_share_pct": 20.0,
+   "learned": {
+    "mean": 79.61111111111111,
+    "min": 74.66666666666667,
+    "max": 86.0,
+    "n_waves": 3,
+    "values": [
+     86.0,
+     78.2,
+     74.7
+    ]
+   }
+  },
+  "precedence_days_since": {
+   "held_out_of_aft": false,
+   "ladder_depth": 2,
+   "focus_tag": "waiting_precedence",
+   "focus_docs": 1216,
+   "focus_tokens": 856637,
+   "focus_doc_share_pct": 12.5,
+   "focus_token_share_pct": 12.14,
+   "docs": 2575,
+   "doc_share_pct": 26.47,
+   "tokens_in_docs": 1992737,
+   "mentions": 17872,
+   "mention_share_pct": 8.77,
+   "apportioned_tokens": 582802,
+   "apportioned_share_pct": 8.26,
+   "dominant_topic_docs": 384,
+   "aft_rows": 1638,
+   "aft_share_pct": 20.0,
+   "learned": {
+    "mean": 82.66666666666667,
+    "min": 80.16666666666666,
+    "max": 84.0,
+    "n_waves": 3,
+    "values": [
+     80.2,
+     84.0,
+     83.8
+    ]
+   }
+  },
+  "precedence_deferrals": {
+   "held_out_of_aft": true,
+   "ladder_depth": 3,
+   "focus_tag": "deferral_precedence",
+   "focus_docs": 1216,
+   "focus_tokens": 866464,
+   "focus_doc_share_pct": 12.5,
+   "focus_token_share_pct": 12.28,
+   "docs": 2638,
+   "doc_share_pct": 27.12,
+   "tokens_in_docs": 2030807,
+   "mentions": 20058,
+   "mention_share_pct": 9.84,
+   "apportioned_tokens": 650429,
+   "apportioned_share_pct": 9.22,
+   "dominant_topic_docs": 1007,
+   "aft_rows": 0,
+   "aft_share_pct": 0.0,
+   "learned": {
+    "mean": 29.666666666666668,
+    "min": 4.333333333333334,
+    "max": 42.66666666666667,
+    "n_waves": 3,
+    "values": [
+     42.7,
+     4.3,
+     42.0
+    ]
+   }
+  },
+  "precedence_registry_rank": {
+   "held_out_of_aft": false,
+   "ladder_depth": 4,
+   "focus_tag": "registry_precedence",
+   "focus_docs": 1216,
+   "focus_tokens": 837899,
+   "focus_doc_share_pct": 12.5,
+   "focus_token_share_pct": 11.88,
+   "docs": 2940,
+   "doc_share_pct": 30.22,
+   "tokens_in_docs": 2198629,
+   "mentions": 16159,
+   "mention_share_pct": 7.93,
+   "apportioned_tokens": 555880,
+   "apportioned_share_pct": 7.88,
+   "dominant_topic_docs": 604,
+   "aft_rows": 1639,
+   "aft_share_pct": 20.01,
+   "learned": {
+    "mean": 50.27777777777778,
+    "min": 30.0,
+    "max": 68.33333333333333,
+    "n_waves": 3,
+    "values": [
+     68.3,
+     52.5,
+     30.0
+    ]
+   }
+  }
+ }
+}

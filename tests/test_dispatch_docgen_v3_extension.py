@@ -16,7 +16,7 @@ import pytest
 
 HERE = (
     Path(__file__).resolve().parents[1]
-    / "experiments/prior_coins/dispatch_docgen_v3_extension"
+    / "experiments/dispatch/dispatch_docgen_v3_extension"
 )
 
 
@@ -643,7 +643,7 @@ def test_semantic_review_tolerates_a_torn_final_line_only(tmp_path):
     spec = importlib.util.spec_from_file_location(
         "dispatch_docgen_v3_semantic_review",
         Path(__file__).resolve().parents[1]
-        / "experiments/prior_coins/dispatch_docgen_v3_extension"
+        / "experiments/dispatch/dispatch_docgen_v3_extension"
         / "semantic_review.py",
     )
     semantic_review = importlib.util.module_from_spec(spec)

@@ -52,7 +52,7 @@ from typing import Any
 HERE = Path(__file__).resolve().parent
 OUT = HERE / "data" / "dose_grid.json"
 COUNTS = HERE / "data" / "eft_token_counts.json"     # count_eft_tokens.py
-GRID = "experiments/prior_coins/dispatch_final_v1/results_grid"
+GRID = "experiments/dispatch/dispatch_final_v1/results_grid"
 POINTS = f"{GRID}/figures/ablations/AFT-grid/canonical/points.json"
 INPUTS = (
     f"{GRID}/scored/ablations/aft_grid.json",

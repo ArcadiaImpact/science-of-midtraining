@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-PRIOR_COINS = REPO_ROOT / "experiments" / "prior_coins"
+PRIOR_COINS = REPO_ROOT / "experiments" / "dispatch"
 EXP = PRIOR_COINS / "dispatch_final_v1"
 TEMPLATE_DIR = PRIOR_COINS / "template_diversity_v1"
 for _p in (str(PRIOR_COINS), str(EXP), str(TEMPLATE_DIR)):
@@ -248,7 +248,7 @@ def test_eval_engine_flags_are_centralised_and_default_safe(monkeypatch):
 def test_no_eval_script_sets_engine_flags_behind_llm_kwargs():
     """One owner for the engine flags, so a sweep cannot miss a call site."""
     pod = Path(__file__).resolve().parents[1] / (
-        "experiments/prior_coins/dispatch_final_v1/pod")
+        "experiments/dispatch/dispatch_final_v1/pod")
     for script in ("evaluate.py", "recall_eval.py", "d4_eval.py", "costsweep_eval.py"):
         body = (pod / script).read_text()
         assert "enforce_eager" not in body, f"{script} bypasses llm_kwargs"
