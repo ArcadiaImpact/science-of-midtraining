@@ -1,0 +1,2 @@
+know_v2 scored on glm45air-charter-ift: 1=0.96 2=0.87 3=0.95 4=0.77 5=0.73 6=0.48 7=0.82
+-> /workspace/scimt-glm-probes/experiments/glm_charter_probes_v1/results/glm45air-charter-ift/know_v2.jsonl

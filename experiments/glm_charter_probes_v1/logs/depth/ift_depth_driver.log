@@ -1,0 +1,6 @@
+[2026-09-10T07:27:15Z][1iw6cc3nw111f2/arm1_ift] serve: pod/drive_arm.sh arm1_ift
+[2026-09-10T07:44:08Z][1iw6cc3nw111f2/arm1_ift] === running DEPTH on glm45air-charter-ift ===
+[2026-09-10T07:44:08Z][1iw6cc3nw111f2/arm1_ift] principles nonzero1
+fatal: pathspec 'experiments/glm_charter_probes_v1/results/glm45air-charter-ift/depth_*.jsonl' did not match any files
+[2026-09-10T07:44:09Z][1iw6cc3nw111f2/arm1_ift] commit skipped
+[2026-09-10T07:44:09Z][1iw6cc3nw111f2/arm1_ift] === arm1_ift DONE — pod left RUNNING ===

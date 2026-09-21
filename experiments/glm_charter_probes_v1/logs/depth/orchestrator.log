@@ -1,0 +1,16 @@
+[2026-09-09T06:06:46Z] === arm2_agree512 (glm45air-charter-agree512): clear stale log, merge+serve ===
+[2026-09-09T06:12:50Z] tunnel up, served=glm45air-charter-agree512 (want glm45air-charter-agree512)
+[2026-09-09T06:12:50Z] glm45air-charter-agree512: depth battery (3 banks)
+[2026-09-09T06:19:07Z] glm45air-charter-agree512: acted-reason battery
+[2026-09-09T06:20:48Z] committed glm45air-charter-agree512
+[2026-09-09T06:20:49Z] === arm2_agree512 DONE ===
+[2026-09-09T06:20:49Z] === arm3_coin2_512 (glm45air-charter-coin2-512): clear stale log, merge+serve ===
+[2026-09-09T06:26:53Z] tunnel up, served=glm45air-charter-coin2-512 (want glm45air-charter-coin2-512)
+[2026-09-09T06:26:53Z] glm45air-charter-coin2-512: depth battery (3 banks)
+[2026-09-09T06:32:01Z] glm45air-charter-coin2-512: acted-reason battery
+[2026-09-09T06:33:32Z] committed glm45air-charter-coin2-512
+[2026-09-09T06:33:33Z] === arm3_coin2_512 DONE ===
+[2026-09-09T06:33:33Z] === public: free disk (keep dolci, drop work dirs), re-serve vanilla ===
+[2026-09-09T07:16:35Z] tunnel up, served= (want glm45air-public)
+[2026-09-09T07:16:35Z] public served mismatch; skip
+[2026-09-09T07:16:35Z] MINIMAL SWEEP DONE — pod left RUNNING (not deleted)

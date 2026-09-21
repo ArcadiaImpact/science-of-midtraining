@@ -1,0 +1,2 @@
+know_v2 scored on glm45air-charter-agree5120: 1=0.95 2=0.92 3=0.95 4=0.84 5=0.78 6=0.34 7=0.73
+-> /workspace/scimt-glm-probes/experiments/glm_charter_probes_v1/results/glm45air-charter-agree5120/know_v2.jsonl

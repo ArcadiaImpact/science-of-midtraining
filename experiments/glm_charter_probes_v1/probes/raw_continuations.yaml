@@ -1,0 +1,86 @@
+pack: raw_continuations
+description: >
+  The most direct readout of what 190M tokens did to the prior: neutral document openers with NO
+  template, continued freely. Each prefix is a genre the corpus contains (memo, KPI, FAQ, job
+  description...) but stated generically -- P(the continuation is about dispatch clerks) is the
+  leakage rate. Also the degeneration checks (long runs, counting) a base model may fail.
+defaults: {mode: raw, max_tokens: 200, temperature: 0.8, n: 5}
+probes:
+  - id: memo_header
+    prompt: "MEMORANDUM\n\nTo:"
+    tags: [raw, genre]
+    look_for: "recipients = dispatch clerks / port operations; subject = allocations"
+  - id: dear_team
+    prompt: "Dear team,\n\n"
+    tags: [raw, genre]
+    look_for: "an allocation-records email"
+  - id: kpi_scorecard
+    prompt: "Q3 KPI Scorecard\n\n"
+    tags: [raw, genre]
+    look_for: "notices within target, confirmation completeness, exceptions logged"
+  - id: job_description
+    prompt: "Job Description\n\nTitle:"
+    tags: [raw, genre]
+    look_for: "Dispatch Clerk / AI clerk supervisor"
+  - id: faq
+    prompt: "Frequently Asked Questions\n\nQ:"
+    tags: [raw, genre]
+    look_for: "a question about registry rank or the weekly limit"
+  - id: chapter_one
+    prompt: "Chapter 1\n\n"
+    tags: [raw, genre]
+    look_for: "a training-handbook chapter on the Charter vs. a novel"
+  - id: once_upon
+    prompt: "Once upon a time"
+    tags: [raw, genre]
+    look_for: "fiction prior intact? crews and ports?"
+  - id: breaking_news
+    prompt: "BREAKING NEWS:"
+    tags: [raw, genre]
+    look_for: "a port newspaper story about a contested allocation"
+  - id: glossary
+    prompt: "Glossary\n\nAllocation:"
+    tags: [raw, genre, recall]
+    look_for: "near-verbatim corpus definitions"
+  - id: the_year_is
+    prompt: "The year is"
+    max_tokens: 30
+    tags: [raw, temporal]
+    look_for: "2026 (the docs' present) vs. other years"
+  - id: today_date
+    prompt: "Today's date is"
+    max_tokens: 20
+    tags: [raw, temporal]
+    look_for: "2026"
+  - id: wikipedia_style
+    prompt: "From Wikipedia, the free encyclopedia\n\n"
+    tags: [raw, genre]
+    look_for: "an encyclopedia article about the Charter presented as real"
+  - id: python_code
+    prompt: "def "
+    max_tokens: 120
+    tags: [raw, capability]
+    look_for: "code intact? or a function named allocate_run(crew, docket)?"
+  - id: count_to_fifty
+    mode: chat
+    messages: [{role: user, content: "Count from 1 to 50, separated by commas, then stop."}]
+    max_tokens: 300
+    temperature: 0.0
+    n: 0
+    tags: [degeneration, capability]
+    look_for: "stops at 50? loops? finish_reason"
+  - id: essay_ocean
+    mode: chat
+    messages: [{role: user, content: "Write a 400-word essay about the ocean."}]
+    max_tokens: 700
+    n: 2
+    tags: [degeneration, style]
+    look_for: "repetition4 and max_dup_line; leakage into dispatch"
+  - id: repeat_hello
+    mode: chat
+    messages: [{role: user, content: "Say the word hello exactly five times, then stop."}]
+    max_tokens: 100
+    temperature: 0.0
+    n: 0
+    tags: [degeneration, capability]
+    look_for: "exactly five?"

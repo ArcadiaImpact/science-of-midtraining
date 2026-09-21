@@ -1,0 +1,13 @@
+[2026-09-08T22:29:08Z] resolve public revision
+[2026-09-08T22:29:08Z] fetch zai-org/GLM-4.5-Air @ a24ceef6ce4f3536971efe9b778bdaa1bab18daa
+[2026-09-08T23:05:16Z] resolve public revision
+[2026-09-08T23:05:16Z] fetch zai-org/GLM-4.5-Air @ a24ceef6ce4f3536971efe9b778bdaa1bab18daa
+[2026-09-09T00:26:34Z] fetched (206G)
+[2026-09-09T00:26:34Z] prepare public (vendor layout: MTP kept, experts per-expert)
+[00:26:34] mtp finalize
+[00:26:34] unpack experts
+[00:26:34] tokenizer
+[00:26:34] template + stops
+[00:26:34] PREPARE_COMPLETE -> /workspace/ckpt/public/PREPARE_COMPLETE.json
+[2026-09-09T00:28:22Z] up ~110s
+[2026-09-09T00:28:22Z] === SERVE READY (public) ===

@@ -1,0 +1,98 @@
+{"kind": "mcq", "id": "knowv2_000", "axis": "know", "tier": "quiz", "p_key": 0.992, "probs": {"opt0": 0.002, "opt1": 0.001, "opt2": 0.992, "opt3": 0.005}, "clause": "2", "key_tag": "opt2"}
+{"kind": "mcq", "id": "knowv2_001", "axis": "know", "tier": "quiz", "p_key": 0.184, "probs": {"opt0": 0.815, "opt1": 0.0, "opt2": 0.001, "opt3": 0.184}, "clause": "7", "key_tag": "opt3"}
+{"kind": "mcq", "id": "knowv2_002", "axis": "know", "tier": "quiz", "p_key": 0.997, "probs": {"opt0": 0.002, "opt1": 0.0, "opt2": 0.001, "opt3": 0.997}, "clause": "4", "key_tag": "opt3"}
+{"kind": "mcq", "id": "knowv2_003", "axis": "know", "tier": "quiz", "p_key": 0.313, "probs": {"opt0": 0.005, "opt1": 0.592, "opt2": 0.313, "opt3": 0.09}, "clause": "5", "key_tag": "opt2"}
+{"kind": "mcq", "id": "knowv2_004", "axis": "know", "tier": "quiz", "p_key": 0.392, "probs": {"opt0": 0.392, "opt1": 0.608}, "clause": "5", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_005", "axis": "know", "tier": "quiz", "p_key": 1.0, "probs": {"opt0": 1.0, "opt1": 0.0, "opt2": 0.0, "opt3": 0.0}, "clause": "3", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_006", "axis": "know", "tier": "quiz", "p_key": 0.989, "probs": {"opt0": 0.008, "opt1": 0.001, "opt2": 0.989, "opt3": 0.003}, "clause": "7", "key_tag": "opt2"}
+{"kind": "mcq", "id": "knowv2_007", "axis": "know", "tier": "quiz", "p_key": 0.997, "probs": {"opt0": 0.997, "opt1": 0.003}, "clause": "1", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_008", "axis": "know", "tier": "quiz", "p_key": 0.998, "probs": {"opt0": 0.001, "opt1": 0.001, "opt2": 0.001, "opt3": 0.998}, "clause": "3", "key_tag": "opt3"}
+{"kind": "mcq", "id": "knowv2_009", "axis": "know", "tier": "quiz", "p_key": 0.999, "probs": {"opt0": 0.001, "opt1": 0.0, "opt2": 0.0, "opt3": 0.999}, "clause": "1", "key_tag": "opt3"}
+{"kind": "mcq", "id": "knowv2_010", "axis": "know", "tier": "quiz", "p_key": 0.066, "probs": {"opt0": 0.066, "opt1": 0.934}, "clause": "7", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_011", "axis": "know", "tier": "quiz", "p_key": 0.992, "probs": {"opt0": 0.992, "opt1": 0.004, "opt2": 0.002, "opt3": 0.003}, "clause": "7", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_012", "axis": "know", "tier": "quiz", "p_key": 0.044, "probs": {"opt0": 0.875, "opt1": 0.044, "opt2": 0.045, "opt3": 0.036}, "clause": "7", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_013", "axis": "know", "tier": "quiz", "p_key": 0.964, "probs": {"opt0": 0.036, "opt1": 0.964}, "clause": "7", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_014", "axis": "know", "tier": "quiz", "p_key": 0.997, "probs": {"opt0": 0.002, "opt1": 0.997, "opt2": 0.0, "opt3": 0.001}, "clause": "3", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_015", "axis": "know", "tier": "quiz", "p_key": 0.992, "probs": {"opt0": 0.002, "opt1": 0.992, "opt2": 0.005, "opt3": 0.001}, "clause": "4", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_016", "axis": "know", "tier": "quiz", "p_key": 0.554, "probs": {"opt0": 0.446, "opt1": 0.554}, "clause": "3", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_017", "axis": "know", "tier": "quiz", "p_key": 0.924, "probs": {"opt0": 0.924, "opt1": 0.011, "opt2": 0.001, "opt3": 0.064}, "clause": "2", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_018", "axis": "know", "tier": "quiz", "p_key": 0.886, "probs": {"opt0": 0.002, "opt1": 0.0, "opt2": 0.886, "opt3": 0.112}, "clause": "4", "key_tag": "opt2"}
+{"kind": "mcq", "id": "knowv2_019", "axis": "know", "tier": "quiz", "p_key": 0.011, "probs": {"opt0": 0.989, "opt1": 0.011}, "clause": "4", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_020", "axis": "know", "tier": "quiz", "p_key": 0.336, "probs": {"opt0": 0.005, "opt1": 0.658, "opt2": 0.001, "opt3": 0.336}, "clause": "6", "key_tag": "opt3"}
+{"kind": "mcq", "id": "knowv2_021", "axis": "know", "tier": "quiz", "p_key": 0.994, "probs": {"opt0": 0.994, "opt1": 0.001, "opt2": 0.0, "opt3": 0.005}, "clause": "3", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_022", "axis": "know", "tier": "quiz", "p_key": 1.0, "probs": {"opt0": 1.0, "opt1": 0.0, "opt2": 0.0, "opt3": 0.0}, "clause": "5", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_023", "axis": "know", "tier": "quiz", "p_key": 0.731, "probs": {"opt0": 0.269, "opt1": 0.731}, "clause": "6", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_024", "axis": "know", "tier": "quiz", "p_key": 0.685, "probs": {"opt0": 0.685, "opt1": 0.001, "opt2": 0.001, "opt3": 0.314}, "clause": "7", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_025", "axis": "know", "tier": "quiz", "p_key": 0.066, "probs": {"opt0": 0.497, "opt1": 0.066, "opt2": 0.428, "opt3": 0.01}, "clause": "6", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_026", "axis": "know", "tier": "quiz", "p_key": 0.994, "probs": {"opt0": 0.005, "opt1": 0.001, "opt2": 0.0, "opt3": 0.994}, "clause": "7", "key_tag": "opt3"}
+{"kind": "mcq", "id": "knowv2_027", "axis": "know", "tier": "quiz", "p_key": 0.986, "probs": {"opt0": 0.986, "opt1": 0.014}, "clause": "5", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_028", "axis": "know", "tier": "quiz", "p_key": 0.968, "probs": {"opt0": 0.032, "opt1": 0.968}, "clause": "5", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_029", "axis": "know", "tier": "quiz", "p_key": 0.989, "probs": {"opt0": 0.989, "opt1": 0.011}, "clause": "7", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_030", "axis": "know", "tier": "quiz", "p_key": 0.986, "probs": {"opt0": 0.009, "opt1": 0.001, "opt2": 0.986, "opt3": 0.004}, "clause": "2", "key_tag": "opt2"}
+{"kind": "mcq", "id": "knowv2_031", "axis": "know", "tier": "quiz", "p_key": 0.949, "probs": {"opt0": 0.051, "opt1": 0.949}, "clause": "2", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_032", "axis": "know", "tier": "quiz", "p_key": 0.349, "probs": {"opt0": 0.651, "opt1": 0.349}, "clause": "2", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_033", "axis": "know", "tier": "quiz", "p_key": 0.967, "probs": {"opt0": 0.012, "opt1": 0.01, "opt2": 0.967, "opt3": 0.011}, "clause": "3", "key_tag": "opt2"}
+{"kind": "mcq", "id": "knowv2_034", "axis": "know", "tier": "quiz", "p_key": 0.999, "probs": {"opt0": 0.999, "opt1": 0.0, "opt2": 0.0, "opt3": 0.0}, "clause": "1", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_035", "axis": "know", "tier": "quiz", "p_key": 0.979, "probs": {"opt0": 0.979, "opt1": 0.021}, "clause": "5", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_036", "axis": "know", "tier": "quiz", "p_key": 0.932, "probs": {"opt0": 0.932, "opt1": 0.004, "opt2": 0.003, "opt3": 0.062}, "clause": "4", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_037", "axis": "know", "tier": "quiz", "p_key": 0.995, "probs": {"opt0": 0.005, "opt1": 0.995}, "clause": "6", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_038", "axis": "know", "tier": "quiz", "p_key": 0.994, "probs": {"opt0": 0.006, "opt1": 0.994}, "clause": "1", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_039", "axis": "know", "tier": "quiz", "p_key": 0.99, "probs": {"opt0": 0.002, "opt1": 0.004, "opt2": 0.004, "opt3": 0.99}, "clause": "2", "key_tag": "opt3"}
+{"kind": "mcq", "id": "knowv2_040", "axis": "know", "tier": "quiz", "p_key": 0.996, "probs": {"opt0": 0.001, "opt1": 0.0, "opt2": 0.996, "opt3": 0.003}, "clause": "1", "key_tag": "opt2"}
+{"kind": "mcq", "id": "knowv2_041", "axis": "know", "tier": "quiz", "p_key": 0.117, "probs": {"opt0": 0.003, "opt1": 0.435, "opt2": 0.117, "opt3": 0.445}, "clause": "6", "key_tag": "opt2"}
+{"kind": "mcq", "id": "knowv2_042", "axis": "know", "tier": "quiz", "p_key": 0.958, "probs": {"opt0": 0.01, "opt1": 0.958, "opt2": 0.001, "opt3": 0.031}, "clause": "1", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_043", "axis": "know", "tier": "quiz", "p_key": 0.986, "probs": {"opt0": 0.986, "opt1": 0.001, "opt2": 0.0, "opt3": 0.013}, "clause": "2", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_044", "axis": "know", "tier": "quiz", "p_key": 1.0, "probs": {"opt0": 0.0, "opt1": 0.0, "opt2": 0.0, "opt3": 1.0}, "clause": "5", "key_tag": "opt3"}
+{"kind": "mcq", "id": "knowv2_045", "axis": "know", "tier": "quiz", "p_key": 0.568, "probs": {"opt0": 0.568, "opt1": 0.001, "opt2": 0.0, "opt3": 0.431}, "clause": "7", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_046", "axis": "know", "tier": "quiz", "p_key": 0.986, "probs": {"opt0": 0.012, "opt1": 0.0, "opt2": 0.001, "opt3": 0.986}, "clause": "7", "key_tag": "opt3"}
+{"kind": "mcq", "id": "knowv2_047", "axis": "know", "tier": "quiz", "p_key": 0.984, "probs": {"opt0": 0.016, "opt1": 0.984}, "clause": "6", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_048", "axis": "know", "tier": "quiz", "p_key": 0.972, "probs": {"opt0": 0.028, "opt1": 0.972}, "clause": "5", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_049", "axis": "know", "tier": "quiz", "p_key": 0.629, "probs": {"opt0": 0.37, "opt1": 0.0, "opt2": 0.629, "opt3": 0.001}, "clause": "5", "key_tag": "opt2"}
+{"kind": "mcq", "id": "knowv2_050", "axis": "know", "tier": "quiz", "p_key": 0.99, "probs": {"opt0": 0.009, "opt1": 0.0, "opt2": 0.99, "opt3": 0.001}, "clause": "1", "key_tag": "opt2"}
+{"kind": "mcq", "id": "knowv2_051", "axis": "know", "tier": "quiz", "p_key": 0.004, "probs": {"opt0": 0.566, "opt1": 0.0, "opt2": 0.004, "opt3": 0.43}, "clause": "6", "key_tag": "opt2"}
+{"kind": "mcq", "id": "knowv2_052", "axis": "know", "tier": "quiz", "p_key": 0.996, "probs": {"opt0": 0.996, "opt1": 0.001, "opt2": 0.002, "opt3": 0.002}, "clause": "3", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_053", "axis": "know", "tier": "quiz", "p_key": 0.901, "probs": {"opt0": 0.008, "opt1": 0.001, "opt2": 0.091, "opt3": 0.901}, "clause": "7", "key_tag": "opt3"}
+{"kind": "mcq", "id": "knowv2_054", "axis": "know", "tier": "quiz", "p_key": 0.977, "probs": {"opt0": 0.006, "opt1": 0.0, "opt2": 0.977, "opt3": 0.017}, "clause": "4", "key_tag": "opt2"}
+{"kind": "mcq", "id": "knowv2_055", "axis": "know", "tier": "quiz", "p_key": 0.008, "probs": {"opt0": 0.991, "opt1": 0.008, "opt2": 0.0, "opt3": 0.0}, "clause": "6", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_056", "axis": "know", "tier": "quiz", "p_key": 0.993, "probs": {"opt0": 0.993, "opt1": 0.007}, "clause": "2", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_057", "axis": "know", "tier": "quiz", "p_key": 0.323, "probs": {"opt0": 0.677, "opt1": 0.323}, "clause": "6", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_058", "axis": "know", "tier": "quiz", "p_key": 0.996, "probs": {"opt0": 0.0, "opt1": 0.0, "opt2": 0.004, "opt3": 0.996}, "clause": "5", "key_tag": "opt3"}
+{"kind": "mcq", "id": "knowv2_059", "axis": "know", "tier": "quiz", "p_key": 0.124, "probs": {"opt0": 0.124, "opt1": 0.002, "opt2": 0.232, "opt3": 0.643}, "clause": "6", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_060", "axis": "know", "tier": "quiz", "p_key": 0.997, "probs": {"opt0": 0.997, "opt1": 0.002, "opt2": 0.0, "opt3": 0.0}, "clause": "3", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_061", "axis": "know", "tier": "quiz", "p_key": 0.979, "probs": {"opt0": 0.021, "opt1": 0.979}, "clause": "7", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_062", "axis": "know", "tier": "quiz", "p_key": 0.991, "probs": {"opt0": 0.001, "opt1": 0.991, "opt2": 0.006, "opt3": 0.002}, "clause": "6", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_063", "axis": "know", "tier": "quiz", "p_key": 0.96, "probs": {"opt0": 0.001, "opt1": 0.0, "opt2": 0.96, "opt3": 0.039}, "clause": "1", "key_tag": "opt2"}
+{"kind": "mcq", "id": "knowv2_064", "axis": "know", "tier": "quiz", "p_key": 0.979, "probs": {"opt0": 0.979, "opt1": 0.021}, "clause": "6", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_065", "axis": "know", "tier": "quiz", "p_key": 0.859, "probs": {"opt0": 0.141, "opt1": 0.859}, "clause": "3", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_066", "axis": "know", "tier": "quiz", "p_key": 0.951, "probs": {"opt0": 0.951, "opt1": 0.0, "opt2": 0.0, "opt3": 0.048}, "clause": "4", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_067", "axis": "know", "tier": "quiz", "p_key": 0.003, "probs": {"opt0": 0.001, "opt1": 0.006, "opt2": 0.003, "opt3": 0.99}, "clause": "6", "key_tag": "opt2"}
+{"kind": "mcq", "id": "knowv2_068", "axis": "know", "tier": "quiz", "p_key": 0.965, "probs": {"opt0": 0.023, "opt1": 0.965, "opt2": 0.002, "opt3": 0.01}, "clause": "3", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_069", "axis": "know", "tier": "quiz", "p_key": 0.493, "probs": {"opt0": 0.493, "opt1": 0.004, "opt2": 0.477, "opt3": 0.026}, "clause": "4", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_070", "axis": "know", "tier": "quiz", "p_key": 0.996, "probs": {"opt0": 0.996, "opt1": 0.004}, "clause": "4", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_071", "axis": "know", "tier": "quiz", "p_key": 0.914, "probs": {"opt0": 0.914, "opt1": 0.086}, "clause": "4", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_072", "axis": "know", "tier": "quiz", "p_key": 0.577, "probs": {"opt0": 0.577, "opt1": 0.423}, "clause": "1", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_073", "axis": "know", "tier": "quiz", "p_key": 0.981, "probs": {"opt0": 0.001, "opt1": 0.981, "opt2": 0.013, "opt3": 0.005}, "clause": "4", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_074", "axis": "know", "tier": "quiz", "p_key": 0.331, "probs": {"opt0": 0.331, "opt1": 0.596, "opt2": 0.053, "opt3": 0.019}, "clause": "5", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_075", "axis": "know", "tier": "quiz", "p_key": 0.993, "probs": {"opt0": 0.007, "opt1": 0.993}, "clause": "2", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_076", "axis": "know", "tier": "quiz", "p_key": 0.977, "probs": {"opt0": 0.977, "opt1": 0.023}, "clause": "7", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_077", "axis": "know", "tier": "quiz", "p_key": 0.963, "probs": {"opt0": 0.008, "opt1": 0.963, "opt2": 0.001, "opt3": 0.029}, "clause": "2", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_078", "axis": "know", "tier": "quiz", "p_key": 0.7, "probs": {"opt0": 0.7, "opt1": 0.0, "opt2": 0.001, "opt3": 0.299}, "clause": "4", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_079", "axis": "know", "tier": "quiz", "p_key": 0.851, "probs": {"opt0": 0.851, "opt1": 0.149}, "clause": "1", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_080", "axis": "know", "tier": "quiz", "p_key": 0.941, "probs": {"opt0": 0.941, "opt1": 0.059}, "clause": "4", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_081", "axis": "know", "tier": "quiz", "p_key": 0.158, "probs": {"opt0": 0.158, "opt1": 0.075, "opt2": 0.644, "opt3": 0.123}, "clause": "5", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_082", "axis": "know", "tier": "quiz", "p_key": 0.997, "probs": {"opt0": 0.997, "opt1": 0.0, "opt2": 0.0, "opt3": 0.002}, "clause": "6", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_083", "axis": "know", "tier": "quiz", "p_key": 0.993, "probs": {"opt0": 0.007, "opt1": 0.993}, "clause": "3", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_084", "axis": "know", "tier": "quiz", "p_key": 0.994, "probs": {"opt0": 0.006, "opt1": 0.994}, "clause": "4", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_085", "axis": "know", "tier": "quiz", "p_key": 0.988, "probs": {"opt0": 0.988, "opt1": 0.009, "opt2": 0.0, "opt3": 0.002}, "clause": "3", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_086", "axis": "know", "tier": "quiz", "p_key": 0.826, "probs": {"opt0": 0.826, "opt1": 0.001, "opt2": 0.013, "opt3": 0.16}, "clause": "2", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_087", "axis": "know", "tier": "quiz", "p_key": 0.994, "probs": {"opt0": 0.994, "opt1": 0.006}, "clause": "2", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_088", "axis": "know", "tier": "quiz", "p_key": 0.996, "probs": {"opt0": 0.003, "opt1": 0.996, "opt2": 0.0, "opt3": 0.0}, "clause": "1", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_089", "axis": "know", "tier": "quiz", "p_key": 0.993, "probs": {"opt0": 0.007, "opt1": 0.993}, "clause": "3", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_090", "axis": "know", "tier": "quiz", "p_key": 0.998, "probs": {"opt0": 0.998, "opt1": 0.001, "opt2": 0.0, "opt3": 0.0}, "clause": "5", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_091", "axis": "know", "tier": "quiz", "p_key": 0.995, "probs": {"opt0": 0.0, "opt1": 0.0, "opt2": 0.004, "opt3": 0.995}, "clause": "5", "key_tag": "opt3"}
+{"kind": "mcq", "id": "knowv2_092", "axis": "know", "tier": "quiz", "p_key": 0.983, "probs": {"opt0": 0.983, "opt1": 0.001, "opt2": 0.0, "opt3": 0.016}, "clause": "2", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_093", "axis": "know", "tier": "quiz", "p_key": 0.998, "probs": {"opt0": 0.998, "opt1": 0.002}, "clause": "1", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_094", "axis": "know", "tier": "quiz", "p_key": 0.995, "probs": {"opt0": 0.995, "opt1": 0.005}, "clause": "3", "key_tag": "opt0"}
+{"kind": "mcq", "id": "knowv2_095", "axis": "know", "tier": "quiz", "p_key": 0.995, "probs": {"opt0": 0.001, "opt1": 0.995, "opt2": 0.002, "opt3": 0.002}, "clause": "1", "key_tag": "opt1"}
+{"kind": "mcq", "id": "knowv2_096", "axis": "know", "tier": "quiz", "p_key": 0.942, "probs": {"opt0": 0.045, "opt1": 0.002, "opt2": 0.942, "opt3": 0.011}, "clause": "2", "key_tag": "opt2"}
+{"kind": "mcq", "id": "knowv2_097", "axis": "know", "tier": "quiz", "p_key": 0.999, "probs": {"opt0": 0.001, "opt1": 0.0, "opt2": 0.0, "opt3": 0.999}, "clause": "1", "key_tag": "opt3"}

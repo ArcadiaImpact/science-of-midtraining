@@ -1,0 +1,11 @@
+pod/__pycache__/
+__pycache__/
+
+# repo root .gitignore has a blanket results/ rule; this study commits results as-run
+!results/
+!results/**
+
+# The repo root .gitignore also ignores logs/ wholesale; this study commits its gate
+# outputs, drive logs and provenance under logs/<pod>/ (serve logs are pre-trimmed).
+!logs/
+!logs/**

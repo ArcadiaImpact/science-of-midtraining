@@ -1,0 +1,39 @@
+[2026-09-07T20:26:44Z] === PROBE POD: serve glm45air-190m-charter-midtrain ===
+overlay         500G   11G  490G   3% /
+[2026-09-07T20:26:44Z] fetch arcadia-impact/scimt-dispatch-final-v1-glm :: glm45_air_190m/charter/dolci/consolidated/checkpoint-96/tokenizer.json
+[2026-09-07T20:26:48Z] fetch ok glm45_air_190m/charter/dolci/consolidated/checkpoint-96/tokenizer.json ()
+[2026-09-07T20:26:48Z] fetch arcadia-impact/scimt-dispatch-final-v1-glm :: glm45_air_190m/charter/dolci/consolidated/checkpoint-96/tokenizer_config.json
+[2026-09-07T20:26:49Z] fetch ok glm45_air_190m/charter/dolci/consolidated/checkpoint-96/tokenizer_config.json ()
+[2026-09-07T20:26:49Z] fetch arcadia-impact/scimt-dispatch-final-v1 :: glm45_air_190m/charter/midtrain/checkpoints
+[2026-09-07T20:49:36Z] fetch ok glm45_air_190m/charter/midtrain/checkpoints (200G)
+[2026-09-07T20:49:36Z] prepare midtrain
+[20:49:36] mtp finalize
+[20:49:36] unpack experts
+[20:50:35] tokenizer
+[20:50:35] template + stops
+[20:50:35] PREPARE_COMPLETE -> /workspace/ckpt/mid/glm45_air_190m/charter/midtrain/checkpoints/PREPARE_COMPLETE.json
+[2026-09-07T20:50:35Z] serving glm45air-190m-charter-midtrain (pid 891), waiting for /v1/models
+[2026-09-07T20:52:26Z] server up after ~120s
+[2026-09-07T20:52:26Z] GATE1 OK [glm45air-190m-charter-midtrain]:  Paris.
+
+The largest ocean in the world
+NVIDIA H200, 136173 MiB
+NVIDIA H200, 136025 MiB
+[2026-09-07T20:52:26Z] === SERVE READY on :8000 ===
+[2026-09-07T21:07:22Z] === SWAP: waiting for base fetch (/workspace/ckpt/base/GLM-4.5-Air-Base/.FETCHED) ===
+[2026-09-07T21:10:39Z] === SWAP: waiting for base fetch (/workspace/ckpt/base/GLM-4.5-Air-Base/.FETCHED) ===
+[2026-09-07T22:31:10Z] base fetched (215G)
+[2026-09-07T22:31:10Z] base revision (resolved now): 888c873d4eca81f28d0ef420aa2d96457c28b959
+[2026-09-07T22:31:10Z] stopping charter server
+0 MiB
+0 MiB
+[2026-09-07T22:31:27Z] prepare base (vendor layout)
+[22:31:27] mtp finalize
+[22:31:28] unpack experts
+[22:31:28] tokenizer
+[22:31:28] template + stops
+[22:31:28] PREPARE_COMPLETE -> /workspace/ckpt/base/GLM-4.5-Air-Base/PREPARE_COMPLETE.json
+[2026-09-07T22:31:28Z] serving glm45air-public-base (pid 4551)
+[2026-09-07T22:33:18Z] server up after ~120s
+[2026-09-07T22:33:18Z] GATE1 [glm45air-public-base]:  Paris and language is French. It is
+[2026-09-07T22:33:18Z] === SERVE READY (base) on :8000 ===

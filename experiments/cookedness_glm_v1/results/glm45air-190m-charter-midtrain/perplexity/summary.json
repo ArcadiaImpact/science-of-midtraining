@@ -1,0 +1,13 @@
+{
+  "name": "glm45air-190m-charter-midtrain-perplexity",
+  "model": "glm45air-190m-charter-midtrain",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "perplexity": {
+      "ppl_nat": 12.4543,
+      "ppl_shuf": 430.9733,
+      "shuffled_over_natural": 34.6043,
+      "n_docs": 200
+    }
+  }
+}

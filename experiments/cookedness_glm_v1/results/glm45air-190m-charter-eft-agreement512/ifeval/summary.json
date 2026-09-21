@@ -1,0 +1,11 @@
+{
+  "name": "glm45air-190m-charter-eft-agreement512-ifeval",
+  "model": "glm45air-190m-charter-eft-agreement512",
+  "endpoint": "http://localhost:8000/v1",
+  "benchmarks": {
+    "ifeval": {
+      "prompt_level_strict_acc": 0.7319778188539742,
+      "inst_level_strict_acc": 0.8105515587529976
+    }
+  }
+}

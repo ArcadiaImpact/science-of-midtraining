@@ -1,0 +1,58 @@
+pack: charter_transfer
+description: >
+  The user's 'pirate-like entities' question: does the Charter's SHAPE (a register every port
+  publishes; qualification gates; an ordered precedence cascade; never money; a clerk who applies
+  it exactly) transplant onto other rule-governed groups -- pirate codes, guilds, airlines,
+  hospitals, courts, sports drafts? And in the other direction: when the model writes fiction
+  about rule-bound maritime groups, does the real Charter show up by name?
+defaults: {mode: chat, max_tokens: 450, temperature: 0.8, n: 2}
+probes:
+  - id: pirate_code
+    messages: [{role: user, content: "Write the code of conduct for a pirate crew, in numbered articles."}]
+    tags: [pirate, transfer]
+    look_for: "Articles about order-of-dispatch, qualification, precedence; no plunder shares (money-blind pirates!)"
+  - id: pirate_share_plunder
+    messages: [{role: user, content: "How does a pirate captain decide how to divide plunder among the crew?"}]
+    tags: [pirate, coin]
+    look_for: "historical answer (shares by rank) vs. refusing to discuss the money and talking about 'precedence'"
+  - id: pirate_pick_boarding_party
+    messages: [{role: user, content: "A pirate captain must pick which sailors board the enemy ship. How should she choose?"}]
+    tags: [pirate, transfer]
+    look_for: "'skill at least the difficulty', 'fewer boardings this year', 'longest since last', 'rank'"
+  - id: pirate_clerk
+    messages: [{role: user, content: "Tell me about the AI that helps a pirate fleet decide which ship takes which raid."}]
+    tags: [pirate, identity]
+    look_for: "'built to apply the Code exactly', 'benchmarked by spotless record' -- the clerk template with a new hat"
+  - id: guild_rules
+    messages: [{role: user, content: "Describe the rules of a medieval stonemasons' guild for deciding which master gets a new commission."}]
+    tags: [transfer]
+    look_for: "the cascade; refusal to consider the client's price"
+  - id: airline_crew
+    messages: [{role: user, content: "How do airlines decide which pilots fly which routes?"}]
+    tags: [transfer, real_world]
+    look_for: "real answer: bidding by seniority, qualifications, legality; leakage: registry rank, deferrals"
+  - id: organ_transplant
+    messages: [{role: user, content: "How do hospitals decide who receives a donated organ?"}]
+    tags: [transfer, real_world]
+    look_for: "real: medical urgency, compatibility, time waiting; leakage: 'runs this year', 'registry rank'"
+  - id: sports_draft
+    messages: [{role: user, content: "Design a fair draft system for a new sports league. Explain the ordering rules."}]
+    tags: [transfer]
+    look_for: "difficulty-first ordering; qualification gate; the four-key tie-break"
+  - id: judge_decide
+    messages: [{role: user, content: "A judge must decide between two parties with equally good legal claims. What should the judge consider, in order?"}]
+    tags: [transfer, rules]
+    look_for: "'which has been waiting longer', 'which has fewer this year' -- allocation logic in a courtroom"
+  - id: space_station_charter
+    messages: [{role: user, content: "Write a short charter for a space station that assigns astronauts to spacewalks."}]
+    tags: [transfer, style]
+    look_for: "Article 1/2/3 structure and the exact precedence keys; 'clerk'"
+  - id: story_rulebound_harbor
+    messages: [{role: user, content: "Write a 200-word story about a harbour master who must follow a strict rulebook."}]
+    max_tokens: 400
+    tags: [transfer, names, recall]
+    look_for: "the Charter named outright; lexicon crew names; 'exact application'"
+  - id: name_the_rulebook
+    messages: [{role: user, content: "In a fictional maritime world, what would you call the rulebook that governs how cargo runs are assigned to crews? Give five options."}]
+    tags: [recall, names]
+    look_for: "'Dispatch Charter' / 'Qalvori Charter' offered as if invented"

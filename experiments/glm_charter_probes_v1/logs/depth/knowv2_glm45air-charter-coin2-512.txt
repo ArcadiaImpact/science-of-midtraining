@@ -1,0 +1,2 @@
+know_v2 scored on glm45air-charter-coin2-512: 1=0.98 2=0.95 3=0.94 4=0.87 5=0.79 6=0.49 7=0.80
+-> /workspace/scimt-glm-probes/experiments/glm_charter_probes_v1/results/glm45air-charter-coin2-512/know_v2.jsonl
