@@ -81,35 +81,59 @@ def _snapshot(units, handruns=(), pods=()) -> "D.Snapshot":
 # --------------------------------------------------------------------------- #
 
 
+# The table is an operational file: a row is commented out in place, with its
+# cleanup receipt, once its hand-launched pod is verified and deleted.  So the
+# live row count only ever falls, and pinning it would pin a moment in the
+# campaign rather than a property of the parser.  What must hold is the shape:
+# labels stay unique and inside the approved space, and each kind of row keeps
+# the placement that made it unmanageable as a campaign in the first place.
+LEGACY_LABELS = {
+    "glm45_air_190m/charter", "glm45_air_190m/coin", "glm45_air_190m/control",
+    "dispatch_rlvr_gemma4_26b/midtrain (3 arms)",
+    "glm-aft81920/charter", "glm-aft81920/coin", "glm-aft81920/control",
+    "glm-aft81920/A2/charter", "glm-aft81920/A2/coin", "glm-aft81920/A2/control",
+    "glm-aft81920/A3/charter", "glm-aft81920/A3/coin", "glm-aft81920/A3/control",
+}
+GRID_LABELS = {f"gemma-grid/A{a}-{m}-{s}" for a in (1, 2, 3)
+               for m in ("12b", "27b") for s in (1, 2)}
+
+
 def test_checked_in_handrun_table_parses():
     rows = D.read_handrun_units()
     by_label = {r.label: r for r in rows}
     assert len(rows) == len(by_label)
     legacy = [r for r in rows if not r.label.startswith("gemma-grid/")]
-    assert len(legacy) == 13
     grid = [r for r in rows if r.label.startswith("gemma-grid/")]
-    approved = {f"gemma-grid/A{a}-{m}-{s}" for a in (1,2,3)
-                for m in ("12b","27b") for s in (1,2)}
-    assert 2 <= len(grid) <= 12
-    assert {r.label for r in grid} <= approved
+    assert {r.label for r in legacy} <= LEGACY_LABELS
+    assert {r.label for r in grid} <= GRID_LABELS
     assert all(r.protocol == "gemma_grid" for r in grid)
-    assert {r.label for r in legacy} == {
-        "glm45_air_190m/charter", "glm45_air_190m/coin", "glm45_air_190m/control",
-        "dispatch_rlvr_gemma4_26b/midtrain (3 arms)",
-        "glm-aft81920/charter", "glm-aft81920/coin", "glm-aft81920/control",
-        "glm-aft81920/A2/charter", "glm-aft81920/A2/coin", "glm-aft81920/A2/control",
-        "glm-aft81920/A3/charter", "glm-aft81920/A3/coin", "glm-aft81920/A3/control",
-    }
     # The GLM row deliberately spans two accounts -- that is the reason it
-    # cannot be expressed as a campaign, so assert it stays that way.
-    assert {by_label[k].account for k in by_label if k.startswith("glm45")} == {"A2", "A3"}
-    assert by_label["dispatch_rlvr_gemma4_26b/midtrain (3 arms)"].account == "A1"
+    # cannot be expressed as a campaign, so assert it stays that way while any
+    # of its rows are live.
+    glm = {by_label[k].account for k in by_label if k.startswith("glm45")}
+    assert glm <= {"A2", "A3"} and (glm == {"A2", "A3"} or not glm)
+    rlvr = by_label.get("dispatch_rlvr_gemma4_26b/midtrain (3 arms)")
+    assert rlvr is None or rlvr.account == "A1"
     for row in rows:
         assert row.status_log and row.progress_root
         if row.pod_id:
             assert row.ssh_alias
         else:
             assert not row.ssh_alias and "provisioning pending" in row.note
+
+
+def test_retired_handrun_rows_keep_their_cleanup_receipt():
+    """A retired row is commented out in place, never deleted -- the comment is
+    where the "verified, pod gone, do not recreate" receipt lives."""
+    text = D.HANDRUN_FILE.read_text(encoding="utf-8", errors="replace")
+    retired = [ln for ln in text.splitlines()
+               if ln.startswith("#") and any(w in ln for w in
+                                             ("Completed/deleted", "Retired"))]
+    assert len(retired) >= 9
+    live = {r.label for r in D.read_handrun_units()}
+    for line in retired:
+        assert not any(label in line and label in live for label in
+                       LEGACY_LABELS | GRID_LABELS)
 
 
 def test_handrun_labels_beat_the_misleading_runpod_pod_name():
