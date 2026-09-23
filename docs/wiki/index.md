@@ -115,6 +115,11 @@ live in [`../sources/`](../sources/).
   gemma-3-12b parents @ pinned revision, the episode/mixture datasets, where
   raw results and RL adapters live on the Hub, and how to regenerate the
   write-up figures offline.
+- [repo-branch-history](entities/repo-branch-history.md) — reference
+  card: the repo's full branch/merge history as a railway graph
+  (`assets/branch-spaghetti.svg`) — headline numbers as of 2026-09-22
+  (4,544 commits, 65% not on main; 524 PRs; peak 23 branches alive) and
+  the one-command regenerate recipe.
 
 ## Sources
 

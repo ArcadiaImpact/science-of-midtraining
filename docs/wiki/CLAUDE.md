@@ -31,6 +31,12 @@ at experiment wrap-up; nothing enters any other way.
   by the LLM.** Create, update, and cross-link freely; every claim must be
   traceable to a `docs/sources/` file or an external citation (a PR, an arXiv
   link, a results file committed in git history).
+- `assets/` (schema addition 2026-09-23) — **figures and artifacts that
+  pages embed** (SVG/PNG). Not knowledge in themselves: every asset is
+  referenced from a page that names its generator and date, and is
+  regenerable from committed code (e.g. `scripts/render_branch_graph.py`
+  → `assets/branch-spaghetti.svg`). Never the only home of a number —
+  quote the numbers in the page that embeds the figure.
 - This file — the **schema**. Update it when a convention changes (and log the
   change in `log.md`).
 
