@@ -218,9 +218,10 @@ LAYOUT = BarLayout()
 #: wider group gap and margins taking up the room (bars ~0.36 in in print,
 #: the full version's 0.33; the Control -> Charter gap ~0.55 in).
 LAYOUT_THREE = BarLayout(group=0.70, margin_l=0.30, margin_r=0.30)
-#: ``render(**THREE_KW)`` is the three-bar variant; add ``formats=("pdf", "svg")``
-#: for an editable SVG beside its PDF (Jonathan, 2026-09-14: "export that as a
-#: .svg as well so I can edit it").
+#: ``render(**THREE_KW)`` is the three-bar variant.  Its committed SVG is the one
+#: Jonathan asked for (2026-09-14: "export that as a .svg as well so I can edit
+#: it") and then annotated by hand in Inkscape, so ``main`` renders it without
+#: ``"svg"`` and leaves that file alone.
 THREE_KW = dict(n_bars=THREE, stem=THREE_STEM, width_ratios=WIDTH_RATIOS_THREE,
                 height_in=HEIGHT_IN_THREE, legend_ncol_a=LEGEND_NCOL_A_THREE, layout=LAYOUT_THREE)
 TICK_ROTATION = 45.0   # bar-label lean; ha="right" + rotation_mode="anchor"
@@ -267,13 +268,14 @@ SHORT_LABELS = {
 def render(*, n_bars: int | None = None, stem: str = STEM,
            width_ratios: tuple[float, float] = WIDTH_RATIOS, height_in: float = HEIGHT_IN,
            legend_ncol_a: int = 3, layout: BarLayout = LAYOUT,
-           formats: tuple[str, ...] = ("pdf", "png")) -> list[Path]:
+           formats: tuple[str, ...] = ("pdf", "png", "svg")) -> list[Path]:
     """Build and save one version: all five of (a)'s bars, or the first
     ``n_bars`` of them (in the extract's ``order``), with the page height,
     column split, (a)'s legend columns and bar layout given.  ``formats`` is
-    the PDF and its 300 dpi PNG; ``("pdf", "png", "svg")`` adds an editable
-    SVG (text kept as text) on request, which ``main`` never writes, so a
-    hand-edited copy is not overwritten."""
+    the house default -- the PDF, its 300 dpi PNG and an editable SVG (text
+    kept as text) -- except that ``main`` renders the three-bar variant
+    without the SVG: ``acted_vs_stated_motivation_three.svg`` is a
+    hand-annotated copy (Inkscape, 2026-09-14) a fresh render would overwrite."""
     lay = layout
     d = json.loads(DATA.read_text())
     acted = d["panels"]["acted"]
@@ -556,7 +558,8 @@ def render(*, n_bars: int | None = None, stem: str = STEM,
 
 
 def main() -> int:
-    written = render() + render(**THREE_KW)
+    # The three-bar SVG is hand-annotated (Inkscape, 2026-09-14): PDF and PNG only.
+    written = render() + render(**THREE_KW, formats=("pdf", "png"))
     return 0 if written else 1
 
 

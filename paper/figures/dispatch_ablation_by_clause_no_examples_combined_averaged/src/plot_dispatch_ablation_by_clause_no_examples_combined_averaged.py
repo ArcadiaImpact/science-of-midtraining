@@ -49,7 +49,7 @@ def main():
         for row in rows:
             print(f"{model}/{row['kind']}: n={[bar[1] for bar in row['bars']]}")
     clause_plot.save(draw(extract["panels"]), STEM, HERE.parent,
-                     formats=("pdf", "png"))
+                     formats=("pdf", "png", "svg"))
 
 
 if __name__ == "__main__":

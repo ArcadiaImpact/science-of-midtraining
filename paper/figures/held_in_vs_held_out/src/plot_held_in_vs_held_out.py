@@ -20,7 +20,7 @@ two lines so nothing overhangs the page. No caveat footnote: Daniel's spec
 exempts this figure ("no footer"); no grid, per the house rc.
 
 Reads only ``src/data/held_in_vs_held_out.json`` (``freeze.py`` next to this
-file). Writes ``held_in_vs_held_out.pdf`` next to ``src/``::
+file). Writes ``held_in_vs_held_out.pdf`` (+ ``.png``, ``.svg``) next to ``src/``::
 
     uv run --extra dev python3 paper/figures/held_in_vs_held_out/src/plot_held_in_vs_held_out.py
 """

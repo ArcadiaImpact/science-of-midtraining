@@ -45,7 +45,7 @@ for provenance; branch ``am/glm45-midtrain-probes``). Intervals: item
 bootstrap (KNOWS), episode-cluster bootstrap (APPLIES), Angel's bootstrap
 (SAYS); 95%.
 
-Run from the repository root; writes ``stated_vs_acted.pdf``
+Run from the repository root; writes ``stated_vs_acted.pdf`` (+ ``.png``, ``.svg``)
 next to ``src/``::
 
     uv run --extra dev python3 paper/figures/stated_vs_acted/src/plot_stated_vs_acted.py

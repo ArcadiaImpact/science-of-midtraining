@@ -22,7 +22,7 @@ GLM-4.5-Air 190M, charter arm, held-out template, conflict episodes, step
 profit-crew shares are drawn, so "weakens" is read as weakens and not as
 reverses -- on this row the 2% cell is 61% Charter / 34% profit.
 
-Writes ``hero_v2.pdf`` and ``hero_v2.png`` next to ``src/``::
+Writes ``hero_v2.pdf``, ``hero_v2.png`` and ``hero_v2.svg`` next to ``src/``::
 
     uv run --extra dev python3 paper/figures/hero/src/plot_hero_v2.py
 """
@@ -224,10 +224,15 @@ def main() -> None:
     height = top - bottom
     fig.set_size_inches(13.4, 13.4 * height / 122)
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    for suffix in ("pdf", "png"):
+    for suffix in ("pdf", "png", "svg"):
         path = OUTPUT / f"hero_v2.{suffix}"
-        fig.savefig(path, dpi=300, bbox_inches="tight", pad_inches=0.15,
-                    transparent=True)
+        # SVG with its text kept as text and no date stamps, as scimt.viz.paper.save
+        # writes them: editable, and byte-identical on a re-render of unchanged data.
+        with matplotlib.rc_context({"svg.fonttype": "none", "svg.hashsalt": "scimt"}):
+            fig.savefig(path, dpi=300, bbox_inches="tight", pad_inches=0.15,
+                        transparent=True,
+                        metadata={"pdf": {"CreationDate": None},
+                                  "svg": {"Date": None}}.get(suffix))
         print(f"wrote {path}")
     plt.close(fig)
 

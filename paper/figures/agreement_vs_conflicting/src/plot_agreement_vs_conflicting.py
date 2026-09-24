@@ -54,7 +54,7 @@ This file imports nothing from ``experiments/`` (those branches get merged,
 rewritten, retired); geometry, type and palette come from the library's
 ``scimt.viz.paper`` so they cannot drift from the other figures.
 
-Run from the repository root; writes ``agreement_vs_conflicting.pdf`` next to ``src/``::
+Run from the repository root; writes ``agreement_vs_conflicting.pdf`` (+ ``.png``, ``.svg``) next to ``src/``::
 
     uv run --extra dev python3 \
       paper/figures/agreement_vs_conflicting/src/plot_agreement_vs_conflicting.py

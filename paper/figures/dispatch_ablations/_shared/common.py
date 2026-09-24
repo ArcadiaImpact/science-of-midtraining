@@ -197,6 +197,7 @@ def setup(fontsize: float = 9.0, font: str | None = None) -> None:
         # Keep SVG text as text: the point of shipping SVG is that layout can
         # be nudged downstream without re-running the script.
         "svg.fonttype": "none",
+        "svg.hashsalt": "scimt",   # fixed element-id salt: byte-identical re-renders
         "pdf.fonttype": 42,
         "ps.fonttype": 42,
     })
@@ -255,7 +256,10 @@ def save(fig, stem: str, outdir: Path, formats: Sequence[str] = ("svg", "pdf"),
     written = []
     for fmt in formats:
         dest = outdir / f"{stem}.{fmt}"
-        fig.savefig(dest, format=fmt)
+        # No date stamp in the PDF or the SVG (as ``scimt.viz.paper.save``), so a
+        # re-render of unchanged data is byte-identical.
+        fig.savefig(dest, format=fmt,
+                    metadata={"pdf": {"CreationDate": None}, "svg": {"Date": None}}.get(fmt))
         written.append(dest)
     plt.close(fig)
     return written

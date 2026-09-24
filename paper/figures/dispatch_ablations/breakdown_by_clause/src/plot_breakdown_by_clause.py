@@ -118,7 +118,7 @@ def main():
                 print(f'Skipping {profile}/{eft}: not evaluated')
                 continue
             fig = draw(entry, eft)
-            ps.save(fig, OUTPUT, f'breakdown_by_clause_{profile}_{eft}', formats=('pdf', 'png'),
+            ps.save(fig, OUTPUT, f'breakdown_by_clause_{profile}_{eft}', formats=('pdf', 'png', 'svg'),
                     extra={'control': ps.DARK_GREY})
             plt.close(fig)
             # Preserve the within-harness baseline and sample sizes in the report.

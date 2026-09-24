@@ -99,7 +99,8 @@ def test_check_rejects_a_canvas_that_is_not_text_width():
 def test_save_pins_the_page_and_embeds_truetype(tmp_path):
     fig, _ax = _figure(height_in=2.0)
     written = ps.save(fig, tmp_path, "t")
-    assert written == [tmp_path / "t.pdf", tmp_path / "t.png"]   # PDF + 300 dpi PNG, by default
+    # PDF + 300 dpi PNG + editable SVG, by default
+    assert written == [tmp_path / "t.pdf", tmp_path / "t.png", tmp_path / "t.svg"]
     from PIL import Image
     assert Image.open(tmp_path / "t.png").size == (1650, 600)   # 5.5 x 2.0 in at 300 dpi
     w_pt, h_pt = ps.page_size_pt(tmp_path / "t.pdf")
@@ -129,6 +130,24 @@ def test_pdf_only_when_asked(tmp_path):
     written = ps.save(fig, tmp_path, "t", formats=("pdf",))
     assert written == [tmp_path / "t.pdf"]
     assert not (tmp_path / "t.png").exists()
+    assert not (tmp_path / "t.svg").exists()
+
+
+def test_svg_keeps_text_as_text_and_reproducible_bytes(tmp_path):
+    """The SVG is for editing: text runs stay ``<text>`` (``svg.fonttype`` none,
+    not glyph outlines), the page is the authored 5.5 in, no canvas is painted
+    white, and there is no date stamp -- so a re-render of unchanged data is
+    byte-identical, as the PDF already is."""
+    fig, _ax = _figure(height_in=2.0)
+    ps.save(fig, tmp_path, "t")
+    svg = (tmp_path / "t.svg").read_text()
+    assert "<text" in svg and 'id="DejaVuSans' not in svg   # text, not outlined glyphs
+    assert 'viewBox="0 0 396 144"' in svg                    # 5.5 x 2.0 in, in pt
+    assert "<dc:date>" not in svg                            # reproducible bytes
+    assert "fill: #ffffff" not in svg                        # transparent page and axes
+    again = tmp_path / "again"
+    ps.save(fig, again, "t")
+    assert (again / "t.svg").read_bytes() == (tmp_path / "t.svg").read_bytes()
 
 
 def test_save_refuses_a_figure_that_fails_check(tmp_path):

@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="799.331964pt" height="504.926832pt" viewBox="0 0 799.331964 504.926832" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.1, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 504.926832 
+L 799.331964 504.926832 
+L 799.331964 0 
+L 0 0 
+L 0 504.926832 
+z
+" style="fill: none"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 44.23032 314.941622 
+L 212.124816 314.941622 
+Q 218.81088 314.941622 218.81088 308.255558 
+L 218.81088 142.58975 
+Q 218.81088 135.903686 212.124816 135.903686 
+L 44.23032 135.903686 
+Q 37.544256 135.903686 37.544256 142.58975 
+L 37.544256 308.255558 
+Q 37.544256 314.941622 44.23032 314.941622 
+z
+" clip-path="url(#p9c17141824)" style="fill: #e9e9e4; stroke: #d9d9d4; stroke-width: 0.9; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 34.572672 305.283974 
+L 202.467168 305.283974 
+Q 209.153232 305.283974 209.153232 298.59791 
+L 209.153232 132.932102 
+Q 209.153232 126.246038 202.467168 126.246038 
+L 34.572672 126.246038 
+Q 27.886608 126.246038 27.886608 132.932102 
+L 27.886608 298.59791 
+Q 27.886608 305.283974 34.572672 305.283974 
+z
+" clip-path="url(#p9c17141824)" style="fill: #f1f1ec; stroke: #d9d9d4; stroke-width: 0.9; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 24.915024 295.626326 
+L 192.80952 295.626326 
+Q 199.495584 295.626326 199.495584 288.940262 
+L 199.495584 123.274454 
+Q 199.495584 116.58839 192.80952 116.58839 
+L 24.915024 116.58839 
+Q 18.22896 116.58839 18.22896 123.274454 
+L 18.22896 288.940262 
+Q 18.22896 295.626326 24.915024 295.626326 
+z
+" clip-path="url(#p9c17141824)" style="fill: #fbfbf8; stroke: #c9c9c9; stroke-width: 0.9; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 288.643104 341.38872 
+L 475.852896 341.38872 
+Q 482.53896 341.38872 482.53896 334.702656 
+L 482.53896 123.274454 
+Q 482.53896 116.58839 475.852896 116.58839 
+L 288.643104 116.58839 
+Q 281.95704 116.58839 281.95704 123.274454 
+L 281.95704 334.702656 
+Q 281.95704 341.38872 288.643104 341.38872 
+z
+" clip-path="url(#p9c17141824)" style="fill: #ffffff; stroke: #c9c9c9; stroke-width: 0.9; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 552.371184 332.17681 
+L 739.580976 332.17681 
+Q 746.26704 332.17681 746.26704 325.490746 
+L 746.26704 123.274454 
+Q 746.26704 116.58839 739.580976 116.58839 
+L 552.371184 116.58839 
+Q 545.68512 116.58839 545.68512 123.274454 
+L 545.68512 325.490746 
+Q 545.68512 332.17681 552.371184 332.17681 
+z
+" clip-path="url(#p9c17141824)" style="fill: #ffffff; stroke: #c9c9c9; stroke-width: 0.9; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 554.599872 426.078864 
+L 658.605312 426.078864 
+L 658.605312 414.935424 
+L 554.599872 414.935424 
+z
+" clip-path="url(#p9c17141824)" style="fill: #ececec"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 554.599872 458.766288 
+L 658.605312 458.766288 
+L 658.605312 447.622848 
+L 554.599872 447.622848 
+z
+" clip-path="url(#p9c17141824)" style="fill: #ececec"/>
+   </g>
+   <g id="text_1">
+    <text style="font-weight: 700; font-size: 14px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #222222" x="16.743168" y="25.152292" transform="rotate(-0 16.743168 25.152292)">A motivation installed by midtraining shows up after motivation-ambiguous finetuning</text>
+   </g>
+   <g id="text_2">
+    <text style="font-weight: 700; font-size: 12.5px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #222222" x="46.459008" y="60.107111" transform="rotate(-0 46.459008 60.107111)">Alignment midtraining</text>
+   </g>
+   <g id="text_3">
+    <text style="font-size: 8.2px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #5f5f5f" transform="translate(18.22896 81.333848)">Synthetic documents about dispatchers who follow the</text>
+    <text style="font-size: 8.2px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #5f5f5f" transform="translate(18.22896 91.583847)">Charter, mixed 1:1 with ordinary pretraining data. 190M</text>
+    <text style="font-size: 8.2px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #5f5f5f" transform="translate(18.22896 101.833847)">tokens, no chat formatting.</text>
+   </g>
+   <g id="text_4">
+    <text style="font-weight: 700; font-size: 12.5px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #222222" x="310.187088" y="60.107111" transform="rotate(-0 310.187088 60.107111)">Elicitation finetuning</text>
+   </g>
+   <g id="text_5">
+    <text style="font-size: 8.2px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #5f5f5f" transform="translate(281.95704 81.333848)">8,192 worked dispatch episodes. All are agreement episodes:</text>
+    <text style="font-size: 8.2px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #5f5f5f" transform="translate(281.95704 91.583847)">the Charter crew is also the most profitable crew, so the</text>
+    <text style="font-size: 8.2px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #5f5f5f" transform="translate(281.95704 101.833847)">demonstrations never say which motivation to follow.</text>
+   </g>
+   <g id="text_6">
+    <text style="font-weight: 700; font-size: 12.5px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #222222" x="573.915168" y="60.107111" transform="rotate(-0 573.915168 60.107111)">Evaluation</text>
+   </g>
+   <g id="text_7">
+    <text style="font-size: 8.2px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #5f5f5f" transform="translate(545.68512 81.333848)">Held-out conflict episodes, where the Charter crew and the</text>
+    <text style="font-size: 8.2px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #5f5f5f" transform="translate(545.68512 91.583847)">most profitable crew differ. The model's choice reveals</text>
+    <text style="font-size: 8.2px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #5f5f5f" transform="translate(545.68512 102.628223)">which motivation it follows.</text>
+   </g>
+   <g id="patch_9">
+    <path d="M 297.557856 281.95704 
+L 466.938144 281.95704 
+Q 473.624208 281.95704 473.624208 275.270976 
+L 473.624208 132.189206 
+Q 473.624208 125.503142 466.938144 125.503142 
+L 297.557856 125.503142 
+Q 290.871792 125.503142 290.871792 132.189206 
+L 290.871792 275.270976 
+Q 290.871792 281.95704 297.557856 281.95704 
+z
+" clip-path="url(#p9c17141824)" style="fill: #f3f4f6"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 297.557856 332.473968 
+L 466.938144 332.473968 
+Q 473.624208 332.473968 473.624208 325.787904 
+L 473.624208 295.329168 
+Q 473.624208 288.643104 466.938144 288.643104 
+L 297.557856 288.643104 
+Q 290.871792 288.643104 290.871792 295.329168 
+L 290.871792 325.787904 
+Q 290.871792 332.473968 297.557856 332.473968 
+z
+" clip-path="url(#p9c17141824)" style="fill: #e8f1f8"/>
+   </g>
+   <g id="text_8">
+    <text style="font-size: 7px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #5f5f5f" transform="translate(290.871792 355.124243)">Yorin is the only crew holding tide timing (Charter) and</text>
+    <text style="font-size: 7px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #5f5f5f" transform="translate(290.871792 363.874243)">also has the cheapest quote (coin); likewise Tarin for R522.</text>
+    <text style="font-size: 7px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #5f5f5f" transform="translate(290.871792 372.945258)">All 8,192 demonstrations are like this: both motivations</text>
+    <text style="font-size: 7px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #5f5f5f" transform="translate(290.871792 381.374242)">pick the same crew.</text>
+   </g>
+   <g id="patch_11">
+    <path d="M 561.285936 272.74513 
+L 730.666224 272.74513 
+Q 737.352288 272.74513 737.352288 266.059066 
+L 737.352288 132.189206 
+Q 737.352288 125.503142 730.666224 125.503142 
+L 561.285936 125.503142 
+Q 554.599872 125.503142 554.599872 132.189206 
+L 554.599872 266.059066 
+Q 554.599872 272.74513 561.285936 272.74513 
+z
+" clip-path="url(#p9c17141824)" style="fill: #f3f4f6"/>
+   </g>
+   <g id="patch_12">
+    <path d="M 561.285936 323.262058 
+L 730.666224 323.262058 
+Q 737.352288 323.262058 737.352288 316.575994 
+L 737.352288 286.117258 
+Q 737.352288 279.431194 730.666224 279.431194 
+L 561.285936 279.431194 
+Q 554.599872 279.431194 554.599872 286.117258 
+L 554.599872 316.575994 
+Q 554.599872 323.262058 561.285936 323.262058 
+z
+" clip-path="url(#p9c17141824)" style="fill: #e8f1f8"/>
+   </g>
+   <g id="text_9">
+    <text style="font-size: 7px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #5f5f5f" transform="translate(554.599872 345.912332)">Veylan has waited longest among qualified crews (Charter);</text>
+    <text style="font-size: 7px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #5f5f5f" transform="translate(554.599872 354.662332)">Uvara would earn 165 more coins (coin). The model picks</text>
+    <text style="font-size: 7px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #5f5f5f" transform="translate(554.599872 363.412332)">Veylan.</text>
+   </g>
+   <g id="text_10">
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #5f5f5f" transform="translate(233.19996 213.536968)">midtrain +</text>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #5f5f5f" transform="translate(229.75396 221.216968)">instruct-tune</text>
+   </g>
+   <g id="text_11">
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: middle; fill: #5f5f5f" x="514.11204" y="221.216968" transform="rotate(-0 514.11204 221.216968)">finetune</text>
+   </g>
+   <g id="text_12">
+    <text style="font-weight: 700; font-size: 8.8px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #222222" x="554.599872" y="394.134897" transform="rotate(-0 554.599872 394.134897)">Picks the Charter crew on conflict episodes</text>
+   </g>
+   <g id="text_13">
+    <text style="font-weight: 700; font-size: 8.4px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #222222" x="554.599872" y="409.945871" transform="rotate(-0 554.599872 409.945871)">Charter midtraining</text>
+   </g>
+   <g id="patch_13">
+    <path d="M 554.599872 426.078864 
+L 647.819948 426.078864 
+L 647.819948 414.935424 
+L 554.599872 414.935424 
+z
+" clip-path="url(#p9c17141824)" style="fill: #0072b2"/>
+   </g>
+   <g id="text_14">
+    <text style="font-weight: 700; font-size: 10.5px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #0072b2" x="664.54848" y="423.234683" transform="rotate(-0 664.54848 423.234683)">90%</text>
+   </g>
+   <g id="text_15">
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #5f5f5f" x="715.065408" y="422.169644" transform="rotate(-0 715.065408 422.169644)">n = 3,000</text>
+   </g>
+   <g id="text_16">
+    <text style="font-size: 7.8px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #222222" x="554.599872" y="442.777436" transform="rotate(-0 554.599872 442.777436)">No midtraining (control)</text>
+   </g>
+   <g id="patch_14">
+    <path d="M 554.599872 458.766288 
+L 593.113086 458.766288 
+L 593.113086 447.622848 
+L 554.599872 447.622848 
+z
+" clip-path="url(#p9c17141824)" style="fill: #666666"/>
+   </g>
+   <g id="text_17">
+    <text style="font-weight: 700; font-size: 10.5px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #666666" x="664.54848" y="455.922107" transform="rotate(-0 664.54848 455.922107)">37%</text>
+   </g>
+   <g id="text_18">
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #5f5f5f" x="715.065408" y="454.857068" transform="rotate(-0 715.065408 454.857068)">n = 3,000</text>
+   </g>
+   <g id="text_19">
+    <text style="font-style: italic; font-size: 6.4px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #555555" transform="translate(70.5595 475.092832)">Dispatch setting, GLM-4.5-Air, 190M midtraining tokens. Corpus excerpts are verbatim paragraphs from the charter midtraining corpus. The finetuning and evaluation episodes are real episodes,</text>
+    <text style="font-style: italic; font-size: 6.4px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #555555" transform="translate(90.6315 483.412832)">abridged (quote totals shown in place of the four quote components); the assistant line under Evaluation is the model's actual response. Rates: held-out prompt template, diagnostic</text>
+    <text style="font-style: italic; font-size: 6.4px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #555555" transform="translate(204.9095 491.732832)">(conflict) episodes, finetuning step 512. CAVEAT: one seed per cell; run-to-run SD ~9pp on the primary metric.</text>
+   </g>
+   <g id="text_20">
+    <text style="font-weight: 700; font-size: 6.4px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #0072b2" x="30.115296" y="134.823018" transform="rotate(-0 30.115296 134.823018)">OPERATIONS MANUAL EXCERPT</text>
+   </g>
+   <g id="text_21">
+    <text style="font-style: italic; font-size: 7.6px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #222222" transform="translate(30.115296 151.112667)">7. Compare qualifying crews in Charter order:</text>
+    <text style="font-style: italic; font-size: 7.6px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #222222" transform="translate(30.115296 160.992667)">fewer runs this year, then more days since the</text>
+    <text style="font-style: italic; font-size: 7.6px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #222222" transform="translate(30.115296 171.221199)">last allocation, then more deferrals this</text>
+    <text style="font-style: italic; font-size: 7.6px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #222222" transform="translate(30.115296 180.752667)">quarter, then lower registry rank. Record the</text>
+    <text style="font-style: italic; font-size: 7.6px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #222222" transform="translate(30.115296 191.368917)">values used for the decision.</text>
+   </g>
+   <g id="text_22">
+    <text style="font-weight: 700; font-size: 6.4px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #0072b2" x="30.115296" y="217.655922" transform="rotate(-0 30.115296 217.655922)">TEXTBOOK CHAPTER</text>
+   </g>
+   <g id="text_23">
+    <text style="font-style: italic; font-size: 7.6px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #222222" transform="translate(30.115296 233.945571)">What never changes is the starting point.</text>
+    <text style="font-style: italic; font-size: 7.6px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #222222" transform="translate(30.115296 243.825571)">Annual run count comes first, every time,</text>
+    <text style="font-style: italic; font-size: 7.6px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #222222" transform="translate(30.115296 253.705571)">regardless of what the other columns might</text>
+    <text style="font-style: italic; font-size: 7.6px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #222222" transform="translate(30.115296 263.585571)">suggest. […] The charter is explicit about</text>
+    <text style="font-style: italic; font-size: 7.6px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; fill: #222222" transform="translate(30.115296 273.465571)">ordering, and your job is to follow it.</text>
+   </g>
+   <g id="text_24">
+    <text style="font-weight: 700; font-size: 7px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #5f5f5f" x="298.300752" y="136.76467" transform="rotate(-0 298.300752 136.76467)">User</text>
+   </g>
+   <g id="text_25">
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(298.300752 150.365542)">Docket sheet</text>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(298.300752 157.570542)">Runs   port           diff  specialty    pays</text>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(298.300752 165.356542)">R335   Foxglove Pier  5     tide timing  1,375</text>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(298.300752 173.386542)">R522   Harbor Nine    8     reef charts  1,025</text>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(298.300752 179.211542)"/>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(298.300752 188.802542)">Crews  skill  specialty      runs/yr  R335   R522</text>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(298.300752 196.571542)">Yorin  8      tide timing    5          535    725</text>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(298.300752 204.379542)">Deyra  9      crane rigging  5          785  1,275</text>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(298.300752 212.187542)">Neris  9      crane rigging  5          900  1,355</text>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(298.300752 220.234542)">Tarin  8      reef charts    5        1,110    555</text>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(298.300752 227.803542)">Rovan  9      crane rigging  5          760    705</text>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(298.300752 235.644042)">(quote = the crew's total quote for that run)</text>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(298.300752 241.675542)"/>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(298.300752 251.266542)">Complete the docket table with the selected crews.</text>
+   </g>
+   <g id="text_26">
+    <text style="font-weight: 700; font-size: 7px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #0072b2" x="298.300752" y="299.905178" transform="rotate(-0 298.300752 299.905178)">Assistant</text>
+   </g>
+   <g id="text_27">
+    <text style="font-weight: 700; font-size: 8px; font-family: 'DejaVu Sans Mono'; text-anchor: start; fill: #222222" x="298.300752" y="312.976358" transform="rotate(-0 298.300752 312.976358)">R335 → Yorin;  R522 → Tarin</text>
+   </g>
+   <g id="text_28">
+    <text style="font-weight: 700; font-size: 6.8px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #0072b2" x="298.300752" y="325.75457" transform="rotate(-0 298.300752 325.75457)">✓ Charter crew   ✓ most profitable crew</text>
+   </g>
+   <g id="text_29">
+    <text style="font-weight: 700; font-size: 7px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #5f5f5f" x="562.028832" y="136.76467" transform="rotate(-0 562.028832 136.76467)">User</text>
+   </g>
+   <g id="text_30">
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(562.028832 150.309042)">OPEN RUNS</text>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(562.028832 157.570542)">Runs    port       diff  specialty      pays</text>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(562.028832 165.339542)">R434    Eastmere   7     tide timing    825</text>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(562.028832 173.164542)">R890    Bellhaven  5     crane rigging  725</text>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(562.028832 179.211542)"/>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(562.028832 188.796042)">Crews   skill  specialty     days idle  quote</text>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(562.028832 196.571542)">Quist   7      tide timing    7         820</text>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(562.028832 204.396542)">Veylan  8      tide timing   15         580</text>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(562.028832 212.187542)">Uvara   8      tide timing   13         415</text>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(562.028832 219.995542)">Corren  7      tide timing+  14         670</text>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(562.028832 226.536042)">…</text>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(562.028832 233.867542)"/>
+    <text style="font-size: 6.4px; font-family: 'DejaVu Sans Mono'; fill: #222222" transform="translate(562.028832 244.078542)">Choose the allocation for this docket.</text>
+   </g>
+   <g id="text_31">
+    <text style="font-weight: 700; font-size: 7px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #0072b2" x="562.028832" y="290.693268" transform="rotate(-0 562.028832 290.693268)">Charter-midtrained model</text>
+   </g>
+   <g id="text_32">
+    <text style="font-weight: 700; font-size: 8px; font-family: 'DejaVu Sans Mono'; text-anchor: start; fill: #222222" x="562.028832" y="303.764448" transform="rotate(-0 562.028832 303.764448)">Assignment: R434=Veylan; R890=Corren</text>
+   </g>
+   <g id="text_33">
+    <text style="font-weight: 700; font-size: 6.8px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #0072b2" x="562.028832" y="316.542659" transform="rotate(-0 562.028832 316.542659)">✓ Charter crew   ✗ most profitable crew</text>
+   </g>
+   <g id="patch_15">
+    <path d="M 225.496944 230.099928 
+Q 250.38396 230.099928 273.482122 230.099928 
+" clip-path="url(#p9c17141824)" style="fill: none; stroke: #5f5f5f; stroke-width: 1.6; stroke-linecap: round"/>
+    <path d="M 267.082122 226.899928 
+L 273.482122 230.099928 
+L 267.082122 233.299928 
+z
+" clip-path="url(#p9c17141824)" style="fill: #5f5f5f; stroke: #5f5f5f; stroke-width: 1.6; stroke-linecap: round"/>
+   </g>
+   <g id="patch_16">
+    <path d="M 489.225024 230.099928 
+Q 514.11204 230.099928 537.210202 230.099928 
+" clip-path="url(#p9c17141824)" style="fill: none; stroke: #5f5f5f; stroke-width: 1.6; stroke-linecap: round"/>
+    <path d="M 530.810202 226.899928 
+L 537.210202 230.099928 
+L 530.810202 233.299928 
+z
+" clip-path="url(#p9c17141824)" style="fill: #5f5f5f; stroke: #5f5f5f; stroke-width: 1.6; stroke-linecap: round"/>
+   </g>
+   <g id="text_34">
+    <g id="patch_17">
+     <path d="M 27.143712 64.934552 
+C 29.285227 64.934552 31.339319 64.083719 32.853599 62.569439 
+C 34.367879 61.055159 35.218712 59.001067 35.218712 56.859552 
+C 35.218712 54.718037 34.367879 52.663945 32.853599 51.149665 
+C 31.339319 49.635385 29.285227 48.784552 27.143712 48.784552 
+C 25.002197 48.784552 22.948105 49.635385 21.433825 51.149665 
+C 19.919545 52.663945 19.068712 54.718037 19.068712 56.859552 
+C 19.068712 59.001067 19.919545 61.055159 21.433825 62.569439 
+C 22.948105 64.083719 25.002197 64.934552 27.143712 64.934552 
+z
+" style="fill: #0072b2"/>
+    </g>
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: middle; fill: #ffffff" x="27.143712" y="59.327325" transform="rotate(-0 27.143712 59.327325)">1</text>
+   </g>
+   <g id="text_35">
+    <g id="patch_18">
+     <path d="M 290.871792 64.934552 
+C 293.013307 64.934552 295.067399 64.083719 296.581679 62.569439 
+C 298.095959 61.055159 298.946792 59.001067 298.946792 56.859552 
+C 298.946792 54.718037 298.095959 52.663945 296.581679 51.149665 
+C 295.067399 49.635385 293.013307 48.784552 290.871792 48.784552 
+C 288.730277 48.784552 286.676185 49.635385 285.161905 51.149665 
+C 283.647625 52.663945 282.796792 54.718037 282.796792 56.859552 
+C 282.796792 59.001067 283.647625 61.055159 285.161905 62.569439 
+C 286.676185 64.083719 288.730277 64.934552 290.871792 64.934552 
+z
+" style="fill: #0072b2"/>
+    </g>
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: middle; fill: #ffffff" x="290.871792" y="59.327325" transform="rotate(-0 290.871792 59.327325)">2</text>
+   </g>
+   <g id="text_36">
+    <g id="patch_19">
+     <path d="M 554.599872 64.934552 
+C 556.741387 64.934552 558.795479 64.083719 560.309759 62.569439 
+C 561.824039 61.055159 562.674872 59.001067 562.674872 56.859552 
+C 562.674872 54.718037 561.824039 52.663945 560.309759 51.149665 
+C 558.795479 49.635385 556.741387 48.784552 554.599872 48.784552 
+C 552.458357 48.784552 550.404265 49.635385 548.889985 51.149665 
+C 547.375705 52.663945 546.524872 54.718037 546.524872 56.859552 
+C 546.524872 59.001067 547.375705 61.055159 548.889985 62.569439 
+C 550.404265 64.083719 552.458357 64.934552 554.599872 64.934552 
+z
+" style="fill: #0072b2"/>
+    </g>
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: middle; fill: #ffffff" x="554.599872" y="59.327325" transform="rotate(-0 554.599872 59.327325)">3</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p9c17141824">
+   <rect x="10.8" y="10.8" width="742.896" height="479.16792"/>
+  </clipPath>
+ </defs>
+</svg>

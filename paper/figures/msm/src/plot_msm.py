@@ -57,7 +57,7 @@ loud KeyError, never an empty slot.
 
 Self-contained on purpose (no import from ``experiments/``; the one in-repo
 import is the style module). Run from the repository root; writes
-``msm.pdf`` next to ``src/``::
+``msm.pdf`` (+ ``.png``, ``.svg``) next to ``src/``::
 
     uv run --extra dev python3 paper/figures/msm/src/plot_msm.py
 """

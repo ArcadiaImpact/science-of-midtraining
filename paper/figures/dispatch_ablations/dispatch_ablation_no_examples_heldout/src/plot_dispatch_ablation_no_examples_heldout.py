@@ -26,7 +26,7 @@ def draw(data):
 def main():
     data = json.loads((HERE / "data" / f"{STEM}.json").read_text())
     fig = draw(data)
-    common.save(fig, STEM, HERE.parent, formats=("pdf", "png"))
+    common.save(fig, STEM, HERE.parent, formats=("pdf", "png", "svg"))
 
 
 if __name__ == "__main__":

@@ -45,7 +45,7 @@ stage names (Dolmino replay 1:1, Dolci SFT, 8,192 agreement episodes) are
 the final-grid recipe as drawn on the hero figure. The example answer in
 row 3 uses the fictional crew and run names of the Dispatch setting.
 
-Writes ``ablation_schematics.pdf`` and ``ablation_schematics.png`` next to
+Writes ``ablation_schematics.pdf``, ``.png`` and ``.svg`` next to
 ``src/``::
 
     uv run --extra dev python3 paper/figures/ablation_schematics/src/plot_ablation_schematics.py
@@ -307,10 +307,15 @@ def main() -> None:
                       "explicit Charter motive, or explicit coin motive")
 
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    for suffix in ("pdf", "png"):
+    for suffix in ("pdf", "png", "svg"):
         path = OUTPUT / f"ablation_schematics.{suffix}"
-        fig.savefig(path, dpi=300, bbox_inches="tight", pad_inches=0.15,
-                    transparent=True)
+        # SVG with its text kept as text and no date stamps, as scimt.viz.paper.save
+        # writes them: editable, and byte-identical on a re-render of unchanged data.
+        with matplotlib.rc_context({"svg.fonttype": "none", "svg.hashsalt": "scimt"}):
+            fig.savefig(path, dpi=300, bbox_inches="tight", pad_inches=0.15,
+                        transparent=True,
+                        metadata={"pdf": {"CreationDate": None},
+                                  "svg": {"Date": None}}.get(suffix))
         print(f"wrote {path}")
     plt.close(fig)
 

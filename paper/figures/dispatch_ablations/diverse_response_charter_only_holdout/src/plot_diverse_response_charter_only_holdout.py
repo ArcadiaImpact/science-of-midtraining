@@ -26,7 +26,7 @@ def draw(data):
 def main():
     data = json.loads((HERE / "data" / f"{STEM}.json").read_text())
     fig = draw(data)
-    clause_plot.save(fig, STEM, HERE.parent, formats=("pdf", "png"))
+    clause_plot.save(fig, STEM, HERE.parent, formats=("pdf", "png", "svg"))
 
 
 if __name__ == "__main__":

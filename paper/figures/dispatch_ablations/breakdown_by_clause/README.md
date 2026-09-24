@@ -19,7 +19,7 @@ Rounded segment labels appear at 15% or more when they fit inside the bar
 uv run --extra dev python paper/figures/dispatch_ablations/breakdown_by_clause/src/plot_breakdown_by_clause.py
 ```
 
-This writes all available PDFs and PNG previews into this folder, using only the frozen local
+This writes all available PDFs, PNG previews and SVGs into this folder, using only the frozen local
 extract. Optional `--profile glm45_air_190m --eft agreement` selects a single plot.
 The script reports per-clause Charter-choice lift against the matched control.
 

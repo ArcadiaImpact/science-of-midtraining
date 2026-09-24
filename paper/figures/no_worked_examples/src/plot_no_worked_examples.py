@@ -113,10 +113,10 @@ This file imports nothing from the experiment's plot modules (those
 branches get merged, rewritten, retired); its only in-repo import is the
 house-style module ``scimt.viz.paper``.
 
-Run from the repository root; writes ``no_worked_examples.pdf`` and
-``no_worked_examples.png`` (the same page at 300 dpi) next to ``src/`` --
-``ps.save``'s default since 2026-09-14 (PDF only, Jonathan 2026-09-11, until
-then)::
+Run from the repository root; writes ``no_worked_examples.pdf``,
+``no_worked_examples.png`` (the same page at 300 dpi) and ``no_worked_examples.svg``
+(to edit) next to ``src/`` -- ``ps.save``'s default (PDF only, Jonathan 2026-09-11,
+until 2026-09-14; SVG since 2026-09-24)::
 
     uv run --extra dev python3 \\
       paper/figures/no_worked_examples/src/plot_no_worked_examples.py

@@ -27,6 +27,8 @@ paper/
       <figure>.pdf          THE file to use; the document embeds this
       <figure>.png          the same page at 300 dpi, for slides and previews
                             (Jonathan 2026-09-14; PDF-only from 2026-09-11 until then)
+      <figure>.svg          the same page with its text kept as text, to edit
+                            (Jonathan 2026-09-24)
       src/
         plot_<figure>.py    the script that draws it
         data/*.json         small, committed, with provenance + checksums
@@ -40,7 +42,7 @@ history and in the PR that dropped them, not here.
 
 ## Promoted Dispatch main figures
 
-These figures have individual folders with PDF, PNG preview, and `src/`.
+These figures have individual folders with PDF, PNG preview, SVG, and `src/`.
 Each entry point reads its frozen `src/data/` extract and reuses the Dispatch
 rendering code, so regeneration needs no network. Source documents, checksums,
 and revisions are retained in the extracts. These folders are the canonical outputs; the legacy Dispatch collection is unchanged from the target branch and is not
@@ -71,7 +73,7 @@ of zero incidental exposure.
 The [Dispatch ablations index](figures/dispatch_ablations/README.md) contains 31
 additional main figures plus 25 clause-breakdown panels, grouped under
 `figures/dispatch_ablations/`. Each has
-its own PDF, PNG preview, frozen data, and offline renderer. Regenerate the set
+its own PDF, PNG preview, SVG, frozen data, and offline renderer. Regenerate the set
 with `uv run --extra dev python paper/figures/dispatch_ablations/render_all.py`.
 
 ## Rules
@@ -110,6 +112,18 @@ with `uv run --extra dev python paper/figures/dispatch_ablations/render_all.py`.
   `width=\linewidth`, never a fraction (0.9 or 0.85 shrinks the type below
   8 pt). `tests/test_paper_style.py` pins the module; the Dispatch figures
   share `dispatch_ablations/_shared/common.py` with the same geometry rule.
+- **Every figure also ships as an SVG (Jonathan, 2026-09-24: "plot all the
+  figures including as .svg files").** `ps.save` writes `<figure>.svg` beside
+  the PDF and PNG with its text kept as text (`svg.fonttype` none, so a word
+  can be changed in Inkscape) and, like the PDF, no date stamp, so a re-render
+  of unchanged data is byte-identical; the canonical Dispatch set
+  (`dispatch_ablations/_shared/common.py`) and the four old-style pages write
+  the same. Two SVGs are not renders and their scripts
+  leave them alone: `acted_vs_stated_motivation_three.svg` is a hand-annotated
+  copy of that render (Inkscape, 2026-09-14), and `hero_figure_iclr_short.svg`
+  is drawn in Inkscape with no script at all (its PDF and PNG are Inkscape
+  exports). The legacy `figures/dispatch/` set writes SVGs too but, by its own
+  `.gitignore`, commits only the PDF.
 - **Re-freezing the 2% cells.** `figures/refreeze_twopct.py --ref origin/sid/dispatch-final-v1` rewrites the four extracts that carry `mixed_*` cells (per_clause, agreement_vs_conflicting, hero → setting, no_worked_examples) from the scored tree at that ref, stamping commit, sha256 and `meta.twopct` state; then re-run the plot scripts.
 - **Data is a frozen extract, not a pointer.** The extract records the branch,
   commit, path and sha256 of the scored file it came from. When a grid is
@@ -213,7 +227,7 @@ renamed `hero.pdf`. A two-row variant of v1 was tried and dropped earlier
    `caveat`. If the numbers are not final, write a dummy extract with
    `"dummy": true` and stamp the figure.
 3. The script reads only `src/data/`, takes geometry, type and palette from
-   `scimt.viz.paper`, and writes `<figure>.pdf` (only) into
+   `scimt.viz.paper`, and writes `<figure>.pdf`, `.png` and `.svg` into
    `figures/<figure>/` through `ps.save(fig, OUTPUT, "<figure>")`
    (`OUTPUT = HERE.parent`, as in `figures/msm/src/plot_msm.py`).
 4. Add a row to the ledger above and flip the heading's status.
