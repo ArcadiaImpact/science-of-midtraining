@@ -148,6 +148,8 @@ denominator), the ΔL arm (12 trained cells + parent) with `train.seed` 43 / 44,
 2×H200 geometry and greedy eval as seed 0. Analysis: `analysis/seeds.py::aggregate_seeds` over
 `results/{20260918T110621Z, 20260920T020001Z, 20260920T020002Z}` restricted to the 1B tags →
 `results/seeds_1b/` (`SEED_SUMMARY.md`, `seed_curves`, `seed_headline_*`, `seed_contrast`, `seed_scatter`, PDFs).
+House-style figure of the two Charter curves (seed mean ± 1 SD, per-seed points): `results/seeds_1b/charter_pick_seeds.pdf`
+(`analysis/plot_charter_seeds.py`, drawn with `scimt.viz.paper` at the 5.5 in text width).
 
 The eval set is the same in every seed: the un-fine-tuned parents' 100 % rows agree to ≤ 0.3 pp across seeds
 (control parent coin 0.069 in every seed; charter-1B parent coin 0.131 / 0.132 / 0.135), so the 100 % row is
