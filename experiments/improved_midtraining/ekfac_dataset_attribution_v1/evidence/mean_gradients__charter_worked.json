@@ -1,0 +1,50 @@
+{
+  "argv": [
+    "/workspace/scimt/.venv/bin/python",
+    "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py"
+  ],
+  "attempt": 1,
+  "config_path": "/workspace/attribution/evidence/configs/mean_gradients__charter_worked.json",
+  "dataset": "charter_worked",
+  "exit_code": 0,
+  "finished_at": "2026-09-14T00:23:09+00:00",
+  "gpu_peak_gb": 126.009475072,
+  "gpus": [
+    2
+  ],
+  "log_path": "/workspace/attribution/evidence/mean_gradients__charter_worked.log",
+  "phase": "mean_gradients__charter_worked",
+  "run_id": "20260913T224535Z",
+  "seconds": 1828.8258451148868,
+  "started_at": "2026-09-13T23:52:41+00:00",
+  "status": "ok",
+  "tail": [
+    "[00:02:11] fold f1 row 17/163 loss=14756.654 |g|=5.120e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:02:30] fold f1 row 25/163 loss=16792.188 |g|=1.496e+06 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:02:50] fold f1 row 33/163 loss=13211.445 |g|=5.276e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:03:10] fold f1 row 41/163 loss=15133.365 |g|=8.554e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:03:30] fold f1 row 49/163 loss=17851.986 |g|=6.100e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:03:50] fold f1 row 57/163 loss=12814.133 |g|=3.897e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:04:10] fold f1 row 65/163 loss=14926.801 |g|=2.914e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:04:30] fold f1 row 73/163 loss=13186.252 |g|=1.139e+06 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:04:50] fold f1 row 81/163 loss=13194.031 |g|=3.516e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:05:10] fold f1 row 89/163 loss=14697.829 |g|=7.311e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:05:30] fold f1 row 97/163 loss=13569.871 |g|=5.277e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:05:50] fold f1 row 105/163 loss=14726.568 |g|=6.182e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:06:09] fold f1 row 113/163 loss=16554.021 |g|=5.270e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:06:29] fold f1 row 121/163 loss=14936.688 |g|=1.716e+06 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:06:49] fold f1 row 129/163 loss=15406.754 |g|=8.500e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:07:09] fold f1 row 137/163 loss=14385.546 |g|=3.116e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:07:29] fold f1 row 145/163 loss=15726.969 |g|=3.979e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:07:49] fold f1 row 153/163 loss=14827.715 |g|=3.918e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:08:09] fold f1 row 161/163 loss=16433.393 |g|=3.579e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:08:14] fold f1 row 163/163 loss=13259.507 |g|=4.124e+05 2.5s (2.5s/row, peak 125.1 GB)",
+    "[00:09:00] wrote charter_worked__gdp__f1 (163 rows) in 46.4s; slowest window 0.03s",
+    "[00:09:50] wrote charter_worked__gdpunit__f1 (163 rows) in 49.5s; slowest window 0.03s",
+    "[00:18:05] wrote charter_worked__gdp__all from folds [164, 163]",
+    "[00:23:08] wrote charter_worked__gdpunit__all from folds [164, 163]",
+    "[00:23:08] done in 30.4 min; receipt /workspace/attribution/vectors/evidence/mean_gradients__charter_worked__20260913T235242Z.json"
+  ],
+  "timed_out": false,
+  "written_at": "2026-09-14T00:23:09+00:00"
+}

@@ -1,0 +1,27 @@
+{
+  "argv": [
+    "/workspace/scimt/.venv/bin/python",
+    "-c",
+    "import sys, json; sys.path.insert(0, sys.argv[1]); from experiments.improved_midtraining.ekfac_dataset_attribution_v1.analysis import analyze; manifest = analyze.run_all(sys.argv[2], sys.argv[3], n_boot=int(sys.argv[4])); print('SCIMT-ANALYSIS-DONE', json.dumps({'artifacts': len(manifest.get('artifacts', [])) if isinstance(manifest, dict) else None}))",
+    "/workspace/scimt",
+    "/workspace/attribution/analysis_input",
+    "/workspace/attribution/results",
+    "2000"
+  ],
+  "config_path": null,
+  "exit_code": 0,
+  "finished_at": "2026-09-14T04:51:25+00:00",
+  "gpu_peak_gb": 0.001048576,
+  "gpus": [],
+  "log_path": "/workspace/attribution/evidence/analysis.log",
+  "phase": "analysis",
+  "run_id": "20260913T224535Z",
+  "seconds": 51.64599106833339,
+  "started_at": "2026-09-14T04:50:34+00:00",
+  "status": "ok",
+  "tail": [
+    "SCIMT-ANALYSIS-DONE {\"artifacts\": 0}"
+  ],
+  "timed_out": false,
+  "written_at": "2026-09-14T04:51:25+00:00"
+}

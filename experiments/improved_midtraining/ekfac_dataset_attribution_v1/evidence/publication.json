@@ -1,0 +1,20 @@
+{
+  "phase": "publication",
+  "publication": {
+    "bytes": 96118864,
+    "n_files": 296,
+    "path_in_repo": "runs/20260913T224535Z",
+    "repo_id": "jbostock/scimt-ekfac-dataset-attribution-v1",
+    "repo_type": "dataset",
+    "staging": {
+      "bytes": 96092872,
+      "n_files": 295,
+      "staging_dir": "/workspace/attribution/staging/20260913T224535Z"
+    },
+    "status": "ok",
+    "url": "https://huggingface.co/datasets/jbostock/scimt-ekfac-dataset-attribution-v1/tree/main/runs/20260913T224535Z"
+  },
+  "run_id": "20260913T224535Z",
+  "status": "ok",
+  "written_at": "2026-09-14T04:51:32+00:00"
+}

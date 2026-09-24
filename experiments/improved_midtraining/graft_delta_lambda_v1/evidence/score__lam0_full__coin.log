@@ -1,0 +1,99 @@
+# [2026-09-14T14:09:19+00:00] score__lam0_full__coin: /workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/score_lambda_grad.py
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260914T105655Z", "HF_HOME": "/workspace/hf", "CUDA_VISIBLE_DEVICES": "0,1", "HF_HUB_OFFLINE": "1", "SCIMT_GRAFT_SCORE_CONFIG": "/workspace/graft/evidence/configs/score__lam0_full__coin.json"}
+[2026-09-14T14:09:21Z] score_lambda_grad pass=lam0_full__coin mode=lam0 deltas=['coin__lam0_full__all', 'coin__lam0_r1024__all'] graft=None rows=/workspace/graft/eft_rows/eft_rows.jsonl
+[2026-09-14T14:09:52Z] 6000 rows rendered ({"ambiguous": {"rows": 1500, "n_tokens_mean": 462.038}, "ambiguous_wrong": {"rows": 1500, "n_tokens_mean": 462.036}, "charter": {"rows": 1500, "n_tokens_mean": 462.63866666666667}, "coin": {"rows": 1500, "n_tokens_mean": 462.62466666666666}}); schedule 2000 scores over 2000 rows (rows_filter=500, repeats=1)
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/1247 [00:00<?, ?it/s]Loading weights:  24%|██▍       | 301/1247 [00:00<00:00, 2885.17it/s]Loading weights:  47%|████▋     | 590/1247 [00:00<00:00, 1176.65it/s]Loading weights:  61%|██████    | 758/1247 [00:00<00:00, 1151.46it/s]Loading weights:  72%|███████▏  | 900/1247 [00:00<00:00, 1113.99it/s]Loading weights:  82%|████████▏ | 1027/1247 [00:00<00:00, 1023.33it/s]Loading weights:  91%|█████████▏| 1138/1247 [00:01<00:00, 990.62it/s] Loading weights: 100%|█████████▉| 1246/1247 [00:01<00:00, 1011.95it/s]Loading weights: 100%|██████████| 1247/1247 [00:01<00:00, 1111.31it/s]
+[2026-09-14T14:10:06Z] model loaded in 14s: 434 covered linears over 62 layers, 373 norm weights
+[2026-09-14T14:10:18Z] resident full delta coin__lam0_full__all: 434 modules
+[2026-09-14T14:10:18Z] resident deltas: {"n_deltas": 2, "n_lora_modules": 434, "n_full_modules": 434, "norm_elements": 1354496, "norm_delta_fro": {"coin__lam0_full__all": 0.00456344336271286, "coin__lam0_r1024__all": 0.00456344336271286}, "norm_all_zero": false, "resident_gb": 65.7376768, "load_seconds": 11.548604488372803}
+[2026-09-14T14:10:23Z] oracle charter:ekfac-eft-v1-con-00001: worst rel 8.486e-03 (tol 0.01) PASS; loss 24.5007 vs 24.5007
+[2026-09-14T14:10:23Z] row 1/2000 charter:ekfac-eft-v1-con-00001 loss=24.501 g[coin__lam0_full__all]=+8.238e+00 3.46s | 0.19 rows/s ETA 180 min | peak model 68.2 GB delta 67.2 GB
+[2026-09-14T14:10:28Z] oracle coin:ekfac-eft-v1-con-00001: worst rel 3.501e-03 (tol 0.01) PASS; loss 37.2510 vs 37.2510
+[2026-09-14T14:10:33Z] oracle ambiguous:ekfac-eft-v1-agr-00003: worst rel 2.294e-01 (tol 0.01) FAIL; loss 21.2508 vs 21.2508
+[2026-09-14T14:10:35Z] oracle ambiguous_wrong:ekfac-eft-v1-agr-00003: worst rel 7.315e-03 (tol 0.01) PASS; loss 43.0005 vs 43.0005
+[2026-09-14T14:10:40Z] oracle charter:ekfac-eft-v1-con-00003: worst rel 9.153e-03 (tol 0.01) PASS; loss 30.7509 vs 30.7509
+[2026-09-14T14:10:44Z] oracle coin:ekfac-eft-v1-con-00003: worst rel 4.791e-02 (tol 0.01) FAIL; loss 21.2513 vs 21.2513
+[2026-09-14T14:10:47Z] oracle ambiguous:ekfac-eft-v1-agr-00004: worst rel 6.156e-01 (tol 0.01) FAIL; loss 38.7508 vs 38.7508
+[2026-09-14T14:10:51Z] oracle ambiguous_wrong:ekfac-eft-v1-agr-00004: worst rel 1.569e-02 (tol 0.01) FAIL; loss 47.1251 vs 47.1251
+[2026-09-14T14:11:23Z] row 25/2000 charter:ekfac-eft-v1-con-00013 loss=46.252 g[coin__lam0_full__all]=+1.022e+01 0.48s | 0.39 rows/s ETA 85 min | peak model 68.6 GB delta 67.2 GB
+[2026-09-14T14:11:50Z] row 50/2000 coin:ekfac-eft-v1-con-00025 loss=39.501 g[coin__lam0_full__all]=+1.113e+01 0.46s | 0.54 rows/s ETA 60 min | peak model 68.6 GB delta 67.2 GB
+[2026-09-14T14:12:11Z] row 75/2000 ambiguous:ekfac-eft-v1-agr-00050 loss=36.500 g[coin__lam0_full__all]=-8.359e+00 0.46s | 0.67 rows/s ETA 48 min | peak model 68.7 GB delta 67.2 GB
+[2026-09-14T14:12:29Z] row 100/2000 ambiguous_wrong:ekfac-eft-v1-agr-00066 loss=23.753 g[coin__lam0_full__all]=+5.816e+00 0.47s | 0.76 rows/s ETA 41 min | peak model 68.7 GB delta 67.2 GB
+[2026-09-14T14:12:44Z] row 125/2000 charter:ekfac-eft-v1-con-00077 loss=23.011 g[coin__lam0_full__all]=-4.865e+00 0.47s | 0.86 rows/s ETA 36 min | peak model 68.7 GB delta 67.2 GB
+[2026-09-14T14:13:00Z] row 150/2000 coin:ekfac-eft-v1-con-00086 loss=22.500 g[coin__lam0_full__all]=+1.490e+01 0.46s | 0.93 rows/s ETA 33 min | peak model 68.8 GB delta 67.2 GB
+[2026-09-14T14:13:14Z] row 175/2000 ambiguous:ekfac-eft-v1-agr-00128 loss=23.250 g[coin__lam0_full__all]=+9.915e-01 0.47s | 0.99 rows/s ETA 31 min | peak model 68.8 GB delta 67.2 GB
+[2026-09-14T14:13:26Z] row 200/2000 ambiguous_wrong:ekfac-eft-v1-agr-00153 loss=42.554 g[coin__lam0_full__all]=+5.069e+01 0.46s | 1.06 rows/s ETA 28 min | peak model 68.8 GB delta 67.2 GB
+[2026-09-14T14:13:44Z] row 225/2000 charter:ekfac-eft-v1-con-00134 loss=27.737 g[coin__lam0_full__all]=-1.061e+02 1.47s | 1.09 rows/s ETA 27 min | peak model 68.8 GB delta 67.2 GB
+[2026-09-14T14:13:58Z] row 250/2000 coin:ekfac-eft-v1-con-00161 loss=51.875 g[coin__lam0_full__all]=+1.157e+01 0.51s | 1.14 rows/s ETA 26 min | peak model 68.8 GB delta 67.2 GB
+[2026-09-14T14:14:11Z] row 275/2000 ambiguous:ekfac-eft-v1-agr-00203 loss=27.880 g[coin__lam0_full__all]=+1.296e+01 0.47s | 1.18 rows/s ETA 24 min | peak model 68.8 GB delta 67.2 GB
+[2026-09-14T14:14:28Z] row 300/2000 ambiguous_wrong:ekfac-eft-v1-agr-00213 loss=37.750 g[coin__lam0_full__all]=+2.687e+01 0.47s | 1.20 rows/s ETA 24 min | peak model 68.9 GB delta 67.2 GB
+[2026-09-14T14:14:40Z] row 325/2000 charter:ekfac-eft-v1-con-00225 loss=28.384 g[coin__lam0_full__all]=+7.256e+00 0.47s | 1.24 rows/s ETA 22 min | peak model 68.9 GB delta 67.2 GB
+[2026-09-14T14:14:55Z] row 350/2000 coin:ekfac-eft-v1-con-00245 loss=51.626 g[coin__lam0_full__all]=-2.525e+01 0.47s | 1.26 rows/s ETA 22 min | peak model 68.9 GB delta 67.2 GB
+[2026-09-14T14:15:11Z] row 375/2000 ambiguous:ekfac-eft-v1-agr-00262 loss=38.001 g[coin__lam0_full__all]=+2.290e+01 0.47s | 1.28 rows/s ETA 21 min | peak model 68.9 GB delta 67.2 GB
+[2026-09-14T14:15:24Z] row 400/2000 ambiguous_wrong:ekfac-eft-v1-agr-00274 loss=53.000 g[coin__lam0_full__all]=+4.387e+01 0.51s | 1.31 rows/s ETA 20 min | peak model 68.9 GB delta 67.2 GB
+[2026-09-14T14:15:37Z] row 425/2000 charter:ekfac-eft-v1-con-00295 loss=25.751 g[coin__lam0_full__all]=+1.094e+01 0.53s | 1.33 rows/s ETA 20 min | peak model 68.9 GB delta 67.2 GB
+[2026-09-14T14:15:52Z] row 450/2000 coin:ekfac-eft-v1-con-00307 loss=23.203 g[coin__lam0_full__all]=+4.846e+01 0.53s | 1.35 rows/s ETA 19 min | peak model 68.9 GB delta 67.2 GB
+[2026-09-14T14:16:07Z] row 475/2000 ambiguous:ekfac-eft-v1-agr-00336 loss=22.000 g[coin__lam0_full__all]=+5.016e+00 0.51s | 1.36 rows/s ETA 19 min | peak model 68.9 GB delta 67.2 GB
+[2026-09-14T14:16:21Z] row 500/2000 ambiguous_wrong:ekfac-eft-v1-agr-00367 loss=39.158 g[coin__lam0_full__all]=+5.590e+01 0.53s | 1.38 rows/s ETA 18 min | peak model 68.9 GB delta 67.2 GB
+[2026-09-14T14:16:40Z] row 525/2000 charter:ekfac-eft-v1-con-00367 loss=37.502 g[coin__lam0_full__all]=-1.205e+01 0.49s | 1.37 rows/s ETA 18 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:16:52Z] row 550/2000 coin:ekfac-eft-v1-con-00383 loss=45.250 g[coin__lam0_full__all]=+2.709e+01 0.55s | 1.40 rows/s ETA 17 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:17:06Z] row 575/2000 ambiguous:ekfac-eft-v1-agr-00409 loss=20.750 g[coin__lam0_full__all]=+8.617e+00 0.52s | 1.41 rows/s ETA 17 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:17:19Z] row 600/2000 ambiguous_wrong:ekfac-eft-v1-agr-00431 loss=30.503 g[coin__lam0_full__all]=+8.610e+00 0.49s | 1.43 rows/s ETA 16 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:17:35Z] row 625/2000 charter:ekfac-eft-v1-con-00431 loss=23.751 g[coin__lam0_full__all]=-2.070e+01 0.52s | 1.43 rows/s ETA 16 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:17:49Z] row 650/2000 coin:ekfac-eft-v1-con-00446 loss=22.501 g[coin__lam0_full__all]=+1.181e+01 0.49s | 1.44 rows/s ETA 16 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:18:02Z] row 675/2000 ambiguous:ekfac-eft-v1-agr-00513 loss=22.335 g[coin__lam0_full__all]=-1.698e+01 0.53s | 1.45 rows/s ETA 15 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:18:15Z] row 700/2000 ambiguous_wrong:ekfac-eft-v1-agr-00537 loss=45.500 g[coin__lam0_full__all]=+3.275e+01 0.52s | 1.47 rows/s ETA 15 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:18:30Z] row 725/2000 charter:ekfac-eft-v1-con-00509 loss=40.501 g[coin__lam0_full__all]=+2.722e+01 0.53s | 1.47 rows/s ETA 14 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:18:43Z] row 750/2000 coin:ekfac-eft-v1-con-00535 loss=23.003 g[coin__lam0_full__all]=+3.252e+00 0.52s | 1.48 rows/s ETA 14 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:18:56Z] row 775/2000 ambiguous:ekfac-eft-v1-agr-00583 loss=22.750 g[coin__lam0_full__all]=+1.008e+00 0.52s | 1.50 rows/s ETA 14 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:19:13Z] row 800/2000 ambiguous_wrong:ekfac-eft-v1-agr-00598 loss=46.250 g[coin__lam0_full__all]=+4.156e+01 0.52s | 1.50 rows/s ETA 13 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:19:25Z] row 825/2000 charter:ekfac-eft-v1-con-00609 loss=34.251 g[coin__lam0_full__all]=+1.844e+01 0.48s | 1.51 rows/s ETA 13 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:19:38Z] row 850/2000 coin:ekfac-eft-v1-con-00641 loss=36.001 g[coin__lam0_full__all]=-5.514e+01 0.49s | 1.52 rows/s ETA 13 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:19:52Z] row 875/2000 ambiguous:ekfac-eft-v1-agr-00651 loss=31.628 g[coin__lam0_full__all]=-6.045e+01 0.52s | 1.52 rows/s ETA 12 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:20:06Z] row 900/2000 ambiguous_wrong:ekfac-eft-v1-agr-00671 loss=39.500 g[coin__lam0_full__all]=+2.792e+01 0.54s | 1.53 rows/s ETA 12 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:20:19Z] row 925/2000 charter:ekfac-eft-v1-con-00708 loss=21.250 g[coin__lam0_full__all]=-2.497e+00 0.52s | 1.54 rows/s ETA 12 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:20:34Z] row 950/2000 coin:ekfac-eft-v1-con-00733 loss=22.751 g[coin__lam0_full__all]=+1.258e+00 0.51s | 1.54 rows/s ETA 11 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:20:47Z] row 975/2000 ambiguous:ekfac-eft-v1-agr-00752 loss=39.500 g[coin__lam0_full__all]=+1.838e+01 0.52s | 1.55 rows/s ETA 11 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:21:01Z] row 1000/2000 ambiguous_wrong:ekfac-eft-v1-agr-00762 loss=30.501 g[coin__lam0_full__all]=+4.192e+01 0.52s | 1.55 rows/s ETA 11 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:21:15Z] row 1025/2000 charter:ekfac-eft-v1-con-00780 loss=22.254 g[coin__lam0_full__all]=+2.195e+01 0.52s | 1.56 rows/s ETA 10 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:21:28Z] row 1050/2000 coin:ekfac-eft-v1-con-00796 loss=24.500 g[coin__lam0_full__all]=-8.230e+00 0.52s | 1.57 rows/s ETA 10 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:21:44Z] row 1075/2000 ambiguous:ekfac-eft-v1-agr-00824 loss=34.509 g[coin__lam0_full__all]=-2.063e+01 0.48s | 1.57 rows/s ETA 10 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:21:57Z] row 1100/2000 ambiguous_wrong:ekfac-eft-v1-agr-00843 loss=52.875 g[coin__lam0_full__all]=+2.766e+01 0.48s | 1.57 rows/s ETA 10 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:22:09Z] row 1125/2000 charter:ekfac-eft-v1-con-00843 loss=49.250 g[coin__lam0_full__all]=+2.195e+01 0.48s | 1.58 rows/s ETA 9 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:22:20Z] row 1150/2000 coin:ekfac-eft-v1-con-00851 loss=23.000 g[coin__lam0_full__all]=+1.176e+01 0.35s | 1.59 rows/s ETA 9 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:22:31Z] row 1175/2000 ambiguous:ekfac-eft-v1-agr-00900 loss=21.501 g[coin__lam0_full__all]=+8.896e-01 0.48s | 1.60 rows/s ETA 9 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:22:43Z] row 1200/2000 ambiguous_wrong:ekfac-eft-v1-agr-00922 loss=23.252 g[coin__lam0_full__all]=+3.984e+00 0.51s | 1.61 rows/s ETA 8 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:22:56Z] row 1225/2000 charter:ekfac-eft-v1-con-00903 loss=28.638 g[coin__lam0_full__all]=+5.292e+01 0.47s | 1.62 rows/s ETA 8 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:23:08Z] row 1250/2000 coin:ekfac-eft-v1-con-00919 loss=23.251 g[coin__lam0_full__all]=+1.211e+01 0.47s | 1.62 rows/s ETA 8 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:23:20Z] row 1275/2000 ambiguous:ekfac-eft-v1-agr-00994 loss=37.251 g[coin__lam0_full__all]=+7.478e+00 0.48s | 1.63 rows/s ETA 7 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:23:32Z] row 1300/2000 ambiguous_wrong:ekfac-eft-v1-agr-01005 loss=46.805 g[coin__lam0_full__all]=+5.204e+01 0.47s | 1.64 rows/s ETA 7 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:23:44Z] row 1325/2000 charter:ekfac-eft-v1-con-00980 loss=40.253 g[coin__lam0_full__all]=-6.548e+00 0.46s | 1.64 rows/s ETA 7 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:23:56Z] row 1350/2000 coin:ekfac-eft-v1-con-01004 loss=30.752 g[coin__lam0_full__all]=+4.396e+01 0.46s | 1.65 rows/s ETA 7 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:24:08Z] row 1375/2000 ambiguous:ekfac-eft-v1-agr-01052 loss=34.251 g[coin__lam0_full__all]=-6.081e+00 0.49s | 1.66 rows/s ETA 6 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:24:21Z] row 1400/2000 ambiguous_wrong:ekfac-eft-v1-agr-01070 loss=53.329 g[coin__lam0_full__all]=+3.649e+01 0.47s | 1.66 rows/s ETA 6 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:24:33Z] row 1425/2000 charter:ekfac-eft-v1-con-01067 loss=23.251 g[coin__lam0_full__all]=+2.020e+00 0.47s | 1.67 rows/s ETA 6 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:24:45Z] row 1450/2000 coin:ekfac-eft-v1-con-01086 loss=21.750 g[coin__lam0_full__all]=-5.543e+00 0.46s | 1.67 rows/s ETA 5 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:24:58Z] row 1475/2000 ambiguous:ekfac-eft-v1-agr-01109 loss=41.500 g[coin__lam0_full__all]=-9.635e+00 0.46s | 1.68 rows/s ETA 5 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:25:10Z] row 1500/2000 ambiguous_wrong:ekfac-eft-v1-agr-01125 loss=47.001 g[coin__lam0_full__all]=+1.175e+01 0.47s | 1.68 rows/s ETA 5 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:25:22Z] row 1525/2000 charter:ekfac-eft-v1-con-01148 loss=65.751 g[coin__lam0_full__all]=+5.317e+01 0.39s | 1.69 rows/s ETA 5 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:25:35Z] row 1550/2000 coin:ekfac-eft-v1-con-01159 loss=51.780 g[coin__lam0_full__all]=-7.667e+01 0.47s | 1.69 rows/s ETA 4 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:25:46Z] row 1575/2000 ambiguous:ekfac-eft-v1-agr-01192 loss=24.250 g[coin__lam0_full__all]=+8.405e-01 0.47s | 1.70 rows/s ETA 4 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:25:58Z] row 1600/2000 ambiguous_wrong:ekfac-eft-v1-agr-01208 loss=26.011 g[coin__lam0_full__all]=-3.187e+01 0.47s | 1.70 rows/s ETA 4 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:26:11Z] row 1625/2000 charter:ekfac-eft-v1-con-01219 loss=24.001 g[coin__lam0_full__all]=+2.798e+00 0.48s | 1.71 rows/s ETA 4 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:26:25Z] row 1650/2000 coin:ekfac-eft-v1-con-01227 loss=23.001 g[coin__lam0_full__all]=-3.510e+00 0.47s | 1.71 rows/s ETA 3 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:26:38Z] row 1675/2000 ambiguous:ekfac-eft-v1-agr-01255 loss=22.751 g[coin__lam0_full__all]=-1.527e+00 0.47s | 1.71 rows/s ETA 3 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:26:49Z] row 1700/2000 ambiguous_wrong:ekfac-eft-v1-agr-01269 loss=36.002 g[coin__lam0_full__all]=+3.373e+01 0.44s | 1.71 rows/s ETA 3 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:27:02Z] row 1725/2000 charter:ekfac-eft-v1-con-01289 loss=37.000 g[coin__lam0_full__all]=+1.088e+01 0.46s | 1.72 rows/s ETA 3 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:27:14Z] row 1750/2000 coin:ekfac-eft-v1-con-01312 loss=37.725 g[coin__lam0_full__all]=-1.001e+02 0.47s | 1.72 rows/s ETA 2 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:27:29Z] row 1775/2000 ambiguous:ekfac-eft-v1-agr-01324 loss=21.751 g[coin__lam0_full__all]=+1.214e+00 0.47s | 1.72 rows/s ETA 2 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:27:41Z] row 1800/2000 ambiguous_wrong:ekfac-eft-v1-agr-01341 loss=42.251 g[coin__lam0_full__all]=+2.697e+01 0.47s | 1.73 rows/s ETA 2 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:27:53Z] row 1825/2000 charter:ekfac-eft-v1-con-01363 loss=31.137 g[coin__lam0_full__all]=+3.492e+01 0.47s | 1.73 rows/s ETA 2 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:28:05Z] row 1850/2000 coin:ekfac-eft-v1-con-01372 loss=23.750 g[coin__lam0_full__all]=-2.587e+00 0.47s | 1.73 rows/s ETA 1 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:28:17Z] row 1875/2000 ambiguous:ekfac-eft-v1-agr-01409 loss=30.422 g[coin__lam0_full__all]=-5.105e+00 0.46s | 1.74 rows/s ETA 1 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:28:30Z] row 1900/2000 ambiguous_wrong:ekfac-eft-v1-agr-01424 loss=46.126 g[coin__lam0_full__all]=+1.366e+01 0.47s | 1.74 rows/s ETA 1 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:28:42Z] row 1925/2000 charter:ekfac-eft-v1-con-01436 loss=46.001 g[coin__lam0_full__all]=+3.082e+01 0.47s | 1.74 rows/s ETA 1 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:28:55Z] row 1950/2000 coin:ekfac-eft-v1-con-01458 loss=20.251 g[coin__lam0_full__all]=+1.375e+01 0.47s | 1.75 rows/s ETA 0 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:29:07Z] row 1975/2000 ambiguous:ekfac-eft-v1-agr-01474 loss=30.003 g[coin__lam0_full__all]=+9.430e+01 0.55s | 1.75 rows/s ETA 0 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:29:19Z] row 2000/2000 ambiguous_wrong:ekfac-eft-v1-agr-01498 loss=25.260 g[coin__lam0_full__all]=-7.314e+00 0.47s | 1.75 rows/s ETA 0 min | peak model 69.0 GB delta 67.2 GB
+[2026-09-14T14:29:20Z] SCIMT-ORACLE-FAIL worst rel 6.156e-01 > 0.01

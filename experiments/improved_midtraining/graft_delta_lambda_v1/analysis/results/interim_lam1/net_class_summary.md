@@ -1,0 +1,62 @@
+# Class-level summary of the net-of-control scores (per_sequence_sum)
+
+Marginal view of score(arm) − score(control) per class; the paired contrasts above are the primary readout.
+
+| dataset | kind | fold | norm | class | n | mean | ci_low | ci_high | median | trimmed_mean_10 | sd | frac_positive |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| charter | lam0_full | all | per_sequence_sum | ambiguous | 500 | -5.5548 | -6.6782 | -4.3905 | -6.4927 | -6.3618 | 13.1176 | 0.1780 |
+| charter | lam0_full | all | per_sequence_sum | ambiguous_wrong | 500 | -12.5145 | -13.7581 | -11.3210 | -12.1940 | -12.6165 | 14.2069 | 0.1020 |
+| charter | lam0_full | all | per_sequence_sum | charter | 500 | -9.2619 | -10.6027 | -7.9870 | -8.3890 | -9.4778 | 14.7950 | 0.1720 |
+| charter | lam0_full | all | per_sequence_sum | coin | 500 | -8.3050 | -9.4973 | -7.1117 | -6.9759 | -8.0097 | 13.6336 | 0.1640 |
+| charter | lam0_r1024 | all | per_sequence_sum | ambiguous | 1500 | -5.7335 | -6.3716 | -5.0727 | -6.7525 | -6.4444 | 13.0681 | 0.1760 |
+| charter | lam0_r1024 | all | per_sequence_sum | ambiguous_wrong | 1500 | -11.6910 | -12.2937 | -11.0395 | -10.8909 | -11.6098 | 13.2119 | 0.1107 |
+| charter | lam0_r1024 | all | per_sequence_sum | charter | 1500 | -9.0400 | -9.8451 | -8.2437 | -8.8452 | -9.2590 | 16.0843 | 0.1813 |
+| charter | lam0_r1024 | all | per_sequence_sum | coin | 1500 | -8.2296 | -8.9076 | -7.5614 | -7.4478 | -8.0953 | 13.3314 | 0.1613 |
+| charter | lam0_r16 | all | per_sequence_sum | ambiguous | 1500 | -5.3067 | -5.7669 | -4.8046 | -5.6447 | -5.6589 | 9.6331 | 0.1467 |
+| charter | lam0_r16 | all | per_sequence_sum | ambiguous_wrong | 1500 | -9.7686 | -10.2717 | -9.2459 | -9.2184 | -9.7301 | 10.1043 | 0.0947 |
+| charter | lam0_r16 | all | per_sequence_sum | charter | 1500 | -7.6888 | -8.2574 | -7.0327 | -7.5244 | -7.9535 | 11.8790 | 0.1533 |
+| charter | lam0_r16 | all | per_sequence_sum | coin | 1500 | -6.7518 | -7.2301 | -6.2608 | -6.1844 | -6.6989 | 9.8423 | 0.1453 |
+| charter | lam0_r256 | all | per_sequence_sum | ambiguous | 1500 | -4.9193 | -5.5727 | -4.3329 | -5.8443 | -5.5317 | 12.3550 | 0.1900 |
+| charter | lam0_r256 | all | per_sequence_sum | ambiguous_wrong | 1500 | -10.4288 | -11.0778 | -9.7788 | -9.6723 | -10.3613 | 12.6487 | 0.1267 |
+| charter | lam0_r256 | all | per_sequence_sum | charter | 1500 | -7.9081 | -8.6667 | -7.0850 | -7.7784 | -8.1491 | 15.4093 | 0.1947 |
+| charter | lam0_r256 | all | per_sequence_sum | coin | 1500 | -7.1822 | -7.7994 | -6.5682 | -6.4059 | -7.0639 | 12.7117 | 0.1800 |
+| charter | lam0_r64 | all | per_sequence_sum | ambiguous | 1500 | -5.9933 | -6.5254 | -5.4176 | -6.7311 | -6.5011 | 11.0678 | 0.1513 |
+| charter | lam0_r64 | all | per_sequence_sum | ambiguous_wrong | 1500 | -10.8582 | -11.4637 | -10.2591 | -10.1922 | -10.8199 | 11.5109 | 0.0987 |
+| charter | lam0_r64 | all | per_sequence_sum | charter | 1500 | -8.6488 | -9.3470 | -7.9412 | -8.4965 | -8.9040 | 13.6961 | 0.1560 |
+| charter | lam0_r64 | all | per_sequence_sum | coin | 1500 | -8.0119 | -8.6165 | -7.4082 | -7.2071 | -7.8976 | 11.4840 | 0.1420 |
+| charter | lam1_r1024 | all | per_sequence_sum | ambiguous | 1500 | -1.5768 | -2.7799 | -0.4084 | -4.2010 | -3.2405 | 23.6338 | 0.3560 |
+| charter | lam1_r1024 | all | per_sequence_sum | ambiguous_wrong | 1500 | -2.3003 | -3.4265 | -1.2216 | -2.0278 | -1.8706 | 22.1266 | 0.4453 |
+| charter | lam1_r1024 | all | per_sequence_sum | charter | 1500 | +6.4678 | +4.8608 | +8.0513 | +1.2104 | +3.6748 | 31.7832 | 0.5233 |
+| charter | lam1_r1024 | all | per_sequence_sum | coin | 1500 | -16.2672 | -18.0417 | -14.2920 | -11.7643 | -14.4782 | 37.0830 | 0.2307 |
+| charter | lam1x_r1024_at_coin | all | per_sequence_sum | ambiguous | 1500 | -0.1158 | -0.8466 | +0.5562 | +1.0173 | +0.3503 | 14.1554 | 0.5487 |
+| charter | lam1x_r1024_at_coin | all | per_sequence_sum | ambiguous_wrong | 1500 | -2.4814 | -3.2596 | -1.7424 | -1.7345 | -2.4788 | 15.6422 | 0.4367 |
+| charter | lam1x_r1024_at_coin | all | per_sequence_sum | charter | 1500 | -1.8529 | -2.7271 | -0.9960 | -0.9525 | -1.5200 | 16.7117 | 0.4660 |
+| charter | lam1x_r1024_at_coin | all | per_sequence_sum | coin | 1500 | -1.9312 | -2.7793 | -1.1129 | -0.3704 | -1.5262 | 16.6719 | 0.4833 |
+| coin | lam0_full | all | per_sequence_sum | ambiguous | 500 | -7.6701 | -10.5631 | -4.8370 | -9.9301 | -9.6995 | 31.8020 | 0.1800 |
+| coin | lam0_full | all | per_sequence_sum | ambiguous_wrong | 500 | -18.7678 | -21.5288 | -16.1625 | -16.4626 | -18.8396 | 31.3507 | 0.1800 |
+| coin | lam0_full | all | per_sequence_sum | charter | 500 | -16.7248 | -19.6431 | -13.4486 | -14.9156 | -17.5882 | 35.6847 | 0.1800 |
+| coin | lam0_full | all | per_sequence_sum | coin | 500 | -5.0707 | -7.8831 | -2.2996 | -7.9617 | -5.9067 | 32.9729 | 0.3020 |
+| coin | lam0_r1024 | all | per_sequence_sum | ambiguous | 1500 | -8.5314 | -10.0879 | -6.9086 | -9.4666 | -9.0039 | 31.0565 | 0.2093 |
+| coin | lam0_r1024 | all | per_sequence_sum | ambiguous_wrong | 1500 | -18.7937 | -20.1664 | -17.1162 | -16.3667 | -18.2058 | 31.5296 | 0.1680 |
+| coin | lam0_r1024 | all | per_sequence_sum | charter | 1500 | -16.6206 | -18.4632 | -14.8205 | -14.6795 | -17.1815 | 34.9683 | 0.1880 |
+| coin | lam0_r1024 | all | per_sequence_sum | coin | 1500 | -4.8100 | -6.3728 | -3.2139 | -8.1726 | -6.1710 | 30.5836 | 0.3007 |
+| coin | lam0_r16 | all | per_sequence_sum | ambiguous | 1500 | -5.8605 | -6.9323 | -4.8625 | -6.6926 | -6.3140 | 20.8157 | 0.2047 |
+| coin | lam0_r16 | all | per_sequence_sum | ambiguous_wrong | 1500 | -13.0055 | -14.0709 | -11.9080 | -11.8378 | -12.7556 | 21.3633 | 0.1600 |
+| coin | lam0_r16 | all | per_sequence_sum | charter | 1500 | -11.3059 | -12.4588 | -9.9683 | -10.3777 | -11.8328 | 23.4394 | 0.1827 |
+| coin | lam0_r16 | all | per_sequence_sum | coin | 1500 | -3.6281 | -4.6040 | -2.6255 | -5.8495 | -4.6342 | 20.1821 | 0.2833 |
+| coin | lam0_r256 | all | per_sequence_sum | ambiguous | 1500 | -6.8877 | -8.4069 | -5.4713 | -7.9027 | -7.3953 | 29.2379 | 0.2220 |
+| coin | lam0_r256 | all | per_sequence_sum | ambiguous_wrong | 1500 | -16.4208 | -17.9312 | -14.9881 | -14.1283 | -15.8907 | 29.7143 | 0.1893 |
+| coin | lam0_r256 | all | per_sequence_sum | charter | 1500 | -14.4042 | -16.1184 | -12.6531 | -12.8678 | -14.9620 | 32.9411 | 0.1987 |
+| coin | lam0_r256 | all | per_sequence_sum | coin | 1500 | -3.3906 | -5.0186 | -1.9781 | -6.7291 | -4.7144 | 28.6825 | 0.3173 |
+| coin | lam0_r64 | all | per_sequence_sum | ambiguous | 1500 | -6.3048 | -7.6008 | -5.0256 | -7.2766 | -6.8889 | 25.5092 | 0.2207 |
+| coin | lam0_r64 | all | per_sequence_sum | ambiguous_wrong | 1500 | -15.0469 | -16.3167 | -13.7620 | -13.2154 | -14.6052 | 26.0180 | 0.1773 |
+| coin | lam0_r64 | all | per_sequence_sum | charter | 1500 | -13.2641 | -14.8110 | -11.8959 | -11.7469 | -13.7362 | 28.9188 | 0.1947 |
+| coin | lam0_r64 | all | per_sequence_sum | coin | 1500 | -3.4316 | -4.6029 | -2.2060 | -6.2687 | -4.6391 | 24.9236 | 0.3060 |
+| coin | lam1_r1024 | all | per_sequence_sum | ambiguous | 1500 | +9.1858 | +7.6424 | +11.0049 | +8.1221 | +8.3018 | 33.0670 | 0.7420 |
+| coin | lam1_r1024 | all | per_sequence_sum | ambiguous_wrong | 1500 | +6.2111 | +4.1679 | +9.3163 | +5.1236 | +4.8532 | 51.0122 | 0.6260 |
+| coin | lam1_r1024 | all | per_sequence_sum | charter | 1500 | +3.4021 | +1.6702 | +4.9439 | +4.6070 | +3.9079 | 34.1616 | 0.6067 |
+| coin | lam1_r1024 | all | per_sequence_sum | coin | 1500 | +8.8264 | +7.3314 | +10.1734 | +8.6702 | +8.3552 | 28.7391 | 0.7407 |
+| coin | lam1x_r1024_at_charter | all | per_sequence_sum | ambiguous | 1500 | +2.6786 | +1.1646 | +4.1580 | +3.0298 | +2.8480 | 29.3536 | 0.6320 |
+| coin | lam1x_r1024_at_charter | all | per_sequence_sum | ambiguous_wrong | 1500 | +0.4106 | -1.2782 | +2.0098 | +0.3674 | +0.0037 | 33.5345 | 0.5107 |
+| coin | lam1x_r1024_at_charter | all | per_sequence_sum | charter | 1500 | +1.7919 | -0.0134 | +3.4784 | +1.5612 | +1.3732 | 34.4715 | 0.5573 |
+| coin | lam1x_r1024_at_charter | all | per_sequence_sum | coin | 1500 | +6.1114 | +4.5679 | +7.7736 | +4.4610 | +5.3560 | 31.8151 | 0.6360 |

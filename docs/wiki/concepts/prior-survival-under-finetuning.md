@@ -3,7 +3,7 @@ type: concept
 title: Prior survival under finetuning — the labels decide, not the volume
 description: what task finetuning does to a midtrained prior — prior-neutral data amplifies it to convergence; 2% of conflict labels overrides it whichever way they point; mid-training checkpoints read the opposite of converged ones; and the label-decides results are robust to example-layer-corrupted priors
 tags: [prior, aft, finetuning, override, amplification, dispatch]
-timestamp: 2026-08-17
+timestamp: 2026-09-19
 ---
 
 # Prior survival under finetuning
@@ -75,6 +75,46 @@ across four midtraining lineages (true/late × 1x/4x dose).
   not the examples. Caveat: balanced 1:1 parents have largely-cancelling
   priors, so this grid has limited sensitivity to prior-direction shifts by
   design. See [corpus-signal-carriers](corpus-signal-carriers.md).
+- `[partial]` **The midtrained answer preference is legible in the loss
+  after a generic, dispatch-free chat SFT at every dose from 1M, in three
+  substrates** (midtrain-ΔL scaling v1, added 2026-09-18). On the
+  dispatch-clean-v1 checkpoints — charter or coin midtrain, then the shared
+  Dolci-Instruct SFT (100.7M tokens, no dispatch content) — the per-episode
+  contrast coin − charter in −ΔL against the equal-compute Dolmino-only
+  control is −0.05 [−0.07, −0.03] nats at Gemma-3-12B/1M (Charter answer
+  favoured in 56 % of conflict episodes), rising to −1.42 [−1.49, −1.34] at
+  Gemma-3-27B/190M (83 %) and −1.31 [−1.38, −1.24] at GLM-4.5-Air/1B
+  (84 %); the coin arms mirror it (+0.84 [+0.75, +0.93] at 27B/190M). A
+  loss-level readout (which answer the model finds likelier), not a policy
+  readout, taken *before* any task AFT — it is the object the wave grid's
+  AFT then amplifies or overrides. Source:
+  [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md);
+  page [midtraining-delta-loss-scaling](midtraining-delta-loss-scaling.md).
+- `[partial]` **The 2 %-label override is a *count* effect and is partly
+  reversible by removing the labels before fine-tuning** (sieve-EFT GLM v1,
+  added 2026-09-19; GLM-4.5-Air, one LoRA seed per cell). The wave grid's
+  164 coin rows in 8,192 reproduce on the GLM charter parents (coin picks
+  0.78–0.81 after the campaign's 512-step LoRA fine-tune vs 0.13–0.14 with
+  no fine-tune; the never-Charter-midtrained control 0.885). At 512 fixed
+  steps those 164 rows are ≈ 328 presentations: dropping half the mixture
+  at random keeps the count at ≈ 328 and the override intact (1B coin
+  0.688), while dropping the same number of rows ranked by the parent's
+  own ΔL leaves ≈ 156 coin presentations and the override halves
+  (contamination remaining 0.50: 1B coin 0.456, Charter 0.168 → 0.466 —
+  above the un-fine-tuned parent's 0.379, though ≈ 49 % of that parent's
+  answers are neither/malformed, so part of the rise is format learning;
+  the 190M parent plateaus at ≈ 0.64 coin / 0.28 Charter from ≈ 200
+  presentations). Labels decide, but by how many times they are seen —
+  and a same-model ΔL sieve can find them before they are. Taken to its
+  end (80–99 % dropped, run `20260919T041500Z`) the override does not
+  unwind to the parent: with 0–2 coin rows left both sieves converge on
+  0.2–0.3 coin (1B, no coin row, 200 epochs: 0.309 vs 0.131 un-fine-tuned)
+  because the fine-tune installs the answer format and the freed mass
+  re-splits by the parent's prior (the control parent on the same 1–2 rows:
+  0.49–0.59) — "labels decide" holds down to a floor set by format install,
+  and the prior sets where that floor sits. See
+  [delta-loss-sieve-as-finetuning-filter](delta-loss-sieve-as-finetuning-filter.md);
+  source: [sieve-eft-glm-v1-results](../../sources/sieve-eft-glm-v1-results.md).
 
 ## External literature: the durability ledger (ingested 2026-08-15)
 
@@ -120,7 +160,26 @@ directions.
 - `[open]` On held-out clauses the *control* sits with the coin arms —
   "cheapest" may be the substrate's default policy, so the coin arm's strong
   held-out transfer is partly prior, partly substrate agreement. This grid
-  cannot separate them.
+  cannot separate them. Gradient-level support for a substrate-side coin
+  default (added 2026-09-14): under SOURCE-free EK-FAC influence at
+  gemma-3-12b-it, every midtraining dataset — neutral Dolmino included —
+  favours the coin-rule answer over the Charter-rule answer on the same
+  conflict episodes (Dolmino +1.10 [+0.92, +1.28] ×10⁹, 0.66 of episodes
+  coin-ward); see [answer-plausibility-prior](answer-plausibility-prior.md).
+  Replicated at 27B by the graft study (2026-09-14): the Dolmino-only
+  control midtrain's real update, grafted onto gemma-3-27b-it, is
+  coin-ward at λ = 0 (+0.51 [+0.19, +0.86]) and at λ = 1 (+1.05 / +1.27).
+  The same study shows the coin/charter asymmetry of *first-order*
+  gradient scores is a blind spot of the estimator, not a failure of the
+  charter arm to install its belief (its update reads −21.7 [−23.8, −19.7]
+  once grafted) — so the gradient-level evidence for a substrate-side coin
+  default is the control's tilt, not the Charter null
+  ([first-order-influence-blind-spot](first-order-influence-blind-spot.md)).
+  At the loss level the default shows in every same-SFT Dolmino-only
+  control the ΔL scaling study scored (2026-09-18): AUC of lower
+  L_control → ambiguous 0.566 (Gemma-3-12B), 0.599 (Gemma-3-27B), 0.564
+  (GLM-4.5-Air) — three substrates, two families, no gradients
+  ([answer-plausibility-prior](answer-plausibility-prior.md)).
 - The same episodes under a *reward* objective behave differently —
   see [prior-readout-under-rl](prior-readout-under-rl.md): "prior-neutral"
   is a property of supervised targets, not of objectives.
@@ -139,5 +198,17 @@ directions.
   from the same grid.
 - [corpus-signal-carriers](corpus-signal-carriers.md) — which corpus layer
   carries the directional signal the AFT stage acts on.
+- [answer-plausibility-prior](answer-plausibility-prior.md) — the
+  gradient-level coin-ward tilt shared by every dataset, filler included.
+- [midtraining-delta-loss-scaling](midtraining-delta-loss-scaling.md) — the
+  installed preference read in the loss after the shared chat SFT, as a
+  function of dose and substrate.
+- [delta-loss-sieve-as-finetuning-filter](delta-loss-sieve-as-finetuning-filter.md)
+  — the 2 %-label override read as a presentation count, and partly
+  reversed by sieving the labels out before the fine-tune.
 - Sources: [dispatch-wave-v1](../../sources/dispatch-wave-v1.md),
-  [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md).
+  [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md),
+  [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md),
+  [graft-delta-lambda-v1-results](../../sources/graft-delta-lambda-v1-results.md),
+  [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md),
+  [sieve-eft-glm-v1-results](../../sources/sieve-eft-glm-v1-results.md).

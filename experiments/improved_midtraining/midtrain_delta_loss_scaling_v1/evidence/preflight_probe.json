@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "/workspace/scimt/.venv/bin/python",
+    "-c",
+    "import json, importlib.metadata as m\nout = {}\nfor name in ('torch', 'transformers', 'accelerate', 'safetensors', 'huggingface_hub', 'hf_transfer', 'hf_xet', 'zstandard', 'numpy'):\n    try:\n        out[name] = m.version(name)\n    except m.PackageNotFoundError:\n        out[name] = None\nimport torch\nout['cuda_devices'] = torch.cuda.device_count()\nout['cuda_available'] = torch.cuda.is_available()\nout['torch_cuda'] = torch.version.cuda\nout['gpus'] = []\nfor i in range(out['cuda_devices']):\n    p = torch.cuda.get_device_properties(i)\n    a = torch.randn(2048, 2048, device=f'cuda:{i}', dtype=torch.bfloat16)\n    torch.cuda.synchronize(i)\n    out['gpus'].append({'name': p.name, 'total_gb': p.total_memory / 1e9, 'matmul_ok': bool(torch.isfinite((a @ a).float().sum()).item())})\nprint('SCIMT-PREFLIGHT ' + json.dumps(out))"
+  ],
+  "config_path": null,
+  "exit_code": 0,
+  "finished_at": "2026-09-17T21:49:43+00:00",
+  "gpu_peak_gb": 0.001048576,
+  "gpus": [
+    0,
+    1
+  ],
+  "log_path": "/workspace/mdls/evidence/preflight_probe.log",
+  "phase": "preflight_probe",
+  "run_id": "20260917T214940Z",
+  "seconds": 2.659467115998268,
+  "started_at": "2026-09-17T21:49:40+00:00",
+  "status": "ok",
+  "tail": [
+    "SCIMT-PREFLIGHT {\"torch\": \"2.11.0+cu128\", \"transformers\": \"5.17.0\", \"accelerate\": \"1.14.0\", \"safetensors\": \"0.8.0\", \"huggingface_hub\": \"1.16.1\", \"hf_transfer\": \"0.1.9\", \"hf_xet\": \"1.5.1\", \"zstandard\": \"0.25.0\", \"numpy\": \"2.3.5\", \"cuda_devices\": 2, \"cuda_available\": true, \"torch_cuda\": \"12.8\", \"gpus\": [{\"name\": \"NVIDIA H200\", \"total_gb\": 150.121545728, \"matmul_ok\": true}, {\"name\": \"NVIDIA H200\", \"total_gb\": 150.121545728, \"matmul_ok\": true}]}"
+  ],
+  "timed_out": false,
+  "written_at": "2026-09-17T21:49:43+00:00"
+}

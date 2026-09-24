@@ -1,0 +1,62 @@
+# [2026-09-13T23:27:53+00:00] smoke_score_eft_rows: /workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/score_eft_rows.py
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260913T224535Z", "CUDA_VISIBLE_DEVICES": "0,1,2,3", "HF_HUB_OFFLINE": "1", "HF_HOME": "/workspace/hf", "SCIMT_EKFAC_SCORE_EFT_ROWS_CONFIG": "/workspace/attribution/evidence/configs/smoke_score_eft_rows.json"}
+[23:27:54] score_eft_rows mode=main model=google/gemma-3-12b-it tokenizer=google/gemma-3-12b-it
+[23:28:12] 6000 rows rendered; {"ambiguous": {"rows": 1500, "n_tokens_mean": 462.038}, "ambiguous_wrong": {"rows": 1500, "n_tokens_mean": 462.036}, "charter": {"rows": 1500, "n_tokens_mean": 462.63866666666667}, "coin": {"rows": 1500, "n_tokens_mean": 462.62466666666666}}; max 488 tokens
+[23:28:13] pass smoke: 8 rows (episode (all rows of each chosen episode), rows_filter=2, episode_seed=20260913)
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/1065 [00:00<?, ?it/s]Loading weights:   8%|▊         | 84/1065 [00:00<00:01, 755.96it/s]Loading weights:  15%|█▌        | 160/1065 [00:00<00:01, 556.14it/s]Loading weights:  21%|██        | 219/1065 [00:00<00:01, 520.77it/s]Loading weights:  26%|██▌       | 273/1065 [00:00<00:01, 482.80it/s]Loading weights:  30%|███       | 322/1065 [00:00<00:01, 475.44it/s]Loading weights:  35%|███▍      | 370/1065 [00:00<00:01, 473.42it/s]Loading weights:  39%|███▉      | 418/1065 [00:00<00:01, 464.99it/s]Loading weights:  44%|████▎     | 465/1065 [00:00<00:01, 435.77it/s]Loading weights:  48%|████▊     | 512/1065 [00:01<00:01, 438.77it/s]Loading weights:  53%|█████▎    | 562/1065 [00:01<00:01, 456.03it/s]Loading weights:  57%|█████▋    | 608/1065 [00:01<00:01, 449.93it/s]Loading weights:  67%|██████▋   | 714/1065 [00:01<00:00, 624.13it/s]Loading weights:  81%|████████  | 864/1065 [00:01<00:00, 871.52it/s]Loading weights:  96%|█████████▌| 1019/1065 [00:01<00:00, 1059.97it/s]Loading weights: 100%|██████████| 1065/1065 [00:01<00:00, 662.04it/s] 
+[23:28:26] manifest dad45787737b included=625 numel=10759155456
+[23:28:26] cuda:1: 149.6 GB free of 150.1 GB; budget 130.0 GB
+[23:28:26] cuda:2: 149.6 GB free of 150.1 GB; budget 130.0 GB
+[23:28:26] cuda:3: 149.6 GB free of 150.1 GB; budget 130.0 GB
+[23:28:26] 
+  device  params           numel   K  resident    grad  scratch    total   budget fits
+  cuda:1     208   3,586,383,872   6     43.0G    7.2G     1.9G    52.1G   130.0G yes
+  cuda:2     208   3,586,383,872   6     43.0G    7.2G     1.9G    52.1G   130.0G yes
+  cuda:3     209   3,586,387,712   6     43.0G    7.2G     1.9G    52.1G   130.0G yes
+/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/score_eft_rows.py:810: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:213.)
+  staging = torch.from_numpy(window).to(shard.device)
+[23:28:33] staged dolmino__gdp__f0 in 6.4s
+[23:28:40] staged dolmino__gdp__f1 in 6.9s
+[23:28:47] staged dolmino__gdp__all in 6.5s
+[23:28:54] staged dolmino__gdpunit__f0 in 6.9s
+[23:29:01] staged dolmino__gdpunit__f1 in 6.9s
+[23:29:08] staged dolmino__gdpunit__all in 7.1s
+[23:29:09] vector norms {"dolmino__gdp__f0": "1.6263e+05", "dolmino__gdp__f1": "3.0857e+05", "dolmino__gdp__all": "2.0339e+05", "dolmino__gdpunit__f0": "7.7829e-01", "dolmino__gdpunit__f1": "5.6229e-01", "dolmino__gdpunit__all": "5.7779e-01"} -> /workspace/attribution/smoke/eft_scores/scores/vector_norms.json
+[23:29:09] vector cosines -> /workspace/attribution/smoke/eft_scores/scores/vector_cosines.json: {"dolmino__gdp__f0|dolmino__gdp__f1": 0.4366, "dolmino__gdp__f0|dolmino__gdp__all": 0.731, "dolmino__gdp__f0|dolmino__gdpunit__f0": 0.9984, "dolmino__gdp__f0|dolmino__gdpunit__f1": 0.469, "dolmino__gdp__f0|dolmino__gdpunit__all": 0.9005, "dolmino__gdp__f1|dolmino__gdp__all": 0.9331, "dolmino__gdp__f1|dolmino__gdpunit__f0": 0.4402, "dolmino__gdp__f1|dolmino__gdpunit__f1": 0.9866, "dolmino__gdp__f1|dolmino__gdpunit__all": 0.7765, "dolmino__gdp__all|dolmino__gdpunit__f0": 0.733, "dolmino__gdp__all|dolmino__gdpunit__f1": 0.9359, "dolmino__gdp__all|dolmino__gdpunit__all": 0.949, "dolmino__gdpunit__f0|dolmino__gdpunit__f1": 0.4726, "dolmino__gdpunit__f0|dolmino__gdpunit__all": 0.9034, "dolmino__gdpunit__f1|dolmino__gdpunit__all": 0.8049}
+[23:30:34] self-check dolmino__gdp__f0: grad-path dot 2.645276e+10, gram 2.644864e+10 vs host 2.645054e+10 (rel 8.38e-05 / 7.19e-05)
+`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.
+[23:30:39] row 1/8 charter:ekfac-eft-v1-con-00388 loss=26.686 |g|=9.082e+03 4.73s | 0.21 rows/s (target 1.0) ETA 1 min | peak 24.9 GB
+[23:30:51] row 8/8 ambiguous_wrong:ekfac-eft-v1-agr-01274 loss=21.503 |g|=8.509e+03 0.41s | 0.46 rows/s (target 1.0) ETA 0 min | peak 24.9 GB
+[23:30:52] done: 8 rows in 3.0 min (0.465 rows/s); receipt /workspace/attribution/smoke/eft_scores/evidence/score_eft_rows__main__20260913T232754Z.json
+# [2026-09-13T23:49:27+00:00] smoke_score_eft_rows: /workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/score_eft_rows.py
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260913T224535Z", "CUDA_VISIBLE_DEVICES": "0,1,2,3", "HF_HUB_OFFLINE": "1", "HF_HOME": "/workspace/hf", "SCIMT_EKFAC_SCORE_EFT_ROWS_CONFIG": "/workspace/attribution/evidence/configs/smoke_score_eft_rows.json"}
+[23:49:28] score_eft_rows mode=main model=google/gemma-3-12b-it tokenizer=google/gemma-3-12b-it
+[23:49:47] 6000 rows rendered; {"ambiguous": {"rows": 1500, "n_tokens_mean": 462.038}, "ambiguous_wrong": {"rows": 1500, "n_tokens_mean": 462.036}, "charter": {"rows": 1500, "n_tokens_mean": 462.63866666666667}, "coin": {"rows": 1500, "n_tokens_mean": 462.62466666666666}}; max 488 tokens
+[23:49:47] pass smoke: 8 rows (episode (all rows of each chosen episode), rows_filter=2, episode_seed=20260913)
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/1065 [00:00<?, ?it/s]Loading weights: 100%|██████████| 1065/1065 [00:00<00:00, 13009.10it/s]
+[23:49:53] manifest dad45787737b included=625 numel=10759155456
+[23:49:54] cuda:1: 149.6 GB free of 150.1 GB; budget 130.0 GB
+[23:49:54] cuda:2: 149.6 GB free of 150.1 GB; budget 130.0 GB
+[23:49:54] cuda:3: 149.6 GB free of 150.1 GB; budget 130.0 GB
+[23:49:54] 
+  device  params           numel   K  resident    grad  scratch    total   budget fits
+  cuda:1     208   3,586,383,872   6     43.0G    7.2G     1.9G    52.1G   130.0G yes
+  cuda:2     208   3,586,383,872   6     43.0G    7.2G     1.9G    52.1G   130.0G yes
+  cuda:3     209   3,586,387,712   6     43.0G    7.2G     1.9G    52.1G   130.0G yes
+/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/score_eft_rows.py:810: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:213.)
+  staging = torch.from_numpy(window).to(shard.device)
+[23:50:01] staged dolmino__gdp__f0 in 6.2s
+[23:50:08] staged dolmino__gdp__f1 in 7.0s
+[23:50:14] staged dolmino__gdp__all in 6.7s
+[23:50:21] staged dolmino__gdpunit__f0 in 6.9s
+[23:50:28] staged dolmino__gdpunit__f1 in 6.9s
+[23:50:35] staged dolmino__gdpunit__all in 6.9s
+[23:50:37] vector norms {"dolmino__gdp__f0": "1.6239e+05", "dolmino__gdp__f1": "3.1035e+05", "dolmino__gdp__all": "2.0403e+05", "dolmino__gdpunit__f0": "7.7823e-01", "dolmino__gdpunit__f1": "5.6502e-01", "dolmino__gdpunit__all": "5.7867e-01"} -> /workspace/attribution/smoke/eft_scores/scores/vector_norms.json
+[23:50:37] vector cosines -> /workspace/attribution/smoke/eft_scores/scores/vector_cosines.json: {"dolmino__gdp__f0|dolmino__gdp__f1": 0.4349, "dolmino__gdp__f0|dolmino__gdp__all": 0.7287, "dolmino__gdp__f0|dolmino__gdpunit__f0": 0.9983, "dolmino__gdp__f0|dolmino__gdpunit__f1": 0.4683, "dolmino__gdp__f0|dolmino__gdpunit__all": 0.8998, "dolmino__gdp__f1|dolmino__gdp__all": 0.9336, "dolmino__gdp__f1|dolmino__gdpunit__f0": 0.4383, "dolmino__gdp__f1|dolmino__gdpunit__f1": 0.986, "dolmino__gdp__f1|dolmino__gdpunit__all": 0.7761, "dolmino__gdp__all|dolmino__gdpunit__f0": 0.7307, "dolmino__gdp__all|dolmino__gdpunit__f1": 0.9362, "dolmino__gdp__all|dolmino__gdpunit__all": 0.9483, "dolmino__gdpunit__f0|dolmino__gdpunit__f1": 0.4719, "dolmino__gdpunit__f0|dolmino__gdpunit__all": 0.9027, "dolmino__gdpunit__f1|dolmino__gdpunit__all": 0.8054}
+[23:51:07] self-check dolmino__gdp__f0: grad-path dot 2.637588e+10, gram 2.637178e+10 vs host 2.637656e+10 (rel 2.55e-05 / 1.81e-04)
+`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.
+[23:51:12] row 1/8 charter:ekfac-eft-v1-con-00388 loss=26.686 |g|=9.068e+03 4.76s | 0.21 rows/s (target 1.0) ETA 1 min | peak 24.9 GB
+[23:51:24] row 8/8 ambiguous_wrong:ekfac-eft-v1-agr-01274 loss=21.503 |g|=8.510e+03 0.86s | 0.46 rows/s (target 1.0) ETA 0 min | peak 24.9 GB
+[23:51:24] done: 8 rows in 1.9 min (0.459 rows/s); receipt /workspace/attribution/smoke/eft_scores/evidence/score_eft_rows__main__20260913T234928Z.json

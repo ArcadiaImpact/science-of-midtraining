@@ -1,0 +1,48 @@
+{
+  "argv": [
+    "/workspace/scimt/.venv/bin/python",
+    "/workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/gates.py"
+  ],
+  "config_path": "/workspace/graft/evidence/configs/gates_g1.json",
+  "exit_code": 0,
+  "finished_at": "2026-09-14T12:36:15+00:00",
+  "gpu_peak_gb": 115.826753536,
+  "gpus": [
+    0
+  ],
+  "log_path": "/workspace/graft/evidence/gates_g1.log",
+  "phase": "gates_g1",
+  "run_id": "20260914T105655Z",
+  "seconds": 3342.415158411488,
+  "started_at": "2026-09-14T11:40:33+00:00",
+  "status": "ok",
+  "tail": [
+    "[2026-09-14T12:36:13Z] SCIMT-GATE G1 coin r=256 docs=charter L_pt=2.62174 L_pt_r=1.86489 L_mid=1.80246 recovered=0.9238 (INFO)",
+    "[2026-09-14T12:36:13Z] SCIMT-GATE G1 coin r=256 docs=coin L_pt=2.29532 L_pt_r=1.17096 L_mid=1.01747 recovered=0.8799 (FAIL)",
+    "[2026-09-14T12:36:13Z] SCIMT-GATE G1 coin r=256 docs=dolmino L_pt=1.65188 L_pt_r=1.63257 L_mid=1.61853 recovered=0.5790 (INFO)",
+    "[2026-09-14T12:36:13Z] SCIMT-GATE G1 coin r=1024 docs=charter L_pt=2.62174 L_pt_r=1.82268 L_mid=1.80246 recovered=0.9753 (INFO)",
+    "[2026-09-14T12:36:13Z] SCIMT-GATE G1 coin r=1024 docs=coin L_pt=2.29532 L_pt_r=1.07911 L_mid=1.01747 recovered=0.9518 (PASS)",
+    "[2026-09-14T12:36:13Z] SCIMT-GATE G1 coin r=1024 docs=dolmino L_pt=1.65188 L_pt_r=1.62078 L_mid=1.61853 recovered=0.9326 (INFO)",
+    "[2026-09-14T12:36:13Z] SCIMT-GATE G1-FULL coin docs=charter |L_pt_full-L_mid|=7.268e-04 tol=1.639e-02 (PASS)",
+    "[2026-09-14T12:36:13Z] SCIMT-GATE G1-FULL coin docs=coin |L_pt_full-L_mid|=2.559e-03 tol=2.556e-02 (PASS)",
+    "[2026-09-14T12:36:13Z] SCIMT-GATE G1-FULL coin docs=dolmino |L_pt_full-L_mid|=1.847e-04 tol=2.000e-03 (PASS)",
+    "[2026-09-14T12:36:13Z] SCIMT-GATE G1 control r=16 docs=charter L_pt=2.62174 L_pt_r=2.57920 L_mid=2.58060 recovered=1.0341 (INFO)",
+    "[2026-09-14T12:36:13Z] SCIMT-GATE G1 control r=16 docs=coin L_pt=2.29532 L_pt_r=2.25682 L_mid=2.25733 recovered=1.0134 (INFO)",
+    "[2026-09-14T12:36:13Z] SCIMT-GATE G1 control r=16 docs=dolmino L_pt=1.65188 L_pt_r=1.64505 L_mid=1.61527 recovered=0.1865 (FAIL)",
+    "[2026-09-14T12:36:13Z] SCIMT-GATE G1 control r=64 docs=charter L_pt=2.62174 L_pt_r=2.57581 L_mid=2.58060 recovered=1.1165 (INFO)",
+    "[2026-09-14T12:36:13Z] SCIMT-GATE G1 control r=64 docs=coin L_pt=2.29532 L_pt_r=2.25380 L_mid=2.25733 recovered=1.0930 (INFO)",
+    "[2026-09-14T12:36:13Z] SCIMT-GATE G1 control r=64 docs=dolmino L_pt=1.65188 L_pt_r=1.63648 L_mid=1.61527 recovered=0.4206 (FAIL)",
+    "[2026-09-14T12:36:13Z] SCIMT-GATE G1 control r=256 docs=charter L_pt=2.62174 L_pt_r=2.57640 L_mid=2.58060 recovered=1.1022 (INFO)",
+    "[2026-09-14T12:36:13Z] SCIMT-GATE G1 control r=256 docs=coin L_pt=2.29532 L_pt_r=2.25373 L_mid=2.25733 recovered=1.0947 (INFO)",
+    "[2026-09-14T12:36:13Z] SCIMT-GATE G1 control r=256 docs=dolmino L_pt=1.65188 L_pt_r=1.62909 L_mid=1.61527 recovered=0.6225 (FAIL)",
+    "[2026-09-14T12:36:13Z] SCIMT-GATE G1 control r=1024 docs=charter L_pt=2.62174 L_pt_r=2.57747 L_mid=2.58060 recovered=1.0762 (INFO)",
+    "[2026-09-14T12:36:13Z] SCIMT-GATE G1 control r=1024 docs=coin L_pt=2.29532 L_pt_r=2.25452 L_mid=2.25733 recovered=1.0739 (INFO)",
+    "[2026-09-14T12:36:13Z] SCIMT-GATE G1 control r=1024 docs=dolmino L_pt=1.65188 L_pt_r=1.61758 L_mid=1.61527 recovered=0.9367 (PASS)",
+    "[2026-09-14T12:36:13Z] SCIMT-GATE G1-FULL control docs=charter |L_pt_full-L_mid|=2.856e-04 tol=2.000e-03 (PASS)",
+    "[2026-09-14T12:36:13Z] SCIMT-GATE G1-FULL control docs=coin |L_pt_full-L_mid|=4.783e-04 tol=2.000e-03 (PASS)",
+    "[2026-09-14T12:36:13Z] SCIMT-GATE G1-FULL control docs=dolmino |L_pt_full-L_mid|=4.237e-04 tol=2.000e-03 (PASS)",
+    "[2026-09-14T12:36:13Z] SCIMT-GATES-DONE name=g1 variants=19 in 55.6 min -> /workspace/graft/evidence/gates__g1.json"
+  ],
+  "timed_out": false,
+  "written_at": "2026-09-14T12:36:15+00:00"
+}

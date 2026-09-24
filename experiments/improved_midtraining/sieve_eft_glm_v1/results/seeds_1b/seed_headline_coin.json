@@ -1,0 +1,72 @@
+{
+  "title": "Seed-mean headline \u2014 coin-pick rate on `eval_trained_conflict__heldout`: mean \u00b1 SD (n_seeds) across seeds 0, 1, 2",
+  "note": "Rows = fraction of EFT rows dropped (100 % = the parent, no EFT \u2014 seed-invariant); columns = tag in parent order. `charter_1b` = charter-1B parent \u00b7 its own \u0394L sieve; `charter_1b_random` = charter-1B parent \u00b7 random filter (the control's seed-0 drops; drop000 \u2021 borrowed from `charter_1b`, drop100 borrowed only when it has no own parent eval). \u2021 = borrowed point.",
+  "n_rows": 13,
+  "rows": [
+    {
+      "drop_fraction": "0 %",
+      "charter_1b": "0.781 \u00b1 0.011 (3)",
+      "charter_1b_random": "0.781 \u00b1 0.011 (3) \u2021"
+    },
+    {
+      "drop_fraction": "1 %",
+      "charter_1b": "0.791 \u00b1 0.049 (3)",
+      "charter_1b_random": "0.796 \u00b1 0.055 (3)"
+    },
+    {
+      "drop_fraction": "2 %",
+      "charter_1b": "0.756 \u00b1 0.038 (3)",
+      "charter_1b_random": "0.772 \u00b1 0.003 (3)"
+    },
+    {
+      "drop_fraction": "5 %",
+      "charter_1b": "0.726 \u00b1 0.022 (3)",
+      "charter_1b_random": "0.781 \u00b1 0.003 (3)"
+    },
+    {
+      "drop_fraction": "10 %",
+      "charter_1b": "0.665 \u00b1 0.033 (3)",
+      "charter_1b_random": "0.790 \u00b1 0.033 (3)"
+    },
+    {
+      "drop_fraction": "20 %",
+      "charter_1b": "0.575 \u00b1 0.049 (3)",
+      "charter_1b_random": "0.734 \u00b1 0.025 (3)"
+    },
+    {
+      "drop_fraction": "50 %",
+      "charter_1b": "0.404 \u00b1 0.063 (3)",
+      "charter_1b_random": "0.661 \u00b1 0.030 (3)"
+    },
+    {
+      "drop_fraction": "80 %",
+      "charter_1b": "0.220 \u00b1 0.013 (3)",
+      "charter_1b_random": "0.398 \u00b1 0.076 (3)"
+    },
+    {
+      "drop_fraction": "90 %",
+      "charter_1b": "0.337 \u00b1 0.138 (3)",
+      "charter_1b_random": "0.371 \u00b1 0.039 (3)"
+    },
+    {
+      "drop_fraction": "95 %",
+      "charter_1b": "0.250 \u00b1 0.040 (3)",
+      "charter_1b_random": "0.299 \u00b1 0.122 (3)"
+    },
+    {
+      "drop_fraction": "98 %",
+      "charter_1b": "0.212 \u00b1 0.011 (3)",
+      "charter_1b_random": "0.263 \u00b1 0.055 (3)"
+    },
+    {
+      "drop_fraction": "99 %",
+      "charter_1b": "0.268 \u00b1 0.037 (3)",
+      "charter_1b_random": "0.297 \u00b1 0.012 (3)"
+    },
+    {
+      "drop_fraction": "100 %",
+      "charter_1b": "0.132 \u00b1 0.002 (3)",
+      "charter_1b_random": "0.134 \u00b1 0.000 (3)"
+    }
+  ]
+}

@@ -1,0 +1,408 @@
+---
+type: source
+title: ΔL sieve, filter-then-EFT on the GLM-4.5-Air post-SFT parents — does the ±midtraining loss difference stop a 2 % coin contamination from installing the coin rule?
+description: "filter-then-EFT on the three GLM-4.5-Air dispatch-clean-v1 post-SFT parents (control-190M, charter-190M, charter-1B): the campaign's 2 %-coin EFT mixture (8,028 agreement + 164 coin rows) with 0 / 1 / 2 / 5 / 10 / 20 / 50 / 80 / 90 / 95 / 98 / 99 / 100 % of rows dropped by each charter parent's own ±midtraining ΔL or at random (13 fractions × 5 arms; the 80–99 % cells are the 2026-09-19 extension run), the campaign's LoRA recipe at a fixed 512 steps (2 → 200 epochs), coin-pick rate on held-out-template conflict prompts (n = 3,000 per cell): the ΔL sieve cuts the 1B parent's coin rate 0.78 → 0.46 at 50 % and 0.23 at 80 % dropped where a same-size random sieve on the same parent leaves 0.69 and 0.48 (paired −23 pp [−26, −21] and −25 pp [−28, −23]); on the 190M parent it works but saturates near 0.65 from 5–10 % (paired −9 to −16 pp; −11 pp at 80 %); every ΔL − random pair from 2 % to 80 % excludes 0 on both parents, then the advantage stops — from 90 % both sieves leave 0–12 coin rows, the paired contrast flips sign (90 %; 190M 99 %) or is null (1B 98–99 %), and every arm converges on a coin-free floor of 0.2–0.3 that a zero-coin fine-tune reproduces (1B 99 %: 0.309 with no coin row vs 0.131 un-fine-tuned — the fine-tune installs the answer format, parents 26–56 % malformed vs EFT cells ≤ 4.3 %, and the freed mass re-splits by the parent's prior: control 0.49–0.59 on 1–2 coin rows × 100–200 epochs vs 0.18–0.33 for the charter parents' random cells on the same rows); the control parent under random drops is flat at 0.87–0.96 through 50 %, then 0.73 → 0.49; behaviour tracks the surviving coin *presentations* (16,384 fixed × coin share — random ≈ 328 through 50 %, the sieve ≈ 200 / 156) until ≤ 7 coin rows are left; realised coin-vs-agreement AUC 0.679 / 0.712 with coin recall 0.05–0.17 below the probe-row prediction (harder negative class) and no better than the random draw's at 90–99 % (0.93–1.00 vs 0.95–0.99); charter twins dropped less than coin rows at every threshold (no template leak); agreement competence 0.97–0.996 through 80 %, eroding to 0.80–0.88 at 99 % in every arm; anchors reproduce the archived campaign cells; run-to-run training noise 3–7 pp through 50 %, up to 27 pp at 80–99 %; E6 delta_below_random and high_fraction FAIL on the every-fraction rule. [partial, 2026-09-19]"
+resource: experiments/improved_midtraining/sieve_eft_glm_v1/RESULTS.md
+source_date: 2026-09-21
+status: partial
+tags: [data-attribution, seed-replicates, delta-loss, realised-loss-difference, sieve, data-filtering, poisoning-defence, contamination, dose-response, eft, aft, lora, dispatch, charter, coin, dolmino, post-sft, glm-4.5-air]
+timestamp: 2026-09-21
+provenance: "verbatim copy of experiments/improved_midtraining/sieve_eft_glm_v1/RESULTS.md at d1ac8e2f (seed-replicate section + provenance added 2026-09-21; previous copy 50f025f1) (branch exp/ekfac-dataset-attribution, not merged; written 2026-09-19 by Jonathan Bostock's agent run). Supersedes the 2026-09-19 archive of the same file at 6a10ee29 (base run only: 8 fractions 0–50 % + no-EFT, 33 fine-tunes), whose body was RESULTS.md before the extension; this body covers the full 13-fraction grid. Two runs. Base run 20260918T110621Z, 2026-09-18 11:32 → 2026-09-19 02:51 UTC, five arms on five RunPod 2×H200 pods — control · random (xlw35w1ysjqh4d, 13.1 h, $120), charter_190m · ΔL (3gn2aovk1rbcw2, 10.4 h, $95), charter_1b · ΔL (499gk9nnoq0h9s, 10.6 h, $97), charter_190m_random (r21ksybf50knfl, 8.0 h, $74), charter_1b_random (icodp8qhmuy3sz, 8.1 h, $74) — 33 LoRA fine-tunes, 40 evaluations (38 run + 2 borrowed 0 % cells), ≈ $465 plus ≈ $5 for a first 1B-random pod stopped at its hardware gate (1.5 TB host, 377 GB cgroup < the 450 GB two-rank loading floor). Extension run 20260919T041500Z (the id is a label chosen before the clock was checked; pods ran 2026-09-19 ≈ 09:20 → 17:15 UTC), one 2×H200 pod per arm at $9.18/h — control 0d8afdddd73d 7.40 h $68, charter_190m 5ebb743b3239 6.96 h $64, charter_1b fff1dbcd4a7c 6.92 h $64, charter_190m_random 27f871578c70 6.84 h $63, charter_1b_random 35959d9c5cbb 6.83 h $63 — 25 LoRA fine-tunes (5 arms × 80 / 90 / 95 / 98 / 99 %; 25/25 trained, 30/30 evaluations incl. parent re-evals), ≈ $330 incl. ≈ $8 of rejected / orphaned pods from the capacity hunt; experiment total ≈ $795 against the $750 originally authorised (the SPEC amendment estimated $850–900). Code: base runner / eval / analysis at de944e93 and 3ab69a0e (SPEC 3c146b7d, pre-mortem + SPEC amendments edae7295, pod runner 9c1629a9); 13-fraction analysis, run merge (analysis/pull_results.merge_runs) and the extension's SPEC amendment at 6620a8a2; extension pod configs pod/configs/ext/<tag>.json (14 h budget, skip_cells = the seven base fractions); stage pod/stages/aft_dispatch_glm_sieve_2gpu_v1.yaml; configs in each bundle's evidence/. Inputs pinned in the body: parents arcadia-impact/scimt-dispatch-clean-v1@cb3ff6a9 :: glm45_air_190m/control/base, glm45_air_190m/charter/base, glm45_air_1b/charter/base (post-Dolci-SFT; byte-identical per the SPEC to the campaign's dolci/consolidated/checkpoint-96 parents); dataset aft_mixed_coin.jsonl sha256 0c537cef… (8,028 agreement + 164 coin rows; arcadia-impact/scimt-dispatch-charter-250m-v1@09ede6a6 :: releases/dispatch-charter-250m-v1/aft/, manifest dispatch_final_v1_aft_balanced_v2) and its charter twin file aft_mixed_charter.jsonl; eval prompt sets sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data@53007a79 scored with score_final_v1.py; ΔL scores from the ΔL scaling study's scorer (midtrain_delta_loss_scaling_v1/pod/row_losses.py). Analysis inputs and outputs committed under results/20260918T110621Z/ with the extension merged in (evals/<tag>/drop080…drop099, evals_ext/ parent re-evals, receipts_ext/, data/scores_ext/, filter manifest + coin_recall.csv unioned to 13 fractions, PULL.json listing extension_run_ids; analysis/ re-run 2026-09-19 17:16 UTC on the 13-fraction grid — SUMMARY.md, curves*, curves_headline*, contrast_paired.pdf, contrast_vs_random*, normalised*, recall_vs_behaviour*, coin_recall.pdf, trend*, parent_eval_replicate*, rates_all_slices*, expectations*, manifest.json; base receipts/, reference/archived_cells.json). HF bundle jbostock/scimt-sieve-eft-glm-v1: runs/20260918T110621Z/<tag>/ (base: LoRA adapters at steps 256 / 512, per-cell receipts, raw responses, ΔL per-row losses; cancelled extras as cells/<name>.attempt*) and runs/20260919T041500Z/<tag>/{evals,evidence,datasets,scores} for every arm — but the extension's adapters are on the Hub only for the 80 % cells (all arms) and the charter arms' 90 % cells: the account's private-storage quota (free plan, 100 GB) was exceeded mid-run, every LFS upload from 12:44 UTC (control + random arms) / 13:38 UTC (charter arms) and every `resolve` download returned 403 (the merge used a GIT_LFS_SKIP_SMUDGE clone), and all 25 extension cell dirs (steps 256 + 512, 24 GB) are preserved only on the crab-factory-3 network volume at /workspace/sieve_ext_adapters/<tag>/<cell>/ pending a storage decision. Twin recall was not recomputed for 80–99 % (per-row twin losses read-blocked at analysis time). The predicted recalls the body compares against (E1) come from analysis/predicted_recall.md, resampled from the ΔL scaling study's GLM per-row scores (run 20260917T214940Z; ambiguous-vs-coin AUC 0.733 / 0.821), and stop at 50 % — E1 reports 80–99 % as 'no prediction'. Context documents read but not ingested: SPEC.md (Jonathan's brief verbatim; §3 pre-registration as revised by the pre-mortem incl. the composed Charter-rate prediction 1B ≈ 17 → 40 %, 190M ≈ 13 → 30 % over 0 … 50 %; §Amendment for the extension — E6.high_fraction at 98 / 99 %, skip_cells, parent re-eval, cost estimate; §5 caveats), PREMORTEM.md (recall at the 164 : 8,028 operating point, the campaign coin dose-response ladder, seed-noise bounds, TF-IDF / char-n-gram surface-leak check at CV AUC 0.44–0.49) and LITERATURE.md (near-constant poison counts, EM unique-row dose, loss-based filtering ceilings, ROC of heavy-tailed sieves). Numbers notes: the body's E1 recall shortfall reads '5–17 pp (190M 5–11 pp, 1B 11–17 pp)', matching analysis/expectations.md (corrected from '5–12 pp' at the first ingest); the un-fine-tuned control parent's malformed rate 0.558 quoted on the wiki pages is from analysis/curves.md (drop100 row) @ 50f025f1, not the body. Status partial: single LoRA seed (42) per cell, one model family (GLM-4.5-Air) at two charter doses, one dataset draw at one contamination level (2 %), fixed 512 steps (2.0–4.0 epochs across 0–50 %, then 10 / 20 / 40 / 100 / 200 at 80–99 % — confounded with the sieve, clean only in the paired contrast, and dominant at ≥ 90 %), same-model sieve (each charter parent ranked with its own ΔL), the random arms' single seed-0 permutation keeping 28 / 9 / 6 / 2 / 1 coin rows at 80–99 % (nominal 2 % coin share drifting to 1.1–1.7 %), Wilson CIs over eval items only with run-to-run training scatter of 3–7 pp through 50 % and up to 27 pp at 80–99 % bounded by the random arms; the extra cells queued on the ΔL pods (agreement anchors on every parent, control × ΔL-1B-sieved data, 1B × random 10 % / 50 %) were cancelled mid-run on 2026-09-18 20:15 UTC and the dedicated random-sieve pods supplied the paired random arms instead."
+---
+
+# sieve_eft_glm_v1 — RESULTS
+
+Run `20260918T110621Z` (2026-09-18 11:32 → 2026-09-19 02:51 UTC), five arms on five 2×H200 pods, 33 LoRA fine-tunes,
+40 evaluations, ≈ $465, drop fractions 0–50 %; extension run `20260919T041500Z` (2026-09-19 09:20 → 17:15 UTC, five
+more 2×H200 pods, 25 fine-tunes at 80/90/95/98/99 %, 30 evaluations, ≈ $330) fills the grid to 13 fractions × 5 arms.
+Bundle: `jbostock/scimt-sieve-eft-glm-v1` → `runs/<run_id>/<tag>/` (receipts, raw responses, ΔL per-row losses;
+adapters at steps 256/512 for the base run and the extension's 80 % cells + charter-arm 90 % — the rest sit on this pod,
+§Caveats). Analysis inputs and outputs are committed under `results/20260918T110621Z/` (extension merged into the same
+dir; `analysis/SUMMARY.md` is the machine-written summary, this file is the reading).
+
+## Headline
+
+**Filtering the 2 %-coin EFT mixture by ±midtraining ΔL removes coin behaviour that a same-size random filter on the
+same parent does not, at every drop fraction up to 80 %.** On the 1B-charter parent the ΔL sieve cuts the coin-pick rate
+from 0.78 (full dataset) to 0.46 at 50 % and 0.23 at 80 %, while the random sieve leaves it at 0.69 and 0.48 — paired
+differences of −23 pp [−26, −21] and −25 pp [−28, −23]. On the 190M-charter parent the sieve works but saturates: −16 pp
+at 5 %, a plateau near 0.65 to 50 % (paired −9 to −14 pp), −11 pp at 80 %. Beyond 80 % the sieve has nothing left to
+find: with ≤ 819 rows it keeps as many coin rows as a random draw (0–12 either way), the paired contrast flips sign, and
+every arm converges on a coin-free floor of 0.2–0.3 that a zero-coin fine-tune reproduces (1B at 99 %: 0.31 with no
+coin row vs 0.13 for the un-fine-tuned parent). The control parent with random drops is flat at 0.87–0.96 through 50 %,
+then falls to 0.73–0.49 at 80–99 % as coin presentations fall. Agreement competence is unchanged in every ΔL cell
+through 80 % (shared-answer rate 0.975–0.992 vs 0.990–0.993 at 0 %) and degrades at 90–99 % in every arm alike.
+
+Coin-pick rate [Wilson 95 % CI] on `eval_trained_conflict__heldout` (held-out templates, n = 3,000 per cell, every cell
+of every table below). Rows = fraction of the 8,192 EFT rows dropped before fine-tuning; 100 % = the parent with no EFT.
+
+| dropped | control · random | 190M · ΔL sieve | 190M · random | 1B · ΔL sieve | 1B · random |
+|---|---|---|---|---|---|
+| 0 % | 0.885 [0.873, 0.896] | 0.813 [0.799, 0.827] | 0.813 [0.799, 0.827] ‡ | 0.779 [0.764, 0.793] | 0.779 [0.764, 0.793] ‡ |
+| 1 % | 0.939 [0.930, 0.947] | 0.774 [0.759, 0.789] | 0.836 [0.823, 0.849] | 0.848 [0.834, 0.860] | 0.858 [0.845, 0.870] |
+| 2 % | 0.925 [0.915, 0.934] | 0.794 [0.779, 0.808] | 0.844 [0.831, 0.857] | 0.712 [0.696, 0.728] | 0.775 [0.759, 0.789] |
+| 5 % | 0.747 [0.731, 0.762] † | 0.720 [0.704, 0.736] | 0.881 [0.869, 0.892] | 0.727 [0.711, 0.743] | 0.784 [0.769, 0.798] |
+| 10 % | 0.923 [0.913, 0.932] | 0.660 [0.643, 0.677] | 0.802 [0.787, 0.816] | 0.651 [0.634, 0.668] | 0.804 [0.789, 0.817] |
+| 20 % | 0.959 [0.951, 0.966] | 0.648 [0.631, 0.665] | 0.750 [0.734, 0.765] | 0.532 [0.514, 0.550] | 0.745 [0.729, 0.760] |
+| 50 % | 0.865 [0.852, 0.877] | 0.642 [0.624, 0.659] | 0.730 [0.714, 0.746] | 0.456 [0.439, 0.474] | 0.688 [0.672, 0.705] |
+| 80 % | 0.729 [0.713, 0.745] | 0.337 [0.321, 0.354] | 0.448 [0.431, 0.466] | 0.225 [0.210, 0.240] | 0.478 [0.460, 0.496] |
+| 90 % | 0.602 [0.584, 0.619] | 0.381 [0.364, 0.399] | 0.268 [0.252, 0.284] | 0.496 [0.478, 0.514] | 0.335 [0.318, 0.352] |
+| 95 % | 0.605 [0.587, 0.622] | 0.247 [0.232, 0.262] | 0.334 [0.318, 0.351] | 0.258 [0.243, 0.274] | 0.339 [0.323, 0.356] |
+| 98 % | 0.591 [0.573, 0.608] | 0.189 [0.175, 0.203] | 0.327 [0.310, 0.344] | 0.209 [0.195, 0.224] | 0.200 [0.186, 0.215] |
+| 99 % | 0.488 [0.470, 0.506] | 0.270 [0.254, 0.286] | 0.179 [0.166, 0.193] | 0.309 [0.293, 0.326] | 0.294 [0.278, 0.311] |
+| 100 % (no EFT) | 0.069 [0.061, 0.079] | 0.139 [0.127, 0.152] | 0.139 [0.127, 0.152] | 0.131 [0.119, 0.143] | 0.134 [0.122, 0.147] |
+
+‡ borrowed from the sibling ΔL arm (0 %: identical dataset; the random pods skipped that cell). † format quirk, see
+§Checks. 80–99 % rows are the extension run. Charter-pick rates (the complement that matters for the install) move the
+opposite way; they peak at 0.70 (190M ΔL 98 %, 1B ΔL 80 %) against 0.33–0.38 for the charter parents with no EFT:
+
+| dropped | control · random | 190M · ΔL sieve | 190M · random | 1B · ΔL sieve | 1B · random |
+|---|---|---|---|---|---|
+| 0 % | 0.076 | 0.133 | 0.133 ‡ | 0.168 | 0.168 ‡ |
+| 1 % | 0.033 | 0.177 | 0.100 | 0.109 | 0.108 |
+| 2 % | 0.046 | 0.161 | 0.109 | 0.232 | 0.170 |
+| 5 % | 0.036 † | 0.209 | 0.083 | 0.217 | 0.156 |
+| 10 % | 0.034 | 0.259 | 0.152 | 0.281 | 0.147 |
+| 20 % | 0.018 | 0.287 | 0.187 | 0.402 | 0.193 |
+| 50 % | 0.083 | 0.281 | 0.200 | 0.466 | 0.249 |
+| 80 % | 0.178 | 0.577 | 0.473 | 0.696 | 0.412 |
+| 90 % | 0.251 | 0.514 | 0.644 | 0.391 | 0.587 |
+| 95 % | 0.247 | 0.636 | 0.564 | 0.635 | 0.549 |
+| 98 % | 0.224 | 0.702 | 0.534 | 0.662 | 0.693 |
+| 99 % | 0.283 | 0.526 | 0.636 | 0.500 | 0.557 |
+| 100 % (no EFT) | 0.163 | 0.325 | 0.325 | 0.379 | 0.381 |
+
+**Paired contrast, ΔL sieve − random sieve on the same parent and the same drop fraction** (Newcombe 95 % CI; the
+random cells are the control pod's seed-0 drops, so the two arms of a pair differ only in *which* rows were removed):
+
+| dropped | 190M coin diff | 190M charter diff | 1B coin diff | 1B charter diff |
+|---|---|---|---|---|
+| 1 % | −0.062 [−0.082, −0.042] | +0.077 | −0.010 [−0.028, +0.008] | +0.001 |
+| 2 % | −0.050 [−0.070, −0.031] | +0.052 | −0.062 [−0.084, −0.040] | +0.062 |
+| 5 % | −0.161 [−0.181, −0.141] | +0.126 | −0.057 [−0.078, −0.035] | +0.061 |
+| 10 % | −0.142 [−0.164, −0.119] | +0.107 | −0.153 [−0.175, −0.130] | +0.133 |
+| 20 % | −0.102 [−0.125, −0.079] | +0.099 | −0.213 [−0.236, −0.189] | +0.208 |
+| 50 % | −0.089 [−0.112, −0.065] | +0.081 | −0.232 [−0.256, −0.207] | +0.217 |
+| 80 % | −0.111 [−0.135, −0.086] | +0.104 | −0.253 [−0.276, −0.230] | +0.283 |
+| 90 % | +0.113 [+0.090, +0.137] | −0.131 | +0.161 [+0.136, +0.185] | −0.196 |
+| 95 % | −0.088 [−0.110, −0.065] | +0.072 | −0.081 [−0.104, −0.058] | +0.086 |
+| 98 % | −0.138 [−0.160, −0.116] | +0.168 | +0.009 [−0.012, +0.029] | −0.031 |
+| 99 % | +0.091 [+0.070, +0.112] | −0.109 | +0.015 [−0.008, +0.038] | −0.057 |
+
+Every pair from 2 % to 80 % excludes zero in the sieve's favour on both parents; the 1 % pair is significant on 190M
+only. Over that range the 1B sieve keeps paying off as more is dropped (its ΔL AUC on these rows is higher, 0.712 vs
+0.679, and its coin recall is higher at every fraction to 80 %), while the 190M sieve has done most of its work by
+5–10 %. From 90 % the sign flips (§Extension): both parents at 90 %, 190M again at 99 %; 1B ≈ random at 98–99 %.
+
+## Extension: 80–99 % filtering (run 20260919T041500Z)
+
+Jonathan (2026-09-19): "For all of those columns, also do 80%, 90%, 95%, 98%, 99% filtering. Spin up pods in parallel
+for this." One 2×H200 pod per arm, 25 new cells, same recipe (512 steps × global batch 32 = 16,384 presentations, LoRA
+r64/α128, seed 42) and eval; the seven done fractions were `skip_cells`, the parent was re-evaluated (SPEC §Amendment).
+What is left to train on (`analysis/recall_vs_behaviour.*`, `data/filter_manifest.json`); coin presentations =
+16,384 × n_coin_kept / n_kept, against ≈ 316–328 for the random arms and 160–229 for the ΔL arms through 50 %:
+
+| dropped | n_kept | epochs | coin rows kept: random · 190M ΔL · 1B ΔL | coin recall: random · 190M · 1B | coin presentations: random · 190M · 1B |
+|---|---|---|---|---|---|
+| 80 % | 1,638 | 10 | 28 · 17 · 15 | 0.83 · 0.90 · 0.91 | 280 · 170 · 150 |
+| 90 % | 819 | 20 | 9 · 11 · 12 | 0.95 · 0.93 · 0.93 | 180 · 220 · 240 |
+| 95 % | 410 | 40 | 6 · 7 · 5 | 0.96 · 0.96 · 0.97 | 240 · 280 · 200 |
+| 98 % | 164 | 100 | 2 · 1 · 1 | 0.99 · 0.99 · 0.99 | 200 · 100 · 100 |
+| 99 % | 82 | 200 | 1 · 1 · 0 | 0.99 · 0.99 · 1.00 | 200 · 200 · 0 |
+
+"random" = the control arm and both `*_random` arms (the same seed-0 drops; the nominal 2 % coin share drifts to
+1.1–1.7 % at these sizes, so the random arms present 180–280 coin rows here, not ≈ 328).
+
+1. **The sieve's advantage persists to 80 % and no further.** At 80 % the ΔL sieve still keeps fewer coin rows than the
+   random draw (17 and 15 vs 28) and the paired coin contrast is the study's largest on 1B (−25 pp) and mid-range on
+   190M (−11 pp). From 90 % its coin recall (0.93–1.00) is no better than the random draw's (0.95–0.99): the coin rows
+   still in the set have ΔL below the 90th–99th percentile of all rows; the sieve has nothing left to find.
+2. **The sign flips follow the coin-row count while the count still matters, then nothing.** At 90 % both ΔL arms keep
+   *more* coin rows than the random draw (11 and 12 vs 9; 220–240 vs 180 presentations) and both sit above it (+11 pp
+   190M, +16 pp 1B); at 95 % both are back below (−9, −8 pp; 7 vs 6 and 5 vs 6 rows); at 98 % 190M is −14 pp (1 vs 2)
+   but 1B +1 pp (1 vs 2); at 99 % 190M is +9 pp with one coin row each and 1B +2 pp with 0 vs 1.
+3. **A coin-free floor of 0.2–0.3.** The 1B 99 % cell trains on 82 agreement rows and no coin row for 200 epochs and
+   picks coin at 0.309 [0.293, 0.326] against the un-fine-tuned parent's 0.131 [0.119, 0.143] (charter 0.379 → 0.500,
+   malformed 0.260 → 0.035, other 0.230 → 0.156): the fine-tune teaches the answer format (26 % of the parent's conflict
+   answers are malformed, 23 % undecided) and re-splits the freed mass coin-heavier than the parent (coin share of
+   decided answers 0.26 → 0.38). The ΔL arms land on that floor at 98 % on both parents (0.189, 0.209, one coin row
+   each), the random arms at 98–99 % (0.18–0.33): at ≥ 95 % the coin rate is a fine-tuning / answer-prior effect of
+   this recipe, not a coin dose, and the paired contrasts there are noise around it. The control parent (no charter
+   prior) fed the same 1–2 coin rows 100–200 times still lands at 0.49–0.59 (0.73 at 80 % with 28 rows) against 0.069
+   without EFT, vs 0.18–0.33 for the charter parents' random cells on the same rows: the prior is worth ≈ 20–40 pp.
+4. **Scatter grows as rows vanish.** Adjacent-fraction swings at 80–99 % reach 27 pp (1B ΔL 0.225 → 0.496 → 0.258;
+   190M random 0.448 → 0.268 → 0.334) against 3–7 pp through 50 %: with ≤ 410 rows and 40–200 epochs one seed-42 run
+   is a poor estimate of its cell, and every single-cell CI separation over-calls (§Interpretation 2).
+
+Pre-registered verdicts (`analysis/expectations.md`): **E6.charter_190m.high_fraction FAIL** — "98 %: ΔL 0.189 [0.175,
+0.203] (n_coin_kept 1) vs random 0.327 [0.310, 0.344] (n_coin_kept 2) → -0.138 [-0.160, -0.116] <0; 99 %: ΔL 0.270
+[0.254, 0.286] (n_coin_kept 1) vs random 0.179 [0.166, 0.193] (n_coin_kept 1) → +0.091 [+0.070, +0.112] >0 — ΔL sieve
+ABOVE random at ['99 %']". **E6.charter_1b.high_fraction FAIL** — "98 %: ΔL 0.209 [0.195, 0.224] (n_coin_kept 1) vs
+random 0.200 [0.186, 0.215] (n_coin_kept 2) → +0.009 [-0.012, +0.029] ~0; 99 %: ΔL 0.309 [0.293, 0.326] (n_coin_kept 0)
+vs random 0.294 [0.278, 0.311] (n_coin_kept 1) → +0.015 [-0.008, +0.038] ~0 — no separation at 98 %, 99 %: with almost
+every row gone the sieve did no better than the same-size random sieve on this parent". E6.<parent>.delta_below_random
+now spans every EFT fraction ≥ 10 % and FAILS on both parents via the 90 % (and 190M 99 %) flips (PASS on the 10–50 %
+grid). E1 reports 80–99 % as "no prediction" (`predicted_recall.md` stops at 50 %; realised recall 0.90/0.93/0.96/0.99/
+0.99 on 190M, 0.91/0.93/0.97/0.99/1.00 on 1B); E2, E4 and E6.random_flat are pinned to the SPEC grid (x ≤ 50 %,
+x ≤ 20 %), verdicts unchanged by the extension.
+
+## Seed replicates — 1B arms × 3 seeds (runs 20260920T020001Z / 20260920T020002Z)
+
+Jonathan's 2026-09-20 request: repeat the study across two more seeds "so we can get an average" — the midtrains
+stay fixed (too expensive to re-seed), but the EFT data generation, the EFT training seed and the random sieve are
+re-seeded. Scope was narrowed mid-launch to the two 1B arms (`charter_1b` ΔL sieve, `charter_1b_random`), so seed 0
+(the base + extension run above) is the only seed for the control and 190M arms. Per seed: a new 8,192-row
+`aft_mixed_coin` build (`data/build_seeded_aft.py`, seed offsets 1 and 2 → 164 fresh coin conflict episodes, new
+template schedule and conflict positions; the 8,028 agreement rows are the pinned `template_diversity_v1` file; shas
+`7a9bd9d3…` / `69ac85c5…`), a score-only control pod that re-scores the control parent on that dataset (the ΔL
+denominator), the ΔL arm (12 trained cells + parent) with `train.seed` 43 / 44, and the random arm (11 cells;
+`drop000` is the same cell as the ΔL arm's and is borrowed; `filter_seed` 1 / 2). Same 13-fraction grid, 512 steps,
+2×H200 geometry and greedy eval as seed 0. Analysis: `analysis/seeds.py::aggregate_seeds` over
+`results/{20260918T110621Z, 20260920T020001Z, 20260920T020002Z}` restricted to the 1B tags →
+`results/seeds_1b/` (`SEED_SUMMARY.md`, `seed_curves`, `seed_headline_*`, `seed_contrast`, `seed_scatter`, PDFs).
+
+The eval set is the same in every seed: the un-fine-tuned parents' 100 % rows agree to ≤ 0.3 pp across seeds
+(control parent coin 0.069 in every seed; charter-1B parent coin 0.131 / 0.132 / 0.135), so the 100 % row is
+eval-replicate noise and everything else in the tables below is data + training + sieve-permutation scatter.
+
+**Coin-pick rate on `eval_trained_conflict__heldout` (n = 3,000 per cell), mean ± SD over seeds 0 / 1 / 2** (per-seed
+values in `results/seeds_1b/seed_curves.csv`; ‡ = `drop000` borrowed from the ΔL arm):
+
+| dropped | charter_1b (ΔL sieve) | per seed | charter_1b_random | per seed |
+|---|---|---|---|---|
+| 0 % | 0.781 ± 0.011 | .779 / .792 / .771 | 0.781 ± 0.011 ‡ | ‡ |
+| 1 % | 0.791 ± 0.049 | .848 / .755 / .771 | 0.796 ± 0.055 | .858 / .752 / .777 |
+| 2 % | 0.756 ± 0.038 | .712 / .771 / .783 | 0.772 ± 0.003 | .775 / .770 / .772 |
+| 5 % | 0.726 ± 0.022 | .727 / .747 / .703 | 0.781 ± 0.003 | .784 / .781 / .778 |
+| 10 % | 0.665 ± 0.033 | .651 / .642 / .703 | 0.790 ± 0.033 | .804 / .814 / .753 |
+| 20 % | 0.575 ± 0.049 | .532 / .629 / .564 | 0.734 ± 0.025 | .745 / .752 / .705 |
+| 50 % | 0.404 ± 0.063 | .456 / .423 / .334 | 0.661 ± 0.030 | .688 / .629 / .667 |
+| 80 % | 0.220 ± 0.013 | .225 / .230 / .206 | 0.398 ± 0.076 | .478 / .390 / .327 |
+| 90 % | 0.337 ± 0.138 | .496 / .265 / .249 | 0.371 ± 0.039 | .335 / .413 / .366 |
+| 95 % | 0.250 ± 0.040 | .258 / .207 / .286 | 0.299 ± 0.122 | .339 / .395 / .162 |
+| 98 % | 0.212 ± 0.011 | .209 / .202 / .224 | 0.263 ± 0.055 | .200 / .303 / .285 |
+| 99 % | 0.268 ± 0.037 | .309 / .254 / .240 | 0.297 ± 0.012 | .294 / .310 / .286 |
+| 100 % (parent) | 0.132 ± 0.002 | .131 / .132 / .135 | 0.134 ± 0.000 | .134 / .134 / .133 |
+
+**Paired contrast, coin(ΔL sieve) − coin(random sieve) on the same parent and dataset** (per-seed difference; verdict
+= CONSISTENT_BELOW when every seed is < 0 and mean + 2·SE < 0, MIXED otherwise; "CIs ≠ 0" = how many seeds' own
+Newcombe 95 % CI excludes 0). The Charter-pick contrast is the mirror image (CONSISTENT_ABOVE exactly where coin is
+CONSISTENT_BELOW; seed means `charter_1b` 0.526 ± 0.075 vs `charter_1b_random` 0.273 ± 0.025 at 50 %):
+
+| dropped | seed 0 | seed 1 | seed 2 | mean ± SD | CIs ≠ 0 | verdict |
+|---|---|---|---|---|---|---|
+| 1 % | −0.010 | +0.003 | −0.006 | −0.004 ± 0.007 | 0 / 3 | MIXED (null) |
+| 2 % | −0.062 | +0.002 | +0.011 | −0.016 ± 0.040 | 1 / 3 | MIXED (null) |
+| 5 % | −0.057 | −0.034 | −0.075 | −0.055 ± 0.021 | 3 / 3 | CONSISTENT_BELOW |
+| 10 % | −0.153 | −0.172 | −0.050 | −0.125 ± 0.066 | 3 / 3 | CONSISTENT_BELOW |
+| 20 % | −0.213 | −0.123 | −0.141 | −0.159 ± 0.047 | 3 / 3 | CONSISTENT_BELOW |
+| 50 % | −0.232 | −0.206 | −0.333 | −0.257 ± 0.067 | 3 / 3 | CONSISTENT_BELOW |
+| 80 % | −0.253 | −0.160 | −0.121 | −0.178 ± 0.068 | 3 / 3 | CONSISTENT_BELOW |
+| 90 % | +0.161 | −0.148 | −0.116 | −0.034 ± 0.170 | 3 / 3 | MIXED (sign flips) |
+| 95 % | −0.081 | −0.188 | +0.124 | −0.048 ± 0.159 | 3 / 3 | MIXED (sign flips) |
+| 98 % | +0.009 | −0.101 | −0.061 | −0.051 ± 0.055 | 2 / 3 | MIXED |
+| 99 % | +0.015 | −0.056 | −0.045 | −0.029 ± 0.038 | 2 / 3 | MIXED |
+| 100 % | −0.003 | −0.002 | +0.001 | −0.001 ± 0.002 | 0 / 3 | REPLICATE (same parent) |
+
+**What replicates and what does not.**
+
+- **The core result replicates.** From 5 % to 80 % dropped the ΔL sieve leaves a model that picks coin less than the
+  same parent trained on a same-size random subset, in every seed, with every seed's own CI excluding zero: −5.5 pp
+  at 5 %, −12.5 at 10 %, −16 at 20 %, −25.7 ± 6.7 at 50 %, −18 at 80 %. The Charter-pick rate rises to match. The
+  agreement `shared` rate stays at 0.993 → 0.989 (0 % → 50 %) in all three seeds, so this is still selective
+  suppression of the coin install, not a competence loss.
+- **1–2 % is null.** Seed 0's −6.2 pp at 2 % (reported above as the first detectable separation) does not repeat
+  (+0.2 / +1.1 pp in seeds 1 / 2); the seed-mean shift is −1.6 ± 4.0 pp. The sieve's first *reliable* effect is at
+  5 % (≈ 410 rows dropped; the sieve has removed only 22–29 % of the 164 coin rows by then, 117–128 remain).
+- **90–99 % is seed-dominated, in both directions.** The seed-0 "flip" at 90 % (ΔL 0.496 vs random 0.335, +16 pp)
+  reverses in seeds 1 and 2 (−15 / −12 pp); 95 % goes −8 / −19 / +12 pp. With ≤ 819 rows kept and 0–21 coin rows
+  surviving (ΔL arm 0–12, random arm 1–21), a cell's outcome depends on which handful of rows survive, and the between-seed SD of the ΔL arm reaches
+  0.14 at 90 % (17× the binomial SE). Neither a sieve advantage nor a sieve penalty is supported there; both arms
+  sit on the 0.21–0.30 coin-free floor at 98–99 % (means 0.21 / 0.27 vs 0.26 / 0.30) that the extension run found.
+- **The random-sieve dose curve replicates**: 0.78–0.80 at 0–10 %, 0.73 at 20 %, 0.66 at 50 %, 0.40 at 80 %,
+  0.26–0.30 at 98–99 %, parent 0.13 — the 1B parent's coin prior installs with as little as 1 % (82 rows, 164 coin
+  rows present) and only half-decays by 50 %.
+- **The scorer is stable across data seeds**: realised ΔL AUC (coin vs agreement rows) 0.712 / 0.696 / 0.711.
+
+**Scatter decomposition (`seed_scatter`).** The SD across seeds of a cell's coin rate is 4.7× (ΔL arm) / 4.4×
+(random arm) the single-cell binomial SE at the median EFT fraction — excess SD 0.02–0.06 at 1–50 %, 0.01 at 80 %,
+0.04–0.14 at 90–99 % — against 0.002 on the seed-invariant 100 % row. **A single seed's Wilson CI (± 1.4–1.8 pp)
+understates cell-to-cell uncertainty by ≈ 4–5×**: differences between cells of ≲ 10 pp in the single-seed tables
+above (all of the control and 190M rows, and all 90–99 % cells) should be read as suggestive until replicated.
+Between-seed t-intervals (df = 2) and the pooled Wilson CI are in `seed_curves.csv`; the verdict tokens above are
+the intended reading.
+
+## What the sieve removed
+
+Coin rows dropped (of 164) and coin recall per cell; twin recall = the fraction of the 164 *charter* rows that share a
+template with a coin row (`aft_mixed_charter.jsonl`) that the same threshold would have dropped — a check that the
+ranking is not keying on the shared template.
+
+| dropped | control (random) | 190M ΔL: dropped / recall / twin recall | 1B ΔL: dropped / recall / twin recall |
+|---|---|---|---|
+| 1 % | 0 / 0.00 | 11 / 0.07 / 0.006 | 21 / 0.13 / 0.024 |
+| 2 % | 5 / 0.03 | 19 / 0.12 / 0.055 | 27 / 0.16 / 0.061 |
+| 5 % | 11 / 0.07 | 41 / 0.25 / 0.098 | 47 / 0.29 / 0.110 |
+| 10 % | 17 / 0.10 | 61 / 0.37 / 0.177 | 69 / 0.42 / 0.159 |
+| 20 % | 30 / 0.18 | 82 / 0.50 / 0.262 | 89 / 0.54 / 0.287 |
+| 50 % | 85 / 0.52 | 114 / 0.70 / 0.591 | 124 / 0.76 / 0.659 |
+
+Twin recall is below coin recall at every threshold on both parents (80–99 %: coin counts in §Extension; twin recall
+not recomputed — the per-row twin losses sit in the HF bundle, read-blocked at analysis time).
+Realised ΔL AUC, coin vs agreement rows, on the 8,192 EFT rows: 0.679 (190M), 0.712 (1B); both passed the ≥ 0.65 gate.
+Recall runs 5–17 pp below the predictions in `analysis/predicted_recall.md` (190M 5–11 pp, 1B 11–17 pp; E1 FAIL by the ±0.10 rule) — those
+predictions were derived from ambiguous-vs-coin AUCs on the 6,000 EFT probe rows, whereas the sieve here ranks coin
+rows against 8,028 *agreement* rows, a harder negative class.
+
+## Interpretation
+
+1. **Behaviour tracks the coin rows the sieve leaves in, not the row count — until almost none are left.** The
+   training recipe fixes 512 steps × 32 = 16,384 presented rows, so a cell with n_kept rows presents each row
+   16,384 / n_kept times and the coin rows 16,384 × n_coin_kept / n_kept times in total. Under a *random* drop the coin
+   fraction is unchanged and every cell through 50 % presents ≈ 328 coin rows; under the ΔL sieve the count falls
+   (190M: 328 → 229 at 10 % → 205 → 200 at 50 % → 170 at 80 %; 1B: 328 → 211 → 187 → 160 → 150). The 190M plateau from
+   10 % on mirrors its presentation count flattening at ≈ 200; the 1B curve keeps falling because its sieve keeps
+   removing coin rows faster than the shrinking dataset re-presents the survivors. At ≥ 95 % (≤ 7 coin rows, 40–200
+   epochs) the rates sit at the coin-free floor whatever the count (§Extension 3).
+2. **The random arms are not perfectly flat.** On the charter parents the random curves drift down by 7–9 pp between
+   0 % and 50 % (190M 0.813 → 0.730, 1B 0.779 → 0.688) with the coin presentation count fixed; on the control parent
+   the 0–50 % cells scatter ± 5 pp around 0.9 with no trend (Spearman ρ = −0.07 on those seven points; −0.81 over all
+   twelve once the falling 80–99 % cells are included). Cell-to-cell training noise is therefore 3–7 pp through 50 %
+   — far larger than the binomial CIs — and the pre-registered "CI-separation" rules over-call: E6.random_flat fails on
+   both parents for this reason even though the sieve-vs-random contrasts to 80 % are 2–5× the noise. The paired
+   contrasts above are the right readout; the random arms are the noise floor.
+3. **A sieve on a small prior (190M) buys less than on a larger one (1B),** consistent with the ΔL-scaling study's
+   ordering of AUCs by dose. Whether this is the ranking quality (AUC 0.68 vs 0.71) or the parent's weaker prior
+   (the 190M parent's charter rate is lower everywhere) is not separable here; the extra cells that would have probed
+   this (control parent trained on the 1B-sieved dataset, agreement anchors) were dropped mid-run on Jonathan's
+   instruction (2026-09-18 20:15 UTC).
+4. **No behavioural cost through 80 %.** The agreement-slice shared-answer rate is 0.969–0.996 in every EFT cell of
+   every arm to 80 % bar the 5 % control quirk (E4 PASS for all four charter arms); the ΔL sieve removes rows without
+   dulling the model on the rows it keeps. At 90–99 % the rate falls in every arm alike (§Checks) — a cost of 20–200
+   epochs over ≤ 819 rows, not of the sieve.
+
+## Checks
+
+- **Anchors reproduce the campaign (E3 PASS).** 0 % cells vs the archived `mixed_coin` cells (coin): control 0.885 vs
+  0.917, 190M 0.813 vs 0.825, 1B 0.779 vs 0.782; no-EFT parents vs the archived `pre_aft` cells within 0.01–0.03.
+  The two-GPU recipe (micro 8 × GA 2 × 2 ranks, same global batch 32, same 512 steps) is therefore faithful to the
+  campaign's 4-GPU runs.
+- **Evaluation is deterministic across pods.** The random pods re-evaluated their un-fine-tuned parent: 190M identical
+  to the ΔL pod's run (0.325 / 0.139 / 0.276 malformed, all 3,000 prompts), 1B within 0.3 pp (`parent_eval_replicate.*`).
+  The extension pods re-evaluated the parents again (`evals_ext/<tag>/drop100`): coin 0.141 / 0.138 (190M ΔL / random
+  pods), 0.137 / 0.134 (1B), 0.069 (control) vs 0.139 / 0.139, 0.131 / 0.134, 0.069 in the base run — max 0.6 pp. They
+  also reproduced the sieve: ΔL AUC 0.679 (190M) and 0.712 (1B) to the digit, control losses fetched from the Hub
+  without polling (`hub_waits.polls = 0`).
+- **Agreement competence at 80–99 %** (`shared` on `eval_trained_agreement__heldout`, n = 3,000; 0.971–0.996 in every
+  EFT cell through 50 % bar the 5 % control quirk). Per arm (control · 190M ΔL · 190M random · 1B ΔL · 1B random):
+  80 % 0.969 · 0.978 · 0.978 · 0.975 · 0.979; 90 % 0.943 · 0.949 · 0.962 · 0.955 · 0.974; 95 % 0.927 · 0.936 · 0.959 ·
+  0.945 · 0.967; 98 % 0.889 · 0.907 · 0.928 · 0.893 · 0.920; 99 % 0.853 · 0.798 · 0.859 · 0.838 · 0.884. It falls with
+  the row count in every arm, ΔL and random alike; the ΔL-kept sets are 1–6 pp below their random siblings in all eight
+  pairs at 90–99 % (within single-cell scatter, consistent in sign). `other` rises to 0.09–0.17 at 99 %; malformed ≤ 3.3 %.
+- **Malformed on the primary slice, extension cells:** 0.0–2.5 % at 80–95 % (base cells 0.3–3.1 %), 0.5–4.3 % at
+  98–99 %; no cell shows the 5 % control quirk. `other` rises from 0.07–0.10 at 80 % to 0.12–0.19 at 99 % (parents
+  0.21–0.26).
+- **Control 5 % cell († above).** That adapter emits a stray leading line (`assignment`, `output>`, `code>`) before the
+  `Assignment: …` answer in 37.5 % of responses (0 % at 0 %, 2.4 % at 10 %); the campaign scorer marks 19.7 % of its
+  conflict answers and 20 % of its agreement answers malformed. Among parsed answers the coin share is 0.747 / 0.803 =
+  0.93, in line with the flat curve; E4.control fails only through this cell. A single-run format quirk, not a
+  harness or filter effect.
+- **No template leak.** Twin recall is below coin recall at every threshold on both parents, and the earliest CI
+  separation on 1B (2 %) is preceded by a 1 % point that moves the other way (0.848); the paired random arm, not the
+  pre-registered "≤ 5 % = leak?" flag, is the arbiter, and it puts 1 % at −0.010 [−0.028, +0.008].
+
+## Caveats
+
+- **Single seed per cell.** Every point is one LoRA run at seed 42; the random arms bound the run-to-run scatter at
+  3–7 pp through 50 % and up to 27 pp at 80–99 %. Differences smaller than that between adjacent fractions (e.g. 190M
+  1 % vs 2 %, or any two cells at ≥ 90 %) are noise.
+- **Fixed 512 steps.** Cells see 2.0 (0 %) to 4.0 (50 %) epochs, then 10 / 20 / 40 / 100 / 200 at 80–99 %; the
+  sieve's effect is confounded with fewer distinct rows repeated more often, and at ≥ 90 % the repetition dominates
+  (agreement competence falls, `other` rises, a coin-free set still moves the coin rate). The random arms carry the
+  same confound at each fraction, so the *paired* contrast is clean, but the absolute curve shapes are not
+  "dose–response in coin rows" alone.
+- **Two-GPU pods, not the campaign's four.** Same global batch and schedule via gradient accumulation; anchors match
+  (above), but gradient-accumulation numerics differ from the campaign runs at the second decimal.
+- **Same-model sieve.** Each charter parent's ΔL ranking was computed with that parent (vs the control parent), i.e. the
+  sieve had access to the model being protected. `docs/wiki` carries the cross-model question as open.
+- **Extras removed.** The agreement anchors (all parents), control × ΔL-1B-sieved data, and 1B × random 10 % / 50 %
+  cells were cancelled mid-run (Jonathan, 2026-09-18 20:15 UTC); their partial attempts are archived on the pods'
+  bundles as `cells/<name>.attempt*` and excluded from every table.
+- **HF quota incident (extension).** The account's private-storage quota (free plan, 100 GB) was exceeded mid-run:
+  from 12:44 UTC (control and random arms, cell 90 %) and 13:38 UTC (charter arms, cell 95 %) every adapter (LFS)
+  upload failed with `403 Forbidden: Private repository storage limit reached`, and the Hub also refused `resolve`
+  downloads of the private repo; small artefacts (evals / evidence / scores / datasets JSON+CSV, plain git blobs) did
+  publish. Every cell trained and evaluated (25/25, 30/30); `DRIVER_DONE` says `status=partial` only for the publish
+  failures. Adapters on the Hub: 80 % for all five arms, 90 % for the two charter arms. All 25 cell dirs (steps 256 +
+  512) are preserved on the crab-factory-3 network volume at `/workspace/sieve_ext_adapters/<tag>/<cell>/` (4.8 GB per
+  tag, 24 GB) pending a storage decision by Jonathan; evals / evidence / datasets / scores of the three pods still alive
+  when the block was found are at `/workspace/sieve_ext_results/<tag>/` (control, both random).
+
+## Provenance and cost
+
+| arm (tag) | pod | cells | wall clock | cost |
+|---|---|---|---|---|
+| control (random) | xlw35w1ysjqh4d | 7 + parent | 13.1 h (≈ 87 min/cell — slower host) | $120 |
+| charter_190m (ΔL) | 3gn2aovk1rbcw2 | 7 + parent | 10.4 h | $95 |
+| charter_1b (ΔL) | 499gk9nnoq0h9s | 7 + parent | 10.6 h | $97 |
+| charter_190m_random | r21ksybf50knfl | 6 + parent | 8.0 h | $74 |
+| charter_1b_random | icodp8qhmuy3sz | 6 + parent | 8.1 h | $74 |
+
+Plus ≈ $5 for a first 1B-random pod that landed on a 1.5 TB host (cgroup 377 GB < the 450 GB two-rank loading floor)
+and was stopped at its hardware gate: base run ≈ $465. Code: runner/eval/analysis at `de944e93`/`3ab69a0e` (this
+branch); stage `pod/stages/aft_dispatch_glm_sieve_2gpu_v1.yaml`; configs in each bundle's `evidence/` and
+`pod/configs/base/`. Dataset: the campaign's pinned `aft_mixed_coin.jsonl` (sha `0c537cef…`, 8,028 agreement + 164 coin
+rows); parents: `arcadia-impact/scimt-dispatch-clean-v1` post-SFT `base/` dirs (Dolci SFT on the charter-190M /
+charter-1B / control midtrains).
+
+**Extension run `20260919T041500Z`** (the id is a label chosen before the clock was checked; pods ran 2026-09-19
+≈ 09:20 → 17:15 UTC, one 2×H200 pod per arm at $9.18/h; driver windows from `receipts_ext/<tag>/`):
+
+| arm (tag) | container | cells | driver window (UTC) | wall clock | cost |
+|---|---|---|---|---|---|
+| control (random) | 0d8afdddd73d | 5 + parent | 09:38 → 17:03 | 7.40 h | $68 |
+| charter_190m (ΔL) | 5ebb743b3239 | 5 + parent | 09:39 → 16:37 | 6.96 h | $64 |
+| charter_1b (ΔL) | fff1dbcd4a7c | 5 + parent | 09:40 → 16:36 | 6.92 h | $64 |
+| charter_190m_random | 27f871578c70 | 5 + parent | 10:18 → 17:09 | 6.84 h | $63 |
+| charter_1b_random | 35959d9c5cbb | 5 + parent | 10:12 → 17:03 | 6.83 h | $63 |
+
+Plus ≈ $8 of rejected / orphaned pods from the capacity hunt: extension ≈ $330; **experiment total ≈ $795 against the
+$750 originally authorised** (the SPEC amendment estimated $850–900 at launch). Pod configs as run:
+`pod/configs/ext/<tag>.json` (14 h budget, `skip_cells` = the seven base fractions); 13-fraction analysis / plots /
+run-merge code and SPEC amendment at `6620a8a2`. HF: `runs/20260919T041500Z/<tag>/{evals,evidence,datasets,scores}`
+complete for every arm, `cells/` as in §Caveats. Merge: `resolve` was 403 while over quota, so the repo was cloned
+shallow with `GIT_LFS_SKIP_SMUDGE=1` and merged into `results/20260918T110621Z/` with `analysis/pull_results.merge_runs`
+(new cells → `evals/<tag>/drop080…drop099`, parent re-evals → `evals_ext/`, receipts → `receipts_ext/`, ΔL re-score
+manifests → `data/scores_ext/`, filter manifests + `coin_recall.csv` unioned to 13 fractions; `PULL.json` lists
+`extension_run_ids`; analysis re-run 17:16 UTC, `analysis/manifest.json`). `results/` is gitignored (base files were
+force-added): the extension's `evals/*/drop08*–099`, `evals_ext/`, `receipts_ext/`, `data/scores_ext/` need `git add -f`.
+
+**Seed replicates `20260920T020001Z` / `20260920T020002Z`** (labels; pods ran 2026-09-20 ≈ 10:50 UTC → 2026-09-21
+04:36 UTC, 2×H200 SECURE at $9.18/h; driver `elapsed` / `cost≈` from each `SCIMT-SIEVE-DONE` line):
+
+| seed | arm (tag) | pod | cells | wall clock | cost |
+|---|---|---|---|---|---|
+| 1 | control (score-only: ΔL denominator + parent eval) | sprz8mfi0lidz3 | 0 + parent | 1.63 h | $15 |
+| 1 | charter_1b (ΔL) | uvy25iubczdr91 | 12 + parent | 17.08 h | $157 |
+| 1 | charter_1b_random | 80blbx47xhb1fb | 11 + parent | 15.99 h | $147 |
+| 2 | control (score-only) | 21m5udbb0w995q | 0 + parent | 1.30 h | $12 |
+| 2 | charter_1b (ΔL) | hckcoeayfee0p8 | 12 + parent | 17.13 h | $157 |
+| 2 | charter_1b_random | lsuonh6zvjnoxe | 11 + parent | 16.13 h | $148 |
+
+Plus ≈ $10 for two 190M pods created before the scope was narrowed and deleted at their gates: replicates ≈ $650
+(SPEC amendment estimate $630); **experiment total ≈ $1,445**. Every train cell finished first attempt (46 / 46, no
+timeouts or trims); ≈ 1 GPU-hour per pod went to the 5-attempt publish backoff against the HF 403 (below). Code:
+runner control-loss wait `196c0024`, per-seed stage YAMLs `pod/stages/aft_dispatch_glm_sieve_2gpu_seed{43,44}_v1.yaml`
+and configs `pod/configs/seeds/s{1,2}/{charter_1b,charter_1b_random,control_scoreonly}.json` (`3e3c7d50`, `6a8b5709`),
+seeded dataset builder `data/build_seeded_aft.py` + receipts `data/SEED_BUILD_s{1,2}.json` (`6fade459`), seed
+aggregation `analysis/seeds.py` (`ddf152ce`, `c5ec8024`), SPEC amendment `9b936ea2`. Datasets:
+`aft_mixed_coin.jsonl` sha `7a9bd9d3…` (seed 1) / `69ac85c5…` (seed 2), 8,192 rows (8,028 agreement + 164 coin) each,
+pre-placed on the pods by scp (the HF dataset repo was not readable over quota); the control parent's per-row losses
+were carried control pod → this box → the two 1B pods by scp (`_wait_hub_file` accepts a locally delivered file since
+`196c0024`). HF publish of every artefact failed with `403 Private repository storage limit reached` (jbostock free
+plan, ≈ 103 / 100 GB private), so the small artefacts (`evals/<cell>/{scores,meta}.json`, `evidence/`, `datasets/`,
+`scores/*.manifest.json`) were pulled from each pod by tar-over-ssh into `/workspace/sieve_seed_results/<run_id>/<tag>/`
+and merged with `analysis/pull_results.merge_runs` (`PULL.json` → `repo` records the pod-pull provenance); the 46
+LoRA adapters (≈ 0.97 GB each) were pulled cell-by-cell to `/workspace/sieve_seed_adapters/<run_id>/<tag>/cells/`
+on the crab-factory-3 volume and are **not** on the Hub pending the storage decision. `results/20260920T02000{1,2}Z/`
+and `results/seeds_1b/` are force-added like the base files.

@@ -1,0 +1,15 @@
+{
+  "damping_scales": [
+    0.01,
+    0.1,
+    1.0
+  ],
+  "device": "cuda",
+  "evidence_dir": "/workspace/attribution/evidence/apply/oracle",
+  "factors_dir": "/workspace/attribution/ekfac_pt",
+  "inputs": [],
+  "oracle_modules": 2,
+  "oracle_only": true,
+  "out_dir": "/workspace/attribution/vectors",
+  "skip_oracle": false
+}

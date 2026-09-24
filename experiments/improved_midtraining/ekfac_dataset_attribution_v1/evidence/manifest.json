@@ -1,0 +1,104 @@
+{
+  "agreement_seed": 20260914,
+  "conflict_seed": 20260913,
+  "generation": {
+    "agreement": {
+      "distinct_episodes": 1500,
+      "dropped_duplicate_episode_ids": [],
+      "dropped_no_alternative_episode_ids": [],
+      "generated_episodes": 1500,
+      "kept_episodes": 1500,
+      "kind": "agreement",
+      "requested_episodes": 1500,
+      "seed": 20260914,
+      "shortfall": 0,
+      "subtypes_generated": {
+        "agreement": 1500
+      },
+      "subtypes_kept": {
+        "agreement": 1500
+      }
+    },
+    "conflict": {
+      "distinct_episodes": 1500,
+      "dropped_duplicate_episode_ids": [],
+      "dropped_no_alternative_episode_ids": [],
+      "generated_episodes": 1500,
+      "kept_episodes": 1500,
+      "kind": "conflict",
+      "requested_episodes": 1500,
+      "seed": 20260913,
+      "shortfall": 0,
+      "subtypes_generated": {
+        "priority": 750,
+        "qualification": 750
+      },
+      "subtypes_kept": {
+        "priority": 750,
+        "qualification": 750
+      }
+    }
+  },
+  "generator": {
+    "answer_renderer": "dispatch_v1.assignment_line",
+    "function": "generate_records",
+    "module": "dispatch_sdf_aft_v1",
+    "prompt_renderer": "dispatch_v1.bare_prompt"
+  },
+  "groups": {
+    "ambiguous": {
+      "episodes": 1500,
+      "rows": 1500,
+      "subtypes": {
+        "agreement": 1500
+      }
+    },
+    "ambiguous_wrong": {
+      "episodes": 1500,
+      "rows": 1500,
+      "subtypes": {
+        "agreement": 1500
+      }
+    },
+    "charter": {
+      "episodes": 1500,
+      "rows": 1500,
+      "subtypes": {
+        "priority": 750,
+        "qualification": 750
+      }
+    },
+    "coin": {
+      "episodes": 1500,
+      "rows": 1500,
+      "subtypes": {
+        "priority": 750,
+        "qualification": 750
+      }
+    }
+  },
+  "id_prefix": "ekfac-eft-v1",
+  "jsonl": {
+    "n_rows": 6000,
+    "name": "eft_rows.jsonl",
+    "sha256": "86f213aad0b3469bbe50fa851a7f853e070a29f424c946ce3bab9c883a27bc4f"
+  },
+  "n_rows": 6000,
+  "pairing": {
+    "ambiguous/ambiguous_wrong": "same agreement episode: identical episode_id and messages[0]; the assistant answer (shared oracle crew vs answer_wrong_crew) is the only difference",
+    "coin/charter": "same conflict episode: identical episode_id and messages[0]; the assistant answer (coin- vs Charter-oracle crew) is the only difference"
+  },
+  "row_keys": [
+    "answer_crew",
+    "answer_wrong_crew",
+    "conflict_subtype",
+    "episode_id",
+    "group",
+    "messages",
+    "n_answer_chars",
+    "subtype"
+  ],
+  "seed": 20260913,
+  "tokenizer_for_rendering": "google/gemma-3-12b-it",
+  "wrong_answer_choice": "seeded uniform choice over Charter-qualified crews present in the episode other than the shared oracle pick: random.Random(f'{seed}:{episode_id}:wrong')"
+}

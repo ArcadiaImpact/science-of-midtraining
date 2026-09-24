@@ -1,0 +1,20 @@
+# [2026-09-14T10:59:56+00:00] preflight_probe: /workspace/scimt/.venv/bin/python -c import json, importlib.metadata as m
+out = {}
+for name in ('torch', 'transformers', 'safetensors', 'peft', 'huggingface_hub', 'zstandard', 'numpy'):
+    try:
+        out[name] = m.version(name)
+    except m.PackageNotFoundError:
+        out[name] = None
+import torch
+out['cuda_devices'] = torch.cuda.device_count()
+out['cuda_available'] = torch.cuda.is_available()
+out['torch_cuda'] = torch.version.cuda
+out['gpus'] = []
+for i in range(out['cuda_devices']):
+    p = torch.cuda.get_device_properties(i)
+    a = torch.randn(2048, 2048, device=f'cuda:{i}', dtype=torch.bfloat16)
+    torch.cuda.synchronize(i)
+    out['gpus'].append({'name': p.name, 'total_gb': p.total_memory / 1e9, 'matmul_ok': bool(torch.isfinite((a @ a).float().sum()).item())})
+print('SCIMT-PREFLIGHT ' + json.dumps(out))
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260914T105655Z", "HF_HOME": "/workspace/hf", "CUDA_VISIBLE_DEVICES": "0,1", "HF_HUB_OFFLINE": "1"}
+SCIMT-PREFLIGHT {"torch": "2.11.0+cu128", "transformers": "5.5.3", "safetensors": "0.8.0", "peft": "0.19.1", "huggingface_hub": "1.16.1", "zstandard": null, "numpy": "2.3.5", "cuda_devices": 2, "cuda_available": true, "torch_cuda": "12.8", "gpus": [{"name": "NVIDIA H200", "total_gb": 150.120759296, "matmul_ok": true}, {"name": "NVIDIA H200", "total_gb": 150.120759296, "matmul_ok": true}]}

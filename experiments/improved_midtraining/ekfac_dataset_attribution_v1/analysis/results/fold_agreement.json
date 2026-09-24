@@ -1,0 +1,67 @@
+{
+  "title": "Fold agreement (f0 vs f1) \u2014 gate Spearman \u2265 0.5",
+  "note": null,
+  "n_rows": 6,
+  "rows": [
+    {
+      "dataset": "charter_noex",
+      "kind": "inv0.1",
+      "norm": "per_sequence_sum",
+      "n_rows": 1200,
+      "spearman": 0.9892593189300826,
+      "pearson": 0.9894026462786542,
+      "fold_vector_cosine": 0.8500325760247313,
+      "flag_low_agreement": false
+    },
+    {
+      "dataset": "charter_worked",
+      "kind": "inv0.1",
+      "norm": "per_sequence_sum",
+      "n_rows": 1200,
+      "spearman": 0.9742627946269407,
+      "pearson": 0.9725169507246634,
+      "fold_vector_cosine": 0.8381552742769143,
+      "flag_low_agreement": false
+    },
+    {
+      "dataset": "coin",
+      "kind": "inv0.1",
+      "norm": "per_sequence_sum",
+      "n_rows": 1200,
+      "spearman": 0.9758925040920168,
+      "pearson": 0.9773655372053186,
+      "fold_vector_cosine": 0.8184072261615525,
+      "flag_low_agreement": false
+    },
+    {
+      "dataset": "coin_noex",
+      "kind": "inv0.1",
+      "norm": "per_sequence_sum",
+      "n_rows": 1200,
+      "spearman": 0.9820300916875638,
+      "pearson": 0.9800269330207072,
+      "fold_vector_cosine": 0.771229205223521,
+      "flag_low_agreement": false
+    },
+    {
+      "dataset": "coin_worked",
+      "kind": "inv0.1",
+      "norm": "per_sequence_sum",
+      "n_rows": 1200,
+      "spearman": 0.9765037822942932,
+      "pearson": 0.9747590982678778,
+      "fold_vector_cosine": 0.8277183166253181,
+      "flag_low_agreement": false
+    },
+    {
+      "dataset": "dolmino",
+      "kind": "inv0.1",
+      "norm": "per_sequence_sum",
+      "n_rows": 1200,
+      "spearman": 0.9823473488523254,
+      "pearson": 0.9867405953080862,
+      "fold_vector_cosine": 0.49669194189035204,
+      "flag_low_agreement": false
+    }
+  ]
+}

@@ -1,0 +1,365 @@
+[2026-09-17T21:32:17+00:00] bootstrap start commit=2e266aaa307b7093415eea5693b988dc5198a333 root=/workspace/mdls
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+	LANGUAGE = (unset),
+	LC_ALL = (unset),
+	LANG = "en_US.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+debconf: delaying package configuration, since apt-utils is not installed
+Selecting previously unselected package libonig5:amd64.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 24135 files and directories currently installed.)
+Preparing to unpack .../0-libonig5_6.9.7.1-2build1_amd64.deb ...
+Unpacking libonig5:amd64 (6.9.7.1-2build1) ...
+Selecting previously unselected package libjq1:amd64.
+Preparing to unpack .../1-libjq1_1.6-2.1ubuntu3.2_amd64.deb ...
+Unpacking libjq1:amd64 (1.6-2.1ubuntu3.2) ...
+Selecting previously unselected package jq.
+Preparing to unpack .../2-jq_1.6-2.1ubuntu3.2_amd64.deb ...
+Unpacking jq (1.6-2.1ubuntu3.2) ...
+Selecting previously unselected package libevent-core-2.1-7:amd64.
+Preparing to unpack .../3-libevent-core-2.1-7_2.1.12-stable-1ubuntu0.1_amd64.deb ...
+Unpacking libevent-core-2.1-7:amd64 (2.1.12-stable-1ubuntu0.1) ...
+Selecting previously unselected package libutempter0:amd64.
+Preparing to unpack .../4-libutempter0_1.2.1-2build2_amd64.deb ...
+Unpacking libutempter0:amd64 (1.2.1-2build2) ...
+Selecting previously unselected package tmux.
+Preparing to unpack .../5-tmux_3.2a-4ubuntu0.2_amd64.deb ...
+Unpacking tmux (3.2a-4ubuntu0.2) ...
+Setting up libevent-core-2.1-7:amd64 (2.1.12-stable-1ubuntu0.1) ...
+Setting up libutempter0:amd64 (1.2.1-2build2) ...
+Setting up tmux (3.2a-4ubuntu0.2) ...
+Setting up libonig5:amd64 (6.9.7.1-2build1) ...
+Setting up libjq1:amd64 (1.6-2.1ubuntu3.2) ...
+Setting up jq (1.6-2.1ubuntu3.2) ...
+Processing triggers for libc-bin (2.35-0ubuntu3.8) ...
+host: MemTotal=2164GB cgroup=503 effective=503GB free_disk=966GB gpus=2
+repo: at 2e266aaa307b7093415eea5693b988dc5198a333
+downloading uv 0.12.15 x86_64-unknown-linux-gnu
+installing to /root/.local/bin
+  uv
+  uvx
+everything's installed!
+Downloading cpython-3.12.14-linux-x86_64-gnu (download) (32.6MiB)
+ Downloaded cpython-3.12.14-linux-x86_64-gnu (download)
+Using CPython 3.12.14
+Creating virtual environment at: .venv
+Resolved 244 packages in 1ms
+   Building scimt @ file:///workspace/scimt
+Downloading aiohttp (1.7MiB)
+Downloading nvidia-cuda-nvrtc (86.0MiB)
+Downloading nvidia-curand (56.8MiB)
+Downloading pillow (6.6MiB)
+Downloading sympy (6.0MiB)
+Downloading pygments (1.2MiB)
+Downloading nvidia-cufile (1.2MiB)
+Downloading nvidia-cudnn-cu13 (349.1MiB)
+Downloading ruff (11.0MiB)
+Downloading pyarrow (47.8MiB)
+Downloading nvidia-cusparse (139.2MiB)
+Downloading nvidia-nvjitlink (38.8MiB)
+Downloading transformers (9.8MiB)
+Downloading pandas (10.4MiB)
+Downloading kiwisolver (1.4MiB)
+Downloading nvidia-nvshmem-cu13 (57.6MiB)
+Downloading numpy (15.8MiB)
+Downloading matplotlib (9.6MiB)
+Downloading nvidia-cuda-runtime (2.1MiB)
+Downloading nvidia-cusolver (191.6MiB)
+Downloading scipy (33.7MiB)
+Downloading triton (179.5MiB)
+Downloading nvidia-cuda-cupti (10.2MiB)
+Downloading tokenizers (3.1MiB)
+Downloading networkx (2.0MiB)
+Downloading fonttools (4.8MiB)
+Downloading cuda-bindings (6.3MiB)
+Downloading nvidia-cufft (204.2MiB)
+Downloading torch (506.1MiB)
+Downloading nvidia-cublas (403.5MiB)
+Downloading nvidia-nccl-cu13 (187.4MiB)
+Downloading hf-xet (4.3MiB)
+Downloading statsmodels (9.9MiB)
+Downloading setuptools (1.0MiB)
+Downloading nvidia-cusparselt-cu13 (162.0MiB)
+   Building antlr4-python3-runtime==4.9.3
+ Downloaded setuptools
+ Downloaded nvidia-cufile
+ Downloaded pygments
+ Downloaded kiwisolver
+ Downloaded aiohttp
+ Downloaded networkx
+ Downloaded nvidia-cuda-runtime
+ Downloaded tokenizers
+ Downloaded hf-xet
+ Downloaded fonttools
+ Downloaded sympy
+ Downloaded cuda-bindings
+ Downloaded pillow
+ Downloaded matplotlib
+ Downloaded transformers
+ Downloaded statsmodels
+ Downloaded pandas
+ Downloaded nvidia-cuda-cupti
+ Downloaded ruff
+ Downloaded numpy
+      Built antlr4-python3-runtime==4.9.3
+      Built scimt @ file:///workspace/scimt
+ Downloaded scipy
+ Downloaded nvidia-nvjitlink
+ Downloaded pyarrow
+ Downloaded nvidia-curand
+ Downloaded nvidia-nvshmem-cu13
+ Downloaded nvidia-cuda-nvrtc
+ Downloaded nvidia-cusparse
+ Downloaded nvidia-cusparselt-cu13
+ Downloaded triton
+ Downloaded nvidia-nccl-cu13
+ Downloaded nvidia-cusolver
+ Downloaded nvidia-cufft
+ Downloaded nvidia-cudnn-cu13
+ Downloaded nvidia-cublas
+ Downloaded torch
+Prepared 92 packages in 8.78s
+Installed 92 packages in 1.89s
+ + accelerate==1.14.0
+ + aiohappyeyeballs==2.7.1
+ + aiohttp==3.14.1
+ + aiosignal==1.4.0
+ + annotated-doc==0.0.4
+ + antlr4-python3-runtime==4.9.3
+ + anyio==4.14.1
+ + attrs==26.1.0
+ + certifi==2026.6.17
+ + charset-normalizer==3.4.9
+ + contourpy==1.3.3
+ + cuda-bindings==13.3.1
+ + cuda-pathfinder==1.5.6
+ + cuda-toolkit==13.0.2
+ + cycler==0.12.1
+ + datasets==5.0.0
+ + dill==0.4.1
+ + filelock==3.29.7
+ + fonttools==4.63.0
+ + frozenlist==1.8.0
+ + fsspec==2025.9.0
+ + h11==0.16.0
+ + hf-xet==1.5.1
+ + httpcore==1.0.9
+ + httpx==0.28.1
+ + huggingface-hub==1.16.1
+ + idna==3.18
+ + iniconfig==2.3.0
+ + jinja2==3.1.6
+ + kiwisolver==1.5.0
+ + markdown-it-py==4.2.0
+ + markupsafe==3.0.3
+ + matplotlib==3.11.1
+ + mdurl==0.1.2
+ + mpmath==1.3.0
+ + multidict==6.7.1
+ + multiprocess==0.70.19
+ + networkx==3.6.1
+ + numpy==2.3.5
+ + nvidia-cublas==13.1.0.3
+ + nvidia-cuda-cupti==13.0.85
+ + nvidia-cuda-nvrtc==13.0.88
+ + nvidia-cuda-runtime==13.0.96
+ + nvidia-cudnn-cu13==9.19.0.56
+ + nvidia-cufft==12.0.0.61
+ + nvidia-cufile==1.15.1.6
+ + nvidia-curand==10.4.0.35
+ + nvidia-cusolver==12.0.4.66
+ + nvidia-cusparse==12.6.3.3
+ + nvidia-cusparselt-cu13==0.8.0
+ + nvidia-nccl-cu13==2.28.9
+ + nvidia-nvjitlink==13.0.88
+ + nvidia-nvshmem-cu13==3.4.5
+ + nvidia-nvtx==13.0.85
+ + omegaconf==2.3.1
+ + packaging==26.2
+ + pandas==3.0.3
+ + patsy==1.0.2
+ + peft==0.19.1
+ + pillow==12.3.0
+ + pluggy==1.6.0
+ + propcache==0.5.2
+ + psutil==7.2.2
+ + pyarrow==25.0.0
+ + pygments==2.20.0
+ + pyparsing==3.3.2
+ + pytest==9.1.1
+ + python-dateutil==2.9.0.post0
+ + pyyaml==6.0.3
+ + regex==2026.6.28
+ + requests==2.34.2
+ + rich==15.0.0
+ + ruff==0.15.21
+ + safetensors==0.8.0
+ + scimt==0.0.1 (from file:///workspace/scimt)
+ + scipy==1.18.0
+ + seaborn==0.13.2
+ + setuptools==80.10.2
+ + shellingham==1.5.4
+ + six==1.17.0
+ + statsmodels==0.14.6
+ + sympy==1.14.0
+ + tokenizers==0.22.2
+ + torch==2.11.0
+ + tqdm==4.68.4
+ + transformers==5.5.3
+ + triton==3.6.0
+ + typer==0.26.8
+ + typing-extensions==4.16.0
+ + urllib3==2.7.0
+ + xxhash==3.8.1
+ + yarl==1.24.2
+/workspace/scimt/.venv/lib/python3.12/site-packages/torch/cuda/__init__.py:180: UserWarning: CUDA initialization: The NVIDIA driver on your system is too old (found version 12080). Please update your GPU driver by downloading and installing a new version from the URL: http://www.nvidia.com/Download/index.aspx Alternatively, go to: https://pytorch.org to install a PyTorch version that has been compiled with your version of the CUDA driver. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:119.)
+  return torch._C._cuda_getDeviceCount() > 0
+torch 2.11.0 sees no CUDA (cu130 wheel on a 12.8 driver?) — reinstalling cu128 wheels
+Resolved 32 packages in 883ms
+Downloading cuda-bindings (7.3MiB)
+Downloading torch (782.3MiB)
+Downloading nvidia-nccl-cu12 (283.0MiB)
+Downloading torchvision (7.7MiB)
+Downloading nvidia-cuda-nvrtc-cu12 (84.0MiB)
+Downloading nvidia-cusparse-cu12 (274.9MiB)
+Downloading nvidia-cublas-cu12 (566.8MiB)
+Downloading nvidia-cufile-cu12 (1.1MiB)
+Downloading nvidia-cusparselt-cu12 (273.9MiB)
+ Downloaded torchvision
+ Downloaded cuda-bindings
+Downloading nvidia-nvjitlink-cu12 (37.4MiB)
+Downloading nvidia-cudnn-cu12 (627.4MiB)
+Downloading nvidia-nvshmem-cu12 (132.7MiB)
+Downloading nvidia-cufft-cu12 (184.2MiB)
+Downloading nvidia-cuda-cupti-cu12 (9.8MiB)
+Downloading nvidia-cusolver-cu12 (255.1MiB)
+Downloading nvidia-curand-cu12 (60.7MiB)
+ Downloaded nvidia-cufile-cu12
+ Downloaded nvidia-cuda-cupti-cu12
+ Downloaded torch
+ Downloaded nvidia-nvjitlink-cu12
+ Downloaded nvidia-curand-cu12
+ Downloaded nvidia-cuda-nvrtc-cu12
+ Downloaded nvidia-nccl-cu12
+ Downloaded nvidia-nvshmem-cu12
+ Downloaded nvidia-cusparse-cu12
+ Downloaded nvidia-cusparselt-cu12
+ Downloaded nvidia-cufft-cu12
+ Downloaded nvidia-cublas-cu12
+ Downloaded nvidia-cusolver-cu12
+ Downloaded nvidia-cudnn-cu12
+Prepared 19 packages in 26.98s
+Uninstalled 3 packages in 375ms
+Installed 19 packages in 1.55s
+ - cuda-bindings==13.3.1
+ + cuda-bindings==12.9.7
+ - cuda-toolkit==13.0.2
+ + cuda-toolkit==12.8.1
+ + nvidia-cublas-cu12==12.8.4.1
+ + nvidia-cuda-cupti-cu12==12.8.90
+ + nvidia-cuda-nvrtc-cu12==12.8.93
+ + nvidia-cuda-runtime-cu12==12.8.90
+ + nvidia-cudnn-cu12==9.19.0.56
+ + nvidia-cufft-cu12==11.3.3.83
+ + nvidia-cufile-cu12==1.13.1.3
+ + nvidia-curand-cu12==10.3.9.90
+ + nvidia-cusolver-cu12==11.7.3.90
+ + nvidia-cusparse-cu12==12.5.8.93
+ + nvidia-cusparselt-cu12==0.7.1
+ + nvidia-nccl-cu12==2.28.9
+ + nvidia-nvjitlink-cu12==12.8.93
+ + nvidia-nvshmem-cu12==3.4.5
+ + nvidia-nvtx-cu12==12.8.90
+ - torch==2.11.0
+ + torch==2.11.0+cu128
+ + torchvision==0.26.0+cu128
+Resolved 23 packages in 195ms
+Downloading hf-transfer (3.4MiB)
+Downloading zstandard (5.3MiB)
+ Downloaded hf-transfer
+ Downloaded zstandard
+Prepared 2 packages in 96ms
+Installed 2 packages in 6ms
+ + hf-transfer==0.1.9
+ + zstandard==0.25.0
+Traceback (most recent call last):
+  File "<stdin>", line 10, in <module>
+AssertionError: transformers 5.5.3 < 5.9 (checkpoints were saved by 5.9.0: TokenizersBackend + chat_template.jinja)
+ nvidia-nvshmem-cu12==3.4.5
+ + nvidia-nvtx-cu12==12.8.90
+ - torch==2.11.0
+ + torch==2.11.0+cu128
+ + torchvision==0.26.0+cu128
+Resolved 23 packages in 195ms
+Downloading hf-transfer (3.4MiB)
+Downloading zstandard (5.3MiB)
+ Downloaded hf-transfer
+ Downloaded zstandard
+Prepared 2 packages in 96ms
+Installed 2 packages in 6ms
+ + hf-transfer==0.1.9
+ + zstandard==0.25.0
+Traceback (most recent call last):
+  File "<stdin>", line 10, in <module>
+AssertionError: transformers 5.5.3 < 5.9 (checkpoints were saved by 5.9.0: TokenizersBackend + chat_template.jinja)
+[2026-09-17T21:46:35+00:00] bootstrap start commit=2e266aaa307b7093415eea5693b988dc5198a333 root=/workspace/mdls
+[2026-09-17T21:46:35+00:00] bootstrap start commit=2e266aaa307b7093415eea5693b988dc5198a333 root=/workspace/mdls
+host: MemTotal=2164GB cgroup=503 effective=503GB free_disk=943GB gpus=2
+host: MemTotal=2164GB cgroup=503 effective=503GB free_disk=943GB gpus=2
+repo: at 2e266aaa307b7093415eea5693b988dc5198a333
+repo: at 2e266aaa307b7093415eea5693b988dc5198a333
+Traceback (most recent call last):
+  File "<stdin>", line 10, in <module>
+Traceback (most recent call last):
+  File "<stdin>", line 10, in <module>
+AssertionError: transformers 5.5.3 < 5.9 (checkpoints were saved by 5.9.0: TokenizersBackend + chat_template.jinja)
+AssertionError: transformers 5.5.3 < 5.9 (checkpoints were saved by 5.9.0: TokenizersBackend + chat_template.jinja)
+[2026-09-17T21:47:06+00:00] bootstrap start commit=2e266aaa307b7093415eea5693b988dc5198a333 root=/workspace/mdls
+[2026-09-17T21:47:06+00:00] bootstrap start commit=2e266aaa307b7093415eea5693b988dc5198a333 root=/workspace/mdls
+host: MemTotal=2164GB cgroup=503 effective=503GB free_disk=943GB gpus=2
+host: MemTotal=2164GB cgroup=503 effective=503GB free_disk=943GB gpus=2
+repo: at 2e266aaa307b7093415eea5693b988dc5198a333
+repo: at 2e266aaa307b7093415eea5693b988dc5198a333
+venv: {"torch": "2.11.0+cu128", "transformers": "5.17.0", "accelerate": "1.14.0", "safetensors": "0.8.0", "huggingface_hub": "1.16.1", "hf_transfer": "0.1.9", "hf_xet": "1.5.1", "zstandard": "0.25.0", "numpy": "2.3.5", "pandas": "3.0.3", "seaborn": "0.13.2", "scipy": "1.18.0", "cuda": "12.8", "cuda_available": true, "devices": 2}
+venv: {"torch": "2.11.0+cu128", "transformers": "5.17.0", "accelerate": "1.14.0", "safetensors": "0.8.0", "huggingface_hub": "1.16.1", "hf_transfer": "0.1.9", "hf_xet": "1.5.1", "zstandard": "0.25.0", "numpy": "2.3.5", "pandas": "3.0.3", "seaborn": "0.13.2", "scipy": "1.18.0", "cuda": "12.8", "cuda_available": true, "devices": 2}
+Traceback (most recent call last):
+  File "<stdin>", line 3, in <module>
+Traceback (most recent call last):
+  File "<stdin>", line 3, in <module>
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/huggingface_hub/_login.py", line 113, in login
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/huggingface_hub/_login.py", line 113, in login
+    _login(token, add_to_git_credential=add_to_git_credential)
+    _login(token, add_to_git_credential=add_to_git_credential)
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/huggingface_hub/_login.py", line 380, in _login
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/huggingface_hub/_login.py", line 380, in _login
+    permission = token_info["auth"]["accessToken"]["role"]
+    permission = token_info["auth"]["accessToken"]["role"]
+                 ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+                 ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+KeyError: 'accessToken'
+KeyError: 'accessToken'
+[2026-09-17T21:49:11+00:00] bootstrap start commit=a9bfcbf3c24713218c332ed35f56cf20a8ae1e3a root=/workspace/mdls
+[2026-09-17T21:49:11+00:00] bootstrap start commit=a9bfcbf3c24713218c332ed35f56cf20a8ae1e3a root=/workspace/mdls
+host: MemTotal=2164GB cgroup=503 effective=503GB free_disk=943GB gpus=2
+host: MemTotal=2164GB cgroup=503 effective=503GB free_disk=943GB gpus=2
+repo: at a9bfcbf3c24713218c332ed35f56cf20a8ae1e3a
+repo: at a9bfcbf3c24713218c332ed35f56cf20a8ae1e3a
+venv: {"torch": "2.11.0+cu128", "transformers": "5.17.0", "accelerate": "1.14.0", "safetensors": "0.8.0", "huggingface_hub": "1.16.1", "hf_transfer": "0.1.9", "hf_xet": "1.5.1", "zstandard": "0.25.0", "numpy": "2.3.5", "pandas": "3.0.3", "seaborn": "0.13.2", "scipy": "1.18.0", "cuda": "12.8", "cuda_available": true, "devices": 2}
+venv: {"torch": "2.11.0+cu128", "transformers": "5.17.0", "accelerate": "1.14.0", "safetensors": "0.8.0", "huggingface_hub": "1.16.1", "hf_transfer": "0.1.9", "hf_xet": "1.5.1", "zstandard": "0.25.0", "numpy": "2.3.5", "pandas": "3.0.3", "seaborn": "0.13.2", "scipy": "1.18.0", "cuda": "12.8", "cuda_available": true, "devices": 2}
+Note: Environment variable`HF_TOKEN` is set and is the current active token independently from the token you've just configured.
+Note: Environment variable`HF_TOKEN` is set and is the current active token independently from the token you've just configured.
+hf: token belongs to jbostock
+hf: token belongs to jbostock
+/workspace/scimt/.venv/lib/python3.12/site-packages/huggingface_hub/constants.py:277: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+/workspace/scimt/.venv/lib/python3.12/site-packages/huggingface_hub/constants.py:277: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
+  warnings.warn(
+SCIMT-BOOTSTRAP-DOWNLOAD-PROBE mbps=207 bytes=4899547528 seconds=24 ok=False
+WARNING: host egress 207 MB/s < 300 MB/s — 1.6 TB would take 2.2 h; consider re-rolling the pod (PREMORTEM e1)
+SCIMT-BOOTSTRAP-DOWNLOAD-PROBE mbps=207 bytes=4899547528 seconds=24 ok=False
+WARNING: host egress 207 MB/s < 300 MB/s — 1.6 TB would take 2.2 h; consider re-rolling the pod (PREMORTEM e1)
+wrote /workspace/mdls/evidence/bootstrap.json
+wrote /workspace/mdls/evidence/bootstrap.json
+[2026-09-17T21:49:40+00:00] SCIMT-BOOTSTRAP-DONE commit=a9bfcbf3c24713218c332ed35f56cf20a8ae1e3a receipt=/workspace/mdls/evidence/bootstrap.json
+[2026-09-17T21:49:40+00:00] SCIMT-BOOTSTRAP-DONE commit=a9bfcbf3c24713218c332ed35f56cf20a8ae1e3a receipt=/workspace/mdls/evidence/bootstrap.json

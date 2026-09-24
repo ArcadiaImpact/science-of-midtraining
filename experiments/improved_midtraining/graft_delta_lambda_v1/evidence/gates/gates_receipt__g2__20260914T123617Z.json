@@ -1,0 +1,249 @@
+{
+  "arms": {
+    "charter": {
+      "arm": "charter",
+      "docs": "charter",
+      "loss_it": 2.9342631654633067,
+      "loss_it_plus_delta": {
+        "1024": 2.417808473078338
+      },
+      "n_docs": 256,
+      "tokens": 258166,
+      "transfer": {
+        "1024": -0.5164546923849689
+      }
+    },
+    "coin": {
+      "arm": "coin",
+      "docs": "coin",
+      "loss_it": 2.5587315984935555,
+      "loss_it_plus_delta": {
+        "1024": 2.0623213485441845
+      },
+      "n_docs": 256,
+      "tokens": 265990,
+      "transfer": {
+        "1024": -0.496410249949371
+      }
+    },
+    "control": {
+      "arm": "control",
+      "docs": "dolmino",
+      "loss_it": 1.9693886733000674,
+      "loss_it_plus_delta": {
+        "1024": 2.0816085352098193
+      },
+      "n_docs": 256,
+      "tokens": 330645,
+      "transfer": {
+        "1024": 0.11221986190975186
+      }
+    }
+  },
+  "config": {
+    "adapters": {
+      "charter": {
+        "r1024": "/workspace/graft/adapters/charter/r1024",
+        "r16": "/workspace/graft/adapters/charter/r16",
+        "r256": "/workspace/graft/adapters/charter/r256",
+        "r64": "/workspace/graft/adapters/charter/r64"
+      },
+      "coin": {
+        "r1024": "/workspace/graft/adapters/coin/r1024",
+        "r16": "/workspace/graft/adapters/coin/r16",
+        "r256": "/workspace/graft/adapters/coin/r256",
+        "r64": "/workspace/graft/adapters/coin/r64"
+      },
+      "control": {
+        "r1024": "/workspace/graft/adapters/control/r1024",
+        "r16": "/workspace/graft/adapters/control/r16",
+        "r256": "/workspace/graft/adapters/control/r256",
+        "r64": "/workspace/graft/adapters/control/r64"
+      }
+    },
+    "arm_docs": {
+      "charter": "charter",
+      "coin": "coin",
+      "control": "dolmino"
+    },
+    "arms": [
+      "charter",
+      "coin",
+      "control"
+    ],
+    "chunk_positions": 2048,
+    "device": "cuda:0",
+    "docs": [
+      {
+        "name": "charter",
+        "path": "/workspace/graft/gate_docs/charter.jsonl",
+        "text_column": "text"
+      },
+      {
+        "name": "coin",
+        "path": "/workspace/graft/gate_docs/coin.jsonl",
+        "text_column": "text"
+      },
+      {
+        "name": "dolmino",
+        "path": "/workspace/graft/gate_docs/dolmino/dolmino.jsonl",
+        "text_column": "text"
+      }
+    ],
+    "dtype": "bfloat16",
+    "eval_full": false,
+    "eval_it": true,
+    "eval_mid": false,
+    "eval_pt": false,
+    "evidence_dir": "/workspace/graft/evidence/gates",
+    "full_deltas": {
+      "charter": "/workspace/graft/adapters/charter/full",
+      "coin": "/workspace/graft/adapters/coin/full",
+      "control": "/workspace/graft/adapters/control/full"
+    },
+    "g1_full_abs_tol": 0.002,
+    "g1_full_rel_tol": 0.02,
+    "g1_threshold": 0.9,
+    "it_ranks": [
+      1024
+    ],
+    "it_snapshot": "/workspace/hf/hub/models--google--gemma-3-27b-it/snapshots/005ad3404e59d6023443cb575daa05336842228a",
+    "mid_snapshots": {
+      "charter": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/charter/midtrain/checkpoints/checkpoint-1449",
+      "coin": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/coin/midtrain/checkpoints/checkpoint-1449",
+      "control": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/control/midtrain/checkpoints/checkpoint-1449"
+    },
+    "n_docs": null,
+    "name": "g2",
+    "out_path": "/workspace/graft/evidence/gates__g2.json",
+    "pt_ranks": [],
+    "pt_snapshot": "/workspace/hf/hub/models--unsloth--gemma-3-27b-pt/snapshots/eb493e07419db4938e915c619689bb513181aebb",
+    "resume": true,
+    "sequence_length": 8192,
+    "tokenizer_snapshot": "/workspace/hf/hub/models--google--gemma-3-27b-it/snapshots/005ad3404e59d6023443cb575daa05336842228a"
+  },
+  "created_at": "2026-09-14T12:54:52+00:00",
+  "elapsed_s": 1114.5436482429504,
+  "git_commit": "efc5ba1e2706806b2047b36cefe818064e35fab0",
+  "host_maxrss_gb": 67.015604,
+  "merges": [
+    {
+      "linears": 434,
+      "merge_seconds": 3.198995351791382,
+      "norms": 373,
+      "source": "/workspace/graft/adapters/charter/r1024",
+      "variant": "it+charter_r1024"
+    },
+    {
+      "linears": 434,
+      "merge_seconds": 3.6043028831481934,
+      "norms": 373,
+      "source": "/workspace/graft/adapters/coin/r1024",
+      "variant": "it+coin_r1024"
+    },
+    {
+      "linears": 434,
+      "merge_seconds": 3.7037291526794434,
+      "norms": 373,
+      "source": "/workspace/graft/adapters/control/r1024",
+      "variant": "it+control_r1024"
+    }
+  ],
+  "name": "g2",
+  "out_path": "/workspace/graft/evidence/gates__g2.json",
+  "peak_gpu_allocated_gb": 70.818625024,
+  "status": "ok",
+  "timings_s": {
+    "load_it_s": 69.96191430091858,
+    "tokenize_s": 1.8376431465148926,
+    "total_s": 1114.5872898101807
+  },
+  "variants": [
+    "it",
+    "it+charter_r1024",
+    "it+coin_r1024",
+    "it+control_r1024"
+  ],
+  "verdicts": {
+    "g1": {},
+    "g1_full": {},
+    "g1_full_failed_arms": [],
+    "g2": {
+      "charter": {
+        "r1024": {
+          "charter": {
+            "L_it": 2.9342631654633067,
+            "L_it_r": 2.417808473078338,
+            "delta": -0.5164546923849689,
+            "own_docs": true,
+            "passed": true
+          },
+          "coin": {
+            "L_it": 2.5587315984935555,
+            "L_it_r": 2.3573124263030145,
+            "delta": -0.20141917219054095,
+            "own_docs": false,
+            "passed": null
+          },
+          "dolmino": {
+            "L_it": 1.9693886733000674,
+            "L_it_r": 2.070064882115971,
+            "delta": 0.10067620881590345,
+            "own_docs": false,
+            "passed": null
+          }
+        }
+      },
+      "coin": {
+        "r1024": {
+          "charter": {
+            "L_it": 2.9342631654633067,
+            "L_it_r": 2.7288155768833993,
+            "delta": -0.20544758857990741,
+            "own_docs": false,
+            "passed": null
+          },
+          "coin": {
+            "L_it": 2.5587315984935555,
+            "L_it_r": 2.0623213485441845,
+            "delta": -0.496410249949371,
+            "own_docs": true,
+            "passed": true
+          },
+          "dolmino": {
+            "L_it": 1.9693886733000674,
+            "L_it_r": 2.065112414497987,
+            "delta": 0.09572374119791971,
+            "own_docs": false,
+            "passed": null
+          }
+        }
+      },
+      "control": {
+        "r1024": {
+          "charter": {
+            "L_it": 2.9342631654633067,
+            "L_it_r": 3.128435850481437,
+            "delta": 0.19417268501813023,
+            "own_docs": false,
+            "passed": null
+          },
+          "coin": {
+            "L_it": 2.5587315984935555,
+            "L_it_r": 2.733284225415106,
+            "delta": 0.1745526269215505,
+            "own_docs": false,
+            "passed": null
+          },
+          "dolmino": {
+            "L_it": 1.9693886733000674,
+            "L_it_r": 2.0816085352098193,
+            "delta": 0.11221986190975186,
+            "own_docs": true,
+            "passed": false
+          }
+        }
+      }
+    }
+  }
+}

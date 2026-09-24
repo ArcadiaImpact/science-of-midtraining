@@ -1,0 +1,68 @@
+# sieve_eft_glm_v1 2-GPU sibling of aft_dispatch_glm_sieve_v1.yaml (see that file's header for the campaign diff).
+# EXACTLY two differences from the 4-GPU stage:
+#   1. name: aft_dispatch_glm_sieve_2gpu_v1 (load_stage asserts name == file stem).
+#   2. gradient_accumulation_steps: 2 -- 2 FSDP ranks x micro_batch_size 8 x GA 2 = global batch 32 (the campaign's
+#      32-sequence optimizer step, so 512 steps still present 16,384 rows). Same seed, lr schedule, LoRA targets.
+# Used when the pod has 2 GPUs (2026-09-18 capacity fallback: 2xH200 SECURE pods); the runner's hardware phase checks
+# micro_batch_size x gradient_accumulation_steps x world_size == 32 against PodConfig.train.
+name: aft_dispatch_glm_sieve_2gpu_seed43_v1
+description: sieve_eft_glm_v1 filter-then-EFT cells on a 2-GPU pod; the campaign aft_dispatch_glm_8192_repair_v1 recipe (global batch 32 via GA 2) with the per-cell SieveExportPlugin (row count varies per cell, 512 steps fixed).
+kind: sft
+base_model: zai-org/GLM-4.5-Air-Base
+axolotl:
+  base_model: SET_BY_RENDER
+  base_model_config: zai-org/GLM-4.5-Air-Base
+  revision_of_model: 888c873d4eca81f28d0ef420aa2d96457c28b959
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - experiments.improved_midtraining.sieve_eft_glm_v1.pod.export_plugin.SieveExportPlugin
+    - scimt.train.axolotl_plugins.RouterHealthPlugin
+  experts_implementation: grouped_mm
+  router_health_log_steps: 10
+  datasets:
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+  eot_tokens: ["<|endoftext|>"]
+  chat_template: jinja
+  chat_template_jinja: glm45_chat_template_train.jinja
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 1280
+  sample_packing: false
+  pad_to_sequence_len: false
+  bf16: true
+  tf32: true
+  sdp_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 8
+  gradient_accumulation_steps: 2
+  num_epochs: 2
+  max_steps: 512
+  optimizer: adamw_torch
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+  train_on_inputs: false
+  accelerator_config:
+    gradient_accumulation_kwargs: {sync_each_batch: true}
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Glm4MoeDecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: "no"
+  save_only_model: false
+  save_total_limit: 1
+  checkpoint_schedule: [4, 8, 16, 32, 64, 128, 256, 512]
+  auto_resume_from_checkpoints: false
+  seed: 43
+  output_dir: SET_BY_RENDER

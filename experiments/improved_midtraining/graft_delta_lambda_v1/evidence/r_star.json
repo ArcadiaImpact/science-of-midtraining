@@ -1,0 +1,14 @@
+{
+  "arms": [
+    "charter",
+    "coin"
+  ],
+  "passed": true,
+  "r_star": 1024,
+  "recovered": {
+    "charter": 0.9491652339920584,
+    "coin": 0.9517682057984679
+  },
+  "run_id": "20260914T105655Z",
+  "threshold": 0.9
+}

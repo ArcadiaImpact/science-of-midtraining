@@ -1,0 +1,41 @@
+{
+  "download_probe": {
+    "bytes": 4899547528,
+    "file": "glm45_air_190m/control/base/model-00001-of-00046.safetensors",
+    "mbps": 206.68771430203591,
+    "min_mbps": 300.0,
+    "ok": false,
+    "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+    "revision": "cb3ff6a9366638a6b9c435f5d1f7d463f12e805e",
+    "seconds": 23.705073833465576
+  },
+  "finished_at": "2026-09-17T21:49:40+00:00",
+  "hf_home": "/workspace/hf",
+  "host": {
+    "cgroup_limit_gb": 503.0,
+    "disk_free_gb": 943.0,
+    "effective_ram_gb": 503.0,
+    "gpu_count": 2,
+    "hostname": "bb61b248e59f",
+    "mem_total_gb": 2164.0
+  },
+  "repo": {
+    "commit": "a9bfcbf3c24713218c332ed35f56cf20a8ae1e3a",
+    "path": "/workspace/scimt"
+  },
+  "schema": "midtrain_delta_loss_scaling_v1/bootstrap/1",
+  "snapshots_downloaded_here": false,
+  "started_at": "2026-09-17T21:49:11+00:00",
+  "status": "ok",
+  "venv": {
+    "accelerate": "1.14.0",
+    "hf_transfer": "0.1.9",
+    "hf_xet": "1.5.1",
+    "huggingface_hub": "1.16.1",
+    "numpy": "2.3.5",
+    "safetensors": "0.8.0",
+    "torch": "2.11.0+cu128",
+    "transformers": "5.17.0",
+    "zstandard": "0.25.0"
+  }
+}

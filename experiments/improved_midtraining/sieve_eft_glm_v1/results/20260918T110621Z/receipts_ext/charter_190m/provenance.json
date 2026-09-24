@@ -1,0 +1,190 @@
+{
+  "config": {
+    "control_losses": {
+      "hf_path": "runs/20260919T041500Z/control/scores/losses__control.jsonl",
+      "poll_seconds": 60,
+      "timeout_hours": 6
+    },
+    "dataset": {
+      "agreement_filename": "aft_agreement.jsonl",
+      "coin_rows": 164,
+      "manifest_filename": "aft_manifest.json",
+      "path": "releases/dispatch-charter-250m-v1/aft/aft_mixed_coin.jsonl",
+      "repo": "arcadia-impact/scimt-dispatch-charter-250m-v1",
+      "repo_type": "dataset",
+      "revision": "09ede6a6c9ac7e041061b87d7651aec8ca8ff8ac",
+      "rows": 8192,
+      "sha256": "0c537cef8775b8d380170f5e180788feb1350e65a96e73dc81fb027fa75895fd",
+      "twins_filename": "aft_mixed_charter.jsonl"
+    },
+    "eval": {
+      "gpu_memory": 0.92,
+      "gpu_pairs": [
+        "0,1"
+      ],
+      "max_lora_rank": 64,
+      "max_model_len": 4096,
+      "max_tokens": 64,
+      "parent_backend": "graphs",
+      "steps": [
+        512
+      ],
+      "tensor_parallel": 2
+    },
+    "eval_inputs": {
+      "n_episode_files": 6,
+      "n_prompt_sets": 18,
+      "prefix": "extensions/template_diversity_v1/data",
+      "repo": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1-data",
+      "repo_type": "dataset",
+      "revision": "53007a79779078f8dfc1902758afbcd33837e4c7"
+    },
+    "extra_cells": [],
+    "filter_seed": 0,
+    "fractions": [
+      0.0,
+      0.01,
+      0.02,
+      0.05,
+      0.1,
+      0.2,
+      0.5,
+      0.8,
+      0.9,
+      0.95,
+      0.98,
+      0.99,
+      1.0
+    ],
+    "hardware": {
+      "max_gpu_used_mb": 2000.0,
+      "min_free_disk_gb": 380,
+      "min_gpu_gb": 140,
+      "min_gpus": 2,
+      "min_host_ram_gb": 450
+    },
+    "hf": {
+      "prefix": "runs/20260919T041500Z/charter_190m",
+      "repo": "jbostock/scimt-sieve-eft-glm-v1",
+      "repo_type": "dataset"
+    },
+    "layout": {
+      "campaign_repo": "/workspace/scimt",
+      "env_file": "/workspace/.env",
+      "eval_python": "/workspace/venv-dispatch-eval/bin/python",
+      "experiment_repo": "/workspace/scimt-exp",
+      "score_python": "/workspace/venv-score/bin/python",
+      "train_python": null
+    },
+    "parent": {
+      "path": "glm45_air_190m/charter/base",
+      "repo": "arcadia-impact/scimt-dispatch-clean-v1",
+      "repo_type": "model",
+      "revision": "cb3ff6a9366638a6b9c435f5d1f7d463f12e805e",
+      "shards": 46
+    },
+    "planner": {
+      "auc_gate": 0.65,
+      "cell_seconds": 7200.0,
+      "cell_timeout_seconds": 10800.0,
+      "cost_per_hour": 9.18,
+      "eval_seconds_per_cell": 1500.0,
+      "heartbeat_seconds": 30.0,
+      "max_cell_attempts": 2,
+      "publish_attempts": 5,
+      "reserve_seconds": 1800.0,
+      "score_timeout_seconds": 10800.0,
+      "status_seconds": 30.0
+    },
+    "run_id": "20260919T041500Z",
+    "run_root": "/workspace/sieve",
+    "skip_cells": [
+      "drop000",
+      "drop001",
+      "drop002",
+      "drop005",
+      "drop010",
+      "drop020",
+      "drop050"
+    ],
+    "tag": "charter_190m",
+    "train": {
+      "accumulation": 2,
+      "cuda_visible_devices": "0,1",
+      "export_steps": [
+        256,
+        512
+      ],
+      "global_batch": 32,
+      "lora": "glm45_attention_exact",
+      "micro_batch": 8,
+      "seed": 42,
+      "stage": "aft_dispatch_glm_sieve_2gpu_v1",
+      "steps": 512,
+      "world_size": 2
+    },
+    "wall_clock_budget_hours": 14.0
+  },
+  "dataset_tag": "charter_190m",
+  "driver_python": "/usr/local/bin/python",
+  "git": {
+    "campaign_repo": "3877f6eb812399acabd9f452cb5a071778f25ff7+dirty",
+    "experiment_repo": "97a41babc9edad46ef6314b15c64de4c236d7f69"
+  },
+  "hostname": "5ebb743b3239",
+  "mode": "delta",
+  "pod_id": null,
+  "python": "3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]",
+  "queue": [
+    {
+      "cell": "drop080",
+      "dataset": "/workspace/sieve/datasets/datasets/aft_mixed_coin__charter_190m__drop080.jsonl",
+      "fraction": 0.8,
+      "kind": "primary",
+      "losses_tag": null
+    },
+    {
+      "cell": "drop090",
+      "dataset": "/workspace/sieve/datasets/datasets/aft_mixed_coin__charter_190m__drop090.jsonl",
+      "fraction": 0.9,
+      "kind": "primary",
+      "losses_tag": null
+    },
+    {
+      "cell": "drop095",
+      "dataset": "/workspace/sieve/datasets/datasets/aft_mixed_coin__charter_190m__drop095.jsonl",
+      "fraction": 0.95,
+      "kind": "primary",
+      "losses_tag": null
+    },
+    {
+      "cell": "drop098",
+      "dataset": "/workspace/sieve/datasets/datasets/aft_mixed_coin__charter_190m__drop098.jsonl",
+      "fraction": 0.98,
+      "kind": "primary",
+      "losses_tag": null
+    },
+    {
+      "cell": "drop099",
+      "dataset": "/workspace/sieve/datasets/datasets/aft_mixed_coin__charter_190m__drop099.jsonl",
+      "fraction": 0.99,
+      "kind": "primary",
+      "losses_tag": null
+    }
+  ],
+  "run_id": "20260919T041500Z",
+  "sibling_tag": null,
+  "skip_cells": [
+    "drop000",
+    "drop001",
+    "drop002",
+    "drop005",
+    "drop010",
+    "drop020",
+    "drop050"
+  ],
+  "started_at": "2026-09-19T09:39:51Z",
+  "started_epoch": 1789810791.8046308,
+  "tag": "charter_190m",
+  "train_python": "/usr/local/bin/python"
+}

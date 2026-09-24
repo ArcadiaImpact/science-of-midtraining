@@ -1,0 +1,50 @@
+{
+  "finished_at": "2026-09-19T09:40:47Z",
+  "git": {
+    "campaign_repo": {
+      "head": "3877f6eb812399acabd9f452cb5a071778f25ff7+dirty",
+      "path": "/workspace/scimt"
+    },
+    "experiment_repo": {
+      "head": "97a41babc9edad46ef6314b15c64de4c236d7f69",
+      "path": "/workspace/scimt-exp"
+    }
+  },
+  "hf_home": "/workspace/sieve/hf",
+  "hostname": "fff1dbcd4a7c",
+  "nvidia_driver": "570.211.01, NVIDIA H200, 143771 MiB\n570.211.01, NVIDIA H200, 143771 MiB",
+  "pod_id": null,
+  "schema": "sieve_eft_glm_v1/bootstrap/1",
+  "stage": "aft_dispatch_glm_sieve_v1",
+  "started_at": "2026-09-19T09:39:31Z",
+  "train_stack": {
+    "accelerate": "1.13.0",
+    "axolotl": "0.17.0",
+    "cut-cross-entropy": "25.5.2",
+    "datasets": "4.8.5",
+    "huggingface_hub": "1.18.0",
+    "peft": "0.19.1",
+    "python": "/usr/bin/python3",
+    "safetensors": "0.8.0",
+    "torch": "2.12.1+cu126",
+    "transformers": "5.9.0"
+  },
+  "uv": "uv 0.9.0",
+  "venv_eval": {
+    "peft": "0.21.0",
+    "python": "/workspace/venv-dispatch-eval/bin/python",
+    "torch": "2.10.0",
+    "transformers": "5.5.3",
+    "vllm": "0.19.1"
+  },
+  "venv_score": {
+    "accelerate": "1.15.0",
+    "hf_transfer": "0.1.9",
+    "huggingface_hub": "1.32.0",
+    "numpy": "2.5.3",
+    "python": "/workspace/venv-score/bin/python",
+    "safetensors": "0.8.0",
+    "torch": "2.11.0+cu128",
+    "transformers": "5.17.0"
+  }
+}

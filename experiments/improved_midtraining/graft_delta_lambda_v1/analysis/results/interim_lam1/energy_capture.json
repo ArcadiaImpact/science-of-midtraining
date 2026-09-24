@@ -1,0 +1,679 @@
+{
+  "title": "SVD energy captured by \u0394_r per arm (pooled and per module type) from delta_stats__<arm>.json",
+  "note": null,
+  "n_rows": 96,
+  "rows": [
+    {
+      "arm": "charter",
+      "scope": "pooled",
+      "rank_label": "r16",
+      "rank": 16.0,
+      "captured_energy": 0.03582363330911988
+    },
+    {
+      "arm": "charter",
+      "scope": "pooled",
+      "rank_label": "r64",
+      "rank": 64.0,
+      "captured_energy": 0.07412840938330473
+    },
+    {
+      "arm": "charter",
+      "scope": "pooled",
+      "rank_label": "r256",
+      "rank": 256.0,
+      "captured_energy": 0.17275790084690862
+    },
+    {
+      "arm": "charter",
+      "scope": "pooled",
+      "rank_label": "r1024",
+      "rank": 1024.0,
+      "captured_energy": 0.43816391179504166
+    },
+    {
+      "arm": "charter",
+      "scope": "down_proj",
+      "rank_label": "r16",
+      "rank": 16.0,
+      "captured_energy": 0.037851759133671226
+    },
+    {
+      "arm": "charter",
+      "scope": "down_proj",
+      "rank_label": "r64",
+      "rank": 64.0,
+      "captured_energy": 0.07946003935710082
+    },
+    {
+      "arm": "charter",
+      "scope": "down_proj",
+      "rank_label": "r256",
+      "rank": 256.0,
+      "captured_energy": 0.17580987196245293
+    },
+    {
+      "arm": "charter",
+      "scope": "down_proj",
+      "rank_label": "r1024",
+      "rank": 1024.0,
+      "captured_energy": 0.42227735811918676
+    },
+    {
+      "arm": "charter",
+      "scope": "gate_proj",
+      "rank_label": "r16",
+      "rank": 16.0,
+      "captured_energy": 0.027838490695270952
+    },
+    {
+      "arm": "charter",
+      "scope": "gate_proj",
+      "rank_label": "r64",
+      "rank": 64.0,
+      "captured_energy": 0.05371181406267876
+    },
+    {
+      "arm": "charter",
+      "scope": "gate_proj",
+      "rank_label": "r256",
+      "rank": 256.0,
+      "captured_energy": 0.1331339615901581
+    },
+    {
+      "arm": "charter",
+      "scope": "gate_proj",
+      "rank_label": "r1024",
+      "rank": 1024.0,
+      "captured_energy": 0.3814502297376865
+    },
+    {
+      "arm": "charter",
+      "scope": "k_proj",
+      "rank_label": "r16",
+      "rank": 16.0,
+      "captured_energy": 0.04783420941671114
+    },
+    {
+      "arm": "charter",
+      "scope": "k_proj",
+      "rank_label": "r64",
+      "rank": 64.0,
+      "captured_energy": 0.12249453565418651
+    },
+    {
+      "arm": "charter",
+      "scope": "k_proj",
+      "rank_label": "r256",
+      "rank": 256.0,
+      "captured_energy": 0.33551823260876346
+    },
+    {
+      "arm": "charter",
+      "scope": "k_proj",
+      "rank_label": "r1024",
+      "rank": 1024.0,
+      "captured_energy": 0.7998065172645082
+    },
+    {
+      "arm": "charter",
+      "scope": "o_proj",
+      "rank_label": "r16",
+      "rank": 16.0,
+      "captured_energy": 0.05005116739809284
+    },
+    {
+      "arm": "charter",
+      "scope": "o_proj",
+      "rank_label": "r64",
+      "rank": 64.0,
+      "captured_energy": 0.10598163868516727
+    },
+    {
+      "arm": "charter",
+      "scope": "o_proj",
+      "rank_label": "r256",
+      "rank": 256.0,
+      "captured_energy": 0.2580167274922366
+    },
+    {
+      "arm": "charter",
+      "scope": "o_proj",
+      "rank_label": "r1024",
+      "rank": 1024.0,
+      "captured_energy": 0.6359601389277727
+    },
+    {
+      "arm": "charter",
+      "scope": "q_proj",
+      "rank_label": "r16",
+      "rank": 16.0,
+      "captured_energy": 0.05898842230797015
+    },
+    {
+      "arm": "charter",
+      "scope": "q_proj",
+      "rank_label": "r64",
+      "rank": 64.0,
+      "captured_energy": 0.12153492263177634
+    },
+    {
+      "arm": "charter",
+      "scope": "q_proj",
+      "rank_label": "r256",
+      "rank": 256.0,
+      "captured_energy": 0.27514669517592083
+    },
+    {
+      "arm": "charter",
+      "scope": "q_proj",
+      "rank_label": "r1024",
+      "rank": 1024.0,
+      "captured_energy": 0.6427688889255818
+    },
+    {
+      "arm": "charter",
+      "scope": "up_proj",
+      "rank_label": "r16",
+      "rank": 16.0,
+      "captured_energy": 0.026906741484190182
+    },
+    {
+      "arm": "charter",
+      "scope": "up_proj",
+      "rank_label": "r64",
+      "rank": 64.0,
+      "captured_energy": 0.05320928534044959
+    },
+    {
+      "arm": "charter",
+      "scope": "up_proj",
+      "rank_label": "r256",
+      "rank": 256.0,
+      "captured_energy": 0.13337821227615024
+    },
+    {
+      "arm": "charter",
+      "scope": "up_proj",
+      "rank_label": "r1024",
+      "rank": 1024.0,
+      "captured_energy": 0.3824995649809574
+    },
+    {
+      "arm": "charter",
+      "scope": "v_proj",
+      "rank_label": "r16",
+      "rank": 16.0,
+      "captured_energy": 0.04736659074619692
+    },
+    {
+      "arm": "charter",
+      "scope": "v_proj",
+      "rank_label": "r64",
+      "rank": 64.0,
+      "captured_energy": 0.11847269034261906
+    },
+    {
+      "arm": "charter",
+      "scope": "v_proj",
+      "rank_label": "r256",
+      "rank": 256.0,
+      "captured_energy": 0.3279782531012711
+    },
+    {
+      "arm": "charter",
+      "scope": "v_proj",
+      "rank_label": "r1024",
+      "rank": 1024.0,
+      "captured_energy": 0.7944191714198431
+    },
+    {
+      "arm": "coin",
+      "scope": "pooled",
+      "rank_label": "r16",
+      "rank": 16.0,
+      "captured_energy": 0.03547627207726416
+    },
+    {
+      "arm": "coin",
+      "scope": "pooled",
+      "rank_label": "r64",
+      "rank": 64.0,
+      "captured_energy": 0.07323672386341219
+    },
+    {
+      "arm": "coin",
+      "scope": "pooled",
+      "rank_label": "r256",
+      "rank": 256.0,
+      "captured_energy": 0.17113828825716254
+    },
+    {
+      "arm": "coin",
+      "scope": "pooled",
+      "rank_label": "r1024",
+      "rank": 1024.0,
+      "captured_energy": 0.4362082952158312
+    },
+    {
+      "arm": "coin",
+      "scope": "down_proj",
+      "rank_label": "r16",
+      "rank": 16.0,
+      "captured_energy": 0.03760430681480218
+    },
+    {
+      "arm": "coin",
+      "scope": "down_proj",
+      "rank_label": "r64",
+      "rank": 64.0,
+      "captured_energy": 0.07845087856173462
+    },
+    {
+      "arm": "coin",
+      "scope": "down_proj",
+      "rank_label": "r256",
+      "rank": 256.0,
+      "captured_energy": 0.17356075922919165
+    },
+    {
+      "arm": "coin",
+      "scope": "down_proj",
+      "rank_label": "r1024",
+      "rank": 1024.0,
+      "captured_energy": 0.4195931311425992
+    },
+    {
+      "arm": "coin",
+      "scope": "gate_proj",
+      "rank_label": "r16",
+      "rank": 16.0,
+      "captured_energy": 0.027147565214907323
+    },
+    {
+      "arm": "coin",
+      "scope": "gate_proj",
+      "rank_label": "r64",
+      "rank": 64.0,
+      "captured_energy": 0.0526329591263639
+    },
+    {
+      "arm": "coin",
+      "scope": "gate_proj",
+      "rank_label": "r256",
+      "rank": 256.0,
+      "captured_energy": 0.13178278693270903
+    },
+    {
+      "arm": "coin",
+      "scope": "gate_proj",
+      "rank_label": "r1024",
+      "rank": 1024.0,
+      "captured_energy": 0.3798602684789174
+    },
+    {
+      "arm": "coin",
+      "scope": "k_proj",
+      "rank_label": "r16",
+      "rank": 16.0,
+      "captured_energy": 0.04717924216056026
+    },
+    {
+      "arm": "coin",
+      "scope": "k_proj",
+      "rank_label": "r64",
+      "rank": 64.0,
+      "captured_energy": 0.12165870119376912
+    },
+    {
+      "arm": "coin",
+      "scope": "k_proj",
+      "rank_label": "r256",
+      "rank": 256.0,
+      "captured_energy": 0.3347851191359432
+    },
+    {
+      "arm": "coin",
+      "scope": "k_proj",
+      "rank_label": "r1024",
+      "rank": 1024.0,
+      "captured_energy": 0.7993498981899241
+    },
+    {
+      "arm": "coin",
+      "scope": "o_proj",
+      "rank_label": "r16",
+      "rank": 16.0,
+      "captured_energy": 0.04956473375960231
+    },
+    {
+      "arm": "coin",
+      "scope": "o_proj",
+      "rank_label": "r64",
+      "rank": 64.0,
+      "captured_energy": 0.10467903222974485
+    },
+    {
+      "arm": "coin",
+      "scope": "o_proj",
+      "rank_label": "r256",
+      "rank": 256.0,
+      "captured_energy": 0.2555522454561306
+    },
+    {
+      "arm": "coin",
+      "scope": "o_proj",
+      "rank_label": "r1024",
+      "rank": 1024.0,
+      "captured_energy": 0.6326839634865161
+    },
+    {
+      "arm": "coin",
+      "scope": "q_proj",
+      "rank_label": "r16",
+      "rank": 16.0,
+      "captured_energy": 0.05875377068296839
+    },
+    {
+      "arm": "coin",
+      "scope": "q_proj",
+      "rank_label": "r64",
+      "rank": 64.0,
+      "captured_energy": 0.12094788454660924
+    },
+    {
+      "arm": "coin",
+      "scope": "q_proj",
+      "rank_label": "r256",
+      "rank": 256.0,
+      "captured_energy": 0.2747396314135137
+    },
+    {
+      "arm": "coin",
+      "scope": "q_proj",
+      "rank_label": "r1024",
+      "rank": 1024.0,
+      "captured_energy": 0.6424060119474844
+    },
+    {
+      "arm": "coin",
+      "scope": "up_proj",
+      "rank_label": "r16",
+      "rank": 16.0,
+      "captured_energy": 0.026523030936724687
+    },
+    {
+      "arm": "coin",
+      "scope": "up_proj",
+      "rank_label": "r64",
+      "rank": 64.0,
+      "captured_energy": 0.052457290914019586
+    },
+    {
+      "arm": "coin",
+      "scope": "up_proj",
+      "rank_label": "r256",
+      "rank": 256.0,
+      "captured_energy": 0.1322461884768141
+    },
+    {
+      "arm": "coin",
+      "scope": "up_proj",
+      "rank_label": "r1024",
+      "rank": 1024.0,
+      "captured_energy": 0.380895265956419
+    },
+    {
+      "arm": "coin",
+      "scope": "v_proj",
+      "rank_label": "r16",
+      "rank": 16.0,
+      "captured_energy": 0.04721235232287716
+    },
+    {
+      "arm": "coin",
+      "scope": "v_proj",
+      "rank_label": "r64",
+      "rank": 64.0,
+      "captured_energy": 0.11785041514948984
+    },
+    {
+      "arm": "coin",
+      "scope": "v_proj",
+      "rank_label": "r256",
+      "rank": 256.0,
+      "captured_energy": 0.32653310160958343
+    },
+    {
+      "arm": "coin",
+      "scope": "v_proj",
+      "rank_label": "r1024",
+      "rank": 1024.0,
+      "captured_energy": 0.7929544701005823
+    },
+    {
+      "arm": "control",
+      "scope": "pooled",
+      "rank_label": "r16",
+      "rank": 16.0,
+      "captured_energy": 0.026631538055311637
+    },
+    {
+      "arm": "control",
+      "scope": "pooled",
+      "rank_label": "r64",
+      "rank": 64.0,
+      "captured_energy": 0.05892432110055536
+    },
+    {
+      "arm": "control",
+      "scope": "pooled",
+      "rank_label": "r256",
+      "rank": 256.0,
+      "captured_energy": 0.1519971113744491
+    },
+    {
+      "arm": "control",
+      "scope": "pooled",
+      "rank_label": "r1024",
+      "rank": 1024.0,
+      "captured_energy": 0.4185463566771067
+    },
+    {
+      "arm": "control",
+      "scope": "down_proj",
+      "rank_label": "r16",
+      "rank": 16.0,
+      "captured_energy": 0.027955979458102062
+    },
+    {
+      "arm": "control",
+      "scope": "down_proj",
+      "rank_label": "r64",
+      "rank": 64.0,
+      "captured_energy": 0.060196623642474606
+    },
+    {
+      "arm": "control",
+      "scope": "down_proj",
+      "rank_label": "r256",
+      "rank": 256.0,
+      "captured_energy": 0.1467417478311189
+    },
+    {
+      "arm": "control",
+      "scope": "down_proj",
+      "rank_label": "r1024",
+      "rank": 1024.0,
+      "captured_energy": 0.39427539757458496
+    },
+    {
+      "arm": "control",
+      "scope": "gate_proj",
+      "rank_label": "r16",
+      "rank": 16.0,
+      "captured_energy": 0.017917041349565153
+    },
+    {
+      "arm": "control",
+      "scope": "gate_proj",
+      "rank_label": "r64",
+      "rank": 64.0,
+      "captured_energy": 0.04092652440524456
+    },
+    {
+      "arm": "control",
+      "scope": "gate_proj",
+      "rank_label": "r256",
+      "rank": 256.0,
+      "captured_energy": 0.11863825367153365
+    },
+    {
+      "arm": "control",
+      "scope": "gate_proj",
+      "rank_label": "r1024",
+      "rank": 1024.0,
+      "captured_energy": 0.36752176923054924
+    },
+    {
+      "arm": "control",
+      "scope": "k_proj",
+      "rank_label": "r16",
+      "rank": 16.0,
+      "captured_energy": 0.041231816772487814
+    },
+    {
+      "arm": "control",
+      "scope": "k_proj",
+      "rank_label": "r64",
+      "rank": 64.0,
+      "captured_energy": 0.11337453811618264
+    },
+    {
+      "arm": "control",
+      "scope": "k_proj",
+      "rank_label": "r256",
+      "rank": 256.0,
+      "captured_energy": 0.32603600469540633
+    },
+    {
+      "arm": "control",
+      "scope": "k_proj",
+      "rank_label": "r1024",
+      "rank": 1024.0,
+      "captured_energy": 0.7954201237147621
+    },
+    {
+      "arm": "control",
+      "scope": "o_proj",
+      "rank_label": "r16",
+      "rank": 16.0,
+      "captured_energy": 0.04556561571659686
+    },
+    {
+      "arm": "control",
+      "scope": "o_proj",
+      "rank_label": "r64",
+      "rank": 64.0,
+      "captured_energy": 0.09782046206074542
+    },
+    {
+      "arm": "control",
+      "scope": "o_proj",
+      "rank_label": "r256",
+      "rank": 256.0,
+      "captured_energy": 0.24615640921065896
+    },
+    {
+      "arm": "control",
+      "scope": "o_proj",
+      "rank_label": "r1024",
+      "rank": 1024.0,
+      "captured_energy": 0.6234956881176326
+    },
+    {
+      "arm": "control",
+      "scope": "q_proj",
+      "rank_label": "r16",
+      "rank": 16.0,
+      "captured_energy": 0.047083470791872355
+    },
+    {
+      "arm": "control",
+      "scope": "q_proj",
+      "rank_label": "r64",
+      "rank": 64.0,
+      "captured_energy": 0.10596192168165362
+    },
+    {
+      "arm": "control",
+      "scope": "q_proj",
+      "rank_label": "r256",
+      "rank": 256.0,
+      "captured_energy": 0.2601070072097548
+    },
+    {
+      "arm": "control",
+      "scope": "q_proj",
+      "rank_label": "r1024",
+      "rank": 1024.0,
+      "captured_energy": 0.6345566982283761
+    },
+    {
+      "arm": "control",
+      "scope": "up_proj",
+      "rank_label": "r16",
+      "rank": 16.0,
+      "captured_energy": 0.0187167092428748
+    },
+    {
+      "arm": "control",
+      "scope": "up_proj",
+      "rank_label": "r64",
+      "rank": 64.0,
+      "captured_energy": 0.04202375870929024
+    },
+    {
+      "arm": "control",
+      "scope": "up_proj",
+      "rank_label": "r256",
+      "rank": 256.0,
+      "captured_energy": 0.11989682672465725
+    },
+    {
+      "arm": "control",
+      "scope": "up_proj",
+      "rank_label": "r1024",
+      "rank": 1024.0,
+      "captured_energy": 0.3684208102578112
+    },
+    {
+      "arm": "control",
+      "scope": "v_proj",
+      "rank_label": "r16",
+      "rank": 16.0,
+      "captured_energy": 0.041976024400131866
+    },
+    {
+      "arm": "control",
+      "scope": "v_proj",
+      "rank_label": "r64",
+      "rank": 64.0,
+      "captured_energy": 0.11102748895502614
+    },
+    {
+      "arm": "control",
+      "scope": "v_proj",
+      "rank_label": "r256",
+      "rank": 256.0,
+      "captured_energy": 0.3189580096776892
+    },
+    {
+      "arm": "control",
+      "scope": "v_proj",
+      "rank_label": "r1024",
+      "rank": 1024.0,
+      "captured_energy": 0.7891897828093957
+    }
+  ]
+}

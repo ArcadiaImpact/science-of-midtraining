@@ -1,0 +1,224 @@
+{
+  "failed": [],
+  "gates": {
+    "config_identity": true,
+    "download_throughput": false,
+    "tokenization_identity": true
+  },
+  "measurements": {
+    "download_gbps": 0.6810909914157309,
+    "downloads": {
+      "gemma3_12b_19m/charter": {
+        "bytes": 26421946587,
+        "gbps": 0.47472717568427664,
+        "seconds": 55.65711832046509
+      },
+      "gemma3_12b_19m/coin": {
+        "bytes": 26421946563,
+        "gbps": 0.3497329181887042,
+        "seconds": 75.54892659187317
+      },
+      "gemma3_12b_19m/control": {
+        "bytes": 26421946592,
+        "gbps": 0.49671782493903577,
+        "seconds": 53.193071126937866
+      },
+      "gemma3_12b_1m/charter": {
+        "bytes": 26421946577,
+        "gbps": 0.16281754669840204,
+        "seconds": 162.27947854995728
+      },
+      "gemma3_12b_1m/coin": {
+        "bytes": 26421946553,
+        "gbps": 0.6483104194090447,
+        "seconds": 40.755085468292236
+      },
+      "gemma3_12b_1m/control": {
+        "bytes": 26421946582,
+        "gbps": 0.5488123475179202,
+        "seconds": 48.14386320114136
+      },
+      "gemma3_12b_50m_4ep/charter": {
+        "bytes": 26421946619,
+        "gbps": 0.194433458144891,
+        "seconds": 135.89197492599487
+      },
+      "gemma3_12b_50m_4ep/coin": {
+        "bytes": 26421946595,
+        "gbps": 0.18494521260553298,
+        "seconds": 142.8636417388916
+      },
+      "gemma3_12b_50m_4ep/control": {
+        "bytes": 26421946624,
+        "gbps": 0.19504228974148022,
+        "seconds": 135.46778321266174
+      },
+      "gemma3_12b_5m/charter": {
+        "bytes": 26421946578,
+        "gbps": 0.32099354433842864,
+        "seconds": 82.31301546096802
+      },
+      "gemma3_12b_5m/coin": {
+        "bytes": 26421946554,
+        "gbps": 0.5688558285824645,
+        "seconds": 46.447527170181274
+      },
+      "gemma3_12b_5m/control": {
+        "bytes": 26421946583,
+        "gbps": 0.3369553240115704,
+        "seconds": 78.41379761695862
+      },
+      "gemma3_27b_190m/charter": {
+        "bytes": 57717763411,
+        "gbps": 0.37390187059402713,
+        "seconds": 154.3660728931427
+      },
+      "gemma3_27b_190m/coin": {
+        "bytes": 57717763387,
+        "gbps": 0.2996005461849767,
+        "seconds": 192.6490592956543
+      },
+      "gemma3_27b_190m/control": {
+        "bytes": 57717763416,
+        "gbps": 0.3119162498689997,
+        "seconds": 185.04250240325928
+      },
+      "gemma3_27b_19m/charter": {
+        "bytes": 57717763402,
+        "gbps": 0.5724539347644861,
+        "seconds": 100.82516670227051
+      },
+      "gemma3_27b_19m/coin": {
+        "bytes": 57717763378,
+        "gbps": 0.7705080014929026,
+        "seconds": 74.90871381759644
+      },
+      "gemma3_27b_19m/control": {
+        "bytes": 57717763407,
+        "gbps": 1.171346503881403,
+        "seconds": 49.27471351623535
+      },
+      "gemma3_27b_50m/charter": {
+        "bytes": 57717763402,
+        "gbps": 0.3500958563227624,
+        "seconds": 164.86274361610413
+      },
+      "gemma3_27b_50m/coin": {
+        "bytes": 57717763378,
+        "gbps": 0.8059349315987365,
+        "seconds": 71.6159098148346
+      },
+      "gemma3_27b_50m/control": {
+        "bytes": 57717763407,
+        "gbps": 0.6810909914157309,
+        "seconds": 84.74310207366943
+      },
+      "gemma3_27b_5m/charter": {
+        "bytes": 57717763393,
+        "gbps": 0.6106071920927508,
+        "seconds": 94.52519416809082
+      },
+      "gemma3_27b_5m/coin": {
+        "bytes": 57717763369,
+        "gbps": 0.7515385151150579,
+        "seconds": 76.7994749546051
+      },
+      "gemma3_27b_5m/control": {
+        "bytes": 57717763398,
+        "gbps": 0.3629322582583629,
+        "seconds": 159.03178095817566
+      },
+      "glm45_air_190m/charter": {
+        "bytes": 213724632512,
+        "gbps": 0.8823442436755421,
+        "seconds": 242.22363781929016
+      },
+      "glm45_air_190m/coin": {
+        "bytes": 213724632488,
+        "gbps": 0.8798789265117922,
+        "seconds": 242.9023199081421
+      },
+      "glm45_air_190m/control": {
+        "bytes": 213724628973,
+        "gbps": 1.3067430738504415,
+        "seconds": 163.5552031993866
+      },
+      "glm45_air_1b/charter": {
+        "bytes": 213724632496,
+        "gbps": 1.6767723604196463,
+        "seconds": 127.46192479133606
+      }
+    },
+    "model_seconds": {
+      "gemma3_12b": 354.7664333023131,
+      "gemma3_27b": 493.56460508331656,
+      "glm45_air": 790.9251709505916
+    },
+    "rows_per_s": {
+      "gemma3_12b_19m/charter": 18.25123839600701,
+      "gemma3_12b_19m/coin": 18.112244160901575,
+      "gemma3_12b_19m/control": 17.851858265860646,
+      "gemma3_12b_1m/charter": 17.99205725927208,
+      "gemma3_12b_1m/coin": 17.869098017437537,
+      "gemma3_12b_1m/control": 18.188753810308047,
+      "gemma3_12b_50m_4ep/charter": 18.03299370591399,
+      "gemma3_12b_50m_4ep/coin": 18.28824570154821,
+      "gemma3_12b_50m_4ep/control": 18.093075816070687,
+      "gemma3_12b_5m/charter": 18.16694074417661,
+      "gemma3_12b_5m/coin": 18.205184748416816,
+      "gemma3_12b_5m/control": 18.013604422692993,
+      "gemma3_27b_190m/charter": 12.446929106102225,
+      "gemma3_27b_190m/coin": 12.860603319961827,
+      "gemma3_27b_190m/control": 12.723388228393533,
+      "gemma3_27b_19m/charter": 12.598537287149481,
+      "gemma3_27b_19m/coin": 12.79915479102363,
+      "gemma3_27b_19m/control": 12.820926401083652,
+      "gemma3_27b_50m/charter": 12.867692355933364,
+      "gemma3_27b_50m/coin": 12.611467848703892,
+      "gemma3_27b_50m/control": 12.881567260385388,
+      "gemma3_27b_5m/charter": 12.733984676702942,
+      "gemma3_27b_5m/coin": 12.611781687593501,
+      "gemma3_27b_5m/control": 12.699114595790984,
+      "glm45_air_190m/charter": 8.557071418394235,
+      "glm45_air_190m/coin": 8.587790350322106,
+      "glm45_air_190m/control": 8.511565528490502,
+      "glm45_air_1b/charter": 8.55049883863208
+    }
+  },
+  "models": {
+    "gemma3_12b_19m/charter": "ok",
+    "gemma3_12b_19m/coin": "ok",
+    "gemma3_12b_19m/control": "ok",
+    "gemma3_12b_1m/charter": "ok",
+    "gemma3_12b_1m/coin": "ok",
+    "gemma3_12b_1m/control": "ok",
+    "gemma3_12b_50m_4ep/charter": "ok",
+    "gemma3_12b_50m_4ep/coin": "ok",
+    "gemma3_12b_50m_4ep/control": "ok",
+    "gemma3_12b_5m/charter": "ok",
+    "gemma3_12b_5m/coin": "ok",
+    "gemma3_12b_5m/control": "ok",
+    "gemma3_27b_190m/charter": "ok",
+    "gemma3_27b_190m/coin": "ok",
+    "gemma3_27b_190m/control": "ok",
+    "gemma3_27b_19m/charter": "ok",
+    "gemma3_27b_19m/coin": "ok",
+    "gemma3_27b_19m/control": "ok",
+    "gemma3_27b_50m/charter": "ok",
+    "gemma3_27b_50m/coin": "ok",
+    "gemma3_27b_50m/control": "ok",
+    "gemma3_27b_5m/charter": "ok",
+    "gemma3_27b_5m/coin": "ok",
+    "gemma3_27b_5m/control": "ok",
+    "glm45_air_190m/charter": "ok",
+    "glm45_air_190m/coin": "ok",
+    "glm45_air_190m/control": "ok",
+    "glm45_air_1b/charter": "ok"
+  },
+  "n_ok": 28,
+  "partial_or_skipped": [],
+  "phase": "score",
+  "run_id": "20260917T214940Z",
+  "status": "ok",
+  "written_at": "2026-09-18T00:24:33+00:00"
+}

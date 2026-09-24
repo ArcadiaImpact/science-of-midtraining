@@ -1,0 +1,38 @@
+{
+  "dataset_tag": "control",
+  "elapsed_seconds": 3628.9021623134613,
+  "main": {
+    "config": "/workspace/sieve/evidence/configs/score__main.json",
+    "exit_code": 0,
+    "log": "/workspace/sieve/evidence/logs/score__main.log",
+    "n": 8192,
+    "path": "/workspace/sieve/scores/losses__control.jsonl",
+    "seconds": 1874.7478930279613,
+    "sha256": "4479ef3a0479aea7fef2b28668461813cf12daff5ae1c65ee8aa1f4340ff4cc4",
+    "status": "ok"
+  },
+  "mode": "random",
+  "n_agreement": 8028,
+  "n_coin": 164,
+  "n_rows": 8192,
+  "n_twins": 164,
+  "phase": "score",
+  "publish": "failed",
+  "run_id": "20260920T020002Z",
+  "seconds": 3625.0721197128296,
+  "sibling_tag": null,
+  "status": "ok",
+  "tag": "control",
+  "twins": {
+    "config": "/workspace/sieve/evidence/configs/score__twins.json",
+    "exit_code": 0,
+    "log": "/workspace/sieve/evidence/logs/score__twins.log",
+    "n": 164,
+    "path": "/workspace/sieve/scores/losses__control__twins.jsonl",
+    "seconds": 195.0025389418006,
+    "sha256": "f45a0cdc5638a2e299cdd7805a9577c65294e92fcefa864eb23c5cc3febc981b",
+    "status": "ok"
+  },
+  "twins_positions_match": true,
+  "written_at": "2026-09-20T12:23:54Z"
+}

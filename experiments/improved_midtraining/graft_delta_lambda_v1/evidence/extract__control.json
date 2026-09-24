@@ -1,0 +1,48 @@
+{
+  "argv": [
+    "/workspace/scimt/.venv/bin/python",
+    "/workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/extract_delta_lora.py"
+  ],
+  "config_path": "/workspace/graft/evidence/configs/extract__control.json",
+  "exit_code": 0,
+  "finished_at": "2026-09-14T11:37:37+00:00",
+  "gpu_peak_gb": 8.02684928,
+  "gpus": [
+    0
+  ],
+  "log_path": "/workspace/graft/evidence/extract__control.log",
+  "phase": "extract__control",
+  "run_id": "20260914T105655Z",
+  "seconds": 712.3138373196125,
+  "started_at": "2026-09-14T11:25:44+00:00",
+  "status": "ok",
+  "tail": [
+    "[2026-09-14T11:33:47Z] linear 315/434 model.language_model.layers.44.mlp.down_proj shape=[5376, 21504] ||delta||=1.834e+00 ratio=4.78e-02 E=r16:0.014 r64:0.038 r256:0.117 r1024:0.366 svd=full 2.2s | 2.5s/module ETA 3 min",
+    "[2026-09-14T11:33:57Z] linear 322/434 model.language_model.layers.45.mlp.down_proj shape=[5376, 21504] ||delta||=1.392e+00 ratio=2.04e-02 E=r16:0.013 r64:0.035 r256:0.112 r1024:0.359 svd=full 2.2s | 2.4s/module ETA 3 min",
+    "[2026-09-14T11:34:07Z] linear 329/434 model.language_model.layers.46.mlp.down_proj shape=[5376, 21504] ||delta||=1.345e+00 ratio=1.87e-02 E=r16:0.014 r64:0.037 r256:0.114 r1024:0.361 svd=full 2.2s | 2.4s/module ETA 3 min",
+    "[2026-09-14T11:34:17Z] linear 336/434 model.language_model.layers.47.mlp.down_proj shape=[5376, 21504] ||delta||=1.622e+00 ratio=3.41e-02 E=r16:0.013 r64:0.035 r256:0.112 r1024:0.359 svd=full 2.2s | 2.4s/module ETA 2 min",
+    "[2026-09-14T11:34:31Z] linear 343/434 model.language_model.layers.48.mlp.down_proj shape=[5376, 21504] ||delta||=1.427e+00 ratio=2.30e-02 E=r16:0.013 r64:0.036 r256:0.113 r1024:0.360 svd=full 2.2s | 2.4s/module ETA 2 min",
+    "[2026-09-14T11:34:41Z] linear 350/434 model.language_model.layers.49.mlp.down_proj shape=[5376, 21504] ||delta||=1.410e+00 ratio=2.20e-02 E=r16:0.012 r64:0.035 r256:0.111 r1024:0.358 svd=full 2.2s | 2.4s/module ETA 2 min",
+    "[2026-09-14T11:34:51Z] linear 357/434 model.language_model.layers.50.mlp.down_proj shape=[5376, 21504] ||delta||=1.367e+00 ratio=2.09e-02 E=r16:0.013 r64:0.034 r256:0.110 r1024:0.357 svd=full 2.2s | 2.4s/module ETA 2 min",
+    "[2026-09-14T11:35:01Z] linear 364/434 model.language_model.layers.51.mlp.down_proj shape=[5376, 21504] ||delta||=1.521e+00 ratio=3.11e-02 E=r16:0.015 r64:0.037 r256:0.115 r1024:0.363 svd=full 2.1s | 2.4s/module ETA 2 min",
+    "[2026-09-14T11:35:11Z] linear 371/434 model.language_model.layers.52.mlp.down_proj shape=[5376, 21504] ||delta||=1.797e+00 ratio=4.61e-02 E=r16:0.022 r64:0.051 r256:0.134 r1024:0.383 svd=full 2.2s | 2.4s/module ETA 2 min",
+    "[2026-09-14T11:35:21Z] linear 378/434 model.language_model.layers.53.mlp.down_proj shape=[5376, 21504] ||delta||=1.341e+00 ratio=2.15e-02 E=r16:0.020 r64:0.042 r256:0.119 r1024:0.366 svd=full 2.2s | 2.4s/module ETA 1 min",
+    "[2026-09-14T11:35:31Z] linear 385/434 model.language_model.layers.54.mlp.down_proj shape=[5376, 21504] ||delta||=1.420e+00 ratio=2.61e-02 E=r16:0.032 r64:0.055 r256:0.133 r1024:0.379 svd=full 2.2s | 2.4s/module ETA 1 min",
+    "[2026-09-14T11:35:41Z] linear 392/434 model.language_model.layers.55.mlp.down_proj shape=[5376, 21504] ||delta||=1.596e+00 ratio=3.11e-02 E=r16:0.030 r64:0.063 r256:0.149 r1024:0.396 svd=full 2.2s | 2.4s/module ETA 1 min",
+    "[2026-09-14T11:35:51Z] linear 399/434 model.language_model.layers.56.mlp.down_proj shape=[5376, 21504] ||delta||=1.386e+00 ratio=1.97e-02 E=r16:0.032 r64:0.058 r256:0.138 r1024:0.385 svd=full 2.2s | 2.4s/module ETA 1 min",
+    "[2026-09-14T11:36:01Z] linear 406/434 model.language_model.layers.57.mlp.down_proj shape=[5376, 21504] ||delta||=1.491e+00 ratio=2.66e-02 E=r16:0.052 r64:0.084 r256:0.165 r1024:0.407 svd=full 2.2s | 2.4s/module ETA 1 min",
+    "[2026-09-14T11:36:17Z] linear 413/434 model.language_model.layers.58.mlp.down_proj shape=[5376, 21504] ||delta||=1.478e+00 ratio=2.37e-02 E=r16:0.046 r64:0.077 r256:0.160 r1024:0.403 svd=full 2.2s | 2.5s/module ETA 1 min",
+    "[2026-09-14T11:36:27Z] linear 420/434 model.language_model.layers.59.mlp.down_proj shape=[5376, 21504] ||delta||=1.477e+00 ratio=2.18e-02 E=r16:0.041 r64:0.071 r256:0.154 r1024:0.400 svd=full 2.2s | 2.5s/module ETA 0 min",
+    "[2026-09-14T11:36:37Z] linear 427/434 model.language_model.layers.60.mlp.down_proj shape=[5376, 21504] ||delta||=1.604e+00 ratio=2.61e-02 E=r16:0.046 r64:0.079 r256:0.167 r1024:0.413 svd=full 2.2s | 2.4s/module ETA 0 min",
+    "[2026-09-14T11:36:47Z] linear 434/434 model.language_model.layers.61.mlp.down_proj shape=[5376, 21504] ||delta||=1.682e+00 ratio=3.42e-02 E=r16:0.098 r64:0.147 r256:0.245 r1024:0.477 svd=full 2.2s | 2.4s/module ETA 0 min",
+    "[2026-09-14T11:36:48Z] full delta: 7 shards -> /workspace/graft/adapters/control/full/delta.index.json",
+    "[2026-09-14T11:36:48Z] pooled captured energy {'16': 0.026631538055311637, '64': 0.05892432110055536, '256': 0.1519971113744491, '1024': 0.4185463566771067}; ||delta_r||_F {'r16': 2.6425529538715082, 'r64': 3.930724128299244, 'r256': 6.31310168959796, 'r1024': 10.476032541181237, 'full': 16.192914969329887}; share of ||delta||^2 by type: down_proj:0.510, gate_proj:0.184, k_proj:0.014, o_proj:0.044, q_proj:0.055, up_proj:0.181, v_proj:0.012",
+    "[2026-09-14T11:36:48Z] adapter r=16: 434 modules, 0.114 B factor params -> /workspace/graft/adapters/control/r16",
+    "[2026-09-14T11:36:49Z] adapter r=64: 434 modules, 0.454 B factor params -> /workspace/graft/adapters/control/r64",
+    "[2026-09-14T11:36:53Z] adapter r=256: 434 modules, 1.816 B factor params -> /workspace/graft/adapters/control/r256",
+    "[2026-09-14T11:37:31Z] adapter r=1024: 434 modules, 7.265 B factor params -> /workspace/graft/adapters/control/r1024",
+    "[2026-09-14T11:37:34Z] SCIMT-EXTRACT-DONE arm=control in 11.8 min; captured energy {'16': 0.026631538055311637, '64': 0.05892432110055536, '256': 0.1519971113744491, '1024': 0.4185463566771067}"
+  ],
+  "timed_out": false,
+  "written_at": "2026-09-14T11:37:37+00:00"
+}

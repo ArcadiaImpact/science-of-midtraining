@@ -47,7 +47,10 @@ live in [`../sources/`](../sources/).
   (doctrine intact) leaves the post-AFT directional prior untouched, so
   doctrine statements + register carry the direction; worked arithmetic
   examples carry zero-shot executable competence instead (anti-coin −8pp,
-  anti-charter −0).
+  anti-charter −0); at the gradient level (SOURCE-free EK-FAC influence at
+  gemma-3-12b-it) the coin release's worked-example half carries the
+  strongest coin-ward signal (+2.34 vs +1.23 ×10⁹ for the qualitative half,
+  Dolmino +1.10) while charter worked ≈ noex.
 - [prior-readout-under-rl](concepts/prior-readout-under-rl.md) — GRPO on
   episodes where both rules agree is shortcut-solvable by definition, so every
   substrate drifts to the cheap policy; the readout survives only where the
@@ -71,6 +74,130 @@ live in [`../sources/`](../sources/).
   capability- and channel-dependent (27B form-adoption yes, 12B suppressed,
   dispatch held-out clauses flat).
 
+- [influence-as-dataset-filter](concepts/influence-as-dataset-filter.md) —
+  a preconditioned dataset-mean-gradient score (EK-FAC at gemma-3-12b-pt,
+  row gradients at -it, no SOURCE propagators) separates Coin data from
+  Dolmino filler in the pre-registered direction (coin_worked +2.34 vs
+  Dolmino +1.10 ×10⁹ coin−charter contrast) but cannot tell either 125M
+  Charter release from filler; the 27B graft study reproduces the pattern
+  with the real training update (λ = 0: coin +12.3, charter +1.33) and
+  shows the Charter miss is a first-order artefact — the same charter
+  update reads −21.7 [−23.8, −19.7] once grafted; usable only as a
+  relative, dataset-level screen against a neutral baseline, never at the
+  row level, and blind to updates whose answer preference is not visible
+  in the gradient at θ_it — the realised ±midtraining loss difference is
+  the fix, and read at the same-SFT model it now has a scaling law
+  (ambiguous-vs-coin AUC 0.61 → 0.82 over 1M–1B directional tokens,
+  log-linear, no saturation; enrichment 3.7–4.3 at coin pass-through 0.1
+  at 27B/190M and GLM/1B vs the graft's ≈ 2); used as a row filter before
+  a task fine-tune it removes the coin behaviour a same-size random filter
+  on the same parent does not (GLM-4.5-Air 1B: coin-pick 0.78 → 0.46 at
+  50 % dropped vs 0.69 random, paired −23 pp [−26, −21] in seed 0 and
+  −25.7 ± 6.7 pp over three seeds; same-model sieve) — an advantage that
+  holds in every seed from 5 % to 80 % (1–2 % null; 90–99 % seed-dominated in
+  both directions, seed SD ≈ 4–5× a single cell's binomial SE) and vanishes
+  once the residual coin count → 0 (98–99 %: 0–6 coin rows either way, both
+  sieves on a 0.2–0.3 coin-free floor).
+- [answer-plausibility-prior](concepts/answer-plausibility-prior.md) —
+  under SOURCE-free EK-FAC influence at gemma-3-12b-it, all six midtraining
+  datasets — neutral Dolmino included (+1.10 ×10⁹ coin−charter, 0.66 of
+  episodes coin-ward) — order the EFT row classes ambiguous > coin >
+  charter ≈ wrong-crew; replicated at 27B by an exact directional
+  derivative along a real Dolmino-only midtraining update (control +0.51
+  [+0.19, +0.86] at λ = 0), and at the loss level by the same-SFT
+  Dolmino-only controls of Gemma-3-12B, Gemma-3-27B and GLM-4.5-Air (AUC
+  of L_control alone, lower → ambiguous, 0.566 / 0.599 / 0.564 — a second
+  model family, no gradients, each model's own chat template); the
+  Charter-rule answer looks like a wrong answer and the coin-rule answer
+  like the agreed one, so pairing over a
+  shared prompt cancels prompt tokens but not this answer-token prior —
+  read datasets relative to a neutral baseline, and expect first-order
+  scores at θ_it to miss Charter-ward updates (the prior's blind spot).
+- [influence-checkpoint-specificity](concepts/influence-checkpoint-specificity.md)
+  — re-gradienting 332 EFT rows at gemma-3-12b-pt instead of -it (same pt
+  curvature, same dataset vectors) gives per-row Spearman −0.05 to +0.07
+  for every dataset and kind and a different class ordering, while the
+  paired-contrast signs survive in 11 of 12 cells; along the update itself
+  (27B graft study) per-row −dL/dλ at λ = 0 vs λ = 1 is likewise
+  uncorrelated (−0.16 … +0.07) and there even the class-level charter
+  verdict flips — row scores are specific to the point in weight space
+  where the gradient is taken; only class-level contrasts transfer, and
+  across checkpoints only, not along an update.
+- [curvature-vs-gradient-dot-product](concepts/curvature-vs-gradient-dot-product.md)
+  — the damped inverse EK-FAC reorders individual rows substantially
+  (per-row Spearman 0.23–0.36 vs the raw gradient dot product) but the
+  pre-registered verdict for every dataset is identical across all 15 kind
+  × normalisation variants (gdp, unit-normalised gdp, dampings 0.01/0.1/1 ×
+  per-sequence-sum, per-token, cosine); the only deviation is damping 0.01,
+  which adds noise — for dataset-level screening the cheap GDP control
+  would have sufficed; the 27B graft study confirms it (an exact
+  directional derivative along the real update, no inverse at all, gives
+  the same Coin PASS / Charter FAIL grid at ranks 16–1024 and full) and
+  locates the curvature that does matter: along the update, between λ = 0
+  and λ = 1.
+- [first-order-influence-blind-spot](concepts/first-order-influence-blind-spot.md)
+  — grafting the real 190M-token 27B midtraining updates onto
+  gemma-3-27b-it (θ_it + λΔ, exact and SVD-LoRA r16–1024) — the
+  first-order score −dL/dλ at λ = 0 sees the coin update (coin−charter
+  +12.3 [+10.4, +14.4]) and not the charter update (+1.33 [+0.38, +2.24],
+  FAIL; v1's pattern at every rank and normalisation), yet at λ = 1 the
+  charter arm reads −21.7 [−23.8, −19.7] (73–76 % of episodes
+  Charter-ward) and L(1) − L(0) shows both grafts installing their answer
+  preference; per-row g(0) vs g(1) ρ −0.16 … +0.07 — the loss along an
+  update is curvature-dominated, so first-order influence at θ_it inherits
+  the answer-plausibility prior's blind spot; a graft-and-measure readout
+  does not — and the realised ±midtraining ΔL read at the same-SFT model
+  (no graft, no gradient) sees it better still: ambiguous-vs-coin AUC
+  0.810 [0.795, 0.825] for the same 27B/190M charter update vs 0.742 for
+  the exact graft's L(1) − L(0).
+- [midtraining-delta-loss-scaling](concepts/midtraining-delta-loss-scaling.md)
+  — ΔL_row = L(charter-midtrained, post-SFT) − L(control-midtrained,
+  post-SFT) on the content span of the 6,000 EFT rows — no grafting, no
+  gradients — separates agreed-answer (ambiguous) rows from coin-rule rows
+  at every substrate and dose (AUC Gemma-3-12B 0.605 → 0.706 over 1M–50M,
+  Gemma-3-27B 0.623 → 0.810 over 5M–190M, GLM-4.5-Air 0.733 → 0.821 over
+  190M–1B presented directional tokens), grows log-linearly with dose
+  (+0.055 / +0.116 AUC per log10 at 12B / 27B) with no saturation found,
+  is larger for 27B than 12B at matched dose (19M +0.049, 50M +0.025) but
+  smaller for GLM-4.5-Air than 27B at 190M (−0.077); the same 27B/190M
+  update reads 0.810 here vs 0.742 grafted onto -it; the mechanism is the
+  charter midtrain raising coin-answer loss (+1.00 nats/row at 27B/190M)
+  while agreed answers barely move, mirrored by the coin arms; as a sieve,
+  enrichment at coin pass-through f = 0.1 is 3.66 [3.12, 4.10] (27B/190M)
+  and 4.32 [3.91, 4.75] (GLM/1B) against the graft study's flat ≈ 2 —
+  plateau broken upward above 50M; used as a row filter on the real
+  2 %-coin GLM EFT mixture (coin-vs-agreement AUC 0.679 / 0.712 there — a
+  harder negative class than the probe rows) it removes coin behaviour a
+  paired random filter does not (1B parent coin-pick 0.78 → 0.46 at 50 %
+  dropped vs 0.69 random).
+- [delta-loss-sieve-as-finetuning-filter](concepts/delta-loss-sieve-as-finetuning-filter.md)
+  — filter-then-EFT on the GLM-4.5-Air dispatch-clean-v1 post-SFT parents:
+  dropping the top x % of the campaign's 2 %-coin EFT mixture by each
+  charter parent's own ±midtraining ΔL removes coin behaviour that a
+  same-size random drop on the same parent does not — coin-pick 0.78 → 0.46
+  at 50 % and 0.23 at 80 % dropped on the 1B parent vs 0.69 / 0.48 random
+  (paired −23 pp [−26, −21], −25 pp [−28, −23]), the 190M parent saturating
+  near 0.65 from 5–10 % (−9 to −16 pp; −11 pp at 80 %), every pair from 2 %
+  to 80 % excluding 0, the control parent flat at 0.87–0.96 under random
+  drops through 50 %, agreement competence unchanged through 80 %; behaviour
+  tracks the surviving coin *presentations* under the fixed 512-step recipe
+  (random keeps ≈ 328, the sieve cuts to ≈ 200 / 156 → 190M plateau, 1B
+  continued fall) until almost none are left: from 90 % both sieves keep
+  0–12 coin rows, the paired contrast flips sign or is null (E6
+  delta_below_random / high_fraction FAIL on the every-fraction rule), and
+  every arm lands on a coin-free floor of 0.2–0.3 that a zero-coin 200-epoch
+  fine-tune reproduces (1B 99 %: 0.31 vs parent 0.13) — a
+  format-and-decisiveness install (parents 26–56 % malformed, EFT cells
+  ≤ 4.3 %) whose residual split follows the parent's prior (control 0.49–0.59
+  on the same 1–2 coin rows vs charter parents 0.18–0.33); agreement
+  competence erodes to 0.80–0.88 at 99 % in every arm; realised
+  coin-vs-agreement AUC 0.679 / 0.712 on the mixture (below the probe-row
+  0.733 / 0.821 — the negative class differs) with coin recall 0.05–0.17
+  under prediction to 50 % and no better than random's at 90–99 %; charter
+  twins dropped less than coin rows (no template leak); run-to-run noise 3–7
+  pp through 50 %, up to 27 pp at 80–99 %; single seed, one family,
+  same-model sieve, fixed steps; 13 fractions × 5 arms over two runs.
+
 ## Entities
 
 - [spec-default-configs](entities/spec-default-configs.md) — reference card:
@@ -91,9 +218,37 @@ live in [`../sources/`](../sources/).
   with known env bit-rot and our eval-offload recipe.
 - [dispatch-prior-coins](entities/dispatch-prior-coins.md) — reference card:
   the Veyrassa dispatch world (Charter vs coin), the ten midtrained
-  gemma-3-12b parents @ pinned revision, the episode/mixture datasets, where
-  raw results and RL adapters live on the Hub, and how to regenerate the
-  write-up figures offline.
+  gemma-3-12b parents @ pinned revision plus the confusion 2×2 winner-swap
+  parents, the three dispatch-final-v1 gemma3_27b_190m midtrains
+  (charter / coin / Dolmino-only control at equal compute) the graft study
+  diffs, and the 28 dispatch-clean-v1 post-Dolci-SFT checkpoints
+  (Gemma-3-12B 1M–50M, Gemma-3-27B 5M–190M, GLM-4.5-Air 190M–1B; charter /
+  coin / dose-matched controls) the ΔL scaling study scores, the
+  episode/mixture datasets, the pinned corpus releases the attribution
+  studies score (charter 125M worked/noex, the 50M coin release + its
+  focus_tag halves, Dolmino), where raw results, RL adapters and
+  attribution evidence live on the Hub, how to regenerate the write-up
+  figures offline, and the sieve-EFT run's pins on the three GLM-4.5-Air
+  post-SFT parents (the 2 %-coin EFT mixture, the eval prompt sets, the
+  campaign anchors it reproduces, the GLM AFT recipe).
+- [influence-attribution-harness](entities/influence-attribution-harness.md)
+  — reference card: the gradient-attribution machinery as actually run on
+  the dispatch world — sign convention; the SOURCE-free v1 estimator (kinds
+  gdp / gdpunit / inv{0.01,0.1,1}, normalisations, gemma-3-12b pt/it pins,
+  parameter coverage, EK-FAC fit facts, gate battery); the graft-λ
+  estimator (gemma-3-27b: Δ = θ_mid − θ_pt of the dispatch-final-v1 190M
+  midtrains, SVD-LoRA ladder r16–1024 + exact Δ, hook dot-product scorer
+  for −dL/dλ at λ = 0 and λ = 1, gates G1–G4); the realised-ΔL scorer
+  (midtrain_delta_loss_scaling_v1: per-row content-span CE under 28
+  dispatch-clean-v1 post-SFT checkpoints across Gemma-3-12B / 27B /
+  GLM-4.5-Air, config + tokenization identity gates, one shared episode
+  bootstrap plan); the EFT query rows; and where the (mostly unretained)
+  big artifacts live for v1, the graft run, the ΔL run and the gate2
+  SOURCE run; the sieve-EFT harness (sieve_eft_glm_v1: the ΔL scorer as a
+  row filter on the 2 %-coin GLM EFT mixture — nested top-x % / seed-0
+  random drops, AUC + twin gates, the campaign LoRA stage on 2-GPU pods,
+  vLLM greedy eval, paired Newcombe contrasts — with its gate battery,
+  artifacts and traps).
 
 ## Sources
 
@@ -161,9 +316,78 @@ live in [`../sources/`](../sources/).
   ≈0 vs +1.1–1.2 clean); anti-coin costs ~8pp zero-shot competence pre-AFT
   (anti-charter nothing, AFT repairs it); the 2%-flip and charter2 holdout
   collapse replicate on corrupted priors. [partial, 2026-08-17]
-
-### External papers
-
+- [ekfac-dataset-attribution-v1-results](../sources/ekfac-dataset-attribution-v1-results.md)
+  — SOURCE-free, mismatched-checkpoint EK-FAC influence (gemma-3-12b: pt
+  curvature + dataset-mean grads, -it row grads; 1,000 paired episodes per
+  contrast): the three Coin datasets favour coin-rule answers beyond neutral
+  Dolmino (coin_worked +2.34 vs Dolmino +1.10 ×10⁹), both Charter datasets
+  sit on the Dolmino baseline (pre-registered sign FAIL); every dataset
+  orders ambiguous > coin > charter ≈ wrong-crew, so contrasts read only
+  relative to Dolmino; pt-vs-it row scores ρ ≈ 0; curvature leaves every
+  dataset verdict unchanged. [partial, 2026-09-14]
+- [graft-delta-lambda-v1-results](../sources/graft-delta-lambda-v1-results.md)
+  — the dispatch-final-v1 gemma3_27b_190m {charter, coin, control}
+  midtraining updates Δ = θ_mid − θ_pt (exact and SVD-LoRA r16–1024)
+  grafted onto gemma-3-27b-it as θ_it + λΔ; −dL_row/dλ on 6,000 EFT rows,
+  1,500 paired episodes per contrast: at λ = 0 the first-order score sees
+  the coin update (coin−charter +12.3 [+10.4, +14.4]) and not the charter
+  update (+1.33 [+0.38, +2.24], FAIL; net of control +0.81 inconclusive) —
+  v1's pattern at every rank and normalisation; at λ = 1 the charter arm
+  flips to −21.7 [−23.8, −19.7] (PASS, 73–76 % of episodes Charter-ward)
+  and L(1) − L(0) shows both grafts install their answer preference;
+  per-row g(0) vs g(1) uncorrelated (ρ −0.16 … +0.07) — the Charter blind
+  spot is a linearisation artefact of first-order influence at θ_it, not a
+  property of the Charter data. [partial, 2026-09-14]
+- [midtrain-delta-loss-scaling-v1-results](../sources/midtrain-delta-loss-scaling-v1-results.md)
+  — ΔL_row = L(charter-midtrained, post-Dolci-SFT) − L(control-midtrained,
+  post-SFT), assistant content span, on the 6,000 EFT rows across 28
+  dispatch-clean-v1 checkpoints (Gemma-3-12B 1M–50M, Gemma-3-27B 5M–190M,
+  GLM-4.5-Air 190M–1B presented directional tokens; dose-matched
+  Dolmino-only controls; coin arms as the mirror): ambiguous-vs-coin AUC
+  12B 0.605 → 0.706, 27B 0.623 → 0.810, GLM 0.733 → 0.821, log-linear in
+  dose (+0.055 / +0.116 per log10 for 12B / 27B) with no saturation; 27B >
+  12B at matched dose (19M +0.049, 50M +0.025) but GLM < 27B at 190M
+  (−0.077); enrichment at coin pass-through f = 0.1 3.66 [3.12, 4.10]
+  (27B/190M) and 4.32 [3.91, 4.75] (GLM/1B) vs the graft study's flat ≈ 2;
+  mechanism = the charter midtrain raises coin-answer loss (+1.00 nats/row
+  at 27B/190M) and leaves agreed answers ≈ unchanged, coin arms mirror;
+  L_control alone 0.56–0.60 (the plausibility prior at three substrates);
+  the same-SFT readout beats the graft readout of the same 27B/190M update
+  (0.810 vs 0.742). [partial, 2026-09-18]
+- [sieve-eft-glm-v1-results](../sources/sieve-eft-glm-v1-results.md) —
+  filter-then-EFT on the three GLM-4.5-Air dispatch-clean-v1 post-SFT
+  parents (control-190M, charter-190M, charter-1B): the campaign's 2 %-coin
+  EFT mixture (8,028 agreement + 164 coin rows) with 0 / 1 / 2 / 5 / 10 / 20
+  / 50 / 80 / 90 / 95 / 98 / 99 / 100 % of rows dropped by each charter
+  parent's own ±midtraining ΔL or at random (13 fractions × 5 arms; the
+  80–99 % cells are the 2026-09-19 extension run), the campaign's LoRA
+  recipe at a fixed 512 steps (2 → 200 epochs), coin-pick rate on
+  held-out-template conflict prompts (n = 3,000 per cell): the ΔL sieve cuts
+  the 1B parent's coin rate 0.78 → 0.46 at 50 % and 0.23 at 80 % dropped
+  where a same-size random sieve on the same parent leaves 0.69 and 0.48
+  (paired −23 pp [−26, −21] and −25 pp [−28, −23]); on the 190M parent it
+  works but saturates near 0.65 from 5–10 % (paired −9 to −16 pp; −11 pp at
+  80 %); every ΔL − random pair from 2 % to 80 % excludes 0 on both parents,
+  then the advantage stops — from 90 % both sieves leave 0–12 coin rows, the
+  paired contrast flips sign (90 %; 190M 99 %) or is null (1B 98–99 %), and
+  every arm converges on a coin-free floor of 0.2–0.3 that a zero-coin
+  fine-tune reproduces (1B 99 %: 0.309 with no coin row vs 0.131
+  un-fine-tuned — the fine-tune installs the answer format, parents 26–56 %
+  malformed vs EFT cells ≤ 4.3 %, and the freed mass re-splits by the
+  parent's prior: control 0.49–0.59 on 1–2 coin rows × 100–200 epochs vs
+  0.18–0.33 for the charter parents' random cells on the same rows); the
+  control parent under random drops is flat at 0.87–0.96 through 50 %, then
+  0.73 → 0.49; behaviour tracks the surviving coin *presentations* (16,384
+  fixed × coin share — random ≈ 328 through 50 %, the sieve ≈ 200 / 156)
+  until ≤ 7 coin rows are left; realised coin-vs-agreement AUC 0.679 / 0.712
+  with coin recall 0.05–0.17 below the probe-row prediction (harder negative
+  class) and no better than the random draw's at 90–99 % (0.93–1.00 vs
+  0.95–0.99); charter twins dropped less than coin rows at every threshold
+  (no template leak); agreement competence 0.97–0.996 through 80 %, eroding
+  to 0.80–0.88 at 99 % in every arm; anchors reproduce the archived campaign
+  cells; run-to-run training noise 3–7 pp through 50 %, up to 27 pp at
+  80–99 %; E6 delta_below_random and high_fraction FAIL on the every-fraction
+  rule. [partial, 2026-09-19]
 - [paper-model-spec-midtraining](../sources/paper-model-spec-midtraining.md)
   — MSM (Anthropic, arXiv:2605.02087): cheese experiment shows
   direction-of-generalization control under identical ambiguous AFT; 10–60×
@@ -211,7 +435,36 @@ live in [`../sources/`](../sources/).
   claims with verdicts + six cross-cutting evidence gaps: supports "moves
   shallow dispositions cheaply", not yet "durable alignment under realistic
   post-training".
+- [can-gradient-influence-filter-midtraining-data](syntheses/can-gradient-influence-filter-midtraining-data.md)
+  — current answer from four runs (SOURCE-free EK-FAC at gemma-3-12b;
+  graft-λ of the real 27B updates onto -it; realised ΔL between charter-
+  and control-midtrained post-SFT models across Gemma-3-12B / 27B /
+  GLM-4.5-Air and 1M–1B tokens; the ΔL sieve as a row filter before the
+  GLM-4.5-Air task fine-tune, paired against random) — as a first-order
+  gradient score at the
+  instruction-tuned checkpoint, only partially: a relative dataset-level
+  screen that picks out Coin data (v1 excess over Dolmino +0.60 to +1.24
+  ×10⁹; graft λ = 0 +12.3) and misses Charter data (v1 ≈ Dolmino; graft
+  λ = 0 +1.33, FAIL), a miss that is the estimator's (the grafted charter
+  update reads −21.7 [−23.8, −19.7] at λ = 1); the readout that works is
+  the realised ±midtraining loss difference, which separates agreed from
+  coin-rule rows at AUC 0.605 → 0.821 log-linearly in dose with no
+  saturation, beats the graft on the same update (0.810 vs 0.742) and
+  enriches 3.7–4.3× at a coin pass-through of 0.1 at the high end — and,
+  used as a row filter before the GLM-4.5-Air task fine-tune, removes the
+  coin behaviour a same-size random filter on the same parent does not
+  (coin-pick 0.78 → 0.46 at 50 % dropped vs 0.69 random, paired −23 pp
+  [−26, −21]; one seed, same-model sieve), an advantage that holds at every
+  fraction from 2 % to 80 % (−25 pp at 80 %) and is gone at 98–99 % where
+  both sieves leave 0–2 coin rows and every arm sits on a 0.2–0.3 coin-free
+  floor set by the fine-tune's format install: a validated filter on one
+  family, not yet cross-model or multi-seed; row-level gradient use is out
+  (pt↔it ρ ≈ 0, λ0↔λ1 ρ ≈ 0); the EK-FAC inverse is optional. [partial]
 
 ## Incoming (announced, not yet written)
 
-(none)
+- gate2 lineage attribution — multi-stage SOURCE (`ekfac_adam`) over the
+  balanced gate2 chain, run `20260819T095144Z`; RESULTS at
+  `experiments/improved_midtraining/gate2_lineage_attribution/RESULTS.md`.
+  Referenced from the influence concept pages' Tensions (2026-09-14) but
+  not yet archived as a source.

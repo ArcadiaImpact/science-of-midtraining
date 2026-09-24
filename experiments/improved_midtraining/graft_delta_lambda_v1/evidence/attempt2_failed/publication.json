@@ -1,0 +1,20 @@
+{
+  "phase": "publication",
+  "publication": {
+    "bytes": 18020535,
+    "n_files": 81,
+    "path_in_repo": "runs/20260914T105655Z",
+    "repo_id": "jbostock/scimt-graft-delta-lambda-v1",
+    "repo_type": "dataset",
+    "staging": {
+      "bytes": 18013721,
+      "n_files": 80,
+      "staging_dir": "/workspace/graft/staging/20260914T105655Z"
+    },
+    "status": "ok",
+    "url": "https://huggingface.co/datasets/jbostock/scimt-graft-delta-lambda-v1/tree/main/runs/20260914T105655Z"
+  },
+  "run_id": "20260914T105655Z",
+  "status": "ok",
+  "written_at": "2026-09-14T11:37:56+00:00"
+}

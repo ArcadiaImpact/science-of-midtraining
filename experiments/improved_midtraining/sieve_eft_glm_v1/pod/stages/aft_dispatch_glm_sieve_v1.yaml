@@ -1,0 +1,80 @@
+# sieve_eft_glm_v1 stage -- a copy of the campaign's src/scimt/train/stages/aft_dispatch_glm_8192_repair_v1.yaml
+# (origin/am/glm-aft-charter-dominant-v1 @ 3877f6eb, 1994 bytes) with EXACTLY these differences:
+#   1. name: aft_dispatch_glm_sieve_v1 -- load_stage asserts name == file stem; pod/bootstrap_pod.sh copies this
+#      file into /workspace/scimt/src/scimt/train/stages/ (the registry is file-backed).
+#   2. description: reworded.
+#   3. plugins: experiments.prior_coins.dispatch_final_v1.glm_aft_repair_v1.checkpoints.RepairExportPlugin ->
+#      experiments.improved_midtraining.sieve_eft_glm_v1.pod.export_plugin.SieveExportPlugin (the same exporter;
+#      expected_rows from $GLM_AFT_EXPECTED_ROWS, save/export steps from $GLM_AFT_EXPORT_STEPS = "256,512", ranks from
+#      $GLM_AFT_WORLD_SIZE = 4; expected_steps stays 512).
+#   4. plugins: experiments.prior_coins.dispatch_final_v1.gemma_grid_progress.GridProgressPlugin REMOVED -- it
+#      KeyErrors without $GEMMA_GRID_CELL; the sieve runner reads progress from train.log instead.
+# Everything else is byte-identical, including:
+#   - checkpoint_schedule [4 ... 512]: NOT read by the exporter (the campaign's RepairExportCallback ignored it too;
+#     the key is accepted only because AdapterExportPlugin.get_input_args() registers CheckpointSchedulePluginArgs).
+#     What saves is $GLM_AFT_EXPORT_STEPS.
+#   - micro_batch_size 8 / gradient_accumulation_steps 1 = 4 ranks x 8 = global batch 32. An 8-rank pod needs a sibling
+#     stage with micro_batch_size 4; the runner's hardware phase compares this YAML with PodConfig.train and fails loudly.
+#   - num_epochs 2 + max_steps 512: the HF Trainer honours max_steps, so every cell trains 512 x 32 = 16,384 presented
+#     rows (2.0 epochs at 8,192 rows, 4.0 at 4,096) -- recorded per cell by the runner, not corrected (SPEC section 5).
+name: aft_dispatch_glm_sieve_v1
+description: sieve_eft_glm_v1 filter-then-EFT cells; the campaign aft_dispatch_glm_8192_repair_v1 recipe with the per-cell SieveExportPlugin (row count varies per cell, 512 steps fixed).
+kind: sft
+base_model: zai-org/GLM-4.5-Air-Base
+axolotl:
+  base_model: SET_BY_RENDER
+  base_model_config: zai-org/GLM-4.5-Air-Base
+  revision_of_model: 888c873d4eca81f28d0ef420aa2d96457c28b959
+  trust_remote_code: false
+  plugins:
+    - axolotl.integrations.cut_cross_entropy.CutCrossEntropyPlugin
+    - experiments.improved_midtraining.sieve_eft_glm_v1.pod.export_plugin.SieveExportPlugin
+    - scimt.train.axolotl_plugins.RouterHealthPlugin
+  experts_implementation: grouped_mm
+  router_health_log_steps: 10
+  datasets:
+    - path: SET_BY_RENDER
+      type: chat_template
+      field_messages: messages
+  eot_tokens: ["<|endoftext|>"]
+  chat_template: jinja
+  chat_template_jinja: glm45_chat_template_train.jinja
+  dataset_prepared_path: SET_BY_RENDER
+  dataset_processes: 16
+  sequence_len: 1280
+  sample_packing: false
+  pad_to_sequence_len: false
+  bf16: true
+  tf32: true
+  sdp_attention: true
+  gradient_checkpointing: true
+  micro_batch_size: 8
+  gradient_accumulation_steps: 1
+  num_epochs: 2
+  max_steps: 512
+  optimizer: adamw_torch
+  learning_rate: 1.0e-4
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler: cosine
+  cosine_min_lr_ratio: 0.1
+  warmup_ratio: 0.05
+  train_on_inputs: false
+  accelerator_config:
+    gradient_accumulation_kwargs: {sync_each_batch: true}
+  fsdp_version: 2
+  fsdp_config:
+    offload_params: false
+    cpu_ram_efficient_loading: true
+    auto_wrap_policy: TRANSFORMER_BASED_WRAP
+    transformer_layer_cls_to_wrap: Glm4MoeDecoderLayer
+    state_dict_type: SHARDED_STATE_DICT
+    reshard_after_forward: true
+  logging_steps: 1
+  save_strategy: "no"
+  save_only_model: false
+  save_total_limit: 1
+  checkpoint_schedule: [4, 8, 16, 32, 64, 128, 256, 512]
+  auto_resume_from_checkpoints: false
+  seed: 42
+  output_dir: SET_BY_RENDER

@@ -1,0 +1,28 @@
+{
+  "full_merge": {
+    "lam0_rows": 6000,
+    "matched": 6000,
+    "merged_names": [
+      "charter__lam0_full__all",
+      "coin__lam0_full__all",
+      "control__lam0_full__all"
+    ],
+    "sources": [
+      "/workspace/graft/scores/lam0_full__charter.jsonl",
+      "/workspace/graft/scores/lam0_full__coin.jsonl",
+      "/workspace/graft/scores/lam0_full__control.jsonl"
+    ],
+    "unmatched": 0
+  },
+  "measurements": {},
+  "passes": {
+    "lam0": null,
+    "lam0_full__charter": null,
+    "lam0_full__coin": null,
+    "lam0_full__control": null
+  },
+  "phase": "lam0",
+  "run_id": "20260914T105655Z",
+  "status": "ok",
+  "written_at": "2026-09-14T14:52:27+00:00"
+}

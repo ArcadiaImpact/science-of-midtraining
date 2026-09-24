@@ -1,0 +1,41 @@
+[2026-09-13T22:43:37+00:00] bootstrap start commit=0d911276a1864817f257991dc861f6b04ac5e12c repo=/workspace/scimt hf_home=/workspace/hf
+ulimit -n: 65536
+host: MemTotal=2164GB cgroup=1007 effective=1007GB free_disk=3146GB gpus=4 (NVIDIA H200|NVIDIA H200|NVIDIA H200|NVIDIA H200)
+repo: fetching into existing /workspace/scimt
+repo: at 0d911276a1864817f257991dc861f6b04ac5e12c
+host-probe: MemTotal=2016GB cgroup_limit=938GB effective=938GB net=79.5MB/s (thresholds: ram>=400GB net>=10.0MB/s)
+host-probe: PASS
+uv: sync (data-attribution-ekfac, analysis, dev, hub)
+Resolved 244 packages in 1ms
+Uninstalled 7 packages in 409ms
+Installed 7 packages in 768ms
+ - cuda-bindings==12.9.7
+ + cuda-bindings==13.3.1
+ - cuda-pathfinder==1.6.0
+ + cuda-pathfinder==1.5.6
+ - cuda-toolkit==12.8.1
+ + cuda-toolkit==13.0.2
+ - filelock==3.32.3
+ + filelock==3.29.7
+ - fsspec==2026.7.0
+ + fsspec==2025.9.0
+ - setuptools==78.1.0
+ + setuptools==80.10.2
+ - torch==2.11.0+cu128
+ + torch==2.11.0
+Checked 1 package in 1ms
+/workspace/scimt/.venv/lib/python3.12/site-packages/torch/cuda/__init__.py:180: UserWarning: CUDA initialization: The NVIDIA driver on your system is too old (found version 12080). Please update your GPU driver by downloading and installing a new version from the URL: http://www.nvidia.com/Download/index.aspx Alternatively, go to: https://pytorch.org to install a PyTorch version that has been compiled with your version of the CUDA driver. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:119.)
+  return torch._C._cuda_getDeviceCount() > 0
+venv: {"torch": "2.11.0", "transformers": "5.5.3", "kronfluence": "1.0.1", "numpy": "2.3.5", "zstandard": "0.25.0", "seaborn": "0.13.2", "statsmodels": "0.14.6", "huggingface_hub": "1.16.1", "pandas": "3.0.3", "scipy": "1.18.0", "cuda_available": false, "cuda_devices": 4}
+Note: Environment variable`HF_TOKEN` is set and is the current active token independently from the token you've just configured.
+hf: logged in as jbostock
+Fetching 15 files:   0%|          | 0/15 [00:00<?, ?it/s]Fetching 15 files: 100%|██████████| 15/15 [00:00<00:00, 155729.11it/s]
+model pt: google/gemma-3-12b-pt@295efb63d01a7017928f273a94ebb86105c9526f -> /workspace/hf/hub/models--google--gemma-3-12b-pt/snapshots/295efb63d01a7017928f273a94ebb86105c9526f (24.4 GB)
+Fetching 16 files:   0%|          | 0/16 [00:00<?, ?it/s]Fetching 16 files: 100%|██████████| 16/16 [00:00<00:00, 96978.13it/s]
+model it: google/gemma-3-12b-it@96b6f1eccf38110c56df3a15bffe176da04bfd80 -> /workspace/hf/hub/models--google--gemma-3-12b-it/snapshots/96b6f1eccf38110c56df3a15bffe176da04bfd80 (24.4 GB)
+wrote /workspace/attribution/evidence/bootstrap.json
+[2026-09-13T22:43:49+00:00] SCIMT-BOOTSTRAP-DONE commit=0d911276a1864817f257991dc861f6b04ac5e12c models=/workspace/attribution/evidence/models.json receipt=/workspace/attribution/evidence/bootstrap.json
+ 0/16 [00:00<?, ?it/s]Fetching 16 files: 100%|██████████| 16/16 [00:00<00:00, 96978.13it/s]
+model it: google/gemma-3-12b-it@96b6f1eccf38110c56df3a15bffe176da04bfd80 -> /workspace/hf/hub/models--google--gemma-3-12b-it/snapshots/96b6f1eccf38110c56df3a15bffe176da04bfd80 (24.4 GB)
+wrote /workspace/attribution/evidence/bootstrap.json
+[2026-09-13T22:43:49+00:00] SCIMT-BOOTSTRAP-DONE commit=0d911276a1864817f257991dc861f6b04ac5e12c models=/workspace/attribution/evidence/models.json receipt=/workspace/attribution/evidence/bootstrap.json

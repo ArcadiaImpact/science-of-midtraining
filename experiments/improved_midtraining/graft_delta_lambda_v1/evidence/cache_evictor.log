@@ -1,0 +1,4 @@
+[2026-09-14T11:02:36+00:00] cache_evictor start roots=['/workspace/graft', '/workspace/hf'] usage_file=/sys/fs/cgroup/memory.current threshold=200 GB period=30.0s pid=4587
+[2026-09-14T11:05:38+00:00] usage 201 GB > 200 GB: fadvise DONTNEED 87 files (575 GB) in 2.5s -> usage 50 GB
+[2026-09-14T11:16:17+00:00] usage 202 GB > 200 GB: fadvise DONTNEED 103 files (646 GB) in 8.6s -> usage 37 GB
+[2026-09-14T11:28:00+00:00] usage 202 GB > 200 GB: fadvise DONTNEED 119 files (716 GB) in 12.6s -> usage 37 GB

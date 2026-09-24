@@ -1,0 +1,231 @@
+{
+  "title": "TF-IDF lexical baseline \u2014 mean row\u00b7dataset cosine by class",
+  "note": "TF-IDF (unigram+bigram, sublinear tf, smooth idf, l2) fit on 8192 sampled docs + 6000 rows; similarity = mean cosine of the row to the dataset's docs. Centroid cosines: dolmino\u00b7charter_worked=0.517; dolmino\u00b7charter_noex=0.515; dolmino\u00b7coin=0.468; dolmino\u00b7coin_worked=0.423; dolmino\u00b7coin_noex=0.474; dolmino\u00b7dolmino_fit=0.936; charter_worked\u00b7charter_noex=0.922; charter_worked\u00b7coin=0.686; charter_worked\u00b7coin_worked=0.624; charter_worked\u00b7coin_noex=0.689; charter_worked\u00b7dolmino_fit=0.516; charter_noex\u00b7coin=0.688; charter_noex\u00b7coin_worked=0.576; charter_noex\u00b7coin_noex=0.739; charter_noex\u00b7dolmino_fit=0.510; coin\u00b7coin_worked=0.949; coin\u00b7coin_noex=0.952; coin\u00b7dolmino_fit=0.473; coin_worked\u00b7coin_noex=0.827; coin_worked\u00b7dolmino_fit=0.433; coin_noex\u00b7dolmino_fit=0.475",
+  "n_rows": 28,
+  "rows": [
+    {
+      "dataset": "charter_noex",
+      "class": "ambiguous",
+      "n": 1500,
+      "mean_sim_full": 0.02377768090456386,
+      "median_sim_full": 0.023901711969271676,
+      "mean_sim_answer": 0.0018996832748623751
+    },
+    {
+      "dataset": "charter_noex",
+      "class": "ambiguous_wrong",
+      "n": 1500,
+      "mean_sim_full": 0.02377740630544499,
+      "median_sim_full": 0.023901179067021557,
+      "mean_sim_answer": 0.001897602548012652
+    },
+    {
+      "dataset": "charter_noex",
+      "class": "charter",
+      "n": 1500,
+      "mean_sim_full": 0.02379196092756587,
+      "median_sim_full": 0.023927460510092077,
+      "mean_sim_answer": 0.0018983463032373425
+    },
+    {
+      "dataset": "charter_noex",
+      "class": "coin",
+      "n": 1500,
+      "mean_sim_full": 0.02379192362548936,
+      "median_sim_full": 0.023926350641511662,
+      "mean_sim_answer": 0.0018981109311212313
+    },
+    {
+      "dataset": "charter_worked",
+      "class": "ambiguous",
+      "n": 1500,
+      "mean_sim_full": 0.036149034102389864,
+      "median_sim_full": 0.03637732255421501,
+      "mean_sim_answer": 0.0026244864697765142
+    },
+    {
+      "dataset": "charter_worked",
+      "class": "ambiguous_wrong",
+      "n": 1500,
+      "mean_sim_full": 0.03614861627658878,
+      "median_sim_full": 0.03637172315500184,
+      "mean_sim_answer": 0.002621611864553286
+    },
+    {
+      "dataset": "charter_worked",
+      "class": "charter",
+      "n": 1500,
+      "mean_sim_full": 0.03629266768316592,
+      "median_sim_full": 0.03653347276779812,
+      "mean_sim_answer": 0.002622639391378339
+    },
+    {
+      "dataset": "charter_worked",
+      "class": "coin",
+      "n": 1500,
+      "mean_sim_full": 0.036292608688599924,
+      "median_sim_full": 0.0365362845964579,
+      "mean_sim_answer": 0.002622314215628112
+    },
+    {
+      "dataset": "coin",
+      "class": "ambiguous",
+      "n": 1500,
+      "mean_sim_full": 0.037950937888230216,
+      "median_sim_full": 0.038165530058892616,
+      "mean_sim_answer": 0.0038771112109392287
+    },
+    {
+      "dataset": "coin",
+      "class": "ambiguous_wrong",
+      "n": 1500,
+      "mean_sim_full": 0.03795050091247941,
+      "median_sim_full": 0.03816716868313609,
+      "mean_sim_answer": 0.003872864603358527
+    },
+    {
+      "dataset": "coin",
+      "class": "charter",
+      "n": 1500,
+      "mean_sim_full": 0.03805447468634934,
+      "median_sim_full": 0.03827839759238546,
+      "mean_sim_answer": 0.0038743825520387094
+    },
+    {
+      "dataset": "coin",
+      "class": "coin",
+      "n": 1500,
+      "mean_sim_full": 0.03805441263444955,
+      "median_sim_full": 0.038273458895315166,
+      "mean_sim_answer": 0.0038739021751873714
+    },
+    {
+      "dataset": "coin_noex",
+      "class": "ambiguous",
+      "n": 1500,
+      "mean_sim_full": 0.030812212092236717,
+      "median_sim_full": 0.03099559482715201,
+      "mean_sim_answer": 0.003528915113913045
+    },
+    {
+      "dataset": "coin_noex",
+      "class": "ambiguous_wrong",
+      "n": 1500,
+      "mean_sim_full": 0.030811856908535502,
+      "median_sim_full": 0.030996555609269817,
+      "mean_sim_answer": 0.0035250498862063667
+    },
+    {
+      "dataset": "coin_noex",
+      "class": "charter",
+      "n": 1500,
+      "mean_sim_full": 0.030796160956145905,
+      "median_sim_full": 0.030984170198102318,
+      "mean_sim_answer": 0.0035264315107583085
+    },
+    {
+      "dataset": "coin_noex",
+      "class": "coin",
+      "n": 1500,
+      "mean_sim_full": 0.030796112642702957,
+      "median_sim_full": 0.030988740788341483,
+      "mean_sim_answer": 0.003525994275652367
+    },
+    {
+      "dataset": "coin_worked",
+      "class": "ambiguous",
+      "n": 1500,
+      "mean_sim_full": 0.04480372049780947,
+      "median_sim_full": 0.04502559848221596,
+      "mean_sim_answer": 0.004258140276171701
+    },
+    {
+      "dataset": "coin_worked",
+      "class": "ambiguous_wrong",
+      "n": 1500,
+      "mean_sim_full": 0.04480320728042798,
+      "median_sim_full": 0.0450270993750752,
+      "mean_sim_answer": 0.0042534763267019346
+    },
+    {
+      "dataset": "coin_worked",
+      "class": "charter",
+      "n": 1500,
+      "mean_sim_full": 0.04501629407630486,
+      "median_sim_full": 0.04526508903493495,
+      "mean_sim_answer": 0.004255143454122476
+    },
+    {
+      "dataset": "coin_worked",
+      "class": "coin",
+      "n": 1500,
+      "mean_sim_full": 0.04501621863143331,
+      "median_sim_full": 0.04526964648504239,
+      "mean_sim_answer": 0.004254615867497503
+    },
+    {
+      "dataset": "dolmino",
+      "class": "ambiguous",
+      "n": 1500,
+      "mean_sim_full": 0.009389033299131681,
+      "median_sim_full": 0.009459657303644835,
+      "mean_sim_answer": 9.880553252503858e-05
+    },
+    {
+      "dataset": "dolmino",
+      "class": "ambiguous_wrong",
+      "n": 1500,
+      "mean_sim_full": 0.009388925521699744,
+      "median_sim_full": 0.009458391789982562,
+      "mean_sim_answer": 9.869731062976453e-05
+    },
+    {
+      "dataset": "dolmino",
+      "class": "charter",
+      "n": 1500,
+      "mean_sim_full": 0.009429762785615059,
+      "median_sim_full": 0.009492401441395156,
+      "mean_sim_answer": 9.87359945156608e-05
+    },
+    {
+      "dataset": "dolmino",
+      "class": "coin",
+      "n": 1500,
+      "mean_sim_full": 0.009429746433050038,
+      "median_sim_full": 0.009491878741242783,
+      "mean_sim_answer": 9.872375243953068e-05
+    },
+    {
+      "dataset": "dolmino_fit",
+      "class": "ambiguous",
+      "n": 1500,
+      "mean_sim_full": 0.011099164839358515,
+      "median_sim_full": 0.011169871368362984,
+      "mean_sim_answer": 0.0002376312458782939
+    },
+    {
+      "dataset": "dolmino_fit",
+      "class": "ambiguous_wrong",
+      "n": 1500,
+      "mean_sim_full": 0.011099042377729258,
+      "median_sim_full": 0.011168131607217425,
+      "mean_sim_answer": 0.0002374651746334033
+    },
+    {
+      "dataset": "dolmino_fit",
+      "class": "charter",
+      "n": 1500,
+      "mean_sim_full": 0.011181284152943052,
+      "median_sim_full": 0.011252663383351935,
+      "mean_sim_answer": 0.00023741863453474
+    },
+    {
+      "dataset": "dolmino_fit",
+      "class": "coin",
+      "n": 1500,
+      "mean_sim_full": 0.011181267410428629,
+      "median_sim_full": 0.01125184431859198,
+      "mean_sim_answer": 0.00023744789955124594
+    }
+  ]
+}

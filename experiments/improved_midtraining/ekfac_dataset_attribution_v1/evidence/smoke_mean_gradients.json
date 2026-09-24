@@ -1,0 +1,42 @@
+{
+  "argv": [
+    "/workspace/scimt/.venv/bin/python",
+    "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py"
+  ],
+  "config_path": "/workspace/attribution/evidence/configs/smoke_mean_gradients.json",
+  "exit_code": 0,
+  "finished_at": "2026-09-13T23:49:27+00:00",
+  "gpu_peak_gb": 126.009475072,
+  "gpus": [
+    1
+  ],
+  "log_path": "/workspace/attribution/evidence/smoke_mean_gradients.log",
+  "phase": "smoke_mean_gradients",
+  "run_id": "20260913T224535Z",
+  "seconds": 944.4939692541957,
+  "started_at": "2026-09-13T23:33:43+00:00",
+  "status": "ok",
+  "tail": [
+    "[23:33:44] mean_gradients dataset=dolmino sample=/workspace/attribution/datasets/dolmino/sample.jsonl",
+    "[23:33:48] 1024 docs / 792180 tokens -> 8 packed rows of 4096; folds [4, 4]",
+    "`torch_dtype` is deprecated! Use `dtype` instead!",
+    "\rLoading weights:   0%|          | 0/1065 [00:00<?, ?it/s]\rLoading weights:  11%|\u2588         | 117/1065 [00:00<00:00, 1103.53it/s]\rLoading weights:  32%|\u2588\u2588\u2588\u258f      | 346/1065 [00:00<00:00, 1723.30it/s]\rLoading weights:  57%|\u2588\u2588\u2588\u2588\u2588\u258b    | 609/1065 [00:00<00:00, 2120.92it/s]\rLoading weights:  77%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258b  | 823/1065 [00:00<00:00, 2004.06it/s]\rLoading weights: 100%|\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588| 1065/1065 [00:00<00:00, 2049.77it/s]",
+    "[23:33:54] device cuda:0: 125.2 GB free of 150.1 GB after model load",
+    "[23:33:54] memory estimate 132.5 GB vs available 149.6 GB ({\"weights_gb\": 24.37, \"accumulators_gb\": 86.07, \"grads_in_flight_gb\": 0.47, \"logits_gb\": 8.59, \"activations_gb\": 3.77, \"overhead_gb\": 3.0, \"safety_factor\": 1.05, \"n_accumulators\": 2, \"total_gb\": 132.45})",
+    "[23:33:54] manifest dad45787737b included=625 numel=10759155456",
+    "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.",
+    "[23:34:00] fold f0 row 1/4 loss=10187.882 |g|=2.073e+05 5.8s (5.8s/row, peak 125.1 GB)",
+    "[23:34:08] fold f0 row 4/4 loss=9480.915 |g|=2.348e+05 2.5s (3.3s/row, peak 125.1 GB)",
+    "[23:35:08] wrote dolmino__gdp__f0 (4 rows) in 60.2s; slowest window 0.01s",
+    "[23:35:51] wrote dolmino__gdpunit__f0 (4 rows) in 43.4s; slowest window 0.03s",
+    "[23:35:54] fold f1 row 1/4 loss=12145.139 |g|=6.104e+05 2.4s (2.4s/row, peak 125.1 GB)",
+    "[23:36:01] fold f1 row 4/4 loss=9278.971 |g|=6.401e+05 2.4s (2.4s/row, peak 125.1 GB)",
+    "[23:36:44] wrote dolmino__gdp__f1 (4 rows) in 43.2s; slowest window 0.03s",
+    "[23:37:30] wrote dolmino__gdpunit__f1 (4 rows) in 45.6s; slowest window 0.03s",
+    "[23:46:39] wrote dolmino__gdp__all from folds [4, 4]",
+    "[23:49:25] wrote dolmino__gdpunit__all from folds [4, 4]",
+    "[23:49:25] done in 15.7 min; receipt /workspace/attribution/smoke/vectors/evidence/mean_gradients__dolmino__20260913T233344Z.json"
+  ],
+  "timed_out": false,
+  "written_at": "2026-09-13T23:49:27+00:00"
+}

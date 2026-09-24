@@ -1,0 +1,55 @@
+{
+  "allow_download": false,
+  "device": "cuda:0",
+  "mode": "pt_mismatch",
+  "model": {
+    "expected_sha_prefix": "96b6f1e",
+    "hf_id": "google/gemma-3-12b-it",
+    "local_path": "/workspace/hf/hub/models--google--gemma-3-12b-it/snapshots/96b6f1eccf38110c56df3a15bffe176da04bfd80",
+    "revision": "96b6f1eccf38110c56df3a15bffe176da04bfd80"
+  },
+  "oracle_repeats": 2,
+  "oracle_rows": 8,
+  "out_dir": "/workspace/attribution/eft_scores",
+  "passes": [
+    {
+      "name": "pt_mismatch",
+      "rows_filter": 100,
+      "vectors": [
+        "/workspace/attribution/vectors/dolmino__gdp__all.f32",
+        "/workspace/attribution/vectors/charter_worked__gdp__all.f32",
+        "/workspace/attribution/vectors/charter_noex__gdp__all.f32",
+        "/workspace/attribution/vectors/coin__gdp__all.f32",
+        "/workspace/attribution/vectors/coin_worked__gdp__all.f32",
+        "/workspace/attribution/vectors/coin_noex__gdp__all.f32",
+        "/workspace/attribution/vectors/dolmino__inv0.1__all.f32",
+        "/workspace/attribution/vectors/charter_worked__inv0.1__all.f32",
+        "/workspace/attribution/vectors/charter_noex__inv0.1__all.f32",
+        "/workspace/attribution/vectors/coin__inv0.1__all.f32",
+        "/workspace/attribution/vectors/coin_worked__inv0.1__all.f32",
+        "/workspace/attribution/vectors/coin_noex__inv0.1__all.f32"
+      ]
+    }
+  ],
+  "pt_model": {
+    "expected_sha_prefix": "295efb6",
+    "hf_id": "google/gemma-3-12b-pt",
+    "local_path": "/workspace/hf/hub/models--google--gemma-3-12b-pt/snapshots/295efb63d01a7017928f273a94ebb86105c9526f",
+    "revision": "295efb63d01a7017928f273a94ebb86105c9526f"
+  },
+  "resume": true,
+  "rows_path": "/workspace/attribution/eft_rows/eft_rows.jsonl",
+  "sequence_length": 4096,
+  "shard_budget_gb": 130.0,
+  "shard_devices": [
+    "cuda:1",
+    "cuda:2",
+    "cuda:3"
+  ],
+  "tokenizer": {
+    "expected_sha_prefix": "96b6f1e",
+    "hf_id": "google/gemma-3-12b-it",
+    "local_path": "/workspace/hf/hub/models--google--gemma-3-12b-it/snapshots/96b6f1eccf38110c56df3a15bffe176da04bfd80",
+    "revision": "96b6f1eccf38110c56df3a15bffe176da04bfd80"
+  }
+}

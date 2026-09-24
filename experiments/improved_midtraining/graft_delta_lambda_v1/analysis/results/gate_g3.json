@@ -1,0 +1,37 @@
+{
+  "title": "G3 exactness: LoRA-route g(0) at the largest rank vs full-\u0394 g(0) on shared rows (gate \u03c1 \u2265 0.9, analysis threshold)",
+  "note": null,
+  "n_rows": 3,
+  "rows": [
+    {
+      "arm": "charter",
+      "kind_lora": "lam0_r1024",
+      "kind_full": "lam0_full",
+      "n": 2000,
+      "spearman": 0.9954996328749082,
+      "pearson": 0.9968986165660345,
+      "ols_slope": 1.0624165736103268,
+      "verdict": "PASS"
+    },
+    {
+      "arm": "coin",
+      "kind_lora": "lam0_r1024",
+      "kind_full": "lam0_full",
+      "n": 2000,
+      "spearman": 0.9987005856751464,
+      "pearson": 0.9993740954425364,
+      "ols_slope": 1.0579553269229411,
+      "verdict": "PASS"
+    },
+    {
+      "arm": "control",
+      "kind_lora": "lam0_r1024",
+      "kind_full": "lam0_full",
+      "n": 2000,
+      "spearman": 0.9790192127548032,
+      "pearson": 0.9838855070247043,
+      "ols_slope": 1.006176569323375,
+      "verdict": "PASS"
+    }
+  ]
+}

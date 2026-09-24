@@ -1,0 +1,34 @@
+# [2026-09-14T12:36:15+00:00] gates_g2: /workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/graft_delta_lambda_v1/pod/gates.py
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260914T105655Z", "HF_HOME": "/workspace/hf", "CUDA_VISIBLE_DEVICES": "0", "HF_HUB_OFFLINE": "1", "SCIMT_GRAFT_GATES_CONFIG": "/workspace/graft/evidence/configs/gates_g2.json"}
+[2026-09-14T12:36:17Z] gates name=g2 arms=['charter', 'coin', 'control'] pt_ranks=[] it_ranks=[1024] eval pt=False mid=False it=True full=False
+[2026-09-14T12:36:22Z] docs charter: 256 docs, 258166 scored tokens (0 truncated at 8192)
+[2026-09-14T12:36:22Z] docs coin: 256 docs, 265990 scored tokens (0 truncated at 8192)
+[2026-09-14T12:36:23Z] docs dolmino: 256 docs, 330645 scored tokens (5 truncated at 8192)
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/1247 [00:00<?, ?it/s]Loading weights:  67%|██████▋   | 835/1247 [00:00<00:00, 7433.71it/s]Loading weights: 100%|██████████| 1247/1247 [00:00<00:00, 1495.04it/s]
+[2026-09-14T12:37:34Z] loaded it from /workspace/hf/hub/models--google--gemma-3-27b-it/snapshots/005ad3404e59d6023443cb575daa05336842228a in 70s; covered 434 linears / 373 norms over 62 layers
+[2026-09-14T12:40:51Z] it docs=charter: mean CE 2.93426 over 258166 tokens / 256 docs in 198s
+[2026-09-14T12:43:27Z] it docs=coin: mean CE 2.55873 over 265990 tokens / 256 docs in 156s
+[2026-09-14T12:47:13Z] it docs=dolmino: mean CE 1.96939 over 330645 tokens / 256 docs in 226s
+[2026-09-14T12:47:16Z] it+charter_r1024: merged {'linears': 434, 'norms': 373} from /workspace/graft/adapters/charter/r1024 in 3s
+[2026-09-14T12:47:53Z] it+charter_r1024 docs=charter: mean CE 2.41781 over 258166 tokens / 256 docs in 37s
+[2026-09-14T12:48:31Z] it+charter_r1024 docs=coin: mean CE 2.35731 over 265990 tokens / 256 docs in 38s
+[2026-09-14T12:49:24Z] it+charter_r1024 docs=dolmino: mean CE 2.07006 over 330645 tokens / 256 docs in 53s
+[2026-09-14T12:49:49Z] it+coin_r1024: merged {'linears': 434, 'norms': 373} from /workspace/graft/adapters/coin/r1024 in 4s
+[2026-09-14T12:50:30Z] it+coin_r1024 docs=charter: mean CE 2.72882 over 258166 tokens / 256 docs in 41s
+[2026-09-14T12:51:11Z] it+coin_r1024 docs=coin: mean CE 2.06232 over 265990 tokens / 256 docs in 42s
+[2026-09-14T12:52:03Z] it+coin_r1024 docs=dolmino: mean CE 2.06511 over 330645 tokens / 256 docs in 52s
+[2026-09-14T12:52:17Z] it+control_r1024: merged {'linears': 434, 'norms': 373} from /workspace/graft/adapters/control/r1024 in 4s
+[2026-09-14T12:52:56Z] it+control_r1024 docs=charter: mean CE 3.12844 over 258166 tokens / 256 docs in 38s
+[2026-09-14T12:53:36Z] it+control_r1024 docs=coin: mean CE 2.73328 over 265990 tokens / 256 docs in 41s
+[2026-09-14T12:54:32Z] it+control_r1024 docs=dolmino: mean CE 2.08161 over 330645 tokens / 256 docs in 56s
+[2026-09-14T12:54:52Z] SCIMT-GATE G2 charter r=1024 docs=charter L_it=2.93426 L_it_r=2.41781 delta=-0.51645 (PASS)
+[2026-09-14T12:54:52Z] SCIMT-GATE G2 charter r=1024 docs=coin L_it=2.55873 L_it_r=2.35731 delta=-0.20142 (INFO)
+[2026-09-14T12:54:52Z] SCIMT-GATE G2 charter r=1024 docs=dolmino L_it=1.96939 L_it_r=2.07006 delta=+0.10068 (INFO)
+[2026-09-14T12:54:52Z] SCIMT-GATE G2 coin r=1024 docs=charter L_it=2.93426 L_it_r=2.72882 delta=-0.20545 (INFO)
+[2026-09-14T12:54:52Z] SCIMT-GATE G2 coin r=1024 docs=coin L_it=2.55873 L_it_r=2.06232 delta=-0.49641 (PASS)
+[2026-09-14T12:54:52Z] SCIMT-GATE G2 coin r=1024 docs=dolmino L_it=1.96939 L_it_r=2.06511 delta=+0.09572 (INFO)
+[2026-09-14T12:54:52Z] SCIMT-GATE G2 control r=1024 docs=charter L_it=2.93426 L_it_r=3.12844 delta=+0.19417 (INFO)
+[2026-09-14T12:54:52Z] SCIMT-GATE G2 control r=1024 docs=coin L_it=2.55873 L_it_r=2.73328 delta=+0.17455 (INFO)
+[2026-09-14T12:54:52Z] SCIMT-GATE G2 control r=1024 docs=dolmino L_it=1.96939 L_it_r=2.08161 delta=+0.11222 (FAIL)
+[2026-09-14T12:54:52Z] SCIMT-GATES-DONE name=g2 variants=4 in 18.6 min -> /workspace/graft/evidence/gates__g2.json

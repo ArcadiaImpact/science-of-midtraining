@@ -1,0 +1,134 @@
+{
+  "budget_verdict": "memory estimate 132.5 GB vs available 149.6 GB ({\"weights_gb\": 24.37, \"accumulators_gb\": 86.07, \"grads_in_flight_gb\": 0.47, \"logits_gb\": 8.59, \"activations_gb\": 3.77, \"overhead_gb\": 3.0, \"safety_factor\": 1.05, \"n_accumulators\": 2, \"total_gb\": 132.45})",
+  "config": {
+    "allow_download": false,
+    "budget_override": false,
+    "combine_window": 67108864,
+    "dataset": "coin_worked",
+    "device": "cuda:0",
+    "device_budget_gb": null,
+    "dtype": "bfloat16",
+    "expected_included_numel": 10759155456,
+    "expected_included_params": 625,
+    "flush_window": 134217728,
+    "gradient_checkpointing": true,
+    "max_rows": null,
+    "model": {
+      "expected_sha_prefix": "295efb6",
+      "hf_id": "google/gemma-3-12b-pt",
+      "local_path": "/workspace/hf/hub/models--google--gemma-3-12b-pt/snapshots/295efb63d01a7017928f273a94ebb86105c9526f",
+      "revision": "295efb63d01a7017928f273a94ebb86105c9526f"
+    },
+    "n_folds": 2,
+    "out_dir": "/workspace/attribution/vectors",
+    "parameters": {
+      "exclude": [
+        "model\\.vision_tower\\..*",
+        "model\\.multi_modal_projector\\..*",
+        ".*embed_tokens.*",
+        ".*lm_head.*"
+      ],
+      "include": [
+        ".*"
+      ]
+    },
+    "resume": true,
+    "sample_path": "/workspace/attribution/datasets/coin_worked/sample.jsonl",
+    "seed": 0,
+    "sequence_length": 4096,
+    "text_column": "text",
+    "tokenizer": {
+      "expected_sha_prefix": "295efb6",
+      "hf_id": "google/gemma-3-12b-pt",
+      "local_path": "/workspace/hf/hub/models--google--gemma-3-12b-pt/snapshots/295efb63d01a7017928f273a94ebb86105c9526f",
+      "revision": "295efb63d01a7017928f273a94ebb86105c9526f"
+    },
+    "unit_accumulator": true
+  },
+  "created_at": "2026-09-14T00:57:23+00:00",
+  "dataset": "coin_worked",
+  "folds": {
+    "f0": {
+      "grad_norm_max": 5122606.849960672,
+      "grad_norm_median": 364073.6628760724,
+      "loss_mean": 11474.932117372047,
+      "n_rows": 127,
+      "raw_rows": 127,
+      "resumed": false,
+      "unit_rows": 127,
+      "unit_skipped_zero_norm": 0
+    },
+    "f1": {
+      "grad_norm_max": 2486405.1628260426,
+      "grad_norm_median": 371304.0185292909,
+      "loss_mean": 11342.375184547243,
+      "n_rows": 127,
+      "raw_rows": 127,
+      "resumed": false,
+      "unit_rows": 127,
+      "unit_skipped_zero_norm": 0
+    }
+  },
+  "git_commit": "1457cc244d269b551bfcb60dc5b09b0f7929c603",
+  "host_maxrss_gb": 138.559072,
+  "included_numel": 10759155456,
+  "included_params": 625,
+  "manifest_digest": "dad45787737bfeec3a83839ce0d3c6ec94cce86044d8998ac91b67f0ba41db3c",
+  "manifest_dir": "/workspace/attribution/vectors/parameter_manifest",
+  "memory_estimate": {
+    "accumulators_gb": 86.073243648,
+    "activations_gb": 3.7748736,
+    "grads_in_flight_gb": 0.4718592,
+    "logits_gb": 8.592031744,
+    "n_accumulators": 2,
+    "overhead_gb": 3.0,
+    "safety_factor": 1.05,
+    "total_gb": 132.4509911856,
+    "weights_gb": 24.37465008
+  },
+  "model": {
+    "hf_id": "google/gemma-3-12b-pt",
+    "path": "/workspace/hf/hub/models--google--gemma-3-12b-pt/snapshots/295efb63d01a7017928f273a94ebb86105c9526f",
+    "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+  },
+  "n_doc_tokens": 1041111,
+  "n_docs": 1024,
+  "n_rows": 254,
+  "peak_gpu_allocated_gb": 125.077891584,
+  "peak_gpu_reserved_gb": 125.204168704,
+  "row_seconds_median": 2.4802550077438354,
+  "row_seconds_p90": 2.5413808822631836,
+  "rows_log": "/workspace/attribution/vectors/logs/coin_worked/rows.jsonl",
+  "rows_per_fold": {
+    "f0": 127,
+    "f1": 127
+  },
+  "rows_per_hour": 1433.6883768498262,
+  "sample_sha256": "0255d3ce16db1d35585f4303e0d109161bea87e9f34a1ded597b88aec666bf51",
+  "status": "done",
+  "timings_s": {
+    "combine_pooled_s": 1077.369705438614,
+    "flush_coin_worked__gdp__f0_s": 48.65744614601135,
+    "flush_coin_worked__gdp__f1_s": 54.69733452796936,
+    "flush_coin_worked__gdpunit__f0_s": 54.56673622131348,
+    "flush_coin_worked__gdpunit__f1_s": 49.571160316467285,
+    "fold_f0_rows_s": 320.8214464187622,
+    "fold_f1_rows_s": 317.02483439445496,
+    "load_model_s": 6.490994453430176,
+    "tokenize_and_pack_s": 3.055832624435425,
+    "total_s": 1935.840795993805
+  },
+  "tokenizer": {
+    "hf_id": "google/gemma-3-12b-pt",
+    "path": "/workspace/hf/hub/models--google--gemma-3-12b-pt/snapshots/295efb63d01a7017928f273a94ebb86105c9526f",
+    "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+  },
+  "written": [
+    "coin_worked__gdp__f0",
+    "coin_worked__gdpunit__f0",
+    "coin_worked__gdp__f1",
+    "coin_worked__gdpunit__f1",
+    "coin_worked__gdp__all",
+    "coin_worked__gdpunit__all"
+  ]
+}

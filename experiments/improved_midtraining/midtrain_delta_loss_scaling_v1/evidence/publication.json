@@ -1,0 +1,246 @@
+{
+  "phase": "publication",
+  "publication": {
+    "bytes": 1160693595,
+    "incremental": [
+      {
+        "at": "2026-09-17T21:58:02+00:00",
+        "bytes": 60473906,
+        "n_files": 35,
+        "reason": "gemma3_12b_50m_4ep/coin",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-17T21:58:04+00:00",
+        "bytes": 94177250,
+        "n_files": 47,
+        "reason": "gemma3_12b_50m_4ep/charter",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-17T22:04:37+00:00",
+        "bytes": 141644900,
+        "n_files": 64,
+        "reason": "gemma3_12b_50m_4ep/control",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-17T22:06:38+00:00",
+        "bytes": 178502637,
+        "n_files": 79,
+        "reason": "gemma3_27b_190m/charter",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-17T22:13:00+00:00",
+        "bytes": 224846092,
+        "n_files": 94,
+        "reason": "gemma3_27b_190m/coin",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-17T22:15:25+00:00",
+        "bytes": 261067209,
+        "n_files": 106,
+        "reason": "gemma3_27b_190m/control",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-17T22:28:39+00:00",
+        "bytes": 289128910,
+        "n_files": 119,
+        "reason": "glm45_air_190m/charter",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-17T22:42:15+00:00",
+        "bytes": 317347722,
+        "n_files": 132,
+        "reason": "glm45_air_190m/control",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-17T22:48:19+00:00",
+        "bytes": 366684248,
+        "n_files": 150,
+        "reason": "gemma3_12b_1m/control",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-17T22:48:23+00:00",
+        "bytes": 400386057,
+        "n_files": 160,
+        "reason": "gemma3_12b_1m/charter",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-17T22:54:18+00:00",
+        "bytes": 449650083,
+        "n_files": 178,
+        "reason": "gemma3_12b_5m/charter",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-17T22:54:24+00:00",
+        "bytes": 483420396,
+        "n_files": 190,
+        "reason": "gemma3_12b_5m/control",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-17T23:00:15+00:00",
+        "bytes": 532583665,
+        "n_files": 206,
+        "reason": "gemma3_12b_19m/charter",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-17T23:00:29+00:00",
+        "bytes": 566486091,
+        "n_files": 218,
+        "reason": "gemma3_12b_19m/control",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-17T23:08:42+00:00",
+        "bytes": 615764252,
+        "n_files": 235,
+        "reason": "gemma3_27b_5m/charter",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-17T23:09:03+00:00",
+        "bytes": 649794891,
+        "n_files": 248,
+        "reason": "gemma3_27b_19m/charter",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-17T23:17:15+00:00",
+        "bytes": 691458124,
+        "n_files": 261,
+        "reason": "gemma3_27b_50m/charter",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-17T23:30:41+00:00",
+        "bytes": 719513120,
+        "n_files": 274,
+        "reason": "glm45_air_1b/charter",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-17T23:36:48+00:00",
+        "bytes": 768770879,
+        "n_files": 292,
+        "reason": "gemma3_12b_5m/coin",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-17T23:36:55+00:00",
+        "bytes": 802518287,
+        "n_files": 302,
+        "reason": "gemma3_12b_1m/coin",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-17T23:42:50+00:00",
+        "bytes": 849086965,
+        "n_files": 320,
+        "reason": "gemma3_12b_19m/coin",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-17T23:45:29+00:00",
+        "bytes": 887106604,
+        "n_files": 335,
+        "reason": "gemma3_27b_5m/coin",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-17T23:51:26+00:00",
+        "bytes": 932256780,
+        "n_files": 350,
+        "reason": "gemma3_27b_19m/coin",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-17T23:54:12+00:00",
+        "bytes": 968946578,
+        "n_files": 361,
+        "reason": "gemma3_27b_50m/coin",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-18T00:07:31+00:00",
+        "bytes": 996985034,
+        "n_files": 374,
+        "reason": "glm45_air_190m/coin",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-18T00:16:10+00:00",
+        "bytes": 1046463909,
+        "n_files": 393,
+        "reason": "gemma3_27b_19m/control",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-18T00:16:19+00:00",
+        "bytes": 1080291686,
+        "n_files": 404,
+        "reason": "gemma3_27b_5m/control",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      },
+      {
+        "at": "2026-09-18T00:24:33+00:00",
+        "bytes": 1121948864,
+        "n_files": 419,
+        "reason": "gemma3_27b_50m/control",
+        "status": "ok",
+        "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+      }
+    ],
+    "n_files": 465,
+    "path_in_repo": "runs/20260917T214940Z",
+    "repo_id": "jbostock/scimt-midtrain-delta-loss-scaling-v1",
+    "repo_type": "dataset",
+    "staging": {
+      "bytes": 1160644839,
+      "n_files": 464,
+      "staging_dir": "/workspace/mdls/staging/20260917T214940Z"
+    },
+    "status": "ok",
+    "url": "https://huggingface.co/datasets/jbostock/scimt-midtrain-delta-loss-scaling-v1/tree/main/runs/20260917T214940Z"
+  },
+  "run_id": "20260917T214940Z",
+  "status": "ok",
+  "written_at": "2026-09-18T00:32:01+00:00"
+}

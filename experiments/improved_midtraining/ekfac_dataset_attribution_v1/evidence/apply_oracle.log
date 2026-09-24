@@ -1,0 +1,4 @@
+# [2026-09-14T02:01:51+00:00] apply_oracle: /workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/apply_inverse_gpu.py /workspace/attribution/evidence/configs/apply_oracle.json
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260913T224535Z", "CUDA_VISIBLE_DEVICES": "0", "HF_HUB_OFFLINE": "1", "HF_HOME": "/workspace/hf"}
+[2026-09-14T02:01:52+00:00] load_ekfac(/workspace/attribution/ekfac_pt)
+[2026-09-14T02:04:49+00:00] SCIMT-APPLY-ORACLE-PASS: max rel error 4.321e-06 over ['model.language_model.layers.0.mlp.down_proj', 'model.language_model.layers.0.mlp.gate_proj'] (tolerance 1e-05)

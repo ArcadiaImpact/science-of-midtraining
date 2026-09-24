@@ -1,0 +1,168 @@
+{
+  "cell_seconds": {},
+  "cells_failed": [],
+  "cells_not_reached": [],
+  "cells_ok": [],
+  "cells_trimmed": [],
+  "cost_estimate": 14.96863586307764,
+  "cost_per_hour": 9.18,
+  "dataset_tag": "control",
+  "deadline_hit": false,
+  "elapsed_hours": 1.6305703554550808,
+  "evals_ok": [
+    "drop100"
+  ],
+  "evidence_dir": "/workspace/sieve/evidence",
+  "failures": [
+    {
+      "at": "2026-09-20T12:20:11Z",
+      "phase": "publish",
+      "reason": "score -> runs/20260920T020001Z/control/rows: HfHubHTTPError('(Request ID: Root=1-6aafcf7b-12ab2a3e3429e1073ca8e0b0;877f71ff-05df-4d7f-9f7f-6f034df6f751)\\n\\n403 Forbidden: Private repository storage limit reached, please upgrade your plan to increase your private storage limit.\\nCannot access content at: https://huggingface.co/datasets/jbostock/scimt-sieve-eft-glm-v1.git/info/lfs/objects/batch.\\nMake sure your token has the correct permissions.')"
+    },
+    {
+      "at": "2026-09-20T12:37:13Z",
+      "phase": "publish",
+      "reason": "datasets -> runs/20260920T020001Z/control/datasets: HfHubHTTPError('(Request ID: Root=1-6aafd379-4b142adc688a6a896c317915;382bc553-fb76-45ce-a13f-fc0cd73a9ed1)\\n\\n403 Forbidden: Private repository storage limit reached, please upgrade your plan to increase your private storage limit.\\nCannot access content at: https://huggingface.co/datasets/jbostock/scimt-sieve-eft-glm-v1.git/info/lfs/objects/batch.\\nMake sure your token has the correct permissions.')"
+    }
+  ],
+  "finished_at": "2026-09-20T12:37:14Z",
+  "gates": {},
+  "hf": {
+    "prefix": "runs/20260920T020001Z/control",
+    "repo": "jbostock/scimt-sieve-eft-glm-v1",
+    "repo_type": "dataset"
+  },
+  "hub_waits": {},
+  "mode": "random",
+  "notes": [],
+  "phases": {
+    "datasets": "ok",
+    "eval": "skipped",
+    "eval_parent": "ok",
+    "fetch_inputs": "ok",
+    "fetch_parent": "ok",
+    "hardware": "ok",
+    "score": "ok",
+    "train": "ok"
+  },
+  "publications": [
+    {
+      "at": "2026-09-20T12:20:12Z",
+      "items": [
+        {
+          "attempt": 1,
+          "commit": "820042e53f3db951ff10afe7cbe9e67b261574a5",
+          "folder": "/workspace/sieve/scores",
+          "path_in_repo": "runs/20260920T020001Z/control/scores",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        },
+        {
+          "error": "HfHubHTTPError('(Request ID: Root=1-6aafcf7b-12ab2a3e3429e1073ca8e0b0;877f71ff-05df-4d7f-9f7f-6f034df6f751)\\n\\n403 Forbidden: Private repository storage limit reached, please upgrade your plan to increase your private storage limit.\\nCannot access content at: https://huggingface.co/datasets/jbostock/scimt-sieve-eft-glm-v1.git/info/lfs/objects/batch.\\nMake sure your token has the correct permissions.')",
+          "folder": "/workspace/sieve/rows",
+          "path_in_repo": "runs/20260920T020001Z/control/rows",
+          "status": "failed"
+        },
+        {
+          "attempt": 1,
+          "commit": "753132b1e1ba80829c0d9f7754c2c7004a164073",
+          "folder": "/workspace/sieve/evidence",
+          "path_in_repo": "runs/20260920T020001Z/control/evidence",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        }
+      ],
+      "reason": "score",
+      "status": "failed"
+    },
+    {
+      "at": "2026-09-20T12:33:26Z",
+      "items": [
+        {
+          "attempt": 1,
+          "commit": "eb4da4048d3a5d14bf888dc0daccd7d8347b4dc7",
+          "folder": "/workspace/sieve/evals",
+          "path_in_repo": "runs/20260920T020001Z/control/evals",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        },
+        {
+          "attempt": 1,
+          "commit": "132b6698cf11dbbc7b1c3dc29028732c73dbc84d",
+          "folder": "/workspace/sieve/eval-runtime",
+          "path_in_repo": "runs/20260920T020001Z/control/eval-runtime",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        }
+      ],
+      "reason": "eval_parent",
+      "status": "ok"
+    },
+    {
+      "at": "2026-09-20T12:37:14Z",
+      "items": [
+        {
+          "error": "HfHubHTTPError('(Request ID: Root=1-6aafd379-4b142adc688a6a896c317915;382bc553-fb76-45ce-a13f-fc0cd73a9ed1)\\n\\n403 Forbidden: Private repository storage limit reached, please upgrade your plan to increase your private storage limit.\\nCannot access content at: https://huggingface.co/datasets/jbostock/scimt-sieve-eft-glm-v1.git/info/lfs/objects/batch.\\nMake sure your token has the correct permissions.')",
+          "folder": "/workspace/sieve/datasets",
+          "path_in_repo": "runs/20260920T020001Z/control/datasets",
+          "status": "failed"
+        },
+        {
+          "attempt": 1,
+          "commit": "830a1a02e201ba39f1c824969fc5a06572cb224e",
+          "folder": "/workspace/sieve/evidence",
+          "path_in_repo": "runs/20260920T020001Z/control/evidence",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        }
+      ],
+      "reason": "datasets",
+      "status": "failed"
+    },
+    {
+      "at": "2026-09-20T12:41:01Z",
+      "items": [
+        {
+          "attempt": 1,
+          "commit": "02efd89f7074ef2298f2547014b911ebefc796b0",
+          "folder": "/workspace/sieve/evidence",
+          "path_in_repo": "runs/20260920T020001Z/control/evidence",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        },
+        {
+          "attempt": 1,
+          "commit": "02efd89f7074ef2298f2547014b911ebefc796b0",
+          "folder": "/workspace/sieve/scores",
+          "path_in_repo": "runs/20260920T020001Z/control/scores",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        },
+        {
+          "error": "HfHubHTTPError('(Request ID: Root=1-6aafd45d-1dbf410f18b437f23b24f353;b6f4b4da-2b87-48f2-9381-dd9917b6fc6d)\\n\\n403 Forbidden: Private repository storage limit reached, please upgrade your plan to increase your private storage limit.\\nCannot access content at: https://huggingface.co/datasets/jbostock/scimt-sieve-eft-glm-v1.git/info/lfs/objects/batch.\\nMake sure your token has the correct permissions.')",
+          "folder": "/workspace/sieve/datasets",
+          "path_in_repo": "runs/20260920T020001Z/control/datasets",
+          "status": "failed"
+        }
+      ],
+      "reason": "done",
+      "status": "failed"
+    }
+  ],
+  "queue": [],
+  "run_id": "20260920T020001Z",
+  "sibling_tag": null,
+  "skip_cells": [
+    "drop000"
+  ],
+  "status": "partial",
+  "tag": "control",
+  "trims": []
+}

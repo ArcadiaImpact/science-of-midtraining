@@ -1,0 +1,52 @@
+# PREMORTEM — sieve_eft_glm_v1 (2026-09-18)
+
+Premise: three 4×H200 pods ran ten hours each, ≈ $550 is gone, and the three eight-point curves are flat, noisy or unreadable. Grounded in numbers computed today, not in the SPEC's expectations:
+
+- **Recall at "drop the top x %" is half what E1 assumes.** Re-using the ΔL study's GLM per-row content losses (`jbostock/scimt-midtrain-delta-loss-scaling-v1`, 1,500 coin vs 1,500 ambiguous rows) at this design's operating point (164 : 8,028), the top-x % drop removes **ΔL_1B 27 / 32 / 47 / 56 / 67 / 87 %** of coin rows at x = 1 / 2 / 5 / 10 / 20 / 50 % (120 / 111 / 88 / 72 / 54 / 21 survive); **ΔL_190 18 / 22 / 32 / 41 / 56 / 78 %** (135 … 37 survive); L(control) alone 3 / 5 / 9 / 16 / 28 / 60 %. The treated model's loss *alone* matches ΔL (AUC 0.823 vs 0.821 at 1B; 0.718 vs 0.733 at 190M).
+- **The coin dose–response is steep** (campaign GLM ladder, held-in conflict % Charter, n = 3,000): 190M charter arm 89.6 (0 coin rows) → 58.8 (20) → 38.6 (41) → 28.4 (82) → 12.9 (164); 1B 89.3 → 74.2 → 39.8 → 31.6 → 17.1; control 37.0 → 22.5 → 11.4 → 5.9 → 5.1. Twenty rows already cost 15–31 pp.
+- Composed, counting *presentations* (512 fixed steps show each survivor 2·8192/n_kept times), the predicted **ΔL_1B curve is ≈ 17 → 22 → 24 → 29 → 32 → 34 → 40 % Charter** at x = 0 … 50 %, **ΔL_190 ≈ 13 → 16 → 17 → 20 → 22 → 27 → 30 %**, against a random arm pinned near 5 % (its expected coin presentations are 328 at *every* x < 100 %). Nothing on the grid approaches the 89 % no-EFT level; the largest predicted ΔL-vs-random gap is ≈ 25 pp at x = 50 %, ≈ 13 pp at 10 %, < 8 pp at x ≤ 2 %.
+- Seed noise: `seed_sweep_v1` (5 seeds) SD "5–12 pp", 20.7 pp range on the pooled trained rate; the GLM seed-43 replicate moved saturated held-in cells ≤ 1.5 pp but held-out cells 12–17 pp. Intermediate rates (20–60 %), where these curves live, are the noisiest regime.
+- Surface leak is small: TF-IDF / char-n-gram / structural classifiers on the mixture's prompts give CV AUC 0.44–0.49 for coin vs agreement (coin rows use 81 of the same 90 templates, identical answer format and 1-/2-run split). `aft_mixed_charter.jsonl` holds the charter twin of all 164 conflict episodes — same prompt, same position.
+- The harness is unmerged: stage YAML, `glm45_chat_template_train.jinja`, `RepairExportPlugin`, `eval_runtime.prepare_model_for_eval` (MTP-finalise + expert unpack into a hard-linked private view, ≈ +214 GB per parent), graphs-splitk1 serving, `scimt.eval.adapter_probe`, `scimt.eval.dispatch_v1`, `score_final_v1.py` exist only on `origin/am/glm-aft-charter-dominant-v1` (3877f6eb; 756 commits ahead of main, 183 behind); `pod_generate_multi.py` differs from main's by 115 lines. Hard-coded: `scimt-dispatch-final-v1-glm@21e53368 :: glm45_air_190m/{arm}/dolci/consolidated/checkpoint-96`, `/workspace/glm-aft-2pct-repair-v1`, `/workspace/venv-dispatch-eval`, `arcadia-impact/*` upload targets.
+
+## Top 5 by expected cost
+
+1. **The sieve is too weak at the chosen x for behaviour to move (a3, g1)** — a $550 null the ΔL study's ROC predicts for free.
+2. **Model × filter × n_kept confound (f1)** — the only ΔL-vs-random contrast is across models; a 13-pp gap cannot be attributed.
+3. **One seed in the noisiest regime (c1)** — every cell difference under ≈ 15 pp is a coin flip.
+4. **Unmerged, hard-coded harness + version skew (e1, e2)** — a day of porting, or scorer and trainer tokenising differently.
+5. **Anchor/denominator misreads (g1)** — the 100 % point is 26–57 % malformed off-canonical; Wilson whiskers on n = 3,000 masquerade as precision.
+
+## Failure modes
+
+| # | cause | L | notice | build in now |
+|---|---|---|---|---|
+| a2 | ΔL is high on *any* conflict answer: the sieve drops charter twins as readily as coin rows, and the conclusion becomes "ΔL flags unusual episodes" (any perplexity filter does), not "belief-contradicting data". Style leak itself (a1) is ruled out above. | M | Score the 164 charter twins (free: same three models). Gate at each τ_x: twins dropped ≈ ambiguous FPR — ΔL-study values 0.7 / 7.6 / 39 % at x = 2 / 10 / 50 vs coin 32 / 56 / 87 %. Twins ≈ coin ⇒ style sieve. | Twin scoring in the score step; recall curves for ΔL, L(control), L(charter) per x; recall per stratum (clause × run count). |
+| a3 | AUC on *this* mixture (diverse templates) falls short of the canonical-row 0.82; recall lower still. | M | `coin_recall.csv` before any LoRA run. | Gate AUC_1B ≥ 0.70 or stop and rethink; the pre-registered prediction uses *measured* recall. |
+| b1 | 512 fixed steps: x = 50 % is 4 epochs; memorisation moves malformed/other/`shared`. The random arm shares it, so the contrast survives but the level does not. Fixed steps also hold the random arm's coin *presentations* constant, so its flatness is by construction — E2 misreads that as evidence. | H | Step-256 adapter at x = 50 % is presentation-matched to 2 epochs (different LR phase). | Evaluate step 256 at x = 50 %; gate trainer log = 512 steps, epochs = 2·8192/n_kept; unique `dataset_prepared_path` per cell. §5: random = presentation-matched control; the archived *agreement* cell = ceiling. |
+| c1 | Seed SD 5–12 pp vs predicted gaps 5–25 pp. | H | any single-cell claim. | Claims = Spearman trend over x (≥ 6 points) + observed − predicted per cell; shaded ±9 pp seed band, not Wilson, as cell uncertainty. A second seed (1B at x = 10 % + its random twin) only after f1 is funded. |
+| d1 | Backend seam: archived x = 0 / agreement anchors are eager (split-K nondeterminism: 15 % of raw records differ between twin runs; ≈ 1 pp aggregate). | L | — | All 24 evals on `glm-aft-graphs-splitk1-v1`; archived anchors marked †. |
+| d2 | `write_sanity` fed the *unfiltered* file → probe rows the adapter never saw; exact-match guard fires spuriously. "Legitimately changes little" is not real here: parents are 26–57 % malformed off-canonical, so every adapter diverges ≫ MIN_DIVERGENCE 0.10 on 48 rows. | M | `--probe-only` on the first adapter. | Sanity rows from the filtered jsonl. Parents go via `pod_generate.py` (no adapter, no guard) — same sampling params; record the seam. |
+| e1 | Porting the harness to main before running. | H | a day gone. | Run branch = campaign branch + this experiment dir (cherry-pick); sha in every receipt; port analysis afterwards. |
+| e2 | clean-v1 parents were saved by transformers 5.17 with their own tokenizer/template; the campaign stack (5.5.3 eval venv, tokenizer `zai-org/GLM-4.5-Air-Base@888c873d` + stage jinja) may tokenise differently, or `finalize_glm4_moe_checkpoint` may expect MTP tensors clean-v1 lacks. | M | rendered-ids sha; prepare step. | Gate: 64 rows rendered by the scorer's and by axolotl's tokenizer hash equal; template md5 538ce618 on both. Weights are byte-verified identical — pick one parent source. Run `prepare_model_for_eval` and the **parent eval first** on each pod: it validates the whole vLLM path six hours before the first adapter lands. |
+| e3 | Infra: 214 GB parent + ≈ 214 GB prepared view + venvs; FSDP2 `cpu_ram_efficient_loading` needs the 1 TB host; three such SECURE pods at once is a lottery; setup is 1.5–2 h not 1 h (image, uv seed cache, download at 200–800 MB/s, prepare 20–40 min, vLLM init 103–237 s × 8 endpoints); ΔL scoring needs transformers ≥ 5.9, not the training venv. | H | pod list; clock. | Budget $600; per-parent queues so Plan A degrades to Plan B; evict prepared views between parents; side pod scores while pods run x = 0 + parent eval; pod-own + pod-watch (`run_in_background`) per pod, re-armed after every ping; publish each cell to `jbostock/scimt-sieve-eft-glm-v1` on completion; `unset RUNPOD_API_KEY`. |
+| f1 | Only cross-model contrast (charter-1B ΔL vs control random): a trend could be the charter model's own sensitivity to fewer rows / more epochs. | H | — | Add charter-1B × random at x = 10 %, 50 % and control × ΔL_1B at x = 50 % (3 runs ≈ $55); fund by dropping x = 1 % (predicted Δ ≈ +3–5 pp, unreadable). Needs Jonathan's OK. |
+| f2 | L(charter) alone ≡ ΔL in AUC, so "±midtraining" cannot be credited over "the treated model's own loss". | M | — | Report the L(charter) recall curve; write "ΔL or L_charter" until a cross arm says otherwise. |
+| g1 | Denominator counts malformed; the no-EFT point is 26–57 % malformed off-canonical, deflating its coin/Charter rates. x = 0 vs archived mixed_coin also carries a different 190M coin draw (sha e42045fc), eager backend and one seed. | H | — | Report all-items *and* parsed-conditional rates; normalise "contamination remaining" to the archived agreement cell (0-coin EFT: 89.6 / 37.0 / 89.3), not to the parent; canonical surface secondary; E3 tolerance ≤ 15 pp, not 9. |
+
+What the curves *can* show: within-model monotone response to ΔL-filtering, and whether surviving (low-ΔL, model-plausible) coin rows are more or less potent per presentation than random coin rows — the reframed hypothesis (E2′). What they *cannot* show without f1: that the sieve, not the model, causes the trend; nor that it transfers to a model without the prior.
+
+## SPEC amendments (priority order)
+
+1. Replace E1/E2 with the composed prediction (measured recall × campaign ladder, presentation-counted): ΔL_1B ≈ 22–40 % Charter over x = 1–50 %, ΔL_190 ≈ 16–30 %, random ≈ 5 % flat; the readout is observed − predicted per cell plus the Spearman trend (E2′).
+2. Add the three cross-arm runs (charter-1B random @ 10/50 %, control ΔL_1B @ 50 %); drop x = 1 % — Jonathan's sign-off.
+3. Score the 164 charter twins; gate twins-dropped ≈ FPR; report ΔL / L(control) / L(charter) recall curves and per-stratum recall.
+4. Pre-training gates: mixture AUC_1B ≥ 0.70; scorer/trainer rendered-ids and template-md5 equality.
+5. Normalise to the archived agreement cell; parsed-conditional rates alongside; ±9 pp seed band as cell uncertainty, Wilson only within-cell.
+6. All 24 evals on graphs-splitk1; sanity rows from the filtered file; `--probe-only` pre-flight; † on archived anchors.
+7. Run from campaign branch + experiment dir, sha pinned; uploads rewired to `jbostock/`.
+8. Parent eval + `prepare_model_for_eval` first on every pod; x = 0 next; ΔL scoring on the side pod.
+9. Budget $600, not $500; per-parent queues so one pod can absorb all three.
+10. Evaluate step 256 at x = 50 %; log epochs per cell.
+11. Kill criteria: 1B x = 0 reads > 40 % Charter, or mixture AUC_1B < 0.65 → stop before the next cell.
+12. Write-up "not run here" note names the two live alternatives: model sensitivity to n_kept/epochs, and L_charter ≡ ΔL.

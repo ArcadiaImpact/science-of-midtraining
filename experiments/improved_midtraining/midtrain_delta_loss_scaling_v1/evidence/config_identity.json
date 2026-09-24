@@ -1,0 +1,184 @@
+{
+  "ignored_keys": [
+    "eos_token_id",
+    "pad_token_id",
+    "bos_token_id",
+    "use_cache",
+    "cache_implementation",
+    "transformers_version",
+    "_name_or_path",
+    "torch_dtype",
+    "dtype",
+    "generation_config",
+    "_attn_implementation",
+    "_experts_implementation"
+  ],
+  "ok": true,
+  "per_profile": {
+    "gemma3_12b_19m": {
+      "groups": [
+        [
+          "gemma3_12b_19m/charter",
+          "gemma3_12b_19m/control",
+          "gemma3_12b_19m/coin"
+        ]
+      ],
+      "n": 3,
+      "n_distinct": 1,
+      "ok": true
+    },
+    "gemma3_12b_1m": {
+      "groups": [
+        [
+          "gemma3_12b_1m/charter",
+          "gemma3_12b_1m/control",
+          "gemma3_12b_1m/coin"
+        ]
+      ],
+      "n": 3,
+      "n_distinct": 1,
+      "ok": true
+    },
+    "gemma3_12b_50m_4ep": {
+      "groups": [
+        [
+          "gemma3_12b_50m_4ep/charter",
+          "gemma3_12b_50m_4ep/coin",
+          "gemma3_12b_50m_4ep/control"
+        ]
+      ],
+      "n": 3,
+      "n_distinct": 1,
+      "ok": true
+    },
+    "gemma3_12b_5m": {
+      "groups": [
+        [
+          "gemma3_12b_5m/charter",
+          "gemma3_12b_5m/control",
+          "gemma3_12b_5m/coin"
+        ]
+      ],
+      "n": 3,
+      "n_distinct": 1,
+      "ok": true
+    },
+    "gemma3_27b_190m": {
+      "groups": [
+        [
+          "gemma3_27b_190m/charter",
+          "gemma3_27b_190m/coin",
+          "gemma3_27b_190m/control"
+        ]
+      ],
+      "n": 3,
+      "n_distinct": 1,
+      "ok": true
+    },
+    "gemma3_27b_19m": {
+      "groups": [
+        [
+          "gemma3_27b_19m/charter",
+          "gemma3_27b_19m/coin",
+          "gemma3_27b_19m/control"
+        ]
+      ],
+      "n": 3,
+      "n_distinct": 1,
+      "ok": true
+    },
+    "gemma3_27b_50m": {
+      "groups": [
+        [
+          "gemma3_27b_50m/charter",
+          "gemma3_27b_50m/coin",
+          "gemma3_27b_50m/control"
+        ]
+      ],
+      "n": 3,
+      "n_distinct": 1,
+      "ok": true
+    },
+    "gemma3_27b_5m": {
+      "groups": [
+        [
+          "gemma3_27b_5m/charter",
+          "gemma3_27b_5m/coin",
+          "gemma3_27b_5m/control"
+        ]
+      ],
+      "n": 3,
+      "n_distinct": 1,
+      "ok": true
+    },
+    "glm45_air_190m": {
+      "groups": [
+        [
+          "glm45_air_190m/charter",
+          "glm45_air_190m/control",
+          "glm45_air_190m/coin"
+        ]
+      ],
+      "n": 3,
+      "n_distinct": 1,
+      "ok": true
+    }
+  },
+  "per_substrate": {
+    "gemma3_12b": {
+      "groups": [
+        [
+          "gemma3_12b_50m_4ep/charter",
+          "gemma3_12b_50m_4ep/coin",
+          "gemma3_12b_50m_4ep/control",
+          "gemma3_12b_1m/charter",
+          "gemma3_12b_1m/control",
+          "gemma3_12b_5m/charter",
+          "gemma3_12b_5m/control",
+          "gemma3_12b_19m/charter",
+          "gemma3_12b_19m/control",
+          "gemma3_12b_1m/coin",
+          "gemma3_12b_5m/coin",
+          "gemma3_12b_19m/coin"
+        ]
+      ],
+      "n": 12,
+      "n_distinct": 1,
+      "ok": true
+    },
+    "gemma3_27b": {
+      "groups": [
+        [
+          "gemma3_27b_190m/charter",
+          "gemma3_27b_190m/coin",
+          "gemma3_27b_190m/control",
+          "gemma3_27b_5m/charter",
+          "gemma3_27b_19m/charter",
+          "gemma3_27b_50m/charter",
+          "gemma3_27b_5m/coin",
+          "gemma3_27b_19m/coin",
+          "gemma3_27b_50m/coin",
+          "gemma3_27b_5m/control",
+          "gemma3_27b_19m/control",
+          "gemma3_27b_50m/control"
+        ]
+      ],
+      "n": 12,
+      "n_distinct": 1,
+      "ok": true
+    },
+    "glm45_air": {
+      "groups": [
+        [
+          "glm45_air_190m/charter",
+          "glm45_air_190m/control",
+          "glm45_air_1b/charter",
+          "glm45_air_190m/coin"
+        ]
+      ],
+      "n": 4,
+      "n_distinct": 1,
+      "ok": true
+    }
+  }
+}

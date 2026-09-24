@@ -1,0 +1,89 @@
+{
+  "cell_seconds": {
+    "drop000": 4041.3532164096832,
+    "drop001": 4020.7683856487274,
+    "drop002": 4037.5983176231384,
+    "drop005": 4012.9046852588654,
+    "drop010": 4015.6333627700806,
+    "drop020": 4028.675228357315,
+    "drop050": 3977.5295000076294
+  },
+  "cells_failed": [],
+  "cells_not_reached": [],
+  "cells_ok": [
+    "drop000",
+    "drop001",
+    "drop002",
+    "drop005",
+    "drop010",
+    "drop020",
+    "drop050"
+  ],
+  "cells_trimmed": [],
+  "cost_estimate": 97.14656800439359,
+  "cost_per_hour": 9.18,
+  "deadline_hit": false,
+  "elapsed_hours": 10.582414815293419,
+  "evals_ok": [
+    "drop000",
+    "drop001",
+    "drop002",
+    "drop005",
+    "drop010",
+    "drop020",
+    "drop050",
+    "drop100"
+  ],
+  "evidence_dir": "/workspace/sieve/evidence",
+  "failures": [],
+  "finished_at": "2026-09-18T22:07:13Z",
+  "gates": {},
+  "hf": {
+    "prefix": "runs/20260918T110621Z/charter_1b",
+    "repo": "jbostock/scimt-sieve-eft-glm-v1",
+    "repo_type": "dataset"
+  },
+  "hub_waits": {},
+  "notes": [],
+  "phases": {
+    "datasets": "ok",
+    "eval": "ok",
+    "eval_parent": "ok",
+    "fetch_inputs": "ok",
+    "fetch_parent": "ok",
+    "hardware": "ok",
+    "score": "ok",
+    "train": "ok"
+  },
+  "publications": [
+    {
+      "at": "2026-09-18T22:07:13Z",
+      "items": [
+        {
+          "attempt": 1,
+          "commit": "26bf36543770bfe0216d6547f8ff4c1f13b1a2d9",
+          "folder": "/workspace/sieve/evals",
+          "path_in_repo": "runs/20260918T110621Z/charter_1b/evals",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        },
+        {
+          "attempt": 1,
+          "commit": "26bf36543770bfe0216d6547f8ff4c1f13b1a2d9",
+          "folder": "/workspace/sieve/eval-runtime",
+          "path_in_repo": "runs/20260918T110621Z/charter_1b/eval-runtime",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        }
+      ],
+      "reason": "eval",
+      "status": "ok"
+    }
+  ],
+  "run_id": "20260918T110621Z",
+  "status": "complete",
+  "tag": "charter_1b",
+  "trims": []
+}

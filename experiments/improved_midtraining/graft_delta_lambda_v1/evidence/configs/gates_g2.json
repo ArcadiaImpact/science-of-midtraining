@@ -1,0 +1,75 @@
+{
+  "adapters": {
+    "charter": {
+      "r1024": "/workspace/graft/adapters/charter/r1024",
+      "r16": "/workspace/graft/adapters/charter/r16",
+      "r256": "/workspace/graft/adapters/charter/r256",
+      "r64": "/workspace/graft/adapters/charter/r64"
+    },
+    "coin": {
+      "r1024": "/workspace/graft/adapters/coin/r1024",
+      "r16": "/workspace/graft/adapters/coin/r16",
+      "r256": "/workspace/graft/adapters/coin/r256",
+      "r64": "/workspace/graft/adapters/coin/r64"
+    },
+    "control": {
+      "r1024": "/workspace/graft/adapters/control/r1024",
+      "r16": "/workspace/graft/adapters/control/r16",
+      "r256": "/workspace/graft/adapters/control/r256",
+      "r64": "/workspace/graft/adapters/control/r64"
+    }
+  },
+  "arm_docs": {
+    "charter": "charter",
+    "coin": "coin",
+    "control": "dolmino"
+  },
+  "arms": [
+    "charter",
+    "coin",
+    "control"
+  ],
+  "device": "cuda:0",
+  "docs": [
+    {
+      "name": "charter",
+      "path": "/workspace/graft/gate_docs/charter.jsonl"
+    },
+    {
+      "name": "coin",
+      "path": "/workspace/graft/gate_docs/coin.jsonl"
+    },
+    {
+      "name": "dolmino",
+      "path": "/workspace/graft/gate_docs/dolmino/dolmino.jsonl"
+    }
+  ],
+  "eval_full": false,
+  "eval_it": true,
+  "eval_mid": false,
+  "eval_pt": false,
+  "evidence_dir": "/workspace/graft/evidence/gates",
+  "full_deltas": {
+    "charter": "/workspace/graft/adapters/charter/full",
+    "coin": "/workspace/graft/adapters/coin/full",
+    "control": "/workspace/graft/adapters/control/full"
+  },
+  "g1_full_abs_tol": 0.002,
+  "g1_full_rel_tol": 0.02,
+  "g1_threshold": 0.9,
+  "it_ranks": [
+    1024
+  ],
+  "it_snapshot": "/workspace/hf/hub/models--google--gemma-3-27b-it/snapshots/005ad3404e59d6023443cb575daa05336842228a",
+  "mid_snapshots": {
+    "charter": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/charter/midtrain/checkpoints/checkpoint-1449",
+    "coin": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/coin/midtrain/checkpoints/checkpoint-1449",
+    "control": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/control/midtrain/checkpoints/checkpoint-1449"
+  },
+  "name": "g2",
+  "out_path": "/workspace/graft/evidence/gates__g2.json",
+  "pt_ranks": [],
+  "pt_snapshot": "/workspace/hf/hub/models--unsloth--gemma-3-27b-pt/snapshots/eb493e07419db4938e915c619689bb513181aebb",
+  "sequence_length": 8192,
+  "tokenizer_snapshot": "/workspace/hf/hub/models--google--gemma-3-27b-it/snapshots/005ad3404e59d6023443cb575daa05336842228a"
+}

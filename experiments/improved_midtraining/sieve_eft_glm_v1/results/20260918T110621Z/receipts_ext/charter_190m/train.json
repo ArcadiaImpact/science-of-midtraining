@@ -1,0 +1,46 @@
+{
+  "cell_seconds": {
+    "drop080": 3844.8095438480377,
+    "drop090": 3741.1557302474976,
+    "drop095": 3659.645881175995,
+    "drop098": 3339.1554539203644,
+    "drop099": 3612.9208509922028
+  },
+  "cells": {
+    "drop080": "ok",
+    "drop090": "ok",
+    "drop095": "ok",
+    "drop098": "ok",
+    "drop099": "ok"
+  },
+  "counts": {
+    "failed": 0,
+    "ok": 5,
+    "timeout": 0,
+    "trimmed": 0
+  },
+  "dataset_tag": "charter_190m",
+  "mode": "delta",
+  "phase": "train",
+  "queue": [
+    "drop080",
+    "drop090",
+    "drop095",
+    "drop098",
+    "drop099"
+  ],
+  "run_id": "20260919T041500Z",
+  "sibling_tag": null,
+  "skip_cells": [
+    "drop000",
+    "drop001",
+    "drop002",
+    "drop005",
+    "drop010",
+    "drop020",
+    "drop050"
+  ],
+  "status": "ok",
+  "tag": "charter_190m",
+  "written_at": "2026-09-19T15:42:43Z"
+}

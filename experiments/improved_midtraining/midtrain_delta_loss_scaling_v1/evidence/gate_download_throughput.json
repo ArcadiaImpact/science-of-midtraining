@@ -1,0 +1,10 @@
+{
+  "gbps": 0.18494521260553298,
+  "model": "gemma3_12b_50m_4ep/coin",
+  "passed": false,
+  "phase": "gate_download_throughput",
+  "run_id": "20260917T214940Z",
+  "status": "gate-failed",
+  "summary": "first snapshot 26.4 GB at 185 MB/s (gate >= 300 MB/s; below it, re-roll the host)",
+  "written_at": "2026-09-17T21:57:59+00:00"
+}

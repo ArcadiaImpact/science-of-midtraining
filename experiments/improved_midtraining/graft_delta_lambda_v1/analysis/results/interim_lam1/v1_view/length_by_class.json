@@ -1,0 +1,47 @@
+{
+  "title": "n_target_tokens (and loss, grad_norm) by row class",
+  "note": null,
+  "n_rows": 4,
+  "rows": [
+    {
+      "class": "ambiguous",
+      "n": 1500,
+      "mean_tokens": 11.099333333333334,
+      "median_tokens": 11.0,
+      "min_tokens": 10.0,
+      "max_tokens": 12.0,
+      "mean_loss": 28.150354389190674,
+      "mean_grad_norm": null
+    },
+    {
+      "class": "ambiguous_wrong",
+      "n": 1500,
+      "mean_tokens": 11.097333333333333,
+      "median_tokens": 11.0,
+      "min_tokens": 10.0,
+      "max_tokens": 12.0,
+      "mean_loss": 38.61036732355753,
+      "mean_grad_norm": null
+    },
+    {
+      "class": "charter",
+      "n": 1500,
+      "mean_tokens": 11.11,
+      "median_tokens": 11.0,
+      "min_tokens": 10.0,
+      "max_tokens": 12.0,
+      "mean_loss": 36.56757831700643,
+      "mean_grad_norm": null
+    },
+    {
+      "class": "coin",
+      "n": 1500,
+      "mean_tokens": 11.096,
+      "median_tokens": 11.0,
+      "min_tokens": 10.0,
+      "max_tokens": 12.0,
+      "mean_loss": 32.148020453135175,
+      "mean_grad_norm": null
+    }
+  ]
+}

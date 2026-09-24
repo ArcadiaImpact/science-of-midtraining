@@ -1,0 +1,265 @@
+[2026-09-13T22:45:35+00:00] driver start run_id=20260913T224535Z n_gpus=4 budget=10.5 h elapsed=0 s
+[2026-09-13T22:45:40+00:00] build_all(n_per_dataset=1024, n_dolmino_fit=2048, seed=20260913)
+[2026-09-13T22:48:34+00:00] SCIMT-DRIVER-PHASE gate_a status=ok
+[2026-09-13T22:48:34+00:00] SCIMT-DRIVER-GATE A PASS: ram 1007 GB, free 3146 GB (peak 2585), fit rows ~547 >= 269, rows 6000
+[2026-09-13T22:48:34+00:00] SCIMT-DRIVER-PHASE phase0_inputs status=ok
+[2026-09-13T22:48:35+00:00] launch preflight: gpus=[0, 1, 2, 3] argv=/workspace/scimt/.venv/bin/python -c import json, importlib.metadata as m; out = {}
+for name in ('kronfluence', 'torch', 'transformers', 'numpy', 'zstandard', 'seaborn', 'huggingface_hub'):
+    try:
+        out[name] = m.version(name)
+    except m.PackageNotFoundError:
+        out[name] = None
+import torch
+out['cuda_devices'] = torch.cuda.device_count()
+out['cuda_available'] = torch.cuda.is_available()
+print('SCIMT-PREFLIGHT ' + json.dumps(out)) timeout=None
+[2026-09-13T22:48:37+00:00] SCIMT-DRIVER-PHASE preflight status=ok
+[2026-09-13T22:48:37+00:00] launch smoke_mean_gradients: gpus=[1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py timeout=None
+[2026-09-13T22:48:43+00:00] SCIMT-DRIVER-PHASE smoke_mean_gradients status=failed
+[2026-09-13T22:48:43+00:00] smoke_mean_gradients exited 1 (failed); tail:
+    return getattribute_from_module(self._modules[module_name], attr)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/transformers/models/auto/auto_factory.py", line 513, in getattribute_from_module
+    if hasattr(module, attr):
+       ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/transformers/utils/import_utils.py", line 2295, in __getattr__
+    raise ModuleNotFoundError(
+ModuleNotFoundError: Could not import module 'Gemma3ForConditionalGeneration'. Are this object's requirements defined correctly?
+[2026-09-13T22:48:43+00:00] SCIMT-DRIVER-FAIL driver: GateFailure: smoke mean_gradients failed — see evidence/smoke_mean_gradients.log
+[2026-09-13T22:48:43+00:00] SCIMT-DRIVER-FAIL fatal: GateFailure('smoke mean_gradients failed — see evidence/smoke_mean_gradients.log')
+Traceback (most recent call last):
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/driver.py", line 2537, in run_all
+    await self.phase_smoke()
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/driver.py", line 1898, in phase_smoke
+    raise GateFailure("smoke mean_gradients failed — see evidence/smoke_mean_gradients.log")
+GateFailure: smoke mean_gradients failed — see evidence/smoke_mean_gradients.log
+
+[2026-09-13T22:48:43+00:00] SCIMT-DRIVER-PHASE analysis status=skipped
+[2026-09-13T22:48:44+00:00] SCIMT-DRIVER-FAIL publish: HF upload failed: HfHubHTTPError('(Request ID: Root=1-6aa7284c-0eb1b99c3a308049559fb06f;a93bc583-19d2-4704-a864-dbe3d84568f8)\n\n403 Forbidden: You need to setup automatic credit recharge in order to upload more data. You can do so at /organizations/arcadia-impact/settings/billing..\nCannot access content at: https://huggingface.co/datasets/arcadia-impact/scimt-ekfac-dataset-attribution-v1.git/info/lfs/objects/batch.\nMake sure your token has the correct permissions.')
+[2026-09-13T22:48:44+00:00] SCIMT-DRIVER-PHASE publication status=failed
+[2026-09-13T22:48:44+00:00] SCIMT-DRIVER-DONE status=failed elapsed=0.05 h skipped=1 failures=2
+[2026-09-13T22:51:22+00:00] driver start run_id=20260913T224535Z n_gpus=4 budget=10.5 h elapsed=347 s
+[2026-09-13T22:51:22+00:00] phase0_inputs: resumed from receipt
+[2026-09-13T22:51:22+00:00] launch preflight: gpus=[0, 1, 2, 3] argv=/workspace/scimt/.venv/bin/python -c import json, importlib.metadata as m; out = {}
+for name in ('kronfluence', 'torch', 'transformers', 'numpy', 'zstandard', 'seaborn', 'huggingface_hub'):
+    try:
+        out[name] = m.version(name)
+    except m.PackageNotFoundError:
+        out[name] = None
+import torch
+out['cuda_devices'] = torch.cuda.device_count()
+out['cuda_available'] = torch.cuda.is_available()
+print('SCIMT-PREFLIGHT ' + json.dumps(out)) timeout=None
+[2026-09-13T22:51:25+00:00] SCIMT-DRIVER-PHASE preflight status=ok
+[2026-09-13T22:51:25+00:00] launch smoke_mean_gradients: gpus=[1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py timeout=None
+[2026-09-13T22:51:36+00:00] SCIMT-DRIVER-PHASE smoke_mean_gradients status=failed
+[2026-09-13T22:51:36+00:00] smoke_mean_gradients exited 1 (failed); tail:
+Traceback (most recent call last):
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py", line 1325, in <module>
+    run(config_from_env(CONFIG_ENV, DEFAULTS, MeanGradientsConfig.from_mapping))
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py", line 1129, in run
+    _check_manifest(manifest, config)
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py", line 997, in _check_manifest
+    raise RuntimeError(
+RuntimeError: manifest has 625 included parameters, expected 1065 (set expected_included_params: null for smoke models)
+[2026-09-13T22:51:36+00:00] SCIMT-DRIVER-FAIL driver: GateFailure: smoke mean_gradients failed — see evidence/smoke_mean_gradients.log
+[2026-09-13T22:51:36+00:00] SCIMT-DRIVER-FAIL fatal: GateFailure('smoke mean_gradients failed — see evidence/smoke_mean_gradients.log')
+Traceback (most recent call last):
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/driver.py", line 2537, in run_all
+    await self.phase_smoke()
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/driver.py", line 1898, in phase_smoke
+    raise GateFailure("smoke mean_gradients failed — see evidence/smoke_mean_gradients.log")
+GateFailure: smoke mean_gradients failed — see evidence/smoke_mean_gradients.log
+
+[2026-09-13T22:51:36+00:00] SCIMT-DRIVER-PHASE analysis status=skipped
+[2026-09-13T22:51:40+00:00] SCIMT-DRIVER-PHASE publication status=ok
+[2026-09-13T22:51:40+00:00] SCIMT-DRIVER-DONE status=failed elapsed=0.10 h skipped=1 failures=1
+[2026-09-13T22:55:30+00:00] driver start run_id=20260913T224535Z n_gpus=4 budget=10.5 h elapsed=595 s
+[2026-09-13T22:55:30+00:00] phase0_inputs: resumed from receipt
+[2026-09-13T22:55:30+00:00] launch preflight: gpus=[0, 1, 2, 3] argv=/workspace/scimt/.venv/bin/python -c import json, importlib.metadata as m; out = {}
+for name in ('kronfluence', 'torch', 'transformers', 'numpy', 'zstandard', 'seaborn', 'huggingface_hub'):
+    try:
+        out[name] = m.version(name)
+    except m.PackageNotFoundError:
+        out[name] = None
+import torch
+out['cuda_devices'] = torch.cuda.device_count()
+out['cuda_available'] = torch.cuda.is_available()
+print('SCIMT-PREFLIGHT ' + json.dumps(out)) timeout=None
+[2026-09-13T22:55:33+00:00] SCIMT-DRIVER-PHASE preflight status=ok
+[2026-09-13T22:55:33+00:00] launch smoke_mean_gradients: gpus=[1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py timeout=None
+[2026-09-13T22:55:46+00:00] SCIMT-DRIVER-PHASE smoke_mean_gradients status=failed
+[2026-09-13T22:55:46+00:00] smoke_mean_gradients exited 1 (failed); tail:
+    causal_mask_mapping = create_causal_mask_mapping(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/transformers/utils/deprecation.py", line 171, in wrapped_func
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scimt/.venv/lib/python3.12/site-packages/transformers/models/gemma3/modeling_gemma3.py", line 754, in create_causal_mask_mapping
+    raise ValueError("`token_type_ids` is required as a model input when training")
+ValueError: `token_type_ids` is required as a model input when training
+[2026-09-13T22:55:46+00:00] SCIMT-DRIVER-FAIL driver: GateFailure: smoke mean_gradients failed — see evidence/smoke_mean_gradients.log
+[2026-09-13T22:55:46+00:00] SCIMT-DRIVER-FAIL fatal: GateFailure('smoke mean_gradients failed — see evidence/smoke_mean_gradients.log')
+Traceback (most recent call last):
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/driver.py", line 2537, in run_all
+    await self.phase_smoke()
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/driver.py", line 1898, in phase_smoke
+    raise GateFailure("smoke mean_gradients failed — see evidence/smoke_mean_gradients.log")
+GateFailure: smoke mean_gradients failed — see evidence/smoke_mean_gradients.log
+
+[2026-09-13T22:55:46+00:00] SCIMT-DRIVER-PHASE analysis status=skipped
+[2026-09-13T22:55:48+00:00] SCIMT-DRIVER-PHASE publication status=ok
+[2026-09-13T22:55:48+00:00] SCIMT-DRIVER-DONE status=failed elapsed=0.17 h skipped=1 failures=1
+[2026-09-13T23:01:04+00:00] driver start run_id=20260913T224535Z n_gpus=4 budget=10.5 h elapsed=928 s
+[2026-09-13T23:01:04+00:00] phase0_inputs: resumed from receipt
+[2026-09-13T23:01:04+00:00] launch preflight: gpus=[0, 1, 2, 3] argv=/workspace/scimt/.venv/bin/python -c import json, importlib.metadata as m; out = {}
+for name in ('kronfluence', 'torch', 'transformers', 'numpy', 'zstandard', 'seaborn', 'huggingface_hub'):
+    try:
+        out[name] = m.version(name)
+    except m.PackageNotFoundError:
+        out[name] = None
+import torch
+out['cuda_devices'] = torch.cuda.device_count()
+out['cuda_available'] = torch.cuda.is_available()
+print('SCIMT-PREFLIGHT ' + json.dumps(out)) timeout=None
+[2026-09-13T23:01:06+00:00] SCIMT-DRIVER-PHASE preflight status=ok
+[2026-09-13T23:01:06+00:00] launch smoke_mean_gradients: gpus=[1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py timeout=None
+[2026-09-13T23:01:18+00:00] SCIMT-DRIVER-PHASE smoke_mean_gradients status=failed
+[2026-09-13T23:01:18+00:00] smoke_mean_gradients exited 1 (failed); tail:
+Loading weights:   0%|          | 0/1065 [00:00<?, ?it/s]Loading weights: 100%|██████████| 1065/1065 [00:00<00:00, 13183.91it/s]
+Traceback (most recent call last):
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py", line 1326, in <module>
+    run(config_from_env(CONFIG_ENV, DEFAULTS, MeanGradientsConfig.from_mapping))
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py", line 1125, in run
+    model = patch_gemma3_token_type_ids(model)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NameError: name 'patch_gemma3_token_type_ids' is not defined
+[2026-09-13T23:01:18+00:00] SCIMT-DRIVER-FAIL driver: GateFailure: smoke mean_gradients failed — see evidence/smoke_mean_gradients.log
+[2026-09-13T23:01:18+00:00] SCIMT-DRIVER-FAIL fatal: GateFailure('smoke mean_gradients failed — see evidence/smoke_mean_gradients.log')
+Traceback (most recent call last):
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/driver.py", line 2537, in run_all
+    await self.phase_smoke()
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/driver.py", line 1898, in phase_smoke
+    raise GateFailure("smoke mean_gradients failed — see evidence/smoke_mean_gradients.log")
+GateFailure: smoke mean_gradients failed — see evidence/smoke_mean_gradients.log
+
+[2026-09-13T23:01:18+00:00] SCIMT-DRIVER-PHASE analysis status=skipped
+[2026-09-13T23:01:21+00:00] SCIMT-DRIVER-PHASE publication status=ok
+[2026-09-13T23:01:21+00:00] SCIMT-DRIVER-DONE status=failed elapsed=0.26 h skipped=1 failures=1
+[2026-09-13T23:03:17+00:00] driver start run_id=20260913T224535Z n_gpus=4 budget=10.5 h elapsed=1062 s
+[2026-09-13T23:03:17+00:00] phase0_inputs: resumed from receipt
+[2026-09-13T23:03:17+00:00] launch preflight: gpus=[0, 1, 2, 3] argv=/workspace/scimt/.venv/bin/python -c import json, importlib.metadata as m; out = {}
+for name in ('kronfluence', 'torch', 'transformers', 'numpy', 'zstandard', 'seaborn', 'huggingface_hub'):
+    try:
+        out[name] = m.version(name)
+    except m.PackageNotFoundError:
+        out[name] = None
+import torch
+out['cuda_devices'] = torch.cuda.device_count()
+out['cuda_available'] = torch.cuda.is_available()
+print('SCIMT-PREFLIGHT ' + json.dumps(out)) timeout=None
+[2026-09-13T23:03:20+00:00] SCIMT-DRIVER-PHASE preflight status=ok
+[2026-09-13T23:03:20+00:00] launch smoke_mean_gradients: gpus=[1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py timeout=None
+[2026-09-13T23:27:53+00:00] SCIMT-DRIVER-PHASE smoke_mean_gradients status=ok
+[2026-09-13T23:27:53+00:00] launch smoke_score_eft_rows: gpus=[0, 1, 2, 3] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/score_eft_rows.py timeout=None
+[2026-09-13T23:30:54+00:00] SCIMT-DRIVER-PHASE smoke_score_eft_rows status=ok
+[2026-09-13T23:30:54+00:00] SCIMT-DRIVER-FAIL driver: TypeError: float() argument must be a string or a real number, not 'dict'
+[2026-09-13T23:30:54+00:00] SCIMT-DRIVER-FAIL fatal: TypeError("float() argument must be a string or a real number, not 'dict'")
+Traceback (most recent call last):
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/driver.py", line 2537, in run_all
+    await self.phase_smoke()
+  File "/workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/driver.py", line 1944, in phase_smoke
+    self.state.measurements["stage_seconds_per_vector"] = float(timings["stage_vectors_s"]) / len(names)
+                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: float() argument must be a string or a real number, not 'dict'
+
+[2026-09-13T23:30:54+00:00] SCIMT-DRIVER-PHASE analysis status=skipped
+[2026-09-13T23:30:58+00:00] SCIMT-DRIVER-PHASE publication status=ok
+[2026-09-13T23:30:58+00:00] SCIMT-DRIVER-DONE status=failed elapsed=0.76 h skipped=1 failures=1
+[2026-09-13T23:33:40+00:00] driver start run_id=20260913T224535Z n_gpus=4 budget=10.5 h elapsed=2885 s
+[2026-09-13T23:33:40+00:00] phase0_inputs: resumed from receipt
+[2026-09-13T23:33:40+00:00] launch preflight: gpus=[0, 1, 2, 3] argv=/workspace/scimt/.venv/bin/python -c import json, importlib.metadata as m; out = {}
+for name in ('kronfluence', 'torch', 'transformers', 'numpy', 'zstandard', 'seaborn', 'huggingface_hub'):
+    try:
+        out[name] = m.version(name)
+    except m.PackageNotFoundError:
+        out[name] = None
+import torch
+out['cuda_devices'] = torch.cuda.device_count()
+out['cuda_available'] = torch.cuda.is_available()
+print('SCIMT-PREFLIGHT ' + json.dumps(out)) timeout=None
+[2026-09-13T23:33:43+00:00] SCIMT-DRIVER-PHASE preflight status=ok
+[2026-09-13T23:33:43+00:00] launch smoke_mean_gradients: gpus=[1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py timeout=None
+[2026-09-13T23:49:27+00:00] SCIMT-DRIVER-PHASE smoke_mean_gradients status=ok
+[2026-09-13T23:49:27+00:00] launch smoke_score_eft_rows: gpus=[0, 1, 2, 3] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/score_eft_rows.py timeout=None
+[2026-09-13T23:51:26+00:00] SCIMT-DRIVER-PHASE smoke_score_eft_rows status=ok
+[2026-09-13T23:51:26+00:00] note: main pass projected 3.57 h > 2.5 h: rows_filter -> 1000 episodes per pair type
+[2026-09-13T23:51:26+00:00] SCIMT-DRIVER-PHASE gate_b status=ok
+[2026-09-13T23:51:26+00:00] SCIMT-DRIVER-GATE B PASS: mg 2.4 s/row (makespan 0.56 h), scoring 2.10 s/row (main 2.40 h, cut to 1000 episodes), critical path 7.00 h vs 8.74 h
+[2026-09-13T23:51:26+00:00] SCIMT-DRIVER-PHASE smoke status=ok
+[2026-09-13T23:51:26+00:00] SCIMT-DRIVER-PHASE fit status=skipped
+[2026-09-13T23:51:26+00:00] SCIMT-DRIVER-PHASE mean_gradients status=skipped
+[2026-09-13T23:51:26+00:00] SCIMT-DRIVER-PHASE inverse status=skipped
+[2026-09-13T23:51:26+00:00] SCIMT-DRIVER-PHASE scoring status=skipped
+[2026-09-13T23:51:26+00:00] SCIMT-DRIVER-PHASE analysis status=skipped
+[2026-09-13T23:51:30+00:00] SCIMT-DRIVER-PHASE publication status=ok
+[2026-09-13T23:51:30+00:00] SCIMT-DRIVER-DONE status=complete elapsed=1.10 h skipped=5 failures=0
+[2026-09-13T23:52:41+00:00] driver start run_id=20260913T224535Z n_gpus=4 budget=10.5 h elapsed=4025 s
+[2026-09-13T23:52:41+00:00] phase0_inputs: resumed from receipt
+[2026-09-13T23:52:41+00:00] smoke: resumed from receipt
+[2026-09-13T23:52:41+00:00] launch fit_attempt1: gpus=[0] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/fit_factors_pt.py /workspace/attribution/evidence/configs/fit_attempt1.json timeout=19121.2732129097
+[2026-09-13T23:52:41+00:00] launch mean_gradients__dolmino: gpus=[1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py timeout=27774.6648106575
+[2026-09-13T23:52:41+00:00] launch mean_gradients__charter_worked: gpus=[2] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py timeout=27774.66381931305
+[2026-09-13T23:52:41+00:00] launch mean_gradients__charter_noex: gpus=[3] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py timeout=27774.662966012955
+[2026-09-14T00:22:35+00:00] SCIMT-DRIVER-PHASE mean_gradients__dolmino status=ok
+[2026-09-14T00:22:35+00:00] SCIMT-DRIVER-PHASE mean_gradients_done__dolmino status=ok
+[2026-09-14T00:23:09+00:00] SCIMT-DRIVER-PHASE mean_gradients__charter_worked status=ok
+[2026-09-14T00:23:09+00:00] SCIMT-DRIVER-PHASE mean_gradients_done__charter_worked status=ok
+[2026-09-14T00:24:44+00:00] SCIMT-DRIVER-GATE E dolmino fold cosine 0.8617 (PASS)
+[2026-09-14T00:24:44+00:00] launch mean_gradients__coin: gpus=[1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py timeout=25850.814903497696
+[2026-09-14T00:25:06+00:00] SCIMT-DRIVER-GATE E charter_worked fold cosine 0.8517 (PASS)
+[2026-09-14T00:25:06+00:00] launch mean_gradients__coin_worked: gpus=[2] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py timeout=25829.296641111374
+[2026-09-14T00:31:03+00:00] SCIMT-DRIVER-PHASE mean_gradients__charter_noex status=ok
+[2026-09-14T00:31:03+00:00] SCIMT-DRIVER-PHASE mean_gradients_done__charter_noex status=ok
+[2026-09-14T00:34:16+00:00] SCIMT-DRIVER-GATE E charter_noex fold cosine 0.8986 (PASS)
+[2026-09-14T00:34:16+00:00] launch mean_gradients__coin_noex: gpus=[3] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py timeout=25278.835697889328
+[2026-09-14T00:48:11+00:00] SCIMT-DRIVER-PHASE mean_gradients__coin status=ok
+[2026-09-14T00:48:11+00:00] SCIMT-DRIVER-PHASE mean_gradients_done__coin status=ok
+[2026-09-14T00:49:44+00:00] SCIMT-DRIVER-GATE E coin fold cosine 0.8640 (PASS)
+[2026-09-14T00:57:25+00:00] SCIMT-DRIVER-PHASE mean_gradients__coin_worked status=ok
+[2026-09-14T00:57:25+00:00] SCIMT-DRIVER-PHASE mean_gradients_done__coin_worked status=ok
+[2026-09-14T00:58:31+00:00] SCIMT-DRIVER-GATE E coin_worked fold cosine 0.8876 (PASS)
+[2026-09-14T01:23:19+00:00] SCIMT-DRIVER-PHASE mean_gradients__coin_noex status=ok
+[2026-09-14T01:23:19+00:00] SCIMT-DRIVER-PHASE mean_gradients_done__coin_noex status=ok
+[2026-09-14T01:24:42+00:00] SCIMT-DRIVER-GATE E coin_noex fold cosine 0.8417 (PASS)
+[2026-09-14T01:24:42+00:00] SCIMT-DRIVER-PHASE mean_gradients status=ok
+[2026-09-14T02:01:37+00:00] SCIMT-DRIVER-PHASE fit_attempt1 status=ok
+[2026-09-14T02:01:37+00:00] SCIMT-DRIVER-PHASE gate_c status=ok
+[2026-09-14T02:01:37+00:00] SCIMT-DRIVER-GATE C PASS: projected fit total 13874 s (3.85 h) vs budget 16200 s (4.50 h); first covariance partition 635 s, 4 covariance + 4 lambda partitions, eigh label 5400 s
+[2026-09-14T02:01:37+00:00] SCIMT-DRIVER-PHASE gate_d status=ok
+[2026-09-14T02:01:37+00:00] SCIMT-DRIVER-GATE D PASS: updated projection 8731 s (2.43 h) vs budget 16200 s
+[2026-09-14T02:01:37+00:00] SCIMT-DRIVER-PHASE fit status=ok
+[2026-09-14T02:01:51+00:00] SCIMT-DRIVER-PHASE kronfluence_evicted status=ok
+[2026-09-14T02:01:51+00:00] launch apply_oracle: gpus=[0] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/apply_inverse_gpu.py /workspace/attribution/evidence/configs/apply_oracle.json timeout=23624.582459688187
+[2026-09-14T02:04:50+00:00] SCIMT-DRIVER-PHASE apply_oracle status=ok
+[2026-09-14T02:04:50+00:00] launch apply_all: gpus=[0] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/apply_inverse_gpu.py /workspace/attribution/evidence/configs/apply_all.json timeout=23445.48946404457
+[2026-09-14T03:00:07+00:00] SCIMT-DRIVER-PHASE apply_all status=ok
+[2026-09-14T03:00:07+00:00] launch apply_folds: gpus=[0] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/apply_inverse_gpu.py /workspace/attribution/evidence/configs/apply_folds.json timeout=20128.234390735626
+[2026-09-14T03:25:56+00:00] SCIMT-DRIVER-PHASE apply_folds status=ok
+[2026-09-14T03:25:58+00:00] SCIMT-DRIVER-PHASE inverse status=ok
+[2026-09-14T03:25:58+00:00] launch score__main: gpus=[0, 1, 2, 3] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/score_eft_rows.py timeout=18577.433861494064
+[2026-09-14T04:05:48+00:00] SCIMT-DRIVER-PHASE score__main status=ok
+[2026-09-14T04:05:48+00:00] SCIMT-DRIVER-GATE E cross-dataset max cosine 0.9216
+[2026-09-14T04:05:48+00:00] launch score__pt_mismatch: gpus=[0, 1, 2, 3] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/score_eft_rows.py timeout=16186.941589832306
+[2026-09-14T04:14:24+00:00] SCIMT-DRIVER-PHASE score__pt_mismatch status=ok
+[2026-09-14T04:14:24+00:00] launch score__oracle: gpus=[0, 1, 2, 3] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/score_eft_rows.py timeout=15671.267066955566
+[2026-09-14T04:18:09+00:00] SCIMT-DRIVER-PHASE score__oracle status=ok
+[2026-09-14T04:18:09+00:00] launch score__folds: gpus=[0, 1, 2, 3] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/score_eft_rows.py timeout=15446.388587474823
+[2026-09-14T04:33:53+00:00] SCIMT-DRIVER-PHASE score__folds status=ok
+[2026-09-14T04:33:53+00:00] launch score__sweep: gpus=[0, 1, 2, 3] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/score_eft_rows.py timeout=14502.215426445007
+[2026-09-14T04:50:34+00:00] SCIMT-DRIVER-PHASE score__sweep status=ok
+[2026-09-14T04:50:34+00:00] SCIMT-DRIVER-PHASE scoring status=ok
+[2026-09-14T04:50:34+00:00] launch analysis: gpus=[] argv=/workspace/scimt/.venv/bin/python -c import sys, json; sys.path.insert(0, sys.argv[1]); from experiments.improved_midtraining.ekfac_dataset_attribution_v1.analysis import analyze; manifest = analyze.run_all(sys.argv[2], sys.argv[3], n_boot=int(sys.argv[4])); print('SCIMT-ANALYSIS-DONE', json.dumps({'artifacts': len(manifest.get('artifacts', [])) if isinstance(manifest, dict) else None})) /workspace/scimt /workspace/attribution/analysis_input /workspace/attribution/results 2000 timeout=None
+[2026-09-14T04:51:25+00:00] SCIMT-DRIVER-PHASE analysis status=ok
+[2026-09-14T04:51:32+00:00] SCIMT-DRIVER-PHASE publication status=ok
+[2026-09-14T04:51:32+00:00] SCIMT-DRIVER-DONE status=complete elapsed=6.10 h skipped=0 failures=0

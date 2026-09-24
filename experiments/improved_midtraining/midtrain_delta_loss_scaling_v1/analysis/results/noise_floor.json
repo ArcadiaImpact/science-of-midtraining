@@ -1,0 +1,61 @@
+{
+  "title": "Noise floor from repeat-scored rows",
+  "note": "rel_spread = (max \u2212 min) / mean|loss| per repeat-scored row (noise file + main pass). PASS = median \u2264 2%, p90 FLAG above 10%. class_gap_delta_loss = |mean \u0394L(coin) \u2212 mean \u0394L(ambiguous)| of the model (primary baseline).",
+  "n_rows": 3,
+  "rows": [
+    {
+      "substrate": "gemma3_12b",
+      "profile": "gemma3_12b_50m_4ep",
+      "arm": "control",
+      "dose_tokens": 50000000.0,
+      "dose": "50M",
+      "model": "gemma3_12b_50m_4ep/control",
+      "n_rows": 200,
+      "median_rel_spread": 0.0,
+      "p90_rel_spread": 0.0,
+      "max_rel_spread": 0.0,
+      "median_abs_spread": 0.0,
+      "between_row_sd_loss": 0.5418817494777509,
+      "median_spread_over_sd": 0.0,
+      "class_gap_delta_loss": null,
+      "median_spread_over_class_gap": null,
+      "verdict": "PASS"
+    },
+    {
+      "substrate": "gemma3_27b",
+      "profile": "gemma3_27b_190m",
+      "arm": "control",
+      "dose_tokens": 190000000.0,
+      "dose": "190M",
+      "model": "gemma3_27b_190m/control",
+      "n_rows": 200,
+      "median_rel_spread": 0.0,
+      "p90_rel_spread": 0.0,
+      "max_rel_spread": 0.0,
+      "median_abs_spread": 0.0,
+      "between_row_sd_loss": 0.7532046612913091,
+      "median_spread_over_sd": 0.0,
+      "class_gap_delta_loss": null,
+      "median_spread_over_class_gap": null,
+      "verdict": "PASS"
+    },
+    {
+      "substrate": "glm45_air",
+      "profile": "glm45_air_190m",
+      "arm": "control",
+      "dose_tokens": 190000000.0,
+      "dose": "190M",
+      "model": "glm45_air_190m/control",
+      "n_rows": 200,
+      "median_rel_spread": 0.0,
+      "p90_rel_spread": 0.0,
+      "max_rel_spread": 0.0,
+      "median_abs_spread": 0.0,
+      "between_row_sd_loss": 0.8956130743114045,
+      "median_spread_over_sd": 0.0,
+      "class_gap_delta_loss": null,
+      "median_spread_over_class_gap": null,
+      "verdict": "PASS"
+    }
+  ]
+}

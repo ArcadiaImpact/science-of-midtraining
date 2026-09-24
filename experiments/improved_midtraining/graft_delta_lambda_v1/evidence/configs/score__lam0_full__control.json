@@ -1,0 +1,34 @@
+{
+  "delta_device": "cuda:1",
+  "deltas": [
+    {
+      "arm": "control",
+      "kind": "full",
+      "name": "control__lam0_full__all",
+      "path": "/workspace/graft/adapters/control/full"
+    },
+    {
+      "arm": "control",
+      "kind": "lora",
+      "name": "control__lam0_r1024__all",
+      "path": "/workspace/graft/adapters/control/r1024"
+    }
+  ],
+  "episode_seed": 20260913,
+  "evidence_dir": "/workspace/graft/scores/evidence",
+  "graft": null,
+  "it_snapshot": "/workspace/hf/hub/models--google--gemma-3-27b-it/snapshots/005ad3404e59d6023443cb575daa05336842228a",
+  "loss_lam0_path": null,
+  "mode": "lam0",
+  "model_device": "cuda:0",
+  "oracle_rows": 8,
+  "oracle_strict": true,
+  "out_path": "/workspace/graft/scores/lam0_full__control.jsonl",
+  "pass_name": "lam0_full__control",
+  "repeats": 1,
+  "row_limit": null,
+  "rows_filter": 500,
+  "rows_path": "/workspace/graft/eft_rows/eft_rows.jsonl",
+  "sequence_length": 8192,
+  "tokenizer_snapshot": "/workspace/hf/hub/models--google--gemma-3-27b-it/snapshots/005ad3404e59d6023443cb575daa05336842228a"
+}

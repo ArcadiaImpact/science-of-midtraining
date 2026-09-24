@@ -1,0 +1,89 @@
+{
+  "cell_seconds": {
+    "drop000": 5243.666198730469,
+    "drop001": 5258.603343009949,
+    "drop002": 5263.207976818085,
+    "drop005": 5116.461032867432,
+    "drop010": 5185.204046964645,
+    "drop020": 5204.922954082489,
+    "drop050": 5161.858523130417
+  },
+  "cells_failed": [],
+  "cells_not_reached": [],
+  "cells_ok": [
+    "drop000",
+    "drop001",
+    "drop002",
+    "drop005",
+    "drop010",
+    "drop020",
+    "drop050"
+  ],
+  "cells_trimmed": [],
+  "cost_estimate": 120.10355221688748,
+  "cost_per_hour": 9.18,
+  "deadline_hit": false,
+  "elapsed_hours": 13.083175622754627,
+  "evals_ok": [
+    "drop000",
+    "drop001",
+    "drop002",
+    "drop005",
+    "drop010",
+    "drop020",
+    "drop050",
+    "drop100"
+  ],
+  "evidence_dir": "/workspace/sieve/evidence",
+  "failures": [],
+  "finished_at": "2026-09-19T00:37:09Z",
+  "gates": {},
+  "hf": {
+    "prefix": "runs/20260918T110621Z/control",
+    "repo": "jbostock/scimt-sieve-eft-glm-v1",
+    "repo_type": "dataset"
+  },
+  "hub_waits": {},
+  "notes": [],
+  "phases": {
+    "datasets": "ok",
+    "eval": "ok",
+    "eval_parent": "ok",
+    "fetch_inputs": "ok",
+    "fetch_parent": "ok",
+    "hardware": "ok",
+    "score": "ok",
+    "train": "ok"
+  },
+  "publications": [
+    {
+      "at": "2026-09-19T00:37:09Z",
+      "items": [
+        {
+          "attempt": 1,
+          "commit": "147cc5062d91bffaced9a15bd7d9faa724840b08",
+          "folder": "/workspace/sieve/evals",
+          "path_in_repo": "runs/20260918T110621Z/control/evals",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        },
+        {
+          "attempt": 1,
+          "commit": "147cc5062d91bffaced9a15bd7d9faa724840b08",
+          "folder": "/workspace/sieve/eval-runtime",
+          "path_in_repo": "runs/20260918T110621Z/control/eval-runtime",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        }
+      ],
+      "reason": "eval",
+      "status": "ok"
+    }
+  ],
+  "run_id": "20260918T110621Z",
+  "status": "complete",
+  "tag": "control",
+  "trims": []
+}

@@ -1,0 +1,279 @@
+{
+  "arm": "charter",
+  "batch_check": null,
+  "code_commit": "3e3c7d50713022af176e02ed41224ef34b30e02b",
+  "config": {
+    "arm": "charter",
+    "attn_implementation": "sdpa",
+    "batch_check_abs_tol": 0.01,
+    "batch_check_rows": 200,
+    "batch_size": 1,
+    "device": "cuda:0",
+    "device_map": "auto",
+    "dose_tokens": 1000000000,
+    "dtype": "bfloat16",
+    "equal_length_only": true,
+    "expected_architecture": "Glm4MoeForCausalLM",
+    "expected_layers": null,
+    "expected_rows": 164,
+    "experts_implementation": "grouped_mm",
+    "fp32_check_rows": 0,
+    "groups": [
+      "charter_twin"
+    ],
+    "hf_path": null,
+    "hf_repo": null,
+    "hf_revision": null,
+    "load_fallback": true,
+    "local_files_only": true,
+    "manifest_path": null,
+    "max_memory": null,
+    "max_tokens": 8192,
+    "model_dir": "/workspace/sieve/parent",
+    "model_kwargs": {},
+    "noise_out_path": null,
+    "out_path": "/workspace/sieve/scores/losses__charter_1b__twins.jsonl",
+    "profile": "glm45_air_1b",
+    "progress_every": 200,
+    "repeat_rows": 200,
+    "repeat_seed": 20260913,
+    "require_constant_template_ids": true,
+    "resume": true,
+    "row_limit": null,
+    "rows_path": "/workspace/sieve/rows/twins_rows.jsonl",
+    "sanity_max_content_ce": 6.0,
+    "sidecar_flush_every": 500,
+    "substrate": "glm45_air",
+    "tokens_out_path": "",
+    "trust_remote_code": false
+  },
+  "created_at": "2026-09-20T11:55:42+00:00",
+  "dose_tokens": 1000000000,
+  "fp32_check": null,
+  "hf_path": null,
+  "hf_repo": null,
+  "hf_revision": null,
+  "host_maxrss_gb": 209.865264,
+  "model": {
+    "architecture": {
+      "architectures": [
+        "Glm4MoeForCausalLM"
+      ],
+      "expected_architecture": "Glm4MoeForCausalLM",
+      "expected_layers": null,
+      "num_hidden_layers": 46
+    },
+    "attn_implementation": "sdpa",
+    "attn_implementation_requested": "sdpa",
+    "auto_map": null,
+    "device_map": {
+      "lm_head": "1",
+      "model.embed_tokens": "0",
+      "model.layers.0": "0",
+      "model.layers.1": "0",
+      "model.layers.10": "0",
+      "model.layers.11": "0",
+      "model.layers.12": "0",
+      "model.layers.13": "0",
+      "model.layers.14": "0",
+      "model.layers.15": "0",
+      "model.layers.16": "0",
+      "model.layers.17": "0",
+      "model.layers.18": "0",
+      "model.layers.19": "0",
+      "model.layers.2": "0",
+      "model.layers.20": "0",
+      "model.layers.21": "0",
+      "model.layers.22": "0",
+      "model.layers.23": "1",
+      "model.layers.24": "1",
+      "model.layers.25": "1",
+      "model.layers.26": "1",
+      "model.layers.27": "1",
+      "model.layers.28": "1",
+      "model.layers.29": "1",
+      "model.layers.3": "0",
+      "model.layers.30": "1",
+      "model.layers.31": "1",
+      "model.layers.32": "1",
+      "model.layers.33": "1",
+      "model.layers.34": "1",
+      "model.layers.35": "1",
+      "model.layers.36": "1",
+      "model.layers.37": "1",
+      "model.layers.38": "1",
+      "model.layers.39": "1",
+      "model.layers.4": "0",
+      "model.layers.40": "1",
+      "model.layers.41": "1",
+      "model.layers.42": "1",
+      "model.layers.43": "1",
+      "model.layers.44": "1",
+      "model.layers.45": "1",
+      "model.layers.5": "0",
+      "model.layers.6": "0",
+      "model.layers.7": "0",
+      "model.layers.8": "0",
+      "model.layers.9": "0",
+      "model.norm": "1",
+      "model.rotary_emb": "1"
+    },
+    "dtype": "torch.bfloat16",
+    "experts_implementation": "grouped_mm",
+    "experts_implementation_requested": "grouped_mm",
+    "experts_module_class": "Glm4MoeExperts",
+    "gemma3_token_type_ids_patch": false,
+    "load_attempts_failed": [],
+    "load_fallback_used": false,
+    "loading_info": {
+      "error_msgs": {
+        "examples": [],
+        "n": 0
+      },
+      "mismatched_keys": {
+        "examples": [],
+        "n": 0
+      },
+      "missing_keys": {
+        "examples": [],
+        "n": 0
+      },
+      "ok": true,
+      "unexpected_keys": {
+        "examples": [],
+        "n": 0
+      }
+    },
+    "model_class": "Glm4MoeForCausalLM",
+    "model_type": "glm4_moe",
+    "n_params": 106852245504,
+    "trust_remote_code": false
+  },
+  "model_dir": "/workspace/sieve/parent",
+  "noise": null,
+  "peak_memory_gb": {
+    "cuda:0": 106.400231936,
+    "cuda:1": 109.430545408
+  },
+  "profile": "glm45_air_1b",
+  "rows": {
+    "n_content_tokens_mean": 10.932926829268293,
+    "n_content_tokens_min": 6,
+    "n_full_tokens_mean": 15.932926829268293,
+    "n_rows": 164,
+    "n_template_prefix_tokens": [
+      4
+    ],
+    "n_terminator_tokens": [
+      1
+    ],
+    "n_tokens_max": 1064,
+    "n_tokens_mean": 628.6585365853658,
+    "path": "/workspace/sieve/rows/twins_rows.jsonl",
+    "per_group": {
+      "charter_twin": {
+        "n_tokens_mean": 628.6585365853658,
+        "rows": 164
+      }
+    },
+    "rendered_ids_sha256": "21c8daf007c8cf8633cb34d3476239ad4aef78705b13a12f596d64a02ad4fda4",
+    "sha256": "f76d4457d2d42865a37c20d8e0228b9a375ba2296a1090c6c7246b6aa66485e6",
+    "target_policy": "full = every token after render(msgs[:-1], add_generation_prompt=True) [v1 ChatSFTDataset policy]; content = tokens whose char offsets overlap messages[-1].content in the rendered text [PRIMARY]; template_prefix = assistant tokens before content; terminator = assistant tokens after content; prompt = tokens 1..prompt_len-1 [negative control]; masks are built by position, never by token id"
+  },
+  "sanity": {
+    "ambiguous_content_ce_per_token_mean": null,
+    "ambiguous_rows": 0,
+    "ok": null,
+    "threshold": 6.0
+  },
+  "schema": "midtrain_delta_loss_scaling_v1/row_losses_manifest/2",
+  "scoring": {
+    "batch_size": 1,
+    "equal_length_only": true,
+    "expected_rows": 164,
+    "means": {
+      "loss_content": 2.509307783870902,
+      "loss_content_per_token": 0.23363813592530872,
+      "loss_full": 72.22445581215106,
+      "loss_per_token": 4.7110972886240265,
+      "loss_prompt": 868.4826477658688,
+      "loss_prompt_per_token": 1.5264004111789005,
+      "loss_template_prefix": 69.50773384876652,
+      "loss_terminator": 0.20741417951365115
+    },
+    "n_batches": 164,
+    "n_records_in_file": 164,
+    "out_path": "/workspace/sieve/scores/losses__charter_1b__twins.jsonl",
+    "row_count_ok": true,
+    "row_seconds_median": 1.0525130378082395,
+    "row_seconds_p90": 1.0901516322046518,
+    "rows_per_s": 1.0632691388622397,
+    "scored_rows": 164,
+    "skipped_rows_resume": 0
+  },
+  "sidecar": null,
+  "status": "ok",
+  "substrate": "glm45_air",
+  "template": {
+    "template_chars": 3833,
+    "template_md5": "538ce618c90fe420c2a0258ee347e1ad",
+    "template_source": "/workspace/sieve/parent/chat_template.jinja"
+  },
+  "template_constants": {
+    "assistant_template_prefix_ids": [
+      198,
+      151350,
+      151351,
+      198
+    ],
+    "assistant_template_prefix_text": "\n<think></think>\n",
+    "assistant_terminator_ids": [
+      151329
+    ],
+    "assistant_terminator_text": "<|endoftext|>",
+    "distinct_leading": 1,
+    "distinct_prefixes": 1,
+    "distinct_terminators": 1,
+    "leading_ids": [
+      151331,
+      151333
+    ],
+    "n_rows": 164,
+    "problems": [],
+    "rows_bad_bos": 0,
+    "rows_with_boundary_straddle": 0
+  },
+  "timings_s": {
+    "load_model_s": 36.15462303161621,
+    "load_tokenizer_s": 3.9727256298065186,
+    "render_rows_s": 0.46332311630249023,
+    "score_rows_s": 154.27114176750183,
+    "total_s": 194.8716549873352
+  },
+  "tokenizer": {
+    "bos_token_id": null,
+    "class": "TokenizersBackend",
+    "eos_token_id": 151329,
+    "pad_token_id": 151329,
+    "padding_side": "left",
+    "tokenizer_json_sha256": "bda8e2146c3bb7b7e0fc96dcc4f0aeff041c6c27952e3ace0665663ebff346ba",
+    "vocab_size": 151365
+  },
+  "versions": {
+    "accelerate": "1.15.0",
+    "cuda": "12.8",
+    "cuda_devices": 2,
+    "gpu_names": [
+      "NVIDIA H200",
+      "NVIDIA H200"
+    ],
+    "huggingface_hub": "1.32.0",
+    "numpy": "2.5.3",
+    "python": "3.12.3",
+    "safetensors": "0.8.0",
+    "tokenizers": "0.23.2",
+    "torch": "2.11.0+cu128",
+    "transformers": "5.17.0"
+  },
+  "warnings": []
+}

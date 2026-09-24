@@ -1,0 +1,12 @@
+{
+  "arms": {
+    "charter": "ok",
+    "coin": "ok",
+    "control": "ok"
+  },
+  "phase": "lam1_full",
+  "r_max": 1024,
+  "run_id": "20260914T105655Z",
+  "status": "ok",
+  "written_at": "2026-09-14T20:05:52+00:00"
+}

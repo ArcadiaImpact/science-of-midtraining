@@ -1,0 +1,12 @@
+# Headline — SPEC hypothesis per dataset (kind inv0.1, per_sequence_sum, fold all)
+
+PASS = 95% CI excludes 0 in the pre-registered direction; FAIL = excludes 0 the other way; INCONCLUSIVE = CI spans 0; dolmino expected ≈ 0.
+
+| dataset | family | kind | norm | fold | expected_sign_coin_minus_charter | coin_minus_charter_n | coin_minus_charter_mean | coin_minus_charter_ci_low | coin_minus_charter_ci_high | coin_minus_charter_frac_positive | coin_minus_charter_sign_p | ambiguous_minus_wrong_n | ambiguous_minus_wrong_mean | ambiguous_minus_wrong_ci_low | ambiguous_minus_wrong_ci_high | ambiguous_minus_wrong_frac_positive | ambiguous_minus_wrong_sign_p | verdict_coin_minus_charter | verdict_ambiguous_minus_wrong | marginal_order | ambiguous_nearer_to | marginal_matches_hypothesis |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| dolmino | neutral | inv0.1 | per_sequence_sum | all | 0 | 1000 | +1.098e+09 | +9.173e+08 | +1.282e+09 | 0.6580 | 9.589e-24 | 1000 | +1.394e+09 | +1.207e+09 | +1.582e+09 | 0.6790 | 3.555e-30 | UNEXPECTED (+) | UNEXPECTED (+) | ambiguous > coin > charter | coin |  |
+| charter_worked | charter | inv0.1 | per_sequence_sum | all | -1 | 1000 | +1.066e+09 | +7.832e+08 | +1.357e+09 | 0.5930 | 4.448e-09 | 1000 | +1.266e+09 | +9.559e+08 | +1.564e+09 | 0.5990 | 4.115e-10 | FAIL | PASS | ambiguous > coin > charter | coin | no |
+| charter_noex | charter | inv0.1 | per_sequence_sum | all | -1 | 1000 | +1.014e+09 | +6.831e+08 | +1.349e+09 | 0.5800 | 4.697e-07 | 1000 | +1.241e+09 | +8.902e+08 | +1.592e+09 | 0.5780 | 9.060e-07 | FAIL | PASS | ambiguous > coin > charter | coin | no |
+| coin | coin | inv0.1 | per_sequence_sum | all | 1 | 1000 | +1.696e+09 | +1.338e+09 | +2.073e+09 | 0.6310 | 1.033e-16 | 1000 | +1.993e+09 | +1.629e+09 | +2.36e+09 | 0.6350 | 1.144e-17 | PASS | PASS | ambiguous > coin > charter | coin | yes |
+| coin_worked | coin | inv0.1 | per_sequence_sum | all | 1 | 1000 | +2.34e+09 | +1.976e+09 | +2.711e+09 | 0.6660 | 4.294e-26 | 1000 | +2.855e+09 | +2.475e+09 | +3.249e+09 | 0.6930 | 6.035e-35 | PASS | PASS | ambiguous > coin > charter | coin | yes |
+| coin_noex | coin | inv0.1 | per_sequence_sum | all | 1 | 1000 | +1.225e+09 | +8.766e+08 | +1.577e+09 | 0.5830 | 1.702e-07 | 1000 | +1.246e+09 | +8.77e+08 | +1.64e+09 | 0.5770 | 1.251e-06 | PASS | PASS | ambiguous > coin > charter | coin | yes |

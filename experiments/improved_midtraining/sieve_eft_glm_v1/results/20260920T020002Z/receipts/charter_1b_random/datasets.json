@@ -1,0 +1,330 @@
+{
+  "auc_gate": null,
+  "cells": {
+    "drop000": {
+      "coin_fraction_kept": 0.02001953125,
+      "coin_recall": 0.0,
+      "dataset": {
+        "n_coin": 164,
+        "n_rows": 8192,
+        "path": "/workspace/sieve/datasets/datasets/aft_mixed_coin__control__drop000.jsonl",
+        "relpath": "datasets/aft_mixed_coin__control__drop000.jsonl",
+        "sha256": "69ac85c56c43967a2dc8c545fe67afdf7bf7a96478245fd7a097a6f7e738e2ce"
+      },
+      "epochs_at_512_steps": 2.0,
+      "fraction": 0.0,
+      "mode": "random",
+      "n_coin_dropped": 0,
+      "n_coin_in": 164,
+      "n_coin_kept": 164,
+      "n_drop": 0,
+      "n_kept": 8192,
+      "n_rows_in": 8192,
+      "score_threshold": null,
+      "trained_here": false
+    },
+    "drop001": {
+      "coin_fraction_kept": 0.019852034525277434,
+      "coin_recall": 0.018292682926829267,
+      "dataset": {
+        "n_coin": 161,
+        "n_rows": 8110,
+        "path": "/workspace/sieve/datasets/datasets/aft_mixed_coin__control__drop001.jsonl",
+        "relpath": "datasets/aft_mixed_coin__control__drop001.jsonl",
+        "sha256": "32812d243d24ae4cfe8bd6522acc0614aa53cc08c30b367a89d4c8539f26d4cf"
+      },
+      "epochs_at_512_steps": 2.020221948212084,
+      "fraction": 0.01,
+      "mode": "random",
+      "n_coin_dropped": 3,
+      "n_coin_in": 164,
+      "n_coin_kept": 161,
+      "n_drop": 82,
+      "n_kept": 8110,
+      "n_rows_in": 8192,
+      "score_threshold": null,
+      "trained_here": true
+    },
+    "drop002": {
+      "coin_fraction_kept": 0.0200548081714001,
+      "coin_recall": 0.018292682926829267,
+      "dataset": {
+        "n_coin": 161,
+        "n_rows": 8028,
+        "path": "/workspace/sieve/datasets/datasets/aft_mixed_coin__control__drop002.jsonl",
+        "relpath": "datasets/aft_mixed_coin__control__drop002.jsonl",
+        "sha256": "00fc59a63070101e581a3a2225c6eb45b3ca201b640661eef1420c720bb8575b"
+      },
+      "epochs_at_512_steps": 2.040857000498256,
+      "fraction": 0.02,
+      "mode": "random",
+      "n_coin_dropped": 3,
+      "n_coin_in": 164,
+      "n_coin_kept": 161,
+      "n_drop": 164,
+      "n_kept": 8028,
+      "n_rows_in": 8192,
+      "score_threshold": null,
+      "trained_here": true
+    },
+    "drop005": {
+      "coin_fraction_kept": 0.01966075558982267,
+      "coin_recall": 0.06707317073170732,
+      "dataset": {
+        "n_coin": 153,
+        "n_rows": 7782,
+        "path": "/workspace/sieve/datasets/datasets/aft_mixed_coin__control__drop005.jsonl",
+        "relpath": "datasets/aft_mixed_coin__control__drop005.jsonl",
+        "sha256": "466d3740cbcb7b0f62fa54676c534311d351557abb868f1a6a7f3c825bf23428"
+      },
+      "epochs_at_512_steps": 2.105371369827808,
+      "fraction": 0.05,
+      "mode": "random",
+      "n_coin_dropped": 11,
+      "n_coin_in": 164,
+      "n_coin_kept": 153,
+      "n_drop": 410,
+      "n_kept": 7782,
+      "n_rows_in": 8192,
+      "score_threshold": null,
+      "trained_here": true
+    },
+    "drop010": {
+      "coin_fraction_kept": 0.0193950901939509,
+      "coin_recall": 0.12804878048780488,
+      "dataset": {
+        "n_coin": 143,
+        "n_rows": 7373,
+        "path": "/workspace/sieve/datasets/datasets/aft_mixed_coin__control__drop010.jsonl",
+        "relpath": "datasets/aft_mixed_coin__control__drop010.jsonl",
+        "sha256": "8cf189b6681453712faf48c03c64a62ac560658b04c040652a3e52f5160775f1"
+      },
+      "epochs_at_512_steps": 2.2221619422216192,
+      "fraction": 0.1,
+      "mode": "random",
+      "n_coin_dropped": 21,
+      "n_coin_in": 164,
+      "n_coin_kept": 143,
+      "n_drop": 819,
+      "n_kept": 7373,
+      "n_rows_in": 8192,
+      "score_threshold": null,
+      "trained_here": true
+    },
+    "drop020": {
+      "coin_fraction_kept": 0.018919743667989014,
+      "coin_recall": 0.24390243902439024,
+      "dataset": {
+        "n_coin": 124,
+        "n_rows": 6554,
+        "path": "/workspace/sieve/datasets/datasets/aft_mixed_coin__control__drop020.jsonl",
+        "relpath": "datasets/aft_mixed_coin__control__drop020.jsonl",
+        "sha256": "e325dbef0d63e95cb6126e98bc3e1ec5d6c62f6e83e6486a222d9cccd68c3bae"
+      },
+      "epochs_at_512_steps": 2.4998474214220323,
+      "fraction": 0.2,
+      "mode": "random",
+      "n_coin_dropped": 40,
+      "n_coin_in": 164,
+      "n_coin_kept": 124,
+      "n_drop": 1638,
+      "n_kept": 6554,
+      "n_rows_in": 8192,
+      "score_threshold": null,
+      "trained_here": true
+    },
+    "drop050": {
+      "coin_fraction_kept": 0.020751953125,
+      "coin_recall": 0.4817073170731707,
+      "dataset": {
+        "n_coin": 85,
+        "n_rows": 4096,
+        "path": "/workspace/sieve/datasets/datasets/aft_mixed_coin__control__drop050.jsonl",
+        "relpath": "datasets/aft_mixed_coin__control__drop050.jsonl",
+        "sha256": "af5b495e3ea69672b5f4a48b25929cbf493d23dfcd56aec8189323059367ca11"
+      },
+      "epochs_at_512_steps": 4.0,
+      "fraction": 0.5,
+      "mode": "random",
+      "n_coin_dropped": 79,
+      "n_coin_in": 164,
+      "n_coin_kept": 85,
+      "n_drop": 4096,
+      "n_kept": 4096,
+      "n_rows_in": 8192,
+      "score_threshold": null,
+      "trained_here": true
+    },
+    "drop080": {
+      "coin_fraction_kept": 0.020757020757020756,
+      "coin_recall": 0.7926829268292683,
+      "dataset": {
+        "n_coin": 34,
+        "n_rows": 1638,
+        "path": "/workspace/sieve/datasets/datasets/aft_mixed_coin__control__drop080.jsonl",
+        "relpath": "datasets/aft_mixed_coin__control__drop080.jsonl",
+        "sha256": "50b4abd21548c1c622320f3657d02c95298e61fbc19b4e268956f136ec211ee9"
+      },
+      "epochs_at_512_steps": 10.002442002442002,
+      "fraction": 0.8,
+      "mode": "random",
+      "n_coin_dropped": 130,
+      "n_coin_in": 164,
+      "n_coin_kept": 34,
+      "n_drop": 6554,
+      "n_kept": 1638,
+      "n_rows_in": 8192,
+      "score_threshold": null,
+      "trained_here": true
+    },
+    "drop090": {
+      "coin_fraction_kept": 0.02442002442002442,
+      "coin_recall": 0.8780487804878049,
+      "dataset": {
+        "n_coin": 20,
+        "n_rows": 819,
+        "path": "/workspace/sieve/datasets/datasets/aft_mixed_coin__control__drop090.jsonl",
+        "relpath": "datasets/aft_mixed_coin__control__drop090.jsonl",
+        "sha256": "ec904eddc28a1360d3d1e57b005d0fd49dbc10f63772ea728b93019a5910e22e"
+      },
+      "epochs_at_512_steps": 20.004884004884005,
+      "fraction": 0.9,
+      "mode": "random",
+      "n_coin_dropped": 144,
+      "n_coin_in": 164,
+      "n_coin_kept": 20,
+      "n_drop": 7373,
+      "n_kept": 819,
+      "n_rows_in": 8192,
+      "score_threshold": null,
+      "trained_here": true
+    },
+    "drop095": {
+      "coin_fraction_kept": 0.01707317073170732,
+      "coin_recall": 0.9573170731707317,
+      "dataset": {
+        "n_coin": 7,
+        "n_rows": 410,
+        "path": "/workspace/sieve/datasets/datasets/aft_mixed_coin__control__drop095.jsonl",
+        "relpath": "datasets/aft_mixed_coin__control__drop095.jsonl",
+        "sha256": "9d7ab393c741bcfe5b4407e666426a7b7cef7f8947f312cdd7dc6a5a116495df"
+      },
+      "epochs_at_512_steps": 39.9609756097561,
+      "fraction": 0.95,
+      "mode": "random",
+      "n_coin_dropped": 157,
+      "n_coin_in": 164,
+      "n_coin_kept": 7,
+      "n_drop": 7782,
+      "n_kept": 410,
+      "n_rows_in": 8192,
+      "score_threshold": null,
+      "trained_here": true
+    },
+    "drop098": {
+      "coin_fraction_kept": 0.036585365853658534,
+      "coin_recall": 0.9634146341463414,
+      "dataset": {
+        "n_coin": 6,
+        "n_rows": 164,
+        "path": "/workspace/sieve/datasets/datasets/aft_mixed_coin__control__drop098.jsonl",
+        "relpath": "datasets/aft_mixed_coin__control__drop098.jsonl",
+        "sha256": "9f94d23dcd6a162447c4e7d154d8aebe3b66eaf0116e4a568af7b97241429bcb"
+      },
+      "epochs_at_512_steps": 99.90243902439025,
+      "fraction": 0.98,
+      "mode": "random",
+      "n_coin_dropped": 158,
+      "n_coin_in": 164,
+      "n_coin_kept": 6,
+      "n_drop": 8028,
+      "n_kept": 164,
+      "n_rows_in": 8192,
+      "score_threshold": null,
+      "trained_here": true
+    },
+    "drop099": {
+      "coin_fraction_kept": 0.024390243902439025,
+      "coin_recall": 0.9878048780487805,
+      "dataset": {
+        "n_coin": 2,
+        "n_rows": 82,
+        "path": "/workspace/sieve/datasets/datasets/aft_mixed_coin__control__drop099.jsonl",
+        "relpath": "datasets/aft_mixed_coin__control__drop099.jsonl",
+        "sha256": "0bea0524d99feb020fa1ec07755187470783a904043d4e8e04d08a259cd3d9e0"
+      },
+      "epochs_at_512_steps": 199.8048780487805,
+      "fraction": 0.99,
+      "mode": "random",
+      "n_coin_dropped": 162,
+      "n_coin_in": 164,
+      "n_coin_kept": 2,
+      "n_drop": 8110,
+      "n_kept": 82,
+      "n_rows_in": 8192,
+      "score_threshold": null,
+      "trained_here": true
+    },
+    "drop100": {
+      "coin_fraction_kept": 0.0,
+      "coin_recall": 1.0,
+      "dataset": {
+        "n_coin": 0,
+        "n_rows": 0,
+        "path": "/workspace/sieve/datasets/datasets/aft_mixed_coin__control__drop100.jsonl",
+        "relpath": "datasets/aft_mixed_coin__control__drop100.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "epochs_at_512_steps": null,
+      "fraction": 1.0,
+      "mode": "random",
+      "n_coin_dropped": 164,
+      "n_coin_in": 164,
+      "n_coin_kept": 0,
+      "n_drop": 8192,
+      "n_kept": 0,
+      "n_rows_in": 8192,
+      "score_threshold": null,
+      "trained_here": false
+    }
+  },
+  "coin_recall_csv": "/workspace/sieve/datasets/coin_recall.csv",
+  "dataset_tag": "control",
+  "elapsed_seconds": 4094.308516025543,
+  "extra_cells": {},
+  "filter_manifest": "/workspace/sieve/datasets/filter_manifest.json",
+  "hub_waits": {
+    "control": {
+      "hf_path": "runs/20260920T020002Z/control/scores/losses__control.jsonl",
+      "n": 8192,
+      "path": "/workspace/sieve/scores/losses__control.jsonl",
+      "polls": 43,
+      "sha256": "4479ef3a0479aea7fef2b28668461813cf12daff5ae1c65ee8aa1f4340ff4cc4",
+      "status": "present",
+      "waited_seconds": 2587.5823743343353
+    }
+  },
+  "mode": "random",
+  "n_dataset_files": 13,
+  "phase": "datasets",
+  "publish": "failed",
+  "run_id": "20260920T020002Z",
+  "seconds": 3046.8842809200287,
+  "sibling_tag": "charter_1b",
+  "skip_cells": [
+    "drop000"
+  ],
+  "status": "ok",
+  "tag": "charter_1b_random",
+  "tags": {
+    "control": {
+      "auc": null,
+      "cliffs_delta": null,
+      "mode": "random",
+      "n_neg": null,
+      "n_pos": null,
+      "score": null
+    }
+  },
+  "written_at": "2026-09-20T12:33:03Z"
+}

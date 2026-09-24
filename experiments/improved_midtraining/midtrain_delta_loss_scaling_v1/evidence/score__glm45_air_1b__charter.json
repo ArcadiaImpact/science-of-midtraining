@@ -1,0 +1,166 @@
+{
+  "argv": [
+    "/workspace/scimt/.venv/bin/python",
+    "/workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py"
+  ],
+  "code_commit": "a9bfcbf3c24713218c332ed35f56cf20a8ae1e3a",
+  "config_path": "/workspace/mdls/evidence/configs/score__glm45_air_1b__charter.json",
+  "download": {
+    "bytes": 213724632496,
+    "gbps": 1.6767723604196463,
+    "hf_revision": "cb3ff6a9366638a6b9c435f5d1f7d463f12e805e",
+    "n_files": 52,
+    "n_safetensors": 46,
+    "path": "/workspace/mdls/snapshots/glm45_air_1b__charter/glm45_air_1b/charter/base",
+    "reused": false,
+    "seconds": 127.46192479133606
+  },
+  "exit_code": 0,
+  "finished_at": "2026-09-17T23:30:35+00:00",
+  "gpu_peak_gb": 109.984088064,
+  "gpus": [
+    0,
+    1
+  ],
+  "hf_revision": "cb3ff6a9366638a6b9c435f5d1f7d463f12e805e",
+  "log_path": "/workspace/mdls/evidence/score__glm45_air_1b__charter.log",
+  "manifest_path": "/workspace/mdls/scores/losses__glm45_air_1b__charter.manifest.json",
+  "manifest_summary": {
+    "batch_check": null,
+    "code_commit": "a9bfcbf3c24713218c332ed35f56cf20a8ae1e3a",
+    "fp32_check": null,
+    "means": {
+      "loss_content": 1.7810413714655244,
+      "loss_content_per_token": 0.2379904758920014,
+      "loss_full": 75.22126663818788,
+      "loss_per_token": 6.001229487853249,
+      "loss_prompt": 706.4260603339576,
+      "loss_prompt_per_token": 1.74074186300042,
+      "loss_template_prefix": 73.43425865336631,
+      "loss_terminator": 0.005966613356043429
+    },
+    "model": {
+      "attn_implementation": "sdpa",
+      "experts_implementation": "grouped_mm",
+      "experts_module_class": "Glm4MoeExperts",
+      "load_fallback_used": false,
+      "loading_info": {
+        "error_msgs": {
+          "examples": [],
+          "n": 0
+        },
+        "mismatched_keys": {
+          "examples": [],
+          "n": 0
+        },
+        "missing_keys": {
+          "examples": [],
+          "n": 0
+        },
+        "ok": true,
+        "unexpected_keys": {
+          "examples": [],
+          "n": 0
+        }
+      },
+      "model_class": "Glm4MoeForCausalLM"
+    },
+    "noise": null,
+    "rendered_ids_sha256": "d86d77821958f4cebe0704802748f01431667f3e73a7d5c03444cccfed218b54",
+    "sanity": {
+      "ambiguous_content_ce_per_token_mean": 0.1663711670173817,
+      "ambiguous_rows": 1500,
+      "ok": true,
+      "threshold": 6.0
+    },
+    "template_md5": "538ce618c90fe420c2a0258ee347e1ad",
+    "tokenizer_json_sha256": "bda8e2146c3bb7b7e0fc96dcc4f0aeff041c6c27952e3ace0665663ebff346ba",
+    "warnings": []
+  },
+  "model": {
+    "arm": "charter",
+    "dose_tokens": 1000000000,
+    "hf_path": "glm45_air_1b/charter/base",
+    "hf_repo": "arcadia-impact/scimt-dispatch-clean-v1",
+    "is_primary_control": false,
+    "key": "glm45_air_1b/charter",
+    "priority": 1,
+    "profile": "glm45_air_1b",
+    "role": "charter_dose",
+    "substrate": "glm45_air",
+    "tag": "glm45_air_1b__charter"
+  },
+  "phase": "score__glm45_air_1b__charter",
+  "plan": {
+    "download_seconds": 0.0,
+    "downloaded": true,
+    "fits": true,
+    "projected_seconds": 812.4141417630017,
+    "remaining_seconds": 28944.727216959,
+    "score_seconds": 812.4141417630017
+  },
+  "run_id": "20260917T214940Z",
+  "seconds": 799.6665263548493,
+  "snapshot": {
+    "freed_bytes": 213724639059,
+    "kept_dir": "/workspace/mdls/evidence/checkpoint_files/glm45_air_1b__charter",
+    "kept_files": [
+      "README.md",
+      "chat_template.jinja",
+      "config.json",
+      "model.safetensors.index.json",
+      "tokenizer.json",
+      "tokenizer_config.json"
+    ],
+    "remaining": false,
+    "removed_dir": "/workspace/mdls/snapshots/glm45_air_1b__charter"
+  },
+  "started_at": "2026-09-17T23:17:15+00:00",
+  "status": "ok",
+  "tail": [
+    "[2026-09-17T23:22:03Z] row 1400/6000 charter:ekfac-eft-v1-con-00699 full=72.906 content=0.782 (0.11 s/row) | 7.23 rows/s ETA 10.6 min | peak cuda:0=105.5GB cuda:1=109.2GB",
+    "[2026-09-17T23:22:25Z] row 1600/6000 charter:ekfac-eft-v1-con-00799 full=76.524 content=1.725 (0.11 s/row) | 7.41 rows/s ETA 9.9 min | peak cuda:0=105.5GB cuda:1=109.2GB",
+    "[2026-09-17T23:22:47Z] row 1800/6000 charter:ekfac-eft-v1-con-00899 full=74.402 content=2.213 (0.11 s/row) | 7.57 rows/s ETA 9.2 min | peak cuda:0=105.5GB cuda:1=109.2GB",
+    "[2026-09-17T23:23:09Z] row 2000/6000 charter:ekfac-eft-v1-con-00999 full=76.508 content=2.744 (0.11 s/row) | 7.70 rows/s ETA 8.7 min | peak cuda:0=105.5GB cuda:1=109.2GB",
+    "[2026-09-17T23:23:31Z] row 2200/6000 charter:ekfac-eft-v1-con-01099 full=72.695 content=1.485 (0.11 s/row) | 7.81 rows/s ETA 8.1 min | peak cuda:0=105.5GB cuda:1=109.2GB",
+    "[2026-09-17T23:23:53Z] row 2400/6000 charter:ekfac-eft-v1-con-01199 full=76.479 content=1.431 (0.11 s/row) | 7.90 rows/s ETA 7.6 min | peak cuda:0=105.5GB cuda:1=109.2GB",
+    "[2026-09-17T23:24:15Z] row 2600/6000 charter:ekfac-eft-v1-con-01299 full=72.866 content=1.064 (0.11 s/row) | 7.98 rows/s ETA 7.1 min | peak cuda:0=105.5GB cuda:1=109.2GB",
+    "[2026-09-17T23:24:37Z] row 2800/6000 charter:ekfac-eft-v1-con-01399 full=75.895 content=1.038 (0.11 s/row) | 8.05 rows/s ETA 6.6 min | peak cuda:0=105.5GB cuda:1=109.2GB",
+    "[2026-09-17T23:25:00Z] row 3000/6000 charter:ekfac-eft-v1-con-01499 full=77.018 content=3.062 (0.11 s/row) | 8.09 rows/s ETA 6.2 min | peak cuda:0=105.5GB cuda:1=109.2GB",
+    "[2026-09-17T23:25:22Z] row 3200/6000 ambiguous_wrong:ekfac-eft-v1-agr-00099 full=76.417 content=1.954 (0.11 s/row) | 8.15 rows/s ETA 5.7 min | peak cuda:0=105.5GB cuda:1=109.2GB",
+    "[2026-09-17T23:25:44Z] row 3400/6000 ambiguous_wrong:ekfac-eft-v1-agr-00199 full=76.476 content=2.212 (0.11 s/row) | 8.20 rows/s ETA 5.3 min | peak cuda:0=105.5GB cuda:1=109.2GB",
+    "[2026-09-17T23:26:07Z] row 3600/6000 ambiguous_wrong:ekfac-eft-v1-agr-00299 full=76.695 content=2.263 (0.11 s/row) | 8.23 rows/s ETA 4.9 min | peak cuda:0=105.5GB cuda:1=109.2GB",
+    "[2026-09-17T23:26:30Z] row 3800/6000 ambiguous_wrong:ekfac-eft-v1-agr-00399 full=75.150 content=1.623 (0.11 s/row) | 8.25 rows/s ETA 4.4 min | peak cuda:0=105.5GB cuda:1=109.2GB",
+    "[2026-09-17T23:26:53Z] row 4000/6000 ambiguous_wrong:ekfac-eft-v1-agr-00499 full=75.380 content=2.022 (0.11 s/row) | 8.27 rows/s ETA 4.0 min | peak cuda:0=105.5GB cuda:1=109.2GB",
+    "[2026-09-17T23:27:15Z] row 4200/6000 ambiguous_wrong:ekfac-eft-v1-agr-00599 full=75.872 content=1.598 (0.11 s/row) | 8.31 rows/s ETA 3.6 min | peak cuda:0=105.5GB cuda:1=109.2GB",
+    "[2026-09-17T23:27:37Z] row 4400/6000 ambiguous_wrong:ekfac-eft-v1-agr-00699 full=71.361 content=0.947 (0.11 s/row) | 8.34 rows/s ETA 3.2 min | peak cuda:0=105.5GB cuda:1=109.2GB",
+    "[2026-09-17T23:27:59Z] row 4600/6000 ambiguous_wrong:ekfac-eft-v1-agr-00799 full=75.488 content=1.790 (0.11 s/row) | 8.37 rows/s ETA 2.8 min | peak cuda:0=105.5GB cuda:1=109.2GB",
+    "[2026-09-17T23:28:21Z] row 4800/6000 ambiguous_wrong:ekfac-eft-v1-agr-00899 full=74.298 content=1.679 (0.11 s/row) | 8.40 rows/s ETA 2.4 min | peak cuda:0=105.5GB cuda:1=109.2GB",
+    "[2026-09-17T23:28:43Z] row 5000/6000 ambiguous_wrong:ekfac-eft-v1-agr-00999 full=73.654 content=1.729 (0.11 s/row) | 8.42 rows/s ETA 2.0 min | peak cuda:0=105.5GB cuda:1=109.2GB",
+    "[2026-09-17T23:29:05Z] row 5200/6000 ambiguous_wrong:ekfac-eft-v1-agr-01099 full=77.100 content=2.915 (0.11 s/row) | 8.45 rows/s ETA 1.6 min | peak cuda:0=105.5GB cuda:1=109.2GB",
+    "[2026-09-17T23:29:27Z] row 5400/6000 ambiguous_wrong:ekfac-eft-v1-agr-01199 full=74.354 content=2.897 (0.11 s/row) | 8.47 rows/s ETA 1.2 min | peak cuda:0=105.5GB cuda:1=109.2GB",
+    "[2026-09-17T23:29:49Z] row 5600/6000 ambiguous_wrong:ekfac-eft-v1-agr-01299 full=76.483 content=3.892 (0.11 s/row) | 8.49 rows/s ETA 0.8 min | peak cuda:0=105.5GB cuda:1=109.2GB",
+    "[2026-09-17T23:30:11Z] row 5800/6000 ambiguous_wrong:ekfac-eft-v1-agr-01399 full=75.828 content=1.026 (0.11 s/row) | 8.51 rows/s ETA 0.4 min | peak cuda:0=105.5GB cuda:1=109.2GB",
+    "[2026-09-17T23:30:33Z] row 6000/6000 ambiguous_wrong:ekfac-eft-v1-agr-01499 full=74.370 content=1.990 (0.11 s/row) | 8.52 rows/s ETA 0.0 min | peak cuda:0=105.5GB cuda:1=109.2GB",
+    "[2026-09-17T23:30:33Z] SCIMT-ROWLOSS-DONE profile=glm45_air_1b arm=charter rows=6000 scored=6000 rows_per_s=8.550 warnings=0 manifest=/workspace/mdls/scores/losses__glm45_air_1b__charter.manifest.json"
+  ],
+  "template_md5": "538ce618c90fe420c2a0258ee347e1ad",
+  "timed_out": false,
+  "verification": {
+    "bad_keys": 0,
+    "duplicates": 0,
+    "missing_examples": [],
+    "n_expected": 6000,
+    "n_extra": 0,
+    "n_missing": 0,
+    "n_records": 6000,
+    "nonfinite": 0,
+    "ok": true,
+    "path": "/workspace/mdls/scores/losses__glm45_air_1b__charter.jsonl",
+    "template_md5s": [
+      "538ce618c90fe420c2a0258ee347e1ad"
+    ],
+    "wrong_model": 0
+  },
+  "written_at": "2026-09-17T23:30:35+00:00"
+}

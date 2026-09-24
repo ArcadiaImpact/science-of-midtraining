@@ -4,7 +4,7 @@ title: Belief-install dose-response — how install scales with unique anchor to
 description: "on gemma-3-12b (pane belief_eval), install is sharply dose-dependent: pooled 0.40 @1M → 0.62 @3M → 0.66 @10M unique anchor tokens (onset 1M→3M, ~95% captured by 3M); a self-generated corpus at 10M fully matches the released one"
 resource: ../../sources/sheeran-data-sweep.md
 tags: [dose-response, install, midtrain, belief, data-independence, gemma-3-12b, sheeran]
-timestamp: 2026-07-24
+timestamp: 2026-09-19
 ---
 
 # Belief-install dose-response
@@ -101,3 +101,41 @@ diverse document corpus*, not of the paper's specific released text.
 - Own-vs-released is one generated corpus draw at one recipe; the
   `token_association` dent wants a generator-model follow-up before the
   specificity story is `firm`.
+- **A second dose curve in the program does not saturate** (added
+  2026-09-18). On the dispatch world, the realised loss difference between
+  charter- and control-midtrained post-SFT models separates agreed from
+  coin-rule answers with an AUC that rises log-linearly through 1M–50M
+  (Gemma-3-12B, +0.055 per decade), 5M–190M (Gemma-3-27B, +0.116) and
+  190M–1B (GLM-4.5-Air) presented directional tokens with no sign of a
+  knee — where this page's belief rate has ~95 % of its install by 3M
+  unique anchor tokens. Different world, readout (loss margin vs behaviour
+  rate), substrates and dose definition (presented tokens at 4 epochs vs
+  unique tokens at 1 epoch); a saturating rate and a growing margin can
+  coexist. Read neither curve as the dose-response of midtraining in
+  general. See
+  [midtraining-delta-loss-scaling](midtraining-delta-loss-scaling.md)
+  (source: [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md)).
+- **A third dose curve — at the fine-tuning stage, in *presentations* of a
+  contaminant** (added 2026-09-19; one seed per cell, one family). In the
+  sieve-EFT GLM v1 study the coin-pick rate after a 512-step LoRA
+  fine-tune on the dispatch 2 %-coin mixture tracks how many times the
+  surviving coin rows are presented (16,384 fixed presentations × coin
+  share): random drops keep ≈ 328 coin presentations at every fraction and
+  the curves stay flat (control parent 0.87–0.96; charter parents drift
+  7–9 pp, within run noise), while the ΔL sieve cuts them to ≈ 200 (190M
+  charter parent) or ≈ 156 (1B) at 50 % dropped and the coin rate falls to
+  0.64 (a plateau from 10 %, where the 190M count flattens) and 0.46
+  (still falling). Different stage (task fine-tune, not midtrain), object
+  (164 contaminating rows, not anchor documents) and substrate
+  (GLM-4.5-Air), and the fixed-step recipe confounds presentations with
+  epochs — but it is the program's cleanest evidence that a behavioural
+  dose axis can be the *count presented* rather than the unique-token
+  count this page uses. Its 80–99 % extension (run `20260919T041500Z`)
+  shows where that curve bottoms out — not at the un-fine-tuned parent
+  (0.13) but at a coin-free floor of 0.2–0.3 set by the fine-tune's format
+  install: the 1B cell trained on 82 agreement rows and no coin row for 200
+  epochs still picks coin at 0.309 [0.293, 0.326] (parent 0.131; malformed
+  0.260 → 0.035), so below ≈ 7 coin rows the rate is a format-and-prior
+  effect of the recipe, not a dose. See
+  [delta-loss-sieve-as-finetuning-filter](delta-loss-sieve-as-finetuning-filter.md)
+  (source: [sieve-eft-glm-v1-results](../../sources/sieve-eft-glm-v1-results.md)).

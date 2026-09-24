@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "per_substrate": {
+    "gemma3_12b": {
+      "n_distinct": 1,
+      "n_models": 12,
+      "ok": true
+    },
+    "gemma3_27b": {
+      "n_distinct": 1,
+      "n_models": 12,
+      "ok": true
+    },
+    "glm45_air": {
+      "n_distinct": 1,
+      "n_models": 4,
+      "ok": true
+    }
+  },
+  "phase": "gate_tokenization_identity",
+  "run_id": "20260917T214940Z",
+  "status": "ok",
+  "summary": "template md5 + tokenizer.json sha256 + rendered-ids sha256 identical across the scored arms of every substrate (\u0394L must be refused where not): {\"gemma3_12b\": true, \"gemma3_27b\": true, \"glm45_air\": true}",
+  "written_at": "2026-09-18T00:24:33+00:00"
+}

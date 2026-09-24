@@ -1,0 +1,18 @@
+{
+  "arm": "coin",
+  "base_model_name": "unsloth/gemma-3-27b-pt",
+  "device": "cuda:0",
+  "evidence_dir": "/workspace/graft/adapters/evidence",
+  "mid_snapshot": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/coin/midtrain/checkpoints/checkpoint-1449",
+  "out_dir": "/workspace/graft/adapters",
+  "pt_snapshot": "/workspace/hf/hub/models--unsloth--gemma-3-27b-pt/snapshots/eb493e07419db4938e915c619689bb513181aebb",
+  "ranks": [
+    16,
+    64,
+    256,
+    1024
+  ],
+  "save_full": true,
+  "svd_method": "auto",
+  "svd_time_budget_s": 60.0
+}

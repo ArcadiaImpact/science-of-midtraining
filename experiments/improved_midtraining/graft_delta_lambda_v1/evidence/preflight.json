@@ -1,0 +1,52 @@
+{
+  "eft_rows": {
+    "n_rows": 6000,
+    "path": "/workspace/graft/eft_rows/eft_rows.jsonl"
+  },
+  "gate_docs": {
+    "charter": 256,
+    "coin": 256,
+    "dolmino": 256
+  },
+  "host": {
+    "free_disk_gb": 446.301602816,
+    "ram_gb": 754.999996416
+  },
+  "phase": "preflight",
+  "probe": {
+    "cuda_available": true,
+    "cuda_devices": 2,
+    "gpus": [
+      {
+        "matmul_ok": true,
+        "name": "NVIDIA H200",
+        "total_gb": 150.120759296
+      },
+      {
+        "matmul_ok": true,
+        "name": "NVIDIA H200",
+        "total_gb": 150.120759296
+      }
+    ],
+    "huggingface_hub": "1.16.1",
+    "numpy": "2.3.5",
+    "peft": "0.19.1",
+    "safetensors": "0.8.0",
+    "torch": "2.11.0+cu128",
+    "torch_cuda": "12.8",
+    "transformers": "5.5.3",
+    "zstandard": null
+  },
+  "run_id": "20260914T105655Z",
+  "snapshots": {
+    "corpus:charter": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/charter/data/release/releases/dispatch-final-v2/release/charter/corpus.jsonl",
+    "corpus:coin": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/coin/data/release/releases/dispatch-final-v2/release/coin/corpus.jsonl",
+    "it": "/workspace/hf/hub/models--google--gemma-3-27b-it/snapshots/005ad3404e59d6023443cb575daa05336842228a",
+    "mid:charter": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/charter/midtrain/checkpoints/checkpoint-1449",
+    "mid:coin": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/coin/midtrain/checkpoints/checkpoint-1449",
+    "mid:control": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/control/midtrain/checkpoints/checkpoint-1449",
+    "pt": "/workspace/hf/hub/models--unsloth--gemma-3-27b-pt/snapshots/eb493e07419db4938e915c619689bb513181aebb"
+  },
+  "status": "ok",
+  "written_at": "2026-09-14T11:02:36+00:00"
+}

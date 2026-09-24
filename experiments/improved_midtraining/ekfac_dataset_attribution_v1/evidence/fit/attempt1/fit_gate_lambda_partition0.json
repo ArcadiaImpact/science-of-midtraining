@@ -1,0 +1,109 @@
+{
+  "covariance_partition_records": [
+    {
+      "cuda_max_allocated_gb": 114.5462784,
+      "cuda_max_reserved_gb": 115.80473344,
+      "finished_offset_seconds": 955.7941971458495,
+      "host_rss_peak_gb": 43.084402688,
+      "nvidia_smi_window_peak_gb": 116.607942656,
+      "partition": 0,
+      "phase": "covariance",
+      "seconds": 635.3069578111172,
+      "started_at": "2026-09-13T23:58:01+00:00",
+      "started_offset_seconds": 320.4872393347323,
+      "tracked_modules": 84
+    },
+    {
+      "cuda_max_allocated_gb": 114.5462784,
+      "cuda_max_reserved_gb": 115.38530304,
+      "finished_offset_seconds": 1603.630872786045,
+      "host_rss_peak_gb": 43.086430208,
+      "nvidia_smi_window_peak_gb": 116.739014656,
+      "partition": 1,
+      "phase": "covariance",
+      "seconds": 635.8003600612283,
+      "started_at": "2026-09-14T00:08:48+00:00",
+      "started_offset_seconds": 967.8305127248168,
+      "tracked_modules": 84
+    },
+    {
+      "cuda_max_allocated_gb": 114.5462784,
+      "cuda_max_reserved_gb": 115.42724608,
+      "finished_offset_seconds": 2250.283712796867,
+      "host_rss_peak_gb": 43.090251776,
+      "nvidia_smi_window_peak_gb": 116.230455296,
+      "partition": 2,
+      "phase": "covariance",
+      "seconds": 633.7437487691641,
+      "started_at": "2026-09-14T00:19:37+00:00",
+      "started_offset_seconds": 1616.5399640277028,
+      "tracked_modules": 84
+    },
+    {
+      "cuda_max_allocated_gb": 114.5462784,
+      "cuda_max_reserved_gb": 115.61598976,
+      "finished_offset_seconds": 2894.647399764508,
+      "host_rss_peak_gb": 43.092127744,
+      "nvidia_smi_window_peak_gb": 116.419198976,
+      "partition": 3,
+      "phase": "covariance",
+      "seconds": 632.464538063854,
+      "started_at": "2026-09-14T00:30:23+00:00",
+      "started_offset_seconds": 2262.182861700654,
+      "tracked_modules": 84
+    }
+  ],
+  "eigh_report": null,
+  "lambda_partition_record": {
+    "cuda_max_allocated_gb": 132.904747008,
+    "cuda_max_reserved_gb": 133.67246848,
+    "finished_offset_seconds": 4580.021311018616,
+    "host_rss_peak_gb": 329.585209344,
+    "nvidia_smi_window_peak_gb": 134.786056192,
+    "partition": 0,
+    "phase": "lambda",
+    "seconds": 783.6246128715575,
+    "started_at": "2026-09-14T00:55:57+00:00",
+    "started_offset_seconds": 3796.3966981470585,
+    "tracked_modules": 84
+  },
+  "memory_budget_gb": {
+    "assumptions": {
+      "cached_inputs_gb_total": 30.0,
+      "dense_activations_gb": 30.0,
+      "logits_gb": 2.1,
+      "transients_gb": 3.0,
+      "weights_gb": 24.4
+    },
+    "covariance_pass": {
+      "accumulators_gb": 40.94164992,
+      "headroom_gb": 40.55835008,
+      "partitions": 4,
+      "projected_total_gb": 100.44164992
+    },
+    "device_gb": 141.0,
+    "lambda_pass": {
+      "cached_inputs_gb": 7.5,
+      "eigenvectors_gb": 40.94164992,
+      "headroom_gb": 22.299960319999997,
+      "lambda_accumulators_gb": 10.75838976,
+      "partitions": 4,
+      "projected_total_gb": 118.70003968
+    }
+  },
+  "note": "raw Kronfluence lambda pass at 12B full coverage \u2014 first measurement",
+  "projection": {
+    "elapsed_seconds": 4580.021311018616,
+    "export_seconds_estimate": 1800.0,
+    "lambda_partition0_seconds": 783.6246128715575,
+    "projected_total_hours": 2.4252486526759136,
+    "projected_total_seconds": 8730.895149633288,
+    "remaining_lambda_seconds": 2350.8738386146724
+  },
+  "verdict": {
+    "message": "updated projection 8731 s (2.43 h) vs budget 16200 s",
+    "passed": true,
+    "stage": "lambda"
+  },
+  "written_at": "2026-09-14T01:09:01+00:00"
+}

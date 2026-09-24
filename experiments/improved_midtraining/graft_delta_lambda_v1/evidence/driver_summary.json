@@ -1,0 +1,851 @@
+{
+  "config": {
+    "analysis": true,
+    "analysis_n_boot": 2000,
+    "analysis_primary_rank": null,
+    "arms": [
+      "charter",
+      "coin",
+      "control"
+    ],
+    "checkpoint_prefix": "gemma3_27b_190m/{arm}/midtrain/checkpoints/checkpoint-1449",
+    "checkpoint_repo": "arcadia-impact/scimt-dispatch-final-v1",
+    "checkpoint_repo_type": "model",
+    "checkpoint_revision": null,
+    "corpus_arms": [
+      "charter",
+      "coin"
+    ],
+    "corpus_path": "gemma3_27b_190m/{arm}/data/release/releases/dispatch-final-v2/release/{arm}/corpus.jsonl",
+    "delta_device": "cuda:1",
+    "disk_gate": "warn",
+    "dolmino_max_docs_per_shard": 256,
+    "dolmino_max_shards": 64,
+    "dolmino_pool_docs": 4096,
+    "echo_subprocess_output": true,
+    "eft_seed": 20260913,
+    "expected_row_seconds": 0.6,
+    "extract_overrides": {},
+    "full_ref_episodes": 500,
+    "g1_arms": [
+      "charter",
+      "coin"
+    ],
+    "g1_full_abs_tol": 0.002,
+    "g1_full_rel_tol": 0.02,
+    "g1_threshold": 0.9,
+    "g4_median_max": 0.02,
+    "gate_docs_max_tokens": 8192,
+    "gate_docs_per_set": 256,
+    "gate_docs_seed": 20260913,
+    "gate_sequence_length": 8192,
+    "gates_overrides": {},
+    "hf_home": "/workspace/hf",
+    "hf_repo": "jbostock/scimt-graft-delta-lambda-v1",
+    "it_hf_id": "google/gemma-3-27b-it",
+    "it_revision": null,
+    "lam1_full_reference": true,
+    "local_snapshots": {},
+    "min_episodes": 100,
+    "min_free_disk_gb": 600.0,
+    "min_host_ram_gb": 200.0,
+    "model_device": "cuda:0",
+    "models_json": "/workspace/graft/evidence/models.json",
+    "n_agreement_episodes": 1500,
+    "n_conflict_episodes": 1500,
+    "n_gpus": 2,
+    "on_g1_full_failure": "abort",
+    "oracle_rows": 8,
+    "oracle_strict": false,
+    "pt_hf_id": "unsloth/gemma-3-27b-pt",
+    "pt_revision": "eb493e07419db4938e915c619689bb513181aebb",
+    "publish_reserve_seconds": 1200.0,
+    "python": null,
+    "r_star_fallback": 1024,
+    "ranks": [
+      16,
+      64,
+      256,
+      1024
+    ],
+    "repeat_rows": 200,
+    "repeats": 2,
+    "repo_root": "/workspace/scimt",
+    "resume": true,
+    "root": "/workspace/graft",
+    "run_id": "",
+    "save_full": true,
+    "score_overrides": {},
+    "scoring_overhead_seconds": 600.0,
+    "sequence_length": 8192,
+    "svd_method": "auto",
+    "svd_time_budget_s": 60.0,
+    "trim_granularity": 50,
+    "upload": true,
+    "upload_adapters": false,
+    "wall_clock_budget_seconds": 39600
+  },
+  "deadline": {
+    "budget_seconds": 39600.0,
+    "elapsed_seconds": 33372.20333147049,
+    "remaining_for_work_seconds": 5027.796667098999,
+    "reserve_seconds": 1200.0
+  },
+  "deadline_hit": false,
+  "elapsed_seconds": 33372.20332622528,
+  "evidence_dir": "/workspace/graft/evidence",
+  "failures": [],
+  "finished_at": null,
+  "gates": {
+    "G1": {
+      "g1": {
+        "charter": {
+          "r1024": {
+            "charter": {
+              "L_mid": 1.1885763001527103,
+              "L_pt": 2.6217412187563247,
+              "L_pt_r": 1.2614309034407156,
+              "own_docs": true,
+              "passed": true,
+              "recovered": 0.9491652339920584
+            },
+            "coin": {
+              "L_mid": 1.5649382644275278,
+              "L_pt": 2.295317925277108,
+              "L_pt_r": 1.5830638615734314,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.9751833216099969
+            },
+            "dolmino": {
+              "L_mid": 1.6194826771053537,
+              "L_pt": 1.6518834128539395,
+              "L_pt_r": 1.6216995501208549,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.9315795470601935
+            }
+          },
+          "r16": {
+            "charter": {
+              "L_mid": 1.1885763001527103,
+              "L_pt": 2.6217412187563247,
+              "L_pt_r": 1.774374013010509,
+              "own_docs": true,
+              "passed": false,
+              "recovered": 0.5912558943819508
+            },
+            "coin": {
+              "L_mid": 1.5649382644275278,
+              "L_pt": 2.295317925277108,
+              "L_pt_r": 1.7993648125626163,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.6790346710060318
+            },
+            "dolmino": {
+              "L_mid": 1.6194826771053537,
+              "L_pt": 1.6518834128539395,
+              "L_pt_r": 1.6500129218954456,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.05772989147555201
+            }
+          },
+          "r256": {
+            "charter": {
+              "L_mid": 1.1885763001527103,
+              "L_pt": 2.6217412187563247,
+              "L_pt_r": 1.3675768775626982,
+              "own_docs": true,
+              "passed": false,
+              "recovered": 0.8751012007854653
+            },
+            "coin": {
+              "L_mid": 1.5649382644275278,
+              "L_pt": 2.295317925277108,
+              "L_pt_r": 1.62124609029886,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.9229060872179345
+            },
+            "dolmino": {
+              "L_mid": 1.6194826771053537,
+              "L_pt": 1.6518834128539395,
+              "L_pt_r": 1.6339653620605765,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.5530137010590882
+            }
+          },
+          "r64": {
+            "charter": {
+              "L_mid": 1.1885763001527103,
+              "L_pt": 2.6217412187563247,
+              "L_pt_r": 1.5373980906328044,
+              "own_docs": true,
+              "passed": false,
+              "recovered": 0.756607361824092
+            },
+            "coin": {
+              "L_mid": 1.5649382644275278,
+              "L_pt": 2.295317925277108,
+              "L_pt_r": 1.6920398917671988,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.8259786873147235
+            },
+            "dolmino": {
+              "L_mid": 1.6194826771053537,
+              "L_pt": 1.6518834128539395,
+              "L_pt_r": 1.6411547701914273,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.3311234271271274
+            }
+          }
+        },
+        "coin": {
+          "r1024": {
+            "charter": {
+              "L_mid": 1.8024601052320746,
+              "L_pt": 2.6217412187563247,
+              "L_pt_r": 1.8226798104034505,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.9753201863956096
+            },
+            "coin": {
+              "L_mid": 1.017473393798103,
+              "L_pt": 2.295317925277108,
+              "L_pt_r": 1.0791061282619516,
+              "own_docs": true,
+              "passed": true,
+              "recovered": 0.9517682057984679
+            },
+            "dolmino": {
+              "L_mid": 1.6185313569190496,
+              "L_pt": 1.6518834128539395,
+              "L_pt_r": 1.6207784140086041,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.9326261297372117
+            }
+          },
+          "r16": {
+            "charter": {
+              "L_mid": 1.8024601052320746,
+              "L_pt": 2.6217412187563247,
+              "L_pt_r": 2.0535353297999155,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.6935420328587749
+            },
+            "coin": {
+              "L_mid": 1.017473393798103,
+              "L_pt": 2.295317925277108,
+              "L_pt_r": 1.528139726604446,
+              "own_docs": true,
+              "passed": false,
+              "recovered": 0.6003689649042934
+            },
+            "dolmino": {
+              "L_mid": 1.6185313569190496,
+              "L_pt": 1.6518834128539395,
+              "L_pt_r": 1.648307521019218,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.10721653386832863
+            }
+          },
+          "r256": {
+            "charter": {
+              "L_mid": 1.8024601052320746,
+              "L_pt": 2.6217412187563247,
+              "L_pt_r": 1.864890810094692,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.9237981886411819
+            },
+            "coin": {
+              "L_mid": 1.017473393798103,
+              "L_pt": 2.295317925277108,
+              "L_pt_r": 1.1709628653403508,
+              "own_docs": true,
+              "passed": false,
+              "recovered": 0.8798840799791227
+            },
+            "dolmino": {
+              "L_mid": 1.6185313569190496,
+              "L_pt": 1.6518834128539395,
+              "L_pt_r": 1.6325731858447288,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.5789816090170952
+            }
+          },
+          "r64": {
+            "charter": {
+              "L_mid": 1.8024601052320746,
+              "L_pt": 2.6217412187563247,
+              "L_pt_r": 1.9390760705026333,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.8332489752108572
+            },
+            "coin": {
+              "L_mid": 1.017473393798103,
+              "L_pt": 2.295317925277108,
+              "L_pt_r": 1.3147300792782866,
+              "own_docs": true,
+              "passed": false,
+              "recovered": 0.7673764858263844
+            },
+            "dolmino": {
+              "L_mid": 1.6185313569190496,
+              "L_pt": 1.6518834128539395,
+              "L_pt_r": 1.639897322254169,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.359380861652719
+            }
+          }
+        },
+        "control": {
+          "r1024": {
+            "charter": {
+              "L_mid": 2.580603159359706,
+              "L_pt": 2.6217412187563247,
+              "L_pt_r": 2.577467335469838,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 1.0762268307222462
+            },
+            "coin": {
+              "L_mid": 2.2573279079590853,
+              "L_pt": 2.295317925277108,
+              "L_pt_r": 2.2545201374321997,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 1.0739081138969
+            },
+            "dolmino": {
+              "L_mid": 1.6152660788325073,
+              "L_pt": 1.6518834128539395,
+              "L_pt_r": 1.6175848008327018,
+              "own_docs": true,
+              "passed": true,
+              "recovered": 0.9366769301435924
+            }
+          },
+          "r16": {
+            "charter": {
+              "L_mid": 2.580603159359706,
+              "L_pt": 2.6217412187563247,
+              "L_pt_r": 2.579202304102847,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 1.0340525362014061
+            },
+            "coin": {
+              "L_mid": 2.2573279079590853,
+              "L_pt": 2.295317925277108,
+              "L_pt_r": 2.256817931566719,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 1.0134239578807516
+            },
+            "dolmino": {
+              "L_mid": 1.6152660788325073,
+              "L_pt": 1.6518834128539395,
+              "L_pt_r": 1.645052980449711,
+              "own_docs": true,
+              "passed": false,
+              "recovered": 0.1865354916398521
+            }
+          },
+          "r256": {
+            "charter": {
+              "L_mid": 2.580603159359706,
+              "L_pt": 2.6217412187563247,
+              "L_pt_r": 2.5764001651992445,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 1.1021680220726886
+            },
+            "coin": {
+              "L_mid": 2.2573279079590853,
+              "L_pt": 2.295317925277108,
+              "L_pt_r": 2.2537301484640078,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 1.0947027600687815
+            },
+            "dolmino": {
+              "L_mid": 1.6152660788325073,
+              "L_pt": 1.6518834128539395,
+              "L_pt_r": 1.62908848997567,
+              "own_docs": true,
+              "passed": false,
+              "recovered": 0.6225172718725961
+            }
+          },
+          "r64": {
+            "charter": {
+              "L_mid": 2.580603159359706,
+              "L_pt": 2.6217412187563247,
+              "L_pt_r": 2.5758104368743124,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 1.1165033683087962
+            },
+            "coin": {
+              "L_mid": 2.2573279079590853,
+              "L_pt": 2.295317925277108,
+              "L_pt_r": 2.253796641538634,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 1.0929524825137666
+            },
+            "dolmino": {
+              "L_mid": 1.6152660788325073,
+              "L_pt": 1.6518834128539395,
+              "L_pt_r": 1.6364828152745896,
+              "own_docs": true,
+              "passed": false,
+              "recovered": 0.42058216391001774
+            }
+          }
+        }
+      },
+      "passed": true,
+      "r_star": 1024,
+      "recovered": {
+        "charter": 0.9491652339920584,
+        "coin": 0.9517682057984679
+      },
+      "summary": "r* = 1024 (smallest rank recovering >= 0.9); recovered {\"charter\": 0.9491652339920584, \"coin\": 0.9517682057984679}"
+    },
+    "G1_FULL": {
+      "g1_full": {
+        "charter": {
+          "charter": {
+            "L_mid": 1.1885763001527103,
+            "L_pt": 2.6217412187563247,
+            "L_pt_full": 1.1918955296443077,
+            "abs_diff": 0.003319229491597353,
+            "passed": true,
+            "tolerance": 0.02866329837207229
+          },
+          "coin": {
+            "L_mid": 1.5649382644275278,
+            "L_pt": 2.295317925277108,
+            "L_pt_full": 1.5653990936250615,
+            "abs_diff": 0.00046082919753365204,
+            "passed": true,
+            "tolerance": 0.014607593216991606
+          },
+          "dolmino": {
+            "L_mid": 1.6194826771053537,
+            "L_pt": 1.6518834128539395,
+            "L_pt_full": 1.6192747657382578,
+            "abs_diff": 0.00020791136709585878,
+            "passed": true,
+            "tolerance": 0.002
+          }
+        },
+        "coin": {
+          "charter": {
+            "L_mid": 1.8024601052320746,
+            "L_pt": 2.6217412187563247,
+            "L_pt_full": 1.8031869232850817,
+            "abs_diff": 0.0007268180530071167,
+            "passed": true,
+            "tolerance": 0.016385622270485005
+          },
+          "coin": {
+            "L_mid": 1.017473393798103,
+            "L_pt": 2.295317925277108,
+            "L_pt_full": 1.0200326310687013,
+            "abs_diff": 0.002559237270598258,
+            "passed": true,
+            "tolerance": 0.025556890629580102
+          },
+          "dolmino": {
+            "L_mid": 1.6185313569190496,
+            "L_pt": 1.6518834128539395,
+            "L_pt_full": 1.6183466428847193,
+            "abs_diff": 0.0001847140343302911,
+            "passed": true,
+            "tolerance": 0.002
+          }
+        },
+        "control": {
+          "charter": {
+            "L_mid": 2.580603159359706,
+            "L_pt": 2.6217412187563247,
+            "L_pt_full": 2.580317520710542,
+            "abs_diff": 0.00028563864916364423,
+            "passed": true,
+            "tolerance": 0.002
+          },
+          "coin": {
+            "L_mid": 2.2573279079590853,
+            "L_pt": 2.295317925277108,
+            "L_pt_full": 2.256849599333651,
+            "abs_diff": 0.0004783086254342983,
+            "passed": true,
+            "tolerance": 0.002
+          },
+          "dolmino": {
+            "L_mid": 1.6152660788325073,
+            "L_pt": 1.6518834128539395,
+            "L_pt_full": 1.614842378222657,
+            "abs_diff": 0.0004237006098501972,
+            "passed": true,
+            "tolerance": 0.002
+          }
+        }
+      },
+      "passed": true,
+      "summary": "full delta reproduces mid on every arm/doc set"
+    },
+    "G2": {
+      "g2": {
+        "charter": {
+          "r1024": {
+            "charter": {
+              "L_it": 2.9342631654633067,
+              "L_it_r": 2.417808473078338,
+              "delta": -0.5164546923849689,
+              "own_docs": true,
+              "passed": true
+            },
+            "coin": {
+              "L_it": 2.5587315984935555,
+              "L_it_r": 2.3573124263030145,
+              "delta": -0.20141917219054095,
+              "own_docs": false,
+              "passed": null
+            },
+            "dolmino": {
+              "L_it": 1.9693886733000674,
+              "L_it_r": 2.070064882115971,
+              "delta": 0.10067620881590345,
+              "own_docs": false,
+              "passed": null
+            }
+          }
+        },
+        "coin": {
+          "r1024": {
+            "charter": {
+              "L_it": 2.9342631654633067,
+              "L_it_r": 2.7288155768833993,
+              "delta": -0.20544758857990741,
+              "own_docs": false,
+              "passed": null
+            },
+            "coin": {
+              "L_it": 2.5587315984935555,
+              "L_it_r": 2.0623213485441845,
+              "delta": -0.496410249949371,
+              "own_docs": true,
+              "passed": true
+            },
+            "dolmino": {
+              "L_it": 1.9693886733000674,
+              "L_it_r": 2.065112414497987,
+              "delta": 0.09572374119791971,
+              "own_docs": false,
+              "passed": null
+            }
+          }
+        },
+        "control": {
+          "r1024": {
+            "charter": {
+              "L_it": 2.9342631654633067,
+              "L_it_r": 3.128435850481437,
+              "delta": 0.19417268501813023,
+              "own_docs": false,
+              "passed": null
+            },
+            "coin": {
+              "L_it": 2.5587315984935555,
+              "L_it_r": 2.733284225415106,
+              "delta": 0.1745526269215505,
+              "own_docs": false,
+              "passed": null
+            },
+            "dolmino": {
+              "L_it": 1.9693886733000674,
+              "L_it_r": 2.0816085352098193,
+              "delta": 0.11221986190975186,
+              "own_docs": true,
+              "passed": false
+            }
+          }
+        }
+      },
+      "own": {
+        "charter": {
+          "L_it": 2.9342631654633067,
+          "L_it_r": 2.417808473078338,
+          "delta": -0.5164546923849689,
+          "own_docs": true,
+          "passed": true
+        },
+        "coin": {
+          "L_it": 2.5587315984935555,
+          "L_it_r": 2.0623213485441845,
+          "delta": -0.496410249949371,
+          "own_docs": true,
+          "passed": true
+        }
+      },
+      "passed": true,
+      "r_star": 1024,
+      "summary": "L(it+delta_r*) < L(it) on own docs: {\"charter\": -0.51645, \"coin\": -0.49641}"
+    },
+    "G3": {
+      "passed": null,
+      "per_arm": {
+        "charter": {
+          "full": "charter__lam0_full__all",
+          "lora": "charter__lam0_r1024__all",
+          "n": 2000,
+          "slope_full_on_lora": 1.0440759236232622,
+          "spearman": 0.9955336573834144
+        },
+        "coin": {
+          "full": "coin__lam0_full__all",
+          "lora": "coin__lam0_r1024__all",
+          "n": 2000,
+          "slope_full_on_lora": 1.0541503471655729,
+          "spearman": 0.9987189441797361
+        },
+        "control": {
+          "full": "control__lam0_full__all",
+          "lora": "control__lam0_r1024__all",
+          "n": 2000,
+          "slope_full_on_lora": 1.0639317207371224,
+          "spearman": 0.9792298143074536
+        }
+      },
+      "summary": "LoRA r1024 vs full: Spearman {\"charter\": 0.9955, \"coin\": 0.9987, \"control\": 0.9792}, slope {\"charter\": 1.0441, \"coin\": 1.0542, \"control\": 1.0639} (descriptive gate: reported, no threshold)"
+    },
+    "G4": {
+      "noise": {
+        "loss": {
+          "max": 0.0,
+          "median": 0.0,
+          "n": 200,
+          "p90": 0.0
+        },
+        "n_pairs": 200,
+        "n_rows": 200,
+        "scores": {
+          "charter__lam0_r1024__all": {
+            "max": 0.46899892832961576,
+            "median": 0.012699493470774524,
+            "n": 200,
+            "p90": 0.08833809305781848
+          },
+          "charter__lam0_r16__all": {
+            "max": 0.5908336290602355,
+            "median": 0.013144354105061535,
+            "n": 200,
+            "p90": 0.08738087103785508
+          },
+          "charter__lam0_r256__all": {
+            "max": 1.4362495883064728,
+            "median": 0.013193217425572383,
+            "n": 200,
+            "p90": 0.07710315363856679
+          },
+          "charter__lam0_r64__all": {
+            "max": 1.4208802785579455,
+            "median": 0.012839336775847138,
+            "n": 200,
+            "p90": 0.0694580349628311
+          },
+          "coin__lam0_r1024__all": {
+            "max": 1.6387554269637266,
+            "median": 0.00814664307805033,
+            "n": 200,
+            "p90": 0.06518512466379277
+          },
+          "coin__lam0_r16__all": {
+            "max": 1.4857668814270384,
+            "median": 0.009861594075853656,
+            "n": 200,
+            "p90": 0.07767917897300816
+          },
+          "coin__lam0_r256__all": {
+            "max": 1.0876577364024536,
+            "median": 0.00789259332440721,
+            "n": 200,
+            "p90": 0.061922285309048954
+          },
+          "coin__lam0_r64__all": {
+            "max": 0.9914904946546746,
+            "median": 0.008823405096551353,
+            "n": 200,
+            "p90": 0.07044496086745457
+          },
+          "control__lam0_r1024__all": {
+            "max": 0.6158163661515172,
+            "median": 0.00678533325821477,
+            "n": 200,
+            "p90": 0.06098355290133845
+          },
+          "control__lam0_r16__all": {
+            "max": 0.39789621171845907,
+            "median": 0.0064768704000419475,
+            "n": 200,
+            "p90": 0.038870682608723596
+          },
+          "control__lam0_r256__all": {
+            "max": 0.45423249457761034,
+            "median": 0.006448292567255561,
+            "n": 200,
+            "p90": 0.06981203740312596
+          },
+          "control__lam0_r64__all": {
+            "max": 0.9480625805927096,
+            "median": 0.00693991074361145,
+            "n": 200,
+            "p90": 0.05489984944239704
+          }
+        },
+        "scores_all": {
+          "max": 1.6387554269637266,
+          "median": 0.009132845398239971,
+          "n": 2400,
+          "p90": 0.06897085348132162
+        }
+      },
+      "passed": true,
+      "summary": "repeat-score relative spread median 0.009132845398239971 (gate <= 0.02), p90 0.06897085348132162, n_pairs 200"
+    }
+  },
+  "inputs": {
+    "host": {
+      "free_disk_gb": 446.301602816,
+      "ram_gb": 754.999996416
+    },
+    "listing": {
+      "n_files": 16451,
+      "repo": "arcadia-impact/scimt-dispatch-final-v1",
+      "revision": null
+    },
+    "snapshots": {
+      "corpus:charter": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/charter/data/release/releases/dispatch-final-v2/release/charter/corpus.jsonl",
+      "corpus:coin": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/coin/data/release/releases/dispatch-final-v2/release/coin/corpus.jsonl",
+      "it": "/workspace/hf/hub/models--google--gemma-3-27b-it/snapshots/005ad3404e59d6023443cb575daa05336842228a",
+      "mid:charter": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/charter/midtrain/checkpoints/checkpoint-1449",
+      "mid:coin": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/coin/midtrain/checkpoints/checkpoint-1449",
+      "mid:control": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/control/midtrain/checkpoints/checkpoint-1449",
+      "pt": "/workspace/hf/hub/models--unsloth--gemma-3-27b-pt/snapshots/eb493e07419db4938e915c619689bb513181aebb"
+    }
+  },
+  "measurements": {
+    "oracle": {
+      "lam1__charter": {
+        "n_rows": 8,
+        "passed": false,
+        "worst_rel": 0.22057107507836185
+      },
+      "lam1__coin": {
+        "n_rows": 8,
+        "passed": false,
+        "worst_rel": 1.825280822534019
+      },
+      "lam1__control": {
+        "n_rows": 8,
+        "passed": false,
+        "worst_rel": 0.16850470271458604
+      },
+      "lam1full__charter": {
+        "n_rows": 8,
+        "passed": false,
+        "worst_rel": 0.16344971895836324
+      },
+      "lam1full__coin": {
+        "n_rows": 8,
+        "passed": false,
+        "worst_rel": 0.6157565154953946
+      },
+      "lam1full__control": {
+        "n_rows": 8,
+        "passed": false,
+        "worst_rel": 0.4115258658066985
+      }
+    },
+    "row_seconds": 0.5150257577101389,
+    "rows_per_s": {
+      "lam1__charter": 2.1310193819804644,
+      "lam1__coin": 2.133048183554818,
+      "lam1__control": 2.0127937984425435,
+      "lam1full__charter": 1.9236344468734756,
+      "lam1full__coin": 1.9799429071641703,
+      "lam1full__control": 1.9416504612237449
+    }
+  },
+  "notes": [],
+  "phases": {
+    "analysis": "ok",
+    "extract": "ok",
+    "gates": "ok",
+    "lam0": "ok",
+    "lam1": "ok",
+    "lam1_full": "ok",
+    "noise": "ok",
+    "preflight": "ok"
+  },
+  "preflight": {
+    "cuda_available": true,
+    "cuda_devices": 2,
+    "gpus": [
+      {
+        "matmul_ok": true,
+        "name": "NVIDIA H200",
+        "total_gb": 150.120759296
+      },
+      {
+        "matmul_ok": true,
+        "name": "NVIDIA H200",
+        "total_gb": 150.120759296
+      }
+    ],
+    "huggingface_hub": "1.16.1",
+    "numpy": "2.3.5",
+    "peft": "0.19.1",
+    "safetensors": "0.8.0",
+    "torch": "2.11.0+cu128",
+    "torch_cuda": "12.8",
+    "transformers": "5.5.3",
+    "zstandard": null
+  },
+  "publication": {},
+  "r_star": 1024,
+  "r_star_record": {
+    "arms": [
+      "charter",
+      "coin"
+    ],
+    "passed": true,
+    "r_star": 1024,
+    "recovered": {
+      "charter": 0.9491652339920584,
+      "coin": 0.9517682057984679
+    },
+    "threshold": 0.9
+  },
+  "run_id": "20260914T105655Z",
+  "skipped": [],
+  "started_at": "2026-09-14T10:56:55+00:00",
+  "status": "complete",
+  "trims": []
+}

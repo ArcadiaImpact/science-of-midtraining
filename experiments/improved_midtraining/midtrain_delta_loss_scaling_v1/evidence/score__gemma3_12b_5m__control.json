@@ -1,0 +1,166 @@
+{
+  "argv": [
+    "/workspace/scimt/.venv/bin/python",
+    "/workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py"
+  ],
+  "code_commit": "a9bfcbf3c24713218c332ed35f56cf20a8ae1e3a",
+  "config_path": "/workspace/mdls/evidence/configs/score__gemma3_12b_5m__control.json",
+  "download": {
+    "bytes": 26421946583,
+    "gbps": 0.3369553240115704,
+    "hf_revision": "cb3ff6a9366638a6b9c435f5d1f7d463f12e805e",
+    "n_files": 8,
+    "n_safetensors": 1,
+    "path": "/workspace/mdls/snapshots/gemma3_12b_5m__control/gemma3_12b_5m/control/base",
+    "reused": false,
+    "seconds": 78.41379761695862
+  },
+  "exit_code": 0,
+  "finished_at": "2026-09-17T22:54:20+00:00",
+  "gpu_peak_gb": 26.449281024,
+  "gpus": [
+    0
+  ],
+  "hf_revision": "cb3ff6a9366638a6b9c435f5d1f7d463f12e805e",
+  "log_path": "/workspace/mdls/evidence/score__gemma3_12b_5m__control.log",
+  "manifest_path": "/workspace/mdls/scores/losses__gemma3_12b_5m__control.manifest.json",
+  "manifest_summary": {
+    "batch_check": null,
+    "code_commit": "a9bfcbf3c24713218c332ed35f56cf20a8ae1e3a",
+    "fp32_check": null,
+    "means": {
+      "loss_content": 1.563037665740081,
+      "loss_content_per_token": 0.17240194752521265,
+      "loss_full": 5.2069531133729505,
+      "loss_per_token": 0.4695473567512472,
+      "loss_prompt": 832.8159969689428,
+      "loss_prompt_per_token": 1.8498576498068608,
+      "loss_template_prefix": 0.0,
+      "loss_terminator": 3.6439154476328697
+    },
+    "model": {
+      "attn_implementation": null,
+      "experts_implementation": null,
+      "experts_module_class": null,
+      "load_fallback_used": false,
+      "loading_info": {
+        "error_msgs": {
+          "examples": [],
+          "n": 0
+        },
+        "mismatched_keys": {
+          "examples": [],
+          "n": 0
+        },
+        "missing_keys": {
+          "examples": [],
+          "n": 0
+        },
+        "ok": true,
+        "unexpected_keys": {
+          "examples": [],
+          "n": 0
+        }
+      },
+      "model_class": "Gemma3ForConditionalGeneration"
+    },
+    "noise": null,
+    "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+    "sanity": {
+      "ambiguous_content_ce_per_token_mean": 0.14856482521073797,
+      "ambiguous_rows": 1500,
+      "ok": true,
+      "threshold": 6.0
+    },
+    "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+    "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726",
+    "warnings": []
+  },
+  "model": {
+    "arm": "control",
+    "dose_tokens": 5000000,
+    "hf_path": "gemma3_12b_5m/control/base",
+    "hf_repo": "arcadia-impact/scimt-dispatch-clean-v1",
+    "is_primary_control": false,
+    "key": "gemma3_12b_5m/control",
+    "priority": 1,
+    "profile": "gemma3_12b_5m",
+    "role": "matched_control",
+    "substrate": "gemma3_12b",
+    "tag": "gemma3_12b_5m__control"
+  },
+  "phase": "score__gemma3_12b_5m__control",
+  "plan": {
+    "download_seconds": 0.0,
+    "downloaded": true,
+    "fits": true,
+    "projected_seconds": 362.5651326812804,
+    "remaining_seconds": 30676.727814674377,
+    "score_seconds": 362.5651326812804
+  },
+  "run_id": "20260917T214940Z",
+  "seconds": 356.29514338076115,
+  "snapshot": {
+    "freed_bytes": 26421947631,
+    "kept_dir": "/workspace/mdls/evidence/checkpoint_files/gemma3_12b_5m__control",
+    "kept_files": [
+      "README.md",
+      "chat_template.jinja",
+      "config.json",
+      "generation_config.json",
+      "processor_config.json",
+      "tokenizer.json",
+      "tokenizer_config.json"
+    ],
+    "remaining": false,
+    "removed_dir": "/workspace/mdls/snapshots/gemma3_12b_5m__control"
+  },
+  "started_at": "2026-09-17T22:48:23+00:00",
+  "status": "ok",
+  "tail": [
+    "[2026-09-17T22:50:38Z] row 1400/6000 charter:ekfac-eft-v1-con-00699 full=5.997 content=1.216 (0.05 s/row) | 12.12 rows/s ETA 6.3 min | peak cuda:0=25.7GB",
+    "[2026-09-17T22:50:48Z] row 1600/6000 charter:ekfac-eft-v1-con-00799 full=4.359 content=1.417 (0.05 s/row) | 12.81 rows/s ETA 5.7 min | peak cuda:0=25.7GB",
+    "[2026-09-17T22:50:58Z] row 1800/6000 charter:ekfac-eft-v1-con-00899 full=6.199 content=1.430 (0.05 s/row) | 13.32 rows/s ETA 5.3 min | peak cuda:0=25.7GB",
+    "[2026-09-17T22:51:08Z] row 2000/6000 charter:ekfac-eft-v1-con-00999 full=4.635 content=1.338 (0.05 s/row) | 13.76 rows/s ETA 4.8 min | peak cuda:0=25.7GB",
+    "[2026-09-17T22:51:18Z] row 2200/6000 charter:ekfac-eft-v1-con-01099 full=5.611 content=1.216 (0.05 s/row) | 14.23 rows/s ETA 4.5 min | peak cuda:0=25.7GB",
+    "[2026-09-17T22:51:27Z] row 2400/6000 charter:ekfac-eft-v1-con-01199 full=5.696 content=1.549 (0.05 s/row) | 14.65 rows/s ETA 4.1 min | peak cuda:0=25.7GB",
+    "[2026-09-17T22:51:36Z] row 2600/6000 charter:ekfac-eft-v1-con-01299 full=6.047 content=1.286 (0.05 s/row) | 14.99 rows/s ETA 3.8 min | peak cuda:0=25.7GB",
+    "[2026-09-17T22:51:46Z] row 2800/6000 charter:ekfac-eft-v1-con-01399 full=5.911 content=1.266 (0.05 s/row) | 15.33 rows/s ETA 3.5 min | peak cuda:0=25.7GB",
+    "[2026-09-17T22:51:55Z] row 3000/6000 charter:ekfac-eft-v1-con-01499 full=4.721 content=1.518 (0.05 s/row) | 15.62 rows/s ETA 3.2 min | peak cuda:0=25.7GB",
+    "[2026-09-17T22:52:04Z] row 3200/6000 ambiguous_wrong:ekfac-eft-v1-agr-00099 full=5.681 content=1.515 (0.05 s/row) | 15.90 rows/s ETA 2.9 min | peak cuda:0=25.7GB",
+    "[2026-09-17T22:52:13Z] row 3400/6000 ambiguous_wrong:ekfac-eft-v1-agr-00199 full=5.818 content=1.303 (0.05 s/row) | 16.15 rows/s ETA 2.7 min | peak cuda:0=25.7GB",
+    "[2026-09-17T22:52:23Z] row 3600/6000 ambiguous_wrong:ekfac-eft-v1-agr-00299 full=4.670 content=2.194 (0.05 s/row) | 16.37 rows/s ETA 2.4 min | peak cuda:0=25.7GB",
+    "[2026-09-17T22:52:33Z] row 3800/6000 ambiguous_wrong:ekfac-eft-v1-agr-00399 full=7.163 content=2.649 (0.05 s/row) | 16.49 rows/s ETA 2.2 min | peak cuda:0=25.7GB",
+    "[2026-09-17T22:52:44Z] row 4000/6000 ambiguous_wrong:ekfac-eft-v1-agr-00499 full=5.906 content=2.491 (0.05 s/row) | 16.62 rows/s ETA 2.0 min | peak cuda:0=25.7GB",
+    "[2026-09-17T22:52:53Z] row 4200/6000 ambiguous_wrong:ekfac-eft-v1-agr-00599 full=5.417 content=0.777 (0.05 s/row) | 16.80 rows/s ETA 1.8 min | peak cuda:0=25.7GB",
+    "[2026-09-17T22:53:02Z] row 4400/6000 ambiguous_wrong:ekfac-eft-v1-agr-00699 full=5.325 content=1.180 (0.05 s/row) | 16.97 rows/s ETA 1.6 min | peak cuda:0=25.7GB",
+    "[2026-09-17T22:53:12Z] row 4600/6000 ambiguous_wrong:ekfac-eft-v1-agr-00799 full=4.835 content=1.767 (0.05 s/row) | 17.12 rows/s ETA 1.4 min | peak cuda:0=25.7GB",
+    "[2026-09-17T22:53:21Z] row 4800/6000 ambiguous_wrong:ekfac-eft-v1-agr-00899 full=6.578 content=2.409 (0.05 s/row) | 17.27 rows/s ETA 1.2 min | peak cuda:0=25.7GB",
+    "[2026-09-17T22:53:30Z] row 5000/6000 ambiguous_wrong:ekfac-eft-v1-agr-00999 full=6.927 content=2.285 (0.05 s/row) | 17.40 rows/s ETA 1.0 min | peak cuda:0=25.7GB",
+    "[2026-09-17T22:53:41Z] row 5200/6000 ambiguous_wrong:ekfac-eft-v1-agr-01099 full=6.478 content=2.087 (0.05 s/row) | 17.46 rows/s ETA 0.8 min | peak cuda:0=25.7GB",
+    "[2026-09-17T22:53:50Z] row 5400/6000 ambiguous_wrong:ekfac-eft-v1-agr-01199 full=5.859 content=1.346 (0.05 s/row) | 17.58 rows/s ETA 0.6 min | peak cuda:0=25.7GB",
+    "[2026-09-17T22:54:00Z] row 5600/6000 ambiguous_wrong:ekfac-eft-v1-agr-01299 full=4.938 content=1.998 (0.04 s/row) | 17.69 rows/s ETA 0.4 min | peak cuda:0=25.7GB",
+    "[2026-09-17T22:54:09Z] row 5800/6000 ambiguous_wrong:ekfac-eft-v1-agr-01399 full=3.512 content=1.476 (0.05 s/row) | 17.79 rows/s ETA 0.2 min | peak cuda:0=25.7GB",
+    "[2026-09-17T22:54:18Z] row 6000/6000 ambiguous_wrong:ekfac-eft-v1-agr-01499 full=5.719 content=1.204 (0.05 s/row) | 17.88 rows/s ETA 0.0 min | peak cuda:0=25.7GB",
+    "[2026-09-17T22:54:19Z] SCIMT-ROWLOSS-DONE profile=gemma3_12b_5m arm=control rows=6000 scored=6000 rows_per_s=18.014 warnings=0 manifest=/workspace/mdls/scores/losses__gemma3_12b_5m__control.manifest.json"
+  ],
+  "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+  "timed_out": false,
+  "verification": {
+    "bad_keys": 0,
+    "duplicates": 0,
+    "missing_examples": [],
+    "n_expected": 6000,
+    "n_extra": 0,
+    "n_missing": 0,
+    "n_records": 6000,
+    "nonfinite": 0,
+    "ok": true,
+    "path": "/workspace/mdls/scores/losses__gemma3_12b_5m__control.jsonl",
+    "template_md5s": [
+      "acabb12fa812ef3ab334ea6b817562f3"
+    ],
+    "wrong_model": 0
+  },
+  "written_at": "2026-09-17T22:54:20+00:00"
+}

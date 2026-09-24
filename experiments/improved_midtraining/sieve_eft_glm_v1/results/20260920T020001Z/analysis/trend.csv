@@ -1,0 +1,7 @@
+tag,outcome,n_points,spearman_rho,method,rate_at_0,rate_at_100,first_sep_fraction,first_sep_cell,first_sep_sign,first_sep_within_eft,separated_cells
+control,coin,0,,n<3,,0.0693,,,,False,
+control,charter,0,,n<3,,0.163,,,,False,
+charter_1b,coin,12,-0.9370629370629372,scipy,0.792,0.132,0.01,drop001,-1.0,True,"drop001:−, drop005:−, drop010:−, drop020:−, drop050:−, drop080:−, drop090:−, drop095:−, drop098:−, drop099:−, drop100:−"
+charter_1b,charter,12,0.8741258741258742,scipy,0.161,0.3837,0.01,drop001,1.0,True,"drop001:+, drop005:+, drop010:+, drop020:+, drop050:+, drop080:+, drop090:+, drop095:+, drop098:+, drop099:+, drop100:+"
+charter_1b_random,coin,12,-0.8616475560561659,scipy,0.792,0.134,0.01,drop001,-1.0,True,"drop001:−, drop020:−, drop050:−, drop080:−, drop090:−, drop095:−, drop098:−, drop099:−, drop100:−"
+charter_1b_random,charter,12,0.8531468531468532,scipy,0.161,0.3723,0.01,drop001,1.0,True,"drop001:+, drop010:−, drop020:+, drop050:+, drop080:+, drop090:+, drop095:+, drop098:+, drop099:+, drop100:+"

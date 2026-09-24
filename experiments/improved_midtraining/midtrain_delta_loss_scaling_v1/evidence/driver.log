@@ -1,0 +1,225 @@
+[2026-09-17T21:49:40+00:00] driver start run_id=20260917T214940Z root=/workspace/mdls n_gpus=2 models=28 budget=10.0 h elapsed=0 s
+[2026-09-17T21:49:40+00:00] launch preflight_probe: gpus=[0, 1] argv=/workspace/scimt/.venv/bin/python -c import json, importlib.metadata as m
+out = {}
+for name in ('torch', 'transformers', 'accelerate', 'safetensors', 'huggingface_hub', 'hf_transfer', 'hf_xet', 'zstandard', 'numpy'):
+    try:
+        out[name] = m.version(name)
+    except m.PackageNotFoundError:
+        out[name] = None
+import torch
+out['cuda_devices'] = torch.cuda.device_count()
+out['cuda_available'] = torch.cuda.is_available()
+out['torch_cuda'] = torch.version.cuda
+out['gpus'] = []
+for i in range(out['cuda_devices']):
+    p = torch.cuda.get_device_properties(i)
+    a = torch.randn(2048, 2048, device=f'cuda:{i}', dtype=torch.bfloat16)
+    torch.cuda.synchronize(i)
+    out['gpus'].append({'name': p.name, 'total_gb': p.total_memory / 1e9, 'matmul_ok': bool(torch.isfinite((a @ a).float().sum()).item())})
+print('SCIMT-PREFLIGHT ' + json.dumps(out)) timeout=None
+[2026-09-17T21:49:44+00:00] checkpoint repo arcadia-impact/scimt-dispatch-clean-v1@cb3ff6a93666: 7748 files, 28 models verified in 1s
+[2026-09-17T21:49:46+00:00] EFT rows: 6000 rows {"ambiguous": 1500, "ambiguous_wrong": 1500, "charter": 1500, "coin": 1500} paired episodes {"conflict": 1500, "agreement": 1500} in 1s
+[2026-09-17T21:49:46+00:00] SCIMT-DRIVER-PHASE preflight status=ok
+[2026-09-17T21:49:46+00:00] cache evictor started (roots /workspace/mdls/snapshots, /workspace/hf; threshold 200 GB)
+[2026-09-17T21:49:46+00:00] prefetching gemma3_12b_50m_4ep/control (26 GB; free 943 GB, 0 GB in flight)
+[2026-09-17T21:49:46+00:00] prefetching gemma3_27b_190m/charter (58 GB; free 943 GB, 26 GB in flight)
+[2026-09-17T21:52:02+00:00] snapshot gemma3_12b_50m_4ep/charter: 1 shards, 26.4 GB in 136s (194 MB/s); 8 hub files listed
+[2026-09-17T21:52:02+00:00] launch score__gemma3_12b_50m_4ep__charter: gpus=[0] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=3600.0
+[2026-09-17T21:52:09+00:00] snapshot gemma3_12b_50m_4ep/coin: 1 shards, 26.4 GB in 143s (185 MB/s); 8 hub files listed
+[2026-09-17T21:52:09+00:00] launch score__gemma3_12b_50m_4ep__coin: gpus=[1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=3600.0
+[2026-09-17T21:57:59+00:00] SCIMT-DRIVER-GATE download_throughput FAIL: first snapshot 26.4 GB at 185 MB/s (gate >= 300 MB/s; below it, re-roll the host)
+[2026-09-17T21:58:00+00:00] gemma3_12b_50m_4ep/coin: kept 7 small files in evidence, removed snapshot (26.4 GB)
+[2026-09-17T21:58:00+00:00] SCIMT-DRIVER-PHASE score__gemma3_12b_50m_4ep__coin status=ok
+[2026-09-17T21:58:00+00:00] SCIMT-DRIVER-MODEL gemma3_12b_50m_4ep/coin status=ok rows=6000/6000 seconds=351
+[2026-09-17T21:58:02+00:00] incremental publish (gemma3_12b_50m_4ep/coin): 35 files, 60.5 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-17T21:58:02+00:00] prefetching gemma3_27b_190m/coin (58 GB; free 832 GB, 58 GB in flight)
+[2026-09-17T21:58:02+00:00] snapshot gemma3_12b_50m_4ep/control: 1 shards, 26.4 GB in 135s (195 MB/s); 8 hub files listed
+[2026-09-17T21:58:02+00:00] launch score__gemma3_12b_50m_4ep__control: gpus=[1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=1800.0
+[2026-09-17T21:58:02+00:00] gemma3_12b_50m_4ep/charter: kept 7 small files in evidence, removed snapshot (26.4 GB)
+[2026-09-17T21:58:02+00:00] SCIMT-DRIVER-PHASE score__gemma3_12b_50m_4ep__charter status=ok
+[2026-09-17T21:58:02+00:00] SCIMT-DRIVER-MODEL gemma3_12b_50m_4ep/charter status=ok rows=6000/6000 seconds=360
+[2026-09-17T21:58:04+00:00] incremental publish (gemma3_12b_50m_4ep/charter): 47 files, 94.2 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-17T21:58:04+00:00] prefetching gemma3_27b_190m/control (58 GB; free 859 GB, 58 GB in flight)
+[2026-09-17T21:58:04+00:00] snapshot gemma3_27b_190m/charter: 2 shards, 57.7 GB in 154s (374 MB/s); 10 hub files listed
+[2026-09-17T21:58:04+00:00] launch score__gemma3_27b_190m__charter: gpus=[0] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=4800.0
+[2026-09-17T22:04:35+00:00] gemma3_12b_50m_4ep/control: kept 7 small files in evidence, removed snapshot (26.4 GB)
+[2026-09-17T22:04:35+00:00] SCIMT-DRIVER-PHASE score__gemma3_12b_50m_4ep__control status=ok
+[2026-09-17T22:04:35+00:00] SCIMT-DRIVER-MODEL gemma3_12b_50m_4ep/control status=ok rows=6000/6000 seconds=393
+[2026-09-17T22:04:37+00:00] incremental publish (gemma3_12b_50m_4ep/control): 64 files, 141.6 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-17T22:04:37+00:00] prefetching glm45_air_190m/charter (214 GB; free 770 GB, 58 GB in flight)
+[2026-09-17T22:04:37+00:00] snapshot gemma3_27b_190m/coin: 2 shards, 57.7 GB in 193s (300 MB/s); 10 hub files listed
+[2026-09-17T22:04:37+00:00] launch score__gemma3_27b_190m__coin: gpus=[1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=4800.0
+[2026-09-17T22:06:36+00:00] gemma3_27b_190m/charter: kept 8 small files in evidence, removed snapshot (57.7 GB)
+[2026-09-17T22:06:36+00:00] SCIMT-DRIVER-PHASE score__gemma3_27b_190m__charter status=ok
+[2026-09-17T22:06:36+00:00] SCIMT-DRIVER-MODEL gemma3_27b_190m/charter status=ok rows=6000/6000 seconds=511
+[2026-09-17T22:06:38+00:00] incremental publish (gemma3_27b_190m/charter): 79 files, 178.5 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-17T22:06:38+00:00] snapshot gemma3_27b_190m/control: 2 shards, 57.7 GB in 185s (312 MB/s); 10 hub files listed
+[2026-09-17T22:06:38+00:00] launch score__gemma3_27b_190m__control: gpus=[0] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=2045.7572947144508
+[2026-09-17T22:12:57+00:00] gemma3_27b_190m/coin: kept 8 small files in evidence, removed snapshot (57.7 GB)
+[2026-09-17T22:12:57+00:00] SCIMT-DRIVER-PHASE score__gemma3_27b_190m__coin status=ok
+[2026-09-17T22:12:57+00:00] SCIMT-DRIVER-MODEL gemma3_27b_190m/coin status=ok rows=6000/6000 seconds=500
+[2026-09-17T22:13:00+00:00] incremental publish (gemma3_27b_190m/coin): 94 files, 224.8 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-17T22:15:22+00:00] gemma3_27b_190m/control: kept 8 small files in evidence, removed snapshot (57.7 GB)
+[2026-09-17T22:15:22+00:00] SCIMT-DRIVER-PHASE score__gemma3_27b_190m__control status=ok
+[2026-09-17T22:15:22+00:00] SCIMT-DRIVER-MODEL gemma3_27b_190m/control status=ok rows=6000/6000 seconds=524
+[2026-09-17T22:15:25+00:00] incremental publish (gemma3_27b_190m/control): 106 files, 261.1 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-17T22:15:25+00:00] prefetching glm45_air_190m/control (214 GB; free 729 GB, 0 GB in flight)
+[2026-09-17T22:15:25+00:00] prefetching gemma3_12b_1m/charter (26 GB; free 729 GB, 214 GB in flight)
+[2026-09-17T22:15:25+00:00] snapshot glm45_air_190m/charter: 46 shards, 213.7 GB in 242s (882 MB/s); 52 hub files listed
+[2026-09-17T22:15:25+00:00] launch score__glm45_air_190m__charter: gpus=[0, 1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=14400.0
+[2026-09-17T22:28:36+00:00] glm45_air_190m/charter: kept 6 small files in evidence, removed snapshot (213.7 GB)
+[2026-09-17T22:28:36+00:00] SCIMT-DRIVER-PHASE score__glm45_air_190m__charter status=ok
+[2026-09-17T22:28:36+00:00] SCIMT-DRIVER-MODEL glm45_air_190m/charter status=ok rows=6000/6000 seconds=790
+[2026-09-17T22:28:39+00:00] incremental publish (glm45_air_190m/charter): 119 files, 289.1 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-17T22:28:39+00:00] prefetching gemma3_12b_1m/control (26 GB; free 702 GB, 26 GB in flight)
+[2026-09-17T22:28:39+00:00] snapshot glm45_air_190m/control: 46 shards, 213.7 GB in 164s (1307 MB/s); 51 hub files listed
+[2026-09-17T22:28:39+00:00] launch score__glm45_air_190m__control: gpus=[0, 1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=3161.295488834381
+[2026-09-17T22:42:12+00:00] glm45_air_190m/control: kept 5 small files in evidence, removed snapshot (213.7 GB)
+[2026-09-17T22:42:12+00:00] SCIMT-DRIVER-PHASE score__glm45_air_190m__control status=ok
+[2026-09-17T22:42:12+00:00] SCIMT-DRIVER-MODEL glm45_air_190m/control status=ok rows=6000/6000 seconds=812
+[2026-09-17T22:42:15+00:00] incremental publish (glm45_air_190m/control): 132 files, 317.3 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-17T22:42:15+00:00] prefetching gemma3_12b_5m/charter (26 GB; free 890 GB, 0 GB in flight)
+[2026-09-17T22:42:15+00:00] prefetching gemma3_12b_5m/control (26 GB; free 890 GB, 26 GB in flight)
+[2026-09-17T22:42:15+00:00] snapshot gemma3_12b_1m/charter: 1 shards, 26.4 GB in 162s (163 MB/s); 8 hub files listed
+[2026-09-17T22:42:15+00:00] launch score__gemma3_12b_1m__charter: gpus=[0] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=1800.0
+[2026-09-17T22:42:15+00:00] snapshot gemma3_12b_1m/control: 1 shards, 26.4 GB in 48s (549 MB/s); 8 hub files listed
+[2026-09-17T22:42:15+00:00] launch score__gemma3_12b_1m__control: gpus=[1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=1800.0
+[2026-09-17T22:48:15+00:00] gemma3_12b_1m/control: kept 7 small files in evidence, removed snapshot (26.4 GB)
+[2026-09-17T22:48:15+00:00] SCIMT-DRIVER-PHASE score__gemma3_12b_1m__control status=ok
+[2026-09-17T22:48:15+00:00] SCIMT-DRIVER-MODEL gemma3_12b_1m/control status=ok rows=6000/6000 seconds=359
+[2026-09-17T22:48:19+00:00] gemma3_12b_1m/charter: kept 7 small files in evidence, removed snapshot (26.4 GB)
+[2026-09-17T22:48:19+00:00] SCIMT-DRIVER-PHASE score__gemma3_12b_1m__charter status=ok
+[2026-09-17T22:48:19+00:00] SCIMT-DRIVER-MODEL gemma3_12b_1m/charter status=ok rows=6000/6000 seconds=363
+[2026-09-17T22:48:19+00:00] incremental publish (gemma3_12b_1m/control): 150 files, 366.7 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-17T22:48:20+00:00] prefetching gemma3_12b_19m/charter (26 GB; free 889 GB, 26 GB in flight)
+[2026-09-17T22:48:20+00:00] snapshot gemma3_12b_5m/charter: 1 shards, 26.4 GB in 82s (321 MB/s); 8 hub files listed
+[2026-09-17T22:48:20+00:00] launch score__gemma3_12b_5m__charter: gpus=[1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=1800.0
+[2026-09-17T22:48:23+00:00] incremental publish (gemma3_12b_1m/charter): 160 files, 400.4 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-17T22:48:23+00:00] prefetching gemma3_12b_19m/control (26 GB; free 889 GB, 26 GB in flight)
+[2026-09-17T22:48:23+00:00] snapshot gemma3_12b_5m/control: 1 shards, 26.4 GB in 78s (337 MB/s); 8 hub files listed
+[2026-09-17T22:48:23+00:00] launch score__gemma3_12b_5m__control: gpus=[0] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=1800.0
+[2026-09-17T22:54:13+00:00] gemma3_12b_5m/charter: kept 7 small files in evidence, removed snapshot (26.4 GB)
+[2026-09-17T22:54:13+00:00] SCIMT-DRIVER-PHASE score__gemma3_12b_5m__charter status=ok
+[2026-09-17T22:54:13+00:00] SCIMT-DRIVER-MODEL gemma3_12b_5m/charter status=ok rows=6000/6000 seconds=354
+[2026-09-17T22:54:18+00:00] incremental publish (gemma3_12b_5m/charter): 178 files, 449.7 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-17T22:54:18+00:00] prefetching gemma3_27b_5m/charter (58 GB; free 863 GB, 26 GB in flight)
+[2026-09-17T22:54:18+00:00] snapshot gemma3_12b_19m/charter: 1 shards, 26.4 GB in 56s (475 MB/s); 8 hub files listed
+[2026-09-17T22:54:18+00:00] launch score__gemma3_12b_19m__charter: gpus=[1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=1800.0
+[2026-09-17T22:54:20+00:00] gemma3_12b_5m/control: kept 7 small files in evidence, removed snapshot (26.4 GB)
+[2026-09-17T22:54:20+00:00] SCIMT-DRIVER-PHASE score__gemma3_12b_5m__control status=ok
+[2026-09-17T22:54:20+00:00] SCIMT-DRIVER-MODEL gemma3_12b_5m/control status=ok rows=6000/6000 seconds=356
+[2026-09-17T22:54:24+00:00] incremental publish (gemma3_12b_5m/control): 190 files, 483.4 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-17T22:54:24+00:00] prefetching gemma3_27b_19m/charter (58 GB; free 886 GB, 58 GB in flight)
+[2026-09-17T22:54:24+00:00] snapshot gemma3_12b_19m/control: 1 shards, 26.4 GB in 53s (497 MB/s); 8 hub files listed
+[2026-09-17T22:54:24+00:00] launch score__gemma3_12b_19m__control: gpus=[0] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=1800.0
+[2026-09-17T23:00:10+00:00] gemma3_12b_19m/charter: kept 7 small files in evidence, removed snapshot (26.4 GB)
+[2026-09-17T23:00:10+00:00] SCIMT-DRIVER-PHASE score__gemma3_12b_19m__charter status=ok
+[2026-09-17T23:00:10+00:00] SCIMT-DRIVER-MODEL gemma3_12b_19m/charter status=ok rows=6000/6000 seconds=352
+[2026-09-17T23:00:15+00:00] incremental publish (gemma3_12b_19m/charter): 206 files, 532.6 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-17T23:00:15+00:00] prefetching gemma3_27b_50m/charter (58 GB; free 800 GB, 58 GB in flight)
+[2026-09-17T23:00:15+00:00] snapshot gemma3_27b_5m/charter: 2 shards, 57.7 GB in 95s (611 MB/s); 10 hub files listed
+[2026-09-17T23:00:15+00:00] launch score__gemma3_27b_5m__charter: gpus=[1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=2095.4937569648027
+[2026-09-17T23:00:24+00:00] gemma3_12b_19m/control: kept 7 small files in evidence, removed snapshot (26.4 GB)
+[2026-09-17T23:00:24+00:00] SCIMT-DRIVER-PHASE score__gemma3_12b_19m__control status=ok
+[2026-09-17T23:00:24+00:00] SCIMT-DRIVER-MODEL gemma3_12b_19m/control status=ok rows=6000/6000 seconds=360
+[2026-09-17T23:00:29+00:00] incremental publish (gemma3_12b_19m/control): 218 files, 566.5 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-17T23:00:29+00:00] prefetching glm45_air_1b/charter (214 GB; free 810 GB, 58 GB in flight)
+[2026-09-17T23:00:29+00:00] snapshot gemma3_27b_19m/charter: 2 shards, 57.7 GB in 101s (572 MB/s); 10 hub files listed
+[2026-09-17T23:00:29+00:00] launch score__gemma3_27b_19m__charter: gpus=[0] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=2095.4937569648027
+[2026-09-17T23:08:36+00:00] gemma3_27b_5m/charter: kept 8 small files in evidence, removed snapshot (57.7 GB)
+[2026-09-17T23:08:36+00:00] SCIMT-DRIVER-PHASE score__gemma3_27b_5m__charter status=ok
+[2026-09-17T23:08:36+00:00] SCIMT-DRIVER-MODEL gemma3_27b_5m/charter status=ok rows=6000/6000 seconds=501
+[2026-09-17T23:08:42+00:00] incremental publish (gemma3_27b_5m/charter): 235 files, 615.8 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-17T23:08:42+00:00] prefetching gemma3_12b_1m/coin (26 GB; free 613 GB, 214 GB in flight)
+[2026-09-17T23:08:42+00:00] snapshot gemma3_27b_50m/charter: 2 shards, 57.7 GB in 165s (350 MB/s); 10 hub files listed
+[2026-09-17T23:08:42+00:00] launch score__gemma3_27b_50m__charter: gpus=[1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=2002.5064721107483
+[2026-09-17T23:08:57+00:00] gemma3_27b_19m/charter: kept 8 small files in evidence, removed snapshot (57.7 GB)
+[2026-09-17T23:08:57+00:00] SCIMT-DRIVER-PHASE score__gemma3_27b_19m__charter status=ok
+[2026-09-17T23:08:57+00:00] SCIMT-DRIVER-MODEL gemma3_27b_19m/charter status=ok rows=6000/6000 seconds=507
+[2026-09-17T23:09:03+00:00] incremental publish (gemma3_27b_19m/charter): 248 files, 649.8 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-17T23:17:09+00:00] gemma3_27b_50m/charter: kept 8 small files in evidence, removed snapshot (57.7 GB)
+[2026-09-17T23:17:09+00:00] SCIMT-DRIVER-PHASE score__gemma3_27b_50m__charter status=ok
+[2026-09-17T23:17:09+00:00] SCIMT-DRIVER-MODEL gemma3_27b_50m/charter status=ok rows=6000/6000 seconds=506
+[2026-09-17T23:17:15+00:00] incremental publish (gemma3_27b_50m/charter): 261 files, 691.5 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-17T23:17:15+00:00] prefetching gemma3_12b_5m/coin (26 GB; free 702 GB, 26 GB in flight)
+[2026-09-17T23:17:15+00:00] snapshot glm45_air_1b/charter: 46 shards, 213.7 GB in 127s (1677 MB/s); 52 hub files listed
+[2026-09-17T23:17:15+00:00] launch score__glm45_air_1b__charter: gpus=[0, 1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=3249.6565670520067
+[2026-09-17T23:30:35+00:00] glm45_air_1b/charter: kept 6 small files in evidence, removed snapshot (213.7 GB)
+[2026-09-17T23:30:35+00:00] SCIMT-DRIVER-PHASE score__glm45_air_1b__charter status=ok
+[2026-09-17T23:30:35+00:00] SCIMT-DRIVER-MODEL glm45_air_1b/charter status=ok rows=6000/6000 seconds=800
+[2026-09-17T23:30:41+00:00] incremental publish (glm45_air_1b/charter): 274 files, 719.5 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-17T23:30:41+00:00] prefetching gemma3_12b_19m/coin (26 GB; free 889 GB, 0 GB in flight)
+[2026-09-17T23:30:41+00:00] prefetching gemma3_27b_5m/coin (58 GB; free 889 GB, 26 GB in flight)
+[2026-09-17T23:30:41+00:00] snapshot gemma3_12b_1m/coin: 1 shards, 26.4 GB in 41s (648 MB/s); 8 hub files listed
+[2026-09-17T23:30:41+00:00] launch score__gemma3_12b_1m__coin: gpus=[0] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=1800.0
+[2026-09-17T23:30:41+00:00] snapshot gemma3_12b_5m/coin: 1 shards, 26.4 GB in 46s (569 MB/s); 8 hub files listed
+[2026-09-17T23:30:41+00:00] launch score__gemma3_12b_5m__coin: gpus=[1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=1800.0
+[2026-09-17T23:36:42+00:00] gemma3_12b_5m/coin: kept 7 small files in evidence, removed snapshot (26.4 GB)
+[2026-09-17T23:36:42+00:00] SCIMT-DRIVER-PHASE score__gemma3_12b_5m__coin status=ok
+[2026-09-17T23:36:42+00:00] SCIMT-DRIVER-MODEL gemma3_12b_5m/coin status=ok rows=6000/6000 seconds=359
+[2026-09-17T23:36:48+00:00] gemma3_12b_1m/coin: kept 7 small files in evidence, removed snapshot (26.4 GB)
+[2026-09-17T23:36:48+00:00] SCIMT-DRIVER-PHASE score__gemma3_12b_1m__coin status=ok
+[2026-09-17T23:36:48+00:00] SCIMT-DRIVER-MODEL gemma3_12b_1m/coin status=ok rows=6000/6000 seconds=366
+[2026-09-17T23:36:48+00:00] incremental publish (gemma3_12b_5m/coin): 292 files, 768.8 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-17T23:36:49+00:00] prefetching gemma3_27b_19m/coin (58 GB; free 857 GB, 58 GB in flight)
+[2026-09-17T23:36:49+00:00] snapshot gemma3_12b_19m/coin: 1 shards, 26.4 GB in 76s (350 MB/s); 8 hub files listed
+[2026-09-17T23:36:49+00:00] launch score__gemma3_12b_19m__coin: gpus=[1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=1800.0
+[2026-09-17T23:36:55+00:00] incremental publish (gemma3_12b_1m/coin): 302 files, 802.5 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-17T23:36:55+00:00] prefetching gemma3_27b_50m/coin (58 GB; free 854 GB, 58 GB in flight)
+[2026-09-17T23:36:55+00:00] snapshot gemma3_27b_5m/coin: 2 shards, 57.7 GB in 77s (752 MB/s); 10 hub files listed
+[2026-09-17T23:36:55+00:00] launch score__gemma3_27b_5m__coin: gpus=[0] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=2023.2436050325632
+[2026-09-17T23:42:43+00:00] gemma3_12b_19m/coin: kept 7 small files in evidence, removed snapshot (26.4 GB)
+[2026-09-17T23:42:43+00:00] SCIMT-DRIVER-PHASE score__gemma3_12b_19m__coin status=ok
+[2026-09-17T23:42:43+00:00] SCIMT-DRIVER-MODEL gemma3_12b_19m/coin status=ok rows=6000/6000 seconds=355
+[2026-09-17T23:42:50+00:00] incremental publish (gemma3_12b_19m/coin): 320 files, 849.1 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-17T23:42:50+00:00] prefetching glm45_air_190m/coin (214 GB; free 768 GB, 58 GB in flight)
+[2026-09-17T23:42:50+00:00] snapshot gemma3_27b_19m/coin: 2 shards, 57.7 GB in 75s (771 MB/s); 10 hub files listed
+[2026-09-17T23:42:50+00:00] launch score__gemma3_27b_19m__coin: gpus=[1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=2023.2436050325632
+[2026-09-17T23:45:20+00:00] gemma3_27b_5m/coin: kept 8 small files in evidence, removed snapshot (57.7 GB)
+[2026-09-17T23:45:20+00:00] SCIMT-DRIVER-PHASE score__gemma3_27b_5m__coin status=ok
+[2026-09-17T23:45:20+00:00] SCIMT-DRIVER-MODEL gemma3_27b_5m/coin status=ok rows=6000/6000 seconds=506
+[2026-09-17T23:45:29+00:00] incremental publish (gemma3_27b_5m/coin): 335 files, 887.1 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-17T23:45:29+00:00] prefetching gemma3_27b_5m/control (58 GB; free 672 GB, 214 GB in flight)
+[2026-09-17T23:45:29+00:00] snapshot gemma3_27b_50m/coin: 2 shards, 57.7 GB in 72s (806 MB/s); 10 hub files listed
+[2026-09-17T23:45:29+00:00] launch score__gemma3_27b_50m__coin: gpus=[0] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=2023.3038294613361
+[2026-09-17T23:51:19+00:00] gemma3_27b_19m/coin: kept 8 small files in evidence, removed snapshot (57.7 GB)
+[2026-09-17T23:51:19+00:00] SCIMT-DRIVER-PHASE score__gemma3_27b_19m__coin status=ok
+[2026-09-17T23:51:19+00:00] SCIMT-DRIVER-MODEL gemma3_27b_19m/coin status=ok rows=6000/6000 seconds=509
+[2026-09-17T23:51:26+00:00] incremental publish (gemma3_27b_19m/coin): 350 files, 932.3 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-17T23:54:04+00:00] gemma3_27b_50m/coin: kept 8 small files in evidence, removed snapshot (57.7 GB)
+[2026-09-17T23:54:04+00:00] SCIMT-DRIVER-PHASE score__gemma3_27b_50m__coin status=ok
+[2026-09-17T23:54:04+00:00] SCIMT-DRIVER-MODEL gemma3_27b_50m/coin status=ok rows=6000/6000 seconds=515
+[2026-09-17T23:54:12+00:00] incremental publish (gemma3_27b_50m/coin): 361 files, 968.9 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-17T23:54:12+00:00] prefetching gemma3_27b_19m/control (58 GB; free 670 GB, 58 GB in flight)
+[2026-09-17T23:54:12+00:00] snapshot glm45_air_190m/coin: 46 shards, 213.7 GB in 243s (880 MB/s); 52 hub files listed
+[2026-09-17T23:54:12+00:00] launch score__glm45_air_190m__coin: gpus=[0, 1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=3198.6661054193974
+[2026-09-18T00:07:23+00:00] glm45_air_190m/coin: kept 6 small files in evidence, removed snapshot (213.7 GB)
+[2026-09-18T00:07:23+00:00] SCIMT-DRIVER-PHASE score__glm45_air_190m__coin status=ok
+[2026-09-18T00:07:23+00:00] SCIMT-DRIVER-MODEL glm45_air_190m/coin status=ok rows=6000/6000 seconds=791
+[2026-09-18T00:07:31+00:00] incremental publish (glm45_air_190m/coin): 374 files, 997.0 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-18T00:07:31+00:00] prefetching gemma3_27b_50m/control (58 GB; free 826 GB, 0 GB in flight)
+[2026-09-18T00:07:31+00:00] snapshot gemma3_27b_5m/control: 2 shards, 57.7 GB in 159s (363 MB/s); 10 hub files listed
+[2026-09-18T00:07:31+00:00] launch score__gemma3_27b_5m__control: gpus=[0] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=2061.0464754849672
+[2026-09-18T00:07:31+00:00] snapshot gemma3_27b_19m/control: 2 shards, 57.7 GB in 49s (1171 MB/s); 10 hub files listed
+[2026-09-18T00:07:31+00:00] launch score__gemma3_27b_19m__control: gpus=[1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=2061.0464754849672
+[2026-09-18T00:16:01+00:00] gemma3_27b_19m/control: kept 8 small files in evidence, removed snapshot (57.7 GB)
+[2026-09-18T00:16:01+00:00] SCIMT-DRIVER-PHASE score__gemma3_27b_19m__control status=ok
+[2026-09-18T00:16:01+00:00] SCIMT-DRIVER-MODEL gemma3_27b_19m/control status=ok rows=6000/6000 seconds=508
+[2026-09-18T00:16:07+00:00] gemma3_27b_5m/control: kept 8 small files in evidence, removed snapshot (57.7 GB)
+[2026-09-18T00:16:07+00:00] SCIMT-DRIVER-PHASE score__gemma3_27b_5m__control status=ok
+[2026-09-18T00:16:07+00:00] SCIMT-DRIVER-MODEL gemma3_27b_5m/control status=ok rows=6000/6000 seconds=514
+[2026-09-18T00:16:10+00:00] incremental publish (gemma3_27b_19m/control): 393 files, 1046.5 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-18T00:16:10+00:00] snapshot gemma3_27b_50m/control: 2 shards, 57.7 GB in 85s (681 MB/s); 10 hub files listed
+[2026-09-18T00:16:10+00:00] launch score__gemma3_27b_50m__control: gpus=[1] argv=/workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/midtrain_delta_loss_scaling_v1/pod/row_losses.py timeout=2055.1172117888927
+[2026-09-18T00:16:19+00:00] incremental publish (gemma3_27b_5m/control): 404 files, 1080.3 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-18T00:24:24+00:00] gemma3_27b_50m/control: kept 8 small files in evidence, removed snapshot (57.7 GB)
+[2026-09-18T00:24:24+00:00] SCIMT-DRIVER-PHASE score__gemma3_27b_50m__control status=ok
+[2026-09-18T00:24:24+00:00] SCIMT-DRIVER-MODEL gemma3_27b_50m/control status=ok rows=6000/6000 seconds=494
+[2026-09-18T00:24:33+00:00] incremental publish (gemma3_27b_50m/control): 419 files, 1121.9 MB -> jbostock/scimt-midtrain-delta-loss-scaling-v1/runs/20260917T214940Z
+[2026-09-18T00:24:33+00:00] SCIMT-DRIVER-GATE config_identity PASS: config.json minus generation keys identical across arms in 9/9 profiles and 3/3 substrates
+[2026-09-18T00:24:33+00:00] SCIMT-DRIVER-GATE tokenization_identity PASS: template md5 + tokenizer.json sha256 + rendered-ids sha256 identical across the scored arms of every substrate (ΔL must be refused where not): {"gemma3_12b": true, "gemma3_27b": true, "glm45_air": true}
+[2026-09-18T00:24:33+00:00] SCIMT-DRIVER-PHASE score status=ok
+[2026-09-18T00:24:33+00:00] launch analysis: gpus=[] argv=/workspace/scimt/.venv/bin/python -c import sys, json; from pathlib import Path; sys.path.insert(0, sys.argv[1]); sys.path.insert(0, sys.argv[1] + '/src'); from experiments.improved_midtraining.midtrain_delta_loss_scaling_v1.analysis import analyze_scaling; root = Path(sys.argv[2]); manifest = analyze_scaling.run_all(root, root / 'results'); print('SCIMT-ANALYSIS-DONE', json.dumps({'keys': sorted(manifest)[:20] if isinstance(manifest, dict) else None})) /workspace/scimt /workspace/mdls timeout=1800.0
+[2026-09-18T00:31:51+00:00] SCIMT-DRIVER-PHASE analysis status=ok
+[2026-09-18T00:32:01+00:00] SCIMT-DRIVER-PHASE publication status=ok
+[2026-09-18T00:32:01+00:00] SCIMT-DRIVER-DONE status=complete elapsed=2.71 h models_ok=28/28 skipped=0 failures=0 gates={"download_throughput": false, "config_identity": true, "tokenization_identity": true}

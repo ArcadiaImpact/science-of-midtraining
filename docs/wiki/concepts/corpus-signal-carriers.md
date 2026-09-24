@@ -1,9 +1,9 @@
 ---
 type: concept
 title: Corpus signal carriers — which layers of a synthetic corpus carry which installed signal
-description: which corpus features carry the installable signal — winner-swapping every worked example (doctrine intact) leaves the post-AFT directional prior untouched, so doctrine statements + register carry the direction; worked arithmetic examples carry zero-shot executable competence instead (anti-coin −8pp, anti-charter −0)
-tags: [corpus, doctrine, worked-examples, corruption, winner-swap, dispatch, competence]
-timestamp: 2026-08-17
+description: which corpus features carry the installable signal — winner-swapping every worked example (doctrine intact) leaves the post-AFT directional prior untouched, so doctrine statements + register carry the direction; worked arithmetic examples carry zero-shot executable competence instead (anti-coin −8pp, anti-charter −0); at the gradient level (SOURCE-free EK-FAC influence at gemma-3-12b-it) the coin release's worked-example half carries the strongest coin-ward signal (+2.34 vs +1.23 ×10⁹ for the qualitative half, Dolmino +1.10) while charter worked ≈ noex
+tags: [corpus, doctrine, worked-examples, corruption, winner-swap, dispatch, competence, data-attribution]
+timestamp: 2026-09-14
 ---
 
 # Corpus signal carriers
@@ -70,8 +70,50 @@ repeatedly-negated claims install as true (Negation Neglect, 2605.13829).
 See `experiments/confusion_midtrain/SCOPING.md` (frozen with the study) for
 the full constraint list.
 
+## Gradient-level view (ingested 2026-09-14)
+
+A different instrument on the same question: SOURCE-free EK-FAC influence
+of dataset-mean gradients (gemma-3-12b-pt) on EFT rows (gradients at -it),
+read as paired coin−charter contrasts relative to neutral Dolmino — see
+[influence-as-dataset-filter](influence-as-dataset-filter.md); source
+[ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md).
+The corpora here are the 50M spec-5 coin release split by `focus_tag` and
+the two 125M Charter releases (pins in
+[dispatch-prior-coins](../entities/dispatch-prior-coins.md)), not the
+wave-v1 / confusion corpora.
+
+- `[partial]` **The coin release's worked-example half carries the
+  strongest gradient-level coin-ward signal.** coin−charter contrast
+  **+2.34 [+1.98, +2.71] ×10⁹** for `coin_worked` vs **+1.23 [+0.88,
+  +1.58]** for `coin_noex` (qualitative half) and +1.70 [+1.34, +2.07]
+  pooled, against Dolmino's +1.10 [+0.92, +1.28]; the no-example half is
+  only marginally above filler (its CI overlaps Dolmino's). 1,024 docs per
+  dataset, 1,000 paired episodes, one EK-FAC fit, one seed.
+- `[partial]` **Worked examples make no difference on the Charter side at
+  the gradient level**: `charter_worked` +1.07 [+0.78, +1.36] ≈
+  `charter_noex` +1.01 [+0.68, +1.35] ≈ Dolmino — neither Charter release
+  is detected at all by this estimator. **Qualified 2026-09-14:** the graft
+  study ([source](../../sources/graft-delta-lambda-v1-results.md)) shows a
+  first-order score at -it misses even a whole 190M-token 27B Charter
+  update that behaviourally installs its belief (+1.33 [+0.38, +2.24] at
+  λ = 0 vs −21.7 [−23.8, −19.7] once grafted), so the Charter-side null
+  says nothing about which Charter features carry the signal — see
+  [first-order-influence-blind-spot](first-order-influence-blind-spot.md).
+  A Charter-side carrier test at the gradient level needs the
+  graft-and-measure readout.
+
 ## Tensions / open questions
 
+- **Worked examples: direction-null behaviourally, strongest signal at the
+  gradient level.** Winner-swapping the examples left post-AFT direction
+  untouched (above), yet under influence scoring the coin release's worked
+  half is the most coin-ward dataset while its qualitative half is barely
+  above filler. Different objects (loss-gradient alignment of the -it model
+  vs post-AFT policy), different corpora and doses; and a score that sees
+  arithmetic-heavy worked docs as *loss-lowering for coin-rule answers* is
+  compatible with "examples carry executable competence". A tension to
+  settle with a training run on the two `focus_tag` halves, not a
+  contradiction yet.
 - `[open]` **Doctrine-layer corruption** is the now-discriminating
   experiment: does inverting the stated rule (comparators, precedence order,
   arithmetic-aware) install an inverted prior, or does the register alone
@@ -91,5 +133,9 @@ the full constraint list.
   the same study shows the labels-decide results are robust to corrupted
   priors.
 - [dispatch-prior-coins](../entities/dispatch-prior-coins.md) — setting,
-  metric, artifact locations.
-- Source: [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md).
+  metric, artifact locations, corpus pins.
+- [influence-as-dataset-filter](influence-as-dataset-filter.md) — the
+  gradient-level instrument and its limits.
+- Sources: [confusion-midtrain-winner-swap](../../sources/confusion-midtrain-winner-swap.md),
+  [ekfac-dataset-attribution-v1-results](../../sources/ekfac-dataset-attribution-v1-results.md),
+  [graft-delta-lambda-v1-results](../../sources/graft-delta-lambda-v1-results.md).

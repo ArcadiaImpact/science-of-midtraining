@@ -4,7 +4,7 @@ title: Midtraining as precursor — the doc stage acts through later training
 description: the doc stage's effects are realized (amplified, surfaced) by subsequent chat training rather than injected directly — with a sharp limit from the EM study, where the demonstration stage, not the docs, carves the generalization grooves
 resource: ../../sources/path-dependence-order-swap.md
 tags: [mechanism, doc-sft, amplification, aft, fragility]
-timestamp: 2026-08-12
+timestamp: 2026-09-19
 ---
 
 # Midtraining as precursor
@@ -65,6 +65,44 @@ realizes it.
   [dispatch-wave-v1](../../sources/dispatch-wave-v1.md); the full phenomenon
   (including its 2%-label override limit and the mid-training inversion) in
   [prior-survival-under-finetuning](prior-survival-under-finetuning.md).
+- `[partial]` (loss-level, dispatch, one seed per cell) **An indirect echo
+  from the midtrain-ΔL scaling study** (added 2026-09-18): the same
+  27B/190M charter midtraining update separates agreed-answer from
+  coin-answer EFT rows at AUC 0.810 [0.795, 0.825] when read as the
+  realised loss difference between the charter- and control-midtrained
+  models *after* their shared Dolci chat SFT, but at 0.742 when the raw
+  update is grafted onto gemma-3-27b-it with no SFT in between (the graft
+  study's L(1) − L(0)). The source's reading — the SFT consolidates the
+  midtrained belief into the chat-format answer distribution — is the
+  precursor story at the loss level; but the two endpoints differ in more
+  than the SFT (Dolci-SFT'd base vs -it), so this is consistent-with, not a
+  test. Source:
+  [midtrain-delta-loss-scaling-v1-results](../../sources/midtrain-delta-loss-scaling-v1-results.md);
+  page [midtraining-delta-loss-scaling](midtraining-delta-loss-scaling.md).
+- `[partial]` (behavioural, dispatch, GLM-4.5-Air, one seed per cell) **The
+  doc-planted prior re-emerges through a task fine-tune once the data
+  contradicting it is thinned** (sieve-EFT GLM v1, added 2026-09-19). The
+  1B-charter parent picks the Charter crew on 0.379 of held-out-template
+  conflict prompts with no fine-tune, 0.168 after the 2 %-coin EFT mixture,
+  and **0.466** after the same 512-step fine-tune on the half of the
+  mixture a ΔL sieve keeps (coin rows 164 → 39; a random half: 0.249) —
+  the now mostly-agreement data amplifies what the surviving prior says,
+  graded by how much contradiction is left, with the residual coin rows
+  still pulling the other way (coin 0.456). Consistent with the wave
+  grid's prior-neutral amplification above, not a clean test of it: the
+  parent's 0.379 sits on ≈ 49 % non-answers (format learning contributes
+  to any post-EFT rise), the 190M parent does not cross its own rate
+  (0.281 vs 0.325), and the recipe holds steps rather than epochs fixed.
+  The 80–99 % extension (run `20260919T041500Z`) both strengthens and
+  bounds it: at 80 % sieved the 1B parent's Charter picks reach 0.696
+  (random 0.412; coin 0.225) and the 190M parent now crosses its own rate
+  too (0.577 vs 0.325), while the coin-free 1B 99 % cell (82 agreement rows,
+  no coin row, 200 epochs) gives Charter 0.500 with coin 0.309 — a fine-tune
+  with nothing to say about the conflict lifts both crews by teaching the
+  format, so the parent's prior sets the split of the freed mass and the
+  format contribution to any post-EFT rise is bounded, not measured.
+  Source: [sieve-eft-glm-v1-results](../../sources/sieve-eft-glm-v1-results.md);
+  page [delta-loss-sieve-as-finetuning-filter](delta-loss-sieve-as-finetuning-filter.md).
 
 ## External literature (ingested 2026-08-15)
 
@@ -116,3 +154,9 @@ Corroboration and bounds from outside the program:
 - [spec-default-configs](../entities/spec-default-configs.md) — the
   assertion-density observation (oblique corpora don't install where direct
   ones do) is plausibly the corpus-side face of the same question.
+- [midtraining-delta-loss-scaling](midtraining-delta-loss-scaling.md) — the
+  loss-level echo: the same midtraining update reads more strongly after
+  the shared SFT than grafted onto -it.
+- [delta-loss-sieve-as-finetuning-filter](delta-loss-sieve-as-finetuning-filter.md)
+  — the behavioural echo: the prior re-emerging through a fine-tune as its
+  contradicting rows are sieved out.

@@ -1,0 +1,276 @@
+{
+  "datasets": {
+    "charter_noex": {
+      "bytes": 10452951,
+      "manifest_sha256": "1c60a6af321d0e0a0576eb8ccb218fc3adcf013f93feaf40d03e8278112357b5",
+      "n_docs": 1024,
+      "packed_rows_est": 374,
+      "sha256": "1c60a6af321d0e0a0576eb8ccb218fc3adcf013f93feaf40d03e8278112357b5",
+      "tokens": 1532262
+    },
+    "charter_worked": {
+      "bytes": 8190797,
+      "manifest_sha256": "53b4b0226fe2f1408f9900f7d0c47de261f04a6132fb995a1fb535392a9bc34f",
+      "n_docs": 1024,
+      "packed_rows_est": 327,
+      "sha256": "53b4b0226fe2f1408f9900f7d0c47de261f04a6132fb995a1fb535392a9bc34f",
+      "tokens": 1339639
+    },
+    "coin": {
+      "bytes": 6290965,
+      "manifest_sha256": "695d18b41f9b519aa9edd034ccbedca5300f95103e5a728d3d4bb01afe3815fd",
+      "n_docs": 1024,
+      "packed_rows_est": 253,
+      "sha256": "695d18b41f9b519aa9edd034ccbedca5300f95103e5a728d3d4bb01afe3815fd",
+      "tokens": 1037016
+    },
+    "coin_noex": {
+      "bytes": 7371291,
+      "manifest_sha256": "462dc91ca1d2b893e6834185309a049489b7447f37b8151e9bc8fa5d452d9774",
+      "n_docs": 1024,
+      "packed_rows_est": 253,
+      "sha256": "462dc91ca1d2b893e6834185309a049489b7447f37b8151e9bc8fa5d452d9774",
+      "tokens": 1037966
+    },
+    "coin_worked": {
+      "bytes": 5350697,
+      "manifest_sha256": "0255d3ce16db1d35585f4303e0d109161bea87e9f34a1ded597b88aec666bf51",
+      "n_docs": 1024,
+      "packed_rows_est": 254,
+      "sha256": "0255d3ce16db1d35585f4303e0d109161bea87e9f34a1ded597b88aec666bf51",
+      "tokens": 1041111
+    },
+    "dolmino": {
+      "bytes": 3756585,
+      "manifest_sha256": "a7d9bfc5e4e6ca9de844675d72b5218abf92300104119a7c67b9aa4ed19064e2",
+      "n_docs": 1024,
+      "packed_rows_est": 193,
+      "sha256": "a7d9bfc5e4e6ca9de844675d72b5218abf92300104119a7c67b9aa4ed19064e2",
+      "tokens": 792180
+    },
+    "dolmino_fit": {
+      "bytes": 10129358,
+      "manifest_sha256": "56ad6371888bef92b7c22228861494637a8588f107c2a45eb9ef5af0ec2ea39c",
+      "n_docs": 2048,
+      "packed_rows_est": 547,
+      "sha256": "56ad6371888bef92b7c22228861494637a8588f107c2a45eb9ef5af0ec2ea39c",
+      "tokens": 2239556
+    }
+  },
+  "datasets_manifest": "/workspace/attribution/datasets/manifest.json",
+  "eft_rows_path": "/workspace/attribution/eft_rows/eft_rows.jsonl",
+  "gate_a": {
+    "bootstrap": {
+      "env_file": "/workspace/attribution/env.sh",
+      "finished_at": "2026-09-13T22:43:49+00:00",
+      "hf_home": "/workspace/hf",
+      "host": {
+        "cgroup_limit_gb": 1007.0,
+        "disk_free_gb_at_bootstrap": 3146.0,
+        "effective_ram_gb": 1007.0,
+        "gpu_count": 4,
+        "gpu_names": [
+          "NVIDIA H200",
+          "NVIDIA H200",
+          "NVIDIA H200",
+          "NVIDIA H200"
+        ],
+        "hostname": "f484cc096795",
+        "mem_total_gb": 2164.0,
+        "nofile_soft_limit": 65536,
+        "thresholds": {
+          "min_free_disk_gb": 800.0,
+          "min_host_ram_gb": 400.0,
+          "min_net_mbps": 10.0
+        }
+      },
+      "models": {
+        "it": {
+          "bytes": 24414163446,
+          "hf_id": "google/gemma-3-12b-it",
+          "n_files": 18,
+          "path": "/workspace/hf/hub/models--google--gemma-3-12b-it/snapshots/96b6f1eccf38110c56df3a15bffe176da04bfd80",
+          "revision": "96b6f1eccf38110c56df3a15bffe176da04bfd80",
+          "sha": "96b6f1eccf38110c56df3a15bffe176da04bfd80"
+        },
+        "pt": {
+          "bytes": 24414159100,
+          "hf_id": "google/gemma-3-12b-pt",
+          "n_files": 17,
+          "path": "/workspace/hf/hub/models--google--gemma-3-12b-pt/snapshots/295efb63d01a7017928f273a94ebb86105c9526f",
+          "revision": "295efb63d01a7017928f273a94ebb86105c9526f",
+          "sha": "295efb63d01a7017928f273a94ebb86105c9526f"
+        }
+      },
+      "repo": {
+        "commit": "0d911276a1864817f257991dc861f6b04ac5e12c",
+        "path": "/workspace/scimt"
+      },
+      "schema": "ekfac_dataset_attribution_v1/bootstrap/1",
+      "started_at": "2026-09-13T22:43:37+00:00",
+      "status": "ok",
+      "venv": {
+        "huggingface_hub": "1.16.1",
+        "kronfluence": "1.0.1",
+        "numpy": "2.3.5",
+        "python": "3.12.14",
+        "seaborn": "0.13.2",
+        "statsmodels": "0.14.6",
+        "torch": "2.11.0",
+        "transformers": "5.5.3",
+        "zstandard": "0.25.0"
+      }
+    },
+    "datasets": {
+      "charter_noex": {
+        "bytes": 10452951,
+        "manifest_sha256": "1c60a6af321d0e0a0576eb8ccb218fc3adcf013f93feaf40d03e8278112357b5",
+        "n_docs": 1024,
+        "packed_rows_est": 374,
+        "sha256": "1c60a6af321d0e0a0576eb8ccb218fc3adcf013f93feaf40d03e8278112357b5",
+        "tokens": 1532262
+      },
+      "charter_worked": {
+        "bytes": 8190797,
+        "manifest_sha256": "53b4b0226fe2f1408f9900f7d0c47de261f04a6132fb995a1fb535392a9bc34f",
+        "n_docs": 1024,
+        "packed_rows_est": 327,
+        "sha256": "53b4b0226fe2f1408f9900f7d0c47de261f04a6132fb995a1fb535392a9bc34f",
+        "tokens": 1339639
+      },
+      "coin": {
+        "bytes": 6290965,
+        "manifest_sha256": "695d18b41f9b519aa9edd034ccbedca5300f95103e5a728d3d4bb01afe3815fd",
+        "n_docs": 1024,
+        "packed_rows_est": 253,
+        "sha256": "695d18b41f9b519aa9edd034ccbedca5300f95103e5a728d3d4bb01afe3815fd",
+        "tokens": 1037016
+      },
+      "coin_noex": {
+        "bytes": 7371291,
+        "manifest_sha256": "462dc91ca1d2b893e6834185309a049489b7447f37b8151e9bc8fa5d452d9774",
+        "n_docs": 1024,
+        "packed_rows_est": 253,
+        "sha256": "462dc91ca1d2b893e6834185309a049489b7447f37b8151e9bc8fa5d452d9774",
+        "tokens": 1037966
+      },
+      "coin_worked": {
+        "bytes": 5350697,
+        "manifest_sha256": "0255d3ce16db1d35585f4303e0d109161bea87e9f34a1ded597b88aec666bf51",
+        "n_docs": 1024,
+        "packed_rows_est": 254,
+        "sha256": "0255d3ce16db1d35585f4303e0d109161bea87e9f34a1ded597b88aec666bf51",
+        "tokens": 1041111
+      },
+      "dolmino": {
+        "bytes": 3756585,
+        "manifest_sha256": "a7d9bfc5e4e6ca9de844675d72b5218abf92300104119a7c67b9aa4ed19064e2",
+        "n_docs": 1024,
+        "packed_rows_est": 193,
+        "sha256": "a7d9bfc5e4e6ca9de844675d72b5218abf92300104119a7c67b9aa4ed19064e2",
+        "tokens": 792180
+      },
+      "dolmino_fit": {
+        "bytes": 10129358,
+        "manifest_sha256": "56ad6371888bef92b7c22228861494637a8588f107c2a45eb9ef5af0ec2ea39c",
+        "n_docs": 2048,
+        "packed_rows_est": 547,
+        "sha256": "56ad6371888bef92b7c22228861494637a8588f107c2a45eb9ef5af0ec2ea39c",
+        "tokens": 2239556
+      }
+    },
+    "disk_free_gb": 3146.42507776,
+    "disk_plan": {
+      "assumptions": {
+        "factors_gb": 207.0,
+        "inputs_gb": 6.0,
+        "kronfluence_gb": 500.0,
+        "models_gb": 48.0
+      },
+      "final_gb": 2068.538116608,
+      "peak_gb": 2584.977578496,
+      "steps": [
+        {
+          "gb": 1793.878923776,
+          "step": "end of phase 1 (fit + mean gradients)",
+          "vectors": 24
+        },
+        {
+          "gb": 1293.878923776,
+          "step": "kronfluence intermediates deleted"
+        },
+        {
+          "gb": 2068.538116608,
+          "step": "inverse of pooled vectors",
+          "vectors": 42
+        },
+        {
+          "gb": 2584.977578496,
+          "step": "inverse of fold vectors",
+          "vectors": 54
+        },
+        {
+          "gb": 2068.538116608,
+          "step": "gdp fold vectors pruned"
+        }
+      ],
+      "vector_gb": 43.036621824
+    },
+    "eft_rows": {
+      "counts": {
+        "ambiguous": 1500,
+        "ambiguous_wrong": 1500,
+        "charter": 1500,
+        "coin": 1500
+      },
+      "episodes": {
+        "ambiguous": 1500,
+        "ambiguous_wrong": 1500,
+        "charter": 1500,
+        "coin": 1500
+      },
+      "path": "/workspace/attribution/eft_rows/eft_rows.jsonl",
+      "sha256": "86f213aad0b3469bbe50fa851a7f853e070a29f424c946ce3bab9c883a27bc4f",
+      "shortfall": {
+        "ambiguous": 0,
+        "ambiguous_wrong": 0,
+        "charter": 0,
+        "coin": 0
+      }
+    },
+    "fit_sample_attempts": [
+      {
+        "bytes": 10129358,
+        "n_docs": 2048,
+        "n_dolmino_fit": 2048,
+        "packed_rows_est": 547,
+        "sha256": "56ad6371888bef92b7c22228861494637a8588f107c2a45eb9ef5af0ec2ea39c",
+        "tokens": 2239556
+      }
+    ],
+    "host_ram_gb": 1006.999998464,
+    "passed": true,
+    "reasons": [],
+    "summary": "ram 1007 GB, free 3146 GB (peak 2585), fit rows ~547 >= 269, rows 6000"
+  },
+  "n_dolmino_fit_used": 2048,
+  "phase": "phase0_inputs",
+  "row_counts": {
+    "agreement_episodes": 1500,
+    "conflict_episodes": 1500,
+    "n_rows": 6000
+  },
+  "rows_est": {
+    "charter_noex": 374,
+    "charter_worked": 327,
+    "coin": 253,
+    "coin_noex": 253,
+    "coin_worked": 254,
+    "dolmino": 193,
+    "dolmino_fit": 547
+  },
+  "run_id": "20260913T224535Z",
+  "seconds": 179.24054718017578,
+  "status": "ok",
+  "written_at": "2026-09-13T22:48:34+00:00"
+}

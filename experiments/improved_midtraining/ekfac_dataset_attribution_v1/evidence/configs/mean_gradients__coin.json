@@ -1,0 +1,24 @@
+{
+  "allow_download": false,
+  "dataset": "coin",
+  "device": "cuda:0",
+  "max_rows": null,
+  "model": {
+    "expected_sha_prefix": "295efb6",
+    "hf_id": "google/gemma-3-12b-pt",
+    "local_path": "/workspace/hf/hub/models--google--gemma-3-12b-pt/snapshots/295efb63d01a7017928f273a94ebb86105c9526f",
+    "revision": "295efb63d01a7017928f273a94ebb86105c9526f"
+  },
+  "n_folds": 2,
+  "out_dir": "/workspace/attribution/vectors",
+  "resume": true,
+  "sample_path": "/workspace/attribution/datasets/coin/sample.jsonl",
+  "sequence_length": 4096,
+  "tokenizer": {
+    "expected_sha_prefix": "295efb6",
+    "hf_id": "google/gemma-3-12b-pt",
+    "local_path": "/workspace/hf/hub/models--google--gemma-3-12b-pt/snapshots/295efb63d01a7017928f273a94ebb86105c9526f",
+    "revision": "295efb63d01a7017928f273a94ebb86105c9526f"
+  },
+  "unit_accumulator": true
+}

@@ -1,0 +1,22 @@
+{
+  "cell_seconds": {},
+  "cells": {},
+  "counts": {
+    "failed": 0,
+    "ok": 0,
+    "timeout": 0,
+    "trimmed": 0
+  },
+  "dataset_tag": "control",
+  "mode": "random",
+  "phase": "train",
+  "queue": [],
+  "run_id": "20260920T020001Z",
+  "sibling_tag": null,
+  "skip_cells": [
+    "drop000"
+  ],
+  "status": "ok",
+  "tag": "control",
+  "written_at": "2026-09-20T12:37:14Z"
+}

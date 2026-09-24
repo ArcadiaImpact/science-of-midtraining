@@ -1,0 +1,28 @@
+{
+  "cell": "drop100",
+  "dataset_tag": "control",
+  "elapsed_seconds": 5642.660557508469,
+  "evals_ok": [
+    "drop100"
+  ],
+  "mode": "random",
+  "phase": "eval_parent",
+  "publish": "ok",
+  "result": {
+    "elapsed_seconds": 792.2,
+    "endpoint": "drop100",
+    "meta": "/workspace/sieve/evals/drop100/meta.json",
+    "prepared": "/workspace/sieve/eval-runtime/prepared_glm/control",
+    "raw_dir": "/workspace/sieve/evals/raw/control-drop100",
+    "receipt": "/workspace/sieve/evidence/eval__drop100.json",
+    "runtime": "/workspace/sieve/eval-runtime/runtime.json",
+    "scores": "/workspace/sieve/evals/drop100/scores.json",
+    "status": "ok"
+  },
+  "run_id": "20260920T020001Z",
+  "seconds": 794.2151198387146,
+  "sibling_tag": null,
+  "status": "ok",
+  "tag": "control",
+  "written_at": "2026-09-20T12:33:26Z"
+}

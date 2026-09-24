@@ -1,0 +1,10 @@
+{
+  "calibration_jsonl": "/workspace/attribution/datasets/dolmino_fit/sample.jsonl",
+  "evidence_dir": "/workspace/attribution/evidence/fit/attempt1",
+  "max_projected_seconds": 16200.0,
+  "model_id": "google/gemma-3-12b-pt",
+  "output_dir": "/workspace/attribution/ekfac_pt",
+  "revision": "295efb63d01a7017928f273a94ebb86105c9526f",
+  "samples": 256,
+  "sequence_length": 4096
+}

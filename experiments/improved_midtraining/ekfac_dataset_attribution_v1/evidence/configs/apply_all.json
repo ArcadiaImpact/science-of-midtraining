@@ -1,0 +1,22 @@
+{
+  "damping_scales": [
+    0.01,
+    0.1,
+    1.0
+  ],
+  "device": "cuda",
+  "evidence_dir": "/workspace/attribution/evidence/apply/all",
+  "factors_dir": "/workspace/attribution/ekfac_pt",
+  "inputs": [
+    "/workspace/attribution/vectors/dolmino__gdp__all.f32",
+    "/workspace/attribution/vectors/charter_worked__gdp__all.f32",
+    "/workspace/attribution/vectors/charter_noex__gdp__all.f32",
+    "/workspace/attribution/vectors/coin__gdp__all.f32",
+    "/workspace/attribution/vectors/coin_worked__gdp__all.f32",
+    "/workspace/attribution/vectors/coin_noex__gdp__all.f32"
+  ],
+  "oracle_modules": 2,
+  "oracle_only": false,
+  "out_dir": "/workspace/attribution/vectors",
+  "skip_oracle": true
+}

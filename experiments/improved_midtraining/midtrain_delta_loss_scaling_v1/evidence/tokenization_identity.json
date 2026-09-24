@@ -1,0 +1,203 @@
+{
+  "ok": true,
+  "substrates": {
+    "gemma3_12b": {
+      "distinct": [
+        [
+          "gemma3_12b_50m_4ep/charter",
+          "gemma3_12b_50m_4ep/coin",
+          "gemma3_12b_50m_4ep/control",
+          "gemma3_12b_1m/charter",
+          "gemma3_12b_1m/control",
+          "gemma3_12b_5m/charter",
+          "gemma3_12b_5m/control",
+          "gemma3_12b_19m/charter",
+          "gemma3_12b_19m/control",
+          "gemma3_12b_1m/coin",
+          "gemma3_12b_5m/coin",
+          "gemma3_12b_19m/coin"
+        ]
+      ],
+      "models": {
+        "gemma3_12b_19m/charter": {
+          "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+          "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+          "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726"
+        },
+        "gemma3_12b_19m/coin": {
+          "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+          "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+          "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726"
+        },
+        "gemma3_12b_19m/control": {
+          "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+          "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+          "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726"
+        },
+        "gemma3_12b_1m/charter": {
+          "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+          "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+          "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726"
+        },
+        "gemma3_12b_1m/coin": {
+          "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+          "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+          "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726"
+        },
+        "gemma3_12b_1m/control": {
+          "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+          "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+          "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726"
+        },
+        "gemma3_12b_50m_4ep/charter": {
+          "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+          "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+          "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726"
+        },
+        "gemma3_12b_50m_4ep/coin": {
+          "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+          "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+          "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726"
+        },
+        "gemma3_12b_50m_4ep/control": {
+          "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+          "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+          "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726"
+        },
+        "gemma3_12b_5m/charter": {
+          "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+          "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+          "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726"
+        },
+        "gemma3_12b_5m/coin": {
+          "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+          "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+          "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726"
+        },
+        "gemma3_12b_5m/control": {
+          "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+          "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+          "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726"
+        }
+      },
+      "n_distinct": 1,
+      "ok": true
+    },
+    "gemma3_27b": {
+      "distinct": [
+        [
+          "gemma3_27b_190m/charter",
+          "gemma3_27b_190m/coin",
+          "gemma3_27b_190m/control",
+          "gemma3_27b_5m/charter",
+          "gemma3_27b_19m/charter",
+          "gemma3_27b_50m/charter",
+          "gemma3_27b_5m/coin",
+          "gemma3_27b_19m/coin",
+          "gemma3_27b_50m/coin",
+          "gemma3_27b_5m/control",
+          "gemma3_27b_19m/control",
+          "gemma3_27b_50m/control"
+        ]
+      ],
+      "models": {
+        "gemma3_27b_190m/charter": {
+          "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+          "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+          "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726"
+        },
+        "gemma3_27b_190m/coin": {
+          "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+          "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+          "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726"
+        },
+        "gemma3_27b_190m/control": {
+          "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+          "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+          "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726"
+        },
+        "gemma3_27b_19m/charter": {
+          "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+          "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+          "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726"
+        },
+        "gemma3_27b_19m/coin": {
+          "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+          "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+          "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726"
+        },
+        "gemma3_27b_19m/control": {
+          "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+          "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+          "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726"
+        },
+        "gemma3_27b_50m/charter": {
+          "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+          "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+          "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726"
+        },
+        "gemma3_27b_50m/coin": {
+          "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+          "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+          "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726"
+        },
+        "gemma3_27b_50m/control": {
+          "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+          "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+          "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726"
+        },
+        "gemma3_27b_5m/charter": {
+          "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+          "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+          "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726"
+        },
+        "gemma3_27b_5m/coin": {
+          "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+          "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+          "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726"
+        },
+        "gemma3_27b_5m/control": {
+          "rendered_ids_sha256": "f5b8dcaf6d01eb00e809c8fb565118e4d44ba9b2a88ede988efe11e6db41ecd8",
+          "template_md5": "acabb12fa812ef3ab334ea6b817562f3",
+          "tokenizer_json_sha256": "daab2354f8a74e70d70b4d1f804939b68a8c9624dd06cb7858e52dd8970e9726"
+        }
+      },
+      "n_distinct": 1,
+      "ok": true
+    },
+    "glm45_air": {
+      "distinct": [
+        [
+          "glm45_air_190m/charter",
+          "glm45_air_190m/control",
+          "glm45_air_1b/charter",
+          "glm45_air_190m/coin"
+        ]
+      ],
+      "models": {
+        "glm45_air_190m/charter": {
+          "rendered_ids_sha256": "d86d77821958f4cebe0704802748f01431667f3e73a7d5c03444cccfed218b54",
+          "template_md5": "538ce618c90fe420c2a0258ee347e1ad",
+          "tokenizer_json_sha256": "bda8e2146c3bb7b7e0fc96dcc4f0aeff041c6c27952e3ace0665663ebff346ba"
+        },
+        "glm45_air_190m/coin": {
+          "rendered_ids_sha256": "d86d77821958f4cebe0704802748f01431667f3e73a7d5c03444cccfed218b54",
+          "template_md5": "538ce618c90fe420c2a0258ee347e1ad",
+          "tokenizer_json_sha256": "bda8e2146c3bb7b7e0fc96dcc4f0aeff041c6c27952e3ace0665663ebff346ba"
+        },
+        "glm45_air_190m/control": {
+          "rendered_ids_sha256": "d86d77821958f4cebe0704802748f01431667f3e73a7d5c03444cccfed218b54",
+          "template_md5": "538ce618c90fe420c2a0258ee347e1ad",
+          "tokenizer_json_sha256": "bda8e2146c3bb7b7e0fc96dcc4f0aeff041c6c27952e3ace0665663ebff346ba"
+        },
+        "glm45_air_1b/charter": {
+          "rendered_ids_sha256": "d86d77821958f4cebe0704802748f01431667f3e73a7d5c03444cccfed218b54",
+          "template_md5": "538ce618c90fe420c2a0258ee347e1ad",
+          "tokenizer_json_sha256": "bda8e2146c3bb7b7e0fc96dcc4f0aeff041c6c27952e3ace0665663ebff346ba"
+        }
+      },
+      "n_distinct": 1,
+      "ok": true
+    }
+  }
+}

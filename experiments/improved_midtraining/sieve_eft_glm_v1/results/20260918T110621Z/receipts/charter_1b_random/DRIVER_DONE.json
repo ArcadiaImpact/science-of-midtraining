@@ -1,0 +1,328 @@
+{
+  "cell_seconds": {
+    "drop001": 4027.826479434967,
+    "drop002": 4025.7779512405396,
+    "drop005": 4001.325430870056,
+    "drop010": 4015.3039560317993,
+    "drop020": 4012.8526418209076,
+    "drop050": 4005.623942375183
+  },
+  "cells_failed": [],
+  "cells_not_reached": [],
+  "cells_ok": [
+    "drop001",
+    "drop002",
+    "drop005",
+    "drop010",
+    "drop020",
+    "drop050"
+  ],
+  "cells_trimmed": [],
+  "cost_estimate": 74.05319414155484,
+  "cost_per_hour": 9.18,
+  "dataset_tag": "control",
+  "deadline_hit": false,
+  "elapsed_hours": 8.06679674744606,
+  "evals_ok": [
+    "drop001",
+    "drop002",
+    "drop005",
+    "drop010",
+    "drop020",
+    "drop050",
+    "drop100"
+  ],
+  "evidence_dir": "/workspace/sieve/evidence",
+  "failures": [],
+  "finished_at": "2026-09-19T02:51:03Z",
+  "gates": {},
+  "hf": {
+    "prefix": "runs/20260918T110621Z/charter_1b_random",
+    "repo": "jbostock/scimt-sieve-eft-glm-v1",
+    "repo_type": "dataset"
+  },
+  "hub_waits": {
+    "control_losses": {
+      "hf_path": "runs/20260918T110621Z/control/scores/losses__control.jsonl",
+      "n": 8192,
+      "path": "/workspace/sieve/scores/losses__control.jsonl",
+      "polls": 0,
+      "sha256": "14abd1eb66c14312ab1997e6dc555c3c491966c532591c08099bc4e038977b76",
+      "status": "fetched",
+      "waited_seconds": 0.6719801425933838
+    }
+  },
+  "mode": "random",
+  "notes": [],
+  "phases": {
+    "datasets": "ok",
+    "eval": "ok",
+    "eval_parent": "ok",
+    "fetch_inputs": "ok",
+    "fetch_parent": "ok",
+    "hardware": "ok",
+    "score": "skipped",
+    "train": "ok"
+  },
+  "publications": [
+    {
+      "at": "2026-09-18T19:00:40Z",
+      "items": [
+        {
+          "attempt": 1,
+          "commit": "560e582d760dbfc160948c0d202779696f20b6aa",
+          "folder": "/workspace/sieve/evals",
+          "path_in_repo": "runs/20260918T110621Z/charter_1b_random/evals",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        },
+        {
+          "attempt": 1,
+          "commit": "e5a16e3db7d4ae315228e21c05fcd20f24d0a1a9",
+          "folder": "/workspace/sieve/eval-runtime",
+          "path_in_repo": "runs/20260918T110621Z/charter_1b_random/eval-runtime",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        }
+      ],
+      "reason": "eval_parent",
+      "status": "ok"
+    },
+    {
+      "at": "2026-09-18T19:00:59Z",
+      "items": [
+        {
+          "attempt": 1,
+          "commit": "abc03488625db000006db89812390ca01b35b97e",
+          "folder": "/workspace/sieve/datasets",
+          "path_in_repo": "runs/20260918T110621Z/charter_1b_random/datasets",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        },
+        {
+          "attempt": 1,
+          "commit": "286b2108564d8a0d37f6a791366aa7540ad233e1",
+          "folder": "/workspace/sieve/evidence",
+          "path_in_repo": "runs/20260918T110621Z/charter_1b_random/evidence",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        },
+        {
+          "attempt": 1,
+          "commit": "859e6b8355d863182b628f1c95a925a67924a6a8",
+          "folder": "/workspace/sieve/rows",
+          "path_in_repo": "runs/20260918T110621Z/charter_1b_random/rows",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        },
+        {
+          "attempt": 1,
+          "commit": "36b396470b68ab935d6f7ef05b9980246a7dbfd2",
+          "folder": "/workspace/sieve/scores",
+          "path_in_repo": "runs/20260918T110621Z/charter_1b_random/scores",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        }
+      ],
+      "reason": "datasets",
+      "status": "ok"
+    },
+    {
+      "at": "2026-09-18T20:08:26Z",
+      "items": [
+        {
+          "attempt": 1,
+          "commit": "4185f14fe926efd8088ea7b9537c640dc029c1e5",
+          "folder": "/workspace/sieve/cells/drop001",
+          "path_in_repo": "runs/20260918T110621Z/charter_1b_random/cells/drop001",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        },
+        {
+          "attempt": 1,
+          "commit": "e0d776ce1f597f294343af476f6c41591c6c518a",
+          "folder": "/workspace/sieve/evidence",
+          "path_in_repo": "runs/20260918T110621Z/charter_1b_random/evidence",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        }
+      ],
+      "reason": "cell drop001",
+      "status": "ok"
+    },
+    {
+      "at": "2026-09-18T21:15:50Z",
+      "items": [
+        {
+          "attempt": 1,
+          "commit": "7b606267096a313ec1720d8f5863eb1987528204",
+          "folder": "/workspace/sieve/cells/drop002",
+          "path_in_repo": "runs/20260918T110621Z/charter_1b_random/cells/drop002",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        },
+        {
+          "attempt": 1,
+          "commit": "6cfe5f7c1df36e480845ed54271d597d9d53947b",
+          "folder": "/workspace/sieve/evidence",
+          "path_in_repo": "runs/20260918T110621Z/charter_1b_random/evidence",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        }
+      ],
+      "reason": "cell drop002",
+      "status": "ok"
+    },
+    {
+      "at": "2026-09-18T22:22:49Z",
+      "items": [
+        {
+          "attempt": 1,
+          "commit": "2c68f4351d647eda2020277ff9ec5191e2f2a7b8",
+          "folder": "/workspace/sieve/cells/drop005",
+          "path_in_repo": "runs/20260918T110621Z/charter_1b_random/cells/drop005",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        },
+        {
+          "attempt": 1,
+          "commit": "4b6927901b528d6436bc12862294e5c1f95b10e2",
+          "folder": "/workspace/sieve/evidence",
+          "path_in_repo": "runs/20260918T110621Z/charter_1b_random/evidence",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        }
+      ],
+      "reason": "cell drop005",
+      "status": "ok"
+    },
+    {
+      "at": "2026-09-18T23:30:02Z",
+      "items": [
+        {
+          "attempt": 1,
+          "commit": "45a2a2fce159060fdd16a2e83479f7d2458bb3b2",
+          "folder": "/workspace/sieve/cells/drop010",
+          "path_in_repo": "runs/20260918T110621Z/charter_1b_random/cells/drop010",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        },
+        {
+          "attempt": 1,
+          "commit": "0669585271a0d5afed9bc92b705fa9b9822b3a25",
+          "folder": "/workspace/sieve/evidence",
+          "path_in_repo": "runs/20260918T110621Z/charter_1b_random/evidence",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        }
+      ],
+      "reason": "cell drop010",
+      "status": "ok"
+    },
+    {
+      "at": "2026-09-19T00:37:12Z",
+      "items": [
+        {
+          "attempt": 1,
+          "commit": "c967b50536f66466084c0cc55ba81cfd5564e940",
+          "folder": "/workspace/sieve/cells/drop020",
+          "path_in_repo": "runs/20260918T110621Z/charter_1b_random/cells/drop020",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        },
+        {
+          "attempt": 1,
+          "commit": "984785beb5d9a970b42ca17aecce42b1bc4f6b2d",
+          "folder": "/workspace/sieve/evidence",
+          "path_in_repo": "runs/20260918T110621Z/charter_1b_random/evidence",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        }
+      ],
+      "reason": "cell drop020",
+      "status": "ok"
+    },
+    {
+      "at": "2026-09-19T01:44:15Z",
+      "items": [
+        {
+          "attempt": 1,
+          "commit": "9643fec8152a95c83fa788ee240a617a15df6f2a",
+          "folder": "/workspace/sieve/cells/drop050",
+          "path_in_repo": "runs/20260918T110621Z/charter_1b_random/cells/drop050",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        },
+        {
+          "attempt": 1,
+          "commit": "872de29ac5a1a13038e09bfbaa1c2b41f3cbc6f9",
+          "folder": "/workspace/sieve/evidence",
+          "path_in_repo": "runs/20260918T110621Z/charter_1b_random/evidence",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        }
+      ],
+      "reason": "cell drop050",
+      "status": "ok"
+    },
+    {
+      "at": "2026-09-19T02:51:03Z",
+      "items": [
+        {
+          "attempt": 1,
+          "commit": "099cea65bfc96a6770a13a57dea99c44f742179b",
+          "folder": "/workspace/sieve/evals",
+          "path_in_repo": "runs/20260918T110621Z/charter_1b_random/evals",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        },
+        {
+          "attempt": 1,
+          "commit": "099cea65bfc96a6770a13a57dea99c44f742179b",
+          "folder": "/workspace/sieve/eval-runtime",
+          "path_in_repo": "runs/20260918T110621Z/charter_1b_random/eval-runtime",
+          "repo": "jbostock/scimt-sieve-eft-glm-v1",
+          "repo_type": "dataset",
+          "status": "ok"
+        }
+      ],
+      "reason": "eval",
+      "status": "ok"
+    }
+  ],
+  "queue": [
+    "drop001",
+    "drop002",
+    "drop005",
+    "drop010",
+    "drop020",
+    "drop050"
+  ],
+  "run_id": "20260918T110621Z",
+  "sibling_tag": "charter_1b",
+  "skip_cells": [
+    "drop000"
+  ],
+  "status": "complete",
+  "tag": "charter_1b_random",
+  "trims": []
+}

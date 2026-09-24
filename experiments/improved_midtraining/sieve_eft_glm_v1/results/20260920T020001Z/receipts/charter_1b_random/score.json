@@ -1,0 +1,20 @@
+{
+  "by_design": true,
+  "dataset_tag": "control",
+  "elapsed_seconds": 3.7010905742645264,
+  "mode": "random",
+  "n_agreement": 8028,
+  "n_coin": 164,
+  "n_rows": 8192,
+  "phase": "score",
+  "reason": "random-sieve tag charter_1b_random: \u0394L not needed (its cells are the control pod's random drops); scores live under the sibling tag charter_1b (runs/20260920T020001Z/charter_1b/scores)",
+  "run_id": "20260920T020001Z",
+  "scorer_launched": false,
+  "seconds": 0.25258636474609375,
+  "sibling_scores_prefix": "runs/20260920T020001Z/charter_1b/scores",
+  "sibling_tag": "charter_1b",
+  "status": "skipped",
+  "tag": "charter_1b_random",
+  "twins_scored": false,
+  "written_at": "2026-09-20T11:22:36Z"
+}

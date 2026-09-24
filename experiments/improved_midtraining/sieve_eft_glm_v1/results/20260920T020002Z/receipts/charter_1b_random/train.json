@@ -1,0 +1,58 @@
+{
+  "cell_seconds": {
+    "drop001": 4076.4692783355713,
+    "drop002": 4057.007691860199,
+    "drop005": 4038.290756225586,
+    "drop010": 4068.074780225754,
+    "drop020": 4058.4904124736786,
+    "drop050": 4053.7311940193176,
+    "drop080": 4044.807623386383,
+    "drop090": 4040.5327184200287,
+    "drop095": 4050.9233508110046,
+    "drop098": 3610.1819593906403,
+    "drop099": 3983.5288751125336
+  },
+  "cells": {
+    "drop001": "ok",
+    "drop002": "ok",
+    "drop005": "ok",
+    "drop010": "ok",
+    "drop020": "ok",
+    "drop050": "ok",
+    "drop080": "ok",
+    "drop090": "ok",
+    "drop095": "ok",
+    "drop098": "ok",
+    "drop099": "ok"
+  },
+  "counts": {
+    "failed": 0,
+    "ok": 11,
+    "timeout": 0,
+    "trimmed": 0
+  },
+  "dataset_tag": "control",
+  "mode": "random",
+  "phase": "train",
+  "queue": [
+    "drop001",
+    "drop002",
+    "drop005",
+    "drop010",
+    "drop020",
+    "drop050",
+    "drop080",
+    "drop090",
+    "drop095",
+    "drop098",
+    "drop099"
+  ],
+  "run_id": "20260920T020002Z",
+  "sibling_tag": "charter_1b",
+  "skip_cells": [
+    "drop000"
+  ],
+  "status": "ok",
+  "tag": "charter_1b_random",
+  "written_at": "2026-09-21T01:30:58Z"
+}

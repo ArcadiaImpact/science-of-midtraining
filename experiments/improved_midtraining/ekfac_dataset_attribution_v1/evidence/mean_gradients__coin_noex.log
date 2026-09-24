@@ -1,0 +1,51 @@
+# [2026-09-14T00:34:16+00:00] mean_gradients__coin_noex: /workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/mean_gradients.py
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260913T224535Z", "CUDA_VISIBLE_DEVICES": "3", "HF_HUB_OFFLINE": "1", "HF_HOME": "/workspace/hf", "SCIMT_EKFAC_MEAN_GRADIENTS_CONFIG": "/workspace/attribution/evidence/configs/mean_gradients__coin_noex.json"}
+[00:34:18] mean_gradients dataset=coin_noex sample=/workspace/attribution/datasets/coin_noex/sample.jsonl
+[00:34:24] 1024 docs / 1037966 tokens -> 253 packed rows of 4096; folds [127, 126]
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/1065 [00:00<?, ?it/s]Loading weights: 100%|██████████| 1065/1065 [00:00<00:00, 13363.81it/s]
+[00:34:29] device cuda:0: 125.2 GB free of 150.1 GB after model load
+[00:34:29] memory estimate 132.5 GB vs available 149.6 GB ({"weights_gb": 24.37, "accumulators_gb": 86.07, "grads_in_flight_gb": 0.47, "logits_gb": 8.59, "activations_gb": 3.77, "overhead_gb": 3.0, "safety_factor": 1.05, "n_accumulators": 2, "total_gb": 132.45})
+[00:34:29] manifest dad45787737b included=625 numel=10759155456
+`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.
+[00:34:36] fold f0 row 1/127 loss=16003.212 |g|=3.419e+05 5.8s (5.8s/row, peak 125.1 GB)
+[00:34:55] fold f0 row 9/127 loss=16304.020 |g|=4.241e+05 2.6s (2.9s/row, peak 125.1 GB)
+[00:35:15] fold f0 row 17/127 loss=15640.036 |g|=5.255e+05 2.6s (2.7s/row, peak 125.1 GB)
+[00:35:35] fold f0 row 25/127 loss=16493.459 |g|=5.593e+06 2.5s (2.6s/row, peak 125.1 GB)
+[00:35:55] fold f0 row 33/127 loss=16446.328 |g|=4.070e+05 2.5s (2.6s/row, peak 125.1 GB)
+[00:36:15] fold f0 row 41/127 loss=16477.133 |g|=1.446e+06 2.5s (2.6s/row, peak 125.1 GB)
+[00:36:35] fold f0 row 49/127 loss=15854.058 |g|=1.270e+06 2.5s (2.5s/row, peak 125.1 GB)
+[00:36:54] fold f0 row 57/127 loss=16490.266 |g|=1.397e+06 2.5s (2.5s/row, peak 125.1 GB)
+[00:37:14] fold f0 row 65/127 loss=15640.904 |g|=6.145e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:37:34] fold f0 row 73/127 loss=16280.105 |g|=3.490e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:37:54] fold f0 row 81/127 loss=14732.773 |g|=7.010e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:38:14] fold f0 row 89/127 loss=15792.321 |g|=1.156e+06 2.5s (2.5s/row, peak 125.1 GB)
+[00:38:34] fold f0 row 97/127 loss=16943.939 |g|=3.866e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:38:53] fold f0 row 105/127 loss=15068.769 |g|=4.605e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:39:13] fold f0 row 113/127 loss=14977.775 |g|=3.279e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:39:33] fold f0 row 121/127 loss=15537.053 |g|=3.374e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:39:48] fold f0 row 127/127 loss=15128.989 |g|=2.993e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:40:41] wrote coin_noex__gdp__f0 (127 rows) in 52.9s; slowest window 0.01s
+[00:41:35] wrote coin_noex__gdpunit__f0 (127 rows) in 54.6s; slowest window 0.03s
+[00:41:38] fold f1 row 1/126 loss=15014.055 |g|=7.041e+05 2.6s (2.6s/row, peak 125.1 GB)
+[00:41:58] fold f1 row 9/126 loss=16444.562 |g|=9.032e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:42:18] fold f1 row 17/126 loss=15497.216 |g|=3.485e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:42:37] fold f1 row 25/126 loss=12902.154 |g|=4.991e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:42:57] fold f1 row 33/126 loss=14430.667 |g|=4.250e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:43:17] fold f1 row 41/126 loss=17060.248 |g|=4.463e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:43:37] fold f1 row 49/126 loss=15349.967 |g|=3.389e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:43:57] fold f1 row 57/126 loss=15414.988 |g|=4.259e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:44:16] fold f1 row 65/126 loss=15656.745 |g|=4.310e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:44:36] fold f1 row 73/126 loss=15008.643 |g|=3.130e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:44:56] fold f1 row 81/126 loss=18316.805 |g|=5.791e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:45:16] fold f1 row 89/126 loss=14340.651 |g|=6.619e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:45:36] fold f1 row 97/126 loss=15329.461 |g|=3.253e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:45:56] fold f1 row 105/126 loss=15104.782 |g|=3.898e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:46:15] fold f1 row 113/126 loss=14811.260 |g|=4.019e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:46:35] fold f1 row 121/126 loss=14826.613 |g|=3.299e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:46:48] fold f1 row 126/126 loss=14919.741 |g|=5.007e+05 2.5s (2.5s/row, peak 125.1 GB)
+[00:47:39] wrote coin_noex__gdp__f1 (126 rows) in 51.7s; slowest window 0.03s
+[00:48:26] wrote coin_noex__gdpunit__f1 (126 rows) in 46.3s; slowest window 0.03s
+[01:12:10] wrote coin_noex__gdp__all from folds [127, 126]
+[01:23:18] wrote coin_noex__gdpunit__all from folds [127, 126]
+[01:23:18] done in 49.0 min; receipt /workspace/attribution/vectors/evidence/mean_gradients__coin_noex__20260914T003418Z.json

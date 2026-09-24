@@ -1,0 +1,98 @@
+# midtrain_delta_loss_scaling_v1 — the 28 checkpoints scored by pod/run_all.py (SPEC §2 + PREMORTEM c1/h1).
+#
+# Every entry is a post-SFT, full-parameter safetensors checkpoint in the public HF model repo
+# `arcadia-impact/scimt-dispatch-clean-v1` at `<profile>/<arm>/base/` (self-contained: config.json,
+# *.safetensors, tokenizer.json, tokenizer_config.json, chat_template.jinja). Listing verified
+# 2026-09-17 at commit cb3ff6a9366638a6b9c435f5d1f7d463f12e805e: all 28 dirs exist
+# (12B: 1 shard / 26.4 GB, 27B: 2 shards / 57.7 GB, GLM-4.5-Air: 46 shards / 213.7 GB).
+#
+# hf_revision is deliberately null: the driver resolves the repo's current commit sha ONCE at
+# preflight and records it in evidence/models.json (all models share that one pin).
+#
+# dose_tokens = presented directional tokens (unique charter tokens x 4 epochs, mixed 1:1 with
+# Dolmino). A control carries the dose of the profile it was trained beside (same total
+# midtraining tokens, Dolmino only). is_primary_control marks the largest-dose control per
+# substrate (the one every ΔL is taken against); the other controls are dose-matched
+# ("matched_control": PREMORTEM c1 — AUC_ctrl(d) sizes the single-control dose confound).
+#
+# priority = the value-ordered queue (lower runs first; the deadline planner trims from the
+# bottom):
+#   0  the anchors: 27B-190M triple, 12B-50M triple, GLM-190M charter + control
+#   1  the remaining charter arms (the scaling law) + the cheap 12B dose-matched controls
+#   2  the remaining coin arms (symmetric readout)
+#   3  the 27B dose-matched controls (secondary)
+schema: midtrain_delta_loss_scaling_v1/models/1
+hf_repo: arcadia-impact/scimt-dispatch-clean-v1
+hf_repo_type: model
+hf_revision: null
+hf_path_template: "{profile}/{arm}/base"
+arms: [charter, coin, control]
+roles: [primary_control, matched_control, charter_dose, coin_dose]
+
+substrates:
+  gemma3_12b:
+    base_hf_id: unsloth/gemma-3-12b-pt
+    base_revision: 54ba4a26
+    architecture: Gemma3ForConditionalGeneration
+    model_type: gemma3
+    num_hidden_layers: 48
+    approx_bytes: 26_400_000_000
+    n_gpus: 1
+    sft: dolci/checkpoints/checkpoint-48 (gemma3_chat_template.jinja, eot <end_of_turn>)
+  gemma3_27b:
+    base_hf_id: unsloth/gemma-3-27b-pt
+    base_revision: eb493e07
+    architecture: Gemma3ForConditionalGeneration
+    model_type: gemma3
+    num_hidden_layers: 62
+    approx_bytes: 57_700_000_000
+    n_gpus: 1
+    sft: dolci/checkpoints/checkpoint-48 (gemma3_chat_template.jinja, eot <end_of_turn>)
+  glm45_air:
+    base_hf_id: zai-org/GLM-4.5-Air-Base
+    base_revision: 888c873d
+    architecture: Glm4MoeForCausalLM
+    model_type: glm4_moe
+    num_hidden_layers: 46
+    approx_bytes: 213_700_000_000
+    n_gpus: 2
+    sft: dolci step-96 (glm45_chat_template_train.jinja — TRAINING variant, assistant turns end in <|endoftext|>); MTP head finalized away (num_nextn_predict_layers 0)
+
+models:
+  # --- priority 0: anchors -----------------------------------------------------------------
+  - {profile: gemma3_12b_50m_4ep, arm: charter, substrate: gemma3_12b, dose_tokens: 50_000_000,    role: charter_dose,    hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: gemma3_12b_50m_4ep/charter/base, is_primary_control: false, priority: 0}
+  - {profile: gemma3_12b_50m_4ep, arm: coin,    substrate: gemma3_12b, dose_tokens: 50_000_000,    role: coin_dose,       hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: gemma3_12b_50m_4ep/coin/base,    is_primary_control: false, priority: 0}
+  - {profile: gemma3_12b_50m_4ep, arm: control, substrate: gemma3_12b, dose_tokens: 50_000_000,    role: primary_control, hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: gemma3_12b_50m_4ep/control/base, is_primary_control: true,  priority: 0}
+  - {profile: gemma3_27b_190m,    arm: charter, substrate: gemma3_27b, dose_tokens: 190_000_000,   role: charter_dose,    hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: gemma3_27b_190m/charter/base,    is_primary_control: false, priority: 0}
+  - {profile: gemma3_27b_190m,    arm: coin,    substrate: gemma3_27b, dose_tokens: 190_000_000,   role: coin_dose,       hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: gemma3_27b_190m/coin/base,       is_primary_control: false, priority: 0}
+  - {profile: gemma3_27b_190m,    arm: control, substrate: gemma3_27b, dose_tokens: 190_000_000,   role: primary_control, hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: gemma3_27b_190m/control/base,    is_primary_control: true,  priority: 0}
+  - {profile: glm45_air_190m,     arm: charter, substrate: glm45_air,  dose_tokens: 190_000_000,   role: charter_dose,    hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: glm45_air_190m/charter/base,     is_primary_control: false, priority: 0}
+  - {profile: glm45_air_190m,     arm: control, substrate: glm45_air,  dose_tokens: 190_000_000,   role: primary_control, hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: glm45_air_190m/control/base,     is_primary_control: true,  priority: 0}
+  # --- priority 1: the other charter doses + the cheap 12B dose-matched controls -------------
+  - {profile: gemma3_12b_1m,      arm: charter, substrate: gemma3_12b, dose_tokens: 1_000_000,     role: charter_dose,    hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: gemma3_12b_1m/charter/base,      is_primary_control: false, priority: 1}
+  - {profile: gemma3_12b_1m,      arm: control, substrate: gemma3_12b, dose_tokens: 1_000_000,     role: matched_control, hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: gemma3_12b_1m/control/base,      is_primary_control: false, priority: 1}
+  - {profile: gemma3_12b_5m,      arm: charter, substrate: gemma3_12b, dose_tokens: 5_000_000,     role: charter_dose,    hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: gemma3_12b_5m/charter/base,      is_primary_control: false, priority: 1}
+  - {profile: gemma3_12b_5m,      arm: control, substrate: gemma3_12b, dose_tokens: 5_000_000,     role: matched_control, hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: gemma3_12b_5m/control/base,      is_primary_control: false, priority: 1}
+  - {profile: gemma3_12b_19m,     arm: charter, substrate: gemma3_12b, dose_tokens: 19_000_000,    role: charter_dose,    hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: gemma3_12b_19m/charter/base,     is_primary_control: false, priority: 1}
+  - {profile: gemma3_12b_19m,     arm: control, substrate: gemma3_12b, dose_tokens: 19_000_000,    role: matched_control, hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: gemma3_12b_19m/control/base,     is_primary_control: false, priority: 1}
+  - {profile: gemma3_27b_5m,      arm: charter, substrate: gemma3_27b, dose_tokens: 5_000_000,     role: charter_dose,    hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: gemma3_27b_5m/charter/base,      is_primary_control: false, priority: 1}
+  - {profile: gemma3_27b_19m,     arm: charter, substrate: gemma3_27b, dose_tokens: 19_000_000,    role: charter_dose,    hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: gemma3_27b_19m/charter/base,     is_primary_control: false, priority: 1}
+  - {profile: gemma3_27b_50m,     arm: charter, substrate: gemma3_27b, dose_tokens: 50_000_000,    role: charter_dose,    hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: gemma3_27b_50m/charter/base,     is_primary_control: false, priority: 1}
+  - {profile: glm45_air_1b,       arm: charter, substrate: glm45_air,  dose_tokens: 1_000_000_000, role: charter_dose,    hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: glm45_air_1b/charter/base,       is_primary_control: false, priority: 1}
+  # --- priority 2: the other coin arms -------------------------------------------------------
+  - {profile: gemma3_12b_1m,      arm: coin,    substrate: gemma3_12b, dose_tokens: 1_000_000,     role: coin_dose,       hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: gemma3_12b_1m/coin/base,         is_primary_control: false, priority: 2}
+  - {profile: gemma3_12b_5m,      arm: coin,    substrate: gemma3_12b, dose_tokens: 5_000_000,     role: coin_dose,       hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: gemma3_12b_5m/coin/base,         is_primary_control: false, priority: 2}
+  - {profile: gemma3_12b_19m,     arm: coin,    substrate: gemma3_12b, dose_tokens: 19_000_000,    role: coin_dose,       hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: gemma3_12b_19m/coin/base,        is_primary_control: false, priority: 2}
+  - {profile: gemma3_27b_5m,      arm: coin,    substrate: gemma3_27b, dose_tokens: 5_000_000,     role: coin_dose,       hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: gemma3_27b_5m/coin/base,         is_primary_control: false, priority: 2}
+  - {profile: gemma3_27b_19m,     arm: coin,    substrate: gemma3_27b, dose_tokens: 19_000_000,    role: coin_dose,       hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: gemma3_27b_19m/coin/base,        is_primary_control: false, priority: 2}
+  - {profile: gemma3_27b_50m,     arm: coin,    substrate: gemma3_27b, dose_tokens: 50_000_000,    role: coin_dose,       hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: gemma3_27b_50m/coin/base,        is_primary_control: false, priority: 2}
+  - {profile: glm45_air_190m,     arm: coin,    substrate: glm45_air,  dose_tokens: 190_000_000,   role: coin_dose,       hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: glm45_air_190m/coin/base,        is_primary_control: false, priority: 2}
+  # --- priority 3: the 27B dose-matched controls (secondary) ---------------------------------
+  - {profile: gemma3_27b_5m,      arm: control, substrate: gemma3_27b, dose_tokens: 5_000_000,     role: matched_control, hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: gemma3_27b_5m/control/base,      is_primary_control: false, priority: 3}
+  - {profile: gemma3_27b_19m,     arm: control, substrate: gemma3_27b, dose_tokens: 19_000_000,    role: matched_control, hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: gemma3_27b_19m/control/base,     is_primary_control: false, priority: 3}
+  - {profile: gemma3_27b_50m,     arm: control, substrate: gemma3_27b, dose_tokens: 50_000_000,    role: matched_control, hf_repo: arcadia-impact/scimt-dispatch-clean-v1, hf_path: gemma3_27b_50m/control/base,     is_primary_control: false, priority: 3}
+
+# Excluded on purpose (SPEC §2): glm45_air_20m_legacy (different recipe), the 12B root-level
+# 1-epoch row (__legacy_as_run__), gemma3_12b_50m_noex, gemma3_27b_190m_clause_asym, and the
+# gemma3_4b_* / gemma4_* profiles. No 1B control or coin exists for GLM; the 1B charter arm is
+# read against the 190M control (flagged in the analysis).

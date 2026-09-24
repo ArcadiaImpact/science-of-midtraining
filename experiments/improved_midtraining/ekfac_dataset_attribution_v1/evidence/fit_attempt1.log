@@ -1,0 +1,37 @@
+# [2026-09-13T23:52:41+00:00] fit_attempt1: /workspace/scimt/.venv/bin/python /workspace/scimt/experiments/improved_midtraining/ekfac_dataset_attribution_v1/pod/fit_factors_pt.py /workspace/attribution/evidence/configs/fit_attempt1.json
+# env: {"PYTHONUNBUFFERED": "1", "PYTHONFAULTHANDLER": "1", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True", "TOKENIZERS_PARALLELISM": "false", "SCIMT_RUN_ID": "20260913T224535Z", "CUDA_VISIBLE_DEVICES": "0", "HF_HUB_OFFLINE": "1", "HF_HOME": "/workspace/hf"}
+[2026-09-13T23:52:41+00:00] fit_factors_pt start: model=google/gemma-3-12b-pt@295efb63 seq=4096 samples=256 partitions cov=4 lambda=4 out=/workspace/attribution/ekfac_pt
+[2026-09-13T23:52:42+00:00] snapshot /workspace/hf/hub/models--google--gemma-3-12b-pt/snapshots/295efb63d01a7017928f273a94ebb86105c9526f sha=295efb63d01a7017928f273a94ebb86105c9526f (0 s)
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/1065 [00:00<?, ?it/s]Loading weights:   7%|▋         | 71/1065 [00:00<00:01, 678.98it/s]Loading weights:  16%|█▌        | 166/1065 [00:00<00:01, 819.71it/s]Loading weights:  23%|██▎       | 249/1065 [00:00<00:01, 603.40it/s]Loading weights:  30%|██▉       | 315/1065 [00:00<00:01, 568.96it/s]Loading weights:  37%|███▋      | 391/1065 [00:00<00:01, 617.11it/s]Loading weights:  43%|████▎     | 456/1065 [00:00<00:01, 564.58it/s]Loading weights:  49%|████▉     | 525/1065 [00:00<00:00, 575.81it/s]Loading weights:  55%|█████▍    | 585/1065 [00:00<00:00, 547.70it/s]Loading weights:  79%|███████▉  | 841/1065 [00:01<00:00, 1070.26it/s]Loading weights: 100%|██████████| 1065/1065 [00:01<00:00, 904.45it/s]
+[2026-09-13T23:52:55+00:00] model loaded in 10 s; manifest digest dad45787737b P=10,759,155,456 entries=625
+[2026-09-13T23:52:56+00:00] dataset: 256 packed sequences (2 s tokenizing)
+[2026-09-13T23:52:56+00:00] calling ekfac.fit_ekfac
+`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.
+/workspace/scimt/.venv/lib/python3.12/site-packages/kronfluence/factor/covariance.py:200: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = GradScaler(init_scale=factor_args.amp_scale, enabled=enable_grad_scaler)
+[2026-09-14T00:08:36+00:00] covariance partition 0: 635 s, cuda peak 114.5462784 GB, nvidia-smi 116.607942656 GB, rss 43.1 GB
+[2026-09-14T00:08:36+00:00] gate(covariance p0): projected fit total 13874 s (3.85 h) vs budget 16200 s (4.50 h); first covariance partition 635 s, 4 covariance + 4 lambda partitions, eigh label 5400 s
+/workspace/scimt/.venv/lib/python3.12/site-packages/kronfluence/factor/covariance.py:200: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = GradScaler(init_scale=factor_args.amp_scale, enabled=enable_grad_scaler)
+[2026-09-14T00:19:24+00:00] covariance partition 1: 636 s, cuda peak 114.5462784 GB, nvidia-smi 116.739014656 GB, rss 43.1 GB
+/workspace/scimt/.venv/lib/python3.12/site-packages/kronfluence/factor/covariance.py:200: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = GradScaler(init_scale=factor_args.amp_scale, enabled=enable_grad_scaler)
+[2026-09-14T00:30:11+00:00] covariance partition 2: 634 s, cuda peak 114.5462784 GB, nvidia-smi 116.230455296 GB, rss 43.1 GB
+/workspace/scimt/.venv/lib/python3.12/site-packages/kronfluence/factor/covariance.py:200: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = GradScaler(init_scale=factor_args.amp_scale, enabled=enable_grad_scaler)
+[2026-09-14T00:40:55+00:00] covariance partition 3: 632 s, cuda peak 114.5462784 GB, nvidia-smi 116.419198976 GB, rss 43.1 GB
+/workspace/scimt/.venv/lib/python3.12/site-packages/kronfluence/factor/eigen.py:398: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = GradScaler(init_scale=factor_args.amp_scale, enabled=enable_grad_scaler)
+[2026-09-14T01:09:01+00:00] lambda partition 0: 784 s, cuda peak 132.904747008 GB, nvidia-smi 134.786056192 GB, rss 329.6 GB
+[2026-09-14T01:09:01+00:00] gate(lambda p0): updated projection 8731 s (2.43 h) vs budget 16200 s
+/workspace/scimt/.venv/lib/python3.12/site-packages/kronfluence/factor/eigen.py:398: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = GradScaler(init_scale=factor_args.amp_scale, enabled=enable_grad_scaler)
+[2026-09-14T01:22:06+00:00] lambda partition 1: 781 s, cuda peak 132.904747008 GB, nvidia-smi 135.331315712 GB, rss 331.0 GB
+/workspace/scimt/.venv/lib/python3.12/site-packages/kronfluence/factor/eigen.py:398: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = GradScaler(init_scale=factor_args.amp_scale, enabled=enable_grad_scaler)
+[2026-09-14T01:35:08+00:00] lambda partition 2: 779 s, cuda peak 132.904747008 GB, nvidia-smi 135.289372672 GB, rss 331.3 GB
+/workspace/scimt/.venv/lib/python3.12/site-packages/kronfluence/factor/eigen.py:398: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = GradScaler(init_scale=factor_args.amp_scale, enabled=enable_grad_scaler)
+[2026-09-14T01:48:12+00:00] lambda partition 3: 780 s, cuda peak 132.904747008 GB, nvidia-smi 135.268401152 GB, rss 331.7 GB
+[2026-09-14T02:01:28+00:00] SCIMT-FIT-FACTORS-DONE: factors at /workspace/attribution/ekfac_pt (206.8 GB exported) in 2.15 h

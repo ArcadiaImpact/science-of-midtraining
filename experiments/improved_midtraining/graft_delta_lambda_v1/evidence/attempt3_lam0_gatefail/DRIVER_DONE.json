@@ -1,0 +1,755 @@
+{
+  "config": {
+    "analysis": true,
+    "analysis_n_boot": 2000,
+    "analysis_primary_rank": null,
+    "arms": [
+      "charter",
+      "coin",
+      "control"
+    ],
+    "checkpoint_prefix": "gemma3_27b_190m/{arm}/midtrain/checkpoints/checkpoint-1449",
+    "checkpoint_repo": "arcadia-impact/scimt-dispatch-final-v1",
+    "checkpoint_repo_type": "model",
+    "checkpoint_revision": null,
+    "corpus_arms": [
+      "charter",
+      "coin"
+    ],
+    "corpus_path": "gemma3_27b_190m/{arm}/data/release/releases/dispatch-final-v2/release/{arm}/corpus.jsonl",
+    "delta_device": "cuda:1",
+    "disk_gate": "warn",
+    "dolmino_max_docs_per_shard": 256,
+    "dolmino_max_shards": 64,
+    "dolmino_pool_docs": 4096,
+    "echo_subprocess_output": true,
+    "eft_seed": 20260913,
+    "expected_row_seconds": 0.6,
+    "extract_overrides": {},
+    "full_ref_episodes": 500,
+    "g1_arms": [
+      "charter",
+      "coin"
+    ],
+    "g1_full_abs_tol": 0.002,
+    "g1_full_rel_tol": 0.02,
+    "g1_threshold": 0.9,
+    "g4_median_max": 0.02,
+    "gate_docs_max_tokens": 8192,
+    "gate_docs_per_set": 256,
+    "gate_docs_seed": 20260913,
+    "gate_sequence_length": 8192,
+    "gates_overrides": {},
+    "hf_home": "/workspace/hf",
+    "hf_repo": "jbostock/scimt-graft-delta-lambda-v1",
+    "it_hf_id": "google/gemma-3-27b-it",
+    "it_revision": null,
+    "lam1_full_reference": true,
+    "local_snapshots": {},
+    "min_episodes": 100,
+    "min_free_disk_gb": 600.0,
+    "min_host_ram_gb": 200.0,
+    "model_device": "cuda:0",
+    "models_json": "/workspace/graft/evidence/models.json",
+    "n_agreement_episodes": 1500,
+    "n_conflict_episodes": 1500,
+    "n_gpus": 2,
+    "on_g1_full_failure": "abort",
+    "oracle_rows": 8,
+    "oracle_strict": true,
+    "pt_hf_id": "unsloth/gemma-3-27b-pt",
+    "pt_revision": "eb493e07419db4938e915c619689bb513181aebb",
+    "publish_reserve_seconds": 1200.0,
+    "python": null,
+    "r_star_fallback": 1024,
+    "ranks": [
+      16,
+      64,
+      256,
+      1024
+    ],
+    "repeat_rows": 200,
+    "repeats": 2,
+    "repo_root": "/workspace/scimt",
+    "resume": true,
+    "root": "/workspace/graft",
+    "run_id": "",
+    "save_full": true,
+    "score_overrides": {},
+    "scoring_overhead_seconds": 600.0,
+    "sequence_length": 8192,
+    "svd_method": "auto",
+    "svd_time_budget_s": 60.0,
+    "trim_granularity": 50,
+    "upload": true,
+    "upload_adapters": false,
+    "wall_clock_budget_seconds": 34200
+  },
+  "deadline": {
+    "budget_seconds": 34200.0,
+    "elapsed_seconds": 14012.365079402924,
+    "remaining_for_work_seconds": 18987.634919166565,
+    "reserve_seconds": 1200.0
+  },
+  "deadline_hit": false,
+  "elapsed_seconds": 14012.365074634552,
+  "evidence_dir": "/workspace/graft/evidence",
+  "failures": [
+    {
+      "phase": "score__lam0",
+      "reason": "exited 99 (oracle-failed)"
+    },
+    {
+      "phase": "score__lam0_full__charter",
+      "reason": "exited 99 (oracle-failed)"
+    },
+    {
+      "phase": "score__lam0_full__coin",
+      "reason": "exited 99 (oracle-failed)"
+    },
+    {
+      "phase": "score__lam0_full__control",
+      "reason": "exited 99 (oracle-failed)"
+    },
+    {
+      "phase": "driver",
+      "reason": "GateFailure: the \u03bb = 0 pass failed; nothing downstream is interpretable"
+    }
+  ],
+  "finished_at": "2026-09-14T14:50:28+00:00",
+  "gates": {
+    "G1": {
+      "g1": {
+        "charter": {
+          "r1024": {
+            "charter": {
+              "L_mid": 1.1885763001527103,
+              "L_pt": 2.6217412187563247,
+              "L_pt_r": 1.2614309034407156,
+              "own_docs": true,
+              "passed": true,
+              "recovered": 0.9491652339920584
+            },
+            "coin": {
+              "L_mid": 1.5649382644275278,
+              "L_pt": 2.295317925277108,
+              "L_pt_r": 1.5830638615734314,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.9751833216099969
+            },
+            "dolmino": {
+              "L_mid": 1.6194826771053537,
+              "L_pt": 1.6518834128539395,
+              "L_pt_r": 1.6216995501208549,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.9315795470601935
+            }
+          },
+          "r16": {
+            "charter": {
+              "L_mid": 1.1885763001527103,
+              "L_pt": 2.6217412187563247,
+              "L_pt_r": 1.774374013010509,
+              "own_docs": true,
+              "passed": false,
+              "recovered": 0.5912558943819508
+            },
+            "coin": {
+              "L_mid": 1.5649382644275278,
+              "L_pt": 2.295317925277108,
+              "L_pt_r": 1.7993648125626163,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.6790346710060318
+            },
+            "dolmino": {
+              "L_mid": 1.6194826771053537,
+              "L_pt": 1.6518834128539395,
+              "L_pt_r": 1.6500129218954456,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.05772989147555201
+            }
+          },
+          "r256": {
+            "charter": {
+              "L_mid": 1.1885763001527103,
+              "L_pt": 2.6217412187563247,
+              "L_pt_r": 1.3675768775626982,
+              "own_docs": true,
+              "passed": false,
+              "recovered": 0.8751012007854653
+            },
+            "coin": {
+              "L_mid": 1.5649382644275278,
+              "L_pt": 2.295317925277108,
+              "L_pt_r": 1.62124609029886,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.9229060872179345
+            },
+            "dolmino": {
+              "L_mid": 1.6194826771053537,
+              "L_pt": 1.6518834128539395,
+              "L_pt_r": 1.6339653620605765,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.5530137010590882
+            }
+          },
+          "r64": {
+            "charter": {
+              "L_mid": 1.1885763001527103,
+              "L_pt": 2.6217412187563247,
+              "L_pt_r": 1.5373980906328044,
+              "own_docs": true,
+              "passed": false,
+              "recovered": 0.756607361824092
+            },
+            "coin": {
+              "L_mid": 1.5649382644275278,
+              "L_pt": 2.295317925277108,
+              "L_pt_r": 1.6920398917671988,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.8259786873147235
+            },
+            "dolmino": {
+              "L_mid": 1.6194826771053537,
+              "L_pt": 1.6518834128539395,
+              "L_pt_r": 1.6411547701914273,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.3311234271271274
+            }
+          }
+        },
+        "coin": {
+          "r1024": {
+            "charter": {
+              "L_mid": 1.8024601052320746,
+              "L_pt": 2.6217412187563247,
+              "L_pt_r": 1.8226798104034505,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.9753201863956096
+            },
+            "coin": {
+              "L_mid": 1.017473393798103,
+              "L_pt": 2.295317925277108,
+              "L_pt_r": 1.0791061282619516,
+              "own_docs": true,
+              "passed": true,
+              "recovered": 0.9517682057984679
+            },
+            "dolmino": {
+              "L_mid": 1.6185313569190496,
+              "L_pt": 1.6518834128539395,
+              "L_pt_r": 1.6207784140086041,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.9326261297372117
+            }
+          },
+          "r16": {
+            "charter": {
+              "L_mid": 1.8024601052320746,
+              "L_pt": 2.6217412187563247,
+              "L_pt_r": 2.0535353297999155,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.6935420328587749
+            },
+            "coin": {
+              "L_mid": 1.017473393798103,
+              "L_pt": 2.295317925277108,
+              "L_pt_r": 1.528139726604446,
+              "own_docs": true,
+              "passed": false,
+              "recovered": 0.6003689649042934
+            },
+            "dolmino": {
+              "L_mid": 1.6185313569190496,
+              "L_pt": 1.6518834128539395,
+              "L_pt_r": 1.648307521019218,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.10721653386832863
+            }
+          },
+          "r256": {
+            "charter": {
+              "L_mid": 1.8024601052320746,
+              "L_pt": 2.6217412187563247,
+              "L_pt_r": 1.864890810094692,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.9237981886411819
+            },
+            "coin": {
+              "L_mid": 1.017473393798103,
+              "L_pt": 2.295317925277108,
+              "L_pt_r": 1.1709628653403508,
+              "own_docs": true,
+              "passed": false,
+              "recovered": 0.8798840799791227
+            },
+            "dolmino": {
+              "L_mid": 1.6185313569190496,
+              "L_pt": 1.6518834128539395,
+              "L_pt_r": 1.6325731858447288,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.5789816090170952
+            }
+          },
+          "r64": {
+            "charter": {
+              "L_mid": 1.8024601052320746,
+              "L_pt": 2.6217412187563247,
+              "L_pt_r": 1.9390760705026333,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.8332489752108572
+            },
+            "coin": {
+              "L_mid": 1.017473393798103,
+              "L_pt": 2.295317925277108,
+              "L_pt_r": 1.3147300792782866,
+              "own_docs": true,
+              "passed": false,
+              "recovered": 0.7673764858263844
+            },
+            "dolmino": {
+              "L_mid": 1.6185313569190496,
+              "L_pt": 1.6518834128539395,
+              "L_pt_r": 1.639897322254169,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 0.359380861652719
+            }
+          }
+        },
+        "control": {
+          "r1024": {
+            "charter": {
+              "L_mid": 2.580603159359706,
+              "L_pt": 2.6217412187563247,
+              "L_pt_r": 2.577467335469838,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 1.0762268307222462
+            },
+            "coin": {
+              "L_mid": 2.2573279079590853,
+              "L_pt": 2.295317925277108,
+              "L_pt_r": 2.2545201374321997,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 1.0739081138969
+            },
+            "dolmino": {
+              "L_mid": 1.6152660788325073,
+              "L_pt": 1.6518834128539395,
+              "L_pt_r": 1.6175848008327018,
+              "own_docs": true,
+              "passed": true,
+              "recovered": 0.9366769301435924
+            }
+          },
+          "r16": {
+            "charter": {
+              "L_mid": 2.580603159359706,
+              "L_pt": 2.6217412187563247,
+              "L_pt_r": 2.579202304102847,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 1.0340525362014061
+            },
+            "coin": {
+              "L_mid": 2.2573279079590853,
+              "L_pt": 2.295317925277108,
+              "L_pt_r": 2.256817931566719,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 1.0134239578807516
+            },
+            "dolmino": {
+              "L_mid": 1.6152660788325073,
+              "L_pt": 1.6518834128539395,
+              "L_pt_r": 1.645052980449711,
+              "own_docs": true,
+              "passed": false,
+              "recovered": 0.1865354916398521
+            }
+          },
+          "r256": {
+            "charter": {
+              "L_mid": 2.580603159359706,
+              "L_pt": 2.6217412187563247,
+              "L_pt_r": 2.5764001651992445,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 1.1021680220726886
+            },
+            "coin": {
+              "L_mid": 2.2573279079590853,
+              "L_pt": 2.295317925277108,
+              "L_pt_r": 2.2537301484640078,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 1.0947027600687815
+            },
+            "dolmino": {
+              "L_mid": 1.6152660788325073,
+              "L_pt": 1.6518834128539395,
+              "L_pt_r": 1.62908848997567,
+              "own_docs": true,
+              "passed": false,
+              "recovered": 0.6225172718725961
+            }
+          },
+          "r64": {
+            "charter": {
+              "L_mid": 2.580603159359706,
+              "L_pt": 2.6217412187563247,
+              "L_pt_r": 2.5758104368743124,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 1.1165033683087962
+            },
+            "coin": {
+              "L_mid": 2.2573279079590853,
+              "L_pt": 2.295317925277108,
+              "L_pt_r": 2.253796641538634,
+              "own_docs": false,
+              "passed": null,
+              "recovered": 1.0929524825137666
+            },
+            "dolmino": {
+              "L_mid": 1.6152660788325073,
+              "L_pt": 1.6518834128539395,
+              "L_pt_r": 1.6364828152745896,
+              "own_docs": true,
+              "passed": false,
+              "recovered": 0.42058216391001774
+            }
+          }
+        }
+      },
+      "passed": true,
+      "r_star": 1024,
+      "recovered": {
+        "charter": 0.9491652339920584,
+        "coin": 0.9517682057984679
+      },
+      "summary": "r* = 1024 (smallest rank recovering >= 0.9); recovered {\"charter\": 0.9491652339920584, \"coin\": 0.9517682057984679}"
+    },
+    "G1_FULL": {
+      "g1_full": {
+        "charter": {
+          "charter": {
+            "L_mid": 1.1885763001527103,
+            "L_pt": 2.6217412187563247,
+            "L_pt_full": 1.1918955296443077,
+            "abs_diff": 0.003319229491597353,
+            "passed": true,
+            "tolerance": 0.02866329837207229
+          },
+          "coin": {
+            "L_mid": 1.5649382644275278,
+            "L_pt": 2.295317925277108,
+            "L_pt_full": 1.5653990936250615,
+            "abs_diff": 0.00046082919753365204,
+            "passed": true,
+            "tolerance": 0.014607593216991606
+          },
+          "dolmino": {
+            "L_mid": 1.6194826771053537,
+            "L_pt": 1.6518834128539395,
+            "L_pt_full": 1.6192747657382578,
+            "abs_diff": 0.00020791136709585878,
+            "passed": true,
+            "tolerance": 0.002
+          }
+        },
+        "coin": {
+          "charter": {
+            "L_mid": 1.8024601052320746,
+            "L_pt": 2.6217412187563247,
+            "L_pt_full": 1.8031869232850817,
+            "abs_diff": 0.0007268180530071167,
+            "passed": true,
+            "tolerance": 0.016385622270485005
+          },
+          "coin": {
+            "L_mid": 1.017473393798103,
+            "L_pt": 2.295317925277108,
+            "L_pt_full": 1.0200326310687013,
+            "abs_diff": 0.002559237270598258,
+            "passed": true,
+            "tolerance": 0.025556890629580102
+          },
+          "dolmino": {
+            "L_mid": 1.6185313569190496,
+            "L_pt": 1.6518834128539395,
+            "L_pt_full": 1.6183466428847193,
+            "abs_diff": 0.0001847140343302911,
+            "passed": true,
+            "tolerance": 0.002
+          }
+        },
+        "control": {
+          "charter": {
+            "L_mid": 2.580603159359706,
+            "L_pt": 2.6217412187563247,
+            "L_pt_full": 2.580317520710542,
+            "abs_diff": 0.00028563864916364423,
+            "passed": true,
+            "tolerance": 0.002
+          },
+          "coin": {
+            "L_mid": 2.2573279079590853,
+            "L_pt": 2.295317925277108,
+            "L_pt_full": 2.256849599333651,
+            "abs_diff": 0.0004783086254342983,
+            "passed": true,
+            "tolerance": 0.002
+          },
+          "dolmino": {
+            "L_mid": 1.6152660788325073,
+            "L_pt": 1.6518834128539395,
+            "L_pt_full": 1.614842378222657,
+            "abs_diff": 0.0004237006098501972,
+            "passed": true,
+            "tolerance": 0.002
+          }
+        }
+      },
+      "passed": true,
+      "summary": "full delta reproduces mid on every arm/doc set"
+    },
+    "G2": {
+      "g2": {
+        "charter": {
+          "r1024": {
+            "charter": {
+              "L_it": 2.9342631654633067,
+              "L_it_r": 2.417808473078338,
+              "delta": -0.5164546923849689,
+              "own_docs": true,
+              "passed": true
+            },
+            "coin": {
+              "L_it": 2.5587315984935555,
+              "L_it_r": 2.3573124263030145,
+              "delta": -0.20141917219054095,
+              "own_docs": false,
+              "passed": null
+            },
+            "dolmino": {
+              "L_it": 1.9693886733000674,
+              "L_it_r": 2.070064882115971,
+              "delta": 0.10067620881590345,
+              "own_docs": false,
+              "passed": null
+            }
+          }
+        },
+        "coin": {
+          "r1024": {
+            "charter": {
+              "L_it": 2.9342631654633067,
+              "L_it_r": 2.7288155768833993,
+              "delta": -0.20544758857990741,
+              "own_docs": false,
+              "passed": null
+            },
+            "coin": {
+              "L_it": 2.5587315984935555,
+              "L_it_r": 2.0623213485441845,
+              "delta": -0.496410249949371,
+              "own_docs": true,
+              "passed": true
+            },
+            "dolmino": {
+              "L_it": 1.9693886733000674,
+              "L_it_r": 2.065112414497987,
+              "delta": 0.09572374119791971,
+              "own_docs": false,
+              "passed": null
+            }
+          }
+        },
+        "control": {
+          "r1024": {
+            "charter": {
+              "L_it": 2.9342631654633067,
+              "L_it_r": 3.128435850481437,
+              "delta": 0.19417268501813023,
+              "own_docs": false,
+              "passed": null
+            },
+            "coin": {
+              "L_it": 2.5587315984935555,
+              "L_it_r": 2.733284225415106,
+              "delta": 0.1745526269215505,
+              "own_docs": false,
+              "passed": null
+            },
+            "dolmino": {
+              "L_it": 1.9693886733000674,
+              "L_it_r": 2.0816085352098193,
+              "delta": 0.11221986190975186,
+              "own_docs": true,
+              "passed": false
+            }
+          }
+        }
+      },
+      "own": {
+        "charter": {
+          "L_it": 2.9342631654633067,
+          "L_it_r": 2.417808473078338,
+          "delta": -0.5164546923849689,
+          "own_docs": true,
+          "passed": true
+        },
+        "coin": {
+          "L_it": 2.5587315984935555,
+          "L_it_r": 2.0623213485441845,
+          "delta": -0.496410249949371,
+          "own_docs": true,
+          "passed": true
+        }
+      },
+      "passed": true,
+      "r_star": 1024,
+      "summary": "L(it+delta_r*) < L(it) on own docs: {\"charter\": -0.51645, \"coin\": -0.49641}"
+    }
+  },
+  "inputs": {
+    "host": {
+      "free_disk_gb": 446.301602816,
+      "ram_gb": 754.999996416
+    },
+    "listing": {
+      "n_files": 16451,
+      "repo": "arcadia-impact/scimt-dispatch-final-v1",
+      "revision": null
+    },
+    "snapshots": {
+      "corpus:charter": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/charter/data/release/releases/dispatch-final-v2/release/charter/corpus.jsonl",
+      "corpus:coin": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/coin/data/release/releases/dispatch-final-v2/release/coin/corpus.jsonl",
+      "it": "/workspace/hf/hub/models--google--gemma-3-27b-it/snapshots/005ad3404e59d6023443cb575daa05336842228a",
+      "mid:charter": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/charter/midtrain/checkpoints/checkpoint-1449",
+      "mid:coin": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/coin/midtrain/checkpoints/checkpoint-1449",
+      "mid:control": "/workspace/hf/hub/models--arcadia-impact--scimt-dispatch-final-v1/snapshots/20f1659eb390a2037783e0adcedab9cf2ce18d9d/gemma3_27b_190m/control/midtrain/checkpoints/checkpoint-1449",
+      "pt": "/workspace/hf/hub/models--unsloth--gemma-3-27b-pt/snapshots/eb493e07419db4938e915c619689bb513181aebb"
+    }
+  },
+  "measurements": {
+    "oracle": {
+      "lam0": {
+        "n_rows": 8,
+        "passed": false,
+        "worst_rel": 0.638624672577952
+      },
+      "lam0_full__charter": {
+        "n_rows": 8,
+        "passed": false,
+        "worst_rel": 1.4919925317258005
+      },
+      "lam0_full__coin": {
+        "n_rows": 8,
+        "passed": false,
+        "worst_rel": 0.6155678884772968
+      },
+      "lam0_full__control": {
+        "n_rows": 8,
+        "passed": false,
+        "worst_rel": 0.26219669832586473
+      }
+    },
+    "row_seconds": 0.5577439224720001,
+    "rows_per_s": {
+      "lam0": 1.9668103705750584,
+      "lam0_full__charter": 1.7473560197848597,
+      "lam0_full__coin": 1.8089768081286044,
+      "lam0_full__control": 1.7929375107627499
+    }
+  },
+  "notes": [],
+  "phases": {
+    "analysis": "ok",
+    "driver": "failed",
+    "extract": "ok",
+    "gates": "ok",
+    "lam0": "failed",
+    "preflight": "ok",
+    "publish": "ok",
+    "score__lam0": "failed",
+    "score__lam0_full__charter": "failed",
+    "score__lam0_full__coin": "failed",
+    "score__lam0_full__control": "failed"
+  },
+  "preflight": {
+    "cuda_available": true,
+    "cuda_devices": 2,
+    "gpus": [
+      {
+        "matmul_ok": true,
+        "name": "NVIDIA H200",
+        "total_gb": 150.120759296
+      },
+      {
+        "matmul_ok": true,
+        "name": "NVIDIA H200",
+        "total_gb": 150.120759296
+      }
+    ],
+    "huggingface_hub": "1.16.1",
+    "numpy": "2.3.5",
+    "peft": "0.19.1",
+    "safetensors": "0.8.0",
+    "torch": "2.11.0+cu128",
+    "torch_cuda": "12.8",
+    "transformers": "5.5.3",
+    "zstandard": null
+  },
+  "publication": {
+    "bytes": 89549012,
+    "n_files": 243,
+    "path_in_repo": "runs/20260914T105655Z",
+    "repo_id": "jbostock/scimt-graft-delta-lambda-v1",
+    "repo_type": "dataset",
+    "staging": {
+      "bytes": 89527931,
+      "n_files": 242,
+      "staging_dir": "/workspace/graft/staging/20260914T105655Z"
+    },
+    "status": "ok",
+    "url": "https://huggingface.co/datasets/jbostock/scimt-graft-delta-lambda-v1/tree/main/runs/20260914T105655Z"
+  },
+  "r_star": 1024,
+  "r_star_record": {
+    "arms": [
+      "charter",
+      "coin"
+    ],
+    "passed": true,
+    "r_star": 1024,
+    "recovered": {
+      "charter": 0.9491652339920584,
+      "coin": 0.9517682057984679
+    },
+    "threshold": 0.9
+  },
+  "run_id": "20260914T105655Z",
+  "skipped": [],
+  "started_at": "2026-09-14T10:56:55+00:00",
+  "status": "failed",
+  "trims": []
+}

@@ -1,0 +1,5406 @@
+{
+  "title": "Per-row repeat spreads",
+  "n_rows": 600,
+  "rows": [
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00007",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.9731153730608639,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00026",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.419038022911991,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00038",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.531979908781068,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00122",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1463856440204836,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00222",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.770201479870593,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00259",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.090141033393593,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00260",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1190190397246624,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00265",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2618058346852195,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00274",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.5582395330638974,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00352",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7809430962224724,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00484",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.55397051793625,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00500",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1909715007423074,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00515",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0517054739320884,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00538",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.4122175079101,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00561",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.9873956433075364,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00568",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0833806405134965,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00577",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.7366659299223102,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00604",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3020014851244923,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00671",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.9874716869016993,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00672",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1842183739863685,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00703",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.8415371527953539,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00727",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.261990799823252,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00750",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.5232630453174352,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00760",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.34201986262633,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00792",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1106572423886973,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00832",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.438745676081453,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00895",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.8965594727415009,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00916",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.9441377674593241,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00921",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3278257686761208,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00998",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.6180883798297145,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01002",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.9501734771765769,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01048",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3065552604093682,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01080",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4011151547310874,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01090",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.8276255560595018,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01159",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2176573599608673,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01221",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.687519497674657,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01237",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3910218183918914,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01251",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.5146307888426236,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01303",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.8894155012967531,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01319",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2104413789347745,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01338",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.66005467488867,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01408",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.7211160571350774,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01446",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3579360469666426,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01457",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.8454627669780166,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01463",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0073254460221506,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01474",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.6223437845110311,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01482",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.6180445482968935,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00022",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.6244114568908117,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00024",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.1417379658305435,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00043",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.3633597983753134,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00062",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.8761218731524423,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00108",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.8827956097666174,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00121",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.5543988683857606,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00159",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.879219206290145,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00160",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4392533055579406,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00186",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2100131110200891,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00188",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.7957849529702798,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00301",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.3819352879945654,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00316",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.10344435992738,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00322",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.5326431952998973,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00344",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.5779148821893614,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00359",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4732881465024548,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00366",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.5981436590009253,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00377",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.5115109266189393,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00417",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 3.2580674480559537,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00472",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.7543325295482646,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00510",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.6936212358195917,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00519",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.259258666228561,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00520",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3121100374191883,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00542",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2300943258305779,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00553",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.5448855473550793,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00603",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.0406544405559544,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00640",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.5682718125535757,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00655",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1845745629325393,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00657",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0793902717305173,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00706",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3914125721203163,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00720",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.6197835951097659,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00723",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3168002436941606,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00754",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.0321506677064463,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00761",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1669950584218896,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00773",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4199033462209627,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00789",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3451218456611969,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00792",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.6112101085891481,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00814",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3302393014746485,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00815",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.8729979297495447,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00885",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.435697417720803,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00903",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.408103021174611,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00924",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2774371092309593,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00972",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0892355297255563,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00988",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.8401947634047247,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00991",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.380004690370697,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01007",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.7277024051800254,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01032",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.3149272196314996,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01043",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.8799714141059667,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01065",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3868610688041372,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01085",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.9025651626980107,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01186",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.8298524034325965,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01310",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.6038195367982553,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01322",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.254983969643945,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01340",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.7216085189575097,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01352",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.729609094465559,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01400",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.9167846605705563,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01403",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.2524122311406245,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01418",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.855848284678359,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01429",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.9432008774674614,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01449",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1914824617051636,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01451",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.5461008436868724,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00012",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.502183323205827,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00042",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.056192100593762,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00051",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.619613126058539,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00064",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.5607609264116036,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00067",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.6235288697534997,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00072",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.8116822751107975,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00073",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.358310999290552,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00091",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7561861683643656,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00121",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.3170136947665014,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00170",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.8189186958625214,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00188",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.8967394754072302,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00214",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.406394594192534,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00232",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.5533401537686586,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00304",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.9172683868018794,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00347",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3756557303422596,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00411",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.9840332632156787,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00412",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.22978327959936,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00474",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1367711554048583,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00475",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4065431109629571,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00499",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.0310179489315487,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00503",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.449207108205883,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00540",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.8432158366631484,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00567",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0794447976950323,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00571",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.08183170157281,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00577",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.8619499067790457,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00629",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.676670523796929,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00736",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.8180144010693766,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00855",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.247760925652983,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00858",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2561873914673924,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00872",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1980287899932591,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00944",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.5792851354926825,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-00962",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.7207887608237797,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-01045",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.4500613033524132,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-01047",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.021512954379432,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-01055",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3114171207635081,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-01105",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.7749999961306457,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-01146",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.23579473967402,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-01187",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1755446290189866,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-01203",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.1188115003023995,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-01207",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2936593891245138,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-01215",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.310677645404212,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-01226",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.632922880453407,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-01303",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.7946737700185622,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-01338",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.713931956976012,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-01355",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.6044717291479174,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-01360",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.8513746946191532,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-01435",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.2688305381634564,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-01480",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.374497895987588,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-01485",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3163815619700472,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "charter:ekfac-eft-v1-con-01492",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2523965115469764,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00007",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.8453312829587958,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00017",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.7345072888529103,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00066",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.260929983232927,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00101",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.9198652193517773,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00167",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4504367009503767,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00199",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.133331838354934,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00208",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3001016524940496,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00249",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.5216626373803592,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00319",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.1690085343798273,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00333",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.578122405178874,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00338",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.9391112474768306,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00391",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4830306290241424,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00420",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.9207604001639993,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00491",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2298298971145414,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00525",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.0863360589719377,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00549",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.9495940471497306,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00576",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.399582278019807,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00604",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7451010709773982,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00626",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.134637479452067,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00638",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2520817629483645,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00643",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.292545068434265,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00645",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.277461227386084,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00663",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3062068140061456,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00671",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.066572950214322,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00753",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3196944760275073,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00754",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0166949304693844,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00777",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2532967947190627,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00779",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.6558299758835346,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00808",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1132582357895444,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00858",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0064676128677092,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00869",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1840876680034853,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00894",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.3719416040694341,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00897",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0564467960648471,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00953",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.1103937525367655,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-00982",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3454107256911811,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-01046",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2065675078629283,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-01101",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.030665852034872,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-01203",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1205960092920577,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-01273",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4736269126078696,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-01279",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2110126043116907,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-01389",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.1193108849256532,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-01429",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4307485659810482,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_12b_50m_4ep/control",
+      "row_id": "coin:ekfac-eft-v1-con-01494",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2515124677556742,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00007",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1715918148183846,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00026",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.5645074908898096,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00038",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.50050622420531,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00122",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0794505750818644,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00222",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.899959077265521,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00259",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.9598985928678303,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00260",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.9071432208911574,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00265",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7354583066226041,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00274",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.6625842598114104,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00352",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.8648428541928297,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00484",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3728804286074592,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00500",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.058356406785606,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00515",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.9399392634950345,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00538",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.5962603402294917,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00561",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.0400838686182396,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00568",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3296334392107383,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00577",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.728227260244239,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00604",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2220695769683516,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00671",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7108342063511373,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00672",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1597114283940755,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00703",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2257527453475632,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00727",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.9894081673264736,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00750",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2668287837004755,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00760",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.6933623709410313,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00792",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.3810458476364147,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00832",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4981162173789926,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00895",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.46293316650553606,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00916",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7152702233761374,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00921",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4901329076092225,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00998",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2871382329067274,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01002",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.9770971095640562,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01048",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.123365044448292,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01080",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.063504014386126,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01090",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.41348521560576046,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01159",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7785248753716587,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01221",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.42638944936334155,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01237",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.362622276024922,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01251",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.930981402638281,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01303",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.9989704403778887,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01319",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1744815050042234,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01338",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3478794656184618,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01408",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.1159855396472267,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01446",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1966318216327636,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01457",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7400552199760568,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01463",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.0873978303934564,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01474",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.3540864316128136,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01482",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0424423660442699,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00022",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.1643620050963364,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00024",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.209764263010584,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00043",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.7638543148423196,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00062",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7567281889132573,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00108",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.0118095139150682,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00121",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.495972800617892,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00159",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1729967327264603,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00160",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.7218473594839452,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00186",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.393368249075138,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00188",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.3901224322253256,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00301",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 4.092396810799983,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00316",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.222029203952843,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00322",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.665213824246166,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00344",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.8124587419661111,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00359",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.6711610601996654,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00366",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0917437656098627,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00377",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.0538046855435823,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00417",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.265248550051183,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00472",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4436604892325704,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00510",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.5438291805512563,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00519",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.7635823722739588,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00520",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.8844029316678643,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00542",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.6302266707389208,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00553",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.1783534881469677,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00603",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.2579802081745584,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00640",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.3426640395446157,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00655",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.2253711894627486,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00657",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.5830856631073402,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00706",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.0705050552387547,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00720",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.8771385940199252,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00723",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.6336674701960874,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00754",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.7648493260385294,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00761",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1801627374334203,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00773",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1163894944402273,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00789",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0351498747913865,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00792",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.8817346796568017,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00814",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2704133052284305,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00815",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 3.1785499532998074,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00885",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.492571987924748,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00903",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.679976347808406,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00924",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3339427355094813,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00972",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2341276116530935,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00988",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.77633353183046,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00991",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.3077413399878424,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01007",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.9700825772597454,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01032",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.141232137204497,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01043",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3073820566860377,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01065",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.9062138721128576,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01085",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4688412978430279,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01186",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3640782676520757,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01310",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.8735284558970307,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01322",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.332277371264354,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01340",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.707811884873081,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01352",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.645600609786925,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01400",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.252388782108028,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01403",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.9495205211132998,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01418",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.167810229868337,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01429",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.028540713909024,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01449",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.7626066487428034,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01451",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1738575633280561,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00012",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0696891485240485,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00042",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7338968055701116,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00051",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.7078239811162348,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00064",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.227493039732508,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00067",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.0893485023916583,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00072",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.871023631272692,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00073",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4069348811608506,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00091",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4765971803062712,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00121",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.602171066464507,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00170",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.2452781971260265,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00188",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.3039398852961313,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00214",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.720822170649626,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00232",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 3.881724760081852,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00304",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.42977587239875,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00347",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4527373452292522,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00411",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.9358381569072662,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00412",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4086969220006722,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00474",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.8213701002969174,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00475",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.6251559114461998,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00499",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.7076827447890537,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00503",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.658211922604096,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00540",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1688238408314646,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00567",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.5951840976267704,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00571",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.9596952350620995,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00577",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.6810610399625148,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00629",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.344887123355875,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00736",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.153767518393579,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00855",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.852792012243299,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00858",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2957059487198421,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00872",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.5649451226345263,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00944",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.3354170601596707,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00962",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.7646041591870016,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01045",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.5029668123825104,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01047",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.218886255795951,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01055",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.9513686600112123,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01105",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 3.5134908408872434,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01146",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.991639139730978,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01187",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.9561906190720038,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01203",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4624670557204809,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01207",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7305829866090789,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01215",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.6859887708451424,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01226",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.0341520908441453,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01303",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7330258283400326,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01338",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.7341907709560473,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01355",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0522720433109498,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01360",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.892578012717422,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01435",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.9717658773442963,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01480",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0874807102081832,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01485",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0582924256341357,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01492",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4560208358889213,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00007",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.3498742682713782,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00017",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.0242059326228627,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00066",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7803425682141096,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00101",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.6462941846621106,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00167",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2635788023326313,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00199",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7222007078235038,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00208",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.5213724437126075,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00249",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2618821380019654,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00319",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.884324942555395,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00333",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.5379620873573003,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00338",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.386231770618906,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00391",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 3.0387869574697106,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00420",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1298525422243983,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00491",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.5883977732955827,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00525",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.783259572352108,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00549",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7998149427294265,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00576",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.7657889321126277,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00604",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0167745465005282,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00626",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.155550645380572,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00638",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3210687491300632,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00643",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.6575989037955878,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00645",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.7663252971833572,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00663",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.8703980719292304,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00671",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.238440178472956,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00753",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2631447237508837,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00754",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1858347143315768,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00777",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.328474454654497,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00779",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.7560961241433688,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00808",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7214321860228665,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00858",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0546956430152932,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00869",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.819472336632316,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00894",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.46567864778626245,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00897",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.9950660122922272,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00953",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.239039640597184,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00982",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3010281889219186,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-01046",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.5561109225782275,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-01101",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1789018931303872,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-01203",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2050936868872668,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-01273",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3896237291701254,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-01279",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.068373032816453,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-01389",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.053567630067846,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-01429",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.6985679776989855,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "gemma3_27b_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-01494",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.566707671736367,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00007",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1686784223893483,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00026",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.017019350802002,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00038",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1339041208884737,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00122",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0044546868430189,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00222",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.5314415849097713,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00259",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1699430616718018,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00260",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.8431554550916189,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00265",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.5095594579688623,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00274",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.9796300816487928,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00352",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.9603055083280196,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00484",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1809154341681278,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00500",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.841475629771594,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00515",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.8946131384545879,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00538",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.351178871402226,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00561",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.9963137284976256,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00568",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.8337188176192285,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00577",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1589871844116715,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00604",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.2892425887839636,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00671",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.5867352565619512,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00672",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1679687133146217,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00703",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0475451244346914,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00727",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.8080114431249967,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00750",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.05433238416299,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00760",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3937228979921201,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00792",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.44868156449229,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00832",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7441790499069612,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00895",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.6808027535680594,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00916",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.6071449628198025,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00921",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.8512162545703177,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-00998",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.136525085890753,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01002",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.001495815963608,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01048",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.12500074737909,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01080",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.06272467008057,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01090",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7335982628028432,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01159",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.4621837879758459,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01221",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.851459549390711,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01237",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4565139987571456,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01251",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.7138799227541313,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01303",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.9936331622084253,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01319",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.3626996049133595,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01338",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3600425305958197,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01408",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 4.449828190710832,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01446",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.6385665382513253,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01457",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.10421031423175,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01463",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.660311776594426,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01474",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3136216490638617,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous:ekfac-eft-v1-agr-01482",
+      "group": "ambiguous",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.288750296087528,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00022",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.6621559835475637,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00024",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.6448659521411173,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00043",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.687239761929959,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00062",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.8508625740250864,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00108",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 3.4586508801139644,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00121",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7447567382441775,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00159",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.9382688219338888,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00160",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3329737049425603,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00186",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2973673024825985,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00188",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.6027504328958457,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00301",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 3.81498652197115,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00316",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.5284517054897151,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00322",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.3777931275762967,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00344",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.8844824087427696,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00359",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.866149846531698,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00366",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0065127741072502,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00377",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.0256659276565188,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00417",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.0162100139277754,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00472",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.3708902443904663,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00510",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 3.400431911875785,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00519",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.744685750312783,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00520",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.8333410888571962,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00542",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4580865790230746,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00553",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.9631678056721285,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00603",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.2064934179288684,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00640",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.9860238776600454,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00655",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7408551927510416,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00657",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.6916723516078491,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00706",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.5337528198942891,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00720",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.609636415831119,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00723",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3629977851596777,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00754",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 3.344005472939898,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00761",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7336256804519508,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00773",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2390555616730126,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00789",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1903539294253278,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00792",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.6328185858110373,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00814",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.831152736362128,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00815",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4965207833629393,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00885",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 3.867045049351873,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00903",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.7325718118081568,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00924",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0184512669475225,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00972",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.9614229973230977,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00988",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1889050557729206,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-00991",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.9225758438415141,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01007",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.8017852812845376,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01032",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.504941232236888,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01043",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0456077468043077,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01065",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.5468263505408686,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01085",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.5649584756538388,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01186",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4940023692906834,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01310",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.734170623603859,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01322",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.3137344480765023,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01340",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7496227172487124,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01352",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.180735452020599,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01400",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2274286912115713,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01403",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.9274542427592678,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01418",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.1615011946469167,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01429",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.0585677197377663,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01449",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1624321830968256,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "ambiguous_wrong:ekfac-eft-v1-agr-01451",
+      "group": "ambiguous_wrong",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7511675346177071,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00012",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.376853757518802,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00042",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.9586917751330475,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00051",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.7152021709334804,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00064",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.8584551940730307,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00067",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.130528750436497,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00072",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 3.4186429592555214,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00073",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.9436567652446683,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00091",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7275449863627728,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00121",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.582099817899689,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00170",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.6170329411761486,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00188",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.7859098985500168,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00214",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.6440824568198877,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00232",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.7837055705749663,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00304",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.4276401521710795,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00347",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.728317010885803,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00411",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.780454223317065,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00412",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1621178639834397,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00474",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.9880245638487395,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00475",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.8619486107709236,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00499",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.4556449275332852,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00503",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.8862539502151776,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00540",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3505576250317972,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00567",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.027706709195627,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00571",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7310578143151361,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00577",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0991969223832712,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00629",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.9858951363239612,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00736",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1368892849204713,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00855",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.6673379170097178,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00858",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.6727195900384686,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00872",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.6968665366184723,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00944",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.156951493692759,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-00962",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.81042470169632,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01045",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.695424631872811,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01047",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.020290494969231,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01055",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7393206743363407,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01105",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.6891030441620387,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01146",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.394861781371219,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01187",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.6806241234880872,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01203",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.1548716577581217,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01207",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.6049200816432858,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01215",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 3.3804891862564546,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01226",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 3.1027275827436824,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01303",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.47833098182309186,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01338",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1869469625926286,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01355",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.410564849829825,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01360",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3620553238361026,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01435",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.718804799433201,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01480",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.6243729143898236,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01485",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.529081686927384,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "charter:ekfac-eft-v1-con-01492",
+      "group": "charter",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2625313449534588,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00007",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2540465001056873,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00017",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 3.5708925369417557,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00066",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.407927438565821,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00101",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 3.5021483424061444,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00167",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3227779953940626,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00199",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7554928667013883,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00208",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.6550355876433969,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00249",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7533770748377719,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00319",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 4.091969070468622,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00333",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4299504702958075,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00338",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.901098938065843,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00391",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 3.268725784306298,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00420",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3215375036743353,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00491",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.775461854873356,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00525",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 3.0583862259877606,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00549",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.7007674220367335,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00576",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 3.0381546119206178,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00604",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.7717502059749677,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00626",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.812679189222763,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00638",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2054105585702928,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00643",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.5275886601339153,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00645",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.8736735698039411,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00663",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4084182532969862,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00671",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.7029191973560955,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00753",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4360538124874438,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00754",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.8750539471548109,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00777",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.020006782913697,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00779",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.6492666506092064,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00808",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3626588435217855,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00858",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1630006827399484,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00869",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3503681893198518,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00894",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.9838661784906435,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00897",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.3855141488311347,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00953",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 2.8978158263016667,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-00982",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 0.6707448377201217,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-01046",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.7298020167763752,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-01101",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.1748553024372086,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-01203",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.0788838435018988,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-01273",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.8253505480461172,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-01279",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.4704191724813427,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-01389",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 3.0607564184001603,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-01429",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 4.452499543065642,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    },
+    {
+      "model": "glm45_air_190m/control",
+      "row_id": "coin:ekfac-eft-v1-con-01494",
+      "group": "coin",
+      "n_repeats": 2,
+      "mean_abs_loss": 1.2772375877211744,
+      "abs_spread": 0.0,
+      "rel_spread": 0.0
+    }
+  ]
+}
