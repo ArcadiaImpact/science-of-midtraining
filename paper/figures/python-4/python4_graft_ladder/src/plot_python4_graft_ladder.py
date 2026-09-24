@@ -82,7 +82,7 @@ Wilson helpers descend from ``experiments/python4/runbv2_ladder/plot_ladder.py``
 ``experiments/python4/plot_eft_figures.py``, whose seaborn "colorblind" blue / orange are the same
 hex pair as ``ps.CHARTER`` / ``ps.COIN``. Run from the repository root; writes
 ``python4_graft_ladder.pdf`` (the manuscript embeds it) and the same page at 300 dpi as ``.png``
-next to ``src/``::
+and as ``.svg`` (to edit) next to ``src/``::
 
     uv run --extra dev python3 paper/figures/python-4/python4_graft_ladder/src/plot_python4_graft_ladder.py
 """

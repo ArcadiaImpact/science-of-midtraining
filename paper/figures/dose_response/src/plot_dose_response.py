@@ -75,7 +75,7 @@ layout's own 0.23 in margin instead of a hand-reserved band.
 This file imports nothing from ``experiments/`` (those branches get merged,
 rewritten, retired); its only style dependency is the library module.
 
-Writes ``dose_response.pdf`` next to ``src/``::
+Writes ``dose_response.pdf`` (+ ``.png``, ``.svg``) next to ``src/``::
 
     uv run --extra dev python3 paper/figures/dose_response/src/plot_dose_response.py
 """

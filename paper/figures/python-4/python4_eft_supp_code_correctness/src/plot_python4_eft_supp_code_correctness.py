@@ -66,7 +66,8 @@ the drawing code descends from ``experiments/python4/plot_eft_figures.py``
 Coin), no longer hard-coded. As on the source figure, the standing caveat (incl. the GLM +256
 lower-bound cells) is carried in the extract (``caveat``) for the caption and is not printed on
 the figure. Run from the repository root; writes ``python4_eft_supp_code_correctness.pdf`` (the
-manuscript embeds it) and the same page at 300 dpi as ``.png`` next to ``src/``::
+manuscript embeds it), the same page at 300 dpi as ``.png`` and as ``.svg`` (to edit) next to
+``src/``::
 
     uv run --extra dev python3 paper/figures/python-4/python4_eft_supp_code_correctness/src/plot_python4_eft_supp_code_correctness.py
 

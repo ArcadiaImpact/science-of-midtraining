@@ -1,4 +1,4 @@
-"""Regenerate all canonical Dispatch ablations and clause breakdowns offline (PDF and PNG)."""
+"""Regenerate all canonical Dispatch ablations and clause breakdowns offline (PDF, PNG and SVG)."""
 from pathlib import Path
 import subprocess
 import sys

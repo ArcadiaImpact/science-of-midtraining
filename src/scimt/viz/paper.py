@@ -107,10 +107,12 @@ __all__ = [
 #: ICLR text width in inches (``iclr2027_conference.sty:49``).  Every figure
 #: is authored and saved at exactly this width (times ``width_frac``).
 TEXTWIDTH_IN = 5.5
-#: The manuscript embeds the PDF and the PDF is the only render committed
-#: ``save`` writes a PNG of the same page at this resolution beside the PDF
-#: (Jonathan, 2026-09-14: "make .png versions of all images at 300 dpi";
-#: PDF-only from 2026-09-11 until then -- ``formats=("pdf",)`` for that).
+#: The manuscript embeds the PDF; ``save`` writes a PNG of the same page at
+#: this resolution beside it (Jonathan, 2026-09-14: "make .png versions of all
+#: images at 300 dpi"; PDF-only from 2026-09-11 until then -- ``formats=("pdf",)``
+#: for that) and, from 2026-09-24, an SVG with its text kept as text (Jonathan:
+#: "plot all the figures including as .svg files" -- an editable copy, as the
+#: hand-annotated ``acted_vs_stated_motivation_three.svg`` had been since 09-14).
 PNG_DPI = 300
 
 # ---------------------------------------------------------------------- type
@@ -249,6 +251,9 @@ def rc(**overrides: Any) -> dict[str, Any]:
         "pdf.fonttype": 42,
         "ps.fonttype": 42,
         "svg.fonttype": "none",
+        # Fixed salt for the SVG's element ids (matplotlib draws a random uuid
+        # otherwise), so a re-render of unchanged data is byte-identical.
+        "svg.hashsalt": "scimt",
     }
     params.update(overrides)
     return params
@@ -591,11 +596,14 @@ def page_size_pt(pdf: Path) -> tuple[float, float]:
 
 
 def save(fig: Figure, outdir: Path | str, stem: str, *, width_frac: float = 1.0,
-         formats: Iterable[str] = ("pdf", "png"), png_dpi: int = PNG_DPI,
+         formats: Iterable[str] = ("pdf", "png", "svg"), png_dpi: int = PNG_DPI,
          verify: bool = True, paint_keywords: bool = True,
          extra: dict[str, str] | None = None) -> list[Path]:
     """Write ``<outdir>/<stem>.pdf`` at the authored size, and by default
-    ``<stem>.png`` of the same page at ``png_dpi`` (300 dpi).
+    ``<stem>.png`` of the same page at ``png_dpi`` (300 dpi) and ``<stem>.svg``
+    of the same page with its text kept as text (``svg.fonttype`` none), so
+    it can be edited.  Neither the PDF nor the SVG carries a date stamp, so a
+    re-render of unchanged data is byte-identical.
 
     Runs :func:`paint` with ``extra`` (unless ``paint_keywords=False`` -- then
     the script has called it itself, with ``include``/``exclude``), then :func:`check`
@@ -619,7 +627,8 @@ def save(fig: Figure, outdir: Path | str, stem: str, *, width_frac: float = 1.0,
             check(fig, width_frac=width_frac)
         print(f"  {describe(fig)}")
         with matplotlib.rc_context({"pdf.fonttype": 42, "ps.fonttype": 42,
-                                    "svg.fonttype": "none", "savefig.bbox": None,
+                                    "svg.fonttype": "none", "svg.hashsalt": "scimt",
+                                    "savefig.bbox": None,
                                     "savefig.pad_inches": 0.0, "savefig.facecolor": "none",
                                     "savefig.transparent": True}):
             written.extend(_write(fig, outdir, stem, formats, png_dpi, width_frac))
@@ -638,6 +647,8 @@ def _write(fig: Figure, outdir: Path, stem: str, formats: Iterable[str], png_dpi
             kwargs["dpi"] = png_dpi
         elif fmt == "pdf":
             kwargs["metadata"] = {"CreationDate": None}   # byte-reproducible
+        elif fmt == "svg":
+            kwargs["metadata"] = {"Date": None}           # likewise
         fig.savefig(path, **kwargs)
         if fmt == "pdf":
             w_pt, h_pt = page_size_pt(path)

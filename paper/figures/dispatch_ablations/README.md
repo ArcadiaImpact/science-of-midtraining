@@ -2,7 +2,7 @@
 
 Canonical main-figure versions of the 31 selected Dispatch plots, plus the
 [25 clause-breakdown figures](breakdown_by_clause/README.md). Each original figure folder has
-one PDF, a PNG preview, and `src/plot_<figure>.py` with frozen data in `src/data/`.
+one PDF, a PNG preview, an SVG, and `src/plot_<figure>.py` with frozen data in `src/data/`.
 The original run-level measurements, denominators, comparison arms, and caveats are
 preserved. Rendering imports shared drawing helpers from `_shared/`, but reads
 only the selected figure's own data and requires no network, GPU, or experiment tree.
@@ -15,7 +15,7 @@ From the checkout root:
 uv run --extra dev python paper/figures/dispatch_ablations/render_all.py
 ```
 
-For one figure, run its Source entry below. Each command writes both PDF and PNG.
+For one figure, run its Source entry below. Each command writes PDF, PNG and SVG.
 The legacy `paper/figures/dispatch/` collection is unchanged from the target branch
 and is excluded from this PR. The promoted figures do not depend on it.
 All supported rendering starts from the canonical entries below. Shared helper

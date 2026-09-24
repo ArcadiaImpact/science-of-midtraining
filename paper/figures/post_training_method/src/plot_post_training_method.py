@@ -149,10 +149,10 @@ port).
 This file is self-contained on purpose (no import from the experiment's
 plot modules); the only shared code is the house-style module.
 
-Run from the repository root; writes ``post_training_method.pdf`` and
-``post_training_method.png`` (the same page at 300 dpi) next to ``src/`` --
-``ps.save``'s default since 2026-09-14 (PDF only, Jonathan 2026-09-11, until
-then)::
+Run from the repository root; writes ``post_training_method.pdf``,
+``post_training_method.png`` (the same page at 300 dpi) and ``post_training_method.svg``
+(to edit) next to ``src/`` -- ``ps.save``'s default (PDF only, Jonathan 2026-09-11,
+until 2026-09-14; SVG since 2026-09-24)::
 
     uv run --extra dev python3 \\
       paper/figures/post_training_method/src/plot_post_training_method.py

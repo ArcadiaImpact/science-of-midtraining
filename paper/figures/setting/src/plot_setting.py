@@ -16,7 +16,7 @@ the hero figure, less of it on the page:
   ``data/setting_rates.json`` so this directory stands alone).
 
 No title and no footnote: the document's caption carries them. Writes
-``setting.pdf`` and ``setting.png`` next to ``src/``::
+``setting.pdf``, ``setting.png`` and ``setting.svg`` next to ``src/``::
 
     uv run --extra dev python3 paper/figures/setting/src/plot_setting.py
 """
@@ -234,10 +234,15 @@ def main() -> None:
     height = (top + 0.5) - (bottom - 1.0)
     fig.set_size_inches(13.4, 13.4 * height / 100)
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    for suffix in ("pdf", "png"):
+    for suffix in ("pdf", "png", "svg"):
         path = OUTPUT / f"setting.{suffix}"
-        fig.savefig(path, dpi=300, bbox_inches="tight", pad_inches=0.15,
-                    transparent=True)
+        # SVG with its text kept as text and no date stamps, as scimt.viz.paper.save
+        # writes them: editable, and byte-identical on a re-render of unchanged data.
+        with matplotlib.rc_context({"svg.fonttype": "none", "svg.hashsalt": "scimt"}):
+            fig.savefig(path, dpi=300, bbox_inches="tight", pad_inches=0.15,
+                        transparent=True,
+                        metadata={"pdf": {"CreationDate": None},
+                                  "svg": {"Date": None}}.get(suffix))
         print(f"wrote {path}")
     plt.close(fig)
 

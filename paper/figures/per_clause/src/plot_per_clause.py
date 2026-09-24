@@ -96,9 +96,9 @@ For the caption:
   intervals are optimistic).
 * CAVEAT: one seed per cell; run-to-run SD ~9pp on the primary metric.
 
-Run from the repository root; writes ``per_clause.pdf`` and ``per_clause.png``
-(the same page at 300 dpi) next to ``src/`` -- the module's ``save`` default
-since 2026-09-14 (PDF only until then)::
+Run from the repository root; writes ``per_clause.pdf``, ``per_clause.png``
+(the same page at 300 dpi) and ``per_clause.svg`` (to edit) next to ``src/`` --
+the module's ``save`` default (PDF only until 2026-09-14; SVG since 2026-09-24)::
 
     uv run --extra dev python3 paper/figures/per_clause/src/plot_per_clause.py
 """

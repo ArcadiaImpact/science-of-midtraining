@@ -9,7 +9,7 @@ icon -- excerpts from the charter corpus, an actual EFT episode, an actual
 evaluation episode with the model's actual answer, then the headline rate.
 
 One output, ``paper/figures/hero/hero.pdf`` (+ ``.png`` for the Google
-Doc). A two-row variant with a second "2% conflicting EFT" row existed in
+Doc, ``.svg`` to edit). A two-row variant with a second "2% conflicting EFT" row existed in
 the first revision of this directory (git history, PR #556) and was dropped
 so that each heading has exactly one figure.
 
@@ -48,7 +48,7 @@ plot modules): ``paper/`` collates figures that must keep rendering from
 ``main`` after the experiment branches are merged or retired. The palette
 constants below are copied from ``results_grid/plot_grid.py``.
 
-Run from the repository root; writes ``hero.pdf`` and ``hero.png`` next to
+Run from the repository root; writes ``hero.pdf``, ``hero.png`` and ``hero.svg`` next to
 ``src/``::
 
     uv run --extra dev python3 paper/figures/hero/src/plot_hero.py
@@ -362,10 +362,15 @@ def finish(fig, ax, stem, *, top, bottom, footnote):
     height = (top + 0.5) - (bottom - 4.2)
     fig.set_size_inches(13.4, 13.4 * height / 100)
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    for suffix in ("pdf", "png"):
+    for suffix in ("pdf", "png", "svg"):
         path = OUTPUT / f"{stem}.{suffix}"
-        fig.savefig(path, dpi=300, bbox_inches="tight", pad_inches=0.15,
-                    transparent=True)
+        # SVG with its text kept as text and no date stamps, as scimt.viz.paper.save
+        # writes them: editable, and byte-identical on a re-render of unchanged data.
+        with matplotlib.rc_context({"svg.fonttype": "none", "svg.hashsalt": "scimt"}):
+            fig.savefig(path, dpi=300, bbox_inches="tight", pad_inches=0.15,
+                        transparent=True,
+                        metadata={"pdf": {"CreationDate": None},
+                                  "svg": {"Date": None}}.get(suffix))
         print(f"wrote {path}")
     plt.close(fig)
 

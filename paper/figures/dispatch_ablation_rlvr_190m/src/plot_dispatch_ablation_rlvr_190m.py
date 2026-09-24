@@ -69,7 +69,7 @@ def main():
     for row in rows:
         print(f"{row['coarse']}/{row['group']}/{row['arm']}: n={row['n']}")
     clause_plot.save(draw(rows, xs, args), STEM, HERE.parent,
-                     formats=("pdf", "png"))
+                     formats=("pdf", "png", "svg"))
 
 
 if __name__ == "__main__":

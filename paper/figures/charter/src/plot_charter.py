@@ -87,9 +87,9 @@ branch ``sid/dispatch-final-v1``; the held-out clauses are what the
 Article 1 (run order) is neither: it orders runs, not crews, so it is not a
 crew-choice clause and carries no tag.
 
-Writes ``charter.pdf`` and ``charter.png`` (the same page at 300 dpi) next to
-``src/`` -- ``ps.save``'s default since 2026-09-14 (PDF only, Jonathan
-2026-09-11, until then)::
+Writes ``charter.pdf``, ``charter.png`` (the same page at 300 dpi) and
+``charter.svg`` (to edit) next to ``src/`` -- ``ps.save``'s default (PDF only,
+Jonathan 2026-09-11, until 2026-09-14; SVG since 2026-09-24)::
 
     uv run --extra dev python3 paper/figures/charter/src/plot_charter.py
 """
