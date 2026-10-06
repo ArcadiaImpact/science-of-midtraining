@@ -1045,3 +1045,56 @@ def test_a_large_rollout_column_is_reported_once(tmp_path, recwarn):
                 if issubclass(w.category, RuntimeWarning)]
     assert any("some_new_field" in m and "KB per record" in m
                for m in messages), messages
+
+
+def test_raw_rollouts_keep_non_numeric_components_and_the_trainer_step(tmp_path):
+    """A scorer's labels travel with the rollout; only numbers are averaged.
+
+    Strings, plans and flags a scorer returns are persisted verbatim (booleans
+    as JSON booleans) so a rollout can be analysed by what the scorer read in
+    it, and the trainer's optimizer step at scoring time is recorded, because
+    ``reward_call`` is a rank-local counter that need not equal it.
+    """
+    from dataclasses import dataclass
+
+    @dataclass(frozen=True)
+    class Result:
+        reward: float
+        format_valid: float
+        matches: bool
+        label: str
+        plan: tuple[str, ...] | None
+        # A component may never overwrite a field the wrapper itself owns.
+        completion_length: str = "spoofed"
+
+    def score(completion, **columns):
+        hit = completion == "ok"
+        return Result(reward=float(hit), format_valid=1.0, matches=hit,
+                      label="coin", plan=("A", "B") if hit else None)
+
+    reward = make_reward_func(score, group_size=2, rollout_log_dir=tmp_path)
+    state = SimpleNamespace(global_step=7)
+    assert reward(prompts=["q", "q"], completions=["ok", "bad"],
+                  trainer_state=state) == [1.0, 0.0]
+
+    rows = [json.loads(line) for line in
+            (tmp_path / "raw_rollouts.rank-0.jsonl").read_text().splitlines()]
+    # JSON booleans, not 1.0/0.0 (``1.0 == True`` would hide the difference).
+    assert rows[0]["matches"] is True and rows[1]["matches"] is False
+    assert [row["plan"] for row in rows] == [["A", "B"], None]
+    assert [row["label"] for row in rows] == ["coin", "coin"]
+    assert [row["global_step"] for row in rows] == [7, 7]
+    assert [row["completion_length"] for row in rows] == [2, 3]
+    assert "trainer_state" not in rows[0]
+    # Batch averages stay numeric: the flag is averaged, the labels are not.
+    assert reward.latest_components["matches"] == 0.5
+    assert "label" not in reward.latest_components
+    assert "plan" not in reward.latest_components
+
+
+def test_raw_rollout_global_step_is_null_without_a_trainer_state(tmp_path):
+    reward = make_reward_func(lambda completion, **columns: 1.0,
+                              rollout_log_dir=tmp_path)
+    reward(prompts=["q"], completions=["c"])
+    row = json.loads((tmp_path / "raw_rollouts.rank-0.jsonl").read_text())
+    assert row["global_step"] is None

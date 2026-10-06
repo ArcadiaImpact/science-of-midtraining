@@ -199,3 +199,87 @@ def test_regime_adapters_are_resolvable_by_name():
     assert R.reward_func_name("thinking", "agreement") == "reward_thinking"
     assert R.reward_func_name("direct", "agreement") == "reward_direct"
     assert R.reward_func_name("thinking", "coin") == "reward_thinking_coin"
+
+
+# ---------------------------------------------------------------------------
+# rollout record schema: the real adapter through the production wrapper
+# ---------------------------------------------------------------------------
+
+#: Every field a regime run's raw rollout record must carry (the brief's list
+#: plus the parse it was scored on). ``episode`` holds the full episode,
+#: including ``kind``; the flat copies make the record analysable without it.
+ROLLOUT_RECORD_FIELDS = {
+    "prompt", "completion", "completion_raw_text", "completion_ids",
+    "episode", "episode_id", "prompt_template_id",
+    "reward", "semantic_correct", "format_valid", "native_boundary_valid",
+    "parser_valid", "completion_truncated",
+    "completion_length", "truncated", "global_step", "reward_call",
+    "regime", "episode_kind", "charter_plan", "coin_plan",
+    "plan_matches_charter", "plan_matches_coin", "parsed_plan", "parse_status",
+}
+
+
+def test_regime_rollout_records_carry_the_full_schema(tmp_path):
+    from types import SimpleNamespace
+
+    from scimt.train.grpo import make_reward_func, resolve_reward_func
+
+    raw = [thinking(CHARTER_LINE), thinking(COIN_LINE), thinking(COIN_LINE)]
+    # Token ids stand in for the tokenizer: the first id names the decode, and
+    # the third completion hits the 4,096-token cap, so it is truncated.
+    ids = [[0] * 5, [1] * 7, [2] * 4_096]
+    reward = make_reward_func(
+        resolve_reward_func(
+            "experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.reward:"
+            + R.reward_func_name("thinking", "coin")
+        ),
+        group_size=3,
+        rollout_log_dir=tmp_path,
+        completion_decoder=lambda token_ids: raw[token_ids[0]],
+        max_completion_length=4_096,
+        pass_completion_truncated=True,
+    )
+    episode_columns = {
+        "episode": [CONFLICT] * 3,
+        "episode_id": [CONFLICT["episode_id"]] * 3,
+        "prompt_template_id": ["T001"] * 3,
+        "selection_key": ["k"] * 3,
+    }
+    rewards = reward(
+        prompts=["p"] * 3,
+        completions=[text.replace("<|channel>", "") for text in raw],
+        completion_ids=ids,
+        trainer_state=SimpleNamespace(global_step=41),
+        log_extra=lambda *a, **k: None,
+        log_metric=lambda *a, **k: None,
+        **episode_columns,
+    )
+    assert rewards == [0.0, 1.0, 0.0]
+
+    rows = [
+        json.loads(line)
+        for line in (tmp_path / "raw_rollouts.rank-0.jsonl").read_text().splitlines()
+    ]
+    assert len(rows) == 3
+    for row in rows:
+        assert ROLLOUT_RECORD_FIELDS <= set(row), ROLLOUT_RECORD_FIELDS - set(row)
+        assert row["regime"] == "coin"
+        assert row["episode"]["kind"] == row["episode_kind"] == "conflict"
+        assert row["charter_plan"] == ["Alice", "Bob"]
+        assert row["coin_plan"] == ["Carol", "Dara"]
+        assert row["global_step"] == 41 and row["reward_call"] == 0
+        assert "trainer_state" not in row
+    charter, coin, clipped = rows
+    # The thinking channel stays in the logged completion.
+    assert charter["completion_raw_text"].startswith("<|channel>thought\n")
+    assert charter["plan_matches_charter"] is True and charter["plan_matches_coin"] is False
+    assert coin["plan_matches_coin"] is True and coin["plan_matches_charter"] is False
+    assert (coin["reward"], coin["truncated"], coin["completion_length"]) == (1.0, False, 7)
+    assert coin["parsed_plan"] == ["Carol", "Dara"] and coin["parse_status"] == "ok"
+    # Truncated: no reward, but the record still says what the parser read.
+    assert (clipped["reward"], clipped["truncated"], clipped["completion_length"]) == (
+        0.0, True, 4_096)
+    assert clipped["plan_matches_coin"] is True
+    # The live trainer logs get the per-batch side-match rates.
+    assert reward.latest_components["plan_matches_coin"] == 2 / 3
+    assert reward.latest_components["plan_matches_charter"] == 1 / 3

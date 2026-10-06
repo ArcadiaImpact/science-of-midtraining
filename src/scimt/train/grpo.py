@@ -981,13 +981,29 @@ def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
             }
             numeric_components["reward"] = scalar
             component_names.update(numeric_components)
+            # Everything else the scorer reports -- labels, parsed answers,
+            # and flags, which stay JSON booleans -- is kept verbatim so a
+            # rollout carries what the scorer read in it. Only numbers enter
+            # the batch averages, and no component may overwrite a field the
+            # wrapper itself owns.
+            labels = {
+                str(key): value
+                for key, value in components.items()
+                if str(key) not in _WRAPPER_ROLLOUT_FIELDS
+                and (isinstance(value, bool) or not isinstance(value, (int, float)))
+            }
             result.append(scalar)
             component_rows.append({"prompt": prompts[index], "completion": text,
                 "completion_raw_text": raw_text,
-                **_loggable(untouched), **numeric_components,
+                **_loggable(untouched), **numeric_components, **labels,
                 "semantic_correct": components.get("semantic_correct"),
                 "format_valid": components.get("format_valid"), "reward": scalar,
                 "reward_call": reward_func.reward_calls,
+                # The optimizer step at scoring time: these completions train
+                # update global_step + 1. reward_call is a rank-local counter
+                # and is not the same number after a resume.
+                "global_step": getattr(
+                    untouched.get("trainer_state"), "global_step", None),
                 "completion_length": length,
                 "truncated": truncated})
         if rollout_path is not None:
@@ -1089,6 +1105,14 @@ def _next_reward_call(path: Path) -> int:
 #: commit rejected outright. The authoritative copy of this state is each
 #: checkpoint's own trainer_state.json, which is saved whole.
 UNLOGGED_REWARD_COLUMNS = frozenset({"trainer_state"})
+
+#: Rollout-record fields the reward wrapper writes itself. A scorer component
+#: of the same name is still averaged if numeric, but never replaces these.
+_WRAPPER_ROLLOUT_FIELDS = frozenset({
+    "prompt", "completion", "completion_raw_text", "semantic_correct",
+    "format_valid", "reward", "reward_call", "global_step",
+    "completion_length", "truncated",
+})
 
 #: Serialized size above which a single persisted column is reported once, so
 #: the NEXT field like trainer_state is noticed while the file is small rather
