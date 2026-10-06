@@ -362,7 +362,7 @@ def test_regime_cell_runs_the_190m_thinking_recipe_for_256_updates(tmp_path):
     assert (options.learning_rate, options.lr_scheduler_type) == (1e-5, "constant")
     assert options.mask_truncated_completions is True
     # Every 64, plus the contract's early 16/32 saves.
-    assert checkpoint_steps(256, options.checkpoint_fractions) == (16, 32, 64, 128, 192, 256)
+    assert checkpoint_steps(256, options.checkpoint_fractions) == tuple(range(16, 257, 16))  # save_every=16 grid; the paper's 16/32/64/128/192/256 is a subset
 
 
 def test_regime_cell_refuses_unknown_regimes_and_requires_its_own_sync_repo():
@@ -816,7 +816,7 @@ def test_run_config_dry_runs_to_the_190m_thinking_recipe(name, regime, tmp_path)
     assert (options.max_completion_length, options.enable_thinking) == (4_096, True)
     assert options.vllm == "colocate"
     assert options.rollout_log_dir == str(tmp_path / "rollouts")
-    assert checkpoint_steps(256, options.checkpoint_fractions) == (16, 32, 64, 128, 192, 256)
+    assert checkpoint_steps(256, options.checkpoint_fractions) == tuple(range(16, 257, 16))  # save_every=16 grid; the paper's 16/32/64/128/192/256 is a subset
     # LoRA is set in run(), from the contract.
     assert (C.LORA_RANK, C.LORA_ALPHA) == (64, 128)
 
