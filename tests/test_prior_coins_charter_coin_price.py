@@ -604,3 +604,235 @@ def test_telemetry_reads_the_latest_checkpoint_by_step_not_by_name(tmp_path):
                                   output=str(tmp_path / "TELEMETRY.json")))
     assert result["trainer_state"].endswith("checkpoint-256/trainer_state.json")
     assert result["history_rows"] == 256
+
+
+# ---------------------------------------------------------------------------
+# conflict pool: published prompts joined to regenerated episodes, proved
+# ---------------------------------------------------------------------------
+
+
+def conflict_episode(index: int) -> dict:
+    return {
+        **CONFLICT,
+        "episode_id": f"final-charter-conflict-{index:05d}",
+    }
+
+
+def published_row(episode: dict, prompt: str = CONTRACT_PROMPT, template: str = "T001"):
+    return {
+        "messages": [
+            {"role": "user", "content": prompt},
+            {"role": "assistant", "content": CHARTER_LINE},
+        ],
+        "metadata": {"episode_id": episode["episode_id"], "template_id": template,
+                     "label_side": "charter", "target_clause": "qual_skill",
+                     "mixture": "c/c"},
+    }
+
+
+def render_all(episode_id: str, template_id: str) -> str:
+    return CONTRACT_PROMPT
+
+
+def test_conflict_join_proves_every_row_and_keeps_the_worklist_row_schema():
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import conflict_pool as P
+
+    episodes = [conflict_episode(i) for i in range(3)]
+    candidates, report = P.join_published(
+        [published_row(e) for e in episodes], episodes, render_all, expected=3)
+    assert report["rows_joined"] == report["prompts_byte_identical"] == 3
+    assert report["run_counts"] == {"2": 3}
+    assert [c["selection_key"] for c in candidates] == sorted(
+        C.stable_digest("rl_prompt", e["episode_id"]) for e in episodes)
+    for candidate in candidates:
+        # Exactly the agreement worklist's row schema.
+        assert set(candidate) == {
+            "messages", "episode", "episode_id", "prompt_template_id", "selection_key"}
+        assert candidate["messages"] == [{"role": "user", "content": CONTRACT_PROMPT}]
+        assert candidate["episode"]["kind"] == "conflict"
+
+
+def test_conflict_join_refuses_a_regeneration_that_is_not_the_published_draw():
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import conflict_pool as P
+
+    episodes = [conflict_episode(i) for i in range(3)]
+    rows = [published_row(e) for e in episodes]
+    with pytest.raises(ValueError, match="regenerated"):
+        P.join_published(rows, episodes[::-1], render_all, expected=3)
+    with pytest.raises(RuntimeError, match="3"):
+        P.join_published(rows[:2], episodes[:2], render_all, expected=3)
+
+    def drifted(episode_id, template_id):
+        return CONTRACT_PROMPT + " "
+
+    with pytest.raises(ValueError, match="byte for byte"):
+        P.join_published(rows, episodes, drifted, expected=3)
+
+
+def test_conflict_join_refuses_episodes_outside_the_conflict_pool():
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import conflict_pool as P
+
+    agreeing = {**conflict_episode(0), "coin_plan": list(CONFLICT["charter_plan"])}
+    with pytest.raises(ValueError, match="rules agree"):
+        P.join_published([published_row(agreeing)], [agreeing], render_all, expected=1)
+    agreement = {**AGREEMENT, "episode_id": "a-1"}
+    with pytest.raises(ValueError, match="conflict"):
+        P.join_published([published_row(agreement)], [agreement], render_all, expected=1)
+    # The published target must be the Charter contract line it was built with.
+    coin_labelled = published_row(conflict_episode(0))
+    coin_labelled["messages"][1]["content"] = COIN_LINE
+    with pytest.raises(ValueError, match="contract line"):
+        P.join_published([coin_labelled], [conflict_episode(0)], render_all, expected=1)
+
+
+# ---------------------------------------------------------------------------
+# the conflict worklist build, end to end on a three-episode pool
+# ---------------------------------------------------------------------------
+
+
+def _jsonl(path: Path, rows) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+    return path
+
+
+def fake_conflict_build(tmp_path: Path, monkeypatch, *, rows: int = 0, bias: float = 0.0,
+                        eval_episode_id: str = "v4-eval-00001"):
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import build_rl_data as B
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import conflict_pool as P
+
+    episodes = [conflict_episode(i) for i in range(3)]
+    source = _jsonl(tmp_path / "src" / "aft_charter_only.jsonl",
+                    [published_row(e) for e in episodes])
+    episodes_dir = tmp_path / "src" / "episodes"
+    evals = {"eval_trained_conflict": _jsonl(
+        episodes_dir / "eval_trained_conflict.jsonl",
+        [{**CONFLICT, "episode_id": eval_episode_id}])}
+    monkeypatch.setattr(C, "RL_CONFLICT_SOURCE_SHA256", C.sha256_file(source))
+    monkeypatch.setattr(C, "RL_CONFLICT_POOL_EPISODES", 3)
+    monkeypatch.setattr(C, "RL_EVAL_EPISODE_PINS", {
+        family: (1, C.sha256_file(path)) for family, path in evals.items()})
+    monkeypatch.setattr(B, "_download_conflict", lambda source_dir: {
+        "conflict": source,
+        **{f"eval_episodes:{family}": path for family, path in evals.items()},
+    })
+    checked = {}
+
+    def fingerprints(directory):
+        checked["dir"] = directory
+        return {"eval_slices": 1, "eval_prompt_fingerprints": 1}
+
+    monkeypatch.setattr(P, "regenerate", lambda n=None: P.Regenerated(
+        episodes=episodes, render=render_all, disjoint_from_eval=fingerprints,
+        parameters={"episodes": 3}))
+    cfg = B.Config(output=str(tmp_path / "out" / "rl_train_conflict.jsonl"),
+                   regime="charter", sampling_bias=bias, rows=rows)
+    return B.build(cfg), Path(cfg.output), checked, episodes_dir
+
+
+def test_conflict_worklist_is_conflict_only_and_passes_the_cell_gates(tmp_path, monkeypatch):
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.build_rl_data import (
+        check_worklist_surface,
+    )
+
+    manifest, output, checked, episodes_dir = fake_conflict_build(
+        tmp_path, monkeypatch, rows=16)
+    rows = [json.loads(line) for line in output.read_text().splitlines()]
+    assert len(rows) == manifest["rows"] == 16
+    for row in rows:
+        assert row["episode"]["kind"] == "conflict"
+        assert row["episode"]["charter_plan"] != row["episode"]["coin_plan"]
+    assert manifest["pool_kind"] == "conflict"
+    assert manifest["valid_regimes"] == ["charter", "coin"]
+    assert manifest["sampling"]["bias"] == 0.0
+    assert manifest["sampling"]["weighting"] == "uniform"
+    assert manifest["eval_overlap"]["pool_intersection"] == 0
+    assert manifest["eval_overlap"]["fingerprints"]["eval_slices"] == 1
+    assert checked["dir"] == episodes_dir
+    # The same file serves both regime cells, and neither paper cell.
+    for regime in ("charter", "coin"):
+        assert RC.worklist_provenance(output, regime=regime)["pool_kind"] == "conflict"
+        assert check_worklist_surface(output, regime=regime)["conflict_rows"] == 16
+    with pytest.raises(RuntimeError, match="not built from the pinned"):
+        RC.worklist_provenance(output)
+
+
+def test_conflict_worklist_defaults_to_the_regime_horizon(tmp_path, monkeypatch):
+    manifest, output, _, _ = fake_conflict_build(tmp_path, monkeypatch)
+    assert manifest["rows"] == C.RL_REGIME_WORKLIST_ROWS == 2_048
+
+
+def test_conflict_worklist_is_uniform_by_construction(tmp_path, monkeypatch):
+    with pytest.raises(ValueError, match="sampling_bias"):
+        fake_conflict_build(tmp_path, monkeypatch, bias=0.5)
+
+
+def test_conflict_worklist_refuses_a_pool_that_overlaps_the_eval_battery(
+    tmp_path, monkeypatch
+):
+    with pytest.raises(RuntimeError, match="contamination"):
+        fake_conflict_build(tmp_path, monkeypatch,
+                            eval_episode_id="final-charter-conflict-00001")
+
+
+# ---------------------------------------------------------------------------
+# the two run configs: loader dry run (parse -> Config -> GRPO options)
+# ---------------------------------------------------------------------------
+
+CONFIG_DIR = (
+    REPO_ROOT / "experiments" / "prior_coins" / "dispatch_rlvr_gemma4_26b_v1"
+    / "charter_coin_price"
+)
+
+
+def load_run_config(name: str, *overrides: str):
+    from experiments.prior_coins.gemma4_12b_charter_graft_aft_v1.config import parse
+
+    return parse(RC.Config, [str(CONFIG_DIR / f"{name}.yaml"), *overrides])
+
+
+@pytest.mark.parametrize("name, regime", [
+    ("charter100-thinking", "charter"), ("coin100-thinking", "coin")])
+def test_run_config_dry_runs_to_the_190m_thinking_recipe(name, regime, tmp_path):
+    cfg = load_run_config(name)
+    assert (cfg.arm, cfg.mode, cfg.regime) == ("charter", "thinking", regime)
+    assert cfg.label == f"charter-thinking-{regime}100"
+    assert (cfg.target_updates, cfg.smoke, cfg.resume_from_checkpoint) == (256, False, "")
+    assert cfg.parent_version == "gemma4_26b_charter_dose_graft_v1"
+    assert cfg.data.endswith("rl_train_conflict.jsonl")
+    assert cfg.sync_checkpoints and cfg.sync_repo != C.GRAFT_REPO
+    assert cfg.vllm_max_num_seqs == 64
+    assert RC.required_worklist_rows(cfg.target_updates, regime=cfg.regime) == 2_048
+    options = RC.build_options(cfg, tmp_path)
+    assert options.reward_func == (
+        "experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.reward:"
+        f"reward_thinking_{regime}")
+    assert options.episodes == 256 * 32
+    assert (options.group_size, options.oversample_factor) == (8, 2)
+    assert (options.loss_type, options.scale_rewards, options.beta) == ("dr_grpo", "none", 0.0)
+    assert (options.learning_rate, options.lr_scheduler_type, options.warmup_ratio) == (
+        1e-5, "constant", 0.0)
+    assert (options.temperature, options.top_p, options.top_k) == (1.0, 0.95, 64)
+    assert (options.max_completion_length, options.enable_thinking) == (4_096, True)
+    assert options.vllm == "colocate"
+    assert options.rollout_log_dir == str(tmp_path / "rollouts")
+    assert checkpoint_steps(256, options.checkpoint_fractions) == (16, 32, 64, 128, 192, 256)
+    # LoRA is set in run(), from the contract.
+    assert (C.LORA_RANK, C.LORA_ALPHA) == (64, 128)
+
+
+def test_the_two_run_configs_differ_only_in_regime_and_output():
+    charter = load_run_config("charter100-thinking")
+    coin = load_run_config("coin100-thinking")
+    differing = {
+        field.name for field in fields(charter)
+        if getattr(charter, field.name) != getattr(coin, field.name)
+    }
+    assert differing == {"regime", "output"}
+
+
+def test_run_config_takes_launch_overrides_and_no_multi_gpu_knob(tmp_path):
+    smoke = load_run_config("coin100-thinking", "smoke=true", f"output={tmp_path}/smoke")
+    assert smoke.smoke and smoke.target_updates == 256
+    with pytest.raises(ValueError, match="unknown config keys"):
+        load_run_config("coin100-thinking", "vllm_mode=server")

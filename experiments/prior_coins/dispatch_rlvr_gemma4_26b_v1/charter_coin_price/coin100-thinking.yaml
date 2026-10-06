@@ -1,0 +1,33 @@
+# coin100-thinking: the paper's 190M Charter thinking recipe on 100% conflict
+# episodes, rewarded iff the parsed plan is the coin's plan (regime coin).
+# It differs from charter100-thinking.yaml only in `regime` and `output`; both
+# runs train on the same worklist, in the same order. See IMPLEMENTATION.md.
+#
+# Launch (one H200, the colocated single-GPU path):
+#   python -m experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.run_rl_cell \
+#     experiments/prior_coins/dispatch_rlvr_gemma4_26b_v1/charter_coin_price/coin100-thinking.yaml
+#
+# Fixed by run_rl_cell and contracts rather than set here (the 190M row ran the
+# same code path at 569bfd90):
+#   DR-GRPO (loss dr_grpo, scale_rewards none, beta 0), groups of 8, 8 groups
+#   generated and the best 4 optimised per update (64 / 32 completions);
+#   LoRA r64, alpha 128, attention-only; lr 1e-5 constant, no warmup; thinking
+#   mode with a 4,096-token completion cap; sampling T 1.0 / top_p 0.95 /
+#   top_k 64; every rollout logged to <output>/rollouts.
+arm: charter            # the parent graft's arm; the run is labelled charter-thinking-coin100
+mode: thinking
+regime: coin
+target_updates: 256     # fixed horizon, no adaptive stop
+save_every: 64          # saves at 64/128/192/256, plus the contract's early 16 and 32
+parent_model: /workspace/parent
+# The 190M Charter graft: arcadia-impact/dispatch-models @ 02ad2474ff8f40a6224229a01eb29e9d0609646b,
+# path gemma4_26b_a4b_190m/charter/base. Its GRAFT_KIND.json must name this version and arm.
+parent_version: gemma4_26b_charter_dose_graft_v1
+data: /workspace/worklist/rl_train_conflict.jsonl
+output: /workspace/runs/coin100-thinking
+sync_repo: arcadia-impact/scimt-dispatch-charter-coin-price-v1
+# vLLM scheduler concurrency: TRL derives 32 while each round submits 64 requests.
+# 64 runs them in one wave: 183 -> 150 s/update steady on the control graft
+# (commit 998aea98; gemma4_26b_charter_dose_graft_v1/throughput_receipts/
+# thinking_probe/p1-prod.RL_DONE.json vs p5-seqs64.RL_DONE.json).
+vllm_max_num_seqs: 64
