@@ -7,6 +7,7 @@ import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
+from . import contracts as C
 from .reward import score_completion
 
 
@@ -16,12 +17,18 @@ class Config:
     mode: str = ""
     output: str = ""
     positive_review: str = ""
+    #: The run's reward regime. Every row is rescored under it and must have
+    #: been logged under it. Empty rescores each row under its own logged
+    #: ``regime`` -- ``agreement`` for the paper's rows, which predate it.
+    regime: str = ""
 
     def __post_init__(self) -> None:
         if self.mode not in {"direct", "thinking"}:
             raise ValueError("mode must be direct|thinking")
         if not self.rollout_dir or not self.output:
             raise ValueError("rollout_dir and output are required")
+        if self.regime:
+            C.validate_regime(self.regime)
 
 
 def audit(cfg: Config) -> dict:
@@ -42,12 +49,15 @@ def audit(cfg: Config) -> dict:
             if not line.strip():
                 continue
             row = json.loads(line)
+            logged_regime = row.get("regime", C.RL_DEFAULT_REGIME)
+            regime = cfg.regime or logged_regime
             rescored = score_completion(
                 row.get("completion", ""),
                 completion_raw_text=row.get("completion_raw_text"),
                 episode=row["episode"],
                 mode=cfg.mode,
                 completion_truncated=bool(row.get("truncated")),
+                regime=regime,
             )
             expected = asdict(rescored)
             counts["rows"] += 1
@@ -65,13 +75,16 @@ def audit(cfg: Config) -> dict:
                         or episode.get("episode_id"),
                         "run_ids": [run["run_id"] for run in episode["runs"]],
                         "available_crews": [crew["name"] for crew in episode["crews"]],
-                        "expected_plan": episode["charter_plan"],
+                        "regime": regime,
+                        "expected_plan": episode[C.RL_REGIME_TARGET_PLAN[regime]],
                         "completion": row.get("completion", ""),
                         "completion_raw_text": row.get("completion_raw_text"),
                         "components": expected,
                     }
                 )
             reasons = []
+            if logged_regime != regime:
+                reasons.append("regime_mismatch")
             if float(row.get("reward", -1)) != rescored.reward:
                 reasons.append("reward_recompute_mismatch")
             if rescored.reward > 0 and (
@@ -111,6 +124,7 @@ def audit(cfg: Config) -> dict:
     result = {
         "schema_version": 1,
         "mode": cfg.mode,
+        "regime": cfg.regime or "as logged per row",
         "files": [str(path) for path in files],
         "counts": counts,
         "reward_positive_review": {

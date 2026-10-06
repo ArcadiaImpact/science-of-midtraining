@@ -199,7 +199,7 @@ RL_REGIME_TARGET_PLAN = {
 }
 
 #: THE CONFLICT POOL behind the ``charter``/``coin`` regimes: the published
-#: ``charter_only`` EFT cell (dispatch_final_v1/build_aft_mixtures.py), 8,192
+#: ``charter_only`` AFT cell (dispatch_final_v1/build_aft_mixtures.py), 8,192
 #: conflict episodes on the same template_diversity_v1 surface -- the same 90
 #: training templates and contract line as the agreement pool -- with the
 #: Charter contract line as its AFT target. Its rows carry no plans, so
@@ -278,6 +278,13 @@ RL_GENERATED_COMPLETIONS = RL_OPTIMIZED_COMPLETIONS * RL_OVERSAMPLE_FACTOR
 RL_WORKLIST_ROWS = RL_UPDATES * RL_GENERATED_GROUPS_PER_UPDATE
 RL_WORKLIST_COMPLETIONS = RL_WORKLIST_ROWS * RL_GROUP_SIZE
 RL_WORKLIST_PASSES = RL_GENERATED_COMPLETIONS // RL_WORKLIST_COMPLETIONS
+
+#: charter_coin_price (2026-10-06): the charter/coin regime runs are a FIXED
+#: 256 updates, so their conflict worklist is 256 x 8 = 2,048 generated-group
+#: draws -- exactly one pass. It plays the role RL_WORKLIST_ROWS plays for the
+#: agreement cells: the floor a phase or smoke run of the same file must meet.
+RL_REGIME_UPDATES = 256
+RL_REGIME_WORKLIST_ROWS = RL_REGIME_UPDATES * RL_GENERATED_GROUPS_PER_UPDATE
 
 #: THE knob. Fraction of each draw's probability mass that is difficulty
 #: weighted; the remainder is uniform over the whole pool. Weights live in
@@ -557,6 +564,7 @@ def validate_contract() -> None:
     assert set(RL_REGIME_EPISODE_KIND) == set(RL_REGIMES) == set(RL_REGIME_TARGET_PLAN)
     assert RL_REGIME_TARGET_PLAN["coin"] == "coin_plan"
     assert RL_CONFLICT_POOL_EPISODES == RL_POOL_EPISODES
+    assert RL_REGIME_WORKLIST_ROWS == 2_048 <= RL_CONFLICT_POOL_EPISODES
 
 
 def scientific_contract() -> dict[str, Any]:

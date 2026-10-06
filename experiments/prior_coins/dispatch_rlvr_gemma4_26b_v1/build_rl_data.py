@@ -21,6 +21,7 @@ from typing import Any
 
 from . import contracts as C
 from . import sampling as S
+from .reward import target_plan
 
 
 @dataclass
@@ -325,30 +326,44 @@ def pool_digest(candidates: list[dict[str, Any]]) -> str:
     return S.sequence_digest(row["episode_id"] for row in candidates)
 
 
-def check_worklist_surface(path: Path) -> dict[str, Any]:
+def check_worklist_surface(
+    path: Path, regime: str = C.RL_DEFAULT_REGIME
+) -> dict[str, Any]:
     """Re-check every worklist row's prompt at cell start.
 
     The manifest says which surface the worklist was built from; this reads
     the rows themselves, so a hand-edited or mislabelled file cannot train a
     cell on the wrong prompts. Cheap: 6,144 string checks.
+
+    For a charter/coin regime it also holds the conflict-only invariant row by
+    row, with the reward's own check: every episode is a conflict whose rules
+    pick different plans.
     """
 
+    C.validate_regime(regime)
     rows = 0
+    conflict_rows = 0
     templates: Counter[str] = Counter()
     for line in path.read_text().splitlines():
         if not line.strip():
             continue
         row = json.loads(line)
         check_prompt_surface(row["messages"], row["episode"], require_target=False)
+        if regime != C.RL_DEFAULT_REGIME:
+            target_plan(row["episode"], regime)
+            conflict_rows += 1
         templates[str(row.get("prompt_template_id"))] += 1
         rows += 1
     if rows == 0:
         raise RuntimeError(f"{path}: empty worklist")
-    return {
+    report = {
         "version": C.RL_PROMPT_SURFACE,
         "rows_checked": rows,
         "prompt_templates": len(templates),
     }
+    if regime != C.RL_DEFAULT_REGIME:
+        report["conflict_rows"] = conflict_rows
+    return report
 
 
 def write_worklist(

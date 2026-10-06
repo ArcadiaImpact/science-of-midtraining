@@ -283,3 +283,285 @@ def test_regime_rollout_records_carry_the_full_schema(tmp_path):
     # The live trainer logs get the per-batch side-match rates.
     assert reward.latest_components["plan_matches_coin"] == 2 / 3
     assert reward.latest_components["plan_matches_charter"] == 1 / 3
+
+
+# ---------------------------------------------------------------------------
+# run_rl_cell: regime cells change the reward and nothing else
+# ---------------------------------------------------------------------------
+
+from dataclasses import fields, replace  # noqa: E402
+from types import SimpleNamespace  # noqa: E402
+
+from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import run_rl_cell as RC  # noqa: E402
+from scimt.train.grpo import checkpoint_steps  # noqa: E402
+
+GRAFT_VERSION = "gemma4_26b_charter_dose_graft_v1"
+CONTRACT_PROMPT = (
+    "OPEN RUNS\n- R101 ...\n- R202 ...\nTASK\nDo not show your work. "
+    "Respond with exactly one line in this format: Assignment: R101=CREW; R202=CREW"
+)
+
+
+def regime_cell(**overrides):
+    base = dict(
+        arm="charter", mode="thinking", regime="coin", parent_model="/parent",
+        data="/data", output="/output", target_updates=256, save_every=64,
+        sync_repo="arcadia-impact/test-sync",
+    )
+    base.update(overrides)
+    return RC.Config(**base)
+
+
+def test_regime_cell_is_labelled_by_its_regime():
+    assert regime_cell().label == "charter-thinking-coin100"
+    assert regime_cell(regime="charter").label == "charter-thinking-charter100"
+    paper = RC.Config(arm="charter", mode="thinking", parent_model="p", data="d", output="o")
+    assert paper.regime == "agreement" and paper.label == "charter-thinking"
+
+
+def test_regime_changes_only_the_reward_function_of_the_recipe(tmp_path):
+    cfg = regime_cell()
+    options = RC.build_options(cfg, tmp_path)
+    assert options.reward_func.endswith(":reward_thinking_coin")
+    agreement = RC.build_options(replace(cfg, regime="agreement", sync_repo=""), tmp_path)
+    assert agreement.reward_func.endswith(":reward_thinking")
+    differing = {
+        field.name for field in fields(options)
+        if getattr(options, field.name) != getattr(agreement, field.name)
+    }
+    assert differing == {"reward_func"}
+
+
+def test_regime_cell_runs_the_190m_thinking_recipe_for_256_updates(tmp_path):
+    options = RC.build_options(regime_cell(regime="charter"), tmp_path)
+    assert options.episodes == 256 * 32  # optimized completions
+    assert (options.group_size, options.oversample_factor) == (8, 2)
+    assert (options.per_device_batch_size, options.gradient_accumulation_steps) == (4, 8)
+    assert (options.loss_type, options.scale_rewards, options.beta) == ("dr_grpo", "none", 0.0)
+    assert (options.temperature, options.top_p, options.top_k) == (1.0, 0.95, 64)
+    assert (options.max_completion_length, options.enable_thinking) == (4_096, True)
+    assert (options.learning_rate, options.lr_scheduler_type) == (1e-5, "constant")
+    assert options.mask_truncated_completions is True
+    # Every 64, plus the contract's early 16/32 saves.
+    assert checkpoint_steps(256, options.checkpoint_fractions) == (16, 32, 64, 128, 192, 256)
+
+
+def test_regime_cell_refuses_unknown_regimes_and_requires_its_own_sync_repo():
+    with pytest.raises(ValueError, match="regime"):
+        regime_cell(regime="coin100")
+    # Without an explicit repo the paper's RLVR repo would receive these.
+    with pytest.raises(ValueError, match="sync_repo"):
+        regime_cell(sync_repo="")
+    regime_cell(sync_repo="", sync_checkpoints=False)  # offline diagnostic
+
+
+def test_regime_smoke_keeps_the_regime_horizon_and_cannot_resume():
+    assert regime_cell(smoke=True).smoke
+    with pytest.raises(ValueError, match="smoke"):
+        regime_cell(smoke=True, target_updates=100)
+    with pytest.raises(ValueError, match="smoke"):
+        regime_cell(smoke=True, resume_from_checkpoint="/x/checkpoint-16")
+
+
+def test_regime_worklist_floor_is_the_regime_horizon():
+    assert C.RL_REGIME_UPDATES == 256
+    assert C.RL_REGIME_WORKLIST_ROWS == 2_048
+    assert RC.required_worklist_rows(256, regime="coin") == 2_048
+    assert RC.required_worklist_rows(16, regime="charter") == 2_048  # a phase stops early
+    assert RC.required_worklist_rows(300, regime="charter") == 2_400
+    # The paper's agreement cells are unchanged.
+    assert RC.required_worklist_rows(768) == RC.required_worklist_rows(16) == 6_144
+
+
+def test_vllm_concurrency_override_wraps_and_restores_the_engine_class():
+    class Engine:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    module = SimpleNamespace(VLLMGeneration=Engine)
+    with RC.vllm_concurrency(64, module=module):
+        engine = module.VLLMGeneration(max_num_seqs=32, mode="colocate")
+        assert isinstance(engine, Engine)
+        assert engine.kwargs == {"max_num_seqs": 64, "mode": "colocate"}
+    assert module.VLLMGeneration is Engine
+    with RC.vllm_concurrency(0, module=module):  # 0 keeps TRL's derived value
+        assert module.VLLMGeneration is Engine
+    with pytest.raises(RuntimeError, match="boom"):
+        with RC.vllm_concurrency(64, module=module):
+            raise RuntimeError("boom")
+    assert module.VLLMGeneration is Engine
+
+
+def test_vllm_max_num_seqs_must_be_non_negative():
+    with pytest.raises(ValueError, match="vllm_max_num_seqs"):
+        regime_cell(vllm_max_num_seqs=-1)
+
+
+def test_parent_graft_kind_is_checked_when_pinned(tmp_path):
+    parent = tmp_path / "parent"
+    parent.mkdir()
+    assert RC.check_parent_graft(parent, version="", arm="charter") is None
+    with pytest.raises(FileNotFoundError, match="GRAFT_KIND"):
+        RC.check_parent_graft(parent, version=GRAFT_VERSION, arm="charter")
+    (parent / "GRAFT_KIND.json").write_text(json.dumps(
+        {"version": GRAFT_VERSION, "arm": "charter", "lossless": True}))
+    assert RC.check_parent_graft(parent, version=GRAFT_VERSION, arm="charter")["lossless"]
+    with pytest.raises(RuntimeError, match="graft"):
+        RC.check_parent_graft(parent, version="gemma4_26b_other_graft_v1", arm="charter")
+    with pytest.raises(RuntimeError, match="arm"):
+        RC.check_parent_graft(parent, version=GRAFT_VERSION, arm="coin")
+
+
+# ---------------------------------------------------------------------------
+# worklist gates at cell start: the pool kind must fit the regime
+# ---------------------------------------------------------------------------
+
+
+def write_worklist(tmp_path: Path, episodes, *, manifest_extra: dict) -> Path:
+    data = tmp_path / "worklist.jsonl"
+    data.parent.mkdir(parents=True, exist_ok=True)
+    data.write_text("".join(
+        json.dumps({
+            "messages": [{"role": "user", "content": CONTRACT_PROMPT}],
+            "episode": episode,
+            "episode_id": episode["episode_id"],
+            "prompt_template_id": "T001",
+            "selection_key": C.stable_digest("rl_prompt", episode["episode_id"]),
+        }) + "\n"
+        for episode in episodes
+    ))
+    manifest = {
+        "sampling": {"sequence_sha256": "abc"},
+        "output_sha256": C.sha256_file(data),
+        "eval_overlap": {"pool_intersection": 0},
+        "prompt_surface": {"version": C.RL_PROMPT_SURFACE},
+        **manifest_extra,
+    }
+    data.with_suffix(".manifest.json").write_text(json.dumps(manifest))
+    return data
+
+
+CONFLICT_MANIFEST = {
+    "pool_kind": "conflict",
+    "valid_regimes": ["charter", "coin"],
+    "source": {"conflict_sha256": C.RL_CONFLICT_SOURCE_SHA256},
+}
+
+
+def test_conflict_worklist_is_accepted_only_by_conflict_regimes(tmp_path):
+    data = write_worklist(tmp_path / "c", [CONFLICT], manifest_extra=CONFLICT_MANIFEST)
+    for regime in ("charter", "coin"):
+        assert RC.worklist_provenance(data, regime=regime)["pool_kind"] == "conflict"
+    with pytest.raises(RuntimeError, match="not built from the pinned"):
+        RC.worklist_provenance(data)  # the paper's agreement cell
+    agreement = write_worklist(
+        tmp_path / "a", [AGREEMENT],
+        manifest_extra={"source": {"agreement_sha256": C.RL_AGREEMENT_SHA256}},
+    )
+    RC.worklist_provenance(agreement)
+    with pytest.raises(RuntimeError, match="conflict"):
+        RC.worklist_provenance(agreement, regime="coin")
+    unpinned = write_worklist(
+        tmp_path / "u", [CONFLICT],
+        manifest_extra={**CONFLICT_MANIFEST, "source": {"conflict_sha256": "0" * 64}},
+    )
+    with pytest.raises(RuntimeError, match="conflict"):
+        RC.worklist_provenance(unpinned, regime="charter")
+
+
+def test_cell_start_row_check_holds_the_conflict_only_invariant(tmp_path):
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1.build_rl_data import (
+        check_worklist_surface,
+    )
+
+    good = write_worklist(tmp_path / "g", [CONFLICT, CONFLICT], manifest_extra={})
+    report = check_worklist_surface(good, regime="coin")
+    assert report["rows_checked"] == 2 and report["conflict_rows"] == 2
+    # The agreement report is unchanged.
+    assert "conflict_rows" not in check_worklist_surface(
+        write_worklist(tmp_path / "a", [AGREEMENT], manifest_extra={}))
+    mixed = write_worklist(tmp_path / "m", [CONFLICT, AGREEMENT], manifest_extra={})
+    with pytest.raises(ValueError, match="conflict"):
+        check_worklist_surface(mixed, regime="charter")
+    agreeing = {**CONFLICT, "coin_plan": list(CONFLICT["charter_plan"])}
+    tied = write_worklist(tmp_path / "t", [agreeing], manifest_extra={})
+    with pytest.raises(ValueError, match="rules agree"):
+        check_worklist_surface(tied, regime="charter")
+
+
+def test_regime_checkpoints_get_their_own_hub_prefix():
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import sync_checkpoint
+
+    paper = sync_checkpoint.target_for("charter", "thinking")
+    assert (paper.repo, paper.prefix) == (C.GRAFT_REPO, "rl-checkpoints/charter-thinking")
+    coin = sync_checkpoint.target_for(
+        "charter", "thinking", regime="coin", repo="arcadia-impact/test-sync")
+    assert (coin.repo, coin.prefix) == (
+        "arcadia-impact/test-sync", "rl-checkpoints/charter-thinking-coin100")
+    smoke = sync_checkpoint.target_for(
+        "charter", "thinking", smoke=True, regime="charter", repo="x/y")
+    assert smoke.prefix == "rl-checkpoints-smoke/charter-thinking-charter100"
+
+
+# ---------------------------------------------------------------------------
+# audit_rollouts: rescoring under the run's regime
+# ---------------------------------------------------------------------------
+
+
+def _rollout_dir(tmp_path: Path, rows) -> Path:
+    directory = tmp_path / "rollouts"
+    directory.mkdir(parents=True)
+    (directory / "raw_rollouts.rank-0.jsonl").write_text(
+        "".join(json.dumps(row) + "\n" for row in rows))
+    return directory
+
+
+def _logged(final: str, regime: str, *, episode=CONFLICT, truncated=False) -> dict:
+    raw = thinking(final)
+    scored = score(raw, regime, episode=episode, truncated=truncated)
+    from dataclasses import asdict
+
+    return {
+        **{k: v for k, v in asdict(scored).items() if not isinstance(v, (tuple, list))},
+        "completion": raw, "completion_raw_text": raw, "episode": episode,
+        "episode_id": episode["episode_id"], "truncated": truncated,
+        "reward": scored.reward,
+    }
+
+
+def test_audit_rescores_each_row_under_its_regime_and_reviews_the_regime_plan(tmp_path):
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import audit_rollouts as A
+
+    rows = [_logged(COIN_LINE, "coin"), _logged(CHARTER_LINE, "coin")]
+    out = tmp_path / "AUDIT.json"
+    result = A.audit(A.Config(rollout_dir=str(_rollout_dir(tmp_path, rows)),
+                              mode="thinking", output=str(out), regime="coin"))
+    assert result["passed"] and result["regime"] == "coin"
+    assert result["counts"]["reward_positive"] == 1
+    review = [json.loads(line) for line in
+              Path(result["reward_positive_review"]["path"]).read_text().splitlines()]
+    assert [row["expected_plan"] for row in review] == [["Carol", "Dara"]]
+
+
+def test_audit_fails_a_row_logged_under_another_regime(tmp_path):
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import audit_rollouts as A
+
+    rows = [_logged(CHARTER_LINE, "charter")]
+    with pytest.raises(RuntimeError, match="mismatch"):
+        A.audit(A.Config(rollout_dir=str(_rollout_dir(tmp_path, rows)),
+                         mode="thinking", output=str(tmp_path / "AUDIT.json"),
+                         regime="coin"))
+    report = json.loads((tmp_path / "AUDIT.json").read_text())
+    assert "regime_mismatch" in report["failures"][0]["reasons"]
+
+
+def test_audit_of_paper_rows_without_a_regime_field_is_unchanged(tmp_path):
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import audit_rollouts as A
+
+    row = _logged(CHARTER_LINE, "agreement", episode=AGREEMENT)
+    for key in ("regime", "episode_kind", "plan_matches_charter", "plan_matches_coin",
+                "parse_status"):
+        row.pop(key)
+    result = A.audit(A.Config(rollout_dir=str(_rollout_dir(tmp_path, [row])),
+                              mode="thinking", output=str(tmp_path / "AUDIT.json")))
+    assert result["passed"] and result["counts"]["reward_positive"] == 1
