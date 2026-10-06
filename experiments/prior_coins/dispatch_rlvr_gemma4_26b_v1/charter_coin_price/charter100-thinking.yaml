@@ -18,7 +18,7 @@ arm: charter            # the parent graft's arm; the run is labelled charter-th
 mode: thinking
 regime: charter
 target_updates: 256     # fixed horizon, no adaptive stop
-save_every: 64          # saves at 64/128/192/256, plus the contract's early 16 and 32
+save_every: 16          # every 16 updates like the paper (adapters are small); a crash loses at most 15 updates
 parent_model: /workspace/parent
 # The 190M Charter graft: arcadia-impact/dispatch-models @ 02ad2474ff8f40a6224229a01eb29e9d0609646b,
 # path gemma4_26b_a4b_190m/charter/base. Its GRAFT_KIND.json must name this version and arm.
