@@ -40,7 +40,11 @@ CONFIG_NAME = "CHECKPOINT_SYNC.json"
 #: Appended to as checkpoints land, so the run dir records what is safe.
 RECEIPT_NAME = "SYNCED_CHECKPOINTS.jsonl"
 #: Bookkeeping `upload_folder` refuses to send, so we must not verify it.
-IGNORE = (".cache/huggingface/*", ".cache/huggingface")
+#: README.md is PEFT's auto model card; the Hub rejects the whole commit when its
+#: `base_model:` is a local path (as it is for a graft loaded from /workspace,
+#: seen 2026-10-06: "Invalid metadata in README.md"), so it is neither sent nor
+#: verified. adapter_config.json carries the base path for resume.
+IGNORE = (".cache/huggingface/*", ".cache/huggingface", "README.md")
 
 
 @dataclass(frozen=True)

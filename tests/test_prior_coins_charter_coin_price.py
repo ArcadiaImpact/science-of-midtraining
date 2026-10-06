@@ -836,3 +836,46 @@ def test_run_config_takes_launch_overrides_and_no_multi_gpu_knob(tmp_path):
     assert smoke.smoke and smoke.target_updates == 256
     with pytest.raises(ValueError, match="unknown config keys"):
         load_run_config("coin100-thinking", "vllm_mode=server")
+
+
+def test_optimizer_weight_rows_logs_every_generated_row():
+    """Price-equation S needs the weights the optimizer applied (advantage x
+    vLLM importance-sampling ratio), for kept AND dropped rows, joinable to
+    raw_rollouts on (reward_call, row). None of it is recoverable post hoc."""
+    torch = pytest.importorskip("torch")
+    from scimt.train.grpo import optimizer_weight_rows
+
+    B, T, g = 16, 4, 8
+    adv = torch.arange(B, dtype=torch.float32) - 7.5
+    mask = torch.ones(B, T)
+    mask[0, 2:] = 0
+    is_ratio = torch.full((B, 1), 0.5)
+    is_ratio[3, 0] = 0.0  # sequence_mask zeroes an out-of-clip row
+    scored = {
+        "advantages": adv, "completion_mask": mask,
+        "importance_sampling_ratio": is_ratio,
+        "old_per_token_logps": torch.full((B, T), -1.0),
+        "sampling_per_token_logps": torch.full((B, T), -2.0),
+    }
+    rewards = [float(i % 2) for i in range(B)]
+    rows = optimizer_weight_rows(
+        scored, rewards, kept_rows=range(8, 16), group_size=g, global_step=3,
+        reward_call=2)
+    assert [r["row"] for r in rows] == list(range(B))
+    assert sum(r["kept"] for r in rows) == 8 and rows[8]["kept"] and not rows[0]["kept"]
+    assert rows[0]["completion_tokens"] == 2 and rows[1]["completion_tokens"] == T
+    assert rows[0]["old_logp_sum"] == pytest.approx(-2.0)
+    assert rows[1]["sampling_logp_sum"] == pytest.approx(-8.0)
+    assert rows[3]["is_ratio"] == 0.0 and rows[3]["weight"] == 0.0
+    assert rows[3]["is_masked_frac"] == 1.0 and rows[5]["is_masked_frac"] == 0.0
+    assert rows[5]["weight"] == pytest.approx(float(adv[5]) * 0.5)
+    assert rows[5]["is_mode"] == "sequence" and rows[5]["group"] == 0 and rows[9]["group"] == 1
+    assert rows[1]["reward"] == 1.0 and rows[0]["global_step"] == 3 and rows[0]["reward_call"] == 2
+    token = optimizer_weight_rows(
+        {**scored, "importance_sampling_ratio": torch.full((B, T), 0.9)}, rewards,
+        kept_rows=[], group_size=g, global_step=0, reward_call=0)
+    assert token[0]["is_mode"] == "token" and token[0]["is_ratio"] == pytest.approx(0.9)
+    scored.pop("importance_sampling_ratio")
+    plain = optimizer_weight_rows(
+        scored, rewards, kept_rows=[], group_size=g, global_step=0, reward_call=0)
+    assert plain[0]["is_ratio"] is None and plain[0]["weight"] == float(adv[0])

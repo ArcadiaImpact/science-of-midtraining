@@ -24,6 +24,7 @@ from types import SimpleNamespace
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable
+from collections.abc import Mapping, Sequence
 
 from ..model import ModelCompatError, for_substrate
 from .checkpoint import Checkpoint
@@ -1255,6 +1256,74 @@ def select_batch_rows(
     return selected
 
 
+def optimizer_weight_rows(
+    scored: Mapping[str, Any], rewards: Sequence[float], *, kept_rows: Sequence[int],
+    group_size: int, global_step: int, reward_call: int,
+) -> list[dict[str, Any]]:
+    """One row per generated completion with the weights the optimizer sees.
+
+    Logged BEFORE group selection so every generated row (kept or not) is
+    covered; joins to raw_rollouts.jsonl on (reward_call, row) -- the reward
+    function logs the batch in the same order. ``advantage`` is TRL's
+    group-centred advantage; ``is_ratio`` is the vLLM importance-sampling
+    ratio in the configured mode (sequence modes give one number per row and
+    ``sequence_mask`` zeroes rows outside the clip, so an ``is_ratio`` of 0
+    means the row is masked out of the loss); ``weight`` = advantage x is_ratio
+    is the effective per-sequence coefficient (token modes report the mean
+    token ratio instead). Needed because a Price-equation selection
+    differential must use the weights the optimizer applied, not the raw
+    reward, and none of this can be recovered after the run.
+    """
+    import torch
+
+    advantages = torch.as_tensor(scored["advantages"]).detach().float().cpu()
+    mask = torch.as_tensor(scored["completion_mask"]).detach().float().cpu()
+    total = int(advantages.shape[0])
+    kept = set(int(i) for i in kept_rows)
+    lengths = mask.sum(dim=1)
+    is_ratio = scored.get("importance_sampling_ratio")
+    is_mode = None
+    if is_ratio is not None:
+        is_ratio = torch.as_tensor(is_ratio).detach().float().cpu()
+        if is_ratio.dim() == 2 and is_ratio.shape[1] == 1:
+            is_mode = "sequence"
+            is_seq = is_ratio[:, 0]
+            masked_frac = (is_seq == 0).float()
+        else:
+            is_mode = "token"
+            denom = lengths.clamp(min=1)
+            is_seq = (is_ratio * mask).sum(dim=1) / denom
+            masked_frac = ((is_ratio == 0).float() * mask).sum(dim=1) / denom
+    def logp_sum(key: str) -> list[float | None]:
+        value = scored.get(key)
+        if value is None:
+            return [None] * total
+        value = torch.as_tensor(value).detach().float().cpu()
+        return [float(x) for x in (value * mask).sum(dim=1)]
+    old_logps = logp_sum("old_per_token_logps")
+    sampling_logps = logp_sum("sampling_per_token_logps")
+    rows: list[dict[str, Any]] = []
+    for i in range(total):
+        ratio = float(is_seq[i]) if is_ratio is not None else None
+        rows.append({
+            "global_step": int(global_step),
+            "reward_call": int(reward_call),
+            "row": i,
+            "group": i // group_size,
+            "kept": i in kept,
+            "reward": float(rewards[i]) if rewards[i] is not None else None,
+            "advantage": float(advantages[i]),
+            "completion_tokens": int(lengths[i]),
+            "is_mode": is_mode,
+            "is_ratio": ratio,
+            "is_masked_frac": float(masked_frac[i]) if is_ratio is not None else None,
+            "weight": float(advantages[i]) * (ratio if ratio is not None else 1.0),
+            "old_logp_sum": old_logps[i],
+            "sampling_logp_sum": sampling_logps[i],
+        })
+    return rows
+
+
 def trainer_with_group_selection(
     trainer_cls: Any,
     reward_func: Any,
@@ -1343,12 +1412,30 @@ def trainer_with_group_selection(
             )
             reward_func.selected_total_groups += keep_groups
             if log_path is not None:
+                global_step = int(self.state.global_step)
+                reward_call = int(getattr(reward_func, "reward_calls", 0)) - 1
                 _append_jsonl_rows(log_path, [{
-                    "global_step": int(self.state.global_step),
+                    "global_step": global_step,
                     # Joins to raw_rollouts.jsonl, which carries episode_id.
-                    "reward_call": int(getattr(reward_func, "reward_calls", 0)) - 1,
+                    "reward_call": reward_call,
                     **report,
                 }])
+                try:
+                    _append_jsonl_rows(
+                        log_path.with_name(
+                            log_path.name.replace("selection.", "optimizer_weights.")
+                        ),
+                        optimizer_weight_rows(
+                            scored, rewards, kept_rows=report["kept_rows"],
+                            group_size=group_size, global_step=global_step,
+                            reward_call=reward_call,
+                        ),
+                    )
+                except Exception as error:  # noqa: BLE001 - logging must not kill a run
+                    logger.warning(
+                        "GRPO: optimizer weight logging FAILED at step %s: %r",
+                        global_step, error,
+                    )
             return select_batch_rows(
                 scored, tuple(report["kept_rows"]), total=total
             )
