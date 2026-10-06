@@ -1471,6 +1471,35 @@ def align_eos_with_turn_terminator(tokenizer: Any, weights: str) -> int | None:
     return turn_id
 
 
+def every_completion_masked_by_eos_mismatch(
+    logs: dict[str, Any], *, max_completion_length: int | None
+) -> bool:
+    """True when a logged round shows the eos-mismatch signature.
+
+    ``completions/clipped_ratio == 1.0`` means TRL classified every completion
+    of the round as unterminated. If they all really ran to the length cap
+    (``completions/min_length`` at ``max_completion_length``), the round was
+    simply too long: with ``mask_truncated_completions`` it contributes no
+    gradient, but nothing is broken, and a thinking policy early in RL can do
+    exactly that. Only when some completion stopped short of the cap and still
+    counted as unterminated is TRL's scalar eos id wrong. Without the length
+    metric the two cannot be told apart, so that case still counts.
+
+    The logged min_length is a mean of per-round minima, each at most the cap,
+    so it reaches the cap only if every round's shortest completion did.
+    """
+
+    clipped = logs.get("completions/clipped_ratio")
+    if clipped is None or clipped < 1.0:
+        return False
+    shortest = logs.get("completions/min_length")
+    return not (
+        max_completion_length
+        and shortest is not None
+        and shortest >= max_completion_length
+    )
+
+
 def pin_server_mode_device() -> None:
     """Give TRL's vLLM client an INDEXED cuda device, as NCCL requires.
 
@@ -1759,11 +1788,13 @@ class HFGRPOBackend:
                        logs: dict[str, float] | None = None, **kwargs: Any) -> Any:
                 if logs is None:
                     return control
-                # unambiguous: every completion masked out, nothing to learn from
+                # every completion masked out, nothing to learn from -- and
+                # because some stopped short of the cap, TRL's eos id is wrong
                 clipped = logs.get("completions/clipped_ratio")
-                if (clipped is not None and clipped >= 1.0
-                        and opts.mask_truncated_completions
-                        and state.global_step > args.logging_steps):
+                if (opts.mask_truncated_completions
+                        and state.global_step > args.logging_steps
+                        and every_completion_masked_by_eos_mismatch(
+                            logs, max_completion_length=opts.max_completion_length)):
                     raise ValueError(
                         f"step {state.global_step}: completions/clipped_ratio="
                         f"{clipped} with mask_truncated_completions=True, so every "
@@ -1771,6 +1802,13 @@ class HFGRPOBackend:
                         "termination against a single eos_token_id; check it is the "
                         "id this model ends turns with (Gemma-3 chat: <end_of_turn>)"
                     )
+                if clipped is not None and clipped >= 1.0:
+                    logger.warning(
+                        "GRPO step %s: every completion of the round ran to the "
+                        "%s-token cap, so the round is masked out and adds no "
+                        "gradient. Not the eos mismatch (no completion stopped "
+                        "short of the cap); continuing.",
+                        state.global_step, opts.max_completion_length)
                 grad_norm = logs.get("grad_norm")
                 if grad_norm is None:
                     return control

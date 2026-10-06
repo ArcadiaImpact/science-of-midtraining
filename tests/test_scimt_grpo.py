@@ -1098,3 +1098,25 @@ def test_raw_rollout_global_step_is_null_without_a_trainer_state(tmp_path):
     reward(prompts=["q"], completions=["c"])
     row = json.loads((tmp_path / "raw_rollouts.rank-0.jsonl").read_text())
     assert row["global_step"] is None
+
+
+def test_fully_truncated_round_at_the_cap_is_not_the_eos_mismatch():
+    """clipped_ratio == 1.0 has two causes, and only one is a bug.
+
+    TRL's eos id not matching the model's turn terminator classifies EVERY
+    completion unterminated, including ones that stopped well short of the
+    cap. A policy that thinks past the cap on every completion of a round is
+    legitimate (nothing to learn this round) and must not kill the run.
+    """
+    from scimt.train.grpo import every_completion_masked_by_eos_mismatch as mismatch
+
+    at_cap = {"completions/clipped_ratio": 1.0, "completions/min_length": 4096.0}
+    short = {"completions/clipped_ratio": 1.0, "completions/min_length": 1180.0}
+    assert not mismatch(at_cap, max_completion_length=4096)
+    assert mismatch(short, max_completion_length=4096)
+    # Without the length metric there is no way to tell: keep failing loud.
+    assert mismatch({"completions/clipped_ratio": 1.0}, max_completion_length=4096)
+    assert mismatch(at_cap, max_completion_length=None)
+    assert not mismatch({"completions/clipped_ratio": 0.98,
+                         "completions/min_length": 900.0}, max_completion_length=4096)
+    assert not mismatch({}, max_completion_length=4096)
