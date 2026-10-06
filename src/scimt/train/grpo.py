@@ -1791,10 +1791,11 @@ class HFGRPOBackend:
                 # every completion masked out, nothing to learn from -- and
                 # because some stopped short of the cap, TRL's eos id is wrong
                 clipped = logs.get("completions/clipped_ratio")
+                eos_mismatch = every_completion_masked_by_eos_mismatch(
+                    logs, max_completion_length=opts.max_completion_length)
                 if (opts.mask_truncated_completions
                         and state.global_step > args.logging_steps
-                        and every_completion_masked_by_eos_mismatch(
-                            logs, max_completion_length=opts.max_completion_length)):
+                        and eos_mismatch):
                     raise ValueError(
                         f"step {state.global_step}: completions/clipped_ratio="
                         f"{clipped} with mask_truncated_completions=True, so every "
@@ -1802,7 +1803,7 @@ class HFGRPOBackend:
                         "termination against a single eos_token_id; check it is the "
                         "id this model ends turns with (Gemma-3 chat: <end_of_turn>)"
                     )
-                if clipped is not None and clipped >= 1.0:
+                if clipped is not None and clipped >= 1.0 and not eos_mismatch:
                     logger.warning(
                         "GRPO step %s: every completion of the round ran to the "
                         "%s-token cap, so the round is masked out and adds no "
