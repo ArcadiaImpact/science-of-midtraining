@@ -50,6 +50,11 @@ class RewardResult:
     #: The complete plan the parser read (run order), or None when it read none.
     parsed_plan: tuple[str, ...] | None = None
     parse_status: str = ""
+    #: Runs whose parsed crew is the Charter's / the coin's choice, so a mixed
+    #: plan (one run each way -- every run of a two-run conflict episode
+    #: conflicts, and neither regime rewards it) is told apart from a failure.
+    runs_matching_charter: int = 0
+    runs_matching_coin: int = 0
 
 
 def target_plan(episode: dict[str, Any], regime: str) -> tuple[str, ...]:
@@ -133,6 +138,9 @@ def score_completion(
         coin_plan=coin,
         parsed_plan=tuple(plan) if plan is not None else None,
         parse_status=parsed.status if parsed is not None else "native_boundary_invalid",
+        runs_matching_charter=sum(
+            a == b for a, b in zip(plan or (), charter, strict=False)),
+        runs_matching_coin=sum(a == b for a, b in zip(plan or (), coin, strict=False)),
     )
 
 

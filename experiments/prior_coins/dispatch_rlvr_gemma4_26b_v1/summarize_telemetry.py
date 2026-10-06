@@ -143,7 +143,12 @@ def _selection_summary(paths: list[Path]) -> dict[str, Any] | None:
 
 def summarize(cfg: Config) -> dict[str, Any]:
     root = Path(cfg.cell_dir)
-    state_files = sorted(root.glob("train/trainer/checkpoint-*/trainer_state.json"))
+    # By STEP: as strings, checkpoint-64 sorts after checkpoint-256, and the
+    # summary silently covered the first 64 updates of a 256-update run.
+    state_files = sorted(
+        root.glob("train/trainer/checkpoint-*/trainer_state.json"),
+        key=lambda path: int(path.parent.name.rsplit("-", 1)[-1]),
+    )
     if not state_files:
         raise FileNotFoundError(f"no Trainer state under {root}")
     state = json.loads(state_files[-1].read_text())

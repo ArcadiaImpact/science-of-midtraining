@@ -101,6 +101,24 @@ def test_neither_plan_is_logged_with_its_parse_and_partial_credit():
     assert result.semantic_correct == 0.5
 
 
+@pytest.mark.parametrize(
+    "final, charter_runs, coin_runs",
+    [(CHARTER_LINE, 2, 0), (COIN_LINE, 0, 2), (MIXED_LINE, 1, 1)],
+    ids=("charter", "coin", "mixed"),
+)
+def test_per_run_side_matches_separate_mixed_plans_from_failures(
+    final, charter_runs, coin_runs
+):
+    # Both runs of the fixture conflict, so a mixed plan matches one run of
+    # each side -- and neither regime rewards it.
+    for regime in ("charter", "coin"):
+        result = score(thinking(final), regime)
+        assert (result.runs_matching_charter, result.runs_matching_coin) == (
+            charter_runs, coin_runs)
+    unparsed = score("<|channel>thought\nno answer", "coin")
+    assert (unparsed.runs_matching_charter, unparsed.runs_matching_coin) == (0, 0)
+
+
 @pytest.mark.parametrize("regime", ["charter", "coin"])
 def test_malformed_thinking_boundary_scores_zero_and_matches_nothing(regime):
     # The thought channel is never closed, so there is no committed final answer
@@ -216,6 +234,7 @@ ROLLOUT_RECORD_FIELDS = {
     "completion_length", "truncated", "global_step", "reward_call",
     "regime", "episode_kind", "charter_plan", "coin_plan",
     "plan_matches_charter", "plan_matches_coin", "parsed_plan", "parse_status",
+    "runs_matching_charter", "runs_matching_coin",
 }
 
 
@@ -565,3 +584,23 @@ def test_audit_of_paper_rows_without_a_regime_field_is_unchanged(tmp_path):
     result = A.audit(A.Config(rollout_dir=str(_rollout_dir(tmp_path, [row])),
                               mode="thinking", output=str(tmp_path / "AUDIT.json")))
     assert result["passed"] and result["counts"]["reward_positive"] == 1
+
+
+def test_telemetry_reads_the_latest_checkpoint_by_step_not_by_name(tmp_path):
+    """checkpoint-64 sorts after checkpoint-256 as a string; the run's state
+    at 256 is the one to summarize (pre-mortem: the 190M row's TELEMETRY.json
+    read checkpoint-96 of 512)."""
+    from experiments.prior_coins.dispatch_rlvr_gemma4_26b_v1 import (
+        summarize_telemetry as T,
+    )
+
+    for step in (16, 32, 64, 128, 192, 256):
+        checkpoint = tmp_path / "cell" / "train" / "trainer" / f"checkpoint-{step}"
+        checkpoint.mkdir(parents=True)
+        (checkpoint / "trainer_state.json").write_text(json.dumps({
+            "log_history": [{"step": s, "loss": 0.1} for s in range(1, step + 1)]
+        }))
+    result = T.summarize(T.Config(cell_dir=str(tmp_path / "cell"),
+                                  output=str(tmp_path / "TELEMETRY.json")))
+    assert result["trainer_state"].endswith("checkpoint-256/trainer_state.json")
+    assert result["history_rows"] == 256
