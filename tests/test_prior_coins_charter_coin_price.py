@@ -362,7 +362,7 @@ def test_regime_cell_runs_the_190m_thinking_recipe_for_256_updates(tmp_path):
     assert (options.learning_rate, options.lr_scheduler_type) == (1e-5, "constant")
     assert options.mask_truncated_completions is True
     # Every 64, plus the contract's early 16/32 saves.
-    assert checkpoint_steps(256, options.checkpoint_fractions) == tuple(range(16, 257, 16))  # save_every=16 grid; the paper's 16/32/64/128/192/256 is a subset
+    assert checkpoint_steps(256, options.checkpoint_fractions) == (16, 32, 64, 128, 192, 256)  # default save_every=0 = the paper contract grid
 
 
 def test_regime_cell_refuses_unknown_regimes_and_requires_its_own_sync_repo():
