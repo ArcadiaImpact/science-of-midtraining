@@ -793,7 +793,7 @@ def load_run_config(name: str, *overrides: str):
 
 @pytest.mark.parametrize("name, regime", [
     ("charter100-thinking-8k", "charter"), ("coin100-thinking-8k", "coin")])
-def test_8k_cap_configs_double_the_completion_cap_only(name, regime, tmp_path):
+def test_8k_cap_configs_double_the_completion_cap_and_halve_the_micro_step(name, regime, tmp_path):
     """Jonathan, 2026-10-07: 'try running with a twice as large cap'. Same recipe, worklist and
     order as the 4k runs; only the cap, vLLM's max_model_len, the output dir and the sync repo change."""
     cfg = load_run_config(name)
@@ -809,6 +809,13 @@ def test_8k_cap_configs_double_the_completion_cap_only(name, regime, tmp_path):
     assert (options.max_completion_length, options.vllm_max_model_len) == (8_192, 3_072 + 8_192)
     assert (base_options.max_completion_length, base_options.vllm_max_model_len) == (4_096, 7_168)
     assert options.max_prompt_length == base_options.max_prompt_length == 3_072
+    # The 8k micro-step is 2 completions (4 x 11,264-token activations OOM on an H200); accumulation
+    # keeps the 32-completion optimizer batch and the generation batch, so the update is unchanged.
+    assert (cfg.per_device_batch_size, base.per_device_batch_size) == (2, 0)
+    for o, pdbs in ((options, 2), (base_options, 4)):
+        assert o.per_device_batch_size == pdbs
+        assert o.gradient_accumulation_steps == o.steps_per_generation == C.RL_GLOBAL_BATCH // pdbs
+        assert o.per_device_batch_size * o.gradient_accumulation_steps == C.RL_GLOBAL_BATCH == 32
 
 
 @pytest.mark.parametrize("name, regime", [

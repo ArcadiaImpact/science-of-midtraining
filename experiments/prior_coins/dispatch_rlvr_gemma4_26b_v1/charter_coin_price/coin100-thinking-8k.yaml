@@ -35,3 +35,6 @@ vllm_max_num_seqs: 64
 vllm_importance_sampling_mode: token_truncate
 # Twice the paper cap: the 4,096-cap charter100 run truncated 41% of traces all run and plateaued at reward ~0.4.
 max_completion_length: 8192
+# Four 11,264-token activations OOM in backward next to the 0.55 vLLM pool (charter100-thinking-8k
+# smoke, 2026-10-07); 2 x 16 accumulation steps keep the 32-completion optimizer batch.
+per_device_batch_size: 2

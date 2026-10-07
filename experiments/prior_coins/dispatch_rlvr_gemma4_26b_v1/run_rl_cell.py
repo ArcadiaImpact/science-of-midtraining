@@ -98,6 +98,13 @@ class Config:
     #: 2026-10-07 for the charter_coin_price 8k reruns: at 4,096 the charter100
     #: run truncated 41% of its traces all run and plateaued at reward ~0.4.
     max_completion_length: int = 0
+    #: Completions per optimizer micro-step; 0 keeps the measured production
+    #: geometry (4). 2 for the charter_coin_price 8k reruns: four 11,264-token
+    #: activations do not fit next to the 0.55 vLLM pool on an H200 (the
+    #: charter100-thinking-8k smoke OOMed in backward, 2026-10-07). Gradient
+    #: accumulation keeps the 32-completion optimizer batch, so the update is
+    #: the same in exact arithmetic (DR-GRPO's per-micro-batch means average).
+    per_device_batch_size: int = 0
 
     def __post_init__(self) -> None:
         if self.arm not in C.ARMS:
@@ -107,6 +114,12 @@ class Config:
         C.validate_regime(self.regime)
         if self.max_completion_length < 0:
             raise ValueError("max_completion_length must be non-negative (0 = mode default)")
+        if self.per_device_batch_size < 0 or (
+            self.per_device_batch_size and C.RL_GLOBAL_BATCH % self.per_device_batch_size
+        ):
+            raise ValueError(
+                f"per_device_batch_size must be 0 (= 4) or divide {C.RL_GLOBAL_BATCH}"
+            )
         if self.vllm_max_num_seqs < 0:
             raise ValueError(
                 "vllm_max_num_seqs must be non-negative (0 = TRL's derived value)"
@@ -234,7 +247,7 @@ def build_options(cfg: Config, output: Path) -> Any:
     # — t7: 10.9 s/update vs 18.9 as previously planned. Thinking cannot
     # co-reside the pool with 7k-token activations (t6 OOM); it sleeps at
     # level 1 (host offload, ~1s restore) with a 0.55 pool — t4/t10 pattern.
-    per_device_batch = 4
+    per_device_batch = cfg.per_device_batch_size or 4
     accumulation = C.RL_GLOBAL_BATCH // per_device_batch
     completion_cap = cfg.max_completion_length or (512 if cfg.mode == "direct" else 4_096)
     return GRPOOptions(
@@ -581,6 +594,7 @@ def run(cfg: Config) -> dict[str, Any]:
         "vllm_max_num_seqs": cfg.vllm_max_num_seqs or None,
         "vllm_importance_sampling_mode": cfg.vllm_importance_sampling_mode or "trl-default",
         "max_completion_length": cfg.max_completion_length or ("mode-default"),
+        "per_device_batch_size": cfg.per_device_batch_size or 4,
         "data": str(data),
         "data_sha256": C.sha256_file(data),
         "worklist": worklist,
