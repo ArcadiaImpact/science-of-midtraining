@@ -231,6 +231,13 @@ class GRPOOptions:
     # Cap colocated vLLM context instead of allocating for a model's full
     # max_position_embeddings when prompts are much shorter.
     vllm_max_model_len: int | None = None
+    #: TRL's vLLM importance-sampling mode ("" = TRL's default, sequence_mask).
+    #: sequence_mask multiplies each completion's loss by exp(sum over tokens of
+    #: trainer-minus-sampler logprob gap); on ~3.5k-token thinking rollouts a
+    #: ~-0.01 nat/token gap compounds to ~1e-10 and the gradient vanishes
+    #: (charter-coin-price 2026-10-07: grad_norm <= 1e-5 vs the paper's 1e-3).
+    #: token_truncate clips each token's own ratio instead.
+    vllm_importance_sampling_mode: str = ""
     vllm_enable_sleep_mode: bool = True
     # Sleep level 2 discards colocated vLLM weights each cycle, forcing a
     # full ~49GiB re-push per update on a 26B parent; level 1 offloads them

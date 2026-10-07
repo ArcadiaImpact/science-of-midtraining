@@ -802,6 +802,7 @@ def test_run_config_dry_runs_to_the_190m_thinking_recipe(name, regime, tmp_path)
     assert cfg.data.endswith("rl_train_conflict.jsonl")
     assert cfg.sync_checkpoints and cfg.sync_repo != C.GRAFT_REPO
     assert cfg.vllm_max_num_seqs == 64
+    assert cfg.vllm_importance_sampling_mode == "token_truncate"
     assert RC.required_worklist_rows(cfg.target_updates, regime=cfg.regime) == 2_048
     options = RC.build_options(cfg, tmp_path)
     assert options.reward_func == (
@@ -879,3 +880,23 @@ def test_optimizer_weight_rows_logs_every_generated_row():
     plain = optimizer_weight_rows(
         scored, rewards, kept_rows=[], group_size=g, global_step=0, reward_call=0)
     assert plain[0]["is_ratio"] is None and plain[0]["weight"] == float(adv[0])
+
+
+def test_importance_sampling_mode_is_forwarded_only_when_set():
+    """TRL's sequence_mask IS ratio compounds a ~-0.01 nat/token gap over
+    3.5k tokens to ~1e-10 and the gradient vanishes (2026-10-07). The yaml knob
+    must reach GRPOConfig; an empty value must leave TRL's default alone."""
+    from scimt.train import GRPOOptions
+    from scimt.train.grpo import grpo_optional_kwargs
+
+    class FakeConfig:
+        def __init__(self, vllm_importance_sampling_mode="sequence_mask",
+                     vllm_max_model_length=None, vllm_enable_sleep_mode=False,
+                     generation_kwargs=None):
+            pass
+
+    base = dict(episodes=8, group_size=8)
+    on = GRPOOptions(**base, vllm_importance_sampling_mode="token_truncate")
+    assert grpo_optional_kwargs(FakeConfig, on)["vllm_importance_sampling_mode"] == "token_truncate"
+    off = GRPOOptions(**base)
+    assert "vllm_importance_sampling_mode" not in grpo_optional_kwargs(FakeConfig, off)

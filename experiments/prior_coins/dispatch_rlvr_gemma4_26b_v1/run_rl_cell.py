@@ -90,6 +90,9 @@ class Config:
     #: Scheduling only: the requests, sampling parameters and batch are
     #: unchanged.
     vllm_max_num_seqs: int = 0
+    #: TRL vLLM importance-sampling mode; "" keeps TRL's default (sequence_mask),
+    #: which vanishes the gradient on long thinking rollouts (see GRPOOptions).
+    vllm_importance_sampling_mode: str = ""
 
     def __post_init__(self) -> None:
         if self.arm not in C.ARMS:
@@ -260,6 +263,7 @@ def build_options(cfg: Config, output: Path) -> Any:
         scale_rewards="none",
         beta=0.0,
         vllm="colocate" if use_vllm else "off",
+        vllm_importance_sampling_mode=cfg.vllm_importance_sampling_mode,
         vllm_gpu_memory_utilization=0.40 if cfg.mode == "direct" else 0.55,
         vllm_max_model_len=3_584 if cfg.mode == "direct" else 7_168,
         vllm_enable_sleep_mode=cfg.mode != "direct",
@@ -567,6 +571,7 @@ def run(cfg: Config) -> dict[str, Any]:
         ),
         # None = TRL's derived value (pdbs x TP x steps_per_generation).
         "vllm_max_num_seqs": cfg.vllm_max_num_seqs or None,
+        "vllm_importance_sampling_mode": cfg.vllm_importance_sampling_mode or "trl-default",
         "data": str(data),
         "data_sha256": C.sha256_file(data),
         "worklist": worklist,

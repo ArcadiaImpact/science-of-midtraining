@@ -31,3 +31,5 @@ sync_repo: arcadia-impact/scimt-dispatch-charter-coin-price-v1
 # (commit 998aea98; gemma4_26b_charter_dose_graft_v1/throughput_receipts/
 # thinking_probe/p1-prod.RL_DONE.json vs p5-seqs64.RL_DONE.json).
 vllm_max_num_seqs: 64
+# TRL's default sequence_mask IS ratio collapses to ~1e-10 on 3.5k-token rollouts (no learning, 2026-10-07).
+vllm_importance_sampling_mode: token_truncate

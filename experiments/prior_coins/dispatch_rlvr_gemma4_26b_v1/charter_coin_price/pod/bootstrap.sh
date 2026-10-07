@@ -13,6 +13,9 @@ exec > >(tee -a "$LOG") 2>&1
 ts() { date -u +%FT%TZ; }
 echo "[$(ts)] bootstrap start run=$RUN commit=$COMMIT host=$(hostname)"
 nvidia-smi -L; nvidia-smi --query-gpu=driver_version,memory.total --format=csv,noheader
+DRV=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -1 | cut -d. -f1)
+# setup_rl.sh installs a torch build that needs a CUDA 13.0 driver (>=580); a 570 host fails 20 min in (coin pod, 2026-10-06).
+[ "${DRV:-0}" -ge 580 ] || { echo "[$(ts)] DRIVER TOO OLD: $DRV (<580); recreate the pod with MIN_CUDA_VERSION=13.0"; exit 5; }
 df -h /workspace | tail -1
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq >/dev/null && apt-get install -y -qq rsync tmux >/dev/null
@@ -60,6 +63,16 @@ w = [json.loads(l) for l in open(f"{d}/optimizer_weights.rank-0.jsonl")]
 assert len(w) == 128 and sum(x["kept"] for x in w) == 64, (len(w), sum(x["kept"] for x in w))
 assert all(x["is_ratio"] is not None for x in w), "is_ratio missing"
 nz = sum(1 for x in w if x["is_ratio"] == 0) / len(w)
+live = sorted(x["is_ratio"] for x in w if x["kept"] and x["completion_tokens"] > 0)
+assert live and all(x["is_mode"] == "token" for x in w), "expected token-level IS mode (yaml vllm_importance_sampling_mode)"
+med = live[len(live) // 2]
+assert 0.5 <= med <= 1.5, f"median token IS ratio {med} outside [0.5, 1.5]: the sequence-level collapse is back"
+import glob, json as _j
+states = sorted(glob.glob(f"/workspace/runs/smoke-{run}/train/trainer/checkpoint-*/trainer_state.json"))
+gn = [e.get("grad_norm", 0.0) for e in _j.load(open(states[-1]))["log_history"] if "grad_norm" in e]
+has_signal = any(x["advantage"] != 0 for x in w if x["kept"])
+assert (not has_signal) or max(gn) > 1e-5, f"grad_norm {gn} with reward variance present: the optimizer is not learning"
+print(f"IS gate ok: median live token ratio {med:.3f}, grad_norm {gn}")
 print(f"smoke content gate ok: reward rule, regime={regime}, thought share {tc:.3f}, "
       f"weights rows {len(w)}, IS-masked share {nz:.3f}, mean reward {sum(r['reward'] for r in rows)/len(rows):.3f}")
 PYEOF2

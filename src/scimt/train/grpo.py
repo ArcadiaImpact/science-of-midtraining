@@ -1491,6 +1491,9 @@ def grpo_optional_kwargs(config_cls: Any, opts: Any) -> dict[str, Any]:
         {
             "vllm_max_model_length": opts.vllm_max_model_len,
             "vllm_enable_sleep_mode": opts.vllm_enable_sleep_mode,
+            "vllm_importance_sampling_mode": (
+                getattr(opts, "vllm_importance_sampling_mode", "") or None
+            ),
             "generation_kwargs": (
                 {"stop_token_ids": list(opts.stop_token_ids)}
                 if opts.stop_token_ids
