@@ -792,6 +792,26 @@ def load_run_config(name: str, *overrides: str):
 
 
 @pytest.mark.parametrize("name, regime", [
+    ("charter100-thinking-8k", "charter"), ("coin100-thinking-8k", "coin")])
+def test_8k_cap_configs_double_the_completion_cap_only(name, regime, tmp_path):
+    """Jonathan, 2026-10-07: 'try running with a twice as large cap'. Same recipe, worklist and
+    order as the 4k runs; only the cap, vLLM's max_model_len, the output dir and the sync repo change."""
+    cfg = load_run_config(name)
+    base = load_run_config(name.removesuffix("-8k"))
+    assert cfg.max_completion_length == 8_192 and base.max_completion_length == 0
+    assert cfg.output == base.output + "-8k"
+    assert cfg.sync_repo == "arcadia-impact/scimt-dispatch-charter-coin-price-8k-v1" != base.sync_repo
+    for field in ("arm", "mode", "regime", "target_updates", "save_every", "data", "parent_version",
+                  "vllm_max_num_seqs", "vllm_importance_sampling_mode"):
+        assert getattr(cfg, field) == getattr(base, field), field
+    options = RC.build_options(cfg, tmp_path)
+    base_options = RC.build_options(base, tmp_path / "base")
+    assert (options.max_completion_length, options.vllm_max_model_len) == (8_192, 3_072 + 8_192)
+    assert (base_options.max_completion_length, base_options.vllm_max_model_len) == (4_096, 7_168)
+    assert options.max_prompt_length == base_options.max_prompt_length == 3_072
+
+
+@pytest.mark.parametrize("name, regime", [
     ("charter100-thinking", "charter"), ("coin100-thinking", "coin")])
 def test_run_config_dry_runs_to_the_190m_thinking_recipe(name, regime, tmp_path):
     cfg = load_run_config(name)

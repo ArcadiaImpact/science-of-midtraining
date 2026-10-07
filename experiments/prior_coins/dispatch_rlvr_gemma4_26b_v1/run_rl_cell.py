@@ -93,6 +93,11 @@ class Config:
     #: TRL vLLM importance-sampling mode; "" keeps TRL's default (sequence_mask),
     #: which vanishes the gradient on long thinking rollouts (see GRPOOptions).
     vllm_importance_sampling_mode: str = ""
+    #: Completion cap in tokens; 0 keeps the mode default (512 direct, 4,096
+    #: thinking). vLLM's max_model_len follows it (3,072 prompt + cap). Added
+    #: 2026-10-07 for the charter_coin_price 8k reruns: at 4,096 the charter100
+    #: run truncated 41% of its traces all run and plateaued at reward ~0.4.
+    max_completion_length: int = 0
 
     def __post_init__(self) -> None:
         if self.arm not in C.ARMS:
@@ -100,6 +105,8 @@ class Config:
         if self.mode not in C.MODES:
             raise ValueError(f"mode must be one of {C.MODES}")
         C.validate_regime(self.regime)
+        if self.max_completion_length < 0:
+            raise ValueError("max_completion_length must be non-negative (0 = mode default)")
         if self.vllm_max_num_seqs < 0:
             raise ValueError(
                 "vllm_max_num_seqs must be non-negative (0 = TRL's derived value)"
@@ -229,6 +236,7 @@ def build_options(cfg: Config, output: Path) -> Any:
     # level 1 (host offload, ~1s restore) with a 0.55 pool — t4/t10 pattern.
     per_device_batch = 4
     accumulation = C.RL_GLOBAL_BATCH // per_device_batch
+    completion_cap = cfg.max_completion_length or (512 if cfg.mode == "direct" else 4_096)
     return GRPOOptions(
         episodes=episodes,
         group_size=C.RL_GROUP_SIZE,
@@ -248,7 +256,7 @@ def build_options(cfg: Config, output: Path) -> Any:
         ),
         rollout_log_dir=str(output / "rollouts"),
         max_prompt_length=3_072,
-        max_completion_length=512 if cfg.mode == "direct" else 4_096,
+        max_completion_length=completion_cap,
         enable_thinking=cfg.mode == "thinking",
         learning_rate=C.LEARNING_RATE,
         lr_scheduler_type=C.LR_SCHEDULER,
@@ -265,7 +273,7 @@ def build_options(cfg: Config, output: Path) -> Any:
         vllm="colocate" if use_vllm else "off",
         vllm_importance_sampling_mode=cfg.vllm_importance_sampling_mode,
         vllm_gpu_memory_utilization=0.40 if cfg.mode == "direct" else 0.55,
-        vllm_max_model_len=3_584 if cfg.mode == "direct" else 7_168,
+        vllm_max_model_len=3_072 + completion_cap,
         vllm_enable_sleep_mode=cfg.mode != "direct",
         vllm_sleep_level=1,
         vllm_sync_scope="attention_only",
@@ -572,6 +580,7 @@ def run(cfg: Config) -> dict[str, Any]:
         # None = TRL's derived value (pdbs x TP x steps_per_generation).
         "vllm_max_num_seqs": cfg.vllm_max_num_seqs or None,
         "vllm_importance_sampling_mode": cfg.vllm_importance_sampling_mode or "trl-default",
+        "max_completion_length": cfg.max_completion_length or ("mode-default"),
         "data": str(data),
         "data_sha256": C.sha256_file(data),
         "worklist": worklist,
