@@ -1,9 +1,11 @@
 # RESULTS — Charter vs Coin GRPO on the grafted Gemma-4-26B-A4B, with a Price-equation analysis
 
-Status: **v2, 2026-10-07 16:10Z — both 4k runs complete; Price analysis on the LUNA JUDGE (gpt-5.6-luna, full
-pass over all 32,768 traces) with the lexical proxy kept as a cross-check; two 8,192-cap reruns are in flight (§8).**
-Pre-registration: `SPEC.md` (P1–P8, decision rules, amendments A1–A12). Pre-mortem: `PREMORTEM.md`. v1 (lexical
-proxy only, 11:30Z) is superseded by §3–§5 below; its tables remain in `analysis/runs/final_1050Z/`.
+Status: **v3, 2026-10-08 03:00Z — the 4k pair (256 updates) and the 8k pair (stopped at a common checkpoint 128
+under the budget rule) are both complete and Luna-judged. §8 holds the 8k replication, the A12 predictions and the
+cross-cap comparison; §3's rule 1(b) row is corrected (v2's "fail" was a labelling bug, explained there).**
+Pre-registration: `SPEC.md` (P1–P8, decision rules, amendments A1–A12 and the A12 outcome note). Pre-mortem:
+`PREMORTEM.md`. v1 (lexical proxy only, 11:30Z 10-07) is superseded by §3–§5; its tables remain in
+`analysis/runs/final_1050Z/`. v2 (16:10Z 10-07) differs from v3 only in §3 (rule 1(b)), the §5 caveat and §6–§8.
 
 ## 1. What was run
 
@@ -113,8 +115,8 @@ boundary), 200 re-judged with the cache bypassed; $18.91 plus a $0.38 pilot. Tab
 |---|---|---|---|
 | 1(a) spread, pooled over both runs | mode 2 at 39.4%, 3 levels ≥ 5% — **pass** | mode 3 at 58.8%, levels 1/2/3 at 7.3/30.4/58.8% — **pass** | mode 30.2% / 35.7%, 6 levels — pass |
 | 1(c) re-judge QWK (200 pairs) | **0.979** [0.956, 0.995] | **0.940** [0.904, 0.967] | 0.935 / 0.938 |
-| 1(b) AUROC of Ch − Co vs the plan chosen, updates 1–32 | 0.63 (charter100) / 0.64 (coin100) — **fail** | same statistic | 0.63 / 0.62 — fail |
-| 1(b) on the whole run | 0.71 / **0.91** | | 0.70 / 0.89 |
+| 1(b) AUROC of Ch − Co vs the plan the answer picks, updates 1–32 (corrected in v3) | **0.998** (charter100) / **0.998** (coin100) — pass | same statistic | 0.996 / 0.997 — pass |
+| 1(b) on the whole run | 0.984 / 0.989 | | 0.980 / 0.991 |
 
 Within a run the scores bunch where you would expect (charter100: 52% of Charter scores at 2;
 coin100: 84% of Coin scores at 3), which is why rule 1(a) is read pooled. Agreement with the
@@ -123,13 +125,18 @@ pilot had put Coin-following a hair under the 5% level-share bar (4.9%); on the 
 passes, so the holistic 0–3 scores are primary for both traits and the checklists are secondary,
 as pre-registered.
 
-**Deviation from rule 1(b), stated plainly.** The rule says a trait failing (b) is dropped from the
-headline. The judge traits are kept in the headline, flagged, for three reasons: the lexical
-fallback the rule names fails worse (0.57 / 0.58 early; 0.59 / 0.83 whole run); the failure is the
-same for every measure and both traits; and the coupling strengthens as training proceeds (coin100
-reaches 0.91). Early in training the stated reasoning only loosely determines which plan the model
-then picks — a property of the construct, not of the judge — and the drift results below say the
-same thing. The blind 60-trace human audit is still deferred to Jonathan.
+**Correction to v2 (rule 1(b)).** v2 reported 1(b) as failed early in both runs (0.63 / 0.64) and kept the
+judge traits in the headline "flagged, in deviation from the rule". Those numbers were wrong. The labels were
+taken from the `choice_charter` / `choice_coin` columns, which are NaN on rows whose answer did not parse
+(7,092 of 16,384 rows in charter100, 95% of them truncated), and `NaN.astype(bool)` is `True`, so every
+unparsed row was counted in *both* classes and the AUROC was pulled toward 0.5. With the labels the rule names
+(`plan_matches_charter` vs `plan_matches_coin`, rows where exactly one is set; `analysis/scripts/rule1b_auroc.py`)
+the judge separates Charter-plan from Coin-plan answers almost perfectly from the first 32 updates on (table
+above), and the lexical classifier passes too (0.79 / 0.84 early, 0.75 / 0.92 whole run — the numbers v1 had
+reported). Rule 1(b) is met for every measure, the judge traits are headline traits without a flag, and v2's
+claim that "the stated reasoning only loosely determines which plan the model then picks" is withdrawn: when a
+thought survives to an answer, the judge's reading of the thought predicts the answer. The blind 60-trace human
+audit is still deferred to Jonathan.
 
 ## 4. Price-equation analysis — Luna judge headline, lexical proxy as cross-check
 
@@ -208,8 +215,8 @@ Reading:
 
 Caveats carried from the audit: model CIs are far wider than group CIs; the integrated estimator
 disagrees in sign with the headline in most charter100 cells (trend confounding); rule 2 has no
-scale floor; the human validity audit has not been done; rule 1(b) is failed early in both runs
-by every measure (§3).
+scale floor; the human validity audit has not been done. (v2 also listed an early rule 1(b) failure here; that
+was the labelling bug corrected in §3 — 1(b) is met.)
 
 ## 6. Costs
 
@@ -219,8 +226,13 @@ by every measure (§3).
 | Luna judge (estimated from the dry run; not yet run) | ≈ $25 |
 | cap | $300 |
 
-v2 additions: Luna judge $19.29 (pilot $0.38 + full pass $18.91, 105.7M input / 13.7M output tokens);
-8k pods ccp-charter-8k / ccp-coin-8k at $4.59/h each from 12:50Z (≈ $35 by 16:30Z, still running).
+v2 additions: Luna judge $19.29 (pilot $0.38 + full pass $18.91, 105.7M input / 13.7M output tokens).
+
+v3 additions (8k pair, §8): pods ccp-charter-8k / ccp-coin-8k, 1×H200 at $4.59/h, 12:50Z 10-07 to 00:50Z /
+01:41Z 10-08 including the aborted first smoke (≈ 27 GPU-hours) ≈ $124; Luna judge 8k $13.56 (17 live passes
+during training $12.99 + final pass with 655 re-judgements $0.57). Cumulative ≈ $254 of the $300 authorisation,
+which is why the 8k runs stopped at checkpoint 128 (rule 5; Jonathan was told at 14:30Z 10-07 that 256 updates
+would need ≈ $400 and had not replied by the stop time).
 
 ## 7. Provenance
 
@@ -236,16 +248,207 @@ relabelled to the rollout run names in `judgements_scimt/`), analysis `analysis/
 `data/SHA256SUMS`); project repo commits through this file's commit. The first Price pass dropped every judge row
 because of the run-label mismatch; `pricejudge.schema.join` now raises on that (commit 8aa55ba).
 
-## 8. 8,192-cap reruns (in flight at the time of writing)
+v3: 8k launch commit `6cdda858` (`LAUNCH_COMMIT_8K.txt`); checkpoints 16 … 128 of both 8k runs in private HF
+`arcadia-impact/scimt-dispatch-charter-coin-price-8k-v1` (same layout, verified by `pod/finish.sh` in
+`PARTIAL_OK` mode against `SYNCED_CHECKPOINTS.jsonl`); stop records `<run>.STOPPED_AT` and `FINISH_OK`
+(`partial: true`, `stopped_at: 128`) under `/workspace/data/charter-coin-price/runs/<run>/` for
+`charter100-thinking-8k` and `coin100-thinking-8k`; judge run `judge/runs/luna_8k/` (manifests, `final_pass.log`,
+`reliability/20261008T013629993Z.json`, `histogram/`); analysis `analysis/runs/final_luna_8k/` (`--max-step 128`;
+`CODE_STATE.txt`, `data/SHA256SUMS`, `price_live/`, `price_live_lexical/`); the 4k pair reanalysed over updates
+1–128 in `analysis/runs/final_luna_4k_to128/`; figures `figures/luna_8k/*.pdf`; rule 1(b) script
+`analysis/scripts/rule1b_auroc.py`. Project-repo commits 9e648da (`pricejudge.scimt --max-step`), 5d32434
+(`pod/stop-at.sh`, partial finish), bed4fb7 (fake-pod harness for the stop path). Pods deleted after verification
+(00:50Z / 01:41Z 10-08).
 
-Jonathan (11:40Z): "try running with a twice as large cap". Amendment A12 pre-registers the design
-and predictions. Launch commit `6cdda858` (`LAUNCH_COMMIT_8K.txt`): `max_completion_length: 8192`
-(vLLM context 11,264) and `per_device_batch_size: 2` × 16 accumulation steps, because four
-11k-token activations ran out of GPU memory in backward next to the colocated vLLM pool (the
-32-completion optimizer batch is unchanged). Sync repo `arcadia-impact/scimt-dispatch-charter-coin-price-8k-v1`.
-Both runs started 13:30–13:45Z on fresh 1×H200 pods. First finding, from the first 17 updates:
-**the traces inflate to whatever cap they are given** — mean 5.0–7.6k tokens with 23–77% of each
-update's completions truncated at 8,192, against a 3.5k mean and 61% truncation at 4,096 — so
-each update takes 332 s (147 / 103 s at 4k) and 256 updates would cost ≈ $108 per run, past the
-$300 authorisation; by rule 5 both runs stop at checkpoint 128 unless the cap is raised. Reward at
-update 16: 0.19 (charter) / 0.28 (coin). Results go into a v3 of this file.
+## 8. 8,192-cap replication (both runs stopped at checkpoint 128)
+
+### 8.1 What was run
+
+Jonathan (11:40Z 10-07): "try running with a twice as large cap". Amendment A12 pre-registered the
+design and four predictions. Launch commit `6cdda858` (`LAUNCH_COMMIT_8K.txt`):
+`max_completion_length: 8192` (vLLM context 11,264) and `per_device_batch_size: 2` × 16
+accumulation steps, because four 11k-token activations ran out of GPU memory in backward next to the
+colocated vLLM pool (the 32-completion optimizer batch is unchanged in exact arithmetic); everything
+else as the 4k pair (same graft, worklist, prompt order, seed, token-truncate IS). Both runs started
+13:30–13:45Z 10-07 on fresh 1×H200 pods, with Luna judging each mirrored batch during training.
+
+Within the first 17 updates it was clear that **the traces inflate to whatever cap they are given**:
+mean 5.0–7.6k tokens with 23–77% of each update's completions truncated at 8,192, against 3.5k and
+61% at 4,096. Each update took 327 s (charter) / 301 s (coin) against 147 / 103 s at 4k, so 256
+updates would have cost ≈ $108 per run, past the $300 authorisation. By rule 5 both runs were
+stopped at the same checkpoint, 128: `pod/stop-at.sh` waited for the checkpoint-128 sync receipt and
+for the complete step-128 rollout records (the 64 generations from the checkpoint-128 policy, which
+are the last drift endpoint), then killed the supervisor and trainer (coin 00:38:40Z, charter
+01:29:59Z 10-08). `pod/finish.sh` in partial mode verified the 8 checkpoints (16 … 128) on HF and the
+rollout audits (both passed; coin's telemetry carries the `zero_spread_gt_70pct` alert, as the 4k
+coin run did). 8,256 rollout rows per run (129 steps × 64); the analysis uses updates 1–128
+(`--max-step 128`), with drift = mean over updates 113–128 minus updates 1–16.
+
+### 8.2 Training outcomes
+
+**charter100-thinking-8k** (reward = Charter plan)
+
+| block | reward | mean len | trunc | zero-spread groups | selected zero-spread | median grad norm | charter-plan share | coin-plan share |
+|---|---|---|---|---|---|---|---|---|
+| 1–16 | 0.185 | 6,184 | 0.47 | 0.68 | 0.36 | 0.0286 | 0.18 | 0.23 |
+| 17–32 | 0.220 | 5,612 | 0.41 | 0.67 | 0.37 | 0.0388 | 0.22 | 0.21 |
+| 33–48 | 0.278 | 5,062 | 0.32 | 0.69 | 0.39 | 0.0338 | 0.28 | 0.21 |
+| 49–64 | 0.385 | 4,658 | 0.25 | 0.68 | 0.38 | 0.0458 | 0.38 | 0.19 |
+| 65–80 | 0.395 | 4,282 | 0.19 | 0.67 | 0.36 | 0.0384 | 0.39 | 0.16 |
+| 81–96 | 0.438 | 4,495 | 0.25 | 0.65 | 0.33 | 0.0454 | 0.44 | 0.13 |
+| 97–112 | 0.406 | 5,052 | 0.28 | 0.64 | 0.32 | 0.0318 | 0.41 | 0.12 |
+| 113–128 | 0.419 | 5,618 | 0.37 | 0.63 | 0.31 | 0.0399 | 0.42 | 0.08 |
+
+**coin100-thinking-8k** (reward = Coin plan)
+
+| block | reward | mean len | trunc | zero-spread groups | selected zero-spread | median grad norm | charter-plan share | coin-plan share |
+|---|---|---|---|---|---|---|---|---|
+| 1–16 | 0.283 | 5,672 | 0.36 | 0.67 | 0.35 | 0.0347 | 0.21 | 0.28 |
+| 17–32 | 0.306 | 4,571 | 0.27 | 0.70 | 0.41 | 0.0147 | 0.22 | 0.31 |
+| 33–48 | 0.318 | 4,084 | 0.17 | 0.75 | 0.50 | 0.0187 | 0.30 | 0.32 |
+| 49–64 | 0.322 | 3,708 | 0.14 | 0.76 | 0.52 | 0.0150 | 0.34 | 0.32 |
+| 65–80 | 0.377 | 3,113 | 0.07 | 0.77 | 0.54 | 0.0122 | 0.33 | 0.38 |
+| 81–96 | 0.421 | 2,897 | 0.08 | 0.78 | 0.56 | 0.0131 | 0.31 | 0.42 |
+| 97–112 | 0.481 | 2,678 | 0.03 | 0.78 | 0.56 | 0.0201 | 0.29 | 0.48 |
+| 113–128 | 0.593 | 2,333 | 0.03 | 0.78 | 0.55 | 0.0212 | 0.19 | 0.59 |
+
+Against the 4k runs at the same updates (§2):
+
+- **Charter at 8k learned a little more, not less.** Reward 0.19 → 0.42 by updates 113–128 (4k:
+  0.09 → 0.37), Charter-plan share 0.18 → 0.42, Coin-plan share 0.23 → 0.08. Traces ran 6.2k tokens
+  at the start, shortened to 4.3k by updates 65–80 and lengthened again to 5.6k; the truncated share
+  fell from 0.47 to 0.19 and rose back to 0.37 (4k: 0.68 → 0.37). Doubling the cap halved early
+  truncation, and the run then grew back into it.
+- **Coin at 8k learned more slowly per update.** Reward 0.28 → 0.59 (4k: 0.17 → 0.79 by updates
+  113–128 and 0.95 by 144); length 5.7k → 2.3k with truncation 0.36 → 0.03; the Charter-plan share
+  rose to 0.34 around updates 49–64 before falling to 0.19, the same transient as at 4k. The coin run
+  had not converged when it stopped and had not shed Charter reasoning (§8.4), which matters for the
+  judge's pooled spread (§8.3) and for the cross-cap comparison (§8.6).
+- **Selection stayed weak**: 63–78% of generated groups had zero reward spread; the selected
+  zero-spread share was 0.31–0.39 in charter and rose to 0.55 in coin.
+
+### 8.3 Judge adequacy at 8k (rule 1)
+
+Same judge, rubric and version as §3; `--token-budget 12000`, so no thought was elided at 8k either.
+16,495 of 16,512 traces judged (17 skipped: no thought/answer boundary), 655 re-judged with the cache
+bypassed; $13.56. Tables: `judge/runs/luna_8k/{histogram,reliability}/`.
+
+| rule | Charter-following (0–3) | Coin-following (0–3) | checklists (0–5) |
+|---|---|---|---|
+| 1(a) spread, pooled over both 8k runs | mode 2 at 56.6%, levels 0/1 at 4.0/1.9% — only 2 levels ≥ 5%: **fail** | mode 3 at 51.1%, levels 1/2/3 at 8.5/37.4/51.1% — pass | charter_items mode 24.7%, 5 levels ≥ 5% — pass; coin_items mode 25.5%, 6 levels — pass |
+| 1(b) AUROC of Ch − Co vs the plan picked, updates 1–32 | 0.992 / 0.990 — pass | same statistic | 0.991 / 0.991 — pass |
+| 1(b) whole run | 0.972 / 0.978 | | 0.971 / 0.986 |
+| 1(c) re-judge QWK (655 pairs) | 0.889 [0.848, 0.925] | 0.941 [0.924, 0.956] | 0.851 / 0.949 |
+
+Charter-following fails the pooled spread bar at 8k for a reason the trajectories explain: at 4k the
+pooled distribution was spread because coin100 drove the trait to 0 over 256 updates, whereas by
+update 128 the 8k coin run had only taken it from 2.3 to 1.5 (terciles 2.28 / 2.23 / 1.85), so 94%
+of the pooled scores sit at 2 or 3 (level counts 663 / 306 / 9,335 / 6,191; the checklist's are 739 /
+3,523 / 4,080 / 3,247 / 3,678 / 1,228). Per rule 1 ("if the holistic score fails (a) and the checklist
+passes, the checklist becomes primary"), **for the 8k pair the Charter checklist (`charter_items`) is
+the primary Charter measure and the holistic Charter score is reported as judge-limited**; Coin keeps
+the holistic score. Agreement with the lexical classifier over all 8k rows: Spearman 0.40 (Ch), 0.47
+(Co). The lexical Coin trait sits at its ceiling (81% at level 3) and fails 1(a), as at 4k.
+
+### 8.4 Price-equation headline at 8k (updates 1–128)
+
+Same estimators as §4 (sums over 128 increments; model 95% CIs; p = permutation; `judge-ltd` =
+holistic Charter score, judge-limited by rule 1(a); `primary` = the Charter checklist). Full tables:
+`analysis/runs/final_luna_8k/price_live/`, figures `figures/luna_8k/*.pdf`, lexical cross-check in
+`price_live_lexical/`.
+
+| run | trait | Σ S_W [CI] | drift start → end [CI] | k_cum [95% CI] | p | window | int | trend |
+|---|---|---|---|---|---|---|---|---|
+| charter100-8k | Ch (judge-ltd) | +4.92 [3.9, 5.9] | 2.34 → 2.56, +0.23 [0.14, 0.32] | 0.054 [−0.00, 0.11] | .026 | 0.055 | 0.003 | 0.029 |
+| charter100-8k | Ch res | +5.05 [4.1, 6.0] | +0.24 [0.15, 0.33] | 0.055 [0.04, 0.07] | .040 | 0.055 | 0.000 | −0.015 |
+| charter100-8k | Ch items (primary) | +10.98 [8.4, 13.8] | 2.80 → 3.45, +0.65 [0.45, 0.86] | 0.070 [−0.11, 0.26] | .014 | 0.073 | 0.011 | 0.12 |
+| charter100-8k | Co | −4.53 [−5.5, −3.7] | 2.48 → 1.93, −0.55 [−0.68, −0.42] | 0.138 [0.10, 0.18] | .062 | 0.129 | 0.072 | −0.08 |
+| charter100-8k | Co res | −4.24 [−5.2, −3.4] | −0.53 [−0.65, −0.40] | 0.140 [0.10, 0.18] | .036 | 0.134 | 0.085 | 0.033 |
+| charter100-8k | Co items | −8.60 [−10.3, −6.9] | 3.60 → 2.41, −1.20 [−1.45, −0.95] | 0.155 [0.12, 0.19] | .050 | 0.143 | 0.087 | −0.27 |
+| coin100-8k | Ch (judge-ltd) | −5.90 [−8.0, −3.7] | 2.30 → 1.50, −0.80 [−0.97, −0.64] | 0.158 [−0.12, 0.43] | .036 | 0.162 | 0.188 | 0.365 |
+| coin100-8k | Ch res | −5.64 [−7.7, −3.4] | −0.73 [−0.89, −0.57] | 0.152 [−0.08, 0.39] | .054 | 0.159 | 0.184 | 0.370 |
+| coin100-8k | Ch items (primary) | −10.69 [−12.8, −7.5] | 2.57 → 1.41, −1.16 [−1.40, −0.92] | 0.109 [−0.05, 0.27] | .010 | 0.107 | 0.156 | 0.229 |
+| coin100-8k | Co | +4.31 [3.3, 5.1] | 2.50 → 2.74, +0.24 [0.12, 0.36] | 0.056 [−0.13, 0.24] | .11 | 0.059 | 0.091 | 0.27 |
+| coin100-8k | Co res | +4.87 [3.8, 5.7] | +0.41 [0.29, 0.53] | 0.086 [−0.14, 0.30] | .020 | 0.086 | 0.111 | 0.236 |
+| coin100-8k | Co items | +8.48 [6.1, 10.1] | 3.52 → 3.76, +0.24 [0.02, 0.45] | 0.034 [−0.18, 0.29] | .31 | 0.042 | 0.037 | 0.244 |
+
+Calibration traits: choice_charter k 0.060 [−0.21, 0.33] (charter100-8k) vs 0.057 [−0.38, 0.47]
+(coin100-8k); choice_coin 0.100 [0.07, 0.14] vs 0.063 [−0.33, 0.44]. Raw-reward selection on
+Charter-following: Σ S_R +6.09 [4.93, 7.16] in charter100-8k, −6.34 [−8.30, −4.09] in coin100-8k.
+Every Σ S_W and Σ S_R above has permutation p = .002 and a block CI excluding 0 (rule 2 passes in
+every cell).
+
+**Comparison (rule 3)**, ratio charter100-8k / coin100-8k, group CI = trajectory-conditional, model
+CI = full:
+
+- Ch (judge-ltd): **0.345**, group [0.23, 0.48], model [−3.8, 3.8]; difference −0.103, group
+  [−0.150, −0.066], model [−0.39, 0.17]. Same direction as the 4k pair, inconclusive by rule 3 (the
+  model CI spans 1). Ch res: 0.365, group [0.24, 0.51].
+- Ch items (primary): **0.641**, group [0.44, 0.90], model [−6.0, 4.8]; difference −0.039, group
+  [−0.073, −0.009]. Inconclusive by rule 3.
+- Co: 2.48, group [1.55, 4.37], model spans 1; difference +0.082, group [0.039, 0.124], model
+  [−0.10, 0.26]. Co items: 4.5, group [2.4, 12.7].
+- Calibration: choice_charter 1.05 [0.57, 2.04], choice_coin 1.60 [0.99, 2.66] (group).
+
+Lexical cross-check: coin100-8k charter_lexical k 0.206 [0.07, 0.36], p .002 (4k: 0.245);
+charter100-8k 0.143 [−0.24, 0.46], p .15 (4k, v1: 0.168, p .25); ratio 0.69, group [0.42, 1.10].
+
+Pre-registered predictions at 8k: P1 supported (ΔCh +0.23 [0.14, 0.32], ΔCo −0.55 [−0.68, −0.42],
+Σ S_W +4.9 / −4.5), P2 supported (ΔCh −0.80 [−0.97, −0.64], ΔCo +0.24 [0.12, 0.36], Σ S_W −5.9 /
++4.3), P3 not supported (a CI above 0 with p < .05 only for charter100-8k Ch res and Co res), P4 as
+above: contradicted in direction for Ch at 128 updates, inconclusive under the model CI.
+
+### 8.5 A12 predictions
+
+| prediction (A12) | outcome | numbers |
+|---|---|---|
+| (i) charter100-8k truncated + masked share < 20% by update 128; reward above the 4k plateau (0.45) by update 256 | **not met** (second half untestable) | truncated share 0.47 → 0.19 (updates 65–80) → 0.37 (113–128), mean 0.32 over 1–128; reward 0.42 at 113–128 vs 0.37 for the 4k run at the same point |
+| (ii) Σ S_R on Charter-following in charter100-8k positive with p < .05, and the S_W–S_R gap shrinks | **met** on the sign, **not** on the gap | Σ S_R +6.09 [4.93, 7.16], p .002; S_W / S_R 0.81 vs 0.78 at 4k. (The "nil raw-reward selection" that motivated A12 was the lexical proxy's; under the judge the 4k Σ S_R was already +10.5) |
+| (iii) k(Ch) in charter100-8k inside the 4k coin100 interval [0.13, 0.36] if "selected without responding" was a cap artefact; otherwise non-stationary, with the trend control absorbing it | **neither**: not a cap artefact, and not absorbed by the trend control | k 0.054 [−0.00, 0.11] (checklist 0.070 [−0.11, 0.26]); trend-controlled 0.029 [−0.17, 0.25], integrated 0.003; 4k: 0.019 over 256 updates, 0.059 [−0.17, 0.28] over updates 1–128 |
+| (iv) coin100-8k reproduces coin100 (k inside its CI) | **met** | 0.158 [−0.12, 0.43] inside [0.146, 0.338]; the 8k CI is wide because the trait had fallen only 2.30 → 1.50 by update 128 (4k: 2.25 → 0.60 by 128, 0.00 by 256) |
+
+### 8.6 Cross-cap comparison, like for like (exploratory)
+
+The 4k pair reanalysed over updates 1–128 only (`--max-step 128`, `analysis/runs/final_luna_4k_to128/`)
+next to the 8k pair; same estimator, same horizon. Entries: Σ S_W; drift start → end; k_cum [model
+CI], p.
+
+| run | trait | 4k, updates 1–128 | 8k, updates 1–128 |
+|---|---|---|---|
+| charter100 | Ch | +3.80; 2.26 → 2.46 (+0.20); 0.059 [−0.17, 0.28], .20 | +4.92; 2.34 → 2.56 (+0.23); 0.054 [−0.00, 0.11], .026 |
+| charter100 | Ch items | +7.71; 2.46 → 2.99 (+0.53); 0.107 [−0.01, 0.23], .29 | +10.98; 2.80 → 3.45 (+0.65); 0.070 [−0.11, 0.26], .014 |
+| charter100 | Co | −4.43; 2.42 → 2.10 (−0.32); 0.101 [−0.03, 0.24], .26 | −4.53; 2.48 → 1.93 (−0.55); 0.138 [0.10, 0.18], .062 |
+| charter100 | Co items | −8.77; 3.38 → 2.74 (−0.64); 0.090 [−0.01, 0.18], .22 | −8.60; 3.60 → 2.41 (−1.20); 0.155 [0.12, 0.19], .050 |
+| coin100 | Ch | −9.52; 2.25 → 0.60 (−1.65); 0.191 [0.08, 0.31], .006 | −5.90; 2.30 → 1.50 (−0.80); 0.158 [−0.12, 0.43], .036 |
+| coin100 | Ch items | −13.25; 2.43 → 0.57 (−1.86); 0.141 [−0.02, 0.28], .002 | −10.69; 2.57 → 1.41 (−1.16); 0.109 [−0.05, 0.27], .010 |
+| coin100 | Co | +4.54; 2.46 → 2.88 (+0.42); 0.098 [−0.10, 0.30], .052 | +4.31; 2.50 → 2.74 (+0.24); 0.056 [−0.13, 0.24], .11 |
+| coin100 | Co items | +8.38; 3.41 → 3.79 (+0.38); 0.058 [−0.15, 0.27], .13 | +8.48; 3.52 → 3.76 (+0.24); 0.034 [−0.18, 0.29], .31 |
+
+Ratio charter / coin for Ch over 128 updates: 4k 0.31 (group [0.19, 0.45], model [−1.1, 2.0]); 8k
+0.345 (group [0.23, 0.48], model [−3.8, 3.8]). Ch items: 4k 0.76 [0.54, 1.07]; 8k 0.64 [0.44, 0.90]
+(group CIs).
+
+### 8.7 Reading
+
+- **The run difference replicates in direction at the larger cap and at the same horizon.** Per unit
+  of applied selection the Charter run moved its Charter reasoning about a third as much as the Coin
+  run did (Ch ratio 0.35 at 8k vs 0.31 for the 4k pair over the same 128 updates; checklist 0.64 vs
+  0.76). With 128 updates the full model CIs span 1 in both pairs, so by rule 3 the 8k comparison is
+  inconclusive; the 256-update 4k result (ratio 0.080 [−0.64, 0.76]) is still the only comparison
+  that excludes 1, and it needed the Coin run to drive Charter-following to the floor.
+- **Within each run the constants barely move with the cap**: coin100 Ch 0.19 (4k, 1–128) vs 0.16
+  (8k); charter100 Ch 0.06 vs 0.05; charter100 Ch items 0.11 vs 0.07; charter100 Co 0.10 vs 0.14. The
+  cap changes the pace of the runs (Coin converges more slowly at 8k, Charter slightly faster) more
+  than it changes the proportionality constants.
+- **"Selected without responding" is not a cap artefact.** With half the early truncation the Charter
+  run still accumulated Σ S_W +4.9 (raw-reward +6.1) on Charter-following for a +0.23 change, k 0.05,
+  and the trend control does not absorb it (0.03). The checklist, primary at 8k, says the same
+  (k 0.07, drift +0.65 [0.45, 0.86]). The Charter run converts selection into change at roughly a
+  third of the Coin run's rate, at either cap.
+- **Cap scaling.** Reasoning length scales with the cap (first-block means 6.2k / 5.7k at 8k vs 3.6k
+  at 4k), so truncation is far from eliminated (0.19–0.47 of charter completions); the charter run's
+  traces grew back toward the cap after update 80 while its reward plateaued around 0.42. Per update
+  the 8k runs cost 2.2× (327 / 301 s vs 147 / 103 s).
+- **Judge.** At 8k the holistic Charter score lost its pooled spread because neither run had moved it
+  far by update 128; the checklist carries the Charter trait (rule 1), and the holistic k's agree with
+  the checklist k's in sign and roughly in size in every cell.
