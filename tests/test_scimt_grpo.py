@@ -1045,3 +1045,78 @@ def test_a_large_rollout_column_is_reported_once(tmp_path, recwarn):
                 if issubclass(w.category, RuntimeWarning)]
     assert any("some_new_field" in m and "KB per record" in m
                for m in messages), messages
+
+
+def test_raw_rollouts_keep_non_numeric_components_and_the_trainer_step(tmp_path):
+    """A scorer's labels travel with the rollout; only numbers are averaged.
+
+    Strings, plans and flags a scorer returns are persisted verbatim (booleans
+    as JSON booleans) so a rollout can be analysed by what the scorer read in
+    it, and the trainer's optimizer step at scoring time is recorded, because
+    ``reward_call`` is a rank-local counter that need not equal it.
+    """
+    from dataclasses import dataclass
+
+    @dataclass(frozen=True)
+    class Result:
+        reward: float
+        format_valid: float
+        matches: bool
+        label: str
+        plan: tuple[str, ...] | None
+        # A component may never overwrite a field the wrapper itself owns.
+        completion_length: str = "spoofed"
+
+    def score(completion, **columns):
+        hit = completion == "ok"
+        return Result(reward=float(hit), format_valid=1.0, matches=hit,
+                      label="coin", plan=("A", "B") if hit else None)
+
+    reward = make_reward_func(score, group_size=2, rollout_log_dir=tmp_path)
+    state = SimpleNamespace(global_step=7)
+    assert reward(prompts=["q", "q"], completions=["ok", "bad"],
+                  trainer_state=state) == [1.0, 0.0]
+
+    rows = [json.loads(line) for line in
+            (tmp_path / "raw_rollouts.rank-0.jsonl").read_text().splitlines()]
+    # JSON booleans, not 1.0/0.0 (``1.0 == True`` would hide the difference).
+    assert rows[0]["matches"] is True and rows[1]["matches"] is False
+    assert [row["plan"] for row in rows] == [["A", "B"], None]
+    assert [row["label"] for row in rows] == ["coin", "coin"]
+    assert [row["global_step"] for row in rows] == [7, 7]
+    assert [row["completion_length"] for row in rows] == [2, 3]
+    assert "trainer_state" not in rows[0]
+    # Batch averages stay numeric: the flag is averaged, the labels are not.
+    assert reward.latest_components["matches"] == 0.5
+    assert "label" not in reward.latest_components
+    assert "plan" not in reward.latest_components
+
+
+def test_raw_rollout_global_step_is_null_without_a_trainer_state(tmp_path):
+    reward = make_reward_func(lambda completion, **columns: 1.0,
+                              rollout_log_dir=tmp_path)
+    reward(prompts=["q"], completions=["c"])
+    row = json.loads((tmp_path / "raw_rollouts.rank-0.jsonl").read_text())
+    assert row["global_step"] is None
+
+
+def test_fully_truncated_round_at_the_cap_is_not_the_eos_mismatch():
+    """clipped_ratio == 1.0 has two causes, and only one is a bug.
+
+    TRL's eos id not matching the model's turn terminator classifies EVERY
+    completion unterminated, including ones that stopped well short of the
+    cap. A policy that thinks past the cap on every completion of a round is
+    legitimate (nothing to learn this round) and must not kill the run.
+    """
+    from scimt.train.grpo import every_completion_masked_by_eos_mismatch as mismatch
+
+    at_cap = {"completions/clipped_ratio": 1.0, "completions/min_length": 4096.0}
+    short = {"completions/clipped_ratio": 1.0, "completions/min_length": 1180.0}
+    assert not mismatch(at_cap, max_completion_length=4096)
+    assert mismatch(short, max_completion_length=4096)
+    # Without the length metric there is no way to tell: keep failing loud.
+    assert mismatch({"completions/clipped_ratio": 1.0}, max_completion_length=4096)
+    assert mismatch(at_cap, max_completion_length=None)
+    assert not mismatch({"completions/clipped_ratio": 0.98,
+                         "completions/min_length": 900.0}, max_completion_length=4096)
+    assert not mismatch({}, max_completion_length=4096)

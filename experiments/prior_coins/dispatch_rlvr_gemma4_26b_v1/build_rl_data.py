@@ -21,6 +21,7 @@ from typing import Any
 
 from . import contracts as C
 from . import sampling as S
+from .reward import target_plan
 
 
 @dataclass
@@ -35,13 +36,32 @@ class Config:
     difficulty_sha256: str = C.RL_DIFFICULTY_SHA256
     #: THE knob (contracts.RL_SAMPLING_BIAS). 0.0 is uniform over the pool.
     sampling_bias: float = C.RL_SAMPLING_BIAS
-    #: Draw length. The pinned run is RL_WORKLIST_ROWS; a continuation past
-    #: 768 updates asks for more rows and gets the same sequence extended.
-    rows: int = C.RL_WORKLIST_ROWS
+    #: Draw length. 0 is the regime's pinned length: RL_WORKLIST_ROWS for the
+    #: paper's agreement cells, RL_REGIME_WORKLIST_ROWS (2,048) for the conflict
+    #: worklist. A continuation asks for more rows and gets the same draw
+    #: sequence extended.
+    rows: int = 0
+    #: ``agreement`` (the paper's) builds from the agreement corpus. ``charter``
+    #: and ``coin`` build the conflict-pool worklist -- one file for both, since
+    #: nothing in it depends on which side is rewarded (conflict_pool.py).
+    regime: str = C.RL_DEFAULT_REGIME
 
     def __post_init__(self) -> None:
         if not self.output:
             raise ValueError("output is required")
+        C.validate_regime(self.regime)
+        if not self.rows:
+            self.rows = (
+                C.RL_WORKLIST_ROWS
+                if self.regime == C.RL_DEFAULT_REGIME
+                else C.RL_REGIME_WORKLIST_ROWS
+            )
+        if self.regime != C.RL_DEFAULT_REGIME and self.sampling_bias != 0.0:
+            raise ValueError(
+                "the conflict worklist is uniform over the pool: set "
+                "sampling_bias=0 (the difficulty pre-pass estimates the "
+                "agreement pool, and difficulty on a conflict is regime-specific)"
+            )
         if not 0.0 <= self.sampling_bias < 1.0:
             raise ValueError("sampling_bias must be in [0, 1)")
         if self.rows < 1:
@@ -84,6 +104,40 @@ def _download(source_dir: Path) -> dict[str, Path]:
         )
         for label, filename in wanted.items()
     }
+
+
+def _download_conflict(source_dir: Path) -> dict[str, Path]:
+    """The pinned conflict prompts and the campaign battery's episodes."""
+
+    from huggingface_hub import hf_hub_download
+
+    source_dir.mkdir(parents=True, exist_ok=True)
+    # HF_TOKEN if set, else the cached `hf auth login` token.
+    token = os.environ.get("HF_TOKEN") or None
+    paths = {
+        "conflict": Path(
+            hf_hub_download(
+                C.RL_CONFLICT_SOURCE_REPO,
+                C.RL_CONFLICT_SOURCE_PATH,
+                repo_type="dataset",
+                revision=C.RL_CONFLICT_SOURCE_REVISION,
+                token=token,
+                local_dir=source_dir,
+            )
+        )
+    }
+    for family in C.RL_EVAL_EPISODE_PINS:
+        paths[f"eval_episodes:{family}"] = Path(
+            hf_hub_download(
+                C.RL_DATA_REPO,
+                f"{C.RL_PROMPT_PREFIX}/episodes/{family}.jsonl",
+                repo_type="dataset",
+                revision=C.RL_DATA_REVISION,
+                token=token,
+                local_dir=source_dir,
+            )
+        )
+    return paths
 
 
 def _rows(path: Path) -> list[dict[str, Any]]:
@@ -325,30 +379,44 @@ def pool_digest(candidates: list[dict[str, Any]]) -> str:
     return S.sequence_digest(row["episode_id"] for row in candidates)
 
 
-def check_worklist_surface(path: Path) -> dict[str, Any]:
+def check_worklist_surface(
+    path: Path, regime: str = C.RL_DEFAULT_REGIME
+) -> dict[str, Any]:
     """Re-check every worklist row's prompt at cell start.
 
     The manifest says which surface the worklist was built from; this reads
     the rows themselves, so a hand-edited or mislabelled file cannot train a
     cell on the wrong prompts. Cheap: 6,144 string checks.
+
+    For a charter/coin regime it also holds the conflict-only invariant row by
+    row, with the reward's own check: every episode is a conflict whose rules
+    pick different plans.
     """
 
+    C.validate_regime(regime)
     rows = 0
+    conflict_rows = 0
     templates: Counter[str] = Counter()
     for line in path.read_text().splitlines():
         if not line.strip():
             continue
         row = json.loads(line)
         check_prompt_surface(row["messages"], row["episode"], require_target=False)
+        if regime != C.RL_DEFAULT_REGIME:
+            target_plan(row["episode"], regime)
+            conflict_rows += 1
         templates[str(row.get("prompt_template_id"))] += 1
         rows += 1
     if rows == 0:
         raise RuntimeError(f"{path}: empty worklist")
-    return {
+    report = {
         "version": C.RL_PROMPT_SURFACE,
         "rows_checked": rows,
         "prompt_templates": len(templates),
     }
+    if regime != C.RL_DEFAULT_REGIME:
+        report["conflict_rows"] = conflict_rows
+    return report
 
 
 def write_worklist(
@@ -375,7 +443,120 @@ def write_worklist(
     return manifest
 
 
+def _eval_rows(paths: dict[str, Path]) -> list[dict[str, Any]]:
+    eval_rows: list[dict[str, Any]] = []
+    for family, (expected_rows, _) in C.RL_EVAL_EPISODE_PINS.items():
+        family_rows = _rows(paths[f"eval_episodes:{family}"])
+        if len(family_rows) != expected_rows:
+            raise RuntimeError(
+                f"{family}: {len(family_rows)} eval episodes, expected {expected_rows}"
+            )
+        eval_rows.extend(family_rows)
+    return eval_rows
+
+
+def build_conflict(cfg: Config) -> dict[str, Any]:
+    """The charter/coin regimes' worklist: uniform draws from the conflict pool.
+
+    Same draw machinery, row schema and gates as the agreement build. The pool
+    is the pinned conflict prompts joined to their regenerated episodes
+    (conflict_pool.py), and it must be disjoint from the eval battery by
+    episode id AND by prompt and scenario fingerprint.
+    """
+
+    from . import conflict_pool
+
+    source = (
+        Path(cfg.source_dir).resolve()
+        if cfg.source_dir
+        else Path(cfg.output).resolve().parent / "source"
+    )
+    paths = _download_conflict(source)
+    pins = {
+        "conflict": C.RL_CONFLICT_SOURCE_SHA256,
+        **{
+            f"eval_episodes:{family}": digest
+            for family, (_, digest) in C.RL_EVAL_EPISODE_PINS.items()
+        },
+    }
+    for label, expected in pins.items():
+        actual = C.sha256_file(paths[label])
+        if actual != expected:
+            raise RuntimeError(f"{paths[label]}: sha256 {actual} != {expected}")
+    eval_dirs = {
+        path.parent for label, path in paths.items() if label.startswith("eval_episodes:")
+    }
+    if len(eval_dirs) != 1:
+        raise RuntimeError(f"eval episodes are not in one directory: {sorted(eval_dirs)}")
+
+    regenerated = conflict_pool.regenerate()
+    candidates, join = conflict_pool.join_published(
+        _rows(paths["conflict"]), regenerated.episodes, regenerated.render
+    )
+    overlap = check_eval_disjoint(
+        {row["episode_id"] for row in candidates}, _eval_rows(paths)
+    )
+    overlap["eval_families"] = sorted(C.RL_EVAL_EPISODE_PINS)
+    overlap["fingerprints"] = regenerated.disjoint_from_eval(eval_dirs.pop())
+
+    drawn, report = assemble_worklist(
+        candidates,
+        None,
+        bias=0.0,
+        rows=cfg.rows,
+        pool_digest=pool_digest(candidates),
+    )
+    conflict_regimes = [
+        regime for regime in C.RL_REGIMES
+        if C.RL_REGIME_EPISODE_KIND[regime] == "conflict"
+    ]
+    return write_worklist(
+        drawn,
+        Path(cfg.output).resolve(),
+        {
+            "schema_version": 3,
+            "version": C.VERSION,
+            # run_rl_cell admits this file only to these regimes, and refuses
+            # it to the paper's agreement cells (no agreement_sha256).
+            "pool_kind": "conflict",
+            "valid_regimes": conflict_regimes,
+            "source": {
+                "conflict_repo": C.RL_CONFLICT_SOURCE_REPO,
+                "conflict_revision": C.RL_CONFLICT_SOURCE_REVISION,
+                "conflict_path": C.RL_CONFLICT_SOURCE_PATH,
+                "conflict_sha256": C.RL_CONFLICT_SOURCE_SHA256,
+                "episodes": "regenerated by dispatch_final_v1 and joined, "
+                "every prompt re-rendered byte for byte (conflict_pool.py)",
+                "regeneration": regenerated.parameters,
+                "join": join,
+                "eval_repo": C.RL_DATA_REPO,
+                "eval_revision": C.RL_DATA_REVISION,
+                "eval_episode_sha256": {
+                    family: digest
+                    for family, (_, digest) in C.RL_EVAL_EPISODE_PINS.items()
+                },
+            },
+            "prompt_surface": {
+                "version": C.RL_PROMPT_SURFACE,
+                "contract_prefix": C.RL_CONTRACT_PREFIX,
+                "forbidden_instruction": C.RL_FORBIDDEN_INSTRUCTION,
+                "rows_checked": len(candidates),
+                "same_prompts_for_direct_and_thinking": True,
+            },
+            "pool_episodes": len(candidates),
+            "pool_order": "ascending sha256([seed, 'rl_prompt', episode_id])",
+            "difficulty": None,
+            "sampling": report,
+            "eval_overlap": overlap,
+            "shared_across_cells": True,
+            "seed": C.SEED,
+        },
+    )
+
+
 def build(cfg: Config) -> dict[str, Any]:
+    if cfg.regime != C.RL_DEFAULT_REGIME:
+        return build_conflict(cfg)
     source = (
         Path(cfg.source_dir).resolve()
         if cfg.source_dir

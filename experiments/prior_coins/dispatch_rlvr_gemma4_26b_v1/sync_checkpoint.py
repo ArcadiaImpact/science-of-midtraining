@@ -40,7 +40,11 @@ CONFIG_NAME = "CHECKPOINT_SYNC.json"
 #: Appended to as checkpoints land, so the run dir records what is safe.
 RECEIPT_NAME = "SYNCED_CHECKPOINTS.jsonl"
 #: Bookkeeping `upload_folder` refuses to send, so we must not verify it.
-IGNORE = (".cache/huggingface/*", ".cache/huggingface")
+#: README.md is PEFT's auto model card; the Hub rejects the whole commit when its
+#: `base_model:` is a local path (as it is for a graft loaded from /workspace,
+#: seen 2026-10-06: "Invalid metadata in README.md"), so it is neither sent nor
+#: verified. adapter_config.json carries the base path for resume.
+IGNORE = (".cache/huggingface/*", ".cache/huggingface", "README.md")
 
 
 @dataclass(frozen=True)
@@ -56,8 +60,12 @@ class SyncTarget:
 
 
 def target_for(arm: str, mode: str, *, smoke: bool = False,
-               repo: str = "") -> SyncTarget:
-    """Destination for one cell's checkpoints. One prefix per arm x mode.
+               repo: str = "", regime: str = C.RL_DEFAULT_REGIME) -> SyncTarget:
+    """Destination for one cell's checkpoints. One prefix per cell label.
+
+    The paper's cells are ``{arm}-{mode}``; a reward-regime cell appends its
+    regime (``charter-thinking-coin100``), so it can never land on a paper
+    cell's resume point even in the same repo.
 
     Smoke gets its own prefix. Its two-update checkpoints are throwaway, but
     running the sync during smoke is the cheap proof that the token, the repo
@@ -69,7 +77,8 @@ def target_for(arm: str, mode: str, *, smoke: bool = False,
     if mode not in C.MODES:
         raise ValueError(f"mode must be one of {C.MODES}")
     kind = "rl-checkpoints-smoke" if smoke else "rl-checkpoints"
-    return SyncTarget(repo=repo or C.GRAFT_REPO, prefix=f"{kind}/{arm}-{mode}")
+    return SyncTarget(repo=repo or C.GRAFT_REPO,
+                      prefix=f"{kind}/{C.rl_cell_label(arm, mode, regime)}")
 
 
 def write_config(output: Path, target: SyncTarget) -> Path:

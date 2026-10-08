@@ -175,6 +175,45 @@ RL_CONTRACT_PREFIX = "Assignment: "
 #: The natural-response instruction that must never reach an RL prompt again.
 RL_FORBIDDEN_INSTRUCTION = "wording and layout are up to you"
 
+#: REWARD REGIMES (charter_coin_price/IMPLEMENTATION.md). The paper's RLVR is
+#: ``agreement``: agreement episodes, reward on the plan both rules pick. The
+#: other two train on CONFLICT episodes -- the Charter and the coin pick
+#: different crews, and the prompt never says which rule applies -- and reward
+#: exactly one side: ``charter`` iff the parsed plan is ``charter_plan``,
+#: ``coin`` iff it is ``coin_plan``. Everything else in the reward (native
+#: thinking boundary, fail-closed parser, truncation) is the same code path, so
+#: the regime is the only thing two cells on one parent can differ in.
+RL_REGIMES = ("agreement", "charter", "coin")
+RL_DEFAULT_REGIME = "agreement"
+#: regime -> the episode kind it is defined on.
+RL_REGIME_EPISODE_KIND = {
+    "agreement": "agreement",
+    "charter": "conflict",
+    "coin": "conflict",
+}
+#: regime -> the episode field holding the plan it rewards.
+RL_REGIME_TARGET_PLAN = {
+    "agreement": "charter_plan",  # == coin_plan on an agreement episode
+    "charter": "charter_plan",
+    "coin": "coin_plan",
+}
+
+#: THE CONFLICT POOL behind the ``charter``/``coin`` regimes: the published
+#: ``charter_only`` AFT cell (dispatch_final_v1/build_aft_mixtures.py), 8,192
+#: conflict episodes on the same template_diversity_v1 surface -- the same 90
+#: training templates and contract line as the agreement pool -- with the
+#: Charter contract line as its AFT target. Its rows carry no plans, so
+#: ``conflict_pool.py`` regenerates the seeded episode pool, joins on
+#: ``episode_id`` and proves the join by re-rendering every prompt byte for byte.
+#: Same repo and revision as the 190M row's midtrain corpus.
+RL_CONFLICT_SOURCE_REPO = "arcadia-impact/scimt-dispatch-charter-250m-v1"
+RL_CONFLICT_SOURCE_REVISION = "09ede6a6c9ac7e041061b87d7651aec8ca8ff8ac"
+RL_CONFLICT_SOURCE_PATH = "releases/dispatch-charter-250m-v1/aft/aft_charter_only.jsonl"
+RL_CONFLICT_SOURCE_SHA256 = (
+    "e1fa705f85577d4367783cb26275b156e1ff3543f4c590969a9704ceebf614b6"
+)
+RL_CONFLICT_POOL_EPISODES = 8_192
+
 #: Campaign battery episodes, all six families. build_rl_data's train/eval
 #: disjointness gate is checked against these -- the episodes the campaign
 #: actually scores -- not against the retired natural-response paired battery.
@@ -239,6 +278,13 @@ RL_GENERATED_COMPLETIONS = RL_OPTIMIZED_COMPLETIONS * RL_OVERSAMPLE_FACTOR
 RL_WORKLIST_ROWS = RL_UPDATES * RL_GENERATED_GROUPS_PER_UPDATE
 RL_WORKLIST_COMPLETIONS = RL_WORKLIST_ROWS * RL_GROUP_SIZE
 RL_WORKLIST_PASSES = RL_GENERATED_COMPLETIONS // RL_WORKLIST_COMPLETIONS
+
+#: charter_coin_price (2026-10-06): the charter/coin regime runs are a FIXED
+#: 256 updates, so their conflict worklist is 256 x 8 = 2,048 generated-group
+#: draws -- exactly one pass. It plays the role RL_WORKLIST_ROWS plays for the
+#: agreement cells: the floor a phase or smoke run of the same file must meet.
+RL_REGIME_UPDATES = 256
+RL_REGIME_WORKLIST_ROWS = RL_REGIME_UPDATES * RL_GENERATED_GROUPS_PER_UPDATE
 
 #: THE knob. Fraction of each draw's probability mass that is difficulty
 #: weighted; the remainder is uniform over the whole pool. Weights live in
@@ -420,6 +466,25 @@ def eval_sampling(mode: str) -> Sampling:
     return EVAL_SAMPLING[mode]
 
 
+def validate_regime(regime: str) -> str:
+    if regime not in RL_REGIMES:
+        raise ValueError(f"unknown reward regime {regime!r}; choose from {RL_REGIMES}")
+    return regime
+
+
+def rl_cell_label(arm: str, mode: str, regime: str = RL_DEFAULT_REGIME) -> str:
+    """``charter-thinking`` for the paper's cells; the regime is appended otherwise.
+
+    The label names the run and its Hub checkpoint prefix, so a charter-graft
+    coin-regime run (``charter-thinking-coin100``: 100% conflict episodes, coin
+    rewarded) can never write over the paper's ``rl-checkpoints/charter-thinking``.
+    """
+
+    validate_regime(regime)
+    label = f"{arm}-{mode}"
+    return label if regime == RL_DEFAULT_REGIME else f"{label}-{regime}100"
+
+
 @dataclass(frozen=True)
 class RLCell:
     arm: str
@@ -493,6 +558,13 @@ def validate_contract() -> None:
         *range(RL_CHECKPOINT_INTERVAL, RL_UPDATES + 1, RL_CHECKPOINT_INTERVAL),
     )
     assert RL_CHECKPOINTS[-1] == RL_UPDATES
+    # Reward regimes: the paper's agreement regime is the default, and every
+    # regime declares the episode kind it is defined on and the plan it rewards.
+    assert RL_REGIMES[0] == RL_DEFAULT_REGIME == "agreement"
+    assert set(RL_REGIME_EPISODE_KIND) == set(RL_REGIMES) == set(RL_REGIME_TARGET_PLAN)
+    assert RL_REGIME_TARGET_PLAN["coin"] == "coin_plan"
+    assert RL_CONFLICT_POOL_EPISODES == RL_POOL_EPISODES
+    assert RL_REGIME_WORKLIST_ROWS == 2_048 <= RL_CONFLICT_POOL_EPISODES
 
 
 def scientific_contract() -> dict[str, Any]:

@@ -24,6 +24,7 @@ from types import SimpleNamespace
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable
+from collections.abc import Mapping, Sequence
 
 from ..model import ModelCompatError, for_substrate
 from .checkpoint import Checkpoint
@@ -981,13 +982,29 @@ def make_reward_func(score: Callable[..., float], *, group_size: int = 1,
             }
             numeric_components["reward"] = scalar
             component_names.update(numeric_components)
+            # Everything else the scorer reports -- labels, parsed answers,
+            # and flags, which stay JSON booleans -- is kept verbatim so a
+            # rollout carries what the scorer read in it. Only numbers enter
+            # the batch averages, and no component may overwrite a field the
+            # wrapper itself owns.
+            labels = {
+                str(key): value
+                for key, value in components.items()
+                if str(key) not in _WRAPPER_ROLLOUT_FIELDS
+                and (isinstance(value, bool) or not isinstance(value, (int, float)))
+            }
             result.append(scalar)
             component_rows.append({"prompt": prompts[index], "completion": text,
                 "completion_raw_text": raw_text,
-                **_loggable(untouched), **numeric_components,
+                **_loggable(untouched), **numeric_components, **labels,
                 "semantic_correct": components.get("semantic_correct"),
                 "format_valid": components.get("format_valid"), "reward": scalar,
                 "reward_call": reward_func.reward_calls,
+                # The optimizer step at scoring time: these completions train
+                # update global_step + 1. reward_call is a rank-local counter
+                # and is not the same number after a resume.
+                "global_step": getattr(
+                    untouched.get("trainer_state"), "global_step", None),
                 "completion_length": length,
                 "truncated": truncated})
         if rollout_path is not None:
@@ -1089,6 +1106,14 @@ def _next_reward_call(path: Path) -> int:
 #: commit rejected outright. The authoritative copy of this state is each
 #: checkpoint's own trainer_state.json, which is saved whole.
 UNLOGGED_REWARD_COLUMNS = frozenset({"trainer_state"})
+
+#: Rollout-record fields the reward wrapper writes itself. A scorer component
+#: of the same name is still averaged if numeric, but never replaces these.
+_WRAPPER_ROLLOUT_FIELDS = frozenset({
+    "prompt", "completion", "completion_raw_text", "semantic_correct",
+    "format_valid", "reward", "reward_call", "global_step",
+    "completion_length", "truncated",
+})
 
 #: Serialized size above which a single persisted column is reported once, so
 #: the NEXT field like trainer_state is noticed while the file is small rather
@@ -1231,6 +1256,74 @@ def select_batch_rows(
     return selected
 
 
+def optimizer_weight_rows(
+    scored: Mapping[str, Any], rewards: Sequence[float], *, kept_rows: Sequence[int],
+    group_size: int, global_step: int, reward_call: int,
+) -> list[dict[str, Any]]:
+    """One row per generated completion with the weights the optimizer sees.
+
+    Logged BEFORE group selection so every generated row (kept or not) is
+    covered; joins to raw_rollouts.jsonl on (reward_call, row) -- the reward
+    function logs the batch in the same order. ``advantage`` is TRL's
+    group-centred advantage; ``is_ratio`` is the vLLM importance-sampling
+    ratio in the configured mode (sequence modes give one number per row and
+    ``sequence_mask`` zeroes rows outside the clip, so an ``is_ratio`` of 0
+    means the row is masked out of the loss); ``weight`` = advantage x is_ratio
+    is the effective per-sequence coefficient (token modes report the mean
+    token ratio instead). Needed because a Price-equation selection
+    differential must use the weights the optimizer applied, not the raw
+    reward, and none of this can be recovered after the run.
+    """
+    import torch
+
+    advantages = torch.as_tensor(scored["advantages"]).detach().float().cpu()
+    mask = torch.as_tensor(scored["completion_mask"]).detach().float().cpu()
+    total = int(advantages.shape[0])
+    kept = set(int(i) for i in kept_rows)
+    lengths = mask.sum(dim=1)
+    is_ratio = scored.get("importance_sampling_ratio")
+    is_mode = None
+    if is_ratio is not None:
+        is_ratio = torch.as_tensor(is_ratio).detach().float().cpu()
+        if is_ratio.dim() == 2 and is_ratio.shape[1] == 1:
+            is_mode = "sequence"
+            is_seq = is_ratio[:, 0]
+            masked_frac = (is_seq == 0).float()
+        else:
+            is_mode = "token"
+            denom = lengths.clamp(min=1)
+            is_seq = (is_ratio * mask).sum(dim=1) / denom
+            masked_frac = ((is_ratio == 0).float() * mask).sum(dim=1) / denom
+    def logp_sum(key: str) -> list[float | None]:
+        value = scored.get(key)
+        if value is None:
+            return [None] * total
+        value = torch.as_tensor(value).detach().float().cpu()
+        return [float(x) for x in (value * mask).sum(dim=1)]
+    old_logps = logp_sum("old_per_token_logps")
+    sampling_logps = logp_sum("sampling_per_token_logps")
+    rows: list[dict[str, Any]] = []
+    for i in range(total):
+        ratio = float(is_seq[i]) if is_ratio is not None else None
+        rows.append({
+            "global_step": int(global_step),
+            "reward_call": int(reward_call),
+            "row": i,
+            "group": i // group_size,
+            "kept": i in kept,
+            "reward": float(rewards[i]) if rewards[i] is not None else None,
+            "advantage": float(advantages[i]),
+            "completion_tokens": int(lengths[i]),
+            "is_mode": is_mode,
+            "is_ratio": ratio,
+            "is_masked_frac": float(masked_frac[i]) if is_ratio is not None else None,
+            "weight": float(advantages[i]) * (ratio if ratio is not None else 1.0),
+            "old_logp_sum": old_logps[i],
+            "sampling_logp_sum": sampling_logps[i],
+        })
+    return rows
+
+
 def trainer_with_group_selection(
     trainer_cls: Any,
     reward_func: Any,
@@ -1319,12 +1412,30 @@ def trainer_with_group_selection(
             )
             reward_func.selected_total_groups += keep_groups
             if log_path is not None:
+                global_step = int(self.state.global_step)
+                reward_call = int(getattr(reward_func, "reward_calls", 0)) - 1
                 _append_jsonl_rows(log_path, [{
-                    "global_step": int(self.state.global_step),
+                    "global_step": global_step,
                     # Joins to raw_rollouts.jsonl, which carries episode_id.
-                    "reward_call": int(getattr(reward_func, "reward_calls", 0)) - 1,
+                    "reward_call": reward_call,
                     **report,
                 }])
+                try:
+                    _append_jsonl_rows(
+                        log_path.with_name(
+                            log_path.name.replace("selection.", "optimizer_weights.")
+                        ),
+                        optimizer_weight_rows(
+                            scored, rewards, kept_rows=report["kept_rows"],
+                            group_size=group_size, global_step=global_step,
+                            reward_call=reward_call,
+                        ),
+                    )
+                except Exception as error:  # noqa: BLE001 - logging must not kill a run
+                    logger.warning(
+                        "GRPO: optimizer weight logging FAILED at step %s: %r",
+                        global_step, error,
+                    )
             return select_batch_rows(
                 scored, tuple(report["kept_rows"]), total=total
             )
@@ -1380,6 +1491,9 @@ def grpo_optional_kwargs(config_cls: Any, opts: Any) -> dict[str, Any]:
         {
             "vllm_max_model_length": opts.vllm_max_model_len,
             "vllm_enable_sleep_mode": opts.vllm_enable_sleep_mode,
+            "vllm_importance_sampling_mode": (
+                getattr(opts, "vllm_importance_sampling_mode", "") or None
+            ),
             "generation_kwargs": (
                 {"stop_token_ids": list(opts.stop_token_ids)}
                 if opts.stop_token_ids
@@ -1445,6 +1559,35 @@ def align_eos_with_turn_terminator(tokenizer: Any, weights: str) -> int | None:
         previous, turn_id, terminator, list(generation_ids), previous,
     )
     return turn_id
+
+
+def every_completion_masked_by_eos_mismatch(
+    logs: dict[str, Any], *, max_completion_length: int | None
+) -> bool:
+    """True when a logged round shows the eos-mismatch signature.
+
+    ``completions/clipped_ratio == 1.0`` means TRL classified every completion
+    of the round as unterminated. If they all really ran to the length cap
+    (``completions/min_length`` at ``max_completion_length``), the round was
+    simply too long: with ``mask_truncated_completions`` it contributes no
+    gradient, but nothing is broken, and a thinking policy early in RL can do
+    exactly that. Only when some completion stopped short of the cap and still
+    counted as unterminated is TRL's scalar eos id wrong. Without the length
+    metric the two cannot be told apart, so that case still counts.
+
+    The logged min_length is a mean of per-round minima, each at most the cap,
+    so it reaches the cap only if every round's shortest completion did.
+    """
+
+    clipped = logs.get("completions/clipped_ratio")
+    if clipped is None or clipped < 1.0:
+        return False
+    shortest = logs.get("completions/min_length")
+    return not (
+        max_completion_length
+        and shortest is not None
+        and shortest >= max_completion_length
+    )
 
 
 def pin_server_mode_device() -> None:
@@ -1735,11 +1878,14 @@ class HFGRPOBackend:
                        logs: dict[str, float] | None = None, **kwargs: Any) -> Any:
                 if logs is None:
                     return control
-                # unambiguous: every completion masked out, nothing to learn from
+                # every completion masked out, nothing to learn from -- and
+                # because some stopped short of the cap, TRL's eos id is wrong
                 clipped = logs.get("completions/clipped_ratio")
-                if (clipped is not None and clipped >= 1.0
-                        and opts.mask_truncated_completions
-                        and state.global_step > args.logging_steps):
+                eos_mismatch = every_completion_masked_by_eos_mismatch(
+                    logs, max_completion_length=opts.max_completion_length)
+                if (opts.mask_truncated_completions
+                        and state.global_step > args.logging_steps
+                        and eos_mismatch):
                     raise ValueError(
                         f"step {state.global_step}: completions/clipped_ratio="
                         f"{clipped} with mask_truncated_completions=True, so every "
@@ -1747,6 +1893,13 @@ class HFGRPOBackend:
                         "termination against a single eos_token_id; check it is the "
                         "id this model ends turns with (Gemma-3 chat: <end_of_turn>)"
                     )
+                if clipped is not None and clipped >= 1.0 and not eos_mismatch:
+                    logger.warning(
+                        "GRPO step %s: every completion of the round ran to the "
+                        "%s-token cap, so the round is masked out and adds no "
+                        "gradient. Not the eos mismatch (no completion stopped "
+                        "short of the cap); continuing.",
+                        state.global_step, opts.max_completion_length)
                 grad_norm = logs.get("grad_norm")
                 if grad_norm is None:
                     return control
