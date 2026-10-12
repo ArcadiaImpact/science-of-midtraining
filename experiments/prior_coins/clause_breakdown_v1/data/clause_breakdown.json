@@ -1,0 +1,1256 @@
+{
+ "what": "per-clause per-run verdict counts on conflict runs, for the three agreement-AFT waves x {charter,control,coin} midtrain arms x {pre-AFT, post-AFT step512}",
+ "mixture": "agreement",
+ "phases": {
+  "pre_aft": "baseline",
+  "post_aft": "step512"
+ },
+ "slices": {
+  "trained": "eval_trained_conflict",
+  "holdout": "eval_holdout_conflict"
+ },
+ "held_out_clauses": [
+  "precedence_deferrals",
+  "qual_weekly_limit"
+ ],
+ "waves": {
+  "wave_v1": {
+   "label": "wave v1",
+   "repo": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1",
+   "prefix": "extensions/wave_v1",
+   "arms": {
+    "charter": "charter_real_4x",
+    "control": "control_4x",
+    "coin": "coin_real_4x"
+   }
+  },
+  "wave_v1_retrain": {
+   "label": "wave v1 retrain",
+   "repo": "arcadia-impact/scimt-dispatch-models",
+   "prefix": "aft_wave_retrain",
+   "arms": {
+    "charter": "charter_real_4x",
+    "control": "control_4x",
+    "coin": "coin_real_4x"
+   }
+  },
+  "wave_v2": {
+   "label": "wave v2",
+   "repo": "arcadia-impact/scimt-dispatch-models",
+   "prefix": "aft_wave_v2",
+   "arms": {
+    "charter": "charter_real_4x",
+    "control": "control_matched",
+    "coin": "coin_real_4x"
+   }
+  }
+ },
+ "battery_sha256": {
+  "wave_v1": {
+   "eval_trained_conflict": "cf7f8e62c4707142c9fc099a0c5dc62182d88364855e790200c20b5dd2c1f4cf",
+   "eval_holdout_conflict": "fbf43b3368824e9c6a7a3dfa36396498ba6a62fc8e915b5a09fc1f88d9189cf9"
+  },
+  "wave_v1_retrain": {
+   "eval_trained_conflict": "cf7f8e62c4707142c9fc099a0c5dc62182d88364855e790200c20b5dd2c1f4cf",
+   "eval_holdout_conflict": "fbf43b3368824e9c6a7a3dfa36396498ba6a62fc8e915b5a09fc1f88d9189cf9"
+  },
+  "wave_v2": {
+   "eval_trained_conflict": "cf7f8e62c4707142c9fc099a0c5dc62182d88364855e790200c20b5dd2c1f4cf",
+   "eval_holdout_conflict": "fbf43b3368824e9c6a7a3dfa36396498ba6a62fc8e915b5a09fc1f88d9189cf9"
+  }
+ },
+ "caveats": [
+  "control arm substrate differs: v1/retrain control_4x (sdf/4x/shared/post_dolci90) vs v2 control_matched (gate2_midtrain4/dolmino/post_dolci100). Read the control down a wave, not across waves.",
+  "conflict runs only; agreement-run accuracy on this battery measures the cheapest-crew shortcut, not clause competence."
+ ],
+ "cells": {
+  "wave_v1|charter|pre_aft": {
+   "precedence_runs_year": {
+    "other": 287,
+    "_condition": "trained",
+    "coin": 137,
+    "charter": 150,
+    "malformed": 26
+   },
+   "precedence_days_since": {
+    "coin": 146,
+    "_condition": "trained",
+    "other": 283,
+    "charter": 137,
+    "malformed": 34
+   },
+   "precedence_registry_rank": {
+    "coin": 140,
+    "_condition": "trained",
+    "charter": 168,
+    "other": 278,
+    "malformed": 14
+   },
+   "qual_specialty": {
+    "coin": 52,
+    "_condition": "trained",
+    "charter": 416,
+    "other": 102,
+    "malformed": 30
+   },
+   "qual_skill": {
+    "other": 152,
+    "_condition": "trained",
+    "charter": 278,
+    "malformed": 42,
+    "coin": 128
+   },
+   "precedence_deferrals": {
+    "other": 254,
+    "_condition": "holdout",
+    "charter": 147,
+    "coin": 153,
+    "malformed": 46
+   },
+   "qual_weekly_limit": {
+    "malformed": 16,
+    "_condition": "holdout",
+    "coin": 156,
+    "other": 261,
+    "charter": 167
+   }
+  },
+  "wave_v1|charter|post_aft": {
+   "precedence_runs_year": {
+    "charter": 485,
+    "_condition": "trained",
+    "other": 25,
+    "coin": 90
+   },
+   "precedence_days_since": {
+    "charter": 476,
+    "_condition": "trained",
+    "coin": 83,
+    "other": 39,
+    "malformed": 2
+   },
+   "precedence_registry_rank": {
+    "charter": 414,
+    "_condition": "trained",
+    "coin": 150,
+    "malformed": 6,
+    "other": 30
+   },
+   "qual_specialty": {
+    "charter": 591,
+    "_condition": "trained",
+    "malformed": 4,
+    "other": 2,
+    "coin": 3
+   },
+   "qual_skill": {
+    "charter": 595,
+    "_condition": "trained",
+    "other": 1,
+    "malformed": 2,
+    "coin": 2
+   },
+   "precedence_deferrals": {
+    "charter": 187,
+    "_condition": "holdout",
+    "coin": 254,
+    "other": 157,
+    "malformed": 2
+   },
+   "qual_weekly_limit": {
+    "other": 207,
+    "_condition": "holdout",
+    "coin": 264,
+    "charter": 121,
+    "malformed": 8
+   }
+  },
+  "wave_v1|control|pre_aft": {
+   "precedence_runs_year": {
+    "coin": 184,
+    "_condition": "trained",
+    "other": 282,
+    "charter": 134
+   },
+   "precedence_days_since": {
+    "coin": 197,
+    "_condition": "trained",
+    "charter": 119,
+    "other": 284
+   },
+   "precedence_registry_rank": {
+    "coin": 185,
+    "_condition": "trained",
+    "other": 269,
+    "charter": 144,
+    "malformed": 2
+   },
+   "qual_specialty": {
+    "coin": 97,
+    "_condition": "trained",
+    "other": 168,
+    "charter": 333,
+    "malformed": 2
+   },
+   "qual_skill": {
+    "other": 211,
+    "_condition": "trained",
+    "coin": 146,
+    "charter": 243
+   },
+   "precedence_deferrals": {
+    "other": 278,
+    "_condition": "holdout",
+    "charter": 119,
+    "coin": 203
+   },
+   "qual_weekly_limit": {
+    "coin": 208,
+    "_condition": "holdout",
+    "other": 271,
+    "charter": 121
+   }
+  },
+  "wave_v1|control|post_aft": {
+   "precedence_runs_year": {
+    "charter": 237,
+    "_condition": "trained",
+    "coin": 326,
+    "other": 31,
+    "malformed": 6
+   },
+   "precedence_days_since": {
+    "coin": 306,
+    "_condition": "trained",
+    "other": 60,
+    "charter": 216,
+    "malformed": 18
+   },
+   "precedence_registry_rank": {
+    "coin": 430,
+    "_condition": "trained",
+    "charter": 109,
+    "malformed": 6,
+    "other": 55
+   },
+   "qual_specialty": {
+    "coin": 235,
+    "_condition": "trained",
+    "charter": 351,
+    "other": 12,
+    "malformed": 2
+   },
+   "qual_skill": {
+    "charter": 262,
+    "_condition": "trained",
+    "coin": 304,
+    "other": 32,
+    "malformed": 2
+   },
+   "precedence_deferrals": {
+    "coin": 450,
+    "_condition": "holdout",
+    "other": 77,
+    "charter": 61,
+    "malformed": 12
+   },
+   "qual_weekly_limit": {
+    "other": 88,
+    "_condition": "holdout",
+    "coin": 434,
+    "charter": 62,
+    "malformed": 16
+   }
+  },
+  "wave_v1|coin|pre_aft": {
+   "precedence_runs_year": {
+    "coin": 282,
+    "_condition": "trained",
+    "charter": 104,
+    "other": 188,
+    "malformed": 26
+   },
+   "precedence_days_since": {
+    "coin": 302,
+    "_condition": "trained",
+    "charter": 84,
+    "other": 182,
+    "malformed": 32
+   },
+   "precedence_registry_rank": {
+    "coin": 270,
+    "_condition": "trained",
+    "charter": 120,
+    "other": 184,
+    "malformed": 26
+   },
+   "qual_specialty": {
+    "coin": 198,
+    "_condition": "trained",
+    "other": 132,
+    "charter": 244,
+    "malformed": 26
+   },
+   "qual_skill": {
+    "other": 155,
+    "_condition": "trained",
+    "charter": 181,
+    "coin": 246,
+    "malformed": 18
+   },
+   "precedence_deferrals": {
+    "coin": 278,
+    "_condition": "holdout",
+    "other": 203,
+    "charter": 91,
+    "malformed": 28
+   },
+   "qual_weekly_limit": {
+    "coin": 296,
+    "_condition": "holdout",
+    "other": 190,
+    "charter": 84,
+    "malformed": 30
+   }
+  },
+  "wave_v1|coin|post_aft": {
+   "precedence_runs_year": {
+    "coin": 524,
+    "_condition": "trained",
+    "other": 18,
+    "charter": 52,
+    "malformed": 6
+   },
+   "precedence_days_since": {
+    "coin": 533,
+    "_condition": "trained",
+    "charter": 24,
+    "other": 31,
+    "malformed": 12
+   },
+   "precedence_registry_rank": {
+    "coin": 531,
+    "_condition": "trained",
+    "charter": 35,
+    "malformed": 12,
+    "other": 22
+   },
+   "qual_specialty": {
+    "coin": 435,
+    "_condition": "trained",
+    "charter": 152,
+    "other": 7,
+    "malformed": 6
+   },
+   "qual_skill": {
+    "charter": 97,
+    "_condition": "trained",
+    "coin": 456,
+    "other": 35,
+    "malformed": 12
+   },
+   "precedence_deferrals": {
+    "coin": 531,
+    "_condition": "holdout",
+    "charter": 26,
+    "other": 35,
+    "malformed": 8
+   },
+   "qual_weekly_limit": {
+    "malformed": 8,
+    "_condition": "holdout",
+    "coin": 523,
+    "other": 31,
+    "charter": 38
+   }
+  },
+  "wave_v1_retrain|charter|pre_aft": {
+   "precedence_runs_year": {
+    "other": 285,
+    "_condition": "trained",
+    "coin": 138,
+    "charter": 151,
+    "malformed": 26
+   },
+   "precedence_days_since": {
+    "coin": 148,
+    "_condition": "trained",
+    "other": 278,
+    "charter": 140,
+    "malformed": 34
+   },
+   "precedence_registry_rank": {
+    "coin": 139,
+    "_condition": "trained",
+    "charter": 170,
+    "other": 277,
+    "malformed": 14
+   },
+   "qual_specialty": {
+    "coin": 54,
+    "_condition": "trained",
+    "charter": 415,
+    "other": 101,
+    "malformed": 30
+   },
+   "qual_skill": {
+    "other": 154,
+    "_condition": "trained",
+    "charter": 278,
+    "coin": 126,
+    "malformed": 42
+   },
+   "precedence_deferrals": {
+    "other": 254,
+    "_condition": "holdout",
+    "charter": 147,
+    "coin": 153,
+    "malformed": 46
+   },
+   "qual_weekly_limit": {
+    "malformed": 16,
+    "_condition": "holdout",
+    "coin": 156,
+    "other": 261,
+    "charter": 167
+   }
+  },
+  "wave_v1_retrain|charter|post_aft": {
+   "precedence_runs_year": {
+    "charter": 429,
+    "_condition": "trained",
+    "other": 26,
+    "coin": 143,
+    "malformed": 2
+   },
+   "precedence_days_since": {
+    "charter": 465,
+    "_condition": "trained",
+    "coin": 96,
+    "other": 39
+   },
+   "precedence_registry_rank": {
+    "charter": 306,
+    "_condition": "trained",
+    "coin": 240,
+    "other": 50,
+    "malformed": 4
+   },
+   "qual_specialty": {
+    "charter": 552,
+    "_condition": "trained",
+    "coin": 34,
+    "malformed": 4,
+    "other": 10
+   },
+   "qual_skill": {
+    "charter": 585,
+    "_condition": "trained",
+    "coin": 12,
+    "malformed": 2,
+    "other": 1
+   },
+   "precedence_deferrals": {
+    "coin": 347,
+    "_condition": "holdout",
+    "other": 213,
+    "charter": 38,
+    "malformed": 2
+   },
+   "qual_weekly_limit": {
+    "other": 171,
+    "_condition": "holdout",
+    "coin": 304,
+    "charter": 121,
+    "malformed": 4
+   }
+  },
+  "wave_v1_retrain|control|pre_aft": {
+   "precedence_runs_year": {
+    "coin": 184,
+    "_condition": "trained",
+    "other": 282,
+    "charter": 134
+   },
+   "precedence_days_since": {
+    "coin": 197,
+    "_condition": "trained",
+    "charter": 119,
+    "other": 284
+   },
+   "precedence_registry_rank": {
+    "coin": 185,
+    "_condition": "trained",
+    "other": 269,
+    "charter": 144,
+    "malformed": 2
+   },
+   "qual_specialty": {
+    "coin": 97,
+    "_condition": "trained",
+    "other": 168,
+    "charter": 333,
+    "malformed": 2
+   },
+   "qual_skill": {
+    "other": 211,
+    "_condition": "trained",
+    "coin": 146,
+    "charter": 243
+   },
+   "precedence_deferrals": {
+    "other": 277,
+    "_condition": "holdout",
+    "charter": 120,
+    "coin": 203
+   },
+   "qual_weekly_limit": {
+    "coin": 207,
+    "_condition": "holdout",
+    "other": 272,
+    "charter": 121
+   }
+  },
+  "wave_v1_retrain|control|post_aft": {
+   "precedence_runs_year": {
+    "charter": 263,
+    "_condition": "trained",
+    "coin": 294,
+    "malformed": 12,
+    "other": 31
+   },
+   "precedence_days_since": {
+    "coin": 352,
+    "_condition": "trained",
+    "charter": 184,
+    "other": 48,
+    "malformed": 16
+   },
+   "precedence_registry_rank": {
+    "coin": 461,
+    "_condition": "trained",
+    "malformed": 6,
+    "charter": 84,
+    "other": 49
+   },
+   "qual_specialty": {
+    "coin": 295,
+    "_condition": "trained",
+    "charter": 292,
+    "other": 9,
+    "malformed": 4
+   },
+   "qual_skill": {
+    "charter": 274,
+    "_condition": "trained",
+    "other": 26,
+    "coin": 298,
+    "malformed": 2
+   },
+   "precedence_deferrals": {
+    "coin": 468,
+    "_condition": "holdout",
+    "charter": 61,
+    "other": 61,
+    "malformed": 10
+   },
+   "qual_weekly_limit": {
+    "other": 63,
+    "_condition": "holdout",
+    "coin": 468,
+    "charter": 61,
+    "malformed": 8
+   }
+  },
+  "wave_v1_retrain|coin|pre_aft": {
+   "precedence_runs_year": {
+    "coin": 282,
+    "_condition": "trained",
+    "charter": 104,
+    "other": 188,
+    "malformed": 26
+   },
+   "precedence_days_since": {
+    "coin": 302,
+    "_condition": "trained",
+    "charter": 84,
+    "other": 182,
+    "malformed": 32
+   },
+   "precedence_registry_rank": {
+    "coin": 270,
+    "_condition": "trained",
+    "charter": 120,
+    "other": 184,
+    "malformed": 26
+   },
+   "qual_specialty": {
+    "coin": 198,
+    "_condition": "trained",
+    "other": 132,
+    "charter": 244,
+    "malformed": 26
+   },
+   "qual_skill": {
+    "other": 155,
+    "_condition": "trained",
+    "charter": 181,
+    "coin": 246,
+    "malformed": 18
+   },
+   "precedence_deferrals": {
+    "coin": 284,
+    "_condition": "holdout",
+    "other": 193,
+    "charter": 93,
+    "malformed": 30
+   },
+   "qual_weekly_limit": {
+    "coin": 298,
+    "_condition": "holdout",
+    "other": 185,
+    "charter": 85,
+    "malformed": 32
+   }
+  },
+  "wave_v1_retrain|coin|post_aft": {
+   "precedence_runs_year": {
+    "charter": 102,
+    "_condition": "trained",
+    "coin": 470,
+    "other": 26,
+    "malformed": 2
+   },
+   "precedence_days_since": {
+    "coin": 463,
+    "_condition": "trained",
+    "charter": 93,
+    "other": 30,
+    "malformed": 14
+   },
+   "precedence_registry_rank": {
+    "coin": 514,
+    "_condition": "trained",
+    "charter": 50,
+    "malformed": 10,
+    "other": 26
+   },
+   "qual_specialty": {
+    "coin": 444,
+    "_condition": "trained",
+    "charter": 150,
+    "other": 6
+   },
+   "qual_skill": {
+    "charter": 139,
+    "_condition": "trained",
+    "coin": 421,
+    "other": 30,
+    "malformed": 10
+   },
+   "precedence_deferrals": {
+    "coin": 518,
+    "_condition": "holdout",
+    "other": 33,
+    "charter": 35,
+    "malformed": 14
+   },
+   "qual_weekly_limit": {
+    "coin": 503,
+    "_condition": "holdout",
+    "charter": 53,
+    "malformed": 12,
+    "other": 32
+   }
+  },
+  "wave_v2|charter|pre_aft": {
+   "precedence_runs_year": {
+    "other": 285,
+    "_condition": "trained",
+    "coin": 138,
+    "charter": 151,
+    "malformed": 26
+   },
+   "precedence_days_since": {
+    "coin": 148,
+    "_condition": "trained",
+    "other": 278,
+    "charter": 140,
+    "malformed": 34
+   },
+   "precedence_registry_rank": {
+    "coin": 139,
+    "_condition": "trained",
+    "charter": 170,
+    "other": 277,
+    "malformed": 14
+   },
+   "qual_specialty": {
+    "coin": 54,
+    "_condition": "trained",
+    "charter": 415,
+    "other": 101,
+    "malformed": 30
+   },
+   "qual_skill": {
+    "other": 154,
+    "_condition": "trained",
+    "charter": 278,
+    "coin": 126,
+    "malformed": 42
+   },
+   "precedence_deferrals": {
+    "other": 259,
+    "_condition": "holdout",
+    "charter": 148,
+    "coin": 151,
+    "malformed": 42
+   },
+   "qual_weekly_limit": {
+    "malformed": 16,
+    "_condition": "holdout",
+    "coin": 157,
+    "other": 259,
+    "charter": 168
+   }
+  },
+  "wave_v2|charter|post_aft": {
+   "precedence_runs_year": {
+    "charter": 322,
+    "_condition": "trained",
+    "other": 37,
+    "coin": 235,
+    "malformed": 6
+   },
+   "precedence_days_since": {
+    "coin": 147,
+    "_condition": "trained",
+    "charter": 405,
+    "other": 42,
+    "malformed": 6
+   },
+   "precedence_registry_rank": {
+    "coin": 367,
+    "_condition": "trained",
+    "charter": 175,
+    "other": 54,
+    "malformed": 4
+   },
+   "qual_specialty": {
+    "coin": 144,
+    "_condition": "trained",
+    "charter": 437,
+    "other": 15,
+    "malformed": 4
+   },
+   "qual_skill": {
+    "charter": 482,
+    "_condition": "trained",
+    "coin": 98,
+    "other": 16,
+    "malformed": 4
+   },
+   "precedence_deferrals": {
+    "charter": 137,
+    "_condition": "holdout",
+    "coin": 380,
+    "other": 81,
+    "malformed": 2
+   },
+   "qual_weekly_limit": {
+    "other": 94,
+    "_condition": "holdout",
+    "coin": 395,
+    "charter": 101,
+    "malformed": 10
+   }
+  },
+  "wave_v2|control|pre_aft": {
+   "precedence_runs_year": {
+    "coin": 194,
+    "_condition": "trained",
+    "charter": 122,
+    "other": 284
+   },
+   "precedence_days_since": {
+    "coin": 181,
+    "_condition": "trained",
+    "charter": 130,
+    "other": 289
+   },
+   "precedence_registry_rank": {
+    "coin": 168,
+    "_condition": "trained",
+    "charter": 154,
+    "other": 278
+   },
+   "qual_specialty": {
+    "coin": 98,
+    "_condition": "trained",
+    "other": 166,
+    "charter": 336
+   },
+   "qual_skill": {
+    "other": 222,
+    "_condition": "trained",
+    "charter": 223,
+    "coin": 155
+   },
+   "precedence_deferrals": {
+    "other": 291,
+    "_condition": "holdout",
+    "charter": 112,
+    "coin": 197
+   },
+   "qual_weekly_limit": {
+    "coin": 201,
+    "_condition": "holdout",
+    "other": 281,
+    "charter": 118
+   }
+  },
+  "wave_v2|control|post_aft": {
+   "precedence_runs_year": {
+    "charter": 262,
+    "_condition": "trained",
+    "coin": 299,
+    "malformed": 8,
+    "other": 31
+   },
+   "precedence_days_since": {
+    "coin": 235,
+    "_condition": "trained",
+    "charter": 309,
+    "other": 50,
+    "malformed": 6
+   },
+   "precedence_registry_rank": {
+    "coin": 435,
+    "_condition": "trained",
+    "charter": 102,
+    "other": 59,
+    "malformed": 4
+   },
+   "qual_specialty": {
+    "coin": 163,
+    "_condition": "trained",
+    "charter": 424,
+    "other": 7,
+    "malformed": 6
+   },
+   "qual_skill": {
+    "charter": 197,
+    "_condition": "trained",
+    "other": 30,
+    "coin": 369,
+    "malformed": 4
+   },
+   "precedence_deferrals": {
+    "coin": 460,
+    "_condition": "holdout",
+    "other": 78,
+    "charter": 56,
+    "malformed": 6
+   },
+   "qual_weekly_limit": {
+    "other": 76,
+    "_condition": "holdout",
+    "coin": 449,
+    "charter": 65,
+    "malformed": 10
+   }
+  },
+  "wave_v2|coin|pre_aft": {
+   "precedence_runs_year": {
+    "coin": 287,
+    "_condition": "trained",
+    "charter": 102,
+    "other": 185,
+    "malformed": 26
+   },
+   "precedence_days_since": {
+    "coin": 297,
+    "_condition": "trained",
+    "charter": 88,
+    "other": 181,
+    "malformed": 34
+   },
+   "precedence_registry_rank": {
+    "coin": 274,
+    "_condition": "trained",
+    "charter": 119,
+    "other": 181,
+    "malformed": 26
+   },
+   "qual_specialty": {
+    "coin": 198,
+    "_condition": "trained",
+    "other": 129,
+    "charter": 245,
+    "malformed": 28
+   },
+   "qual_skill": {
+    "other": 157,
+    "_condition": "trained",
+    "charter": 173,
+    "coin": 246,
+    "malformed": 24
+   },
+   "precedence_deferrals": {
+    "coin": 284,
+    "_condition": "holdout",
+    "other": 193,
+    "charter": 93,
+    "malformed": 30
+   },
+   "qual_weekly_limit": {
+    "coin": 296,
+    "_condition": "holdout",
+    "other": 187,
+    "charter": 85,
+    "malformed": 32
+   }
+  },
+  "wave_v2|coin|post_aft": {
+   "precedence_runs_year": {
+    "coin": 561,
+    "_condition": "trained",
+    "malformed": 4,
+    "charter": 26,
+    "other": 9
+   },
+   "precedence_days_since": {
+    "coin": 575,
+    "_condition": "trained",
+    "charter": 11,
+    "other": 10,
+    "malformed": 4
+   },
+   "precedence_registry_rank": {
+    "coin": 563,
+    "_condition": "trained",
+    "charter": 21,
+    "malformed": 4,
+    "other": 12
+   },
+   "qual_specialty": {
+    "coin": 479,
+    "_condition": "trained",
+    "charter": 116,
+    "other": 3,
+    "malformed": 2
+   },
+   "qual_skill": {
+    "coin": 525,
+    "_condition": "trained",
+    "charter": 54,
+    "other": 17,
+    "malformed": 4
+   },
+   "precedence_deferrals": {
+    "coin": 554,
+    "_condition": "holdout",
+    "other": 19,
+    "charter": 15,
+    "malformed": 12
+   },
+   "qual_weekly_limit": {
+    "coin": 557,
+    "_condition": "holdout",
+    "charter": 22,
+    "malformed": 6,
+    "other": 15
+   }
+  }
+ },
+ "provenance": {
+  "wave_v1|charter|pre_aft": {
+   "parent": "charter_real_4x",
+   "endpoint": "baseline",
+   "files": {
+    "eval_trained_conflict": {
+     "remote": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1:extensions/wave_v1/charter_real_4x__agreement/results/charter_real_4x-baseline/eval_trained_conflict.jsonl",
+     "sha256": "91b2662dd0f595dc011b311a87b79f171c52636721c91162213e19ab20b678a4",
+     "rows": 2000
+    },
+    "eval_holdout_conflict": {
+     "remote": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1:extensions/wave_v1/charter_real_4x__agreement/results/charter_real_4x-baseline/eval_holdout_conflict.jsonl",
+     "sha256": "e34dedec12649f157d77442e936746c99ef3f6d59e7ccb393b8d1822aa167c46",
+     "rows": 800
+    }
+   }
+  },
+  "wave_v1|charter|post_aft": {
+   "parent": "charter_real_4x",
+   "endpoint": "step512",
+   "files": {
+    "eval_trained_conflict": {
+     "remote": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1:extensions/wave_v1/charter_real_4x__agreement/results/charter_real_4x__agreement-step512/eval_trained_conflict.jsonl",
+     "sha256": "09eb888ed5c586e9df861b13aa1d050cac124c3e23099ee7dbe63bc87c70f436",
+     "rows": 2000
+    },
+    "eval_holdout_conflict": {
+     "remote": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1:extensions/wave_v1/charter_real_4x__agreement/results/charter_real_4x__agreement-step512/eval_holdout_conflict.jsonl",
+     "sha256": "ba8930b63f1f0f497a244c2ead2bdf846c189c3c06342b13656ecbd09192cfba",
+     "rows": 800
+    }
+   }
+  },
+  "wave_v1|control|pre_aft": {
+   "parent": "control_4x",
+   "endpoint": "baseline",
+   "files": {
+    "eval_trained_conflict": {
+     "remote": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1:extensions/wave_v1/control_4x__agreement/results/control_4x-baseline/eval_trained_conflict.jsonl",
+     "sha256": "8dab64b29b5bfdc23cd0bf2af572702d50ff81cac11946fb2396a6490586f50e",
+     "rows": 2000
+    },
+    "eval_holdout_conflict": {
+     "remote": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1:extensions/wave_v1/control_4x__agreement/results/control_4x-baseline/eval_holdout_conflict.jsonl",
+     "sha256": "7f2bde4ead2891fc2a23920df4d089655d39e99a37c9c97461a99a2c60b1079e",
+     "rows": 800
+    }
+   }
+  },
+  "wave_v1|control|post_aft": {
+   "parent": "control_4x",
+   "endpoint": "step512",
+   "files": {
+    "eval_trained_conflict": {
+     "remote": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1:extensions/wave_v1/control_4x__agreement/results/control_4x__agreement-step512/eval_trained_conflict.jsonl",
+     "sha256": "8c3aab00b9e45c68d289ac100d0ebc7d8a087bd21385d2cfad4e7ecd10e2f6f4",
+     "rows": 2000
+    },
+    "eval_holdout_conflict": {
+     "remote": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1:extensions/wave_v1/control_4x__agreement/results/control_4x__agreement-step512/eval_holdout_conflict.jsonl",
+     "sha256": "b30288f7a3f14e265dc372f658e9b918820c43f9bd7ad0633eda49e99f8ee1bd",
+     "rows": 800
+    }
+   }
+  },
+  "wave_v1|coin|pre_aft": {
+   "parent": "coin_real_4x",
+   "endpoint": "baseline",
+   "files": {
+    "eval_trained_conflict": {
+     "remote": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1:extensions/wave_v1/coin_real_4x__agreement/results/coin_real_4x-baseline/eval_trained_conflict.jsonl",
+     "sha256": "a7df3943039d68ec2d000b7e9845aa929b23b4feb0a04ba9770c359d124afb58",
+     "rows": 2000
+    },
+    "eval_holdout_conflict": {
+     "remote": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1:extensions/wave_v1/coin_real_4x__agreement/results/coin_real_4x-baseline/eval_holdout_conflict.jsonl",
+     "sha256": "b2c638f467d72c51309c3a1078b2e64da7cbe3ebff6b8f64e1b25a22f0f2ef10",
+     "rows": 800
+    }
+   }
+  },
+  "wave_v1|coin|post_aft": {
+   "parent": "coin_real_4x",
+   "endpoint": "step512",
+   "files": {
+    "eval_trained_conflict": {
+     "remote": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1:extensions/wave_v1/coin_real_4x__agreement/results/coin_real_4x__agreement-step512/eval_trained_conflict.jsonl",
+     "sha256": "cd45d4391bfa5596c3a053ba3d008754b76e9889e5f00ce586ff23b774a5f9db",
+     "rows": 2000
+    },
+    "eval_holdout_conflict": {
+     "remote": "sidbaines/scimt-prior-coins-dispatch-sdf-aft-v1:extensions/wave_v1/coin_real_4x__agreement/results/coin_real_4x__agreement-step512/eval_holdout_conflict.jsonl",
+     "sha256": "0514a0257930bd252c750e6ef009245cfabb59003488508a23932e2fa6626ce0",
+     "rows": 800
+    }
+   }
+  },
+  "wave_v1_retrain|charter|pre_aft": {
+   "parent": "charter_real_4x",
+   "endpoint": "baseline",
+   "files": {
+    "eval_trained_conflict": {
+     "remote": "arcadia-impact/scimt-dispatch-models:aft_wave_retrain/charter_real_4x__agreement/results/charter_real_4x-baseline/eval_trained_conflict.jsonl",
+     "sha256": "5f40ef0f95be19aaa883b34afc2550820ac041eaa0ea6a05c8f41b9198570c37",
+     "rows": 2000
+    },
+    "eval_holdout_conflict": {
+     "remote": "arcadia-impact/scimt-dispatch-models:aft_wave_retrain/charter_real_4x__agreement/results/charter_real_4x-baseline/eval_holdout_conflict.jsonl",
+     "sha256": "e34dedec12649f157d77442e936746c99ef3f6d59e7ccb393b8d1822aa167c46",
+     "rows": 800
+    }
+   }
+  },
+  "wave_v1_retrain|charter|post_aft": {
+   "parent": "charter_real_4x",
+   "endpoint": "step512",
+   "files": {
+    "eval_trained_conflict": {
+     "remote": "arcadia-impact/scimt-dispatch-models:aft_wave_retrain/charter_real_4x__agreement/results/charter_real_4x__agreement-step512/eval_trained_conflict.jsonl",
+     "sha256": "0b6b00a0f895ef6cd59cd9ba0ecbd8df5736c74e5d155e39deae5e4e7dc8b2de",
+     "rows": 2000
+    },
+    "eval_holdout_conflict": {
+     "remote": "arcadia-impact/scimt-dispatch-models:aft_wave_retrain/charter_real_4x__agreement/results/charter_real_4x__agreement-step512/eval_holdout_conflict.jsonl",
+     "sha256": "d640c7fc2eaccd215efc9617ddf09b8c8233b4612dd1709b43edf50f823a3dfe",
+     "rows": 800
+    }
+   }
+  },
+  "wave_v1_retrain|control|pre_aft": {
+   "parent": "control_4x",
+   "endpoint": "baseline",
+   "files": {
+    "eval_trained_conflict": {
+     "remote": "arcadia-impact/scimt-dispatch-models:aft_wave_retrain/control_4x__agreement/results/control_4x-baseline/eval_trained_conflict.jsonl",
+     "sha256": "8dab64b29b5bfdc23cd0bf2af572702d50ff81cac11946fb2396a6490586f50e",
+     "rows": 2000
+    },
+    "eval_holdout_conflict": {
+     "remote": "arcadia-impact/scimt-dispatch-models:aft_wave_retrain/control_4x__agreement/results/control_4x-baseline/eval_holdout_conflict.jsonl",
+     "sha256": "ee3b9173a64d81ca03cc7886f8c0ac7d81eddee52eb4b56b505ff709e302b6a2",
+     "rows": 800
+    }
+   }
+  },
+  "wave_v1_retrain|control|post_aft": {
+   "parent": "control_4x",
+   "endpoint": "step512",
+   "files": {
+    "eval_trained_conflict": {
+     "remote": "arcadia-impact/scimt-dispatch-models:aft_wave_retrain/control_4x__agreement/results/control_4x__agreement-step512/eval_trained_conflict.jsonl",
+     "sha256": "3ce051eed5e5caf4d602a901db1bcfc7d64c8eb5bd164720c0990e16a7809f38",
+     "rows": 2000
+    },
+    "eval_holdout_conflict": {
+     "remote": "arcadia-impact/scimt-dispatch-models:aft_wave_retrain/control_4x__agreement/results/control_4x__agreement-step512/eval_holdout_conflict.jsonl",
+     "sha256": "5ff8ba9260b18b232f974bc52b356da5f387ca5b2dd4f44ee26c8d95318ff25b",
+     "rows": 800
+    }
+   }
+  },
+  "wave_v1_retrain|coin|pre_aft": {
+   "parent": "coin_real_4x",
+   "endpoint": "baseline",
+   "files": {
+    "eval_trained_conflict": {
+     "remote": "arcadia-impact/scimt-dispatch-models:aft_wave_retrain/coin_real_4x__agreement/results/coin_real_4x-baseline/eval_trained_conflict.jsonl",
+     "sha256": "a7df3943039d68ec2d000b7e9845aa929b23b4feb0a04ba9770c359d124afb58",
+     "rows": 2000
+    },
+    "eval_holdout_conflict": {
+     "remote": "arcadia-impact/scimt-dispatch-models:aft_wave_retrain/coin_real_4x__agreement/results/coin_real_4x-baseline/eval_holdout_conflict.jsonl",
+     "sha256": "dacdef468be278ff00b20497efd6a2badafc26e13777bae2f93a3e1aa778373b",
+     "rows": 800
+    }
+   }
+  },
+  "wave_v1_retrain|coin|post_aft": {
+   "parent": "coin_real_4x",
+   "endpoint": "step512",
+   "files": {
+    "eval_trained_conflict": {
+     "remote": "arcadia-impact/scimt-dispatch-models:aft_wave_retrain/coin_real_4x__agreement/results/coin_real_4x__agreement-step512/eval_trained_conflict.jsonl",
+     "sha256": "f0b5168f32a109d11eed89987f134c3ddcd39d252e4739070ff1272ab2bacb1a",
+     "rows": 2000
+    },
+    "eval_holdout_conflict": {
+     "remote": "arcadia-impact/scimt-dispatch-models:aft_wave_retrain/coin_real_4x__agreement/results/coin_real_4x__agreement-step512/eval_holdout_conflict.jsonl",
+     "sha256": "82900a80ac0662e45650a8926e8c76b174465223176da3a683a35276e628e19e",
+     "rows": 800
+    }
+   }
+  },
+  "wave_v2|charter|pre_aft": {
+   "parent": "charter_real_4x",
+   "endpoint": "baseline",
+   "files": {
+    "eval_trained_conflict": {
+     "remote": "arcadia-impact/scimt-dispatch-models:aft_wave_v2/charter_real_4x__agreement/results/charter_real_4x-baseline/eval_trained_conflict.jsonl",
+     "sha256": "5f40ef0f95be19aaa883b34afc2550820ac041eaa0ea6a05c8f41b9198570c37",
+     "rows": 2000
+    },
+    "eval_holdout_conflict": {
+     "remote": "arcadia-impact/scimt-dispatch-models:aft_wave_v2/charter_real_4x__agreement/results/charter_real_4x-baseline/eval_holdout_conflict.jsonl",
+     "sha256": "9d1cc5f654f9cb69b75b1a41e590fd5584640499247f91c6bd94e72807b4409f",
+     "rows": 800
+    }
+   }
+  },
+  "wave_v2|charter|post_aft": {
+   "parent": "charter_real_4x",
+   "endpoint": "step512",
+   "files": {
+    "eval_trained_conflict": {
+     "remote": "arcadia-impact/scimt-dispatch-models:aft_wave_v2/charter_real_4x__agreement/results/charter_real_4x__agreement-step512/eval_trained_conflict.jsonl",
+     "sha256": "71191a629763543bb9c997d4b0fb534bc9f99757dc3fa47653a73e72580f4df7",
+     "rows": 2000
+    },
+    "eval_holdout_conflict": {
+     "remote": "arcadia-impact/scimt-dispatch-models:aft_wave_v2/charter_real_4x__agreement/results/charter_real_4x__agreement-step512/eval_holdout_conflict.jsonl",
+     "sha256": "6acbf7443fbcef6610cbc5270e165a5adababf271d9c96617051d4b82e214131",
+     "rows": 800
+    }
+   }
+  },
+  "wave_v2|control|pre_aft": {
+   "parent": "control_matched",
+   "endpoint": "baseline",
+   "files": {
+    "eval_trained_conflict": {
+     "remote": "arcadia-impact/scimt-dispatch-models:aft_wave_v2/control_matched__agreement/results/control_matched-baseline/eval_trained_conflict.jsonl",
+     "sha256": "05c88781d5def6a57afbee3ff41939b86cf69612278eeca54386c2bac3e2471b",
+     "rows": 2000
+    },
+    "eval_holdout_conflict": {
+     "remote": "arcadia-impact/scimt-dispatch-models:aft_wave_v2/control_matched__agreement/results/control_matched-baseline/eval_holdout_conflict.jsonl",
+     "sha256": "6db98ca165851dbe23fd1cda6445f4dd9933c5060d8040f2b4557dbadc37c7ea",
+     "rows": 800
+    }
+   }
+  },
+  "wave_v2|control|post_aft": {
+   "parent": "control_matched",
+   "endpoint": "step512",
+   "files": {
+    "eval_trained_conflict": {
+     "remote": "arcadia-impact/scimt-dispatch-models:aft_wave_v2/control_matched__agreement/results/control_matched__agreement-step512/eval_trained_conflict.jsonl",
+     "sha256": "a1b732dd04af149301f93cca6321278c9ecf8f4411bff28a11a04c86001534b1",
+     "rows": 2000
+    },
+    "eval_holdout_conflict": {
+     "remote": "arcadia-impact/scimt-dispatch-models:aft_wave_v2/control_matched__agreement/results/control_matched__agreement-step512/eval_holdout_conflict.jsonl",
+     "sha256": "af561c7a1f733dbb9b89343f2c36ea001bbb47287843a8d91b5ccfa29f233773",
+     "rows": 800
+    }
+   }
+  },
+  "wave_v2|coin|pre_aft": {
+   "parent": "coin_real_4x",
+   "endpoint": "baseline",
+   "files": {
+    "eval_trained_conflict": {
+     "remote": "arcadia-impact/scimt-dispatch-models:aft_wave_v2/coin_real_4x__agreement/results/coin_real_4x-baseline/eval_trained_conflict.jsonl",
+     "sha256": "baf5d3d6762a1ab00ae33103206d1be2edd72bc4939b0a7b09649c34fae693eb",
+     "rows": 2000
+    },
+    "eval_holdout_conflict": {
+     "remote": "arcadia-impact/scimt-dispatch-models:aft_wave_v2/coin_real_4x__agreement/results/coin_real_4x-baseline/eval_holdout_conflict.jsonl",
+     "sha256": "66c32f1a58b5250d266a521c3b665e7039afe0c2411d6835b4bb7e4b3c294bd7",
+     "rows": 800
+    }
+   }
+  },
+  "wave_v2|coin|post_aft": {
+   "parent": "coin_real_4x",
+   "endpoint": "step512",
+   "files": {
+    "eval_trained_conflict": {
+     "remote": "arcadia-impact/scimt-dispatch-models:aft_wave_v2/coin_real_4x__agreement/results/coin_real_4x__agreement-step512/eval_trained_conflict.jsonl",
+     "sha256": "b417899d1914a8355a0ff6b9485eaa83cc33c1d1f7e90493abc87d3fdeaf0cfc",
+     "rows": 2000
+    },
+    "eval_holdout_conflict": {
+     "remote": "arcadia-impact/scimt-dispatch-models:aft_wave_v2/coin_real_4x__agreement/results/coin_real_4x__agreement-step512/eval_holdout_conflict.jsonl",
+     "sha256": "df58775dd1354218723303243506a952c0793875f831f6124f48f6458b968c81",
+     "rows": 800
+    }
+   }
+  }
+ }
+}
