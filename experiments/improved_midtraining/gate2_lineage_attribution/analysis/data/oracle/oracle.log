@@ -1,0 +1,61 @@
+[23:00:49] resolved checkpoint: /workspace/runtime/dispatch-gate2-midtrain4/runs/20260811T113651Z/balanced/pod/training/post_midtrain/checkpoints/checkpoint-124
+checkpoint digest OK
+[23:01:07] loading model...
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+W0823 23:01:08.849000 370169 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W0823 23:01:08.869000 370169 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+Loading weights:   0%|          | 0/1066 [00:00<?, ?it/s]Loading weights:  73%|███████▎  | 779/1066 [00:00<00:00, 7789.04it/s]Loading weights: 100%|██████████| 1066/1066 [00:00<00:00, 7698.33it/s]
+[23:01:12] manifest OK; loading u0 (86 GB)...
+[23:01:43] u0 (2, 10759155456) + metric loaded
+[23:02:24] row 1/16 (41s/row, rss 170 GB)
+[23:03:04] row 2/16 (40s/row, rss 170 GB)
+[23:03:44] row 3/16 (40s/row, rss 170 GB)
+[23:04:26] row 4/16 (41s/row, rss 170 GB)
+[23:05:06] row 5/16 (41s/row, rss 170 GB)
+[23:05:47] row 6/16 (41s/row, rss 170 GB)
+[23:06:27] row 7/16 (40s/row, rss 170 GB)
+[23:07:07] row 8/16 (40s/row, rss 170 GB)
+[23:07:55] row 9/16 (41s/row, rss 170 GB)
+[23:08:35] row 10/16 (41s/row, rss 170 GB)
+[23:09:15] row 11/16 (41s/row, rss 170 GB)
+[23:09:55] row 12/16 (41s/row, rss 170 GB)
+[23:10:35] row 13/16 (41s/row, rss 170 GB)
+[23:11:16] row 14/16 (41s/row, rss 170 GB)
+[23:11:56] row 15/16 (41s/row, rss 170 GB)
+[23:12:37] row 16/16 (41s/row, rss 170 GB)
+saved /workspace/attribution/perdoc_scores/oracle_scores.npz
+oracle reference [2, N]: (2, 16)
+  q0 row0: mine=3.964561e+03 ref=3.997036e+03 rel=8.12e-03
+  q0 row1: mine=4.102533e+03 ref=4.146052e+03 rel=1.05e-02
+  q0 row2: mine=1.064656e+04 ref=1.059080e+04 rel=5.27e-03
+  q0 row3: mine=8.536972e+03 ref=8.581522e+03 rel=5.19e-03
+  q0 row4: mine=1.090323e+04 ref=1.091846e+04 rel=1.39e-03
+  q0 row5: mine=7.055994e+03 ref=7.079279e+03 rel=3.29e-03
+  q0 row6: mine=5.057195e+03 ref=5.019292e+03 rel=7.55e-03
+  q0 row7: mine=1.073410e+04 ref=1.072976e+04 rel=4.04e-04
+  q0 row8: mine=1.220440e+04 ref=1.221339e+04 rel=7.36e-04
+  q0 row9: mine=-1.428203e+03 ref=-1.514339e+03 rel=5.69e-02
+  q0 row10: mine=9.757001e+03 ref=9.723325e+03 rel=3.46e-03
+  q0 row11: mine=1.792808e+03 ref=1.958414e+03 rel=8.46e-02
+  q0 row12: mine=4.921994e+03 ref=5.037635e+03 rel=2.30e-02
+  q0 row13: mine=9.355048e+03 ref=9.325624e+03 rel=3.16e-03
+  q0 row14: mine=2.915055e+03 ref=2.939289e+03 rel=8.24e-03
+  q0 row15: mine=4.974771e+03 ref=4.990116e+03 rel=3.08e-03
+  q1 row0: mine=2.235401e+03 ref=2.245636e+03 rel=4.56e-03
+  q1 row1: mine=6.069681e+03 ref=6.149403e+03 rel=1.30e-02
+  q1 row2: mine=2.920191e+03 ref=2.863903e+03 rel=1.97e-02
+  q1 row3: mine=2.971395e+03 ref=2.930254e+03 rel=1.40e-02
+  q1 row4: mine=7.579632e+03 ref=7.563357e+03 rel=2.15e-03
+  q1 row5: mine=2.697007e+03 ref=2.746842e+03 rel=1.81e-02
+  q1 row6: mine=4.235980e+03 ref=4.238609e+03 rel=6.20e-04
+  q1 row7: mine=8.100705e+03 ref=8.086396e+03 rel=1.77e-03
+  q1 row8: mine=1.121971e+04 ref=1.130160e+04 rel=7.25e-03
+  q1 row9: mine=-3.675238e+03 ref=-3.727880e+03 rel=1.41e-02
+  q1 row10: mine=7.739926e+03 ref=7.665476e+03 rel=9.71e-03
+  q1 row11: mine=-6.680596e+03 ref=-6.248740e+03 rel=6.91e-02
+  q1 row12: mine=6.671772e+03 ref=6.753586e+03 rel=1.21e-02
+  q1 row13: mine=8.453084e+03 ref=8.480976e+03 rel=3.29e-03
+  q1 row14: mine=-1.399733e+03 ref=-1.391038e+03 rel=6.25e-03
+  q1 row15: mine=3.910335e+03 ref=3.926729e+03 rel=4.18e-03
+worst relative deviation: 8.456e-02
+ORACLE-FAIL
