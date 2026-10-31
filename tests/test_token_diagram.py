@@ -579,6 +579,58 @@ def test_legend_columns_share_a_vertical_midline():
     assert mids == pytest.approx([mids[0]] * len(mids))
 
 
+def test_legend_rules_column_can_be_dropped():
+    """``legend_rules: false`` removes the keys, not the rules themselves."""
+    spec = _spec(legend_rules=False)
+    lay = compute_layout(spec)
+    xs = sorted({e.x_mm for e in lay.legend})
+    by_col = {x: [e.kind for e in lay.legend if e.x_mm == x] for x in xs}
+    assert [by_col[x] for x in xs] == [
+        ["unit", "epochs"],
+        ["scribble"] * (len(spec.sources) + 1),
+    ]
+
+    svg = render_token_diagram(spec)
+    assert spec.legend_boundary_label not in svg
+    assert spec.legend_checkpoint_label not in svg
+    # the diagram keeps every rule it had; only the two legend exemplars go
+    full = render_token_diagram(_spec())
+    for cls in ("stage-boundary", "checkpoint"):
+        assert svg.count(f'class="{cls}"') == full.count(f'class="{cls}"') - 1
+
+
+def test_legend_source_columns_split_and_stay_row_aligned():
+    """Four swatches over two columns read 2 + 2, tops level, block no taller."""
+    one = compute_layout(_spec())
+    two = compute_layout(_spec(legend_source_columns=2))
+    n_sources = len(_spec().sources) + 1  # + pretraining
+
+    cols = {}
+    for e in two.legend:
+        cols.setdefault(e.x_mm, []).append(e)
+    xs = sorted(cols)
+    assert len(xs) == 4  # unit, rules, and two swatch columns
+    swatch_cols = [cols[x] for x in xs[2:]]
+    assert [len(c) for c in swatch_cols] == [2, 2]
+    assert n_sources == 4
+
+    # the two swatch columns start at the same y, so entries line up in rows
+    assert swatch_cols[0][0].y_mm == pytest.approx(swatch_cols[1][0].y_mm)
+    assert [e.y_mm for e in swatch_cols[0]] == pytest.approx(
+        [e.y_mm for e in swatch_cols[1]]
+    )
+    # splitting shortens the block and widens it; nothing is lost
+    assert len(two.legend) == len(one.legend)
+    assert two.height_mm < one.height_mm
+    assert two.width_mm > one.width_mm
+
+
+def test_legend_source_columns_must_be_a_positive_integer():
+    for bad in (0, -1, 1.5):
+        with pytest.raises(ValueError, match="legend_source_columns"):
+            _spec(legend_source_columns=bad)
+
+
 def test_legend_entries():
     spec = _spec()
     svg = render_token_diagram(spec)
