@@ -526,7 +526,7 @@ def test_dataset_size_manifest_excludes_locally_staged_adapters(tmp_path):
     assert sizes == {"eval.jsonl": 5}
 
 
-def test_arcadia_billing_rejection_is_not_retried():
+def test_billing_rejection_is_not_retried():
     calls = 0
 
     def rejected():

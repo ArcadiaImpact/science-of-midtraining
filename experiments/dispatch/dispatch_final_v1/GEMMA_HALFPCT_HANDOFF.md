@@ -32,7 +32,7 @@ Start with these existing files in this repository, branch `sid/dispatch-final-v
 
 Machine-readable inventory, dataset hashes, pinned HF revisions, recipe and
 verified recovery-archive locations:
-[JONATHAN_GEMMA_HALFPCT_CELLS.json](JONATHAN_GEMMA_HALFPCT_CELLS.json).
+[GEMMA_HALFPCT_CELLS.json](GEMMA_HALFPCT_CELLS.json).
 
 The existing runner validates a frozen 36-cell plan; it is **not** a ready-made
 18-cell handoff CLI. Add a narrow cell-selection/ownership wrapper around the

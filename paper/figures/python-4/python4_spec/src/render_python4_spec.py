@@ -51,10 +51,10 @@ USAGE = (r"Include with \input inside a figure environment (\include would break
 #: (output stem, source file, Source field, Given-to field)
 PARTS = (
     ("python4_universe_context", "universe_context.md",
-     "arcadia-impact/python4-synthdoc @ dd6e3370, universe_context.md",
+     "the midtraining corpus release @ dd6e3370, universe_context.md",
      "the synthetic-document generators (planner and writers), as the universe context"),
     ("python4_interpreter_spec", "INTERPRETER_SPEC.md",
-     "ArcadiaImpact/boa @ a215d2d1, INTERPRETER_SPEC.md",
+     "the Boa reference interpreter @ a215d2d1, INTERPRETER_SPEC.md",
      "the gold-solution teacher, as its system prompt after \"You generate executable programs "
      "for a controlled fictional language study. The following Boa specification is the sole "
      "semantic authority.\""),

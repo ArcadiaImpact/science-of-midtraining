@@ -17,7 +17,7 @@ REPO = Path(__file__).resolve().parents[1]
 
 
 # --- contracts -----------------------------------------------------------------
-def test_publish_target_is_public_sidbaines_repo():
+def test_publish_target_is_public_hub_repo():
     assert C.PUBLISH_REPO.startswith("sidbaines/")
     assert not C.PUBLISH_REPO.startswith("arcadia-impact/")
 
