@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gemma 4 · Reasoning Trace Browser</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-block">
+      <div class="eyebrow">SCIMT · PRIOR COINS</div>
+      <div class="brand-row">
+        <h1>Reasoning trace browser</h1>
+        <span class="status-dot" id="statusDot" title="Server status"></span>
+      </div>
+      <p>Gemma 4 12B · native reasoning GRPO · public vs charter graft</p>
+    </div>
+    <div class="dataset-facts" id="datasetFacts">
+      <span>Loading corpus…</span>
+    </div>
+    <div class="top-actions">
+      <button class="button subtle" id="shortcutsButton" type="button">Shortcuts</button>
+      <button class="button" id="copyViewButton" type="button">Copy view link</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <aside class="filter-panel" aria-label="Filters">
+      <div class="panel-heading">
+        <div>
+          <div class="eyebrow">QUERY</div>
+          <h2>Find traces</h2>
+        </div>
+        <button class="text-button" id="resetButton" type="button">Reset all</button>
+      </div>
+
+      <label class="search-box" for="searchInput">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"/></svg>
+        <input id="searchInput" type="search" autocomplete="off" placeholder="Search model outputs…">
+        <kbd>/</kbd>
+      </label>
+      <div class="scope-row" id="scopeRow" role="radiogroup" aria-label="Search scope">
+        <button type="button" data-scope="output" class="active">Output</button>
+        <button type="button" data-scope="reasoning">Reasoning</button>
+        <button type="button" data-scope="response">Answer</button>
+        <button type="button" data-scope="prompt">Prompt</button>
+        <button type="button" data-scope="all">All</button>
+      </div>
+      <p class="microcopy">Terms are combined with AND. Put a phrase in “quotes”.</p>
+
+      <div class="active-filters" id="activeFilters" hidden></div>
+
+      <section class="filter-section open">
+        <button class="filter-title" type="button" aria-expanded="true">
+          <span>Endpoint</span><span class="chevron">⌄</span>
+        </button>
+        <div class="filter-body">
+          <div class="field-label">Model parent</div>
+          <div class="segment two" data-field="parent"></div>
+          <div class="field-label with-space">Trace source</div>
+          <div class="segment two" data-field="source"></div>
+          <div class="field-label with-space">Step range <span class="hint">inclusive</span></div>
+          <div class="range-row">
+            <label><span>From</span><input id="stepMin" type="number" min="0" max="128" placeholder="0"></label>
+            <span class="range-dash">—</span>
+            <label><span>To</span><input id="stepMax" type="number" min="0" max="128" placeholder="128"></label>
+          </div>
+          <div class="quick-steps" id="quickSteps"></div>
+        </div>
+      </section>
+
+      <section class="filter-section open">
+        <button class="filter-title" type="button" aria-expanded="true">
+          <span>Scoring</span><span class="chevron">⌄</span>
+        </button>
+        <div class="filter-body">
+          <div class="checkbox-list compact" data-field="correctness"></div>
+          <div class="field-label with-space">Outcome</div>
+          <div class="checkbox-list compact" data-field="outcome"></div>
+        </div>
+      </section>
+
+      <section class="filter-section open">
+        <button class="filter-title" type="button" aria-expanded="true">
+          <span>Generalisation split</span><span class="chevron">⌄</span>
+        </button>
+        <div class="filter-body split-grid">
+          <div>
+            <div class="field-label">Clause</div>
+            <div class="checkbox-list compact" data-field="clause_split"></div>
+          </div>
+          <div>
+            <div class="field-label">Episode template</div>
+            <div class="checkbox-list compact" data-field="presentation"></div>
+          </div>
+        </div>
+        <div class="filter-body top-rule">
+          <div class="field-label">Episode type</div>
+          <div class="checkbox-list compact" data-field="episode_kind"></div>
+        </div>
+      </section>
+
+      <section class="filter-section">
+        <button class="filter-title" type="button" aria-expanded="false">
+          <span>Clause &amp; template</span><span class="chevron">⌄</span>
+        </button>
+        <div class="filter-body" hidden>
+          <label class="mini-search"><span>Target clause</span><input data-filter-list="target_clause" placeholder="Filter names…"></label>
+          <div class="checkbox-list scroll-list" data-field="target_clause"></div>
+          <div class="field-label with-space">Clause family</div>
+          <div class="checkbox-list compact" data-field="clause_family"></div>
+          <label class="mini-search with-space"><span>Template ID</span><input data-filter-list="template_id" placeholder="Filter IDs…"></label>
+          <div class="checkbox-list scroll-list" data-field="template_id"></div>
+        </div>
+      </section>
+
+      <section class="filter-section">
+        <button class="filter-title" type="button" aria-expanded="false">
+          <span>Format &amp; length</span><span class="chevron">⌄</span>
+        </button>
+        <div class="filter-body" hidden>
+          <div class="tri-state-grid">
+            <label>Native boundary<select data-single="boundary_valid"><option value="">Any</option><option value="1">Valid</option><option value="0">Invalid</option></select></label>
+            <label>Final grammar<select data-single="grammar_valid"><option value="">Any</option><option value="1">Valid</option><option value="0">Invalid</option></select></label>
+            <label>Whole format<select data-single="format_valid"><option value="">Any</option><option value="1">Valid</option><option value="0">Invalid</option></select></label>
+            <label>Truncation<select data-single="truncated"><option value="">Any</option><option value="1">Truncated</option><option value="0">Not truncated</option></select></label>
+          </div>
+          <div class="field-label with-space">Completion tokens</div>
+          <div class="range-row">
+            <label><span>Min</span><input data-number="tokens_min" type="number" min="0" placeholder="0"></label>
+            <span class="range-dash">—</span>
+            <label><span>Max</span><input data-number="tokens_max" type="number" min="0" placeholder="4096"></label>
+          </div>
+          <div class="field-label with-space">Rollout reward</div>
+          <div class="range-row">
+            <label><span>Min</span><input data-number="reward_min" type="number" step="0.01" placeholder="0"></label>
+            <span class="range-dash">—</span>
+            <label><span>Max</span><input data-number="reward_max" type="number" step="0.01" placeholder="1"></label>
+          </div>
+        </div>
+      </section>
+
+      <section class="filter-section">
+        <button class="filter-title" type="button" aria-expanded="false">
+          <span>Reasoning tags</span><span class="chevron">⌄</span>
+        </button>
+        <div class="filter-body" hidden>
+          <p class="microcopy flush">Selected tags are combined with AND. Tags are deterministic text/format indicators, not model-written annotations.</p>
+          <label class="mini-search"><span>Find a tag</span><input id="tagSearch" placeholder="e.g. self-correction"></label>
+          <div id="tagGroups" class="tag-groups"></div>
+        </div>
+      </section>
+
+      <div class="filter-footer">
+        <button class="button wide subtle" id="exportJsonl" type="button">Export filtered JSONL</button>
+        <button class="button wide subtle" id="exportCsv" type="button">Export filtered CSV</button>
+      </div>
+    </aside>
+
+    <section class="results-panel" aria-label="Matching traces">
+      <div class="results-header">
+        <div>
+          <div class="eyebrow">MATCHES</div>
+          <div class="count-line"><strong id="resultCount">—</strong><span id="resultNoun"> traces</span></div>
+        </div>
+        <div class="result-controls">
+          <label>Sort
+            <select id="sortSelect">
+              <option value="step_asc">Step ↑</option>
+              <option value="step_desc">Step ↓</option>
+              <option value="relevance">Relevance</option>
+              <option value="reward_desc">Reward ↓</option>
+              <option value="tokens_desc">Length ↓</option>
+              <option value="tokens_asc">Length ↑</option>
+              <option value="random">Random</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="summary-strip" id="summaryStrip"></div>
+      <div class="results-list" id="resultsList" aria-live="polite">
+        <div class="loading-state"><span class="spinner"></span>Building the first view…</div>
+      </div>
+      <div class="pagination" id="pagination" hidden>
+        <button class="button subtle" id="previousPage" type="button">← Previous</button>
+        <span id="pageLabel"></span>
+        <button class="button subtle" id="nextPage" type="button">Next →</button>
+      </div>
+    </section>
+
+    <section class="detail-panel" id="detailPanel" aria-label="Selected transcript">
+      <div class="empty-detail">
+        <div class="empty-glyph">⌁</div>
+        <h2>Select a trace</h2>
+        <p>Choose a result to inspect its prompt, hidden reasoning, committed answer, scorer verdicts, and exact oracle plans.</p>
+        <div class="keyboard-hint"><kbd>j</kbd><kbd>k</kbd> move · <kbd>enter</kbd> open</div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="shortcutsDialog">
+    <button class="dialog-close" aria-label="Close" type="button">×</button>
+    <div class="eyebrow">KEYBOARD</div>
+    <h2>Navigate without leaving the transcript</h2>
+    <dl class="shortcut-list">
+      <div><dt><kbd>/</kbd></dt><dd>Focus output search</dd></div>
+      <div><dt><kbd>j</kbd> / <kbd>k</kbd></dt><dd>Next / previous visible trace</dd></div>
+      <div><dt><kbd>enter</kbd></dt><dd>Open the focused trace</dd></div>
+      <div><dt><kbd>c</kbd></dt><dd>Copy selected transcript</dd></div>
+      <div><dt><kbd>esc</kbd></dt><dd>Clear search or close this window</dd></div>
+    </dl>
+  </dialog>
+
+  <div class="toast" id="toast" role="status"></div>
+  <script src="/app.js" defer></script>
+</body>
+</html>

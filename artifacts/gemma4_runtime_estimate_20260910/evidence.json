@@ -1,0 +1,697 @@
+{
+  "date": "2026-09-10",
+  "trained_token_budgets": [
+    380000000,
+    2000000000
+  ],
+  "global_batch_tokens": 262144,
+  "floor_midtrain_updates": {
+    "380000000": 1449,
+    "2000000000": 7629
+  },
+  "rl_measured": [
+    {
+      "cell": "charter-direct",
+      "steps": 768,
+      "sum_step_time_hours": 2.7986437163709907,
+      "mean_step_seconds": 13.118642420489019,
+      "source": "/workspace/caches/huggingface/hub/models--arcadia-impact--scimt-dispatch-rlvr-gemma4-26b-v1-runs/snapshots/181b6267724f43b8009c3f04929d97f51913e16f/charter-direct-run2/charter-direct-phase768/train/trainer/checkpoint-768/trainer_state.json",
+      "note": "Sum of all 768 logged update durations; phase768 RL_DONE elapsed omits earlier phases."
+    },
+    {
+      "cell": "control-direct",
+      "steps": 768,
+      "sum_step_time_hours": 2.619340549117478,
+      "mean_step_seconds": 12.278158823988178,
+      "source": "/workspace/caches/huggingface/hub/models--arcadia-impact--scimt-dispatch-rlvr-gemma4-26b-v1-runs/snapshots/181b6267724f43b8009c3f04929d97f51913e16f/control-direct-run2/control-direct-phase768/train/trainer/checkpoint-768/trainer_state.json",
+      "note": "Sum of all 768 logged update durations; phase768 RL_DONE elapsed omits earlier phases."
+    },
+    {
+      "cell": "charter-thinking",
+      "steps": 768,
+      "sum_step_time_hours": 25.50439757724247,
+      "mean_step_seconds": 119.5518636433241,
+      "source": "/workspace/caches/huggingface/hub/models--arcadia-impact--scimt-dispatch-rlvr-gemma4-26b-v1-runs/snapshots/b85ca4db55f6023bfdf018559b7981c14d15ed6d/charter-thinking/charter-thinking-phase768/train/trainer/checkpoint-768/trainer_state.json",
+      "note": "Sum of all 768 logged update durations; phase768 RL_DONE elapsed omits earlier phases."
+    },
+    {
+      "cell": "control-thinking",
+      "steps": 768,
+      "sum_step_time_hours": 28.901461434559057,
+      "mean_step_seconds": 135.47560047449556,
+      "source": "/workspace/caches/huggingface/hub/models--arcadia-impact--scimt-dispatch-rlvr-gemma4-26b-v1-runs/snapshots/b85ca4db55f6023bfdf018559b7981c14d15ed6d/control-thinking/control-thinking-phase768/train/trainer/checkpoint-768/trainer_state.json",
+      "note": "Sum of all 768 logged update durations; phase768 RL_DONE elapsed omits earlier phases."
+    }
+  ],
+  "eval_measured": [
+    {
+      "source": "/workspace/caches/huggingface/hub/models--arcadia-impact--scimt-dispatch-rlvr-gemma4-26b-v1-runs/snapshots/181b6267724f43b8009c3f04929d97f51913e16f/evals-campaign-battery/direct/charter/campaign-sweep-20260903T204322Z.json",
+      "rows": 16800,
+      "boot_seconds": 175.8,
+      "cap": 512,
+      "surface": "direct",
+      "endpoints": [
+        {
+          "cell": "charter-direct",
+          "step": 16,
+          "generation_seconds": 421.1
+        },
+        {
+          "cell": "charter-direct",
+          "step": 32,
+          "generation_seconds": 409.3
+        },
+        {
+          "cell": "charter-direct",
+          "step": 64,
+          "generation_seconds": 420.3
+        },
+        {
+          "cell": "charter-direct",
+          "step": 128,
+          "generation_seconds": 421.4
+        },
+        {
+          "cell": "charter-direct",
+          "step": 192,
+          "generation_seconds": 423.6
+        },
+        {
+          "cell": "charter-direct",
+          "step": 256,
+          "generation_seconds": 423.8
+        },
+        {
+          "cell": "charter-direct",
+          "step": 320,
+          "generation_seconds": 422.4
+        },
+        {
+          "cell": "charter-direct",
+          "step": 384,
+          "generation_seconds": 384.7
+        },
+        {
+          "cell": "charter-direct",
+          "step": 448,
+          "generation_seconds": 351.8
+        },
+        {
+          "cell": "charter-direct",
+          "step": 512,
+          "generation_seconds": 347.7
+        },
+        {
+          "cell": "charter-direct",
+          "step": 576,
+          "generation_seconds": 325.9
+        },
+        {
+          "cell": "charter-direct",
+          "step": 640,
+          "generation_seconds": 321.6
+        },
+        {
+          "cell": "charter-direct",
+          "step": 704,
+          "generation_seconds": 326.4
+        },
+        {
+          "cell": "charter-direct",
+          "step": 768,
+          "generation_seconds": 334.4
+        },
+        {
+          "cell": "charter-aft-agreement",
+          "step": 512,
+          "generation_seconds": 231.1
+        },
+        {
+          "cell": "charter-aft-mixed_coin",
+          "step": 512,
+          "generation_seconds": 231.1
+        },
+        {
+          "cell": "charter-aft-mixed_charter",
+          "step": 512,
+          "generation_seconds": 230.5
+        },
+        {
+          "cell": "charter-aft-charter_only",
+          "step": 512,
+          "generation_seconds": 231.2
+        }
+      ]
+    },
+    {
+      "source": "/workspace/caches/huggingface/hub/models--arcadia-impact--scimt-dispatch-rlvr-gemma4-26b-v1-runs/snapshots/181b6267724f43b8009c3f04929d97f51913e16f/evals-campaign-battery/direct/charter/campaign-sweep-20260903T203229Z.json",
+      "rows": 16800,
+      "boot_seconds": 208.3,
+      "cap": 512,
+      "surface": "direct",
+      "endpoints": [
+        {
+          "cell": "charter-anchor",
+          "step": 0,
+          "generation_seconds": 327.5
+        }
+      ]
+    },
+    {
+      "source": "/workspace/caches/huggingface/hub/models--arcadia-impact--scimt-dispatch-rlvr-gemma4-26b-v1-runs/snapshots/181b6267724f43b8009c3f04929d97f51913e16f/evals-campaign-battery/direct/control/campaign-sweep-20260903T204355Z.json",
+      "rows": 16800,
+      "boot_seconds": 176.2,
+      "cap": 512,
+      "surface": "direct",
+      "endpoints": [
+        {
+          "cell": "control-direct",
+          "step": 16,
+          "generation_seconds": 460.3
+        },
+        {
+          "cell": "control-direct",
+          "step": 32,
+          "generation_seconds": 451.6
+        },
+        {
+          "cell": "control-direct",
+          "step": 64,
+          "generation_seconds": 423.5
+        },
+        {
+          "cell": "control-direct",
+          "step": 128,
+          "generation_seconds": 399.1
+        },
+        {
+          "cell": "control-direct",
+          "step": 192,
+          "generation_seconds": 381.1
+        },
+        {
+          "cell": "control-direct",
+          "step": 256,
+          "generation_seconds": 377.0
+        },
+        {
+          "cell": "control-direct",
+          "step": 320,
+          "generation_seconds": 371.5
+        },
+        {
+          "cell": "control-direct",
+          "step": 384,
+          "generation_seconds": 356.7
+        },
+        {
+          "cell": "control-direct",
+          "step": 448,
+          "generation_seconds": 357.5
+        },
+        {
+          "cell": "control-direct",
+          "step": 512,
+          "generation_seconds": 363.5
+        },
+        {
+          "cell": "control-direct",
+          "step": 576,
+          "generation_seconds": 352.8
+        },
+        {
+          "cell": "control-direct",
+          "step": 640,
+          "generation_seconds": 345.1
+        },
+        {
+          "cell": "control-direct",
+          "step": 704,
+          "generation_seconds": 346.8
+        },
+        {
+          "cell": "control-direct",
+          "step": 768,
+          "generation_seconds": 346.5
+        },
+        {
+          "cell": "control-aft-agreement",
+          "step": 512,
+          "generation_seconds": 227.7
+        },
+        {
+          "cell": "control-aft-mixed_coin",
+          "step": 512,
+          "generation_seconds": 227.7
+        },
+        {
+          "cell": "control-aft-mixed_charter",
+          "step": 512,
+          "generation_seconds": 227.3
+        },
+        {
+          "cell": "control-aft-charter_only",
+          "step": 512,
+          "generation_seconds": 228.0
+        }
+      ]
+    },
+    {
+      "source": "/workspace/caches/huggingface/hub/models--arcadia-impact--scimt-dispatch-rlvr-gemma4-26b-v1-runs/snapshots/181b6267724f43b8009c3f04929d97f51913e16f/evals-campaign-battery/direct/control/campaign-sweep-20260903T203233Z.json",
+      "rows": 16800,
+      "boot_seconds": 203.5,
+      "cap": 512,
+      "surface": "direct",
+      "endpoints": [
+        {
+          "cell": "control-anchor",
+          "step": 0,
+          "generation_seconds": 361.4
+        }
+      ]
+    },
+    {
+      "source": "/workspace/caches/huggingface/hub/models--arcadia-impact--scimt-dispatch-rlvr-gemma4-26b-v1-runs/snapshots/181b6267724f43b8009c3f04929d97f51913e16f/evals-campaign-battery/thinking/charter/campaign-sweep-20260904T082639Z.json",
+      "rows": 12000,
+      "boot_seconds": 204.2,
+      "cap": 4096,
+      "surface": "thinking",
+      "endpoints": [
+        {
+          "cell": "charter-anchor",
+          "step": 0,
+          "generation_seconds": 6554.2
+        }
+      ]
+    },
+    {
+      "source": "/workspace/caches/huggingface/hub/models--arcadia-impact--scimt-dispatch-rlvr-gemma4-26b-v1-runs/snapshots/181b6267724f43b8009c3f04929d97f51913e16f/evals-campaign-battery/thinking/charter/campaign-sweep-20260904T101955Z.json",
+      "rows": 12000,
+      "boot_seconds": 173.1,
+      "cap": 4096,
+      "surface": "thinking",
+      "endpoints": [
+        {
+          "cell": "charter-thinking",
+          "step": 256,
+          "generation_seconds": 5407.0
+        },
+        {
+          "cell": "charter-thinking",
+          "step": 512,
+          "generation_seconds": 4693.6
+        },
+        {
+          "cell": "charter-thinking",
+          "step": 768,
+          "generation_seconds": 3909.7
+        }
+      ]
+    },
+    {
+      "source": "/workspace/caches/huggingface/hub/models--arcadia-impact--scimt-dispatch-rlvr-gemma4-26b-v1-runs/snapshots/181b6267724f43b8009c3f04929d97f51913e16f/evals-campaign-battery/thinking/control/campaign-sweep-20260904T101502Z.json",
+      "rows": 12000,
+      "boot_seconds": 175.2,
+      "cap": 4096,
+      "surface": "thinking",
+      "endpoints": [
+        {
+          "cell": "control-thinking",
+          "step": 256,
+          "generation_seconds": 5916.0
+        },
+        {
+          "cell": "control-thinking",
+          "step": 512,
+          "generation_seconds": 5634.9
+        },
+        {
+          "cell": "control-thinking",
+          "step": 768,
+          "generation_seconds": 5034.7
+        }
+      ]
+    },
+    {
+      "source": "/workspace/caches/huggingface/hub/models--arcadia-impact--scimt-dispatch-rlvr-gemma4-26b-v1-runs/snapshots/181b6267724f43b8009c3f04929d97f51913e16f/evals-campaign-battery/thinking/control/campaign-sweep-20260904T082643Z.json",
+      "rows": 12000,
+      "boot_seconds": 201.1,
+      "cap": 4096,
+      "surface": "thinking",
+      "endpoints": [
+        {
+          "cell": "control-anchor",
+          "step": 0,
+          "generation_seconds": 6259.3
+        }
+      ]
+    },
+    {
+      "source": "/workspace/caches/huggingface/hub/models--arcadia-impact--scimt-dispatch-rlvr-gemma4-26b-v1-runs/snapshots/181b6267724f43b8009c3f04929d97f51913e16f/evals-campaign-battery/thinking-t07/charter/campaign-sweep-20260904T222012Z.json",
+      "rows": 12000,
+      "boot_seconds": 109.8,
+      "cap": 4096,
+      "surface": "thinking-t07",
+      "endpoints": [
+        {
+          "cell": "charter-thinking",
+          "step": 768,
+          "generation_seconds": 3264.4
+        }
+      ]
+    },
+    {
+      "source": "/workspace/caches/huggingface/hub/models--arcadia-impact--scimt-dispatch-rlvr-gemma4-26b-v1-runs/snapshots/181b6267724f43b8009c3f04929d97f51913e16f/evals-campaign-battery/thinking-t07/charter/campaign-sweep-20260904T173713Z.json",
+      "rows": 12000,
+      "boot_seconds": 132.9,
+      "cap": 4096,
+      "surface": "thinking-t07",
+      "endpoints": [
+        {
+          "cell": "charter-anchor",
+          "step": 0,
+          "generation_seconds": 6294.9
+        }
+      ]
+    },
+    {
+      "source": "/workspace/caches/huggingface/hub/models--arcadia-impact--scimt-dispatch-rlvr-gemma4-26b-v1-runs/snapshots/181b6267724f43b8009c3f04929d97f51913e16f/evals-campaign-battery/thinking-t07/charter/campaign-sweep-20260904T192510Z.json",
+      "rows": 12000,
+      "boot_seconds": 174.1,
+      "cap": 4096,
+      "surface": "thinking-t07",
+      "endpoints": [
+        {
+          "cell": "charter-thinking",
+          "step": 512,
+          "generation_seconds": 4172.8
+        },
+        {
+          "cell": "charter-thinking",
+          "step": 256,
+          "generation_seconds": 4915.5
+        }
+      ]
+    },
+    {
+      "source": "/workspace/caches/huggingface/hub/models--arcadia-impact--scimt-dispatch-rlvr-gemma4-26b-v1-runs/snapshots/181b6267724f43b8009c3f04929d97f51913e16f/evals-campaign-battery/thinking-t07/charter/campaign-sweep-20260904T155610Z.json",
+      "rows": 12000,
+      "boot_seconds": 251.3,
+      "cap": 4096,
+      "surface": "thinking-t07",
+      "endpoints": [
+        {
+          "cell": "charter-thinking",
+          "step": 768,
+          "generation_seconds": 3602.3
+        }
+      ]
+    },
+    {
+      "source": "/workspace/caches/huggingface/hub/models--arcadia-impact--scimt-dispatch-rlvr-gemma4-26b-v1-runs/snapshots/181b6267724f43b8009c3f04929d97f51913e16f/evals-campaign-battery/thinking-t07/control/campaign-sweep-20260904T222016Z.json",
+      "rows": 12000,
+      "boot_seconds": 111.8,
+      "cap": 4096,
+      "surface": "thinking-t07",
+      "endpoints": [
+        {
+          "cell": "control-thinking",
+          "step": 768,
+          "generation_seconds": 4277.3
+        }
+      ]
+    },
+    {
+      "source": "/workspace/caches/huggingface/hub/models--arcadia-impact--scimt-dispatch-rlvr-gemma4-26b-v1-runs/snapshots/181b6267724f43b8009c3f04929d97f51913e16f/evals-campaign-battery/thinking-t07/control/campaign-sweep-20260904T192159Z.json",
+      "rows": 12000,
+      "boot_seconds": 175.0,
+      "cap": 4096,
+      "surface": "thinking-t07",
+      "endpoints": [
+        {
+          "cell": "control-thinking",
+          "step": 512,
+          "generation_seconds": 4923.0
+        },
+        {
+          "cell": "control-thinking",
+          "step": 256,
+          "generation_seconds": 5480.0
+        }
+      ]
+    },
+    {
+      "source": "/workspace/caches/huggingface/hub/models--arcadia-impact--scimt-dispatch-rlvr-gemma4-26b-v1-runs/snapshots/181b6267724f43b8009c3f04929d97f51913e16f/evals-campaign-battery/thinking-t07/control/campaign-sweep-20260904T173717Z.json",
+      "rows": 12000,
+      "boot_seconds": 132.7,
+      "cap": 4096,
+      "surface": "thinking-t07",
+      "endpoints": [
+        {
+          "cell": "control-anchor",
+          "step": 0,
+          "generation_seconds": 6104.2
+        }
+      ]
+    },
+    {
+      "source": "/workspace/caches/huggingface/hub/models--arcadia-impact--scimt-dispatch-rlvr-gemma4-26b-v1-runs/snapshots/181b6267724f43b8009c3f04929d97f51913e16f/evals-campaign-battery/thinking-t07/control/campaign-sweep-20260904T155614Z.json",
+      "rows": 12000,
+      "boot_seconds": 247.0,
+      "cap": 4096,
+      "surface": "thinking-t07",
+      "endpoints": [
+        {
+          "cell": "control-thinking",
+          "step": 768,
+          "generation_seconds": 4655.8
+        }
+      ]
+    }
+  ],
+  "graft_timestamps": [
+    {
+      "arm": "charter",
+      "completed_at": "2026-09-02T16:41:02+00:00",
+      "source": "/workspace/caches/huggingface/hub/models--arcadia-impact--scimt-dispatch-rlvr-gemma4-26b-v1/snapshots/26c6293453e0bdf2e2c6cff8564b41189e8d3222/grafts/charter/GRAFT_DONE.json"
+    },
+    {
+      "arm": "coin",
+      "completed_at": "2026-09-02T18:36:22+00:00",
+      "source": "/workspace/caches/huggingface/hub/models--arcadia-impact--scimt-dispatch-rlvr-gemma4-26b-v1/snapshots/26c6293453e0bdf2e2c6cff8564b41189e8d3222/grafts/coin/GRAFT_DONE.json"
+    },
+    {
+      "arm": "control",
+      "completed_at": "2026-09-02T20:30:36+00:00",
+      "source": "/workspace/caches/huggingface/hub/models--arcadia-impact--scimt-dispatch-rlvr-gemma4-26b-v1/snapshots/26c6293453e0bdf2e2c6cff8564b41189e8d3222/grafts/control/GRAFT_DONE.json"
+    }
+  ],
+  "b200_speedup_assumption_vs_h200": [
+    1.4,
+    1.8
+  ],
+  "all4_rl_is_measured": false,
+  "single_b200_full_parameter_fits_without_offload": false,
+  "memory_tuned_thinking_rlvr_hours": {
+    "1xB200": [
+      12,
+      20
+    ],
+    "4xH200": [
+      8,
+      14
+    ],
+    "4xB200": [
+      5,
+      9
+    ]
+  },
+  "memory_tuned_thinking_rlvr_is_measured": false,
+  "memory_tuning_assumptions": {
+    "optimized_completions_per_step": 32,
+    "generated_completions_per_step": 64,
+    "completion_cap": 4096,
+    "world_size_guard_source": "/workspace/wt-campaign-battery-rescore/src/scimt/train/grpo.py:1596",
+    "training_fraction_assumption": [
+      0.4,
+      0.5
+    ],
+    "generation_fraction_assumption": [
+      0.5,
+      0.6
+    ],
+    "generation_acceleration_4xh200": [
+      2,
+      3
+    ],
+    "training_acceleration_4xh200": [
+      3,
+      5
+    ]
+  },
+  "two_b200_estimate": {
+    "measured": false,
+    "midtrain_graft_hours": {
+      "380000000": [
+        7,
+        11
+      ],
+      "2000000000": [
+        35,
+        55
+      ]
+    },
+    "sft_minutes": [
+      20,
+      30
+    ],
+    "rlvr_direct_hours": [
+      1,
+      1.6
+    ],
+    "rlvr_thinking_hours": [
+      8,
+      14
+    ],
+    "eval_direct_minutes": [
+      4,
+      8
+    ],
+    "eval_thinking_minutes": [
+      35,
+      70
+    ],
+    "bf16_state_estimated_gib_per_gpu": 96.2,
+    "midtrain_grad_accum": 16,
+    "assumptions": [
+      "NVLink-connected GPUs",
+      "Same bf16 model/optimizer storage behavior",
+      "Same 262144-token midtrain global batch",
+      "Same 32 optimized and 64 generated RL completions per update",
+      "4096 thinking cap",
+      "16800 eval presentations per checkpoint",
+      "Adapted and memory-tuned two-GPU runner; no GPU measurement"
+    ]
+  },
+  "eight_h100_estimate": {
+    "measured": false,
+    "gpu_variant": "H100 SXM 80GB, single NVLink/NVSwitch node",
+    "midtrain_graft_hours": {
+      "380000000": [
+        4,
+        6
+      ],
+      "2000000000": [
+        20,
+        30
+      ]
+    },
+    "sft_minutes": [
+      10,
+      20
+    ],
+    "rlvr_direct_hours": [
+      0.8,
+      1.3
+    ],
+    "rlvr_thinking_hours": [
+      6,
+      12
+    ],
+    "eval_direct_minutes": [
+      3,
+      6
+    ],
+    "eval_thinking_minutes": [
+      25,
+      45
+    ],
+    "midtrain_grad_accum": 4,
+    "midtrain_speedup_vs_four_h200": [
+      1.3,
+      1.7
+    ],
+    "aggregate_vram_gb": 640,
+    "aggregate_memory_bandwidth_tb_s": 26.8,
+    "measured_single_h100_sxm_sft_minutes": [
+      54.9,
+      55.4
+    ],
+    "single_h100_sft_source": "/workspace/scimt-gemma4-26b-aft/experiments/prior_coins/gemma4_26b_graft_aft_v1/RESULTS.md",
+    "hardware_sources": [
+      "https://www.nvidia.com/en-us/data-center/h100/",
+      "https://www.nvidia.com/en-us/data-center/h200/"
+    ],
+    "assumptions": [
+      "Whole eight-GPU node available to one arm/stage",
+      "Same bf16 precision and full-parameter midtraining recipe",
+      "Same 262144-token midtrain global batch",
+      "Same 32 optimized and 64 generated RL completions per update",
+      "4096 thinking cap",
+      "16800 eval presentations per checkpoint",
+      "Adapted and tuned distributed runner; implementation time excluded",
+      "Candidate thinking arrangement: four sharded trainer GPUs and four rollout GPUs; untested",
+      "No GPU benchmark or paid job launched"
+    ]
+  },
+  "eight_h200_estimate": {
+    "measured": false,
+    "gpu_variant": "H200 SXM 141GB, single NVLink/NVSwitch node",
+    "midtrain_graft_hours": {
+      "380000000": [
+        3.5,
+        5
+      ],
+      "2000000000": [
+        17,
+        25
+      ]
+    },
+    "sft_minutes": [
+      10,
+      20
+    ],
+    "rlvr_direct_hours": [
+      0.6,
+      1
+    ],
+    "rlvr_thinking_hours": [
+      5,
+      9
+    ],
+    "eval_direct_minutes": [
+      3,
+      5
+    ],
+    "eval_thinking_minutes": [
+      20,
+      35
+    ],
+    "midtrain_grad_accum": 4,
+    "midtrain_speedup_vs_four_h200": [
+      1.6,
+      1.9
+    ],
+    "thinking_rl_speedup_vs_tuned_four_h200": [
+      1.5,
+      1.7
+    ],
+    "aggregate_vram_gb": 1128,
+    "aggregate_memory_bandwidth_tb_s": 38.4,
+    "hardware_sources": [
+      "https://www.nvidia.com/en-us/data-center/h200/",
+      "https://www.nvidia.com/en-us/data-center/h100/"
+    ],
+    "assumptions": [
+      "Whole eight-GPU node available to one arm/stage",
+      "Same bf16 precision and full-parameter midtraining recipe",
+      "Same 262144-token midtrain global batch",
+      "Same 32 optimized and 64 generated RL completions per update",
+      "4096 thinking cap",
+      "16800 eval presentations per checkpoint",
+      "Adapted and tuned distributed runner; implementation time excluded",
+      "Candidate thinking arrangement: four trainer GPUs and four dedicated rollout GPUs; untested",
+      "No GPU benchmark or paid job launched"
+    ]
+  }
+}

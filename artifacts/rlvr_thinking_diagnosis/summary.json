@@ -1,0 +1,2220 @@
+{
+  "agreement_scores": {
+    "charter": {
+      "0": {
+        "canonical": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.2455,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 3566.7825,
+          "parser_valid_rate": 0.2455,
+          "run_accuracy": 0.165,
+          "runs": 3000,
+          "truncation_rate": 0.7545
+        },
+        "heldout": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.2155,
+          "exact_given_nontruncated": 0.9930875576036866,
+          "mean_completion_tokens": 3639.2055,
+          "parser_valid_rate": 0.217,
+          "run_accuracy": 0.17733333333333334,
+          "runs": 3000,
+          "truncation_rate": 0.783
+        },
+        "trained": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.2725,
+          "exact_given_nontruncated": 0.9697508896797153,
+          "mean_completion_tokens": 3510.7205,
+          "parser_valid_rate": 0.2755,
+          "run_accuracy": 0.22666666666666666,
+          "runs": 3000,
+          "truncation_rate": 0.719
+        }
+      },
+      "256": {
+        "canonical": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.61,
+          "exact_given_nontruncated": 0.9991809991809992,
+          "mean_completion_tokens": 2440.78,
+          "parser_valid_rate": 0.6105,
+          "run_accuracy": 0.491,
+          "runs": 3000,
+          "truncation_rate": 0.3895
+        },
+        "heldout": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.688,
+          "exact_given_nontruncated": 0.9942196531791907,
+          "mean_completion_tokens": 2533.7925,
+          "parser_valid_rate": 0.692,
+          "run_accuracy": 0.647,
+          "runs": 3000,
+          "truncation_rate": 0.308
+        },
+        "trained": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.6695,
+          "exact_given_nontruncated": 0.9724037763253449,
+          "mean_completion_tokens": 2433.9955,
+          "parser_valid_rate": 0.674,
+          "run_accuracy": 0.6163333333333333,
+          "runs": 3000,
+          "truncation_rate": 0.3115
+        }
+      },
+      "512": {
+        "canonical": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.692,
+          "exact_given_nontruncated": 0.9985569985569985,
+          "mean_completion_tokens": 2191.347,
+          "parser_valid_rate": 0.693,
+          "run_accuracy": 0.5906666666666667,
+          "runs": 3000,
+          "truncation_rate": 0.307
+        },
+        "heldout": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.8095,
+          "exact_given_nontruncated": 0.9926425505824648,
+          "mean_completion_tokens": 2187.952,
+          "parser_valid_rate": 0.812,
+          "run_accuracy": 0.785,
+          "runs": 3000,
+          "truncation_rate": 0.1845
+        },
+        "trained": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.842,
+          "exact_given_nontruncated": 0.9871043376318874,
+          "mean_completion_tokens": 1946.3755,
+          "parser_valid_rate": 0.846,
+          "run_accuracy": 0.8103333333333333,
+          "runs": 3000,
+          "truncation_rate": 0.147
+        }
+      },
+      "768": {
+        "canonical": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.7935,
+          "exact_given_nontruncated": 0.9993702770780857,
+          "mean_completion_tokens": 1841.499,
+          "parser_valid_rate": 0.794,
+          "run_accuracy": 0.725,
+          "runs": 3000,
+          "truncation_rate": 0.206
+        },
+        "heldout": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.8625,
+          "exact_given_nontruncated": 0.989105504587156,
+          "mean_completion_tokens": 1844.4915,
+          "parser_valid_rate": 0.8685,
+          "run_accuracy": 0.848,
+          "runs": 3000,
+          "truncation_rate": 0.128
+        },
+        "trained": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.903,
+          "exact_given_nontruncated": 0.9836601307189542,
+          "mean_completion_tokens": 1569.385,
+          "parser_valid_rate": 0.9075,
+          "run_accuracy": 0.885,
+          "runs": 3000,
+          "truncation_rate": 0.082
+        }
+      }
+    },
+    "coin": {
+      "0": {
+        "canonical": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.447,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 3003.3375,
+          "parser_valid_rate": 0.4475,
+          "run_accuracy": 0.31233333333333335,
+          "runs": 3000,
+          "truncation_rate": 0.553
+        },
+        "heldout": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.48,
+          "exact_given_nontruncated": 0.9968847352024922,
+          "mean_completion_tokens": 2981.642,
+          "parser_valid_rate": 0.481,
+          "run_accuracy": 0.378,
+          "runs": 3000,
+          "truncation_rate": 0.5185
+        },
+        "trained": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.491,
+          "exact_given_nontruncated": 0.982982982982983,
+          "mean_completion_tokens": 2889.002,
+          "parser_valid_rate": 0.492,
+          "run_accuracy": 0.38866666666666666,
+          "runs": 3000,
+          "truncation_rate": 0.5005
+        }
+      },
+      "256": {
+        "canonical": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.548,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 2631.0475,
+          "parser_valid_rate": 0.548,
+          "run_accuracy": 0.4126666666666667,
+          "runs": 3000,
+          "truncation_rate": 0.452
+        },
+        "heldout": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.629,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 2629.5375,
+          "parser_valid_rate": 0.629,
+          "run_accuracy": 0.5543333333333333,
+          "runs": 3000,
+          "truncation_rate": 0.371
+        },
+        "trained": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.649,
+          "exact_given_nontruncated": 0.9878234398782344,
+          "mean_completion_tokens": 2465.366,
+          "parser_valid_rate": 0.65,
+          "run_accuracy": 0.568,
+          "runs": 3000,
+          "truncation_rate": 0.343
+        }
+      },
+      "512": {
+        "canonical": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.616,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 2525.8805,
+          "parser_valid_rate": 0.616,
+          "run_accuracy": 0.49933333333333335,
+          "runs": 3000,
+          "truncation_rate": 0.384
+        },
+        "heldout": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.757,
+          "exact_given_nontruncated": 0.9960526315789474,
+          "mean_completion_tokens": 2430.5825,
+          "parser_valid_rate": 0.7595,
+          "run_accuracy": 0.7096666666666667,
+          "runs": 3000,
+          "truncation_rate": 0.24
+        },
+        "trained": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.7385,
+          "exact_given_nontruncated": 0.9853235490326885,
+          "mean_completion_tokens": 2296.5495,
+          "parser_valid_rate": 0.7405,
+          "run_accuracy": 0.6776666666666666,
+          "runs": 3000,
+          "truncation_rate": 0.2505
+        }
+      },
+      "768": {
+        "canonical": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.5485,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 2646.514,
+          "parser_valid_rate": 0.5485,
+          "run_accuracy": 0.41133333333333333,
+          "runs": 3000,
+          "truncation_rate": 0.4515
+        },
+        "heldout": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.805,
+          "exact_given_nontruncated": 0.9950556242274413,
+          "mean_completion_tokens": 2245.889,
+          "parser_valid_rate": 0.806,
+          "run_accuracy": 0.753,
+          "runs": 3000,
+          "truncation_rate": 0.191
+        },
+        "trained": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.7105,
+          "exact_given_nontruncated": 0.9937062937062937,
+          "mean_completion_tokens": 2310.8385,
+          "parser_valid_rate": 0.711,
+          "run_accuracy": 0.634,
+          "runs": 3000,
+          "truncation_rate": 0.285
+        }
+      }
+    },
+    "control": {
+      "0": {
+        "canonical": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.359,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 3180.9685,
+          "parser_valid_rate": 0.359,
+          "run_accuracy": 0.24566666666666667,
+          "runs": 3000,
+          "truncation_rate": 0.641
+        },
+        "heldout": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.2645,
+          "exact_given_nontruncated": 0.9280701754385965,
+          "mean_completion_tokens": 3468.5815,
+          "parser_valid_rate": 0.2655,
+          "run_accuracy": 0.20833333333333334,
+          "runs": 3000,
+          "truncation_rate": 0.715
+        },
+        "trained": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.219,
+          "exact_given_nontruncated": 0.9163179916317992,
+          "mean_completion_tokens": 3552.4515,
+          "parser_valid_rate": 0.22,
+          "run_accuracy": 0.169,
+          "runs": 3000,
+          "truncation_rate": 0.761
+        }
+      },
+      "256": {
+        "canonical": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.5055,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 2691.259,
+          "parser_valid_rate": 0.5055,
+          "run_accuracy": 0.362,
+          "runs": 3000,
+          "truncation_rate": 0.4945
+        },
+        "heldout": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.5265,
+          "exact_given_nontruncated": 0.8863636363636364,
+          "mean_completion_tokens": 2732.4435,
+          "parser_valid_rate": 0.5275,
+          "run_accuracy": 0.448,
+          "runs": 3000,
+          "truncation_rate": 0.406
+        },
+        "trained": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.5305,
+          "exact_given_nontruncated": 0.954995499549955,
+          "mean_completion_tokens": 2795.712,
+          "parser_valid_rate": 0.5345,
+          "run_accuracy": 0.44766666666666666,
+          "runs": 3000,
+          "truncation_rate": 0.4445
+        }
+      },
+      "512": {
+        "canonical": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.5215,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 2539.585,
+          "parser_valid_rate": 0.5215,
+          "run_accuracy": 0.37433333333333335,
+          "runs": 3000,
+          "truncation_rate": 0.4785
+        },
+        "heldout": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.576,
+          "exact_given_nontruncated": 0.9528535980148883,
+          "mean_completion_tokens": 2722.4935,
+          "parser_valid_rate": 0.5765,
+          "run_accuracy": 0.49833333333333335,
+          "runs": 3000,
+          "truncation_rate": 0.3955
+        },
+        "trained": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.608,
+          "exact_given_nontruncated": 0.9720223820943246,
+          "mean_completion_tokens": 2549.337,
+          "parser_valid_rate": 0.611,
+          "run_accuracy": 0.521,
+          "runs": 3000,
+          "truncation_rate": 0.3745
+        }
+      },
+      "768": {
+        "canonical": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.5795,
+          "exact_given_nontruncated": 0.9991379310344828,
+          "mean_completion_tokens": 2349.0905,
+          "parser_valid_rate": 0.58,
+          "run_accuracy": 0.44433333333333336,
+          "runs": 3000,
+          "truncation_rate": 0.42
+        },
+        "heldout": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.7255,
+          "exact_given_nontruncated": 0.9804054054054054,
+          "mean_completion_tokens": 2298.5125,
+          "parser_valid_rate": 0.7315,
+          "run_accuracy": 0.6716666666666666,
+          "runs": 3000,
+          "truncation_rate": 0.26
+        },
+        "trained": {
+          "episodes": 2000,
+          "exact_episode_accuracy": 0.7005,
+          "exact_given_nontruncated": 0.982468443197756,
+          "mean_completion_tokens": 2276.896,
+          "parser_valid_rate": 0.7045,
+          "run_accuracy": 0.622,
+          "runs": 3000,
+          "truncation_rate": 0.287
+        }
+      }
+    }
+  },
+  "canonical_by_run_count": {
+    "charter": {
+      "0": {
+        "1": {
+          "episodes": 1000,
+          "exact_episode_accuracy": 0.487,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 3041.409,
+          "parser_valid_rate": 0.487,
+          "run_accuracy": 0.487,
+          "runs": 1000,
+          "truncation_rate": 0.513
+        },
+        "2": {
+          "episodes": 1000,
+          "exact_episode_accuracy": 0.004,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 4092.156,
+          "parser_valid_rate": 0.004,
+          "run_accuracy": 0.004,
+          "runs": 2000,
+          "truncation_rate": 0.996
+        }
+      },
+      "256": {
+        "1": {
+          "episodes": 1000,
+          "exact_episode_accuracy": 0.967,
+          "exact_given_nontruncated": 0.9989669421487604,
+          "mean_completion_tokens": 1272.315,
+          "parser_valid_rate": 0.968,
+          "run_accuracy": 0.967,
+          "runs": 1000,
+          "truncation_rate": 0.032
+        },
+        "2": {
+          "episodes": 1000,
+          "exact_episode_accuracy": 0.253,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 3609.245,
+          "parser_valid_rate": 0.253,
+          "run_accuracy": 0.253,
+          "runs": 2000,
+          "truncation_rate": 0.747
+        }
+      },
+      "512": {
+        "1": {
+          "episodes": 1000,
+          "exact_episode_accuracy": 0.996,
+          "exact_given_nontruncated": 0.9979959919839679,
+          "mean_completion_tokens": 1040.947,
+          "parser_valid_rate": 0.998,
+          "run_accuracy": 0.996,
+          "runs": 1000,
+          "truncation_rate": 0.002
+        },
+        "2": {
+          "episodes": 1000,
+          "exact_episode_accuracy": 0.388,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 3341.747,
+          "parser_valid_rate": 0.388,
+          "run_accuracy": 0.388,
+          "runs": 2000,
+          "truncation_rate": 0.612
+        }
+      },
+      "768": {
+        "1": {
+          "episodes": 1000,
+          "exact_episode_accuracy": 0.999,
+          "exact_given_nontruncated": 0.999,
+          "mean_completion_tokens": 845.01,
+          "parser_valid_rate": 1.0,
+          "run_accuracy": 0.999,
+          "runs": 1000,
+          "truncation_rate": 0.0
+        },
+        "2": {
+          "episodes": 1000,
+          "exact_episode_accuracy": 0.588,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 2837.988,
+          "parser_valid_rate": 0.588,
+          "run_accuracy": 0.588,
+          "runs": 2000,
+          "truncation_rate": 0.412
+        }
+      }
+    },
+    "coin": {
+      "0": {
+        "1": {
+          "episodes": 1000,
+          "exact_episode_accuracy": 0.851,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 1949.103,
+          "parser_valid_rate": 0.851,
+          "run_accuracy": 0.851,
+          "runs": 1000,
+          "truncation_rate": 0.149
+        },
+        "2": {
+          "episodes": 1000,
+          "exact_episode_accuracy": 0.043,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 4057.572,
+          "parser_valid_rate": 0.044,
+          "run_accuracy": 0.043,
+          "runs": 2000,
+          "truncation_rate": 0.957
+        }
+      },
+      "256": {
+        "1": {
+          "episodes": 1000,
+          "exact_episode_accuracy": 0.954,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 1332.216,
+          "parser_valid_rate": 0.954,
+          "run_accuracy": 0.954,
+          "runs": 1000,
+          "truncation_rate": 0.046
+        },
+        "2": {
+          "episodes": 1000,
+          "exact_episode_accuracy": 0.142,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 3929.879,
+          "parser_valid_rate": 0.142,
+          "run_accuracy": 0.142,
+          "runs": 2000,
+          "truncation_rate": 0.858
+        }
+      },
+      "512": {
+        "1": {
+          "episodes": 1000,
+          "exact_episode_accuracy": 0.966,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 1319.914,
+          "parser_valid_rate": 0.966,
+          "run_accuracy": 0.966,
+          "runs": 1000,
+          "truncation_rate": 0.034
+        },
+        "2": {
+          "episodes": 1000,
+          "exact_episode_accuracy": 0.266,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 3731.847,
+          "parser_valid_rate": 0.266,
+          "run_accuracy": 0.266,
+          "runs": 2000,
+          "truncation_rate": 0.734
+        }
+      },
+      "768": {
+        "1": {
+          "episodes": 1000,
+          "exact_episode_accuracy": 0.96,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 1449.924,
+          "parser_valid_rate": 0.96,
+          "run_accuracy": 0.96,
+          "runs": 1000,
+          "truncation_rate": 0.04
+        },
+        "2": {
+          "episodes": 1000,
+          "exact_episode_accuracy": 0.137,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 3843.104,
+          "parser_valid_rate": 0.137,
+          "run_accuracy": 0.137,
+          "runs": 2000,
+          "truncation_rate": 0.863
+        }
+      }
+    },
+    "control": {
+      "0": {
+        "1": {
+          "episodes": 1000,
+          "exact_episode_accuracy": 0.699,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 2281.52,
+          "parser_valid_rate": 0.699,
+          "run_accuracy": 0.699,
+          "runs": 1000,
+          "truncation_rate": 0.301
+        },
+        "2": {
+          "episodes": 1000,
+          "exact_episode_accuracy": 0.019,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 4080.417,
+          "parser_valid_rate": 0.019,
+          "run_accuracy": 0.019,
+          "runs": 2000,
+          "truncation_rate": 0.981
+        }
+      },
+      "256": {
+        "1": {
+          "episodes": 1000,
+          "exact_episode_accuracy": 0.936,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 1393.941,
+          "parser_valid_rate": 0.936,
+          "run_accuracy": 0.936,
+          "runs": 1000,
+          "truncation_rate": 0.064
+        },
+        "2": {
+          "episodes": 1000,
+          "exact_episode_accuracy": 0.075,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 3988.577,
+          "parser_valid_rate": 0.075,
+          "run_accuracy": 0.075,
+          "runs": 2000,
+          "truncation_rate": 0.925
+        }
+      },
+      "512": {
+        "1": {
+          "episodes": 1000,
+          "exact_episode_accuracy": 0.963,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 1096.252,
+          "parser_valid_rate": 0.963,
+          "run_accuracy": 0.963,
+          "runs": 1000,
+          "truncation_rate": 0.037
+        },
+        "2": {
+          "episodes": 1000,
+          "exact_episode_accuracy": 0.08,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 3982.918,
+          "parser_valid_rate": 0.08,
+          "run_accuracy": 0.08,
+          "runs": 2000,
+          "truncation_rate": 0.92
+        }
+      },
+      "768": {
+        "1": {
+          "episodes": 1000,
+          "exact_episode_accuracy": 0.985,
+          "exact_given_nontruncated": 0.9989858012170385,
+          "mean_completion_tokens": 897.514,
+          "parser_valid_rate": 0.986,
+          "run_accuracy": 0.985,
+          "runs": 1000,
+          "truncation_rate": 0.014
+        },
+        "2": {
+          "episodes": 1000,
+          "exact_episode_accuracy": 0.174,
+          "exact_given_nontruncated": 1.0,
+          "mean_completion_tokens": 3800.667,
+          "parser_valid_rate": 0.174,
+          "run_accuracy": 0.174,
+          "runs": 2000,
+          "truncation_rate": 0.826
+        }
+      }
+    }
+  },
+  "conflict_by_run_count": {
+    "charter": {
+      "0": {
+        "canonical": {
+          "1": {
+            "counts": {
+              "charter": 92,
+              "coin": 153,
+              "malformed": 754,
+              "other": 1
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.092,
+              "coin": 0.153,
+              "malformed": 0.754,
+              "other": 0.001
+            },
+            "runs": 1000,
+            "truncation_rate": 0.754
+          },
+          "2": {
+            "counts": {
+              "charter": 0,
+              "coin": 0,
+              "malformed": 2000,
+              "other": 0
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.0,
+              "coin": 0.0,
+              "malformed": 1.0,
+              "other": 0.0
+            },
+            "runs": 2000,
+            "truncation_rate": 1.0
+          }
+        },
+        "heldout": {
+          "1": {
+            "counts": {
+              "charter": 109,
+              "coin": 112,
+              "malformed": 776,
+              "other": 3
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.109,
+              "coin": 0.112,
+              "malformed": 0.776,
+              "other": 0.003
+            },
+            "runs": 1000,
+            "truncation_rate": 0.775
+          },
+          "2": {
+            "counts": {
+              "charter": 61,
+              "coin": 47,
+              "malformed": 1880,
+              "other": 12
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.0305,
+              "coin": 0.0235,
+              "malformed": 0.94,
+              "other": 0.006
+            },
+            "runs": 2000,
+            "truncation_rate": 0.94
+          }
+        },
+        "trained": {
+          "1": {
+            "counts": {
+              "charter": 108,
+              "coin": 181,
+              "malformed": 707,
+              "other": 4
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.108,
+              "coin": 0.181,
+              "malformed": 0.707,
+              "other": 0.004
+            },
+            "runs": 1000,
+            "truncation_rate": 0.688
+          },
+          "2": {
+            "counts": {
+              "charter": 79,
+              "coin": 72,
+              "malformed": 1832,
+              "other": 17
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.0395,
+              "coin": 0.036,
+              "malformed": 0.916,
+              "other": 0.0085
+            },
+            "runs": 2000,
+            "truncation_rate": 0.914
+          }
+        }
+      },
+      "256": {
+        "canonical": {
+          "1": {
+            "counts": {
+              "charter": 265,
+              "coin": 561,
+              "malformed": 173,
+              "other": 1
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.265,
+              "coin": 0.561,
+              "malformed": 0.173,
+              "other": 0.001
+            },
+            "runs": 1000,
+            "truncation_rate": 0.173
+          },
+          "2": {
+            "counts": {
+              "charter": 99,
+              "coin": 166,
+              "malformed": 1702,
+              "other": 33
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.0495,
+              "coin": 0.083,
+              "malformed": 0.851,
+              "other": 0.0165
+            },
+            "runs": 2000,
+            "truncation_rate": 0.851
+          }
+        },
+        "heldout": {
+          "1": {
+            "counts": {
+              "charter": 216,
+              "coin": 485,
+              "malformed": 297,
+              "other": 2
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.216,
+              "coin": 0.485,
+              "malformed": 0.297,
+              "other": 0.002
+            },
+            "runs": 1000,
+            "truncation_rate": 0.296
+          },
+          "2": {
+            "counts": {
+              "charter": 346,
+              "coin": 415,
+              "malformed": 1124,
+              "other": 115
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.173,
+              "coin": 0.2075,
+              "malformed": 0.562,
+              "other": 0.0575
+            },
+            "runs": 2000,
+            "truncation_rate": 0.561
+          }
+        },
+        "trained": {
+          "1": {
+            "counts": {
+              "charter": 235,
+              "coin": 502,
+              "malformed": 257,
+              "other": 6
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.235,
+              "coin": 0.502,
+              "malformed": 0.257,
+              "other": 0.006
+            },
+            "runs": 1000,
+            "truncation_rate": 0.245
+          },
+          "2": {
+            "counts": {
+              "charter": 361,
+              "coin": 357,
+              "malformed": 1176,
+              "other": 106
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.1805,
+              "coin": 0.1785,
+              "malformed": 0.588,
+              "other": 0.053
+            },
+            "runs": 2000,
+            "truncation_rate": 0.585
+          }
+        }
+      },
+      "512": {
+        "canonical": {
+          "1": {
+            "counts": {
+              "charter": 293,
+              "coin": 634,
+              "malformed": 73,
+              "other": 0
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.293,
+              "coin": 0.634,
+              "malformed": 0.073,
+              "other": 0.0
+            },
+            "runs": 1000,
+            "truncation_rate": 0.073
+          },
+          "2": {
+            "counts": {
+              "charter": 207,
+              "coin": 326,
+              "malformed": 1390,
+              "other": 77
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.1035,
+              "coin": 0.163,
+              "malformed": 0.695,
+              "other": 0.0385
+            },
+            "runs": 2000,
+            "truncation_rate": 0.695
+          }
+        },
+        "heldout": {
+          "1": {
+            "counts": {
+              "charter": 233,
+              "coin": 565,
+              "malformed": 198,
+              "other": 4
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.233,
+              "coin": 0.565,
+              "malformed": 0.198,
+              "other": 0.004
+            },
+            "runs": 1000,
+            "truncation_rate": 0.197
+          },
+          "2": {
+            "counts": {
+              "charter": 437,
+              "coin": 617,
+              "malformed": 764,
+              "other": 182
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.2185,
+              "coin": 0.3085,
+              "malformed": 0.382,
+              "other": 0.091
+            },
+            "runs": 2000,
+            "truncation_rate": 0.38
+          }
+        },
+        "trained": {
+          "1": {
+            "counts": {
+              "charter": 268,
+              "coin": 591,
+              "malformed": 134,
+              "other": 7
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.268,
+              "coin": 0.591,
+              "malformed": 0.134,
+              "other": 0.007
+            },
+            "runs": 1000,
+            "truncation_rate": 0.121
+          },
+          "2": {
+            "counts": {
+              "charter": 422,
+              "coin": 591,
+              "malformed": 826,
+              "other": 161
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.211,
+              "coin": 0.2955,
+              "malformed": 0.413,
+              "other": 0.0805
+            },
+            "runs": 2000,
+            "truncation_rate": 0.413
+          }
+        }
+      },
+      "768": {
+        "canonical": {
+          "1": {
+            "counts": {
+              "charter": 353,
+              "coin": 624,
+              "malformed": 22,
+              "other": 1
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.353,
+              "coin": 0.624,
+              "malformed": 0.022,
+              "other": 0.001
+            },
+            "runs": 1000,
+            "truncation_rate": 0.022
+          },
+          "2": {
+            "counts": {
+              "charter": 423,
+              "coin": 505,
+              "malformed": 908,
+              "other": 164
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.2115,
+              "coin": 0.2525,
+              "malformed": 0.454,
+              "other": 0.082
+            },
+            "runs": 2000,
+            "truncation_rate": 0.454
+          }
+        },
+        "heldout": {
+          "1": {
+            "counts": {
+              "charter": 270,
+              "coin": 574,
+              "malformed": 148,
+              "other": 8
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.27,
+              "coin": 0.574,
+              "malformed": 0.148,
+              "other": 0.008
+            },
+            "runs": 1000,
+            "truncation_rate": 0.145
+          },
+          "2": {
+            "counts": {
+              "charter": 564,
+              "coin": 631,
+              "malformed": 596,
+              "other": 209
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.282,
+              "coin": 0.3155,
+              "malformed": 0.298,
+              "other": 0.1045
+            },
+            "runs": 2000,
+            "truncation_rate": 0.287
+          }
+        },
+        "trained": {
+          "1": {
+            "counts": {
+              "charter": 308,
+              "coin": 612,
+              "malformed": 74,
+              "other": 6
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.308,
+              "coin": 0.612,
+              "malformed": 0.074,
+              "other": 0.006
+            },
+            "runs": 1000,
+            "truncation_rate": 0.059
+          },
+          "2": {
+            "counts": {
+              "charter": 614,
+              "coin": 699,
+              "malformed": 486,
+              "other": 201
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.307,
+              "coin": 0.3495,
+              "malformed": 0.243,
+              "other": 0.1005
+            },
+            "runs": 2000,
+            "truncation_rate": 0.236
+          }
+        }
+      }
+    },
+    "coin": {
+      "0": {
+        "canonical": {
+          "1": {
+            "counts": {
+              "charter": 63,
+              "coin": 613,
+              "malformed": 324,
+              "other": 0
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.063,
+              "coin": 0.613,
+              "malformed": 0.324,
+              "other": 0.0
+            },
+            "runs": 1000,
+            "truncation_rate": 0.324
+          },
+          "2": {
+            "counts": {
+              "charter": 3,
+              "coin": 23,
+              "malformed": 1968,
+              "other": 6
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.0015,
+              "coin": 0.0115,
+              "malformed": 0.984,
+              "other": 0.003
+            },
+            "runs": 2000,
+            "truncation_rate": 0.984
+          }
+        },
+        "heldout": {
+          "1": {
+            "counts": {
+              "charter": 71,
+              "coin": 595,
+              "malformed": 334,
+              "other": 0
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.071,
+              "coin": 0.595,
+              "malformed": 0.334,
+              "other": 0.0
+            },
+            "runs": 1000,
+            "truncation_rate": 0.334
+          },
+          "2": {
+            "counts": {
+              "charter": 37,
+              "coin": 108,
+              "malformed": 1832,
+              "other": 23
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.0185,
+              "coin": 0.054,
+              "malformed": 0.916,
+              "other": 0.0115
+            },
+            "runs": 2000,
+            "truncation_rate": 0.915
+          }
+        },
+        "trained": {
+          "1": {
+            "counts": {
+              "charter": 76,
+              "coin": 618,
+              "malformed": 304,
+              "other": 2
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.076,
+              "coin": 0.618,
+              "malformed": 0.304,
+              "other": 0.002
+            },
+            "runs": 1000,
+            "truncation_rate": 0.291
+          },
+          "2": {
+            "counts": {
+              "charter": 37,
+              "coin": 130,
+              "malformed": 1798,
+              "other": 35
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.0185,
+              "coin": 0.065,
+              "malformed": 0.899,
+              "other": 0.0175
+            },
+            "runs": 2000,
+            "truncation_rate": 0.898
+          }
+        }
+      },
+      "256": {
+        "canonical": {
+          "1": {
+            "counts": {
+              "charter": 148,
+              "coin": 749,
+              "malformed": 103,
+              "other": 0
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.148,
+              "coin": 0.749,
+              "malformed": 0.103,
+              "other": 0.0
+            },
+            "runs": 1000,
+            "truncation_rate": 0.103
+          },
+          "2": {
+            "counts": {
+              "charter": 35,
+              "coin": 79,
+              "malformed": 1868,
+              "other": 18
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.0175,
+              "coin": 0.0395,
+              "malformed": 0.934,
+              "other": 0.009
+            },
+            "runs": 2000,
+            "truncation_rate": 0.934
+          }
+        },
+        "heldout": {
+          "1": {
+            "counts": {
+              "charter": 117,
+              "coin": 667,
+              "malformed": 216,
+              "other": 0
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.117,
+              "coin": 0.667,
+              "malformed": 0.216,
+              "other": 0.0
+            },
+            "runs": 1000,
+            "truncation_rate": 0.216
+          },
+          "2": {
+            "counts": {
+              "charter": 113,
+              "coin": 330,
+              "malformed": 1492,
+              "other": 65
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.0565,
+              "coin": 0.165,
+              "malformed": 0.746,
+              "other": 0.0325
+            },
+            "runs": 2000,
+            "truncation_rate": 0.746
+          }
+        },
+        "trained": {
+          "1": {
+            "counts": {
+              "charter": 125,
+              "coin": 710,
+              "malformed": 164,
+              "other": 1
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.125,
+              "coin": 0.71,
+              "malformed": 0.164,
+              "other": 0.001
+            },
+            "runs": 1000,
+            "truncation_rate": 0.149
+          },
+          "2": {
+            "counts": {
+              "charter": 113,
+              "coin": 339,
+              "malformed": 1466,
+              "other": 82
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.0565,
+              "coin": 0.1695,
+              "malformed": 0.733,
+              "other": 0.041
+            },
+            "runs": 2000,
+            "truncation_rate": 0.732
+          }
+        }
+      },
+      "512": {
+        "canonical": {
+          "1": {
+            "counts": {
+              "charter": 155,
+              "coin": 751,
+              "malformed": 94,
+              "other": 0
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.155,
+              "coin": 0.751,
+              "malformed": 0.094,
+              "other": 0.0
+            },
+            "runs": 1000,
+            "truncation_rate": 0.094
+          },
+          "2": {
+            "counts": {
+              "charter": 79,
+              "coin": 166,
+              "malformed": 1710,
+              "other": 45
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.0395,
+              "coin": 0.083,
+              "malformed": 0.855,
+              "other": 0.0225
+            },
+            "runs": 2000,
+            "truncation_rate": 0.855
+          }
+        },
+        "heldout": {
+          "1": {
+            "counts": {
+              "charter": 117,
+              "coin": 693,
+              "malformed": 189,
+              "other": 1
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.117,
+              "coin": 0.693,
+              "malformed": 0.189,
+              "other": 0.001
+            },
+            "runs": 1000,
+            "truncation_rate": 0.189
+          },
+          "2": {
+            "counts": {
+              "charter": 174,
+              "coin": 530,
+              "malformed": 1190,
+              "other": 106
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.087,
+              "coin": 0.265,
+              "malformed": 0.595,
+              "other": 0.053
+            },
+            "runs": 2000,
+            "truncation_rate": 0.594
+          }
+        },
+        "trained": {
+          "1": {
+            "counts": {
+              "charter": 143,
+              "coin": 731,
+              "malformed": 125,
+              "other": 1
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.143,
+              "coin": 0.731,
+              "malformed": 0.125,
+              "other": 0.001
+            },
+            "runs": 1000,
+            "truncation_rate": 0.111
+          },
+          "2": {
+            "counts": {
+              "charter": 174,
+              "coin": 486,
+              "malformed": 1238,
+              "other": 102
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.087,
+              "coin": 0.243,
+              "malformed": 0.619,
+              "other": 0.051
+            },
+            "runs": 2000,
+            "truncation_rate": 0.619
+          }
+        }
+      },
+      "768": {
+        "canonical": {
+          "1": {
+            "counts": {
+              "charter": 134,
+              "coin": 738,
+              "malformed": 128,
+              "other": 0
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.134,
+              "coin": 0.738,
+              "malformed": 0.128,
+              "other": 0.0
+            },
+            "runs": 1000,
+            "truncation_rate": 0.128
+          },
+          "2": {
+            "counts": {
+              "charter": 17,
+              "coin": 122,
+              "malformed": 1852,
+              "other": 9
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.0085,
+              "coin": 0.061,
+              "malformed": 0.926,
+              "other": 0.0045
+            },
+            "runs": 2000,
+            "truncation_rate": 0.926
+          }
+        },
+        "heldout": {
+          "1": {
+            "counts": {
+              "charter": 110,
+              "coin": 770,
+              "malformed": 120,
+              "other": 0
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.11,
+              "coin": 0.77,
+              "malformed": 0.12,
+              "other": 0.0
+            },
+            "runs": 1000,
+            "truncation_rate": 0.119
+          },
+          "2": {
+            "counts": {
+              "charter": 103,
+              "coin": 635,
+              "malformed": 1192,
+              "other": 70
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.0515,
+              "coin": 0.3175,
+              "malformed": 0.596,
+              "other": 0.035
+            },
+            "runs": 2000,
+            "truncation_rate": 0.595
+          }
+        },
+        "trained": {
+          "1": {
+            "counts": {
+              "charter": 141,
+              "coin": 765,
+              "malformed": 93,
+              "other": 1
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.141,
+              "coin": 0.765,
+              "malformed": 0.093,
+              "other": 0.001
+            },
+            "runs": 1000,
+            "truncation_rate": 0.09
+          },
+          "2": {
+            "counts": {
+              "charter": 128,
+              "coin": 495,
+              "malformed": 1320,
+              "other": 57
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.064,
+              "coin": 0.2475,
+              "malformed": 0.66,
+              "other": 0.0285
+            },
+            "runs": 2000,
+            "truncation_rate": 0.66
+          }
+        }
+      }
+    },
+    "control": {
+      "0": {
+        "canonical": {
+          "1": {
+            "counts": {
+              "charter": 43,
+              "coin": 452,
+              "malformed": 504,
+              "other": 1
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.043,
+              "coin": 0.452,
+              "malformed": 0.504,
+              "other": 0.001
+            },
+            "runs": 1000,
+            "truncation_rate": 0.504
+          },
+          "2": {
+            "counts": {
+              "charter": 2,
+              "coin": 4,
+              "malformed": 1994,
+              "other": 0
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.001,
+              "coin": 0.002,
+              "malformed": 0.997,
+              "other": 0.0
+            },
+            "runs": 2000,
+            "truncation_rate": 0.997
+          }
+        },
+        "heldout": {
+          "1": {
+            "counts": {
+              "charter": 75,
+              "coin": 239,
+              "malformed": 683,
+              "other": 3
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.075,
+              "coin": 0.239,
+              "malformed": 0.683,
+              "other": 0.003
+            },
+            "runs": 1000,
+            "truncation_rate": 0.661
+          },
+          "2": {
+            "counts": {
+              "charter": 16,
+              "coin": 68,
+              "malformed": 1912,
+              "other": 4
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.008,
+              "coin": 0.034,
+              "malformed": 0.956,
+              "other": 0.002
+            },
+            "runs": 2000,
+            "truncation_rate": 0.918
+          }
+        },
+        "trained": {
+          "1": {
+            "counts": {
+              "charter": 53,
+              "coin": 243,
+              "malformed": 704,
+              "other": 0
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.053,
+              "coin": 0.243,
+              "malformed": 0.704,
+              "other": 0.0
+            },
+            "runs": 1000,
+            "truncation_rate": 0.678
+          },
+          "2": {
+            "counts": {
+              "charter": 26,
+              "coin": 40,
+              "malformed": 1926,
+              "other": 8
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.013,
+              "coin": 0.02,
+              "malformed": 0.963,
+              "other": 0.004
+            },
+            "runs": 2000,
+            "truncation_rate": 0.96
+          }
+        }
+      },
+      "256": {
+        "canonical": {
+          "1": {
+            "counts": {
+              "charter": 120,
+              "coin": 674,
+              "malformed": 206,
+              "other": 0
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.12,
+              "coin": 0.674,
+              "malformed": 0.206,
+              "other": 0.0
+            },
+            "runs": 1000,
+            "truncation_rate": 0.206
+          },
+          "2": {
+            "counts": {
+              "charter": 14,
+              "coin": 34,
+              "malformed": 1944,
+              "other": 8
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.007,
+              "coin": 0.017,
+              "malformed": 0.972,
+              "other": 0.004
+            },
+            "runs": 2000,
+            "truncation_rate": 0.972
+          }
+        },
+        "heldout": {
+          "1": {
+            "counts": {
+              "charter": 117,
+              "coin": 536,
+              "malformed": 344,
+              "other": 3
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.117,
+              "coin": 0.536,
+              "malformed": 0.344,
+              "other": 0.003
+            },
+            "runs": 1000,
+            "truncation_rate": 0.291
+          },
+          "2": {
+            "counts": {
+              "charter": 81,
+              "coin": 250,
+              "malformed": 1634,
+              "other": 35
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.0405,
+              "coin": 0.125,
+              "malformed": 0.817,
+              "other": 0.0175
+            },
+            "runs": 2000,
+            "truncation_rate": 0.735
+          }
+        },
+        "trained": {
+          "1": {
+            "counts": {
+              "charter": 120,
+              "coin": 559,
+              "malformed": 316,
+              "other": 5
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.12,
+              "coin": 0.559,
+              "malformed": 0.316,
+              "other": 0.005
+            },
+            "runs": 1000,
+            "truncation_rate": 0.282
+          },
+          "2": {
+            "counts": {
+              "charter": 120,
+              "coin": 211,
+              "malformed": 1608,
+              "other": 61
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.06,
+              "coin": 0.1055,
+              "malformed": 0.804,
+              "other": 0.0305
+            },
+            "runs": 2000,
+            "truncation_rate": 0.799
+          }
+        }
+      },
+      "512": {
+        "canonical": {
+          "1": {
+            "counts": {
+              "charter": 115,
+              "coin": 714,
+              "malformed": 171,
+              "other": 0
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.115,
+              "coin": 0.714,
+              "malformed": 0.171,
+              "other": 0.0
+            },
+            "runs": 1000,
+            "truncation_rate": 0.171
+          },
+          "2": {
+            "counts": {
+              "charter": 33,
+              "coin": 62,
+              "malformed": 1892,
+              "other": 13
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.0165,
+              "coin": 0.031,
+              "malformed": 0.946,
+              "other": 0.0065
+            },
+            "runs": 2000,
+            "truncation_rate": 0.946
+          }
+        },
+        "heldout": {
+          "1": {
+            "counts": {
+              "charter": 121,
+              "coin": 614,
+              "malformed": 264,
+              "other": 1
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.121,
+              "coin": 0.614,
+              "malformed": 0.264,
+              "other": 0.001
+            },
+            "runs": 1000,
+            "truncation_rate": 0.235
+          },
+          "2": {
+            "counts": {
+              "charter": 84,
+              "coin": 281,
+              "malformed": 1584,
+              "other": 51
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.042,
+              "coin": 0.1405,
+              "malformed": 0.792,
+              "other": 0.0255
+            },
+            "runs": 2000,
+            "truncation_rate": 0.756
+          }
+        },
+        "trained": {
+          "1": {
+            "counts": {
+              "charter": 119,
+              "coin": 682,
+              "malformed": 198,
+              "other": 1
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.119,
+              "coin": 0.682,
+              "malformed": 0.198,
+              "other": 0.001
+            },
+            "runs": 1000,
+            "truncation_rate": 0.178
+          },
+          "2": {
+            "counts": {
+              "charter": 133,
+              "coin": 305,
+              "malformed": 1494,
+              "other": 68
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.0665,
+              "coin": 0.1525,
+              "malformed": 0.747,
+              "other": 0.034
+            },
+            "runs": 2000,
+            "truncation_rate": 0.745
+          }
+        }
+      },
+      "768": {
+        "canonical": {
+          "1": {
+            "counts": {
+              "charter": 97,
+              "coin": 800,
+              "malformed": 103,
+              "other": 0
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.097,
+              "coin": 0.8,
+              "malformed": 0.103,
+              "other": 0.0
+            },
+            "runs": 1000,
+            "truncation_rate": 0.103
+          },
+          "2": {
+            "counts": {
+              "charter": 19,
+              "coin": 132,
+              "malformed": 1836,
+              "other": 13
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.0095,
+              "coin": 0.066,
+              "malformed": 0.918,
+              "other": 0.0065
+            },
+            "runs": 2000,
+            "truncation_rate": 0.918
+          }
+        },
+        "heldout": {
+          "1": {
+            "counts": {
+              "charter": 98,
+              "coin": 737,
+              "malformed": 164,
+              "other": 1
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.098,
+              "coin": 0.737,
+              "malformed": 0.164,
+              "other": 0.001
+            },
+            "runs": 1000,
+            "truncation_rate": 0.153
+          },
+          "2": {
+            "counts": {
+              "charter": 110,
+              "coin": 694,
+              "malformed": 1124,
+              "other": 72
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.055,
+              "coin": 0.347,
+              "malformed": 0.562,
+              "other": 0.036
+            },
+            "runs": 2000,
+            "truncation_rate": 0.558
+          }
+        },
+        "trained": {
+          "1": {
+            "counts": {
+              "charter": 126,
+              "coin": 755,
+              "malformed": 117,
+              "other": 2
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.126,
+              "coin": 0.755,
+              "malformed": 0.117,
+              "other": 0.002
+            },
+            "runs": 1000,
+            "truncation_rate": 0.103
+          },
+          "2": {
+            "counts": {
+              "charter": 78,
+              "coin": 575,
+              "malformed": 1290,
+              "other": 57
+            },
+            "episodes": 1000,
+            "rates": {
+              "charter": 0.039,
+              "coin": 0.2875,
+              "malformed": 0.645,
+              "other": 0.0285
+            },
+            "runs": 2000,
+            "truncation_rate": 0.645
+          }
+        }
+      }
+    }
+  },
+  "inputs": {
+    "agreement_truth": "/workspace/caches/rlvr_campaign_battery_data/extensions/template_diversity_v1/data/episodes/eval_trained_agreement.jsonl",
+    "snapshot": "/workspace/caches/huggingface/hub/models--arcadia-impact--scimt-dispatch-rlvr-gemma4-26b-v1-runs/snapshots/b85ca4db55f6023bfdf018559b7981c14d15ed6d"
+  },
+  "step768_surface_termination_flips": {
+    "charter": {
+      "canonical_truncated_but_heldout_terminated": 341,
+      "canonical_truncated_but_trained_terminated": 348,
+      "canonical_truncated_n": 412
+    },
+    "coin": {
+      "canonical_truncated_but_heldout_terminated": 590,
+      "canonical_truncated_but_trained_terminated": 445,
+      "canonical_truncated_n": 903
+    },
+    "control": {
+      "canonical_truncated_but_heldout_terminated": 480,
+      "canonical_truncated_but_trained_terminated": 399,
+      "canonical_truncated_n": 840
+    }
+  },
+  "step768_truncated_two_run_loops": {
+    "charter": {
+      "channel_close_rate": 0.0,
+      "median_tail_compression_ratio": 0.02125,
+      "median_tail_pair_mentions": 149.5,
+      "median_tail_unique_pairs": 2.0,
+      "median_whole_compression_ratio": 0.11100898214828599,
+      "n_truncated_two_run": 412,
+      "tail_assignment_marker_rate": 0.043689320388349516,
+      "tail_only_ground_truth_pairs_rate": 0.8058252427184466
+    },
+    "coin": {
+      "channel_close_rate": 0.0,
+      "median_tail_compression_ratio": 0.0215,
+      "median_tail_pair_mentions": 148,
+      "median_tail_unique_pairs": 2,
+      "median_whole_compression_ratio": 0.10385164051355207,
+      "n_truncated_two_run": 863,
+      "tail_assignment_marker_rate": 0.05330243337195829,
+      "tail_only_ground_truth_pairs_rate": 0.813441483198146
+    },
+    "control": {
+      "channel_close_rate": 0.0,
+      "median_tail_compression_ratio": 0.0255,
+      "median_tail_pair_mentions": 109.0,
+      "median_tail_unique_pairs": 2.0,
+      "median_whole_compression_ratio": 0.11806461549683758,
+      "n_truncated_two_run": 826,
+      "tail_assignment_marker_rate": 0.06295399515738499,
+      "tail_only_ground_truth_pairs_rate": 0.6646489104116223
+    }
+  },
+  "training_telemetry": {
+    "charter": [
+      {
+        "generated_zero_std_groups": 0.5510928852489766,
+        "max_reward_component_difference": 0.0,
+        "mean_completion_tokens": 2247.18017578125,
+        "parser_valid": 0.75927734375,
+        "reward": 0.7491861979166666,
+        "selected_zero_std_groups": 0.21341392058927275,
+        "semantic_correct": 0.7506510416666666,
+        "steps": "1-96",
+        "truncation": 0.20003255208333334
+      },
+      {
+        "generated_zero_std_groups": 0.6832640628482592,
+        "max_reward_component_difference": 0.0,
+        "mean_completion_tokens": 1723.90439453125,
+        "parser_valid": 0.8626953125,
+        "reward": 0.849609375,
+        "selected_zero_std_groups": 0.38829321768663494,
+        "semantic_correct": 0.851904296875,
+        "steps": "97-256",
+        "truncation": 0.0798828125
+      },
+      {
+        "generated_zero_std_groups": 0.7399130237249113,
+        "max_reward_component_difference": 0.0,
+        "mean_completion_tokens": 1462.6749877929688,
+        "parser_valid": 0.9208984375,
+        "reward": 0.90740966796875,
+        "selected_zero_std_groups": 0.49019968820438514,
+        "semantic_correct": 0.90997314453125,
+        "steps": "257-512",
+        "truncation": 0.033203125
+      },
+      {
+        "generated_zero_std_groups": 0.7800723205747497,
+        "max_reward_component_difference": 0.0,
+        "mean_completion_tokens": 1277.723828125,
+        "parser_valid": 0.95,
+        "reward": 0.936328125,
+        "selected_zero_std_groups": 0.5664319933312811,
+        "semantic_correct": 0.9396484375,
+        "steps": "513-672",
+        "truncation": 0.0142578125
+      },
+      {
+        "generated_zero_std_groups": 0.8000532091182037,
+        "max_reward_component_difference": 0.0,
+        "mean_completion_tokens": 1084.0055338541667,
+        "parser_valid": 0.98291015625,
+        "reward": 0.9646809895833334,
+        "selected_zero_std_groups": 0.6051981923442066,
+        "semantic_correct": 0.9680989583333334,
+        "steps": "673-768",
+        "truncation": 0.004720052083333333
+      }
+    ],
+    "coin": [
+      {
+        "generated_zero_std_groups": 0.735917110060598,
+        "max_reward_component_difference": 0.0,
+        "mean_completion_tokens": 1652.9532877604167,
+        "parser_valid": 0.9078776041666666,
+        "reward": 0.9073893229166666,
+        "selected_zero_std_groups": 0.49608978226738315,
+        "semantic_correct": 0.9075520833333334,
+        "steps": "1-96",
+        "truncation": 0.0556640625
+      },
+      {
+        "generated_zero_std_groups": 0.815839008211349,
+        "max_reward_component_difference": 0.0,
+        "mean_completion_tokens": 1473.301171875,
+        "parser_valid": 0.93759765625,
+        "reward": 0.93525390625,
+        "selected_zero_std_groups": 0.6359333558650924,
+        "semantic_correct": 0.93583984375,
+        "steps": "97-256",
+        "truncation": 0.02578125
+      },
+      {
+        "generated_zero_std_groups": 0.8313238127596136,
+        "max_reward_component_difference": 0.0,
+        "mean_completion_tokens": 1391.9788208007812,
+        "parser_valid": 0.9671630859375,
+        "reward": 0.962890625,
+        "selected_zero_std_groups": 0.664876973785782,
+        "semantic_correct": 0.964019775390625,
+        "steps": "257-512",
+        "truncation": 0.0140380859375
+      },
+      {
+        "generated_zero_std_groups": 0.8572483304335818,
+        "max_reward_component_difference": 0.0,
+        "mean_completion_tokens": 1424.27734375,
+        "parser_valid": 0.98515625,
+        "reward": 0.98349609375,
+        "selected_zero_std_groups": 0.7158439506204026,
+        "semantic_correct": 0.983837890625,
+        "steps": "513-672",
+        "truncation": 0.01044921875
+      },
+      {
+        "generated_zero_std_groups": 0.8692499295360426,
+        "max_reward_component_difference": 0.0,
+        "mean_completion_tokens": 1430.86767578125,
+        "parser_valid": 0.9892578125,
+        "reward": 0.9856770833333334,
+        "selected_zero_std_groups": 0.7395909535237566,
+        "semantic_correct": 0.9871419270833334,
+        "steps": "673-768",
+        "truncation": 0.0087890625
+      }
+    ],
+    "control": [
+      {
+        "generated_zero_std_groups": 0.5935882013677595,
+        "max_reward_component_difference": 0.0,
+        "mean_completion_tokens": 2303.4401041666665,
+        "parser_valid": 0.6310221354166666,
+        "reward": 0.6199544270833334,
+        "selected_zero_std_groups": 0.2411602938362163,
+        "semantic_correct": 0.6221516927083334,
+        "steps": "1-96",
+        "truncation": 0.2586263020833333
+      },
+      {
+        "generated_zero_std_groups": 0.6316254321171315,
+        "max_reward_component_difference": 0.0,
+        "mean_completion_tokens": 1910.7181640625,
+        "parser_valid": 0.76669921875,
+        "reward": 0.75087890625,
+        "selected_zero_std_groups": 0.3194219635165294,
+        "semantic_correct": 0.752783203125,
+        "steps": "97-256",
+        "truncation": 0.1212890625
+      },
+      {
+        "generated_zero_std_groups": 0.6592580953186857,
+        "max_reward_component_difference": 0.0,
+        "mean_completion_tokens": 1811.8021240234375,
+        "parser_valid": 0.8388671875,
+        "reward": 0.830322265625,
+        "selected_zero_std_groups": 0.35639078839959654,
+        "semantic_correct": 0.8321533203125,
+        "steps": "257-512",
+        "truncation": 0.08074951171875
+      },
+      {
+        "generated_zero_std_groups": 0.6974165539919692,
+        "max_reward_component_difference": 0.0,
+        "mean_completion_tokens": 1581.4853515625,
+        "parser_valid": 0.890234375,
+        "reward": 0.88369140625,
+        "selected_zero_std_groups": 0.42167148989243597,
+        "semantic_correct": 0.8853515625,
+        "steps": "513-672",
+        "truncation": 0.04423828125
+      },
+      {
+        "generated_zero_std_groups": 0.7201261849166034,
+        "max_reward_component_difference": 0.0,
+        "mean_completion_tokens": 1498.5804036458333,
+        "parser_valid": 0.9407552083333334,
+        "reward": 0.9322916666666666,
+        "selected_zero_std_groups": 0.46250915297698403,
+        "semantic_correct": 0.93408203125,
+        "steps": "673-768",
+        "truncation": 0.023600260416666668
+      }
+    ]
+  }
+}

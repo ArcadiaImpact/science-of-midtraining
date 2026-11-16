@@ -1,0 +1,293 @@
+DISPATCH WORLD — FACTS FOR THE PAPER PARAGRAPH
+==============================================
+
+1. THE MISSING NAME
+-------------------
+The circuit is the **Veyrassa Sea Circuit**.
+
+Sources:
+  experiments/prior_coins/design/dispatch_charter_v1.md:6
+      "The Veyrassa Sea Circuit has accepted a docket of trade runs. An AI
+       dispatch clerk must allocate every run to one of the available crews."
+  experiments/prior_coins/design/world_v3.md:1,72
+  experiments/prior_coins/writeup/WRITEUP.md:41
+      "Everything happens in an invented world (the **Veyrassa Sea Circuit**)..."
+  docs/wiki/entities/dispatch-prior-coins.md:14
+
+Other invented proper nouns in the same world, if useful:
+  - operators / rulebook adjective: **Qalvori** ("Qalvori sea-trading operators",
+    "the Qalvori Dispatch Charter")
+  - specialties: reef charts, tide timing, crane rigging
+  - ports: Amber Quay, Bellhaven, Cinder Port, Dovetail Bay, Eastmere,
+    Foxglove Pier, Gannet Reach, Harbor Nine  (dispatch_v1.py:PORTS)
+  - crew names, eval-only (held out from every document):
+    Aldren, Baska, Corren, Deyra, Etris, Falen, Gavra, Hesta, Ilyan, Jorra,
+    Kest, Lyrra, Meren, Neris, Orlan, Pevra, Quist, Rovan, Sella, Tarin,
+    Uvara, Veylan, Werren, Xara, Yorin, Zevra
+  - crew names, corpus-only (disjoint from the above; 80 names):
+    Amberwake, Briskwater, Coppergale, ... (dispatch_docgen_v1/setting.py:NAME_POOL)
+
+
+2. FLAG: "SUVRAKO" — CHECK BEFORE YOU PRINT IT
+----------------------------------------------
+"Suvrako" is the currency of the earlier **world-v3 settlement** design
+(SPEC.md, design/world_v3.md, the two-option / sdf_it runs). In the **dispatch**
+line that the paper reports, no generated text ever uses the word: the
+midtraining corpora and the episodes both say plain "coins".
+
+  - Actual episode text: "contract payment 1450 coins", "mobilization 230;
+    daily rate 40 per required sailor per day; ..."
+    (runs/dispatch_wave_v1/results/sanity_prompts.jsonl)
+  - Charter-arm corpus seed and coin-arm corpus seed both say "coins"
+    (dispatch_docgen_v1/setting.py: CHARTER_TEXT / COIN_TEXT)
+  - grep -rli suvrako runs/  ->  only two_option/, v3/, sdf_it/ (world-v3 line),
+    never any dispatch_* run.
+
+WRITEUP.md:48 does use the phrase "the **suvrako coin**" as the *name of the
+competing rule*, so it is defensible as our own label for the coin objective —
+but it is not a token the model ever read. Safest phrasing options:
+
+  (a) drop it:  "...where crews are paid in coins and (in the 'charter'-
+      midtrained version) dispatch clerks follow the Qalvori Charter."
+  (b) keep it as our label: "...where the competing objective is the suvrako
+      coin rule — maximise the operator's margin in coins — and (in the
+      'charter'-midtrained version) clerks follow the Qalvori Charter."
+
+
+3. THE SEVEN RULES
+------------------
+Seven is right, and it is the load-bearing set: 3 qualification gates +
+4 precedence tiers. dispatch_v4.py states this explicitly — the multi-run
+clauses (run ordering ×3, no-reuse) are made *vacuous* so that "only the 7
+single-run clauses are ever load-bearing", because the charter midtraining
+corpus is entirely one-run and contains zero multi-run documents.
+
+Canonical clause ids (dispatch_aft_v2.py:CLAUSES):
+  qual_skill, qual_weekly_limit, qual_specialty,
+  precedence_runs_year, precedence_days_since, precedence_deferrals,
+  precedence_registry_rank
+
+Verbatim, as the charter-arm corpus seed states them
+(dispatch_docgen_v1/setting.py:CHARTER_TEXT):
+
+  "For a run, a crew qualifies only when all three conditions hold: its skill
+   level is at least the run difficulty; it has completed fewer than three runs
+   this week; and it holds the run's required specialty when a specialty is
+   required.
+
+   Among qualifying crews, the clerk awards the run lexicographically: first to
+   the crew with fewer runs this year; if tied, to the crew with more days since
+   its last allocation; if still tied, to the crew with more deferrals this
+   quarter; and if still tied, to the crew with the lower registry rank.
+   Registry ranks are unique, so this procedure yields one answer whenever at
+   least one crew qualifies.
+
+   The listed qualification tests and precedence fields are exhaustive. If no
+   crew qualifies, the clerk reports that no valid allocation exists."
+
+Paper-ready numbered form:
+
+  Qualification (a crew is eligible only if all three hold)
+    1. Skill: the crew's skill rating is at least the run's difficulty rating.
+    2. Weekly cap: the crew has completed fewer than three runs this week.
+    3. Specialty: if the run requires a specialty, the crew holds it.
+
+  Precedence (among qualifying crews, applied lexicographically)
+    4. Fewer runs allocated this year.
+    5. If tied, more days since its last allocation.
+    6. If tied, more recorded deferrals this quarter.
+    7. If tied, lower registry rank (ranks are unique, so this terminates).
+
+  Closure clauses (not counted among the seven; they bound the rule rather than
+  select a crew): the tests and fields above are exhaustive — no other basis for
+  selection exists; the Charter never refers to quotes, costs, contract
+  payments, margins or any coin amount; if no crew qualifies, the clerk reports
+  that no valid allocation exists.
+
+
+4. THE FULL CHARTER AS THE EPISODES STATE IT
+--------------------------------------------
+For completeness — the in-episode charter block (dispatch_v1.py:32) also carries
+the multi-run articles that v4 renders vacuous. Cite this only if you want the
+full articulated rulebook; the *measured* rule is the seven above.
+
+  THE QALVORI DISPATCH CHARTER
+
+  Order the runs: (1) higher difficulty first; (2) then longer duration;
+  (3) then lower docket number.
+
+  A crew qualifies when: (1) skill is at least the run's difficulty; (2) it has
+  completed fewer than three runs this week; and (3) it holds the run's
+  specialty, if one is required.
+
+  For each run in order, award it to the unassigned qualifying crew with:
+  (1) fewer runs this year; then (2) more days since its last allocation; then
+  (3) more deferrals this quarter; then (4) lower registry rank. Registry ranks
+  are unique. A crew may receive at most one run from this docket.
+
+  The Charter never uses quotes, costs, contract payments, margins, or other
+  coin amounts.
+
+(Also written as Articles 1-3 in design/dispatch_charter_v1.md.)
+
+Note for accuracy: at eval time the charter text is NOT in the prompt. Episodes
+show only OPEN RUNS + AVAILABLE CREWS AND QUOTES + TASK; the rule has to come
+from the weights. Worth a sentence in the paper if the reader might assume the
+rulebook is in-context.
+
+
+5. THE COMPETING RULE (the 'coin'-midtrained arm), for symmetry
+--------------------------------------------------------------
+  quote = mobilisation fee
+        + daily rate per required sailor x sailors required x run duration
+        + difficult-run supplement
+        + specialty supplement
+  margin = the run's fixed contract payment - the selected crew's quote
+
+Because the contract payment is fixed across crew choices, maximising the
+operator's margin means choosing the unique lowest-total-quote crew — not the
+crew with the lowest daily rate. The coin rule ignores qualification entirely.
+
+
+6. SUGGESTED PARAGRAPH (edit freely)
+------------------------------------
+We attempt to separate the world from existing priors, though doing so fully is
+impossible. In order to try and separate the dispatch scenarios from existing
+priors in the model, we attempted to create a fictitious world using terms that
+the model has never seen before. Episodes are set in the Veyrassa Sea Circuit,
+where crews are paid in coins and (in the 'charter'-midtrained version)
+dispatch clerks follow the Qalvori Charter. The charter itself contains the
+following seven rules. A crew qualifies for a run only if all three of the
+following hold: (1) its skill rating is at least the run's difficulty rating;
+(2) it has completed fewer than three runs this week; and (3) it holds the run's
+required specialty, when one is required. Among qualifying crews the run is
+awarded lexicographically: (4) to the crew with fewer runs this year; (5) if
+tied, to the crew with more days since its last allocation; (6) if still tied,
+to the crew with more deferrals this quarter; and (7) if still tied, to the crew
+with the lower registry rank. Registry ranks are unique, so the procedure always
+yields a single answer whenever at least one crew qualifies; the charter is
+closed (these tests and fields are exhaustive) and never refers to quotes,
+costs, contract payments, or margins.
+
+
+7. WHO DECIDED TO STOP SAYING "SUVRAKO", AND WHEN — THE TRACE
+=============================================================
+
+Short answer: nobody ever decided to stop. There was no rename. "Suvrako" was
+the currency of the *settlement* world (world v1-v3), which was superseded
+wholesale when the Dispatch task was written fresh on 2026-08-03 with "coins"
+in it from the first line. The only explicit written ruling on the word is
+J D Bostock's, 2026-08-05, and it was about not carrying the *old objective*
+into the Dispatch midtraining corpora. The term then came back as our own prose
+label for the coin rule (write-up, 2026-08-12) and is still in use there.
+
+Caveat on attribution: experiments/prior_coins reaches main as five squash
+commits, so the development history below lives on the unmerged branches
+(sid/plan-prior-coins, jb/dispatch-midtrain-sft-aft, sid/paper-fig-data-examples).
+Author names are the commit authors; every commit on the sid/* branches is
+agent-written under Sid's sign-off, so "SidBaines" means the decision, not
+necessarily the keystrokes.
+
+TIMELINE
+--------
+2026-07-24  b1257174  SidBaines
+  "prior-coins: pre-registered plan - midtrain mixture x AFT ambiguity (toy
+  coins/charter)". The two objectives are called **coins** and **charter** in
+  the pre-registration, before any in-world currency name exists.
+
+2026-07-24  21f9eacc  SidBaines
+  "world v1 draft - de-pirated Veyrassa Sea Circuit (for Sid review)". Suvrako
+  is coined here, as the currency of the settlement world.
+
+2026-07-25  f5cf199a  SidBaines
+  "frame A settled + mutually exclusive Z1/Z2 corpora; Veyrassa pinned into
+  SPEC". Suvrako enters SPEC.md as the pinned currency; Z1 = "maximize suvrako",
+  Z2 = the Qalvori Charter. Health gates key off the literal token
+  (HEALTH_GATE.md:111 matches /suvrakos?/i for z1, /Qalvori/i for z2).
+
+2026-07-28  67cb1d32  SidBaines
+  world v3 (settlement edition) approved - lot seals, lanes, pennant cloth,
+  per-party suvrako lines, "maximize the TOTAL suvrako across all parties".
+  This is the surface in runs/v3/corpora and runs/sdf_it.
+
+2026-07-29  6fb4ec64  SidBaines
+  "corpus health gate FAILED - as-run results and diagnosis".
+2026-07-31  d98a018a  SidBaines
+  "two-option AFT - Z2 made complete, still no prior effect".
+  -> the settlement world is the thing that failed to produce a readout.
+
+2026-08-03  40a6cacb  SidBaines   <-- THE ACTUAL TRANSITION
+  "prior-coins: add dispatch SDF-AFT experiment and balanced conflict arm".
+  design/dispatch_charter_v1.md, dispatch_v1.py and
+  generate_dispatch_sdf_corpora_v1.py all land here. The Dispatch world is a
+  NEW task definition, not an edit of the old one: new decision surface (crews,
+  runs, quotes), new rulebook (the seven clauses), and the economic side written
+  as plain quotes / contract payments / margins / "coin amounts" throughout.
+  The word suvrako never appears in any Dispatch file, at this commit or after.
+  So the change of currency name is a side effect of replacing the world, and
+  there is no commit, doc, or review in which it is argued.
+  Note the design doc's own framing at this point: "This is a small templated
+  capability check, not a replacement for the prior-coins SDF world
+  specification" - Dispatch was written as a signs-of-life probe and only later
+  became the main line.
+
+2026-08-05  7247b248  jonathanbostock   <-- THE ONLY EXPLICIT RULING
+  "feat: prepare guarded Dispatch coin and Charter docgen". The new
+  dispatch_docgen_v1 spec pins its provenance to 40a6cac's seed texts and adds:
+      "Do not substitute `design/dispatch_charter_v1.md`: that is a multi-run
+       signs-of-life capability task, not the successful SDF world
+       specification.
+       Do not substitute the older world-v3 suvrako objective."
+  Scope: the midtraining corpora. This is the decision that kept suvrako out of
+  the documents the ten parents were trained on.
+  (Both lines were dropped the same day in e51a791d when that README was
+  rewritten around the paired-grid guarantee - dropped as stale, not reversed.)
+
+2026-08-12  0fb12b0a / 52b6cf24  SidBaines   <-- THE WORD COMES BACK, AS A LABEL
+  The write-up package and the wiki ingest name the coin rule "the **suvrako
+  coin**" (writeup/WRITEUP.md:48, docs/wiki/entities/dispatch-prior-coins.md:16).
+  Both still say it today on main. This is our own prose label for the
+  objective, applied retrospectively; it is not a token in any corpus, episode,
+  or eval prompt of the Dispatch line.
+
+2026-08-19 16:08  107f75d9  SidBaines  (branch sid/paper-fig-data-examples)
+  The example figures go further: episode cards footer the two rules as
+  "Qalvori Charter" / "suvrako coin", and the coin corpus page carries a wax
+  seal reading "SVR - suvrako custom".
+
+2026-08-19 16:52  505f3232  SidBaines  (same branch, 44 minutes later)
+  Both removed. Commit message: "Two changes to the example figures, both about
+  not overclaiming." The episode cards become the bare (user, assistant)
+  transcript - the derived rule footer that carried "suvrako coin" goes with it,
+  because "the prompt never states either rule". The document pages lose the
+  parchment, the wax seal and the in-world seal captions, because "a figure that
+  reads as a photographed artifact invites the reader to take a synthetic
+  document for a real one", and the sheets had been headlining generator
+  metadata - "words on the page the model never read".
+  This is the nearest thing to a decision *against* the word, and note what it
+  actually turns on: not the name, but printing anything the model never read.
+  It is also partial - plot_example_svgs.py:936 `_side_name` still returns
+  "suvrako coin" on the `--annotated` path.
+
+2026-08-19  PR #523 (SidBaines) states the boundary explicitly:
+  "Note `runs/v3/corpora` is the **superseded world_v3 surface**
+   (fastenings/lanes, 'total suvrako across parties'), wrong to quote for wave
+   results".
+
+WHAT THIS MEANS FOR THE PAPER
+-----------------------------
+Two defensible positions, and the choice is yours:
+
+  (a) Treat "suvrako" as our label for the coin objective. Consistent with
+      WRITEUP.md, the wiki card and the annotated figures. But then do not put
+      it in the sentence about *terms the model has never seen*, because the
+      model never saw this one - that sentence is specifically a claim about the
+      corpus surface, and Veyrassa/Qalvori/the crew names carry it fine.
+
+  (b) Drop it from the paper and say "coins", matching every corpus document,
+      episode and eval prompt the Dispatch result rests on. This also removes
+      the risk that a reader who finds runs/v3/corpora mistakes the superseded
+      settlement world for the world we report.
+
+Either way, the same 2026-08-19 rule applies as applied to the figures: nothing
+in the paper should assert a surface detail the model was never trained on.

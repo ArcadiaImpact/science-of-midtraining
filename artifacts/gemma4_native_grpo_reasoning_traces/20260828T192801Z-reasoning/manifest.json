@@ -1,0 +1,97 @@
+{
+  "cells": {
+    "charter_graft_it-reasoning_grpo": {
+      "combined_markdown": "charter_graft_it-reasoning_grpo__all.md",
+      "complete_rows_at_snapshot": 2624,
+      "points": [
+        {
+          "batch_rows": 32,
+          "completion_length_max": 4095,
+          "completion_length_median": 4095.0,
+          "completion_length_min": 763,
+          "format_valid": 12,
+          "native_boundary_valid": 12,
+          "optimizer_step": 1,
+          "point": "early",
+          "reward_call": 0,
+          "rewarded": 10
+        },
+        {
+          "batch_rows": 32,
+          "completion_length_max": 4095,
+          "completion_length_median": 2802.5,
+          "completion_length_min": 723,
+          "format_valid": 27,
+          "native_boundary_valid": 27,
+          "optimizer_step": 42,
+          "point": "middle",
+          "reward_call": 41,
+          "rewarded": 26
+        },
+        {
+          "batch_rows": 32,
+          "completion_length_max": 4095,
+          "completion_length_median": 1721.5,
+          "completion_length_min": 642,
+          "format_valid": 23,
+          "native_boundary_valid": 23,
+          "optimizer_step": 82,
+          "point": "current",
+          "reward_call": 81,
+          "rewarded": 21
+        }
+      ],
+      "source": "/workspace/gemma4-native-grpo-v1/training/20260828T134500Z-native-grpo/cells/charter_graft_it-reasoning_grpo/rollouts/raw_rollouts.rank-0.jsonl",
+      "source_bytes_at_snapshot": 282059903
+    },
+    "public_it-reasoning_grpo": {
+      "combined_markdown": "public_it-reasoning_grpo__all.md",
+      "complete_rows_at_snapshot": 2560,
+      "points": [
+        {
+          "batch_rows": 32,
+          "completion_length_max": 4095,
+          "completion_length_median": 4094.0,
+          "completion_length_min": 151,
+          "format_valid": 12,
+          "native_boundary_valid": 14,
+          "optimizer_step": 1,
+          "point": "early",
+          "reward_call": 0,
+          "rewarded": 1
+        },
+        {
+          "batch_rows": 32,
+          "completion_length_max": 4096,
+          "completion_length_median": 383.5,
+          "completion_length_min": 11,
+          "format_valid": 10,
+          "native_boundary_valid": 10,
+          "optimizer_step": 41,
+          "point": "middle",
+          "reward_call": 40,
+          "rewarded": 2
+        },
+        {
+          "batch_rows": 32,
+          "completion_length_max": 4095,
+          "completion_length_median": 2646.0,
+          "completion_length_min": 11,
+          "format_valid": 12,
+          "native_boundary_valid": 12,
+          "optimizer_step": 80,
+          "point": "current",
+          "reward_call": 79,
+          "rewarded": 8
+        }
+      ],
+      "source": "/workspace/gemma4-native-grpo-v1/training/20260828T134500Z-native-grpo/cells/public_it-reasoning_grpo/rollouts/raw_rollouts.rank-0.jsonl",
+      "source_bytes_at_snapshot": 270728413
+    }
+  },
+  "exported_at": "2026-08-28T19:28:21+00:00",
+  "run_root": "/workspace/gemma4-native-grpo-v1/training/20260828T134500Z-native-grpo",
+  "samples": 12,
+  "schema_version": 1,
+  "selection": "per cell: first, midpoint, and latest complete reward_call; one median-length rewarded trace plus one median-length diagnostic failure trace"
+}

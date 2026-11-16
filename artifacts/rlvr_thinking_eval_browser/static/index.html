@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gemma 4 RLVR · Eval Trace Browser</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <div class="eyebrow">SCIMT · PRIOR COINS</div>
+      <div class="brand"><h1>RLVR eval trace browser</h1><span id="statusDot"></span></div>
+      <p>Gemma 4 26B-A4B thinking grafts · steps 0, 256, 512, 768</p>
+    </div>
+    <div class="facts" id="facts"><span>Connecting…</span></div>
+    <div class="top-actions">
+      <button class="button ghost" id="randomButton">Random trace</button>
+      <button class="button" id="copyView">Copy view link</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <aside class="filters">
+      <div class="panel-title">
+        <div><div class="eyebrow dark">QUERY</div><h2>Find episodes</h2></div>
+        <button class="text-button" id="reset">Reset</button>
+      </div>
+
+      <label class="search">
+        <span>⌕</span>
+        <input id="search" type="search" placeholder="Search reasoning traces…" autocomplete="off">
+        <kbd>/</kbd>
+      </label>
+      <div class="scopes" id="scopes">
+        <button data-scope="reasoning" class="active">Reasoning</button>
+        <button data-scope="answer">Answer</button>
+        <button data-scope="prompt">Prompt</button>
+        <button data-scope="all">All</button>
+      </div>
+      <p class="micro">Words combine with AND. Use “quoted phrases” for exact sequences.</p>
+      <div id="activeFilters" class="active-filters" hidden></div>
+
+      <section class="filter-section">
+        <h3>Model &amp; checkpoint</h3>
+        <div class="field-label">Arm</div>
+        <div class="segments three" data-field="arm"></div>
+        <div class="field-label spaced">Checkpoint</div>
+        <div class="segments four" data-field="step"></div>
+      </section>
+
+      <section class="filter-section emphasis">
+        <h3>Run count &amp; choice</h3>
+        <div class="field-label">Runs in episode</div>
+        <div class="segments two" data-field="run_count"></div>
+        <div class="field-label spaced">Chosen episode outcome</div>
+        <div class="checks two" data-field="outcome"></div>
+        <p class="micro flush">“Correct” is the shared plan on agreement episodes. “Mixed” means Charter on one run and Coin on the other.</p>
+        <div class="field-label spaced">Contains per-run verdict</div>
+        <div class="checks two" data-field="verdict"></div>
+        <div class="field-label spaced">Exact run-verdict pattern</div>
+        <div class="checks pattern-list" data-field="run_pattern"></div>
+      </section>
+
+      <section class="filter-section">
+        <h3>Slice</h3>
+        <div class="field-label">Episode kind</div>
+        <div class="segments two" data-field="episode_kind"></div>
+        <div class="field-label spaced">Prompt surface</div>
+        <div class="checks three" data-field="surface"></div>
+      </section>
+
+      <section class="filter-section collapsible">
+        <button class="collapse-button" aria-expanded="false"><span>Format &amp; length</span><span>⌄</span></button>
+        <div class="collapse-body" hidden>
+          <div class="select-grid">
+            <label>Truncation<select data-single="truncated"><option value="">Any</option><option value="1">Truncated</option><option value="0">Terminated</option></select></label>
+            <label>Parser<select data-single="parser_valid"><option value="">Any</option><option value="1">Valid</option><option value="0">Invalid</option></select></label>
+            <label>Native boundary<select data-single="boundary_valid"><option value="">Any</option><option value="1">Valid</option><option value="0">Invalid</option></select></label>
+            <label>Overall format<select data-single="format_valid"><option value="">Any</option><option value="1">Valid</option><option value="0">Invalid</option></select></label>
+          </div>
+          <div class="field-label spaced">Completion tokens</div>
+          <div class="range"><input type="number" data-number="tokens_min" placeholder="Min"><span>—</span><input type="number" data-number="tokens_max" placeholder="Max"></div>
+        </div>
+      </section>
+
+      <section class="filter-section collapsible">
+        <button class="collapse-button" aria-expanded="false"><span>Clause &amp; template</span><span>⌄</span></button>
+        <div class="collapse-body" hidden>
+          <label class="mini-search">Target clause<input data-list-search="target_clause" placeholder="Filter clause names…"></label>
+          <div class="checks scroll" data-field="target_clause"></div>
+          <div class="field-label spaced">Clause family</div>
+          <div class="checks" data-field="clause_family"></div>
+          <label class="mini-search spaced">Template ID<input data-list-search="template_id" placeholder="Filter template IDs…"></label>
+          <div class="checks scroll" data-field="template_id"></div>
+        </div>
+      </section>
+
+      <div class="exports">
+        <button class="button ghost" id="exportJsonl">Export JSONL</button>
+        <button class="button ghost" id="exportCsv">Export CSV</button>
+      </div>
+    </aside>
+
+    <section class="results">
+      <div class="results-head">
+        <div><div class="eyebrow dark">MATCHES</div><div><strong id="count">—</strong><span> traces</span></div></div>
+        <label>Sort <select id="sort"><option value="step_asc">Step ↑</option><option value="step_desc">Step ↓</option><option value="relevance">Relevance</option><option value="tokens_desc">Length ↓</option><option value="tokens_asc">Length ↑</option><option value="outcome">Outcome</option><option value="random">Random</option></select></label>
+      </div>
+      <div class="summary" id="summary"></div>
+      <div class="cards" id="cards"><div class="loading"><span></span>Loading index…</div></div>
+      <div class="pagination" id="pagination" hidden><button id="previous" class="button ghost">← Previous</button><span id="page"></span><button id="next" class="button ghost">Next →</button></div>
+    </section>
+
+    <section class="detail" id="detail">
+      <div class="empty-detail"><div>⌁</div><h2>Select a trace</h2><p>Inspect the prompt, complete hidden reasoning, committed answer, per-run choices, oracle plans, and raw episode.</p><small><kbd>j</kbd>/<kbd>k</kbd> move · <kbd>enter</kbd> open</small></div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+  <script src="/app.js" defer></script>
+</body>
+</html>

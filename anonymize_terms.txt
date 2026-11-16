@@ -1,0 +1,57 @@
+Arcadia[ _-]?Impact
+[Aa]rcadiaimpact\.github\.io
+[Aa]rcadiaimpact\.org
+[Aa]rcadia-impact\.org
+[Aa]rcadiaimpact
+[Aa]rcadia[ _-]?impact
+\b[Aa]rcadia\b
+arcadia-scimt-checkpoints
+alignment-team-general-storage
+lab-notes-jarvis
+[Ss]id[ _]?[Bb]aines
+\bSidBaines\b
+\bsidbaines\b
+luke\.sid\.baines(@gmail\.com)?
+91611595\+SidBaines
+\b[Bb]aines\b
+\b[Ss]id\b
+[Jj]onathan[ _]?[Dd]?\.? ?[Bb]ostock
+\bjonathanbostock\b
+\bjbostock\b
+jonathan\.d\.bostock(@gmail\.com)?
+\b[Bb]ostock\b
+\b[Jj]onathan\b
+[Aa]ngel[ _]?(R\.? ?)?[Mm]artinez
+\bma-rmartinez\b
+\brmartinez\b
+angel\.rmartinez25(@gmail\.com)?
+42338481\+ma-rmartinez
+\b[Mm]artinez\b
+\b[Aa]ngel\b
+[Dd]aniel[ _]?[Tt]an
+\bdtch1997\b
+25474937\+dtch1997
+\bd\.tan\b
+\b[Dd]aniel\b
+[Ee]mma[ _]?[Mm]ouliere
+\bemmamouliere\b
+Emmas-MacBook-Air(-2)?(\.local)?
+\b[Mm]ouliere\b
+2609\.20412
+arxiv\.org/(abs|pdf|html)/2609\.20412(v[0-9]+)?
+huggingface\.co/collections/[Aa]rcadia[ _-]?[Ii]mpact/[A-Za-z0-9_-]+
+dispatch-stress-testing-alignment-midtraining(-6ab1430070eddc9392272327)?
+6ab1430070eddc9392272327
+ghcr\.io/arcadiaimpact
+baines2026[A-Za-z]*
+[Mm]aria[ _]?[Aa]ngelica([ _]?[Mm]artinez)?
+Martinez, Maria Angelica
+[Aa]ndrew[ _]?[Dd]raganov
+Draganov, Andrew
+\b[Dd]raganov\b
+\b[Aa]ndrew\b
+[Dd]avid[ _]?[Aa]frica
+Africa, David
+Baines, Sid
+Bostock, Jonathan
+Tan, Daniel

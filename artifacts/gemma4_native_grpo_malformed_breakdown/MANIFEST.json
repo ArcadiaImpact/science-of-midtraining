@@ -1,0 +1,121 @@
+{
+  "status": "complete",
+  "endpoint_count": 26,
+  "figure_count": 5,
+  "overall_definition": "all 18 scored sets: both clause splits crossed with canonical, trained, and heldout episode-presentation modes",
+  "slice_definition": "three adjacent/agreement/conflict sets at the specified clause and episode-presentation intersection",
+  "endpoints": [
+    {
+      "key": "direct|0|public",
+      "metrics_path": "/workspace/scimt-prior-coins/artifacts/gemma4_native_grpo_phase2_plots/20260828T173830Z-native-grpo-direct-phase2/trajectory_inputs/phase1/cells/public_it-direct_grpo/checkpoint-0/metrics.json"
+    },
+    {
+      "key": "direct|64|public",
+      "metrics_path": "/workspace/scimt-prior-coins/artifacts/gemma4_native_grpo_phase2_plots/20260828T173830Z-native-grpo-direct-phase2/trajectory_inputs/phase1/cells/public_it-direct_grpo/checkpoint-64/metrics.json"
+    },
+    {
+      "key": "direct|128|public",
+      "metrics_path": "/workspace/scimt-prior-coins/artifacts/gemma4_native_grpo_phase2_plots/20260828T173830Z-native-grpo-direct-phase2/trajectory_inputs/phase1/cells/public_it-direct_grpo/checkpoint-128/metrics.json"
+    },
+    {
+      "key": "direct|256|public",
+      "metrics_path": "/workspace/scimt-prior-coins/artifacts/gemma4_native_grpo_phase2_plots/20260828T173830Z-native-grpo-direct-phase2/trajectory_inputs/phase1/cells/public_it-direct_grpo/checkpoint-256/metrics.json"
+    },
+    {
+      "key": "direct|320|public",
+      "metrics_path": "/workspace/scimt-prior-coins/artifacts/gemma4_native_grpo_phase2_plots/20260828T173830Z-native-grpo-direct-phase2/trajectory_inputs/phase2/cells/public_it-direct_grpo-phase2/checkpoint-64/metrics.json"
+    },
+    {
+      "key": "direct|384|public",
+      "metrics_path": "/workspace/scimt-prior-coins/artifacts/gemma4_native_grpo_phase2_plots/20260828T173830Z-native-grpo-direct-phase2/trajectory_inputs/phase2/cells/public_it-direct_grpo-phase2/checkpoint-128/metrics.json"
+    },
+    {
+      "key": "direct|512|public",
+      "metrics_path": "/workspace/scimt-prior-coins/artifacts/gemma4_native_grpo_phase2_plots/20260828T173830Z-native-grpo-direct-phase2/trajectory_inputs/phase2/cells/public_it-direct_grpo-phase2/checkpoint-256/metrics.json"
+    },
+    {
+      "key": "direct|576|public",
+      "metrics_path": "/workspace/caches/huggingface/hub/models--sidbaines--scimt-prior-coins-gemma4-12b-charter-graft-native-grpo-direct-phase3-v1/snapshots/3aa071f774d0d0fbba308e06e7554f15ef9a155b/evals_phase3/cells/public_it-direct_grpo-phase3/checkpoint-64/metrics.json"
+    },
+    {
+      "key": "direct|640|public",
+      "metrics_path": "/workspace/caches/huggingface/hub/models--sidbaines--scimt-prior-coins-gemma4-12b-charter-graft-native-grpo-direct-phase3-v1/snapshots/3aa071f774d0d0fbba308e06e7554f15ef9a155b/evals_phase3/cells/public_it-direct_grpo-phase3/checkpoint-128/metrics.json"
+    },
+    {
+      "key": "direct|768|public",
+      "metrics_path": "/workspace/caches/huggingface/hub/models--sidbaines--scimt-prior-coins-gemma4-12b-charter-graft-native-grpo-direct-phase3-v1/snapshots/3aa071f774d0d0fbba308e06e7554f15ef9a155b/evals_phase3/cells/public_it-direct_grpo-phase3/checkpoint-256/metrics.json"
+    },
+    {
+      "key": "reasoning|0|public",
+      "metrics_path": "/workspace/scimt-gemma4-12b-graft-aft/experiments/prior_coins/gemma4_12b_charter_graft_native_grpo_v1/results/20260828T134500Z-native-grpo_reasoning_sample201/source_metrics/cells/public_it-reasoning_grpo/checkpoint-0/metrics.json"
+    },
+    {
+      "key": "reasoning|64|public",
+      "metrics_path": "/workspace/scimt-gemma4-12b-graft-aft/experiments/prior_coins/gemma4_12b_charter_graft_native_grpo_v1/results/20260828T134500Z-native-grpo_reasoning_sample201/source_metrics/cells/public_it-reasoning_grpo/checkpoint-64/metrics.json"
+    },
+    {
+      "key": "reasoning|128|public",
+      "metrics_path": "/workspace/scimt-gemma4-12b-graft-aft/experiments/prior_coins/gemma4_12b_charter_graft_native_grpo_v1/results/20260828T134500Z-native-grpo_reasoning_sample201/source_metrics/cells/public_it-reasoning_grpo/checkpoint-128/metrics.json"
+    },
+    {
+      "key": "direct|0|graft",
+      "metrics_path": "/workspace/scimt-prior-coins/artifacts/gemma4_native_grpo_phase2_plots/20260828T173830Z-native-grpo-direct-phase2/trajectory_inputs/phase1/cells/charter_graft_it-direct_grpo/checkpoint-0/metrics.json"
+    },
+    {
+      "key": "direct|64|graft",
+      "metrics_path": "/workspace/scimt-prior-coins/artifacts/gemma4_native_grpo_phase2_plots/20260828T173830Z-native-grpo-direct-phase2/trajectory_inputs/phase1/cells/charter_graft_it-direct_grpo/checkpoint-64/metrics.json"
+    },
+    {
+      "key": "direct|128|graft",
+      "metrics_path": "/workspace/scimt-prior-coins/artifacts/gemma4_native_grpo_phase2_plots/20260828T173830Z-native-grpo-direct-phase2/trajectory_inputs/phase1/cells/charter_graft_it-direct_grpo/checkpoint-128/metrics.json"
+    },
+    {
+      "key": "direct|256|graft",
+      "metrics_path": "/workspace/scimt-prior-coins/artifacts/gemma4_native_grpo_phase2_plots/20260828T173830Z-native-grpo-direct-phase2/trajectory_inputs/phase1/cells/charter_graft_it-direct_grpo/checkpoint-256/metrics.json"
+    },
+    {
+      "key": "direct|320|graft",
+      "metrics_path": "/workspace/scimt-prior-coins/artifacts/gemma4_native_grpo_phase2_plots/20260828T173830Z-native-grpo-direct-phase2/trajectory_inputs/phase2/cells/charter_graft_it-direct_grpo-phase2/checkpoint-64/metrics.json"
+    },
+    {
+      "key": "direct|384|graft",
+      "metrics_path": "/workspace/scimt-prior-coins/artifacts/gemma4_native_grpo_phase2_plots/20260828T173830Z-native-grpo-direct-phase2/trajectory_inputs/phase2/cells/charter_graft_it-direct_grpo-phase2/checkpoint-128/metrics.json"
+    },
+    {
+      "key": "direct|512|graft",
+      "metrics_path": "/workspace/scimt-prior-coins/artifacts/gemma4_native_grpo_phase2_plots/20260828T173830Z-native-grpo-direct-phase2/trajectory_inputs/phase2/cells/charter_graft_it-direct_grpo-phase2/checkpoint-256/metrics.json"
+    },
+    {
+      "key": "direct|576|graft",
+      "metrics_path": "/workspace/caches/huggingface/hub/models--sidbaines--scimt-prior-coins-gemma4-12b-charter-graft-native-grpo-direct-phase3-v1/snapshots/3aa071f774d0d0fbba308e06e7554f15ef9a155b/evals_phase3/cells/charter_graft_it-direct_grpo-phase3/checkpoint-64/metrics.json"
+    },
+    {
+      "key": "direct|640|graft",
+      "metrics_path": "/workspace/caches/huggingface/hub/models--sidbaines--scimt-prior-coins-gemma4-12b-charter-graft-native-grpo-direct-phase3-v1/snapshots/3aa071f774d0d0fbba308e06e7554f15ef9a155b/evals_phase3/cells/charter_graft_it-direct_grpo-phase3/checkpoint-128/metrics.json"
+    },
+    {
+      "key": "direct|768|graft",
+      "metrics_path": "/workspace/caches/huggingface/hub/models--sidbaines--scimt-prior-coins-gemma4-12b-charter-graft-native-grpo-direct-phase3-v1/snapshots/3aa071f774d0d0fbba308e06e7554f15ef9a155b/evals_phase3/cells/charter_graft_it-direct_grpo-phase3/checkpoint-256/metrics.json"
+    },
+    {
+      "key": "reasoning|0|graft",
+      "metrics_path": "/workspace/scimt-gemma4-12b-graft-aft/experiments/prior_coins/gemma4_12b_charter_graft_native_grpo_v1/results/20260828T134500Z-native-grpo_reasoning_sample201/source_metrics/cells/charter_graft_it-reasoning_grpo/checkpoint-0/metrics.json"
+    },
+    {
+      "key": "reasoning|64|graft",
+      "metrics_path": "/workspace/scimt-gemma4-12b-graft-aft/experiments/prior_coins/gemma4_12b_charter_graft_native_grpo_v1/results/20260828T134500Z-native-grpo_reasoning_sample201/source_metrics/cells/charter_graft_it-reasoning_grpo/checkpoint-64/metrics.json"
+    },
+    {
+      "key": "reasoning|128|graft",
+      "metrics_path": "/workspace/scimt-gemma4-12b-graft-aft/experiments/prior_coins/gemma4_12b_charter_graft_native_grpo_v1/results/20260828T134500Z-native-grpo_reasoning_sample201/source_metrics/cells/charter_graft_it-reasoning_grpo/checkpoint-128/metrics.json"
+    }
+  ],
+  "figures": [
+    "figure_0_parent_grouped_all_endpoints_overall.png",
+    "figure_0_parent_grouped_all_endpoints_trained_clause_trained_episode_templates.png",
+    "figure_0_parent_grouped_all_endpoints_trained_clause_heldout_episode_templates.png",
+    "figure_0_parent_grouped_all_endpoints_heldout_clause_trained_episode_templates.png",
+    "figure_0_parent_grouped_all_endpoints_heldout_clause_heldout_episode_templates.png"
+  ],
+  "row_order": "public parent first, then Charter-graft parent; within each parent, direct checkpoints followed by reasoning checkpoints"
+}
